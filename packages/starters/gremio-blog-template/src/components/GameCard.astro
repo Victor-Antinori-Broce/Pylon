@@ -1,0 +1,93 @@
+---
+interface Props {
+  title: string;
+  slug: string;
+  developer: string;
+  metacriticScore?: number | null;
+  coverArtUrl?: string | null;
+  platforms?: any[];
+  tags?: any[];
+  index?: number;
+}
+
+const { title, slug, developer, metacriticScore, coverArtUrl, platforms = [], tags = [], index = 0 } = Astro.props;
+
+const scoreClass = metacriticScore
+  ? metacriticScore >= 85 ? "score-high" : metacriticScore >= 70 ? "score-mid" : "score-low"
+  : "";
+
+const delay = Math.min(index * 0.08, 0.4);
+---
+
+<a
+  href={`/games/${slug}`}
+  class="glass-card group block animate-enter"
+  style={`animation-delay: ${delay}s`}
+>
+  <!-- Cover image -->
+  <div class="aspect-[16/10] overflow-hidden relative bg-gremius-surface">
+    {coverArtUrl ? (
+      <img
+        src={coverArtUrl}
+        alt={title}
+        width="640"
+        height="400"
+        loading={index < 3 ? "eager" : "lazy"}
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+    ) : (
+      <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-gremius-surface to-gremius-bg">
+        <span class="text-4xl opacity-20">🎮</span>
+      </div>
+    )}
+
+    <!-- Score overlay -->
+    {metacriticScore && (
+      <div class={`absolute top-3 right-3 ${scoreClass} score-badge shadow-lg`}>
+        {metacriticScore}
+      </div>
+    )}
+
+    <!-- Gradient overlay at bottom -->
+    <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 to-transparent" />
+  </div>
+
+  <!-- Content -->
+  <div class="p-5">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <h3 class="font-display text-base font-semibold text-gremius-heading group-hover:text-gremius-cyan transition-colors truncate">
+          {title}
+        </h3>
+        <p class="mt-0.5 text-sm text-zinc-500">{developer}</p>
+      </div>
+    </div>
+
+    {platforms.length > 0 && (
+      <div class="mt-3 flex flex-wrap gap-1.5">
+        {platforms.slice(0, 4).map((p: any) => (
+          <span class="inline-flex items-center rounded-md bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-zinc-400">
+            {typeof p === "string" ? p : p.shortName || p.name}
+          </span>
+        ))}
+      </div>
+    )}
+
+    {tags.length > 0 && (
+      <div class="mt-2 flex flex-wrap gap-1.5">
+        {tags.slice(0, 3).map((tag: any) => {
+          const name = typeof tag === "string" ? tag : tag.name;
+          const color = typeof tag === "object" && tag.color ? tag.color : "#00E5FF";
+          return (
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+              style={`color: ${color}; background: ${color}10; border-color: ${color}20;`}
+            >
+              {name}
+            </span>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</a>

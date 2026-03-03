@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# GremiusCMS - Imagen de Desarrollo con Auto-Setup
+# ═══════════════════════════════════════════════════════════════════════════
+
+FROM oven/bun:1-alpine AS base
+
+# Instalar Node.js y pnpm
+RUN apk add --no-cache nodejs npm curl
+RUN npm install -g pnpm@9.15.4
+
+WORKDIR /app
+
+# Copiar archivos de configuración del monorepo
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/web/package.json ./packages/web/
+COPY packages/admin/package.json ./packages/admin/
+
+# Instalar dependencias
+RUN pnpm install --frozen-lockfile
+
+# Copiar todo el código fuente
+COPY . .
+
+# Script de entrypoint para auto-setup
+COPY docker/docker-entrypoint-dev.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
+
+EXPOSE 3000 3001 4321
+
+ENTRYPOINT ["docker-entrypoint-dev.sh"]
+CMD ["pnpm", "dev"]

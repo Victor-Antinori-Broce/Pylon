@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  /* ── Theme Engine CSS Variables (overridden at runtime by useThemeEngine) ── */
+  :root {
+    --gremius-color-primary: #00e5ff;
+    --gremius-color-secondary: #ff2a6d;
+    --gremius-bg: 9 9 11;
+    --gremius-card: 24 24 27;
+    --gremius-border: 39 39 42;
+    --gremius-muted: 63 63 70;
+    --gremius-subtle: 82 82 91;
+    --gremius-text: 250 250 250;
+    --gremius-text-dim: 161 161 170;
+    --gremius-cyan: 0 229 255;
+    --gremius-cyan-dim: 0 184 212;
+    --gremius-pink: 255 42 109;
+    --gremius-pink-dim: 233 30 99;
+    --gremius-green: 0 230 118;
+    --gremius-amber: 255 171 0;
+    --gremius-purple: 179 136 255;
+    --gremius-font-sans: 'Inter', system-ui, sans-serif;
+    --gremius-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  * {
+    @apply border-gremius-border;
+  }
+
+  body {
+    @apply bg-gremius-bg text-gremius-text antialiased;
+    font-family: var(--gremius-font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#3f3f4680] rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gremius-subtle;
+  }
+
+  ::selection {
+    @apply bg-gremius-cyan/20 text-gremius-cyan;
+  }
+}
+
+
+/* Trigger HMR 1 */

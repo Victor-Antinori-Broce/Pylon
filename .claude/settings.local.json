@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"if exist C:\\\\Users\\\\vantinori\\\\.claude\\\\plans \\(echo exists\\) else \\(echo not exists\\)\")",
+      "Bash(powershell -Command:*)",
+      "WebFetch(domain:payloadcms.com)",
+      "Bash(dir:*)",
+      "WebFetch(domain:docs.astro.build)",
+      "Bash(cmd /c \"mkdir C:\\\\Users\\\\vantinori\\\\.claude\\\\plans 2>nul & echo done\")",
+      "mcp__playwright-test__generator_write_test",
+      "mcp__playwright-test__generator_setup_page",
+      "mcp__n8n__n8n_health_check"
+    ]
+  }
+}

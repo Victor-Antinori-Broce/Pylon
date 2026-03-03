@@ -1,0 +1,78 @@
+---
+/**
+ * ImageGalleryBlock.astro — Grid/masonry/carousel of images
+ */
+interface GalleryImage {
+  url: string;
+  alt?: string;
+  caption?: string;
+}
+
+interface Props {
+  images: GalleryImage[];
+  layout?: "grid" | "masonry" | "carousel";
+  columns?: number;
+}
+
+const { images = [], layout = "grid", columns = 3 } = Astro.props;
+---
+
+{images.length > 0 && (
+  <div>
+    {layout === "grid" && (
+      <div class={`grid gap-3 grid-cols-${Math.min(columns, 4)}`} style={`grid-template-columns: repeat(${columns}, minmax(0, 1fr))`}>
+        {images.map((img, i) => (
+          <figure class="group overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <div class="overflow-hidden">
+              <img
+                src={img.url}
+                alt={img.alt || `Image ${i + 1}`}
+                class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            </div>
+            {img.caption && (
+              <figcaption class="px-3 py-2 text-xs text-zinc-500">{img.caption}</figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+    )}
+
+    {layout === "masonry" && (
+      <div class="columns-2 md:columns-3 gap-3 space-y-3">
+        {images.map((img, i) => (
+          <figure class="break-inside-avoid overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <img
+              src={img.url}
+              alt={img.alt || `Image ${i + 1}`}
+              class="w-full object-cover"
+              loading="lazy"
+            />
+            {img.caption && (
+              <figcaption class="px-3 py-2 text-xs text-zinc-500">{img.caption}</figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+    )}
+
+    {layout === "carousel" && (
+      <div class="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin">
+        {images.map((img, i) => (
+          <figure class="shrink-0 w-[80%] md:w-[60%] snap-center overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <img
+              src={img.url}
+              alt={img.alt || `Image ${i + 1}`}
+              class="w-full aspect-video object-cover"
+              loading="lazy"
+            />
+            {img.caption && (
+              <figcaption class="px-4 py-2 text-xs text-zinc-500">{img.caption}</figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+    )}
+  </div>
+)}

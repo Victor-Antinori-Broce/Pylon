@@ -1,0 +1,11 @@
+{
+    "id": "grimoire-tags",
+    "name": "Tags",
+    "description": "Taxonomy system with categorized tags (genre, feature, topic, series) for cross-entity tagging.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Tag",
+    "tables": [
+        "tags"
+    ]
+}

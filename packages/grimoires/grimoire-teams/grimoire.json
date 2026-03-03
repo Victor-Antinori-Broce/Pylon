@@ -1,0 +1,8 @@
+{
+    "id": "grimoire-teams",
+    "name": "Teams",
+    "description": "Esports team management with roster tracking, logos, and social links.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Users"
+}

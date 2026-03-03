@@ -1,0 +1,25 @@
+---
+/**
+ * DynamicCarouselBlock.astro
+ * Renders the DynamicCarousel Vue island with client-side hydration.
+ * Fetches data from /api/games or /api/streamers and displays a scroll-snap carousel.
+ */
+import DynamicCarousel from "../islands/DynamicCarousel.vue";
+
+interface Props {
+  source: "games" | "streamers";
+  sortBy: "date" | "score" | "name";
+  limit: number;
+  autoplay: boolean;
+}
+
+const { source, sortBy, limit, autoplay } = Astro.props;
+---
+
+<DynamicCarousel
+  client:load
+  source={source}
+  sortBy={sortBy}
+  limit={limit}
+  autoplay={autoplay}
+/>

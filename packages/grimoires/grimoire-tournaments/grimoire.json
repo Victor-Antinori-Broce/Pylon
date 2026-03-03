@@ -1,0 +1,8 @@
+{
+    "id": "grimoire-tournaments",
+    "name": "Tournaments",
+    "description": "Tournament engine with bracket generation, seeding, and match scheduling.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Trophy"
+}

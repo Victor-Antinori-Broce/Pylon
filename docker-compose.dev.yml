@@ -1,0 +1,102 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# GremiusCMS — Infraestructura para DESARROLLO
+#
+# Servicios:
+#   - PostgreSQL 16 + pgvector
+#   - MinIO (S3-compatible storage)
+#   - Valkey (Redis-compatible cache)
+#
+# USO:
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# NOTA: Las aplicaciones corren LOCALMENTE (pnpm dev), no en Docker.
+#       Solo la infraestructura corre en contenedores.
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # PostgreSQL 16 con pgvector
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_db:
+    image: pgvector/pgvector:pg16
+    container_name: gremius_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gremius}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gremiuspassword}
+      POSTGRES_DB: ${POSTGRES_DB:-gremius_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - gremius_postgres_data:/var/lib/postgresql/data
+      - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gremius} -d ${POSTGRES_DB:-gremius_dev}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gremius_net
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # MinIO (S3-compatible storage)
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_minio:
+    image: minio/minio:latest
+    container_name: gremius_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-gremius_minio}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-gremius_minio_secret_2025}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - gremius_minio_data:/data
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gremius_net
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Valkey (Redis-compatible para cache y colas BullMQ)
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_cache:
+    image: valkey/valkey:7-alpine
+    container_name: gremius_cache
+    restart: unless-stopped
+    command: valkey-server --maxmemory 128mb --maxmemory-policy noeviction
+    ports:
+      - "${VALKEY_PORT:-6379}:6379"
+    volumes:
+      - gremius_valkey_data:/data
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - gremius_net
+
+volumes:
+  gremius_postgres_data:
+    name: gremius_postgres_data
+    driver: local
+
+  gremius_minio_data:
+    name: gremius_minio_data
+    driver: local
+
+  gremius_valkey_data:
+    name: gremius_valkey_data
+    driver: local
+
+networks:
+  gremius_net:
+    name: gremius_net
+    driver: bridge

@@ -1,0 +1,8 @@
+{
+    "id": "grimoire-players",
+    "name": "Players",
+    "description": "Esports player profiles with stats, social links, and team affiliations.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "User"
+}

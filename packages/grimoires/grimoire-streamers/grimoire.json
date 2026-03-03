@@ -1,0 +1,11 @@
+{
+    "id": "grimoire-streamers",
+    "name": "Streamers",
+    "description": "Live streamer tracking across Twitch, YouTube, and Kick with real-time status sync.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Tv",
+    "tables": [
+        "streamers"
+    ]
+}

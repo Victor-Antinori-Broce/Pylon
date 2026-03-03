@@ -1,0 +1,11 @@
+{
+    "id": "grimoire-platforms",
+    "name": "Platforms",
+    "description": "Gaming platform registry (PC, PlayStation, Xbox, Nintendo, etc.) for game catalog tagging.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Monitor",
+    "tables": [
+        "platforms"
+    ]
+}

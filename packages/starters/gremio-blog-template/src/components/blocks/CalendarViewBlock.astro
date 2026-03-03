@@ -1,0 +1,43 @@
+---
+import CalendarWidget from "../islands/CalendarWidget.vue";
+import { getCollection } from "astro:content";
+
+interface Props {
+    datasetId: string;
+    titleField: string;
+    dateField: string;
+}
+
+const { datasetId, titleField, dateField } = Astro.props;
+
+// Fetch data from API or DB (using simplified fetch here or content collection if available)
+// For this POC, we'll fetch from the public API or inject initial data if possible.
+// Since this is SSG/SSR, we can fetch from the API.
+
+let events: any[] = [];
+try {
+    // Mock fetch or usage of local db helper if available in 'web'
+    // In Gremius 'web', we often fetch from 'http://localhost:3001/api/data-sets/{id}/entries'
+    // But for now, let's pass an empty array or fetch client-side in the island if needed.
+    // The CalendarWidget expects 'events' prop.
+
+    // To make it functional, let's assume we can fetch:
+    const API_URL = import.meta.env.API_URL || "http://localhost:3001/api";
+    const res = await fetch(`${API_URL}/data-sets/${datasetId}/entries`);
+    if (res.ok) {
+        const entries = await res.json();
+        events = entries.map((e: any) => ({
+            id: e.id,
+            title: e.data[titleField] || "Untitled",
+            date: e.data[dateField] || new Date(),
+            ...e.data,
+        }));
+    }
+} catch (e) {
+    console.error("Failed to fetch calendar events", e);
+}
+---
+
+<div class="calendar-block my-8">
+    <CalendarWidget client:visible events={events} />
+</div>

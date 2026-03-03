@@ -1,0 +1,9 @@
+{
+    "id": "gremius-crm",
+    "name": "Gremius CRM",
+    "description": "Simple CRM with Contacts, Deals, and Kanban view",
+    "version": "1.0.0",
+    "type": "module",
+    "icon": "Users",
+    "admin_route": "/datasets"
+}

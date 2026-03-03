@@ -1,0 +1,9 @@
+{
+    "id": "gremius-default",
+    "name": "Gremius Default",
+    "description": "Standard Cyberpunk Theme",
+    "version": "1.0.0",
+    "type": "theme",
+    "author": "GremiusCMSTeam",
+    "css_entry": "variables.css"
+}

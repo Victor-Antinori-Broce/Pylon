@@ -1,0 +1,21 @@
+{
+  "id": "realm-corporate",
+  "name": "Corporate Realm",
+  "description": "Professional enterprise ecosystem with clean design, document management, employee directories, and business workflows. Ideal for corporate intranets, enterprise portals, and business applications.",
+  "version": "2.0.0",
+  "type": "realm",
+  "author": "GremiusCMS Team",
+  "industry": "enterprise",
+  "keywords": ["corporate", "enterprise", "business", "professional"],
+  "grimoires": [
+    "grimoire-crm"
+  ],
+  "optional_grimoires": [],
+  "config": {
+    "theme": {
+      "css_entry": "variables.css",
+      "primary_color": "#3b82f6",
+      "accent_color": "#64748b"
+    }
+  }
+}

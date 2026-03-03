@@ -1,0 +1,18 @@
+{
+  "id": "realm-sharepoint",
+  "name": "SharePoint Realm",
+  "description": "Microsoft 365 and SharePoint integration realm. Enables seamless connection with SharePoint sites, document libraries, and Microsoft Graph API.",
+  "version": "2.0.0",
+  "type": "realm",
+  "author": "GremiusCMS Team",
+  "industry": "microsoft",
+  "keywords": ["sharepoint", "microsoft", "office365", "enterprise"],
+  "grimoires": [],
+  "optional_grimoires": [],
+  "config": {
+    "integrations": {
+      "microsoft_graph": true,
+      "sharepoint_sites": true
+    }
+  }
+}

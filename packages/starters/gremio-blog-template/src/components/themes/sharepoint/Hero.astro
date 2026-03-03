@@ -1,0 +1,88 @@
+---
+/**
+ * SharePoint-Style Hero ("Hero Web Part")
+ * Split layout: One large feature + stack of smaller items.
+ */
+
+interface HeroItem {
+    title: string;
+    image: string;
+    category: string;
+    link: string;
+}
+
+interface Props {
+    items: HeroItem[];
+}
+
+const { items = [] } = Astro.props;
+
+const mainItem = items[0];
+const sideItems = items.slice(1, 3);
+---
+
+<div
+    class="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-1 max-w-7xl mx-auto p-4 md:h-[400px]"
+>
+    {/* Main Feature (Left 2/3) */}
+    {
+        mainItem && (
+            <a
+                href={mainItem.link}
+                class="relative col-span-2 h-64 md:h-full group overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+            >
+                <img
+                    src={mainItem.image}
+                    alt={mainItem.title}
+                    class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90" />
+
+                <div class="absolute bottom-0 left-0 p-6 text-white w-full">
+                    <span class="inline-block px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold uppercase tracking-wider mb-2">
+                        {mainItem.category}
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-semibold leading-tight line-clamp-2group-hover:underline decoration-2 underline-offset-4">
+                        {mainItem.title}
+                    </h2>
+                </div>
+            </a>
+        )
+    }
+
+    {/* Side Stack (Right 1/3) */}
+    <div class="col-span-1 flex flex-col gap-1 h-full">
+        {
+            sideItems.map((item) => (
+                <a
+                    href={item.link}
+                    class="relative flex-1 group overflow-hidden shadow-sm hover:shadow-md transition-shadow min-h-[150px]"
+                >
+                    <img
+                        src={item.image}
+                        alt={item.title}
+                        class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80" />
+                    <div class="absolute bottom-0 left-0 p-4 text-white">
+                        <span class="text-xs font-medium text-white/80 uppercase">
+                            {item.category}
+                        </span>
+                        <h3 class="text-lg font-semibold leading-snug group-hover:underline decoration-1 underline-offset-2">
+                            {item.title}
+                        </h3>
+                    </div>
+                </a>
+            ))
+        }
+    </div>
+</div>
+
+<style>
+    /* Optional: Add SharePoint specific shadow utility if not using Tailwind's */
+    .sp-shadow {
+        box-shadow:
+            0 1.6px 3.6px 0 rgba(0, 0, 0, 0.13),
+            0 0.3px 0.9px 0 rgba(0, 0, 0, 0.11);
+    }
+</style>

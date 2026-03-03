@@ -1,0 +1,30 @@
+---
+/**
+ * SmartFilterBlock.astro
+ * Renders the SmartFilter Vue island with client-side hydration.
+ * Provides toggle-based genre, platform, and score filters.
+ */
+import SmartFilter from "../islands/SmartFilter.vue";
+
+interface Props {
+    enableGenreFilter: boolean;
+    enablePlatformFilter: boolean;
+    enableScoreSlider: boolean;
+    targetDatasetId?: string;
+}
+
+const {
+    enableGenreFilter,
+    enablePlatformFilter,
+    enableScoreSlider,
+    targetDatasetId,
+} = Astro.props;
+---
+
+<SmartFilter
+    client:load
+    enableGenreFilter={enableGenreFilter}
+    enablePlatformFilter={enablePlatformFilter}
+    enableScoreSlider={enableScoreSlider}
+    targetDatasetId={targetDatasetId}
+/>

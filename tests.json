@@ -1,0 +1,103 @@
+{
+    "_meta": {
+        "project": "GremiusCMS — BaaS/CMS Hybrid Core",
+        "version": "0.5.0",
+        "lastUpdated": "2026-02-23",
+        "description": "Registro de pruebas para los endpoints de las 4 épicas"
+    },
+    "epics": {
+        "webhooks": {
+            "status": "completada",
+            "tests": [
+                {
+                    "file": "tests/api/webhooks.spec.ts",
+                    "framework": "playwright",
+                    "cases": [
+                        "Full webhook CRUD lifecycle",
+                        "Create webhook rejects missing fields",
+                        "Create webhook rejects invalid event",
+                        "Test ping queues a delivery",
+                        "Logs endpoint returns delivery history",
+                        "Get nonexistent webhook returns 404",
+                        "Test ping on nonexistent webhook returns 404"
+                    ]
+                }
+            ],
+            "endpoints": [
+                "GET    /api/custom/webhooks",
+                "GET    /api/custom/webhooks/:id",
+                "POST   /api/custom/webhooks",
+                "PATCH  /api/custom/webhooks/:id",
+                "DELETE /api/custom/webhooks/:id",
+                "GET    /api/custom/webhooks/:id/logs",
+                "POST   /api/custom/webhooks/:id/test"
+            ]
+        },
+        "promote_to_content": {
+            "status": "completada",
+            "tests": [
+                {
+                    "file": "tests/api/promote.spec.ts",
+                    "framework": "playwright",
+                    "cases": [
+                        "Full promote/demote lifecycle",
+                        "Promote rejects missing slugPrefix",
+                        "Promote nonexistent dataset returns 404",
+                        "Demote nonexistent dataset returns 404",
+                        "Content slug lookup for nonexistent slug returns 404",
+                        "Update content meta on non-promoted entry returns 404"
+                    ]
+                }
+            ],
+            "endpoints": [
+                "POST   /api/custom/promote/:datasetId",
+                "DELETE /api/custom/promote/:datasetId",
+                "GET    /api/custom/promote/:datasetId/status",
+                "GET    /api/custom/content/:datasetId/entries",
+                "PATCH  /api/custom/content/entry/:entryId",
+                "GET    /api/custom/content/slug/:slug"
+            ]
+        },
+        "data_connectors": {
+            "status": "completada",
+            "tests": [
+                {
+                    "file": "tests/api/connectors.spec.ts",
+                    "framework": "playwright",
+                    "cases": [
+                        "CRUD lifecycle for API Connector",
+                        "Validation rules for creating connectors"
+                    ]
+                }
+            ],
+            "endpoints": [
+                "GET    /api/custom/connectors",
+                "GET    /api/custom/connectors/:id",
+                "POST   /api/custom/connectors",
+                "PATCH  /api/custom/connectors/:id",
+                "DELETE /api/custom/connectors/:id",
+                "POST   /api/custom/connectors/:id/test",
+                "GET    /api/custom/connectors/:id/data",
+                "GET    /api/custom/connectors/:id/data/:table"
+            ]
+        },
+        "mdx_editor": {
+            "status": "completada",
+            "tests": [
+                {
+                    "file": "manual",
+                    "framework": "manual",
+                    "cases": [
+                        "CodeMirror loads with OneDark theme and Markdown syntax highlighting",
+                        "Typing ````mermaid graph TD; A-->B; ```` renders SVG diagram in preview pane",
+                        "Typing standard markdown fetches HTML correctly from Astro /api/preview",
+                        "Split-view layout is clean and responsive without AI-slop wrappers"
+                    ]
+                }
+            ],
+            "endpoints": [
+                "POST   /api/preview  (Astro SSR Server)"
+            ]
+        }
+    }
+}

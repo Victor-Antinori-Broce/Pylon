@@ -1,0 +1,42 @@
+# ============================================================
+#  GremiusCMS — BaaS/CMS Hybrid Core · Roadmap de Épicas
+# ============================================================
+#  Última actualización: 2026-02-25
+# ============================================================
+
+Épica 1 · Webhooks (Valkey)                        → ✅ Completada
+  - Sistema de webhooks con eventos pub/sub via Valkey
+  - Cola de reintentos con BullMQ
+  - Panel de gestión en Admin (API + UI completados) ✅
+  - Vista de webhooks con tabla, creación, edición, eliminación
+  - Monitoreo de Failed Jobs desde BullMQ con retry
+  - Logs de entregas con payload completo para debugging
+
+MIGRACIÓN SVELTE (En Progreso)                     → 🔄 Fase 3 Completada
+  - Migración de Vue 3 → Svelte 5
+  - Build tooling actualizado (Vite + Svelte)
+  - Router SPA propio implementado
+  - Auth store migrado a Svelte
+  - LoginView migrado completamente
+  - Layout completo con sidebar responsive
+  - Sistema de registro de componentes dinámicos
+  - Widgets dinámicos con <svelte:component>
+  - Dashboard con slots extensibles
+  - BUILD EXITOSO ✅
+
+Épica 2 · Promote to Content (Magia Híbrida)       → ✅ Completada
+  - Overlay relacional 1:1 (content_metadata → data_entries)
+  - Promover/Degradar datasets con slug, SEO, publishedAt
+  - Lookup público por slug para contenido publicado
+  - 6 endpoints REST bajo /api/custom/promote y /api/custom/content
+
+Épica 3 · Conectores de Datos                      → ✅ Completada
+  - API remota JSON con mapeo de claves a columnas virtuales (read-only)
+  - Introspección DB (MySQL/MariaDB) con lectura de information_schema
+  - Browse paginado de tablas con prevención de SQL injection
+  - 8 endpoints REST bajo /api/custom/connectors
+
+Épica 4 · Editor MDX (Astro)                       → ✅ Completada
+  - Editor visual split-screen integrado en el Admin (Vue + CodeMirror 6)
+  - Renderizado client-side de diagramas Mermaid en tiempo real
+  - Live Preview alimentado backend por Astro SSR endpoint (`/api/preview`) usando marcado unificado

@@ -1,0 +1,30 @@
+---
+/**
+ * DividerBlock.astro — Visual separator
+ */
+interface Props {
+  style?: "line" | "gradient" | "dots" | "space";
+}
+
+const { style = "gradient" } = Astro.props;
+---
+
+{style === "gradient" && (
+  <div class="h-px bg-gradient-to-r from-transparent via-gremius-cyan/30 to-transparent my-2" />
+)}
+
+{style === "line" && (
+  <hr class="border-t border-white/[0.06] my-2" />
+)}
+
+{style === "dots" && (
+  <div class="flex items-center justify-center gap-3 py-4">
+    <span class="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+    <span class="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+    <span class="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+  </div>
+)}
+
+{style === "space" && (
+  <div class="h-12" />
+)}

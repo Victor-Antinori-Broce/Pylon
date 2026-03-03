@@ -1,0 +1,326 @@
+---
+/**
+ * Gremius Academy — Course Detail
+ * Shows course content with topic navigation, quiz, and certificate.
+ */
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import TopicViewer from "../../components/islands/academy/TopicViewer.vue";
+import QuizRunner from "../../components/islands/academy/QuizRunner.vue";
+import CertificateModal from "../../components/islands/academy/CertificateModal.vue";
+
+const { slug } = Astro.params;
+const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3001";
+
+let course: any = null;
+let error = "";
+
+try {
+  const res = await fetch(`${API_URL}/api/custom/academy/courses/${slug}`);
+  if (res.ok) {
+    course = await res.json();
+  } else if (res.status === 404) {
+    return Astro.redirect("/academy");
+  } else {
+    error = "No se pudo cargar el curso.";
+  }
+} catch (e) {
+  error = "Error de conexión con el servidor.";
+}
+
+const topics = course?.topics || [];
+const quiz = course?.quiz || null;
+const pageTitle = course?.title || "Curso";
+---
+
+<BaseLayout title={pageTitle} description={course?.description || "Gremius Academy - Curso"}>
+  <!-- Fonts for Academy -->
+  <link
+    slot="head"
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  {error && (
+    <div class="course-error">
+      <p>{error}</p>
+      <a href="/academy" class="back-link">← Volver al catálogo</a>
+    </div>
+  )}
+
+  {course && (
+    <div class="course-layout">
+      <!-- Sidebar: topic list -->
+      <aside class="course-sidebar">
+        <a href="/academy" class="sidebar-back">← Catálogo</a>
+
+        <h2 class="sidebar-title">{course.title}</h2>
+
+        <nav class="topic-list">
+          {topics.map((topic: any, idx: number) => (
+            <a
+              href={`#topic-${idx}`}
+              class="topic-link"
+              data-topic-index={idx}
+            >
+              <span class="topic-idx">{idx + 1}</span>
+              <span class="topic-name">{topic.title}</span>
+            </a>
+          ))}
+
+          {quiz && (
+            <a href="#quiz" class="topic-link quiz-link">
+              <span class="topic-idx">📝</span>
+              <span class="topic-name">Evaluación Final</span>
+            </a>
+          )}
+        </nav>
+      </aside>
+
+      <!-- Main content area -->
+      <main class="course-content">
+        <!-- Course header -->
+        <header class="course-header">
+          <h1 class="course-title">{course.title}</h1>
+          {course.description && (
+            <p class="course-desc">{course.description}</p>
+          )}
+          <div class="course-stats">
+            <span class="stat">{topics.length} temas</span>
+            {quiz && <span class="stat">1 evaluación</span>}
+          </div>
+        </header>
+
+        <!-- Topics -->
+        {topics.map((topic: any, idx: number) => (
+          <section id={`topic-${idx}`} class="topic-section">
+            <TopicViewer
+              client:visible
+              topic={topic}
+              topicIndex={idx}
+              hasNext={idx < topics.length - 1}
+            />
+          </section>
+        ))}
+
+        <!-- Quiz -->
+        {quiz && (
+          <section id="quiz" class="quiz-section">
+            <div class="section-divider">
+              <span class="divider-label">Evaluación Final</span>
+            </div>
+            <QuizRunner
+              client:visible
+              quizId={quiz.id}
+            />
+          </section>
+        )}
+      </main>
+    </div>
+  )}
+</BaseLayout>
+
+<style>
+  /* ── Layout ── */
+  .course-layout {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    gap: 2rem;
+    padding: 2rem 0 4rem;
+    min-height: 80vh;
+  }
+
+  @media (max-width: 768px) {
+    .course-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Sidebar ── */
+  .course-sidebar {
+    position: sticky;
+    top: 5rem;
+    height: fit-content;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding-right: 1rem;
+  }
+
+  .sidebar-back {
+    display: inline-block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: color 0.2s;
+  }
+
+  .sidebar-back:hover {
+    color: #a5b4fc;
+  }
+
+  .sidebar-title {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 1.25rem;
+    line-height: 1.3;
+  }
+
+  .topic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .topic-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .topic-link:hover {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: rgba(99, 102, 241, 0.15);
+  }
+
+  .topic-idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 0.3rem;
+    background: rgba(255, 255, 255, 0.05);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+  }
+
+  .topic-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .topic-link:hover .topic-name {
+    color: #a5b4fc;
+  }
+
+  .quiz-link {
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.75rem;
+  }
+
+  /* ── Content ── */
+  .course-content {
+    min-width: 0;
+  }
+
+  .course-header {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .course-title {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: #f1f5f9;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+
+  .course-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.6;
+    max-width: 40rem;
+  }
+
+  .course-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .stat {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* ── Sections ── */
+  .topic-section {
+    padding: 2rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .quiz-section {
+    padding: 2rem 0;
+  }
+
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+  }
+
+  .divider-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #a5b4fc;
+    white-space: nowrap;
+  }
+
+  /* ── Error ── */
+  .course-error {
+    text-align: center;
+    padding: 3rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #a5b4fc;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .back-link:hover {
+    text-decoration: underline;
+  }
+</style>

@@ -1,0 +1,22 @@
+{
+  "id": "realm-default",
+  "name": "Default Realm",
+  "description": "Standard Gremius realm with core functionality. The foundation for custom realms and a starting point for new projects.",
+  "version": "2.0.0",
+  "type": "realm",
+  "author": "GremiusCMS Team",
+  "industry": "general",
+  "keywords": ["default", "core", "foundation"],
+  "grimoires": [],
+  "optional_grimoires": [
+    "grimoire-crm",
+    "grimoire-tags"
+  ],
+  "config": {
+    "theme": {
+      "css_entry": "variables.css",
+      "primary_color": "#00e5ff",
+      "accent_color": "#ff2a6d"
+    }
+  }
+}

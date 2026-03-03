@@ -1,0 +1,550 @@
+# ============================================================
+#  GremiusCMS — BaaS/CMS Hybrid Core · Roadmap de Épicas
+# ============================================================
+#  Última actualización: 2026-02-24
+# ============================================================
+
+Épica 1 · Webhooks (Valkey)                        → ✅ Completada
+  - Sistema de webhooks con eventos pub/sub via Valkey
+  - Cola de reintentos con BullMQ
+  - Panel de gestión en Admin (API lista, UI pendiente)
+
+Épica 2 · Promote to Content (Magia Híbrida)       → ✅ Completada
+  - Overlay relacional 1:1 (content_metadata → data_entries)
+  - Promover/Degradar datasets con slug, SEO, publishedAt
+  - Lookup público por slug para contenido publicado
+  - 6 endpoints REST bajo /api/custom/promote
+
+Épica 3 · Conectores de Datos                      → ✅ Completada
+  - API remota JSON con mapeo de claves (read-only)
+  - Introspección DB (MySQL/MariaDB)
+  - Browse paginado con SQL injection prevention
+  - 8 endpoints REST bajo /api/custom/connectors
+
+Épica 4 · Editor MDX (Astro)                       → ✅ Completada
+  - Editor visual split-screen (Vue + CodeMirror 6)
+  - Mermaid diagrams client-side
+  - Live Preview via Astro SSR (/api/preview)
+
+Épica 5 · Arquitectura de Grimorios Reorganizada        → ✅ Completada
+  - Engine / Core / Optional / Realm classification
+  - Grimoire-loader con auto-discovery
+  - Realm manifest (realm.json) con grimoires (antes bundled_modules)
+
+Épica 6 · La Jerarquía Mágica de Gremius (Refactor)  → ✅ Completada
+  - Renombrado: Modules → Grimoires, Themes → Realms
+  - Estructura: packages/grimoires/ y packages/realms/
+  - Grimorios migrados: games, streamers, platforms, tags, collections, 
+    players, teams, tournaments, matches
+  - Wrappers en src/modules/ para backward compatibility
+  - Rutas dinámicas via grimoire-loader
+
+# ============================================================
+#  FASE 3: Capa Real-Time
+# ============================================================
+
+Épica 7 · Real-time Layer (WebSockets)             → ✅ COMPLETADA
+  
+  ## Investigación Completada:
+    ✅ Runtime: Bun nativo (export default { port, fetch, websocket })
+    ✅ Valkey: redis package con createClient(), URL configurable
+    ✅ EventEmitter: Ya existe en src/lib/events.ts
+    ✅ Hooks de mutación: Ya emiten entry:created/updated/deleted
+
+  ## Implementación Completada:
+
+  ### 1. Valkey Pub/Sub (lib/valkey.ts)
+    ✅ getPublisher() / getSubscriber() - clientes dedicados
+    ✅ publish(channel, message) - emitir a canal
+    ✅ subscribe(pattern, callback) - escuchar canal/patrón
+    ✅ Separación de conexiones: cache vs pub/sub
+
+  ### 2. WebSocket Server (lib/realtime.ts)
+    ✅ RealtimeManager singleton
+    ✅ Connection tracking (Map<clientId, WSClient>)
+    ✅ Channel subscriptions (table:{datasetId}, entry:{entryId})
+    ✅ Presence system (rooms con lista de usuarios)
+    ✅ Protocol JSON bidireccional
+    ✅ Validación de formatos de canal/room
+    ✅ Stats para monitoreo
+
+  ### 3. Bun WebSocket Integration (index.ts)
+    ✅ Upgrade en /api/realtime
+    ✅ Auth via session cookie (Better Auth)
+    ✅ Handlers: open, message, close, error
+    ✅ Stats incluidas en /api/health
+
+  ### 4. Data Layer Integration (routes/datasets.ts)
+    ✅ broadcastMutation() en POST entries
+    ✅ broadcastMutation() en PATCH entries
+    ✅ broadcastMutation() en DELETE entries
+    ✅ Dual emission: EventEmitter (webhooks) + Valkey (realtime)
+
+  ### 5. Client SDK (packages/sdk/)
+    ✅ GremiusRealtime class con auto-reconnect
+    ✅ subscribe(channel, handler) → unsubscribe
+    ✅ subscribeToDataset(id, handler)
+    ✅ subscribeToEntry(id, handler)
+    ✅ joinRoom() / leaveRoom() para presence
+    ✅ onPresence() handler
+    ✅ Heartbeat automático (ping/pong)
+    ✅ Exponential backoff en reconexiones
+    ✅ Gremius class con data().subscribe()
+
+  ### 6. Tests (tests.json + src/tests/)
+    ✅ Definición de tests en tests.json
+    ✅ Script ejecutable: bun run test:realtime
+    ✅ Tests: connection, subscription, ping/pong, presence, errors
+
+  ## Endpoints:
+    ws://host/api/realtime  → WebSocket upgrade
+    GET /api/health         → Incluye stats de realtime
+
+  ## Protocol (JSON):
+    Client → Server:
+      { "type": "subscribe", "channel": "table:abc123" }
+      { "type": "unsubscribe", "channel": "table:abc123" }
+      { "type": "presence:join", "room": "editor:doc-1" }
+      { "type": "presence:leave", "room": "editor:doc-1" }
+      { "type": "ping" }
+
+    Server → Client:
+      { "type": "connected", "clientId": "...", "userId": "..." }
+      { "type": "subscribed", "channel": "..." }
+      { "type": "unsubscribed", "channel": "..." }
+      { "type": "message", "channel": "...", "data": {...} }
+      { "type": "presence", "room": "...", "users": [...], "count": N }
+      { "type": "pong", "timestamp": N }
+      { "type": "error", "message": "..." }
+
+  ## SDK Usage Example:
+    ```typescript
+    import { Gremius } from '@gremius/sdk';
+    
+    const gremius = new Gremius('http://localhost:3001');
+    await gremius.realtime.connect();
+    
+    // Subscribe to dataset changes (Live Query)
+    const unsub = gremius.data('matches').subscribe((event) => {
+      console.log(event.event, event.entry);
+      // "insert" { id: "...", title: "...", ... }
+      // "update" { id: "...", title: "...", ... }
+      // "delete" { id: "..." }
+    });
+    
+    // Presence
+    gremius.realtime.joinRoom('editor:doc-123');
+    gremius.realtime.onPresence('editor:doc-123', (users) => {
+      console.log('Online:', users);
+    });
+    
+    // Cleanup
+    unsub();
+    gremius.realtime.disconnect();
+    ```
+
+  ## Criterios de Aceptación (BDD):
+    ✅ Feature 1: Hono WebSocket Server con Valkey Pub/Sub
+       ✅ Scenario: Upgrade de HTTP a WebSocket
+       ✅ Scenario: Valkey como Broker (Pub/Sub)
+    
+    ✅ Feature 2: SDK Subscriptions (Live Queries)
+       ✅ Scenario: Suscripción a cambios de un Dataset
+
+# ============================================================
+#  Arquitectura Final
+# ============================================================
+
+┌────────────────────────────────────────────────────────────┐
+│                    GREMIUS ENGINE                            │
+│  (Always active, not shown in /api/modules)                │
+├────────────────────────────────────────────────────────────┤
+│  Schema Engine │ Auth Manager │ API Gateway │ Valkey       │
+│  Media Hub     │ Grimoire Loader│ Data Sets │ TOON         │
+│  Real-time WS  │ Pub/Sub      │ Presence    │ BullMQ       │
+└────────────────────────────────────────────────────────────┘
+
+# ============================================================
+#  Real-Time Flow Diagram
+# ============================================================
+
+  Client A                    Client B
+     │                           │
+     │ ws://host/api/realtime    │
+     ▼                           │
+ ┌─────────────────────────┐     │
+ │  Bun WS Server          │     │ POST /api/data-sets/
+ │  (RealtimeManager)      │     │      .../entries
+ │  - channels: Map        │     ▼
+ │  - presence: Map        │  ┌─────────────┐
+ └──────────┬──────────────┘  │ Data Layer  │
+            │                 │ (Drizzle)   │
+            │ SUBSCRIBE       └──────┬──────┘
+            ▼                        │
+ ┌─────────────────────────┐         │ PUBLISH
+ │  Valkey Pub/Sub         │◄────────┘
+ │  Channels:              │   table:{id}, entry:{id}
+ │  - table:{datasetId}    │
+ │  - entry:{entryId}      │
+ └──────────┬──────────────┘
+            │ Message
+            ▼
+  Client A receives:
+  { type: "message", channel: "table:abc",
+    data: { event: "insert", entry: {...} } }
+
+# ============================================================
+#  BaaS 2026 Score
+# ============================================================
+
+| Componente             | Estado | Score |
+|:-----------------------|:------:|:-----:|
+| API Gateway            |   ✅   | 100%  |
+| Auth & Security        |   ✅   |  90%  |
+| Data Layer (REST)      |   ✅   |  85%  |
+| File Storage           |   ✅   |  80%  |
+| Real-time Layer        |   ✅   | 100%  |
+| Cloud Functions        |   ✅   |  95%  | ← COMPLETADO (Épica 8)
+| GraphQL                |   ✅   |  85%  | ← COMPLETADO (Queries, falta Mutations)
+| Admin Extensibility    |   ✅   | 100%  | ← COMPLETADO (Fase 3)
+
+TOTAL: ~93% BaaS 2026 completo
+
+# ============================================================
+#  Próximos Pasos
+# ============================================================
+
+Épica 8 · Cloud Functions (Serverless)             → ⏳ Pendiente
+  - Endpoint para deploy de funciones JS/TS
+  - Runtime aislado (Bun Workers / isolated-vm)
+  - Triggers: HTTP, Events, Cron
+  - Logs y límites de ejecución
+
+Épica 9 · Auth Avanzado                            → ⏳ Pendiente
+  - OAuth providers (Google, GitHub)
+  - API Keys para integraciones
+  - MFA/2FA (TOTP)
+
+Épica 10 · GraphQL (Opcional)                      → ✅ COMPLETADA
+  - Schema auto-generado para BlogPosts, Games, DataEntries, Media, Tags, Platforms, Streamers
+  - Queries paginadas con filtros (status, search, featured)
+  - ContentBlock type para bloques embebidos en contenido
+  - GraphiQL playground en GET /api/graphql
+  - Dependencia: graphql + graphql-type-json
+
+# ============================================================
+#  FASE 3: Extensibilidad del Admin & Componentes Dinámicos
+# ============================================================
+
+Épica 11 · Extensibilidad del Admin                → ✅ COMPLETADA
+
+  ## Feature 1: Admin Plugin System & Theming
+
+  ### Plugin Registry (PluginRegistry.ts)
+    ✅ Singleton con registro de Widgets, Routes, Blocks, Actions
+    ✅ Module-aware: filtra por módulos habilitados
+    ✅ registerWidget()/getWidgets() para slots nombrados
+    ✅ registerBlock()/getBlocks() para bloques dinámicos del editor
+    ✅ registerRoute()/getRoutes() para rutas dinámicas
+    ✅ registerAction()/getActions() para toolbar/context-menu
+    ✅ unregisterModule() para cleanup
+    ✅ Sincronización con ModulesStore (watch en main.ts)
+    ✅ Provide global via app.provide('pluginRegistry')
+
+  ### PluginSlot.vue
+    ✅ Componente genérico que renderiza widgets por slot name
+    ✅ En uso en Dashboard (dashboard:top, dashboard:bottom)
+    ✅ Slots disponibles: dashboard:top, dashboard:bottom,
+       sidebar:modules, editor:toolbar, settings:sections
+
+  ### Theme Engine (useThemeEngine.ts)
+    ✅ Composable singleton que carga config de tema activo
+    ✅ GET /api/system/active-theme-config endpoint
+    ✅ Parsea variables.css → extrae colores y fonts
+    ✅ Lee theme.json para overrides (logos, colores custom)
+    ✅ Merge con siteSettings.branding
+    ✅ Inyecta CSS Custom Properties en :root
+    ✅ Variables compatibles con Tailwind (--gremius-cyan → primary)
+    ✅ previewTheme() para hot-preview
+    ✅ resetTheme() para limpiar
+    ✅ App.vue usa loadTheme() en onMounted
+
+  ## Feature 2: Component Registry en el Editor
+
+  ### Block System (types/blocks.ts)
+    ✅ 12 block types definidos (hero, richtext, image-gallery, etc.)
+    ✅ BlockDefinition con fields tipados para formularios
+    ✅ BLOCK_REGISTRY estático + extensible via PluginRegistry
+    ✅ createBlock() y getBlockDef() helpers
+    ✅ PageBlock interface con id, type, data (jsonb), order
+
+  ### PageBuilder (components/builder/)
+    ✅ Visual drag-and-drop block layout editor
+    ✅ BlockPicker con categorías y búsqueda
+    ✅ BlockEditor con formularios dinámicos por tipo
+    ✅ Reordenamiento, duplicación, eliminación
+
+  ### BlockInserter (components/editor/BlockInserter.vue)
+    ✅ Floating block picker para el MDX Editor
+    ✅ Muestra bloques estáticos + plugin blocks (module-aware)
+    ✅ Props editor dialog con formularios dinámicos
+    ✅ Genera MDX ```gremius-block fence con JSON serializado
+    ✅ Integrado en MdxEditor toolbar
+
+  ### Almacenamiento en DB
+    ✅ Columna blocks jsonb en games y blogPosts
+    ✅ Tipo PageBlock[] con data Record<string, any>
+    ✅ Compatible con consultas JSONB de PostgreSQL
+
+  ## Feature 3: Entrega de Datos (GraphQL & WebSockets)
+
+  ### GraphQL Endpoint (routes/graphql.ts)
+    ✅ POST /api/graphql — Execute queries
+    ✅ GET /api/graphql — GraphiQL playground
+    ✅ Types: BlogPost, Game, DataEntry, Media, Tag, Platform, Streamer
+    ✅ ContentBlock type para bloques embebidos
+    ✅ Queries paginadas: blogPosts, games, dataEntries
+    ✅ Queries singulares: blogPost(id/slug), game(id/slug), media(id)
+    ✅ Filtros: status, search, featured, live, platform
+    ✅ Resolvers para relaciones: author, featuredImage, coverArt
+
+  ### WebSocket Content Channels
+    ✅ Canal content:{postId} para actualizaciones en tiempo real
+    ✅ broadcastContentUpdate() helper (update/publish/unpublish)
+    ✅ Integrado en PATCH /api/blog-posts/:id
+    ✅ Valkey Pub/Sub como broker
+    ✅ RealtimeManager suscrito a content:* pattern
+
+  ## Endpoints Nuevos:
+    POST /api/graphql          → Execute GraphQL query
+    GET  /api/graphql           → GraphiQL playground
+    GET  /api/system/active-theme-config → Theme config JSON
+
+  ## Archivos Creados/Modificados:
+    apps/admin/src/composables/useThemeEngine.ts     (NUEVO)
+    apps/admin/src/components/editor/BlockInserter.vue (NUEVO)
+    apps/api/src/routes/graphql.ts                    (NUEVO)
+    apps/admin/src/main.ts                            (MODIFICADO)
+    apps/admin/src/App.vue                            (MODIFICADO)
+    apps/admin/src/components/editor/MdxEditor.vue    (MODIFICADO)
+    apps/api/src/index.ts                             (MODIFICADO)
+    apps/api/src/routes/system.ts                     (MODIFICADO)
+    apps/api/src/routes/blog.ts                       (MODIFICADO)
+    apps/api/src/lib/realtime.ts                      (MODIFICADO)
+
+# ============================================================
+#  ÉPICA 8: Gremius Workers (Serverless Compute)
+# ============================================================
+
+Épica 12 · Gremius Workers                          → ✅ COMPLETADA
+
+  ## Feature 1: Worker Sandbox (Ejecución Aislada)
+
+  ### worker-sandbox.ts
+    ✅ Ejecuta código JS del usuario en Bun Workers aislados
+    ✅ Wrapper script auto-generado por ejecución
+    ✅ Globals peligrosos bloqueados (process, require, fs, __dirname)
+    ✅ Console.log/warn/error capturados (máx 50KB)
+    ✅ Timeout enforcement: mata el Worker tras N ms
+    ✅ Directorio .sandbox con archivos temporales auto-eliminados
+    ✅ API limitada disponible: event, env, console, gremius.fetch()
+    ✅ gremius.fetch() tiene timeout propio de 10s por request
+    ✅ Retorna SandboxResult: { success, result, logs, error, durationMs, exitReason }
+
+  ### Seguridad del Sandbox
+    ✅ new Function() con parámetros controlados (no eval directo)
+    ✅ Sin acceso a sistema de archivos del servidor
+    ✅ Sin acceso a variables de entorno del servidor
+    ✅ Sin acceso a conexión de base de datos
+    ✅ Timeout configurable por función (default 5000ms)
+    ✅ Límite de memoria configurable (informacional)
+
+  ## Feature 2: Function Dispatcher (Event → Function)
+
+  ### function-dispatcher.ts
+    ✅ Event listener que conecta EventEmitter → funciones activas
+    ✅ EVENT_TRIGGER_MAP: entry:created → on_entry_created, etc.
+    ✅ Filtra funciones por trigger type + watchDatasetId
+    ✅ Ejecución concurrente fire-and-forget (no bloquea event loop)
+    ✅ executeFunction(): ejecuta + loguea a function_executions
+    ✅ executeManually(): para el botón "Run" del admin
+    ✅ Auto-disable: tras 10 errores consecutivos, status → 'error'
+    ✅ Reset automático: éxito después de error restaura status 'active'
+    ✅ Actualiza contadores: executionCount, errorCount, lastExecutedAt
+
+  ## Feature 3: Cron Scheduler
+
+  ### cron-scheduler.ts
+    ✅ Usa `croner` (ligero, sin deps nativas)
+    ✅ initCronScheduler(): carga funciones cron activas de DB al iniciar
+    ✅ scheduleCronJob(): programa ejecución periódica
+    ✅ refreshCronJob(): re-programa cuando se actualiza una función
+    ✅ removeCronJob(): elimina job cuando se borra función
+    ✅ stopAllCronJobs(): graceful shutdown
+    ✅ getCronJobStatus(): estado de todos los jobs activos
+    ✅ Re-fetch de función antes de ejecutar (para obtener código actualizado)
+    ✅ Skip si función ya no está activa
+
+  ## Feature 4: API Routes
+
+  ### routes/functions.ts
+    ✅ GET    /api/functions               — Listar funciones (filtro por trigger/status)
+    ✅ POST   /api/functions               — Crear función
+    ✅ GET    /api/functions/:id           — Detalle + watchDataset
+    ✅ PATCH  /api/functions/:id           — Actualizar (re-programa cron)
+    ✅ DELETE /api/functions/:id           — Eliminar (remueve cron job)
+    ✅ POST   /api/functions/:id/execute   — Ejecución manual con payload custom
+    ✅ GET    /api/functions/:id/executions — Logs de ejecución paginados
+    ✅ GET    /api/functions/cron/status    — Estado de jobs cron activos
+    ✅ Todas las rutas protegidas con auth middleware
+
+  ## Feature 5: Admin UI
+
+  ### views/workers/WorkersView.vue
+    ✅ Tabla de funciones con filtro por trigger type
+    ✅ Stats cards: Total, Active, Cron, Errors
+    ✅ Modal Create/Edit con editor de código (textarea estilizada)
+    ✅ Configuración de trigger, cron expression, watch dataset
+    ✅ Timeout y memory limit configurables
+    ✅ Environment variables como JSON
+    ✅ Botón "Run" para ejecución manual con toast de resultado
+    ✅ Modal de logs de ejecución con status, duration, output
+    ✅ Toggle enable/disable por función
+    ✅ Delete con confirmación
+
+  ## Feature 6: Schema de Base de Datos (Drizzle)
+
+  ### db/schema.ts (ya existía)
+    ✅ Tabla gremius_functions: id, name, slug, code, trigger, cronExpression,
+       watchDatasetId, timeoutMs, memoryLimitMb, status, envVars, contadores
+    ✅ Tabla function_executions: id, functionId, status, triggerEvent,
+       triggerPayload, logs, result, errorMessage, durationMs, timestamps
+    ✅ Enums: function_trigger, function_status, execution_status
+    ✅ Índices en trigger, status, dataset, createdAt
+    ✅ Relaciones con user (createdBy) y dataSets (watchDataset)
+
+  ## Dependencias Añadidas:
+    graphql ^16.9.0       (GraphQL core)
+    graphql-type-json ^0.3.2 (JSON scalar type)
+    croner ^9.0.0         (Cron scheduler, ligero)
+
+  ## Archivos Creados:
+    apps/api/src/lib/worker-sandbox.ts      (Sandbox executor)
+    apps/api/src/lib/function-dispatcher.ts (Event → Function bridge)
+    apps/api/src/lib/cron-scheduler.ts      (Cron job manager)
+    apps/api/src/routes/functions.ts        (API CRUD + execute)
+    apps/admin/src/views/workers/WorkersView.vue (Admin UI)
+
+  ## Archivos Modificados:
+    apps/api/src/index.ts      (Mount routes + init dispatcher + cron)
+    apps/api/package.json      (graphql, graphql-type-json, croner)
+    apps/admin/src/router/index.ts (Ruta actualizada a workers/)
+
+# (Documentación legacy de Épica 8 — ver arriba para la versión completa)
+       watchDatasetId, timeoutMs, memoryLimitMb, status, envVars,
+       lastExecutedAt, lastError, executionCount, errorCount, createdById
+    ✅ function_executions table: id, functionId, status, triggerEvent,
+       triggerPayload, logs, result, errorMessage, durationMs, memoryUsedBytes
+    ✅ Enums: function_trigger (7 values), function_status (3), execution_status (6)
+    ✅ Relations: gremiusFunctions ↔ user, dataSets, functionExecutions
+    ✅ Indexes: slug, trigger, status, dataset, functionId, createdAt
+
+  ## Worker Sandbox (lib/worker-sandbox.ts)
+    ✅ Bun Worker-based isolated execution
+    ✅ Restricted globals: no fs, no process.env, no require, no Bun API
+    ✅ Console capture: console.log/warn/error → logs string
+    ✅ Gremius SDK disponible dentro del worker:
+       - gremius.event — trigger event name
+       - gremius.payload — event data (entry, post, etc.)
+       - gremius.env — user-defined env vars
+       - gremius.api(path, opts) — call Gremius REST API internally
+       - gremius.fetch(url, opts) — make external HTTP requests
+       - gremius.log(...) — log messages
+    ✅ Timeout enforcement: kills worker after N ms (default 5s)
+    ✅ Temp file cleanup after execution
+    ✅ JSON-serialized context passed to worker
+
+  ## Function Dispatcher (lib/function-dispatcher.ts)
+    ✅ Event-driven: listens to entry:created/updated/deleted via EventEmitter
+    ✅ Cron scheduling via croner library (UTC timezone)
+    ✅ Post publish trigger: post:published event
+    ✅ Manual execution: manualExecute(functionId, payload)
+    ✅ Execution logging: writes to function_executions table
+    ✅ Stats tracking: executionCount, errorCount, lastExecutedAt
+    ✅ Auto-disable: functions disabled after 10 consecutive errors
+    ✅ Concurrency limit: MAX_CONCURRENT (default 10)
+    ✅ reloadCronJobs() for hot-reloading after CRUD
+    ✅ Graceful shutdown: shutdownFunctionDispatcher()
+    ✅ Dataset-aware: watchDatasetId filters which datasets trigger the fn
+
+  ## REST API Routes (routes/functions.ts)
+    ✅ GET    /api/functions — List all (with trigger/status filters)
+    ✅ GET    /api/functions/:id — Detail + last 5 executions
+    ✅ POST   /api/functions — Create (validates trigger, cron expr, dataset)
+    ✅ PATCH  /api/functions/:id — Update (resets error count on code change)
+    ✅ DELETE /api/functions/:id — Delete + cron reload
+    ✅ POST   /api/functions/:id/execute — Manual execution with payload
+    ✅ GET    /api/functions/:id/logs — Execution logs (paginated, filterable)
+    ✅ POST   /api/functions/reload-cron — Admin utility to reload cron
+
+  ## Admin Panel (views/Workers.vue)
+    ✅ Full CRUD UI with cyberpunk design system
+    ✅ Stats dashboard: total, active, cron, error counts
+    ✅ Function list with status indicators, trigger badges, execution stats
+    ✅ Create/Edit dialog with code editor (textarea + syntax hints)
+    ✅ Trigger-specific fields (cron expression, dataset selector)
+    ✅ Environment variables editor (JSON)
+    ✅ One-click manual execution with toast result display
+    ✅ Toggle active/inactive per function
+    ✅ Execution result toast with logs, duration, errors
+    ✅ Route: /workers in sidebar under System
+
+  ## Integration Points
+    ✅ EventEmitter bridge: entry:created/updated/deleted → dispatcher
+    ✅ Post publish: blog.ts emits post:published event
+    ✅ Dispatcher initialized at server startup (index.ts)
+    ✅ Sidebar navigation: Workers link with Zap icon
+    ✅ Router: /workers route added
+
+  ## Dependencies Added
+    ✅ croner ^9.0.0 — Cron scheduling
+    ✅ graphql ^16.9.0 — GraphQL endpoint (Épica 10)
+    ✅ graphql-type-json ^0.3.2 — JSON scalar for GraphQL
+
+  ## Archivos Creados/Modificados
+    apps/api/src/db/schema.ts                         (MODIFICADO — +3 enums +2 tables +2 relations)
+    apps/api/src/lib/worker-sandbox.ts                (NUEVO)
+    apps/api/src/lib/function-dispatcher.ts           (NUEVO)
+    apps/api/src/routes/functions.ts                  (NUEVO)
+    apps/admin/src/views/Workers.vue                  (NUEVO)
+    apps/api/src/index.ts                             (MODIFICADO — mount routes + init dispatcher)
+    apps/api/src/routes/blog.ts                       (MODIFICADO — emit post:published)
+    apps/api/package.json                             (MODIFICADO — added deps)
+    apps/admin/src/router/index.ts                    (MODIFICADO — /workers route)
+    apps/admin/src/layouts/SidebarLayout.vue           (MODIFICADO — Workers in sidebar)
+
+# ============================================================
+#  Archivos Clave de la Épica 7
+# ============================================================
+
+apps/api/src/
+├── index.ts                 # Bun server con WS handlers
+├── lib/
+│   ├── valkey.ts           # Pub/Sub + Cache + Leaderboards
+│   ├── realtime.ts         # RealtimeManager + broadcastMutation
+│   └── events.ts           # EventEmitter para Webhooks
+├── routes/
+│   └── datasets.ts         # Emit events en CRUD entries
+└── tests/
+    └── realtime.test.ts    # Test suite
+
+packages/sdk/
+├── package.json
+├── tsconfig.json
+└── src/
+    ├── index.ts            # Gremius class
+    └── realtime.ts         # GremiusRealtime class
+
+apps/api/
+├── tests.json              # Test definitions
+└── package.json            # Script: test:realtime

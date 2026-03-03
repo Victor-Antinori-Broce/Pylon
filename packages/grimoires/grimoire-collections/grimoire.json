@@ -1,0 +1,12 @@
+{
+    "id": "grimoire-collections",
+    "name": "Collections",
+    "description": "Curated groupings of games and content for editorial organization and front-page showcases.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Library",
+    "tables": [
+        "game_collections",
+        "game_collection_entries"
+    ]
+}

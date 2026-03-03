@@ -1,0 +1,14 @@
+:root {
+    --gremius-bg: #09090b;
+    --gremius-card: #18181b;
+    --gremius-text: #e4e4e7;
+    --gremius-text-dim: #a1a1aa;
+    --gremius-subtle: #52525b;
+    --gremius-border: #27272a;
+
+    --gremius-cyan: #22d3ee;
+    --gremius-purple: #c084fc;
+    --gremius-pink: #f472b6;
+    --gremius-green: #4ade80;
+    --gremius-amber: #fbbf24;
+}

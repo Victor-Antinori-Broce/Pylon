@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gremius-border;
+  }
+
+  body {
+    @apply bg-gremius-bg text-gremius-text font-sans antialiased;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-gremius-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gremius-muted rounded-full hover:bg-gremius-subtle;
+  }
+}
+
+@layer components {
+  .gremius-glow {
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.15), 0 0 40px rgba(0, 229, 255, 0.05);
+  }
+
+  .gremius-glow-pink {
+    box-shadow: 0 0 10px rgba(255, 42, 109, 0.15), 0 0 40px rgba(255, 42, 109, 0.05);
+  }
+
+  .gremius-input {
+    @apply bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm
+           text-gremius-text placeholder:text-gremius-subtle
+           focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50 focus:border-gremius-cyan/50
+           transition-all duration-150;
+  }
+
+  .gremius-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
+           text-sm font-medium transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-gremius-cyan/30 focus:ring-offset-2 focus:ring-offset-gremius-bg
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .gremius-btn-primary {
+    @apply gremius-btn bg-gremius-cyan text-gremius-bg hover:bg-gremius-cyan-dim active:scale-[0.98];
+  }
+
+  .gremius-btn-secondary {
+    @apply gremius-btn bg-gremius-card border border-gremius-border text-gremius-text hover:bg-gremius-muted/30;
+  }
+
+  .gremius-btn-danger {
+    @apply gremius-btn bg-gremius-pink/10 text-gremius-pink border border-gremius-pink/20 hover:bg-gremius-pink/20;
+  }
+
+  .gremius-btn-ghost {
+    @apply gremius-btn text-gremius-text-dim hover:text-gremius-text hover:bg-gremius-card;
+  }
+
+  .gremius-card {
+    @apply bg-gremius-card border border-gremius-border rounded-xl;
+  }
+
+  /* Form Elements - ensure proper theming for both light and dark modes */
+  .input {
+    @apply w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm
+           text-gremius-text placeholder:text-gremius-subtle
+           focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50 focus:border-gremius-cyan/50
+           transition-all duration-150;
+  }
+
+  .select {
+    @apply w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm
+           text-gremius-text
+           focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50 focus:border-gremius-cyan/50
+           transition-all duration-150 appearance-none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+  }
+
+  .textarea {
+    @apply w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm
+           text-gremius-text placeholder:text-gremius-subtle
+           focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50 focus:border-gremius-cyan/50
+           transition-all duration-150 resize-y;
+  }
+}

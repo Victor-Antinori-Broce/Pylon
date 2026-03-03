@@ -1,0 +1,249 @@
+---
+import { db } from "../../../../../apps/api/src/db";
+import { tournaments, tournamentParticipants } from "../../modules/tournaments/tournaments.schema";
+import { games } from "../../modules/games/games.schema";
+import { eq } from "drizzle-orm";
+import TournamentBracket from "../../components/TournamentBracket.vue";
+import "../../variables.css";
+
+const { id } = Astro.params;
+
+// Fetch tournament data directly via Drizzle since Astro runs server-side
+const [tournament] = await db
+  .select({
+    tournament: tournaments,
+    game: games
+  })
+  .from(tournaments)
+  .leftJoin(games, eq(tournaments.gameId, games.id))
+  .where(eq(tournaments.id, id))
+  .limit(1);
+
+if (!tournament) {
+  return new Response("Tournament not found", { status: 404 });
+}
+
+// Fetch participants
+const participants = await db
+  .select()
+  .from(tournamentParticipants)
+  .where(eq(tournamentParticipants.tournamentId, id));
+
+---
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{tournament.tournament.title} | Gremio CMS</title>
+    <!-- Add standard fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: var(--gremius-bg);
+            color: var(--gremius-text);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-xl);
+        }
+
+        .hero {
+            background: var(--gremius-surface);
+            border: 1px solid var(--gremius-border);
+            border-bottom: 2px solid var(--gremius-cyan);
+            padding: var(--space-2xl);
+            margin-bottom: var(--space-xl);
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+        }
+
+        /* Glitch effect pseudo-element */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, transparent 40%, rgba(0, 229, 255, 0.05) 45%, rgba(255, 42, 109, 0.05) 55%, transparent 60%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-badge {
+            display: inline-block;
+            background: var(--gremius-pink-glow);
+            color: var(--gremius-pink);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: var(--space-md);
+            border: 1px solid var(--gremius-pink-dim);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            color: var(--gremius-text);
+            margin: 0 0 var(--space-sm) 0;
+            text-shadow: var(--shadow-glow-cyan);
+        }
+
+        .meta {
+            color: var(--gremius-text-secondary);
+            font-family: var(--font-mono);
+            display: flex;
+            gap: var(--space-lg);
+            margin-top: var(--space-md);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .meta-value {
+            color: var(--gremius-cyan);
+        }
+
+        /* Tabs Simulation */
+        .tabs {
+            display: flex;
+            gap: var(--space-md);
+            border-bottom: 1px solid var(--gremius-border);
+            margin-bottom: var(--space-xl);
+        }
+
+        .tab {
+            padding: var(--space-md) var(--space-xl);
+            color: var(--gremius-text-secondary);
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition-fast);
+        }
+
+        .tab.active {
+            color: var(--gremius-cyan);
+            border-bottom-color: var(--gremius-cyan);
+            text-shadow: var(--shadow-glow-cyan);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--gremius-text);
+        }
+
+        /* Content Sections */
+        h2 {
+            font-family: var(--font-display);
+            color: var(--gremius-pink);
+            border-bottom: 1px solid var(--gremius-border-subtle);
+            padding-bottom: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .participant-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .participant-card {
+            background: var(--gremius-card);
+            border: 1px solid var(--gremius-border-subtle);
+            padding: var(--space-md);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .participant-status {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-xs);
+            text-transform: uppercase;
+        }
+        
+        .status-Pending { background: var(--gremius-warning); color: #000; }
+        .status-Approved { background: var(--gremius-success); color: #000; }
+        .status-Rejected { background: var(--gremius-error); color: #fff; }
+
+        .brackets-section {
+            background: var(--gremius-surface);
+            padding: var(--space-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gremius-border);
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-content">
+                <span class="game-badge">{tournament.game?.title || 'Unknown Game'}</span>
+                <h1>{tournament.tournament.title}</h1>
+                <div class="meta">
+                    <div class="meta-item">FORMAT: <span class="meta-value">{tournament.tournament.format}</span></div>
+                    <div class="meta-item">STATUS: <span class="meta-value">{tournament.tournament.status}</span></div>
+                    <div class="meta-item">PARTICIPANTS: <span class="meta-value">{participants.length} / {tournament.tournament.maxParticipants}</span></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <div class="tab" onclick="document.getElementById('info').style.display='block'; document.getElementById('brackets').style.display='none'; this.classList.add('active'); this.nextElementSibling.classList.remove('active');">Info & Participants</div>
+            
+            <div class="tab active" onclick="document.getElementById('brackets').style.display='block'; document.getElementById('info').style.display='none'; this.classList.add('active'); this.previousElementSibling.classList.remove('active');">Brackets</div>
+        </div>
+
+        <!-- Participants Section (Hidden by default, shown via basic JS) -->
+        <section id="info" style="display: none;">
+            <h2>Registered Participants</h2>
+            <div class="participant-list">
+                {participants.length > 0 ? participants.map(p => (
+                    <div class="participant-card">
+                        <span>ID: {p.playerId || p.teamId}</span>
+                        <span class="participant-status `status-${p.status}`">{p.status}</span>
+                    </div>
+                )) : (
+                    <p style="color: var(--gremius-text-muted)">No participants registered yet.</p>
+                )}
+            </div>
+        </section>
+
+        <!-- Brackets Section -->
+        <section id="brackets" class="brackets-section">
+            <h2>Tournament Bracket</h2>
+            
+            {tournament.tournament.status === 'Draft' || tournament.tournament.status === 'Open' ? (
+                <div style="text-align: center; color: var(--gremius-text-muted); padding: var(--space-2xl); font-family: var(--font-mono)">
+                    BRACKETS_NOT_GENERATED. STATUS IS {tournament.tournament.status}.
+                </div>
+            ) : (
+                <!-- Vue Component instantiated here with client:load -->
+                <TournamentBracket client:load tournamentId={tournament.tournament.id} />
+            )}
+        </section>
+    </div>
+</body>
+</html>

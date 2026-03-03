@@ -1,0 +1,459 @@
+{
+  "name": "GremiusCMS Real-time Layer Tests",
+  "version": "1.0.0",
+  "description": "Test definitions for WebSocket and Live Query functionality",
+  
+  "suites": {
+    "websocket-connection": {
+      "name": "WebSocket Connection Tests",
+      "tests": [
+        {
+          "id": "ws-upgrade",
+          "name": "HTTP to WebSocket Upgrade",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "assertions": [
+            { "type": "connected", "timeout": 5000 },
+            { "type": "message", "match": { "type": "connected", "clientId": "string" } }
+          ]
+        },
+        {
+          "id": "ws-auth",
+          "name": "Authenticated WebSocket Connection",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "headers": { "Cookie": "{{session_cookie}}" },
+          "assertions": [
+            { "type": "message", "match": { "type": "connected", "userId": "string" } }
+          ]
+        },
+        {
+          "id": "ws-ping-pong",
+          "name": "Heartbeat Ping/Pong",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "send": { "type": "ping" },
+          "assertions": [
+            { "type": "message", "match": { "type": "pong", "timestamp": "number" } }
+          ]
+        }
+      ]
+    },
+
+    "channel-subscriptions": {
+      "name": "Channel Subscription Tests",
+      "tests": [
+        {
+          "id": "subscribe-table",
+          "name": "Subscribe to Table Channel",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "subscribe", "channel": "table:test-dataset-id" } },
+            { "expect": { "type": "subscribed", "channel": "table:test-dataset-id" } }
+          ]
+        },
+        {
+          "id": "subscribe-entry",
+          "name": "Subscribe to Entry Channel",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "subscribe", "channel": "entry:test-entry-id" } },
+            { "expect": { "type": "subscribed", "channel": "entry:test-entry-id" } }
+          ]
+        },
+        {
+          "id": "unsubscribe",
+          "name": "Unsubscribe from Channel",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "subscribe", "channel": "table:test-dataset" } },
+            { "expect": { "type": "subscribed" } },
+            { "send": { "type": "unsubscribe", "channel": "table:test-dataset" } },
+            { "expect": { "type": "unsubscribed", "channel": "table:test-dataset" } }
+          ]
+        },
+        {
+          "id": "invalid-channel",
+          "name": "Reject Invalid Channel Format",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "subscribe", "channel": "invalid-format" } },
+            { "expect": { "type": "error", "message": "string" } }
+          ]
+        }
+      ]
+    },
+
+    "live-queries": {
+      "name": "Live Query Tests",
+      "tests": [
+        {
+          "id": "live-insert",
+          "name": "Receive Insert Event via Live Query",
+          "type": "integration",
+          "steps": [
+            {
+              "action": "ws-connect",
+              "endpoint": "ws://localhost:3001/api/realtime"
+            },
+            {
+              "action": "ws-send",
+              "message": { "type": "subscribe", "channel": "table:{{datasetId}}" }
+            },
+            {
+              "action": "http-post",
+              "endpoint": "/api/data-sets/{{datasetId}}/entries",
+              "body": { "title": "Test Entry", "data": { "foo": "bar" } }
+            },
+            {
+              "action": "ws-expect",
+              "timeout": 5000,
+              "match": {
+                "type": "message",
+                "channel": "table:{{datasetId}}",
+                "data": {
+                  "event": "insert",
+                  "entry": { "title": "Test Entry" }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "live-update",
+          "name": "Receive Update Event via Live Query",
+          "type": "integration",
+          "steps": [
+            { "action": "ws-connect", "endpoint": "ws://localhost:3001/api/realtime" },
+            { "action": "ws-send", "message": { "type": "subscribe", "channel": "table:{{datasetId}}" } },
+            {
+              "action": "http-patch",
+              "endpoint": "/api/data-sets/{{datasetId}}/entries/{{entryId}}",
+              "body": { "title": "Updated Title" }
+            },
+            {
+              "action": "ws-expect",
+              "timeout": 5000,
+              "match": {
+                "type": "message",
+                "data": { "event": "update" }
+              }
+            }
+          ]
+        },
+        {
+          "id": "live-delete",
+          "name": "Receive Delete Event via Live Query",
+          "type": "integration",
+          "steps": [
+            { "action": "ws-connect", "endpoint": "ws://localhost:3001/api/realtime" },
+            { "action": "ws-send", "message": { "type": "subscribe", "channel": "table:{{datasetId}}" } },
+            {
+              "action": "http-delete",
+              "endpoint": "/api/data-sets/{{datasetId}}/entries/{{entryId}}"
+            },
+            {
+              "action": "ws-expect",
+              "timeout": 5000,
+              "match": {
+                "type": "message",
+                "data": { "event": "delete" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    "presence": {
+      "name": "Presence System Tests",
+      "tests": [
+        {
+          "id": "presence-join",
+          "name": "Join Presence Room",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "presence:join", "room": "editor:doc-123" } },
+            { "expect": { "type": "presence", "room": "editor:doc-123", "count": 1 } }
+          ]
+        },
+        {
+          "id": "presence-multi-user",
+          "name": "Multiple Users in Room",
+          "type": "concurrent",
+          "clients": 3,
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "all": { "send": { "type": "presence:join", "room": "shared-room" } } },
+            { "wait": 500 },
+            { "any": { "expect": { "type": "presence", "room": "shared-room", "count": 3 } } }
+          ]
+        },
+        {
+          "id": "presence-leave",
+          "name": "Leave Presence Room",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "presence:join", "room": "temp-room" } },
+            { "expect": { "type": "presence", "count": 1 } },
+            { "send": { "type": "presence:leave", "room": "temp-room" } }
+          ]
+        }
+      ]
+    },
+
+    "concurrent-connections": {
+      "name": "Concurrent Connection Tests",
+      "tests": [
+        {
+          "id": "concurrent-10",
+          "name": "10 Concurrent WebSocket Connections",
+          "type": "load",
+          "clients": 10,
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "actions": [
+            { "send": { "type": "subscribe", "channel": "table:load-test" } }
+          ],
+          "assertions": [
+            { "all-connected": true },
+            { "all-subscribed": true }
+          ]
+        },
+        {
+          "id": "concurrent-100",
+          "name": "100 Concurrent WebSocket Connections",
+          "type": "load",
+          "clients": 100,
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "assertions": [
+            { "all-connected": true },
+            { "max-connect-time": 5000 }
+          ]
+        },
+        {
+          "id": "broadcast-latency",
+          "name": "Broadcast Latency Under Load",
+          "type": "load",
+          "clients": 50,
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "setup": [
+            { "all": { "send": { "type": "subscribe", "channel": "table:latency-test" } } }
+          ],
+          "trigger": {
+            "action": "http-post",
+            "endpoint": "/api/data-sets/latency-test/entries",
+            "body": { "title": "Latency Test" }
+          },
+          "assertions": [
+            { "all-receive-within": 1000 },
+            { "p95-latency-under": 500 }
+          ]
+        }
+      ]
+    },
+
+    "error-handling": {
+      "name": "Error Handling Tests",
+      "tests": [
+        {
+          "id": "invalid-json",
+          "name": "Handle Invalid JSON Message",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send-raw": "not valid json {{{" },
+            { "expect": { "type": "error", "message": "Invalid JSON" } }
+          ]
+        },
+        {
+          "id": "unknown-type",
+          "name": "Handle Unknown Message Type",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "unknown-action" } },
+            { "expect": { "type": "error" } }
+          ]
+        },
+        {
+          "id": "reconnect",
+          "name": "Client Reconnection After Disconnect",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "subscribe", "channel": "table:reconnect-test" } },
+            { "expect": { "type": "subscribed" } },
+            { "disconnect": true },
+            { "reconnect": true },
+            { "expect": { "type": "connected" } },
+            { "send": { "type": "subscribe", "channel": "table:reconnect-test" } },
+            { "expect": { "type": "subscribed" } }
+          ]
+        }
+      ]
+    }
+  },
+
+    "graphql": {
+      "name": "GraphQL API Tests",
+      "tests": [
+        {
+          "id": "gql-blog-posts",
+          "name": "Query Blog Posts with Blocks",
+          "type": "http",
+          "method": "POST",
+          "endpoint": "/api/graphql",
+          "body": {
+            "query": "{ blogPosts(limit: 5) { docs { id title slug status blocks { type data } } totalDocs } }"
+          },
+          "assertions": [
+            { "status": 200 },
+            { "jsonPath": "data.blogPosts.docs", "type": "array" },
+            { "jsonPath": "data.blogPosts.totalDocs", "type": "number" }
+          ]
+        },
+        {
+          "id": "gql-blog-post-by-slug",
+          "name": "Query Single Blog Post by Slug",
+          "type": "http",
+          "method": "POST",
+          "endpoint": "/api/graphql",
+          "body": {
+            "query": "{ blogPost(slug: \"test-post\") { id title slug blocks { type data } author { id name } } }"
+          },
+          "assertions": [
+            { "status": 200 },
+            { "jsonPath": "data.blogPost", "type": "object" }
+          ]
+        },
+        {
+          "id": "gql-games",
+          "name": "Query Games with Filters",
+          "type": "http",
+          "method": "POST",
+          "endpoint": "/api/graphql",
+          "body": {
+            "query": "{ games(status: \"published\", limit: 10) { docs { id title slug metacriticScore blocks { type data } coverArt { url } } totalDocs hasNextPage } }"
+          },
+          "assertions": [
+            { "status": 200 },
+            { "jsonPath": "data.games.docs", "type": "array" }
+          ]
+        },
+        {
+          "id": "gql-data-entries",
+          "name": "Query Data Entries by Dataset",
+          "type": "http",
+          "method": "POST",
+          "endpoint": "/api/graphql",
+          "body": {
+            "query": "query($dsId: String!) { dataEntries(dataSetId: $dsId) { docs { id title data } totalDocs } }",
+            "variables": { "dsId": "{{datasetId}}" }
+          },
+          "assertions": [
+            { "status": 200 },
+            { "jsonPath": "data.dataEntries.docs", "type": "array" }
+          ]
+        },
+        {
+          "id": "gql-tags-platforms",
+          "name": "Query Tags and Platforms",
+          "type": "http",
+          "method": "POST",
+          "endpoint": "/api/graphql",
+          "body": {
+            "query": "{ tags { id name slug color } platforms { id name slug } }"
+          },
+          "assertions": [
+            { "status": 200 },
+            { "jsonPath": "data.tags", "type": "array" },
+            { "jsonPath": "data.platforms", "type": "array" }
+          ]
+        },
+        {
+          "id": "gql-streamers-live",
+          "name": "Query Live Streamers",
+          "type": "http",
+          "method": "POST",
+          "endpoint": "/api/graphql",
+          "body": {
+            "query": "{ streamers(live: true) { displayName platform isLive viewerCount } }"
+          },
+          "assertions": [
+            { "status": 200 },
+            { "jsonPath": "data.streamers", "type": "array" }
+          ]
+        },
+        {
+          "id": "gql-graphiql",
+          "name": "GraphiQL Playground Available",
+          "type": "http",
+          "method": "GET",
+          "endpoint": "/api/graphql",
+          "assertions": [
+            { "status": 200 },
+            { "contentType": "text/html" }
+          ]
+        }
+      ]
+    },
+
+    "content-realtime": {
+      "name": "Content Real-time Channel Tests",
+      "tests": [
+        {
+          "id": "content-subscribe",
+          "name": "Subscribe to Content Channel",
+          "type": "websocket",
+          "endpoint": "ws://localhost:3001/api/realtime",
+          "steps": [
+            { "send": { "type": "subscribe", "channel": "content:test-post-id" } },
+            { "expect": { "type": "subscribed", "channel": "content:test-post-id" } }
+          ]
+        },
+        {
+          "id": "content-live-update",
+          "name": "Receive Content Update Event",
+          "type": "integration",
+          "steps": [
+            { "action": "ws-connect", "endpoint": "ws://localhost:3001/api/realtime" },
+            { "action": "ws-send", "message": { "type": "subscribe", "channel": "content:{{postId}}" } },
+            {
+              "action": "http-patch",
+              "endpoint": "/api/blog-posts/{{postId}}",
+              "body": { "title": "Updated via WS test", "blocks": [{ "id": "blk_test", "type": "hero", "data": { "title": "Test" }, "order": 0 }] }
+            },
+            {
+              "action": "ws-expect",
+              "timeout": 5000,
+              "match": {
+                "type": "message",
+                "channel": "content:{{postId}}",
+                "data": { "event": "update" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "fixtures": {
+    "datasetId": "test-dataset-uuid",
+    "entryId": "test-entry-uuid",
+    "session_cookie": "better-auth.session_token=test-session"
+  },
+
+  "config": {
+    "baseUrl": "http://localhost:3001",
+    "wsUrl": "ws://localhost:3001",
+    "timeout": 10000,
+    "retries": 3
+  }
+}

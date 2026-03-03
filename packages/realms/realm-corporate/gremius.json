@@ -1,0 +1,10 @@
+{
+    "id": "gremius-corporate",
+    "name": "Gremius Corporate",
+    "description": "Clean light theme inspired by enterprise design systems. Professional, high-contrast, and accessible.",
+    "version": "1.0.0",
+    "type": "theme",
+    "author": "GremiusCMSTeam",
+    "theme_type": "corporate",
+    "css_entry": "variables.css"
+}

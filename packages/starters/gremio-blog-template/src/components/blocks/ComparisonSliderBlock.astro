@@ -1,0 +1,25 @@
+---
+/**
+ * ComparisonSliderBlock.astro
+ * Renders the ComparisonSlider Vue island with client-side hydration.
+ * Before/After image comparison with draggable vertical divider.
+ */
+import ComparisonSlider from "../islands/ComparisonSlider.vue";
+
+interface Props {
+    beforeImageUrl: string;
+    afterImageUrl: string;
+    beforeLabel: string;
+    afterLabel: string;
+}
+
+const { beforeImageUrl, afterImageUrl, beforeLabel, afterLabel } = Astro.props;
+---
+
+<ComparisonSlider
+    client:load
+    beforeImageUrl={beforeImageUrl}
+    afterImageUrl={afterImageUrl}
+    beforeLabel={beforeLabel}
+    afterLabel={afterLabel}
+/>

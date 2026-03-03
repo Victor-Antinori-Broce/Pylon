@@ -1,0 +1,218 @@
+---
+/**
+ * Gremius Academy — Course Catalog
+ * Lists all published courses with enrollment status.
+ */
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CourseCard from "../../components/islands/academy/CourseCard.vue";
+
+const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3001";
+
+let courses: any[] = [];
+let error = "";
+
+try {
+    const res = await fetch(`${API_URL}/api/custom/academy/courses`);
+    if (res.ok) {
+        const data = await res.json();
+        courses = data.docs || [];
+    } else {
+        error = "No se pudieron cargar los cursos.";
+    }
+} catch (e) {
+    error = "Error de conexión con el servidor.";
+}
+---
+
+<BaseLayout
+    title="Gremius Academy"
+    description="Plataforma de capacitación y aprendizaje"
+>
+    <!-- Fonts for Academy -->
+    <link
+        slot="head"
+        href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    />
+
+    <section class="academy-hero">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-content">
+            <span class="hero-badge">Gremius Academy</span>
+            <h1 class="hero-title">
+                Capacitación <span class="hero-accent">Continua</span>
+            </h1>
+            <p class="hero-subtitle">
+                Desarrolla tus habilidades con cursos interactivos, evaluaciones
+                y certificaciones.
+            </p>
+        </div>
+    </section>
+
+    {
+        error && (
+            <div class="academy-error">
+                <p>{error}</p>
+            </div>
+        )
+    }
+
+    <section class="courses-grid">
+        {
+            courses.length === 0 && !error && (
+                <div class="empty-catalog">
+                    <svg
+                        class="empty-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                    >
+                        <path
+                            d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                    <h3>No hay cursos disponibles</h3>
+                    <p>
+                        Los cursos aparecerán aquí cuando el administrador los
+                        publique.
+                    </p>
+                </div>
+            )
+        }
+
+        {
+            courses.map((course: any) => (
+                <CourseCard
+                    client:visible
+                    course={course}
+                    topicCount={course.topics?.length || 0}
+                    hasQuiz={!!course.quiz}
+                />
+            ))
+        }
+    </section>
+</BaseLayout>
+
+<style>
+    /* ── Hero ── */
+    .academy-hero {
+        position: relative;
+        padding: 4rem 0 3rem;
+        text-align: center;
+        overflow: hidden;
+    }
+
+    .hero-glow {
+        position: absolute;
+        top: -8rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30rem;
+        height: 30rem;
+        background: radial-gradient(
+            circle,
+            rgba(99, 102, 241, 0.12) 0%,
+            rgba(139, 92, 246, 0.06) 40%,
+            transparent 70%
+        );
+        pointer-events: none;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        padding: 0.3rem 0.9rem;
+        border-radius: 9999px;
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #a5b4fc;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 1.25rem;
+    }
+
+    .hero-title {
+        font-family: "Source Serif 4", "Georgia", serif;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 800;
+        color: #f1f5f9;
+        line-height: 1.15;
+        margin-bottom: 1rem;
+    }
+
+    .hero-accent {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6, #c4b5fd);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        font-family: "DM Sans", sans-serif;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.45);
+        max-width: 32rem;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* ── Grid ── */
+    .courses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        padding: 2rem 0 4rem;
+    }
+
+    /* ── Error ── */
+    .academy-error {
+        text-align: center;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-radius: 0.75rem;
+        background: rgba(239, 68, 68, 0.06);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #f87171;
+        font-size: 0.85rem;
+    }
+
+    /* ── Empty ── */
+    .empty-catalog {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+    .empty-icon {
+        width: 3rem;
+        height: 3rem;
+        color: rgba(255, 255, 255, 0.15);
+    }
+
+    .empty-catalog h3 {
+        font-family: "Source Serif 4", "Georgia", serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .empty-catalog p {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.3);
+        max-width: 24rem;
+    }
+</style>

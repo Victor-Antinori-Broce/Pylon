@@ -1,0 +1,38 @@
+# ── Dependencies ──
+node_modules/
+.pnpm-store/
+
+# ── Build outputs ──
+dist/
+.astro/
+.next/
+build/
+
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── Docker ──
+docker/data/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Payload CMS ──
+apps/cms/media/
+
+# ── Logs ──
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ── Coverage ──
+coverage/

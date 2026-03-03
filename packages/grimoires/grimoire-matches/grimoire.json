@@ -1,0 +1,8 @@
+{
+    "id": "grimoire-matches",
+    "name": "Matches",
+    "description": "Competitive match tracking with scores, VOD links, and team rosters.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Swords"
+}

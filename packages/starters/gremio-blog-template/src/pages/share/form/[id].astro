@@ -1,0 +1,170 @@
+---
+/**
+ * /share/form/[id].astro — Public intake form for a Dataset
+ * Fetches the dataset definition by ID and renders a
+ * clean, Typeform-style form via the PublicForm Vue island.
+ */
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PublicForm from "../../../components/islands/PublicForm.vue";
+import { cms } from "../../../lib/cms";
+
+const { id } = Astro.params;
+
+let dataset: any = null;
+let errorMessage = "";
+
+try {
+    dataset = await cms.dataSets.getById(id!);
+    if (!dataset) errorMessage = "Dataset not found.";
+} catch {
+    errorMessage = "Failed to load form. Please try again later.";
+}
+
+// Parse fields from the schema
+const schema = dataset?.schema || {};
+const fields = schema.fields || [];
+const datasetName = dataset?.name || "Form";
+const datasetDescription = dataset?.description || "";
+const datasetIcon = dataset?.icon || "📋";
+---
+
+<BaseLayout
+    title={`${datasetName} — Submit`}
+    description={`Public submission form for ${datasetName}`}
+>
+    <div class="form-page">
+        {
+            errorMessage ? (
+                <div class="form-container">
+                    <div class="form-error">
+                        <span class="error-icon">⚠️</span>
+                        <h2>Something went wrong</h2>
+                        <p>{errorMessage}</p>
+                    </div>
+                </div>
+            ) : (
+                <div class="form-container">
+                    <div class="form-header">
+                        <span class="form-icon">{datasetIcon}</span>
+                        <h1 class="form-title">{datasetName}</h1>
+                        {datasetDescription && (
+                            <p class="form-description">{datasetDescription}</p>
+                        )}
+                        <div class="form-badge">Public Submission Form</div>
+                    </div>
+
+                    <PublicForm
+                        client:load
+                        fields={fields}
+                        datasetId={id!}
+                        datasetName={datasetName}
+                    />
+
+                    <footer class="form-footer">
+                        <p>
+                            Powered by <strong>GremiusCMS</strong>
+                        </p>
+                    </footer>
+                </div>
+            )
+        }
+    </div>
+</BaseLayout>
+
+<style>
+    .form-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 3rem 1.5rem;
+        background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.9) 0%,
+            rgba(12, 12, 20, 1) 100%
+        );
+    }
+
+    .form-container {
+        width: 100%;
+        max-width: 640px;
+    }
+
+    .form-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .form-icon {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .form-description {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.45);
+        margin-top: 0.5rem;
+        line-height: 1.5;
+    }
+
+    .form-badge {
+        display: inline-block;
+        margin-top: 1rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        padding: 0.35em 1em;
+        border-radius: 9999px;
+        background: rgba(0, 229, 255, 0.08);
+        color: rgba(0, 229, 255, 0.7);
+        border: 1px solid rgba(0, 229, 255, 0.15);
+    }
+
+    .form-error {
+        text-align: center;
+        padding: 4rem 2rem;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .form-error .error-icon {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+    .form-error h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #fff;
+        margin: 0 0 0.5rem;
+    }
+    .form-error p {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.9rem;
+    }
+
+    .form-footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .form-footer p {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.2);
+    }
+    .form-footer strong {
+        color: rgba(0, 229, 255, 0.5);
+        font-weight: 600;
+    }
+</style>

@@ -1,0 +1,31 @@
+{
+  "id": "realm-esports",
+  "name": "Esports Realm",
+  "description": "Complete esports and gaming ecosystem with tournaments, teams, players, matches, and game catalogs. Perfect for gaming platforms, esports leagues, and competitive gaming communities.",
+  "version": "2.0.0",
+  "type": "realm",
+  "author": "GremiusCMS Team",
+  "industry": "gaming",
+  "keywords": ["esports", "gaming", "tournaments", "teams", "competitive"],
+  "grimoires": [
+    "grimoire-games",
+    "grimoire-streamers",
+    "grimoire-platforms",
+    "grimoire-tags",
+    "grimoire-collections",
+    "grimoire-players",
+    "grimoire-teams",
+    "grimoire-tournaments",
+    "grimoire-matches"
+  ],
+  "optional_grimoires": [
+    "grimoire-crm"
+  ],
+  "config": {
+    "theme": {
+      "css_entry": "variables.css",
+      "primary_color": "#00e5ff",
+      "accent_color": "#ff2a6d"
+    }
+  }
+}

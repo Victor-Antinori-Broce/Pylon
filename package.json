@@ -1,0 +1,63 @@
+{
+  "name": "gremius-cms",
+  "version": "0.7.0-beta",
+  "private": true,
+  "description": "GremiusCMS - High-Performance Open Source Gaming CMS (Bun + Hono + Drizzle)",
+  "license": "MIT",
+  "author": "GremiusCMS Contributors",
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:api": "cd apps/api && bun run dev",
+    "dev:web": "pnpm --filter @gremius/web dev",
+    "dev:admin": "pnpm --filter @gremius/admin dev",
+    "build": "pnpm --filter @gremius/shared build && pnpm --filter @gremius/api build && pnpm --filter @gremius/web build && pnpm --filter @gremius/admin build",
+    "build:api": "cd apps/api && bun build src/index.ts --outdir dist --target bun",
+    "build:web": "pnpm --filter @gremius/web build",
+    "build:admin": "pnpm --filter @gremius/admin build",
+    "db:generate": "cd apps/api && bun run db:generate",
+    "db:migrate": "cd apps/api && bun run db:migrate",
+    "db:push": "cd apps/api && bun run db:push",
+    "db:seed": "cd apps/api && bun run db:seed",
+    "db:studio": "cd apps/api && bun run db:studio",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test:api": "cd apps/api && bun run test-api.ts",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:debug": "npx playwright test --debug",
+    "test:e2e:report": "npx playwright show-report",
+    "pw:init": "npx playwright init-agents --loop=vscode",
+    "pw:install": "npx playwright install chromium",
+    "docker:up": "docker compose --profile apps up -d",
+    "docker:down": "docker compose --profile apps down",
+    "docker:build": "docker compose --profile apps build",
+    "docker:logs": "docker compose logs -f",
+    "docker:infra": "docker compose up -d gremius_cache",
+    "docker:nuke": "docker compose down -v --remove-orphans",
+    "dev:start": "powershell -ExecutionPolicy Bypass -File .\\scripts\\dev-start-full.ps1",
+    "dev:start:simple": "powershell -ExecutionPolicy Bypass -File .\\scripts\\dev-start-simple.ps1",
+    "dev:infra": "docker compose -f docker-compose.dev.yml up -d",
+    "dev:down": "docker compose -f docker-compose.dev.yml down",
+    "prod:up": "docker compose up -d",
+    "prod:down": "docker compose down",
+    "prod:build": "docker compose build",
+    "prod:logs": "docker compose logs -f",
+    "clean": "pnpm -r exec rm -rf node_modules dist .astro && rm -rf node_modules"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "dependencies": {
+    "@types/pg": "^8.16.0",
+    "drizzle-kit": "^0.31.9",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.7.0",
+    "pg": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

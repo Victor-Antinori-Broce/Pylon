@@ -1,0 +1,41 @@
+/**
+ * Enterprise (SharePoint) Theme — CSS Variables
+ *
+ * Loaded dynamically by App.vue via GET /api/system/theme-css/sharepoint
+ * when this theme is activated. Overrides :root variables from gremius-default.
+ */
+
+:root {
+    /* ── Surfaces ── */
+    --gremius-bg: #FAF9F8;
+    --gremius-card: #FFFFFF;
+    --gremius-text: #323130;
+    --gremius-text-dim: #605E5C;
+    --gremius-subtle: #A19F9D;
+    --gremius-border: #E1DFDD;
+    --gremius-heading: #201F1E;
+
+    /* ── Brand Accents ── */
+    --gremius-cyan: #03787C;
+    --gremius-purple: #5B5FC7;
+    --gremius-pink: #C239B3;
+    --gremius-green: #107C10;
+    --gremius-amber: #FFB900;
+
+    /* ── Design tokens used by global.css ── */
+    --color-cyan: #03787C;
+    --color-pink: #C239B3;
+    --color-bg: #FAF9F8;
+    --color-surface: #FFFFFF;
+    --color-border: #E1DFDD;
+
+    /* ── Typography ── */
+    --font-display: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    --font-body: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* ── Overrides for glass-card ── */
+    --glass-bg: #FFFFFF;
+    --glass-border: #E1DFDD;
+    --glass-radius: 2px;
+    --glass-shadow: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.13), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.11);
+}

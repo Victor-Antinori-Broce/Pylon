@@ -1,0 +1,102 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GameCard from "../../components/GameCard.astro";
+import { cms } from "../../lib/cms";
+
+let games: any[] = [];
+let totalDocs = 0;
+
+try {
+  const res = await cms.games.list({ limit: 50 });
+  games = res.docs || [];
+  totalDocs = res.totalDocs || games.length;
+} catch {
+  // Mock data
+  games = [
+    {
+      id: "1",
+      title: "Elden Ring",
+      slug: "elden-ring",
+      developer: "FromSoftware",
+      metacriticScore: 96,
+      platforms: ["PC", "PS5", "XSX"],
+      tags: [
+        { name: "RPG", color: "#00E5FF" },
+        { name: "Open World", color: "#76FF03" },
+      ],
+    },
+    {
+      id: "2",
+      title: "Baldur's Gate 3",
+      slug: "baldurs-gate-3",
+      developer: "Larian Studios",
+      metacriticScore: 96,
+      platforms: ["PC", "PS5"],
+      tags: [{ name: "RPG", color: "#00E5FF" }],
+    },
+    {
+      id: "3",
+      title: "Zelda: Tears of the Kingdom",
+      slug: "zelda-totk",
+      developer: "Nintendo EPD",
+      metacriticScore: 96,
+      platforms: ["NSW"],
+      tags: [{ name: "Adventure", color: "#FFD600" }],
+    },
+  ];
+  totalDocs = games.length;
+}
+---
+
+<BaseLayout title="Games" description="Browse our complete gaming database">
+  <section class="py-12">
+    <!-- Header -->
+    <div class="mb-12">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="h-1 w-8 bg-gremius-cyan rounded-full"></div>
+        <p
+          class="font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-gremius-cyan"
+        >
+          Database
+        </p>
+      </div>
+      <div class="flex items-end justify-between">
+        <div>
+          <h1
+            class="font-display text-4xl font-bold text-gremius-heading md:text-5xl"
+          >
+            Game Database
+          </h1>
+          <p class="mt-3 text-zinc-500 text-lg">
+            {totalDocs} games tracked and indexed
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Grid -->
+    {
+      games.length > 0 ? (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {games.map((game: any, i: number) => (
+            <GameCard
+              title={game.title}
+              slug={game.slug}
+              developer={game.developer}
+              metacriticScore={game.metacriticScore}
+              coverArtUrl={game.coverArt?.url || null}
+              platforms={game.platforms || []}
+              tags={game.tags || []}
+              index={i}
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="glass-card p-20 text-center">
+          <span class="text-5xl mb-4 block">🎮</span>
+          <p class="text-zinc-500 mb-4">No games found. Check back later!</p>
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>

@@ -1,0 +1,14 @@
+{
+    "id": "grimoire-games",
+    "name": "Games",
+    "description": "Full game catalog with metadata, screenshots, specs, and editorial blocks.",
+    "version": "1.0.0",
+    "type": "grimoire",
+    "icon": "Gamepad2",
+    "tables": [
+        "games",
+        "games_to_platforms",
+        "games_to_streamers",
+        "games_to_tags"
+    ]
+}

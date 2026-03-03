@@ -1,0 +1,41 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import DataTable from "../../components/islands/DataTable.vue";
+import { cms } from "../../lib/cms";
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/data");
+
+const dataSet = await cms.dataSets.getBySlug(slug);
+if (!dataSet) return Astro.redirect("/data");
+
+const entriesRes = await cms.dataEntries.listByDataSet(dataSet.id);
+const gameName = dataSet.game && typeof dataSet.game !== "string" ? (dataSet.game as any).title : null;
+---
+
+<BaseLayout
+  title={`${dataSet.name}${gameName ? ` — ${gameName}` : ""}`}
+  description={dataSet.description || `${dataSet.name} data table`}
+>
+  <section class="py-8">
+    <nav class="mb-6 text-sm text-gremius-muted">
+      <a href="/data" class="hover:text-gremius-green transition-colors">Data</a>
+      <span class="mx-2">›</span>
+      <span class="text-gremius-text">{dataSet.name}</span>
+    </nav>
+
+    <div class="mb-8">
+      <h1 class="font-display text-3xl font-bold text-gremius-heading">{dataSet.name}</h1>
+      {gameName && <p class="mt-1 text-gremius-muted">From: {gameName}</p>}
+      {dataSet.description && <p class="mt-3 text-gremius-text">{dataSet.description}</p>}
+    </div>
+
+    <!-- Vue Island: Interactive Data Table (hydrates on scroll) -->
+    <DataTable
+      client:visible
+      schema={dataSet.schema || []}
+      entries={entriesRes.docs || []}
+      dataSetName={dataSet.name}
+    />
+  </section>
+</BaseLayout>

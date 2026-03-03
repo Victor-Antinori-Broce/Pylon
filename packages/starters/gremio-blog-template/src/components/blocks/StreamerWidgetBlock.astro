@@ -1,0 +1,26 @@
+---
+/**
+ * StreamerWidgetBlock.astro — Astro wrapper that hydrates StreamerStatus Vue island
+ * Uses client:visible for lazy hydration (stream embed loads when scrolled into view)
+ */
+import StreamerStatus from "../islands/StreamerStatus.vue";
+
+interface Props {
+  channelName: string;
+  platform?: "twitch" | "youtube" | "kick";
+  showChat?: boolean;
+  autoplay?: boolean;
+}
+
+const { channelName, platform = "twitch", showChat = false, autoplay = false } = Astro.props;
+---
+
+<div class="my-6">
+  <StreamerStatus
+    client:visible
+    channelName={channelName}
+    platform={platform}
+    showChat={showChat}
+    autoplay={autoplay}
+  />
+</div>

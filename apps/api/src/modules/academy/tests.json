@@ -1,0 +1,124 @@
+{
+    "module": "gremius-academy",
+    "tests": [
+        {
+            "id": "T1",
+            "name": "List courses endpoint",
+            "type": "api",
+            "method": "GET",
+            "path": "/api/custom/academy/courses",
+            "expect": {
+                "status": 200,
+                "body": "docs array"
+            }
+        },
+        {
+            "id": "T2",
+            "name": "Create course (admin)",
+            "type": "api",
+            "method": "POST",
+            "path": "/api/custom/academy/courses",
+            "body": {
+                "title": "Test Course",
+                "slug": "test-course",
+                "description": "A test course",
+                "status": "published"
+            },
+            "expect": {
+                "status": 201,
+                "body": "course object with id"
+            }
+        },
+        {
+            "id": "T3",
+            "name": "Create topic for course",
+            "type": "api",
+            "method": "POST",
+            "path": "/api/custom/academy/courses/:courseId/topics",
+            "body": {
+                "title": "Introduction",
+                "content": "<p>Welcome to the course</p>",
+                "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            },
+            "expect": {
+                "status": 201
+            }
+        },
+        {
+            "id": "T4",
+            "name": "Create quiz for course",
+            "type": "api",
+            "method": "POST",
+            "path": "/api/custom/academy/courses/:courseId/quiz",
+            "body": {
+                "title": "Final Evaluation",
+                "passing_score": 70
+            },
+            "expect": {
+                "status": 201
+            }
+        },
+        {
+            "id": "T5",
+            "name": "Add question to quiz",
+            "type": "api",
+            "method": "POST",
+            "path": "/api/custom/academy/quizzes/:quizId/questions",
+            "body": {
+                "question_text": "What is 2+2?",
+                "options": [
+                    "3",
+                    "4",
+                    "5",
+                    "6"
+                ],
+                "correct_option_index": 1
+            },
+            "expect": {
+                "status": 201,
+                "body": "NO correct_option_index in response"
+            }
+        },
+        {
+            "id": "T6",
+            "name": "Get quiz (no correct answers exposed)",
+            "type": "api",
+            "method": "GET",
+            "path": "/api/custom/academy/quizzes/:quizId",
+            "expect": {
+                "status": 200,
+                "body": "questions array WITHOUT correctOptionIndex field"
+            }
+        },
+        {
+            "id": "T7",
+            "name": "Submit quiz (server-side grading)",
+            "type": "api",
+            "method": "POST",
+            "path": "/api/custom/academy/quizzes/:quizId/submit",
+            "body": {
+                "answers": {
+                    "<questionId>": 1
+                }
+            },
+            "expect": {
+                "status": 200,
+                "body": "score, passed, totalQuestions, correctAnswers"
+            }
+        },
+        {
+            "id": "T8",
+            "name": "Duplicate slug returns 409",
+            "type": "api",
+            "method": "POST",
+            "path": "/api/custom/academy/courses",
+            "body": {
+                "title": "Dup",
+                "slug": "test-course"
+            },
+            "expect": {
+                "status": 409
+            }
+        }
+    ]
+}

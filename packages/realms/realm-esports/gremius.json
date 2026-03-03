@@ -1,0 +1,27 @@
+{
+    "id": "realm-esports",
+    "name": "Realm Esports",
+    "description": "Complete esports ecosystem with tournaments, teams, players, and matches",
+    "version": "1.0.0",
+    "type": "realm",
+    "author": "GremiusCMS Team",
+    "realm_type": "esports",
+    "css_entry": "variables.css",
+    "grimoires": [
+        "games"
+    ],
+    "optional_grimoires": [
+        "blog"
+    ],
+    "grimoires": [
+        "games",
+        "streamers",
+        "platforms",
+        "tags",
+        "collections",
+        "players",
+        "teams",
+        "tournaments",
+        "matches"
+    ]
+}

@@ -1,0 +1,86 @@
+/**
+ * Gremio CMS — Design System Variables
+ * 
+ * Cyberpunk-industrial aesthetic with high contrast and neon accents.
+ * Optimized for gaming content and dark mode interfaces.
+ */
+
+:root {
+    /* ═══ Background Layers ═══ */
+    --gremius-bg: #0A0A0F;
+    --gremius-surface: #12121A;
+    --gremius-card: #1A1A24;
+    --gremius-elevated: #222230;
+
+    /* ═══ Text Hierarchy ═══ */
+    --gremius-text: #F4F4F5;
+    --gremius-text-secondary: #A1A1AA;
+    --gremius-text-dim: #71717A;
+    --gremius-text-muted: #52525B;
+
+    /* ═══ Borders & Dividers ═══ */
+    --gremius-border: #27272A;
+    --gremius-border-subtle: #3F3F46;
+    --gremius-divider: #18181B;
+
+    /* ═══ Primary Accent — Cyan ═══ */
+    --gremius-cyan: #00E5FF;
+    --gremius-cyan-dim: #00B8D4;
+    --gremius-cyan-glow: rgba(0, 229, 255, 0.15);
+
+    /* ═══ Secondary Accent — Pink ═══ */
+    --gremius-pink: #FF2A6D;
+    --gremius-pink-dim: #D61F5C;
+    --gremius-pink-glow: rgba(255, 42, 109, 0.15);
+
+    /* ═══ Tertiary Accents ═══ */
+    --gremius-purple: #A855F7;
+    --gremius-green: #10B981;
+    --gremius-amber: #F59E0B;
+    --gremius-red: #EF4444;
+
+    /* ═══ Status Colors ═══ */
+    --gremius-success: #22C55E;
+    --gremius-warning: #EAB308;
+    --gremius-error: #DC2626;
+    --gremius-info: #3B82F6;
+
+    /* ═══ Typography ═══ */
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+    /* ═══ Spacing Scale ═══ */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+
+    /* ═══ Border Radius ═══ */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-full: 9999px;
+
+    /* ═══ Shadows ═══ */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --shadow-glow-cyan: 0 0 20px var(--gremius-cyan-glow);
+    --shadow-glow-pink: 0 0 20px var(--gremius-pink-glow);
+
+    /* ═══ Transitions ═══ */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 350ms ease;
+}
+
+/* ═══ Dark Mode Override (if system preference matters) ═══ */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+    }
+}

@@ -1,0 +1,39 @@
+---
+/**
+ * GameMapBlock.astro — Astro wrapper that hydrates the InteractiveMap Vue island
+ * Uses client:visible for lazy hydration (only when scrolled into view)
+ */
+import InteractiveMap from "../islands/InteractiveMap.vue";
+
+interface MapMarker {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  category?: string;
+  description?: string;
+  icon?: string;
+}
+
+interface Props {
+  mapImageUrl: string;
+  mapTitle?: string;
+  markers?: MapMarker[];
+  categories?: { name: string; color: string; icon: string }[];
+}
+
+const { mapImageUrl, mapTitle, markers = [], categories = [] } = Astro.props;
+---
+
+<div class="my-6">
+  {mapTitle && (
+    <h3 class="font-display text-lg font-semibold text-gremius-heading mb-4">{mapTitle}</h3>
+  )}
+  <InteractiveMap
+    client:visible
+    mapImageUrl={mapImageUrl}
+    mapTitle={mapTitle}
+    markers={markers}
+    categories={categories}
+  />
+</div>

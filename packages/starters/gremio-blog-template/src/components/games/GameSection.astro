@@ -1,0 +1,76 @@
+---
+/**
+ * GameSection.astro — Horizontal scrolling section of game cards
+ * Used on the homepage to render each curated collection.
+ */
+import GameCard from "../islands/GameCard.vue";
+
+interface Props {
+    title: string;
+    games: any[];
+}
+
+const { title, games } = Astro.props;
+---
+
+<section class="game-section">
+    <div class="section-header">
+        <h2 class="section-title">{title}</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <div class="scroll-track">
+        {games.map((game: any) => <GameCard client:visible game={game} />)}
+    </div>
+</section>
+
+<style>
+    .game-section {
+        position: relative;
+        z-index: 1;
+        padding: 0 0 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 0 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.85);
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .section-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.08),
+            transparent
+        );
+    }
+
+    .scroll-track {
+        display: flex;
+        gap: 0.75rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem 1.5rem 0.5rem;
+
+        /* Hide scrollbar */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scroll-track::-webkit-scrollbar {
+        display: none;
+    }
+</style>

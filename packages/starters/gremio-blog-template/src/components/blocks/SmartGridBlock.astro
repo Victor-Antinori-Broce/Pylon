@@ -1,0 +1,73 @@
+---
+/**
+ * SmartGridBlock.astro
+ * Server-side fetches dataset schema + entries, then passes JSON to InteractiveGrid.vue island.
+ * This ensures SEO (HTML table in the SSR output) and performance (data fetched at build time).
+ */
+import InteractiveGrid from "../islands/InteractiveGrid.vue";
+import { cms } from "../../lib/cms";
+
+interface Props {
+    datasetId: string;
+    columns?: string[];
+    initialSort?: string;
+    initialFilter?: Record<string, any>;
+    enableGrouping?: boolean;
+    groupByField?: string;
+}
+
+const {
+    datasetId,
+    columns = [],
+    initialSort = "",
+    initialFilter = {},
+    enableGrouping = false,
+    groupByField = "",
+} = Astro.props;
+
+// ── Fetch dataset schema + entries server-side ──
+let schema: any = { fields: [] };
+let entries: any[] = [];
+let datasetName = "Data Grid";
+
+try {
+    const dataset = await cms.dataSets.getById(datasetId);
+    if (dataset) {
+        schema = dataset.schema || { fields: [] };
+        datasetName = dataset.name || "Data Grid";
+    }
+} catch {
+    // fallback
+}
+
+try {
+    const res = await cms.dataEntries.listByDataSet(datasetId, 500);
+    entries = (res.docs || []).map((e: any) => ({
+        _id: e.id,
+        ...e.data,
+    }));
+} catch {
+    // fallback
+}
+
+// Apply initial filter server-side for SEO
+if (initialFilter && Object.keys(initialFilter).length > 0) {
+    entries = entries.filter((row: any) => {
+        return Object.entries(initialFilter).every(([key, val]) => {
+            if (val === undefined || val === null || val === "") return true;
+            return String(row[key]) === String(val);
+        });
+    });
+}
+---
+
+<InteractiveGrid
+    client:visible
+    datasetName={datasetName}
+    schema={schema}
+    rows={entries}
+    visibleColumns={columns}
+    initialSort={initialSort}
+    enableGrouping={enableGrouping}
+    groupByField={groupByField}
+/>

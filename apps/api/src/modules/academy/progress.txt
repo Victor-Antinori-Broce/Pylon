@@ -1,0 +1,21 @@
+Gremius Academy — Progress Tracker
+==================================
+
+[✓] academy.schema.ts — 6 Drizzle tables + Zod validators
+[✓] academy.service.ts — Business logic (CRUD, server-side quiz grading)
+[✓] academy.controller.ts — 12 Hono endpoints
+[✓] academy.queue.ts — BullMQ queue for async events
+[✓] index.ts — Barrel exports
+[✓] Routes mounted in apps/api/src/index.ts
+[✓] CourseCard.vue — Course card component
+[✓] TopicViewer.vue — Rich text + video viewer
+[✓] QuizRunner.vue — Interactive quiz component
+[✓] CertificateModal.vue — Certificate modal with CSS animations
+[✓] pages/academy/index.astro — Course catalog page
+[✓] pages/academy/[slug].astro — Course detail page
+[✓] tests.json — Test definitions
+[✓] progress.txt — This file
+
+Pending:
+[ ] Database migration (run drizzle-kit push or generate)
+[ ] Playwright E2E tests (tests/academy/academy.spec.ts)

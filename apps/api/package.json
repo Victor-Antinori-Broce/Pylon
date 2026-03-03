@@ -1,0 +1,49 @@
+{
+  "name": "@gremius/api",
+  "version": "0.7.0-beta",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:migrate": "bunx drizzle-kit migrate",
+    "db:push": "bunx drizzle-kit push",
+    "db:studio": "bunx drizzle-kit studio",
+    "db:seed": "bun run src/db/seed.ts",
+    "test:realtime": "bun run src/tests/realtime.test.ts"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^5.5.0",
+    "@aws-sdk/client-s3": "^3.990.0",
+    "@aws-sdk/s3-request-presigner": "^3.995.0",
+    "@gremius/mcp-server": "workspace:^",
+    "@gremius/shared": "workspace:*",
+    "@hono/swagger-ui": "^0.5.3",
+    "@hono/zod-openapi": "^0.2.0",
+    "@hono/zod-validator": "^0.4.0",
+    "@modelcontextprotocol/sdk": "^1.5.0",
+    "better-auth": "^1.4.18",
+    "bullmq": "^5.0.0",
+    "croner": "^9.0.0",
+    "drizzle-orm": "^0.45.0",
+    "graphql": "^16.9.0",
+    "graphql-type-json": "^0.3.2",
+    "hono": "^4.7.0",
+    "mysql2": "^3.18.0",
+    "nodemailer": "^6.9.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.16.0",
+    "redis": "^5.11.0",
+    "sharp": "^0.34.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "@types/nodemailer": "^6.4.0",
+    "@types/pg": "^8.16.0",
+    "drizzle-kit": "^0.31.0",
+    "typescript": "^5.7.0"
+  }
+}

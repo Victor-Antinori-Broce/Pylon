@@ -1,0 +1,259 @@
+---
+/**
+ * BaseLayout - Master layout for GremiusCMS "Digital Neon Noir"
+ * Static nav with Vue Islands for interactivity (search, auth)
+ */
+
+import "../styles/global.css";
+import SearchTrigger from "../components/islands/SearchTrigger.vue";
+import CommandMenu from "../components/islands/CommandMenu.vue";
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  jsonLd?: Record<string, unknown>;
+  fullWidth?: boolean;
+}
+
+const {
+  title,
+  description = "GremiusCMS — The High-Performance Gaming CMS",
+  ogImage = "/og-default.png",
+  canonicalUrl,
+  jsonLd,
+  fullWidth = false,
+} = Astro.props;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
+const fullTitle = `${title} | GremiusCMS`;
+const fullOg = ogImage.startsWith("http") ? ogImage : `${siteUrl}${ogImage}`;
+
+const navItems = [
+  { href: "/blog", label: "Blog" },
+  { href: "/games", label: "Games" },
+  { href: "/data", label: "Data" },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- SEO -->
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={fullOg} />
+    <meta property="og:site_name" content="GremiusCMS" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={fullOg} />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#0A0A0F" />
+
+    <!-- JSON-LD -->
+    {
+      jsonLd && (
+        <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+      )
+    }
+  </head>
+
+  <body class="bg-gremius-bg text-gremius-text min-h-screen font-body">
+    <!-- Skip Nav -->
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 gremius-btn-primary"
+    >
+      Skip to content
+    </a>
+
+    <!-- ═══ HEADER — "Command Center" ═══ -->
+    <header
+      class="sticky top-0 z-40 border-b border-white/[0.06] bg-gremius-bg/60 backdrop-blur-xl"
+    >
+      <nav
+        class="mx-auto flex max-w-7xl items-center justify-between px-6 h-16"
+      >
+        <!-- Logo -->
+        <a href="/" class="group flex items-center gap-3 shrink-0">
+          <div
+            class="h-8 w-8 bg-gremius-cyan transition-all duration-300 group-hover:shadow-neon group-hover:scale-105"
+            style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"
+          >
+          </div>
+          <span
+            class="font-display text-lg font-bold tracking-tight text-gremius-heading"
+          >
+            Gremius<span class="text-gremius-cyan">CMS</span>
+          </span>
+        </a>
+
+        <!-- Center Nav -->
+        <div class="hidden items-center gap-1 md:flex">
+          {
+            navItems.map(({ href, label }) => {
+              const isActive =
+                currentPath === href || currentPath.startsWith(href + "/");
+              return (
+                <a
+                  href={href}
+                  class:list={[
+                    "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-white/[0.06] text-gremius-cyan"
+                      : "text-zinc-400 hover:text-gremius-text hover:bg-white/[0.03]",
+                  ]}
+                >
+                  {label}
+                </a>
+              );
+            })
+          }
+        </div>
+
+        <!-- Right: Search + Mobile -->
+        <div class="flex items-center gap-3">
+          <SearchTrigger client:load />
+
+          <!-- Mobile toggle -->
+          <button
+            class="md:hidden text-zinc-400 hover:text-gremius-text p-2"
+            aria-label="Menu"
+          >
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Command Menu (Vue Island) -->
+    <CommandMenu client:idle />
+
+    <!-- ═══ MAIN ═══ -->
+    <main id="main" class={fullWidth ? "" : "mx-auto max-w-7xl px-6"}>
+      <slot />
+    </main>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="border-t border-white/[0.04] mt-20">
+      <div class="mx-auto max-w-7xl px-6 py-12">
+        <div class="grid gap-8 md:grid-cols-3">
+          <!-- Brand -->
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div
+                class="h-6 w-6 bg-gremius-cyan"
+                style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"
+              >
+              </div>
+              <span class="font-display text-sm font-bold text-gremius-heading"
+                >GremiusCMS</span
+              >
+            </div>
+            <p class="text-sm text-zinc-500 leading-relaxed max-w-xs">
+              The high-performance, open source CMS built for gaming.
+            </p>
+          </div>
+
+          <!-- Links -->
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p
+                class="font-display text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-3"
+              >
+                Platform
+              </p>
+              <div class="space-y-2">
+                <a
+                  href="/blog"
+                  class="block text-zinc-400 hover:text-gremius-cyan transition-colors"
+                  >Blog</a
+                >
+                <a
+                  href="/games"
+                  class="block text-zinc-400 hover:text-gremius-cyan transition-colors"
+                  >Games</a
+                >
+                <a
+                  href="/data"
+                  class="block text-zinc-400 hover:text-gremius-cyan transition-colors"
+                  >Data</a
+                >
+              </div>
+            </div>
+            <div>
+              <p
+                class="font-display text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-3"
+              >
+                Connect
+              </p>
+              <div class="space-y-2">
+                <a
+                  href="https://github.com/gremiuscms"
+                  class="block text-zinc-400 hover:text-gremius-cyan transition-colors"
+                  >GitHub</a
+                >
+                <a
+                  href="/rss.xml"
+                  class="block text-zinc-400 hover:text-gremius-cyan transition-colors"
+                  >RSS Feed</a
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Separator for mobile / Status -->
+          <div class="flex flex-col justify-end">
+            <div class="flex items-center gap-2 text-[11px] text-zinc-600">
+              <span class="dot-live"></span>
+              <span>All systems operational</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gradient-divider mt-10 mb-6"></div>
+
+        <div class="flex items-center justify-between text-xs text-zinc-600">
+          <p>© {new Date().getFullYear()} GremiusCMS. Open Source.</p>
+          <p class="font-mono">v0.2.0</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

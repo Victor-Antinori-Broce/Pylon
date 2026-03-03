@@ -1,0 +1,6 @@
+# Gremio CMS - Core Competitivo Progress
+
+1. Épica 1: Perfiles de Jugadores y Equipos - Completado
+2. Épica 2: Motor de Torneos (Brackets) - Completado
+3. Épica 3: Partidos - Completado
+4. Épica 4: Interfaz UI - Completado

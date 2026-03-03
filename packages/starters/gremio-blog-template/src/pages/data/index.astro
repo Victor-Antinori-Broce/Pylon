@@ -1,0 +1,91 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { cms } from "../../lib/cms";
+
+let dataSets: any[] = [];
+try {
+  const res = await cms.dataSets.list({ limit: 50 });
+  dataSets = res.docs || [];
+} catch {
+  dataSets = [];
+}
+
+const iconMap: Record<string, string> = {
+  weapons: "⚔️",
+  armor: "🛡️",
+  items: "🧪",
+  characters: "👤",
+  maps: "🗺️",
+  stats: "📊",
+  achievements: "🏆",
+  quests: "📜",
+  other: "📦",
+};
+---
+
+<BaseLayout
+  title="Data"
+  description="Explore game data tables — items, characters, maps, and more"
+>
+  <section class="py-12">
+    <div class="mb-12">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="h-1 w-8 bg-gremius-green rounded-full"></div>
+        <p
+          class="font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-gremius-green"
+        >
+          Explorer
+        </p>
+      </div>
+      <h1
+        class="font-display text-4xl font-bold text-gremius-heading md:text-5xl"
+      >
+        Data Explorer
+      </h1>
+      <p class="mt-3 text-zinc-500 text-lg">
+        Browse structured game data — items, characters, maps, and more
+      </p>
+    </div>
+
+    {
+      dataSets.length > 0 ? (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {dataSets.map((ds: any, i: number) => (
+            <a
+              href={`/data/${ds.slug}`}
+              class="glass-card group block p-6 animate-enter"
+              style={`animation-delay: ${i * 0.08}s`}
+            >
+              <div class="flex items-start gap-4">
+                <span class="text-3xl">{iconMap[ds.icon] || "📦"}</span>
+                <div class="min-w-0">
+                  <h2 class="font-display text-base font-semibold text-gremius-heading group-hover:text-gremius-green transition-colors">
+                    {ds.name}
+                  </h2>
+                  {ds.game && typeof ds.game !== "string" && (
+                    <p class="mt-0.5 text-sm text-zinc-500">{ds.game.title}</p>
+                  )}
+                  {ds.description && (
+                    <p class="mt-2 text-sm text-zinc-400 line-clamp-2">
+                      {ds.description}
+                    </p>
+                  )}
+                  <div class="mt-3">
+                    <span class="inline-flex items-center rounded-md bg-gremius-green/10 border border-gremius-green/[0.15] px-2 py-0.5 text-[10px] font-medium text-gremius-green">
+                      {ds.schema?.length || 0} columns
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="glass-card p-20 text-center">
+          <span class="text-5xl mb-4 block">📊</span>
+          <p class="text-zinc-500 mb-4">No data sets defined yet.</p>
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>

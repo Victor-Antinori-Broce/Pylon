@@ -1,0 +1,63 @@
+---
+/**
+ * HeroBlock.astro — Renders a hero section from block data
+ */
+interface Props {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  ctaSecondaryLabel?: string;
+  ctaSecondaryUrl?: string;
+  overlay?: "dark" | "gradient" | "none";
+}
+
+const { title, subtitle, imageUrl, ctaLabel, ctaUrl, ctaSecondaryLabel, ctaSecondaryUrl, overlay = "gradient" } = Astro.props;
+---
+
+<section class="relative flex min-h-[50vh] flex-col items-center justify-center text-center overflow-hidden py-20">
+  <!-- Background image -->
+  {imageUrl && (
+    <div class="absolute inset-0">
+      <img src={imageUrl} alt="" class="w-full h-full object-cover" loading="lazy" />
+      {overlay === "dark" && <div class="absolute inset-0 bg-black/70" />}
+      {overlay === "gradient" && (
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/60 to-transparent" />
+      )}
+    </div>
+  )}
+
+  <!-- No-image background -->
+  {!imageUrl && (
+    <div class="absolute inset-0">
+      <div
+        class="absolute inset-0 opacity-[0.04]"
+        style="background-image: linear-gradient(rgba(0,229,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,1) 1px, transparent 1px); background-size: 80px 80px;"
+      />
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,229,255,0.06)_0%,_transparent_70%)]" />
+    </div>
+  )}
+
+  <!-- Content -->
+  <div class="relative z-10 max-w-3xl px-4">
+    <h2 class="font-display text-4xl font-bold tracking-tight text-gremius-heading md:text-6xl leading-tight animate-enter">
+      {title}
+    </h2>
+    {subtitle && (
+      <p class="mx-auto mt-6 max-w-xl text-lg text-zinc-400 leading-relaxed animate-enter animate-enter-delay-1">
+        {subtitle}
+      </p>
+    )}
+    {(ctaLabel || ctaSecondaryLabel) && (
+      <div class="mt-10 flex flex-wrap items-center justify-center gap-4 animate-enter animate-enter-delay-2">
+        {ctaLabel && ctaUrl && (
+          <a href={ctaUrl} class="gremius-btn-primary text-sm">{ctaLabel}</a>
+        )}
+        {ctaSecondaryLabel && ctaSecondaryUrl && (
+          <a href={ctaSecondaryUrl} class="gremius-btn-ghost text-sm">{ctaSecondaryLabel}</a>
+        )}
+      </div>
+    )}
+  </div>
+</section>

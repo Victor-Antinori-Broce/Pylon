@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/build
+**/.astro
+**/.next
+**/.turbo
+.git
+.env.local
+.env.*.local
+*.log
+.DS_Store
+Thumbs.db

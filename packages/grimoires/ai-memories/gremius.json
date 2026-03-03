@@ -1,0 +1,16 @@
+{
+  "id": "ai-memories",
+  "name": "AI Memories",
+  "description": "Cerebro de IA para Gremius. Almacena embeddings vectoriales usando pgvector para búsqueda semántica, memoria conversacional y RAG.",
+  "version": "1.0.0",
+  "type": "grimoire",
+  "author": "Gremius Team",
+  "requires": ["pgvector extension"],
+  "tables": ["ai_memories", "ai_memory_chunks"],
+  "features": [
+    "Vector embeddings (1536 dims)",
+    "Similarity search",
+    "Document chunking",
+    "Metadata filtering"
+  ]
+}

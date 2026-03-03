@@ -1,0 +1,142 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import BlockRenderer from "../../components/blocks/BlockRenderer.astro";
+import { cms } from "../../lib/cms";
+import { articleJsonLd, formatDate } from "@gremius/shared";
+
+const { slug } = Astro.params;
+if (!slug) return Astro.redirect("/blog");
+
+const post = await cms.posts.getBySlug(slug);
+if (!post) return Astro.redirect("/blog");
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
+
+const jsonLd = articleJsonLd({
+  title: post.title,
+  excerpt: post.excerpt,
+  publishedAt: post.publishedAt,
+  author: post.author as any,
+  featuredImage: post.featuredImage as any,
+  siteUrl,
+  slug: post.slug,
+});
+
+const ogImage = (post.featuredImage as any)?.sizes?.og?.url || (post.featuredImage as any)?.url;
+
+// Extract blocks array (from JSONB column, defaults to empty)
+const blocks = (post as any).blocks || [];
+const hasBlocks = Array.isArray(blocks) && blocks.length > 0;
+---
+
+<BaseLayout
+  title={post.title}
+  description={post.excerpt || `${post.title} — GremiusCMS Blog`}
+  ogImage={ogImage}
+  jsonLd={jsonLd}
+>
+  <article class="py-12">
+    <div class="max-w-3xl mx-auto">
+      <!-- Breadcrumb -->
+      <nav class="mb-8 flex items-center gap-2 text-sm text-zinc-500 animate-enter">
+        <a href="/blog" class="hover:text-gremius-pink transition-colors">Blog</a>
+        <span class="text-zinc-700">›</span>
+        <span class="text-gremius-text truncate">{post.title}</span>
+      </nav>
+
+      <!-- Tags -->
+      {post.tags?.length > 0 && (
+        <div class="flex gap-2 mb-6 animate-enter animate-enter-delay-1">
+          {post.tags.map((tag: any) => {
+            const name = typeof tag === "string" ? tag : tag.name;
+            const color = typeof tag === "object" && tag.color ? tag.color : "#FF2A6D";
+            return (
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border"
+                style={`color: ${color}; background: ${color}10; border-color: ${color}20;`}
+              >
+                {name}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      <!-- Title -->
+      <h1 class="font-display text-3xl font-bold text-gremius-heading md:text-5xl leading-tight animate-enter animate-enter-delay-1">
+        {post.title}
+      </h1>
+
+      <!-- Meta -->
+      <div class="mt-6 flex items-center gap-4 text-sm text-zinc-500 animate-enter animate-enter-delay-2">
+        {(post.author as any)?.displayName && (
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gremius-cyan/10 border border-gremius-cyan/20 flex items-center justify-center text-xs font-bold text-gremius-cyan">
+              {(post.author as any).displayName[0]}
+            </div>
+            <span>{(post.author as any).displayName}</span>
+          </div>
+        )}
+        {post.publishedAt && (
+          <span>{formatDate(post.publishedAt, "en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+        )}
+        {post.readingTime && <span>· {post.readingTime} min read</span>}
+      </div>
+
+      <!-- Featured Image -->
+      {(post.featuredImage as any)?.url && (
+        <div class="mt-10 overflow-hidden rounded-2xl border border-white/[0.06] animate-enter animate-enter-delay-3">
+          <img
+            src={(post.featuredImage as any).sizes?.hero?.url || (post.featuredImage as any).url}
+            alt={(post.featuredImage as any).alt || post.title}
+            width="1200"
+            height="630"
+            class="w-full h-auto"
+          />
+        </div>
+      )}
+
+      <div class="gradient-divider my-10" />
+    </div>
+
+    <!--
+      ═══ BLOCK RENDERER — "Lego" Layout System ═══
+      If blocks exist, render them instead of (or before) raw content.
+      Blocks break out of max-w-3xl for full-width heroes/maps.
+    -->
+    {hasBlocks && (
+      <div class="animate-enter animate-enter-delay-3">
+        <BlockRenderer blocks={blocks} />
+      </div>
+    )}
+
+    <!--
+      ═══ CLASSIC CONTENT — Markdown/HTML fallback ═══
+      Always render if present (blocks + content can coexist).
+    -->
+    {(post as any).content && (
+      <div class="max-w-3xl mx-auto">
+        {hasBlocks && <div class="gradient-divider my-10" />}
+        <div class="prose prose-invert prose-zinc max-w-none animate-enter animate-enter-delay-3
+                    prose-headings:font-display prose-headings:text-gremius-heading
+                    prose-a:text-gremius-cyan prose-a:no-underline hover:prose-a:underline
+                    prose-strong:text-gremius-heading
+                    prose-code:text-gremius-cyan prose-code:bg-white/[0.04] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md
+                    prose-blockquote:border-gremius-cyan/30 prose-blockquote:text-zinc-400
+                    prose-img:rounded-xl prose-img:border prose-img:border-white/[0.06]
+                    leading-relaxed">
+          {post.excerpt && <p class="text-lg text-zinc-300 leading-relaxed">{post.excerpt}</p>}
+          <div set:html={(post as any).content} />
+        </div>
+      </div>
+    )}
+
+    <!-- Back link -->
+    <div class="max-w-3xl mx-auto">
+      <div class="gradient-divider my-10" />
+      <a href="/blog" class="gremius-btn-ghost text-sm">
+        ← Back to Blog
+      </a>
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,193 @@
+---
+/**
+ * BlockRenderer.astro — Universal block renderer
+ *
+ * Takes a blocks[] array (from the API) and renders each block
+ * by mapping its `type` to the correct Astro/Vue component.
+ *
+ * Block type → Component mapping:
+ *   hero              → HeroBlock.astro
+ *   richtext          → RichtextBlock.astro
+ *   image-gallery     → ImageGalleryBlock.astro
+ *   game-map          → GameMapBlock.astro (hydrates InteractiveMap.vue island)
+ *   streamer-widget   → StreamerWidgetBlock.astro (hydrates StreamerStatus.vue island)
+ *   embed             → EmbedBlock.astro
+ *   callout           → CalloutBlock.astro
+ *   divider           → DividerBlock.astro
+ *   dynamic-carousel  → DynamicCarouselBlock.astro (hydrates DynamicCarousel.vue island)
+ *   smart-filter      → SmartFilterBlock.astro (hydrates SmartFilter.vue island)
+ *   comparison-slider → ComparisonSliderBlock.astro (hydrates ComparisonSlider.vue island)
+ *
+ * Unknown block types are silently skipped in production,
+ * or rendered as a debug placeholder in dev mode.
+ */
+
+import HeroBlock from "./HeroBlock.astro";
+import RichtextBlock from "./RichtextBlock.astro";
+import ImageGalleryBlock from "./ImageGalleryBlock.astro";
+import GameMapBlock from "./GameMapBlock.astro";
+import StreamerWidgetBlock from "./StreamerWidgetBlock.astro";
+import EmbedBlock from "./EmbedBlock.astro";
+import CalloutBlock from "./CalloutBlock.astro";
+import DividerBlock from "./DividerBlock.astro";
+import DynamicCarouselBlock from "./DynamicCarouselBlock.astro";
+import SmartFilterBlock from "./SmartFilterBlock.astro";
+import ComparisonSliderBlock from "./ComparisonSliderBlock.astro";
+import SmartGridBlock from "./SmartGridBlock.astro";
+
+interface PageBlock {
+  id: string;
+  type: string;
+  data: Record<string, any>;
+  order: number;
+}
+
+interface Props {
+  blocks: PageBlock[];
+}
+
+const { blocks = [] } = Astro.props;
+
+// Sort by order to ensure correct rendering sequence
+const sorted = [...blocks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+const isDev = import.meta.env.DEV;
+---
+
+{
+  sorted.length > 0 && (
+    <div class="blocks-renderer space-y-8">
+      {sorted.map((block) => {
+        const { type, data, id } = block;
+
+        // Each block is wrapped in a section with a data attribute for debugging
+        return (
+          <section data-block-id={id} data-block-type={type}>
+            {type === "hero" && (
+              <HeroBlock
+                title={data.title}
+                subtitle={data.subtitle}
+                imageUrl={data.imageUrl}
+                ctaLabel={data.ctaLabel}
+                ctaUrl={data.ctaUrl}
+                ctaSecondaryLabel={data.ctaSecondaryLabel}
+                ctaSecondaryUrl={data.ctaSecondaryUrl}
+                overlay={data.overlay}
+              />
+            )}
+            {type === "richtext" && (
+              <RichtextBlock content={data.content} format={data.format} />
+            )}
+            {type === "image-gallery" && (
+              <ImageGalleryBlock
+                images={data.images || []}
+                layout={data.layout}
+                columns={data.columns}
+              />
+            )}
+            {type === "game-map" && (
+              <GameMapBlock
+                mapImageUrl={data.mapImageUrl}
+                mapTitle={data.mapTitle}
+                markers={data.markers || []}
+                categories={data.categories || []}
+              />
+            )}
+            {type === "streamer-widget" && (
+              <StreamerWidgetBlock
+                channelName={data.channelName}
+                platform={data.platform}
+                showChat={data.showChat}
+                autoplay={data.autoplay}
+              />
+            )}
+            {type === "embed" && (
+              <EmbedBlock
+                url={data.url}
+                caption={data.caption}
+                aspectRatio={data.aspectRatio}
+              />
+            )}
+            {type === "callout" && (
+              <CalloutBlock
+                title={data.title}
+                content={data.content}
+                variant={data.variant}
+              />
+            )}
+            {type === "divider" && <DividerBlock style={data.style} />}
+            {type === "dynamic-carousel" && (
+              <DynamicCarouselBlock
+                source={data.source}
+                sortBy={data.sortBy}
+                limit={data.limit}
+                autoplay={data.autoplay}
+              />
+            )}
+            {type === "smart-filter" && (
+              <SmartFilterBlock
+                enableGenreFilter={data.enableGenreFilter}
+                enablePlatformFilter={data.enablePlatformFilter}
+                enableScoreSlider={data.enableScoreSlider}
+                targetDatasetId={data.targetDatasetId}
+              />
+            )}
+            {type === "comparison-slider" && (
+              <ComparisonSliderBlock
+                beforeImageUrl={data.beforeImageUrl}
+                afterImageUrl={data.afterImageUrl}
+                beforeLabel={data.beforeLabel || "Before"}
+                afterLabel={data.afterLabel || "After"}
+              />
+            )}
+            import CalendarViewBlock from "./CalendarViewBlock.astro"; // ...
+            (previous imports)
+            {type === "smart-grid" && (
+              <SmartGridBlock
+                datasetId={data.datasetId}
+                columns={data.columns || []}
+                initialSort={data.initialSort}
+                initialFilter={data.initialFilter}
+                enableGrouping={data.enableGrouping}
+                groupByField={data.groupByField}
+              />
+            )}
+            {type === "calendar-view" && (
+              <CalendarViewBlock
+                datasetId={data.datasetId}
+                titleField={data.titleField}
+                dateField={data.dateField}
+              />
+            )}
+            {/* Dev-only: Unknown block debug placeholder */}
+            {isDev &&
+              ![
+                "hero",
+                "richtext",
+                "image-gallery",
+                "game-map",
+                "streamer-widget",
+                "embed",
+                "callout",
+                "divider",
+                "dynamic-carousel",
+                "smart-filter",
+                "comparison-slider",
+                "smart-grid",
+                "calendar-view",
+              ].includes(type) && (
+                <div class="rounded-xl border border-dashed border-yellow-500/30 bg-yellow-500/5 p-4">
+                  <p class="text-xs font-mono text-yellow-400">
+                    ⚠ Unknown block type: "{type}"
+                  </p>
+                  <pre class="mt-2 text-[10px] text-zinc-500 overflow-auto max-h-24">
+                    {JSON.stringify(data, null, 2)}
+                  </pre>
+                </div>
+              )}
+          </section>
+        );
+      })}
+    </div>
+  )
+}

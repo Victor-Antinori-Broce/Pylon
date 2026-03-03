@@ -1,0 +1,63 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/builder": [
+		"src/routes/+layout.ts"
+	],
+	"/dashboard": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets/new": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets/[id]/entries": [
+		"src/routes/+layout.ts"
+	],
+	"/data/games": [
+		"src/routes/+layout.ts"
+	],
+	"/editor": [
+		"src/routes/+layout.ts"
+	],
+	"/formulas": [
+		"src/routes/+layout.ts"
+	],
+	"/games": [
+		"src/routes/+layout.ts"
+	],
+	"/grimoires": [
+		"src/routes/+layout.ts"
+	],
+	"/media": [
+		"src/routes/+layout.ts"
+	],
+	"/posts": [
+		"src/routes/+layout.ts"
+	],
+	"/posts/new": [
+		"src/routes/+layout.ts"
+	],
+	"/posts/[id]": [
+		"src/routes/+layout.ts"
+	],
+	"/realms": [
+		"src/routes/+layout.ts"
+	],
+	"/settings": [
+		"src/routes/+layout.ts"
+	],
+	"/streamers": [
+		"src/routes/+layout.ts"
+	],
+	"/webhooks": [
+		"src/routes/+layout.ts"
+	],
+	"/workers": [
+		"src/routes/+layout.ts"
+	]
+}

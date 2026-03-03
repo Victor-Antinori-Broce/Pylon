@@ -1,0 +1,17 @@
+/* Gremius Corporate — Light Enterprise Theme */
+:root {
+    --gremius-bg: #FAF9F8;
+    --gremius-card: #FFFFFF;
+    --gremius-text: #323130;
+    --gremius-text-dim: #605E5C;
+    --gremius-subtle: #A19F9D;
+    --gremius-border: #E1DFDD;
+
+    --gremius-cyan: #0078D4;
+    --gremius-purple: #8764B8;
+    --gremius-pink: #E3008C;
+    --gremius-green: #107C10;
+    --gremius-amber: #FFB900;
+
+    --gremius-heading: #201F1E;
+}

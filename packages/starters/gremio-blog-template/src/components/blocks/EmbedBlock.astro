@@ -1,0 +1,64 @@
+---
+/**
+ * EmbedBlock.astro — YouTube, Twitter, or generic oEmbed
+ */
+interface Props {
+  url: string;
+  caption?: string;
+  aspectRatio?: "16:9" | "4:3" | "1:1";
+}
+
+const { url, caption, aspectRatio = "16:9" } = Astro.props;
+
+// Parse embed URL to get proper iframe src
+function getEmbedSrc(url: string): string | null {
+  // YouTube
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+
+  // Vimeo
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+
+  // Twitter/X — render as link
+  if (url.includes("twitter.com") || url.includes("x.com")) return null;
+
+  return url; // Fallback: use as-is
+}
+
+const embedSrc = getEmbedSrc(url);
+
+const aspectClasses: Record<string, string> = {
+  "16:9": "aspect-video",
+  "4:3": "aspect-[4/3]",
+  "1:1": "aspect-square",
+};
+---
+
+<figure class="rounded-2xl border border-white/[0.06] overflow-hidden bg-white/[0.02]">
+  {embedSrc ? (
+    <div class={aspectClasses[aspectRatio] || "aspect-video"}>
+      <iframe
+        src={embedSrc}
+        class="w-full h-full"
+        allowfullscreen
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      />
+    </div>
+  ) : (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center gap-3 px-5 py-4 text-sm text-gremius-cyan hover:bg-white/[0.02] transition-colors"
+    >
+      🔗 {url}
+    </a>
+  )}
+  {caption && (
+    <figcaption class="px-4 py-2.5 text-xs text-zinc-500 border-t border-white/[0.06]">
+      {caption}
+    </figcaption>
+  )}
+</figure>

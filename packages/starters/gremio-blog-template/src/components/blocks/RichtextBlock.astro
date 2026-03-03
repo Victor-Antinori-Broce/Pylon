@@ -1,0 +1,41 @@
+---
+/**
+ * RichtextBlock.astro — Renders Markdown or HTML content
+ */
+interface Props {
+  content: string;
+  format?: "markdown" | "html";
+}
+
+const { content, format = "markdown" } = Astro.props;
+
+// Simple Markdown → HTML (no external deps needed at build time)
+function renderMarkdown(md: string): string {
+  return md
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+    .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" class="rounded-xl border border-white/[0.06]" />')
+    .replace(/^\> (.+)$/gm, "<blockquote>$1</blockquote>")
+    .replace(/^\- (.+)$/gm, "<li>$1</li>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+}
+
+const html = format === "markdown" ? `<p>${renderMarkdown(content)}</p>` : content;
+---
+
+<div class="prose prose-invert prose-zinc max-w-none
+            prose-headings:font-display prose-headings:text-gremius-heading
+            prose-a:text-gremius-cyan prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-gremius-heading
+            prose-code:text-gremius-cyan prose-code:bg-white/[0.04] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md
+            prose-blockquote:border-gremius-cyan/30 prose-blockquote:text-zinc-400
+            prose-img:rounded-xl prose-img:border prose-img:border-white/[0.06]
+            leading-relaxed">
+  <Fragment set:html={html} />
+</div>
