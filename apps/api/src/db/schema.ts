@@ -15,6 +15,7 @@ import {
   timestamp,
   date,
   real,
+  doublePrecision,
   jsonb,
   uniqueIndex,
   index,
@@ -431,6 +432,15 @@ export const gameCollections = pgTable(
 // Grimoires & Realms (Module Registry)
 // ═══════════════════════════════════════════════
 
+// ── Grimoire Source Enum ──
+export const grimoireSourceEnum = pgEnum("grimoire_source", [
+  "local",
+  "npm",
+  "github",
+  "marketplace",
+  "legacy",
+]);
+
 // ── Modules (Plugin/Grimoire Registry) ──
 export const modules = pgTable("modules", {
   key: varchar("key", { length: 100 }).primaryKey(),
@@ -447,6 +457,29 @@ export const modules = pgTable("modules", {
   sidebarBadge: varchar("sidebar_badge", { length: 50 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── Installed Grimoires (from npm/marketplace) ──
+export const installedGrimoires = pgTable(
+  "installed_grimoires",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    grimoireId: varchar("grimoire_id", { length: 200 }).notNull(),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: text("description"),
+    version: varchar("version", { length: 50 }).notNull(),
+    source: grimoireSourceEnum("source").notNull().default("local"),
+    sourceUrl: text("source_url"), // npm package name, git url, etc.
+    path: text("path").notNull(), // Filesystem path
+    manifest: jsonb("manifest"), // Full grimoire.json content
+    config: jsonb("config").default({}), // Plugin-specific config
+    enabled: boolean("enabled").notNull().default(true),
+    installedById: text("installed_by_id").references(() => authUsers.id, { onDelete: "set null" }),
+    installedAt: timestamp("installed_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("installed_grimoire_id_idx").on(t.grimoireId)]
+);
 
 // ═══════════════════════════════════════════════
 // Gremius Workers (Cloud Functions / Serverless)
@@ -561,6 +594,261 @@ export const gremiusFunctionsRelations = relations(gremiusFunctions, ({ one, man
 export const functionExecutionsRelations = relations(functionExecutions, ({ one }) => ({
   function: one(gremiusFunctions, { fields: [functionExecutions.functionId], references: [gremiusFunctions.id] }),
 }));
+
+// ═══════════════════════════════════════════════
+// Actions (Unified Action System)
+// ═══════════════════════════════════════════════
+
+export const actionTypeEnum = pgEnum("action_type", [
+  "code",
+  "webhook_out",
+  "webhook_in",
+  "agent",
+]);
+
+export const actionTriggerEnum = pgEnum("action_trigger", [
+  "manual",
+  "cron",
+  "event",
+  "http",
+]);
+
+export const actionStatusEnum = pgEnum("action_status", [
+  "active",
+  "paused",
+  "error",
+]);
+
+export const actions = pgTable(
+  "actions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 200 }).notNull(),
+    slug: varchar("slug", { length: 200 }).notNull(),
+    description: text("description"),
+    type: actionTypeEnum("type").notNull(),
+    trigger: actionTriggerEnum("trigger").notNull(),
+    triggerConfig: jsonb("trigger_config").default({}),
+    config: jsonb("config").default({}),
+    status: actionStatusEnum("status").default("active").notNull(),
+    lastExecutedAt: timestamp("last_executed_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    executionCount: integer("execution_count").default(0).notNull(),
+    errorCount: integer("error_count").default(0).notNull(),
+    createdById: text("created_by_id").references(() => authUsers.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("actions_slug_idx").on(t.slug),
+    index("actions_type_idx").on(t.type),
+    index("actions_trigger_idx").on(t.trigger),
+    index("actions_status_idx").on(t.status),
+  ]
+);
+
+export const actionExecutions = pgTable(
+  "action_executions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actionId: uuid("action_id").references(() => actions.id, { onDelete: "cascade" }).notNull(),
+    status: executionStatusEnum("status").default("pending").notNull(),
+    triggerType: actionTriggerEnum("trigger_type"),
+    triggerEvent: varchar("trigger_event", { length: 100 }),
+    triggerPayload: jsonb("trigger_payload"),
+    httpRequest: jsonb("http_request"),
+    logs: text("logs"),
+    result: jsonb("result"),
+    errorMessage: text("error_message"),
+    durationMs: integer("duration_ms"),
+    memoryUsedBytes: integer("memory_used_bytes"),
+    httpResponse: jsonb("http_response"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("ae_action_idx").on(t.actionId),
+    index("ae_status_idx").on(t.status),
+    index("ae_created_idx").on(t.createdAt),
+  ]
+);
+
+// ═══════════════════════════════════════════════
+// Agent System (NHI - Non-Human Identities)
+// ═══════════════════════════════════════════════
+
+export const agentTraceStatusEnum = pgEnum("agent_trace_status", [
+  "pending",
+  "running",
+  "success",
+  "error",
+  "cancelled",
+]);
+
+export const agentTraceStepTypeEnum = pgEnum("agent_trace_step_type", [
+  "llm_call",
+  "tool_call",
+  "tool_result",
+  "thinking",
+  "retrieval",
+  "memory_read",
+  "memory_write",
+  "user_input",
+  "system",
+  "error",
+]);
+
+export const agentIdentities = pgTable(
+  "agent_identities",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    type: text("type").default("custom").notNull(),
+    scopes: jsonb("scopes").default([]),
+    rateLimit: integer("rate_limit").default(60),
+    capabilities: jsonb("capabilities").default([]),
+    systemPrompt: text("system_prompt"),
+    allowedTools: jsonb("allowed_tools").default([]),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("agent_identities_name_idx").on(t.name),
+    index("agent_identities_created_at_idx").on(t.createdAt),
+  ]
+);
+
+export const agentApiKeys = pgTable(
+  "agent_api_keys",
+  {
+    id: text("id").primaryKey(),
+    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }).notNull(),
+    keyHash: text("key_hash").notNull(),
+    keyPrefix: text("key_prefix").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("agent_api_keys_agent_id_idx").on(t.agentId),
+    uniqueIndex("agent_api_keys_hash_idx").on(t.keyHash),
+    index("agent_api_keys_expires_at_idx").on(t.expiresAt),
+  ]
+);
+
+export const agentMemory = pgTable(
+  "agent_memory",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }).notNull(),
+    memoryType: text("memory_type").default("short_term").notNull(),
+    category: text("category").default("general").notNull(),
+    key: text("key"),
+    content: jsonb("content").notNull(),
+    summary: text("summary"),
+    importance: integer("importance").default(50),
+    confidence: integer("confidence").default(80),
+    source: text("source").default("agent"),
+    relatedMemoryIds: jsonb("related_memory_ids").default([]),
+    tags: jsonb("tags").default([]),
+    validFrom: timestamp("valid_from", { withTimezone: true }).defaultNow(),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
+    accessCount: integer("access_count").default(0),
+    lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("agent_memory_agent_type_idx").on(t.agentId, t.memoryType),
+    index("agent_memory_category_idx").on(t.category),
+    index("agent_memory_key_idx").on(t.agentId, t.key),
+  ]
+);
+
+export const agentAuditLogs = pgTable(
+  "agent_audit_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }).notNull(),
+    keyId: text("key_id"),
+    action: text("action").notNull(),
+    resource: text("resource"),
+    resourceId: text("resource_id"),
+    details: jsonb("details").default({}),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    durationMs: integer("duration_ms"),
+    success: boolean().default(true).notNull(),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("agent_audit_agent_id_idx").on(t.agentId),
+    index("agent_audit_created_at_idx").on(t.createdAt),
+    index("agent_audit_action_idx").on(t.action),
+  ]
+);
+
+// ═══════════════════════════════════════════════
+// Agent Traces (Telemetry)
+// ═══════════════════════════════════════════════
+
+export const agentTraces = pgTable(
+  "agent_traces",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentId: text("agent_id").notNull().references(() => agentIdentities.id, { onDelete: "cascade" }),
+    sessionId: text("session_id"),
+    name: text(),
+    input: jsonb(),
+    output: jsonb(),
+    totalDurationMs: integer("total_duration_ms"),
+    tokensIn: integer("tokens_in"),
+    tokensOut: integer("tokens_out"),
+    estimatedCost: doublePrecision("estimated_cost"),
+    status: agentTraceStatusEnum("status").default("pending").notNull(),
+    errorMessage: text("error_message"),
+    metadata: jsonb().default({}),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("agent_traces_agent_id_idx").on(t.agentId),
+    index("agent_traces_created_at_idx").on(t.createdAt),
+    index("agent_traces_session_id_idx").on(t.sessionId),
+    index("agent_traces_status_idx").on(t.status),
+  ]
+);
+
+export const agentTraceSteps = pgTable(
+  "agent_trace_steps",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    traceId: uuid("trace_id").notNull().references(() => agentTraces.id, { onDelete: "cascade" }),
+    stepOrder: integer("step_order").default(0).notNull(),
+    stepType: agentTraceStepTypeEnum("step_type").notNull(),
+    content: text(),
+    reasoning: text(),
+    toolName: text("tool_name"),
+    toolInput: jsonb("tool_input"),
+    toolOutput: jsonb("tool_output"),
+    durationMs: integer("duration_ms"),
+    tokensIn: integer("tokens_in"),
+    tokensOut: integer("tokens_out"),
+    errorMessage: text("error_message"),
+    metadata: jsonb().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("agent_trace_steps_trace_id_idx").on(t.traceId),
+    index("agent_trace_steps_trace_order_idx").on(t.traceId, t.stepOrder),
+    index("agent_trace_steps_type_idx").on(t.stepType),
+  ]
+);
 
 // ═══════════════════════════════════════════════
 // Game Collections
