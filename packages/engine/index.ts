@@ -130,3 +130,17 @@ export type {
     InferGrimoireSelect,
     InferGrimoireInsert,
 } from "./src/grimoire";
+
+// ── Query Engine (JSON to SQL with Auto-Join) ──
+export {
+    parseQuery,
+    validateQuery,
+    getAvailableRelations,
+    registerDynamicRelation,
+    fieldWhiteList,
+    fieldBlackList,
+} from "./src/query-parser";
+export type {
+    QueryOptions,
+    QueryResult,
+} from "./src/query-parser";

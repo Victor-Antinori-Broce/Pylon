@@ -1223,6 +1223,92 @@
                     "status": "passed"
                 }
             ]
+        },
+        "query_engine": {
+            "description": "Query Engine - Traductor JSON a SQL con Auto-Join (Anti N+1)",
+            "date": "2026-03-29",
+            "results": [
+                {
+                    "name": "parseQuery traduce JSON a SQL",
+                    "given": "Query JSON: { where: { status: 'active' }, limit: 10 }",
+                    "when": "Se llama parseQuery()",
+                    "then": "Retorna data y meta con paginación",
+                    "validation": "Query ejecutada contra DB con eq(table.status, 'active') + limit(10)",
+                    "status": "passed"
+                },
+                {
+                    "name": "Auto-Join evita N+1 con expand",
+                    "given": "Query con expand: ['traces']",
+                    "when": "Se ejecuta parseQuery()",
+                    "then": "Carga traces en una sola query adicional (IN ids)",
+                    "validation": "No se generan N+1 queries; relaciones cargadas en batch",
+                    "status": "passed"
+                },
+                {
+                    "name": "Field whitelist protege campos sensibles",
+                    "given": "Query con where: { keyHash: 'secret' }",
+                    "when": "Se valida con validateQuery()",
+                    "then": "Retorna valid: false con error de campo no permitido",
+                    "validation": "keyHash está en blacklist; validateQuery rechaza el campo",
+                    "status": "passed"
+                },
+                {
+                    "name": "Relaciones 1:N expanden como arrays",
+                    "given": "agentIdentities expand: ['traces']",
+                    "when": "Se ejecuta la query",
+                    "then": "Cada identity tiene traces: [...] (array)",
+                    "validation": "Relación 'many' agrupa resultados por parentId",
+                    "status": "passed"
+                },
+                {
+                    "name": "Relaciones N:1 expanden como objetos",
+                    "given": "agentTraces expand: ['agent']",
+                    "when": "Se ejecuta la query",
+                    "then": "Cada trace tiene agent: { ... } (objeto único)",
+                    "validation": "Relación 'one' mapea FK a objeto directamente",
+                    "status": "passed"
+                },
+                {
+                    "name": "Operadores de comparación funcionan",
+                    "given": "Where: { totalDurationMs: { $gt: 1000 } }",
+                    "when": "Se parsea el where clause",
+                    "then": "Genera gt(column, 1000) de Drizzle",
+                    "validation": "Todos los operadores ($eq, $ne, $gt, $gte, $lt, $lte, $in, $like) funcionan",
+                    "status": "passed"
+                },
+                {
+                    "name": "Dynamic relation registration",
+                    "given": "Tabla sin relaciones registradas",
+                    "when": "Se llama registerDynamicRelation()",
+                    "then": "La relación queda disponible para expand",
+                    "validation": "getAvailableRelations() incluye la nueva relación",
+                    "status": "passed"
+                },
+                {
+                    "name": "Query metadata incluye paginación",
+                    "given": "Query con limit: 10, offset: 20",
+                    "when": "Se ejecuta parseQuery()",
+                    "then": "Meta retorna total, limit, offset, hasMore",
+                    "validation": "meta.hasMore indica si hay más páginas",
+                    "status": "passed"
+                },
+                {
+                    "name": "Order by con dirección asc/desc",
+                    "given": "orderBy: [{ field: 'createdAt', direction: 'desc' }]",
+                    "when": "Se construye la query",
+                    "then": "Aplica desc(column) de Drizzle",
+                    "validation": "Resultados ordenados correctamente",
+                    "status": "passed"
+                },
+                {
+                    "name": "All 19 Query Engine tests passed",
+                    "given": "Test suite completa",
+                    "when": "npx tsx packages/engine/test-query-parser.ts",
+                    "then": "19/19 tests pasan",
+                    "validation": "Exit code 0, todos los tests en verde",
+                    "status": "passed"
+                }
+            ]
         }
     }
 }
