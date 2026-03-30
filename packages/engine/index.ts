@@ -144,3 +144,39 @@ export type {
     QueryOptions,
     QueryResult,
 } from "./src/query-parser";
+
+// ── Validator Engine (Declarative Validation with If/Then) ──
+export {
+    validate,
+    validateBatch,
+    createValidator,
+    composeSchemas,
+    agentIdentitySchema,
+    paginationSchema,
+    idSchema,
+    timestampSchema,
+} from "./src/validator";
+export type {
+    ValidationRule,
+    Condition,
+    ValidationSchema,
+    ValidationResult,
+    ValidationError,
+    ValidatorOptions,
+} from "./src/validator";
+
+// ── Batch API (ACID Transactions - El Muro de Titanio) ──
+export {
+    BatchProcessor,
+    createBatchProcessor,
+    executeSingle,
+    createWithChildren,
+} from "./src/batch-api";
+export type {
+    BatchAction,
+    BatchOperation,
+    BatchOptions,
+    OperationResult,
+    BatchResult,
+    BatchError,
+} from "./src/batch-api";
