@@ -513,9 +513,9 @@ function sortGrimoiresByDependencies(
     visiting.add(key);
     stack.push(key);
 
-    const deps = (g.manifest?.dependencies as any)?.grimoires as string[] ||
-      (g.manifest?.dependencies as string[]) ||
-      [];
+    const rawDeps = (g.manifest?.dependencies as any)?.grimoires ??
+      (g.manifest?.dependencies as string[]);
+    const deps = Array.isArray(rawDeps) ? rawDeps : [];
 
     for (const depId of deps) {
       const dep = map.get(depId);

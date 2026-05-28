@@ -230,14 +230,6 @@ function initializeRelations(): void {
     targetTable: schema.dataSets,
   });
 
-  // games → dataSets (1:N)
-  registerRelation(schema.games, "dataSets", {
-    type: "many",
-    table: schema.dataSets,
-    fkColumn: "gameId",
-    targetColumn: "id",
-    targetTable: schema.games,
-  });
 }
 
 // Inicializar relaciones al importar

@@ -227,63 +227,12 @@ function initializeRelations(): void {
     targetTable: schema.dataSets,
   });
 
-  registerRelation(schema.dataSets, "game", {
-    type: "one",
-    table: schema.dataSets,
-    fkColumn: "gameId",
-    targetColumn: "id",
-    targetTable: schema.games,
-  });
-
   registerRelation(schema.dataEntries, "dataset", {
     type: "one",
     table: schema.dataEntries,
     fkColumn: "dataSetId",
     targetColumn: "id",
     targetTable: schema.dataSets,
-  });
-
-  // Games relations
-  registerRelation(schema.games, "dataSets", {
-    type: "many",
-    table: schema.dataSets,
-    fkColumn: "gameId",
-    targetColumn: "id",
-    targetTable: schema.games,
-  });
-
-  registerRelation(schema.games, "coverArt", {
-    type: "one",
-    table: schema.games,
-    fkColumn: "coverArtId",
-    targetColumn: "id",
-    targetTable: schema.media,
-  });
-
-  // Blog Posts relations
-  registerRelation(schema.blogPosts, "author", {
-    type: "one",
-    table: schema.blogPosts,
-    fkColumn: "authorId",
-    targetColumn: "id",
-    targetTable: schema.authUsers,
-  });
-
-  registerRelation(schema.blogPosts, "featuredImage", {
-    type: "one",
-    table: schema.blogPosts,
-    fkColumn: "featuredImageId",
-    targetColumn: "id",
-    targetTable: schema.media,
-  });
-
-  // Streamers relations
-  registerRelation(schema.streamers, "avatar", {
-    type: "one",
-    table: schema.streamers,
-    fkColumn: "avatarId",
-    targetColumn: "id",
-    targetTable: schema.media,
   });
 }
 
