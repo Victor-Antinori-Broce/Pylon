@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * SEARCH ENGINE - Full-Text + Vector Search con PGVector
@@ -9,9 +8,8 @@
  */
 
 import { db } from "../db";
-import { sql, eq, and, or, ilike, desc, asc, inArray, type SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { Hono } from "hono";
-import type { Context } from "hono";
 import type { AppVariables } from "../types/hono";
 import { requireAuth } from "../middleware/auth";
 
@@ -133,13 +131,6 @@ export async function searchFullText(options: SearchOptions): Promise<SearchResu
   const { query, limit = 20, offset = 0 } = options;
   
   // Normalizar query para tsquery
-  const tsQuery = query
-    .replace(/[^\w\s]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(term => `${term}:*`)
-    .join(" & ");
-
   const results = await db.execute<{
     id: string;
     title: string;
@@ -215,7 +206,7 @@ export async function searchFuzzy(
  * Genera embedding usando un servicio externo (OpenAI, local, etc.)
  * En producción, esto llamaría a tu servicio de embeddings
  */
-export async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateEmbedding(_text: string): Promise<number[]> {
   // TODO: Integrar con servicio real de embeddings (OpenAI, Ollama, etc.)
   // Por ahora retornamos un mock para desarrollo
   

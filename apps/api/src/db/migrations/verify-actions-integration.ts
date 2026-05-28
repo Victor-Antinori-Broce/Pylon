@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Verification Script: Actions Integration Test
  *
@@ -24,7 +23,6 @@ import {
   deleteAction,
   executeActionById,
   dispatchEvent,
-  initActionsEngine,
 } from "../../lib/actions";
 
 const TEST_ACTION_SLUG = "test-verification-action";

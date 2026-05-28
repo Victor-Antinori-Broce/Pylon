@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Seed Script — Creates the initial superadmin user
  *
@@ -81,7 +80,7 @@ async function seed() {
 
   // Import schema tables dynamically to avoid top-level issues if needed, 
   // but we already imported user. Let's import the rest.
-  const { games, blogPosts, platforms, tags, siteSettings } = await import("./schema");
+  const { games, blogPosts, platforms, tags, siteSettings } = await import("./schema") as any;
 
   // 1. Platforms
   const platformData = [
@@ -92,7 +91,7 @@ async function seed() {
   ];
 
   for (const p of platformData) {
-    await db.insert(platforms).values(p).onConflictDoNothing();
+    await db.insert(platforms as any).values(p).onConflictDoNothing();
   }
   console.log("  ✓ Platforms seeded");
 
@@ -107,7 +106,7 @@ async function seed() {
   ];
 
   for (const t of tagData) {
-    await db.insert(tags).values(t as any).onConflictDoNothing();
+    await db.insert(tags as any).values(t as any).onConflictDoNothing();
   }
   console.log("  ✓ Tags seeded");
 
@@ -140,7 +139,7 @@ async function seed() {
   ];
 
   for (const g of gameData) {
-    await db.insert(games).values(g as any).onConflictDoNothing();
+    await db.insert(games as any).values(g as any).onConflictDoNothing();
   }
   console.log("  ✓ Games seeded");
 
@@ -157,7 +156,7 @@ async function seed() {
   ];
 
   for (const p of postData) {
-    await db.insert(blogPosts).values(p as any).onConflictDoNothing();
+    await db.insert(blogPosts as any).values(p as any).onConflictDoNothing();
   }
   console.log("  ✓ Blog Posts seeded");
 

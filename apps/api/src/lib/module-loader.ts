@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Dynamic Grimoire Loader v3 (Node Modules Support)
  *
@@ -514,8 +513,8 @@ function sortGrimoiresByDependencies(
     visiting.add(key);
     stack.push(key);
 
-    const deps = (g.manifest?.dependencies as string[]) ||
-      (g.manifest?.dependencies?.grimoires as string[]) ||
+    const deps = (g.manifest?.dependencies as any)?.grimoires as string[] ||
+      (g.manifest?.dependencies as string[]) ||
       [];
 
     for (const depId of deps) {

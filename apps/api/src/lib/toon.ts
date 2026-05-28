@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — TOON Encoder & Middleware
  *

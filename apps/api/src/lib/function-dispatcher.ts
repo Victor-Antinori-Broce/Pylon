@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Function Dispatcher (Legacy Wrapper)
  *
@@ -11,7 +10,7 @@
  * Phase 3: Delegates all execution to ActionEngine.
  */
 
-import { eq } from "drizzle-orm";
+// import { eq } from "drizzle-orm"; // Not used in legacy wrapper
 import { db } from "../db";
 import { gremiusFunctions } from "../db/schema";
 import { events } from "./events";

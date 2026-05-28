@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { auth } from "../lib/auth";
 import { db } from "./index";
 import { authUsers as user } from "./schema";

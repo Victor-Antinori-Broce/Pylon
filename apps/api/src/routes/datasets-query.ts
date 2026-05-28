@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DATASETS QUERY & BATCH ROUTES - FASE 2: La Magia de los Datos
@@ -157,20 +156,17 @@ datasetsQueryRoutes.post(
   async (c) => {
     const datasetId = c.req.param("id");
     const body = c.req.valid("json");
-    const user = c.get("user");
 
     try {
       // 1. Verificar que el dataset existe
-      const dataset = await db.query.dataSets.findFirst({
-        where: eq(dataSets.id, datasetId),
-      });
+      const [dataset] = await db.select().from(dataSets).where(eq(dataSets.id, datasetId)).limit(1);
 
       if (!dataset) {
         return c.json({ error: "Dataset not found" }, 404);
       }
 
       // 2. Verificar permisos de lectura
-      const hasAccess = await checkDatasetReadAccess(datasetId, user?.id);
+      const hasAccess = await checkDatasetReadAccess(c, datasetId);
       if (!hasAccess) {
         return c.json({ error: "Forbidden: No read access to this dataset" }, 403);
       }
@@ -232,7 +228,7 @@ datasetsQueryRoutes.post(
     if (!table) {
       return c.json({
         error: `Table "${tableName}" not found`,
-        availableTables: Object.keys(TABLE_MAP),
+        availableTables: Object.keys(mergedSchema as Record<string, unknown>),
       }, 400);
     }
 
@@ -327,7 +323,6 @@ datasetsQueryRoutes.post(
   zValidator("json", BatchRequestSchema),
   async (c) => {
     const body = c.req.valid("json");
-    const user = c.get("user");
 
     try {
       // 1. Validar permisos para cada operación
@@ -346,7 +341,7 @@ datasetsQueryRoutes.post(
 
       // Verificar acceso de escritura a todos los datasets involucrados
       for (const dsId of datasetIds) {
-        const hasAccess = await checkDatasetWriteAccess(dsId, user?.id);
+        const hasAccess = await checkDatasetWriteAccess(c, dsId);
         if (!hasAccess) {
           return c.json({
             error: `Forbidden: No write access to dataset "${dsId}"`,
@@ -434,7 +429,7 @@ datasetsQueryRoutes.post(
       return c.json({
         valid: false,
         errors: [`Table "${tableName}" not found`],
-        availableTables: Object.keys(TABLE_MAP),
+        availableTables: Object.keys(mergedSchema as Record<string, unknown>),
       }, 400);
     }
 

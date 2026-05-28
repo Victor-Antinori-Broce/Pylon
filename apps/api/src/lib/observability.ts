@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * OBSERVABILITY - Métricas y estadísticas del sistema
@@ -9,15 +8,15 @@
  */
 
 import { db } from "../db";
-import { sql, eq, count, desc, and, gte } from "drizzle-orm";
+import { sql, count, desc, gte } from "drizzle-orm";
 import { 
-  dataSets, dataEntries, authUsers, apiKeys, 
-  blogPosts, games, media, agentIdentities 
+  dataSets, dataEntries, authUsers, 
+  media, agentIdentities 
 } from "../db/schema";
 import { getValkeyClient } from "./valkey";
 import { realtimeManager } from "./realtime";
 import { Hono } from "hono";
-import type { Context } from "hono";
+
 import type { AppVariables } from "../types/hono";
 import { requireAuth } from "../middleware/auth";
 
@@ -130,8 +129,8 @@ async function getDatabaseStats() {
       .where(gte(authUsers.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))),
     
     // Content
-    db.select({ count: count() }).from(blogPosts),
-    db.select({ count: count() }).from(games),
+    db.execute<{ count: number }>(sql`SELECT COUNT(*) as count FROM blog_posts`),
+    db.execute<{ count: number }>(sql`SELECT COUNT(*) as count FROM games`),
     db.select({ count: count() }).from(media),
     
     // Agents
@@ -150,8 +149,8 @@ async function getDatabaseStats() {
       newThisWeek: usersWeekResult[0]?.count || 0,
     },
     content: {
-      posts: postsResult[0]?.count || 0,
-      games: gamesResult[0]?.count || 0,
+      posts: Number((postsResult as any).rows?.[0]?.count ?? 0) || 0,
+      games: Number((gamesResult as any).rows?.[0]?.count ?? 0) || 0,
       media: mediaResult[0]?.count || 0,
     },
     agents: {
@@ -482,7 +481,7 @@ observabilityRoutes.get("/admin/realtime", requireAuth, async (c) => {
   let pubsubStats = { channels: 0, patterns: 0 };
   try {
     if (valkey) {
-      const info = await valkey.info("stats");
+      await valkey.info("stats");
       // Parsear info básica
       pubsubStats = {
         channels: wsStats.channels,

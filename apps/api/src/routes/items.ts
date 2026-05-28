@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * UNIFIED ITEMS API — /api/items/{collection}
@@ -26,7 +25,7 @@
  */
 
 import { Hono } from "hono";
-import { eq, sql, desc, asc, and, or, like, ilike, gt, gte, lt, lte, inArray } from "drizzle-orm";
+import { eq, sql, desc, asc, and, ilike, gt, gte, lt, lte, inArray } from "drizzle-orm";
 import { db as rawDb, mergedSchema } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
 import { requireAuth } from "../middleware/auth";
@@ -279,7 +278,7 @@ itemsRoutes.get("/:collection", async (c) => {
       ]);
 
       return c.json({
-        docs: docs.map((d) => ({ id: d.id, ...d.data, _meta: { datasetId: d.dataSetId, createdAt: d.createdAt } })),
+        docs: docs.map((d: typeof dataEntries.$inferSelect) => ({ id: d.id, ...d.data, _meta: { datasetId: d.dataSetId, createdAt: d.createdAt } })),
         totalDocs: total?.value || 0,
         limit,
         offset,
@@ -370,14 +369,14 @@ itemsRoutes.post("/:collection", async (c) => {
         ownerId,
       }).returning();
 
-      broadcastMutation("data_entry_created", { datasetSlug: collection, entryId: doc.id });
+      broadcastMutation(ds.id, "insert", { datasetSlug: collection, entryId: doc.id });
       await invalidateGraphQLCache();
       return c.json({ id: doc.id, ...doc.data, _meta: { datasetId: doc.dataSetId } }, 201);
     }
 
     const table = resolved.table;
     const [doc] = await db.insert(table).values(body).returning();
-    broadcastMutation(`${collection}_created`, { id: doc.id });
+    broadcastMutation(collection, "insert", { id: doc.id });
     await invalidateGraphQLCache();
     return c.json(doc, 201);
   } catch (err: any) {
@@ -415,7 +414,7 @@ itemsRoutes.patch("/:collection/:id", async (c) => {
         .where(eq(dataEntries.id, id))
         .returning();
 
-      broadcastMutation("data_entry_updated", { datasetSlug: collection, entryId: doc.id });
+      broadcastMutation(ds.id, "update", { datasetSlug: collection, entryId: doc.id });
       await invalidateGraphQLCache();
       return c.json({ id: doc.id, ...doc.data, _meta: { datasetId: doc.dataSetId } });
     }
@@ -425,7 +424,7 @@ itemsRoutes.patch("/:collection/:id", async (c) => {
     if (!existing) return c.json({ error: "Not found" }, 404);
 
     const [doc] = await db.update(table).set(body).where(eq(table.id, id)).returning();
-    broadcastMutation(`${collection}_updated`, { id: doc.id });
+    broadcastMutation(collection, "update", { id: doc.id });
     await invalidateGraphQLCache();
     return c.json(doc);
   } catch (err: any) {
@@ -457,7 +456,7 @@ itemsRoutes.delete("/:collection/:id", async (c) => {
       if (!existing) return c.json({ error: "Not found" }, 404);
 
       await db.delete(dataEntries).where(eq(dataEntries.id, id));
-      broadcastMutation("data_entry_deleted", { datasetSlug: collection, entryId: id });
+      broadcastMutation(ds.id, "delete", { datasetSlug: collection, entryId: id });
       await invalidateGraphQLCache();
       return c.json({ success: true, id });
     }
@@ -467,7 +466,7 @@ itemsRoutes.delete("/:collection/:id", async (c) => {
     if (!existing) return c.json({ error: "Not found" }, 404);
 
     await db.delete(table).where(eq(table.id, id));
-    broadcastMutation(`${collection}_deleted`, { id });
+    broadcastMutation(collection, "delete", { id });
     await invalidateGraphQLCache();
     return c.json({ success: true, id });
   } catch (err: any) {

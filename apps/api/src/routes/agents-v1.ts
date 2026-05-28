@@ -9,10 +9,10 @@
  */
 
 import { Hono } from "hono";
-import { db } from "@/db";
-import { agentIdentities, agentApiKeys, agentTraces, agentTraceSteps } from "@/db/schema";
-import { desc, eq, sql, count, and } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { db } from "../db";
+import { agentIdentities, agentApiKeys, agentTraces, agentTraceSteps } from "../db/schema";
+import { desc, eq, sql, and } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import { requireAuth } from "../middleware/auth";
 import type { AppVariables } from "../types/hono";
 
@@ -63,14 +63,14 @@ agentsV1Router.get("/agents", async (c) => {
 agentsV1Router.post("/agents", async (c) => {
   try {
     const body = await c.req.json();
-    const { name, description, model, identityId, enabled } = body;
+    const { name, description, model, enabled } = body;
 
     if (!name) {
       return c.json({ error: "Name is required" }, 400);
     }
 
     // Import generateAgentApiKey
-    const { generateAgentApiKey } = await import("@/services/agent-auth");
+    const { generateAgentApiKey } = await import("../services/agent-auth");
     const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey("custom");
 
     const [agent] = await db
@@ -205,7 +205,7 @@ agentsV1Router.post("/agents/:id/token", async (c) => {
       return c.json({ error: "Agent not found" }, 404);
     }
 
-    const { generateAgentApiKey } = await import("@/services/agent-auth");
+    const { generateAgentApiKey } = await import("../services/agent-auth");
     const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey(agent.type || "custom");
 
     await db.insert(agentApiKeys).values({

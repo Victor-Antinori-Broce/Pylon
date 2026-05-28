@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Row Level Security (RLS) Tests
  * 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Agent RLS (Row Level Security) Policies
  * 

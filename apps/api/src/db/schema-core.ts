@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS - Core Database Schema (Domain-Agnostic)
  *
@@ -30,7 +29,7 @@ import {
 import { relations } from "drizzle-orm";
 
 // ─── Block Type (shared with admin + web) ─────────────────────
-interface PageBlock {
+export interface PageBlock {
   id: string;
   type: string;
   data: Record<string, any>;

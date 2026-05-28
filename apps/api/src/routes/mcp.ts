@@ -1015,7 +1015,7 @@ async function executeTool(
                 };
 
                 if (settings) {
-                    await db.update(siteSettings).set({ branding: updatedBranding }).where(eq(siteSettings.id, settings.id));
+                    await db.update(siteSettings).set({ branding: updatedBranding as any }).where(eq(siteSettings.id, settings.id));
                 } else {
                     await db.insert(siteSettings).values({
                         branding: updatedBranding,
@@ -1086,7 +1086,8 @@ async function executeTool(
                 const table = tableKey ? (mergedSchema as any)[tableKey] : null;
                 if (!table) return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
 
-                const [record] = await db.insert(table).values(data).returning();
+                const result = await db.insert(table as any).values(data).returning() as any[];
+                const record = result[0];
                 return toolResult(`Created native record: ${record.id}`, id);
             }
 
@@ -1110,7 +1111,8 @@ async function executeTool(
                 const table = tableKey ? (mergedSchema as any)[tableKey] : null;
                 if (!table) return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
 
-                const [updated] = await db.update(table).set(data).where(eq(table.id, recordId)).returning();
+                const updateResult = await db.update(table as any).set(data).where(eq(table.id, recordId)).returning() as any[];
+                const updated = updateResult[0];
                 return toolResult(`Updated native record: ${updated.id}`, id);
             }
 
@@ -1129,7 +1131,8 @@ async function executeTool(
                 const table = tableKey ? (mergedSchema as any)[tableKey] : null;
                 if (!table) return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
 
-                const [deleted] = await db.delete(table).where(eq(table.id, recordId)).returning();
+                const deleteResult = await db.delete(table as any).where(eq(table.id, recordId)).returning() as any[];
+                const deleted = deleteResult[0];
                 return toolResult(`Deleted native record: ${deleted.id}`, id);
             }
 

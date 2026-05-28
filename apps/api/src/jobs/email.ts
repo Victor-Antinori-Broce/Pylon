@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Email Worker (Fail-Safe)
  *

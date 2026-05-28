@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "../db";
 // @ts-ignore - Path alias @/ not resolved by tsc

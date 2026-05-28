@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Migration Script: Workers + Webhooks → Actions
  * 
@@ -13,7 +12,7 @@
  * because it tracks legacyId and legacyType.
  */
 
-import { eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../index";
 import { actions, gremiusFunctions } from "../schema";
 

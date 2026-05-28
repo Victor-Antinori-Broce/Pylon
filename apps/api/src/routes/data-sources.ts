@@ -9,10 +9,10 @@
  */
 
 import { Hono } from "hono";
-import { db } from "@/db";
-import { dataSources } from "@/db/schema";
-import { eq, desc, sql } from "drizzle-orm";
-import { logger } from "@/lib/logger";
+import { db } from "../db";
+import { dataSources } from "../db/schema";
+import { eq, desc } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import { requireAuth } from "../middleware/auth";
 import type { AppVariables } from "../types/hono";
 
@@ -145,7 +145,7 @@ dataSourcesRouter.post("/", async (c) => {
 dataSourcesRouter.post("/test", async (c) => {
   try {
     const body = await c.req.json();
-    const { type, host, port, database, username, password, url, headers } = body;
+    const { type, host, port: _port, database, username: _username, password: _password, url, headers: _headers } = body;
 
     // Simulate connection test
     // In production, this would actually try to connect to the database/API

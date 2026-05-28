@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Admin Registry API
  * 
@@ -108,7 +107,7 @@ adminRegistryRoutes.post("/refresh", async (c) => {
  * Returns schema for a specific table (columns, types, etc.)
  */
 adminRegistryRoutes.get("/:grimoireId/schema/:table", async (c) => {
-  const { grimoireId, table } = c.req.param();
+  const { grimoireId: _grimoireId, table: _table } = c.req.param();
   
   // Delegate to existing data-explorer endpoint
   // This maintains backward compatibility

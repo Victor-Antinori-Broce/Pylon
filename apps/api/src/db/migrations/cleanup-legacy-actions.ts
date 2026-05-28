@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Cleanup Script: Remove Legacy Tables After Migration Verification
  *

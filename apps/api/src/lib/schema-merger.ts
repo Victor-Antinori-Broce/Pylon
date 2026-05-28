@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Dynamic Schema Merger (The Arcane Schema Weaver)
  *

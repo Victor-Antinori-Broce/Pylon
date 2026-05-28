@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * RLS Builder - Re-export from @gremius/shared
  *

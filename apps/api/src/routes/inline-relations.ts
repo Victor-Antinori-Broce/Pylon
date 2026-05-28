@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Inline Relations API
  * 
@@ -14,8 +13,7 @@ import {
   detectRelations, 
   generateInlineConfigs, 
   fetchInlineData,
-  saveInlineRecords,
-  type InlineConfig 
+  saveInlineRecords
 } from "../services/inline-relations";
 
 export const inlineRelationsRoutes = new Hono();

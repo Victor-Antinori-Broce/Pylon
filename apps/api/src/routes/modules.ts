@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Modules API Routes
  *
@@ -28,7 +27,7 @@ import {
   checkCanDisable,
   getCoreModules,
   getOptionalModules,
-  getRealmGrimoires as getHardcodedRealmGrimoires,
+
   getGrimoireCoreGrimoires,
 } from "../services/module-registry";
 import { staticConfig as gremiusConfig } from "../../gremius.config";
@@ -559,8 +558,7 @@ modulesRoutes.patch("/:key", async (c) => {
   const registryDef = CORE_MODULES.find((m) => m.key === key);
   
   // Check if this is a realm grimoire
-  const [existingModule] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
-  const isRealmGrimoire = registryDef?.category === "realm" || existingModule?.realmId;
+  const [_existingModule] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
 
   // If disabling, run dependency check
   if (body.enabled === false) {

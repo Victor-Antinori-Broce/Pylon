@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Image Optimization Pipeline
  *

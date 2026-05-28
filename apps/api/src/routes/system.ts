@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * System Routes
  * - Theme management (Module-Aware Themes / Prism)
@@ -11,7 +10,7 @@
 
 import { Hono } from "hono";
 import { join } from "node:path";
-import { eq, sql as drizzleSql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { siteSettings, modules } from "../db/schema";
 import { scanPackages, scanPackages as scanRealms } from "../services/scanner";

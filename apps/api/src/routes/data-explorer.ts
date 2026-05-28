@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Data Explorer API — "Data Studio" (Pilar 1)
  *
@@ -603,7 +602,7 @@ explorerRoutes.delete("/:collection/:id", async (c) => {
     const [deleted] = await db
       .delete(meta.table)
       .where(eq(pkCol, id))
-      .returning();
+      .returning() as any[];
 
     if (!deleted) {
       return c.json({ error: "Record not found" }, 404);
@@ -678,29 +677,31 @@ async function handleDynamicQuery(c: any, tableName: string, meta: TableMeta) {
   const filterValue = c.req.query("filter_value");
 
   try {
-    let whereClause = "";
+    const safeSort = sortField.replace(/[^a-zA-Z0-9_]/g, "");
+    let countSql;
+    let dataSql;
+
     if (filterField && filterValue) {
-      // Sanitize: only allow alphanumeric and underscore in field names
       const safeField = filterField.replace(/[^a-zA-Z0-9_]/g, "");
       if (filterOp === "contains") {
-        whereClause = `WHERE "${safeField}"::text ILIKE '%' || $1 || '%'`;
+        countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)} WHERE "${sql.raw(safeField)}"::text ILIKE '%' || ${filterValue} || '%'`;
+        dataSql = sql`SELECT * FROM ${sql.raw(`"${tableName}"`)} WHERE "${sql.raw(safeField)}"::text ILIKE '%' || ${filterValue} || '%' ORDER BY "${sql.raw(safeSort)}" ${sql.raw(sortDir)} LIMIT ${sql.raw(String(limit))} OFFSET ${sql.raw(String(offset))}`;
       } else if (filterOp === "equals") {
-        whereClause = `WHERE "${safeField}"::text = $1`;
+        countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)} WHERE "${sql.raw(safeField)}"::text = ${filterValue}`;
+        dataSql = sql`SELECT * FROM ${sql.raw(`"${tableName}"`)} WHERE "${sql.raw(safeField)}"::text = ${filterValue} ORDER BY "${sql.raw(safeSort)}" ${sql.raw(sortDir)} LIMIT ${sql.raw(String(limit))} OFFSET ${sql.raw(String(offset))}`;
+      } else {
+        countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)}`;
+        dataSql = sql`SELECT * FROM ${sql.raw(`"${tableName}"`)} ORDER BY "${sql.raw(safeSort)}" ${sql.raw(sortDir)} LIMIT ${sql.raw(String(limit))} OFFSET ${sql.raw(String(offset))}`;
       }
+    } else {
+      countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)}`;
+      dataSql = sql`SELECT * FROM ${sql.raw(`"${tableName}"`)} ORDER BY "${sql.raw(safeSort)}" ${sql.raw(sortDir)} LIMIT ${sql.raw(String(limit))} OFFSET ${sql.raw(String(offset))}`;
     }
 
-    const safeSort = sortField.replace(/[^a-zA-Z0-9_]/g, "");
-    const queryParams = filterValue ? [filterValue] : [];
-
-    const countResult = await db.execute(
-      sql.raw(`SELECT count(*) as total FROM "${tableName}" ${whereClause}`, queryParams)
-    );
+    const countResult = await db.execute(countSql);
     const total = Number((countResult.rows[0] as any)?.total ?? 0);
 
-    const dataResult = await db.execute(
-      sql.raw(`SELECT * FROM "${tableName}" ${whereClause} ORDER BY "${safeSort}" ${sortDir} LIMIT ${limit} OFFSET ${offset}`, queryParams)
-    );
-
+    const dataResult = await db.execute(dataSql);
     const data = dataResult.rows;
     const columns = data.length > 0
       ? Object.keys(data[0]).map(key => ({
@@ -730,11 +731,10 @@ async function handleDynamicCreate(c: any, tableName: string, meta: TableMeta) {
 
     const keys = Object.keys(body);
     const safeKeys = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}"`);
-    const placeholders = keys.map((_, i) => `${i + 1}`);
-    const values = keys.map(k => body[k]);
+    const values = keys.map(k => pgLiteral(body[k]));
 
     const result = await db.execute(
-      sql.raw(`INSERT INTO "${tableName}" (${safeKeys.join(", ")}) VALUES (${placeholders.join(", ")}) RETURNING *`, values)
+      sql.raw(`INSERT INTO "${tableName}" (${safeKeys.join(", ")}) VALUES (${values.join(", ")}) RETURNING *`)
     );
     return c.json(result.rows[0], 201);
   } catch (error: any) {
@@ -750,12 +750,11 @@ async function handleDynamicUpdate(c: any, tableName: string, meta: TableMeta, i
     if (Object.keys(body).length === 0) return c.json({ error: "No editable fields provided" }, 400);
 
     const keys = Object.keys(body);
-    const setClauses = keys.map((k, i) => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}" = ${i + 1}`);
-    const values = [...keys.map(k => body[k]), id];
-
+    const setClauses = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}" = ${pgLiteral(body[k])}`);
     const safePk = meta.pk.replace(/[^a-zA-Z0-9_]/g, "");
+
     const result = await db.execute(
-      sql.raw(`UPDATE "${tableName}" SET ${setClauses.join(", ")} WHERE "${safePk}" = ${keys.length + 1} RETURNING *`, values)
+      sql.raw(`UPDATE "${tableName}" SET ${setClauses.join(", ")} WHERE "${safePk}" = ${pgLiteral(id)} RETURNING *`)
     );
     if (result.rows.length === 0) return c.json({ error: "Record not found" }, 404);
     return c.json(result.rows[0]);
@@ -769,7 +768,7 @@ async function handleDynamicDelete(c: any, tableName: string, meta: TableMeta, i
   try {
     const safePk = meta.pk.replace(/[^a-zA-Z0-9_]/g, "");
     const result = await db.execute(
-      sql.raw(`DELETE FROM "${tableName}" WHERE "${safePk}" = $1 RETURNING *`, [id])
+      sql.raw(`DELETE FROM "${tableName}" WHERE "${safePk}" = ${pgLiteral(id)} RETURNING *`)
     );
     if (result.rows.length === 0) return c.json({ error: "Record not found" }, 404);
     return c.json({ deleted: true, id });
@@ -867,13 +866,14 @@ explorerRoutes.delete("/:collection/views/:viewId", async (c) => {
 // ═══════════════════════════════════════════════
 
 /**
- * Infer the column type and optional FK reference from a column name and value.
- * Returns type string. For FK columns, also provides the related table name.
+ * Safely format a JS value for use as a PostgreSQL literal in raw SQL.
  */
-interface ColumnTypeInfo {
-  type: string;
-  /** For FK columns: the inferred related table name */
-  relatedTable?: string;
+function pgLiteral(value: unknown): string {
+  if (value === null || value === undefined) return 'NULL';
+  if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+  if (typeof value === 'number') return String(value);
+  if (value instanceof Date) return `'${value.toISOString()}'`;
+  return `'${String(value).replace(/'/g, "''")}'`;
 }
 
 /** Map of known FK column → table name patterns */

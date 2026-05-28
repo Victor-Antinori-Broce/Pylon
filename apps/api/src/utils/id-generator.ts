@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ID Generator Utilities
  * 

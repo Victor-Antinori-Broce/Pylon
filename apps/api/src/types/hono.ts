@@ -1,11 +1,10 @@
-// @ts-nocheck
 /**
  * Hono Type Definitions
  * 
  * Centralized type definitions for Hono context variables
  */
 
-import type { Hono } from "hono";
+// import type { Hono } from "hono"; // Not used directly
 import type { auth } from "../lib/auth";
 import type { AgentAuthContext } from "../services/agent-auth";
 

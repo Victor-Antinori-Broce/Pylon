@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Zero Config Integration Tests
  * 

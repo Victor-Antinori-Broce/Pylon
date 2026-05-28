@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS - Hono API Server v0.8.0-beta (Actions Unification)
  *
@@ -30,7 +29,7 @@ import type { ServerWebSocket } from "bun";
 
 // ── Configuration ──
 import { config, features, rateLimitConfig, corsConfig } from "./lib/config";
-import { logger, createRequestLogger, logSecurity } from "./lib/logger";
+import { logger, createRequestLogger } from "./lib/logger";
 
 // ── Feature Flags ──
 import { staticConfig as gremiusConfig } from "../gremius.config";
@@ -467,7 +466,7 @@ app.get("/api/health/pgvector", async (c) => {
 // ══════════════════════════════════════════════
 
 if (features.headless) {
-  app.use("/api/admin/*", (c) => {
+  app.all("/api/admin/*", (c) => {
     return c.json({
       error: "Headless mode",
       message: "Admin API is disabled. This Gremius instance is running in headless BaaS mode."
@@ -751,6 +750,8 @@ console.log(`
 ║   Port: ${port}                                  ║
 ╚══════════════════════════════════════════════════╝
 `);
+
+export { app };
 
 export default {
   port,

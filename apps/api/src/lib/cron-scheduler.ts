@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Cron Scheduler for Actions
  *
@@ -148,7 +147,7 @@ export function removeCronJob(actionId: string): void {
  * Stop all cron jobs (for graceful shutdown).
  */
 export function stopAllCronJobs(): void {
-  for (const [id, job] of cronJobs) {
+  for (const [, job] of cronJobs) {
     job.stop();
   }
   cronJobs.clear();
@@ -183,6 +182,6 @@ import { gremiusFunctions } from "../db/schema";
 /**
  * @deprecated Use refreshCronJob with actions table instead
  */
-export function refreshCronJobLegacy(fn: typeof gremiusFunctions.$inferSelect): void {
+export function refreshCronJobLegacy(_fn: typeof gremiusFunctions.$inferSelect): void {
   console.warn("[DEPRECATED] refreshCronJobLegacy called, migrate to new actions table");
 }

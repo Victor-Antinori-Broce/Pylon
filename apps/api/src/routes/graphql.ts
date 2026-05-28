@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Dynamic GraphQL API Layer v2 (100% Auto-Generated)
  *
@@ -33,7 +32,7 @@ import { db } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
 import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { introspectTable } from "../services/schema-introspector";
+
 import { buildMergedSchema } from "../lib/schema-merger";
 
 export const graphqlRoutes = new Hono();
@@ -205,7 +204,7 @@ async function buildNativeTableTypes(
     if (exportKey.endsWith("Relations")) continue;
     if (exportKey === "default") continue;
 
-    const table = exportedValue;
+    const table = exportedValue as any;
     const tableName = table[Symbol.for("drizzle:Name")];
     const typeName = toPascalCase(exportKey);
     const columns = getTableColumns(table);
@@ -341,7 +340,7 @@ async function buildNativeTableMutations(
         try {
           const input = args.input ? { ...args.input } : {};
           delete input.id;
-          const [doc] = await db.insert(table).values(input).returning();
+          const [doc] = await (db.insert(table).values(input).returning() as Promise<any[]>);
           await invalidateGraphQLCache();
           return doc;
         } catch (err: any) {
@@ -633,8 +632,8 @@ async function buildDatasetMutations(
 // ═══════════════════════════════════════════════════════════════
 
 function buildUniversalQuery(
-  nativeQueries: GraphQLFieldConfigMap<any, any>,
-  datasetQueries: GraphQLFieldConfigMap<any, any>,
+  _nativeQueries: GraphQLFieldConfigMap<any, any>,
+  _datasetQueries: GraphQLFieldConfigMap<any, any>,
   schema: Record<string, unknown>
 ) {
   return {

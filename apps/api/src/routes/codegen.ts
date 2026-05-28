@@ -24,7 +24,7 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { db, mergedSchema } from "../db";
-import { dataSets, dataEntries } from "../db/schema-core";
+import { dataSets } from "../db/schema-core";
 import { introspectTable } from "../services/schema-introspector";
 import type { AppVariables } from "../types/hono";
 import { logger } from "../lib/logger";

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * GremiusCMS — Gremius Workers API Routes
  *
@@ -16,7 +15,7 @@
  */
 
 import { Hono } from "hono";
-import { eq, desc, and, count } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db } from "../db";
 import { gremiusFunctions, functionExecutions, dataSets } from "../db/schema";
 import { executeManually } from "../lib/function-dispatcher";
@@ -37,8 +36,6 @@ functionsRoutes.get("/", async (c) => {
   const limit = Math.min(Number(c.req.query("limit")) || 50, 200);
   const trigger = c.req.query("trigger");
   const status = c.req.query("status");
-
-  let query = db.select().from(gremiusFunctions).orderBy(desc(gremiusFunctions.updatedAt)).limit(limit);
 
   // Drizzle doesn't allow dynamic chaining well, so build conditions
   const conditions = [];
@@ -108,7 +105,7 @@ functionsRoutes.post("/", async (c) => {
   }).returning();
 
   // If cron, schedule it (legacy)
-  refreshCronJob(fn);
+  refreshCronJob(fn as any);
 
   return c.json(fn, 201);
 });
@@ -142,7 +139,7 @@ functionsRoutes.patch("/:id", async (c) => {
   if (!updated) return c.json({ error: "Function not found" }, 404);
 
   // Refresh cron schedule (legacy)
-  refreshCronJob(updated);
+  refreshCronJob(updated as any);
 
   return c.json(updated);
 });
