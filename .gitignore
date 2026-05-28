@@ -60,21 +60,67 @@ playwright-report/
 # ── Compiled .ts artifacts in source directories ──
 # These MUST NOT be tracked — they cause SvelteKit "Multiple layout module"
 # crashes and pollute the source tree.
+
+# Global: map files are always compiled
+**/*.js.map
+**/*.d.ts.map
+
+# Apps
 apps/admin/src/**/*.js
-apps/admin/src/**/*.js.map
 apps/admin/src/**/*.d.ts
-apps/admin/src/**/*.d.ts.map
+apps/admin/.svelte-kit/
 apps/api/src/**/*.js
-apps/api/src/**/*.js.map
 apps/api/src/**/*.d.ts
-apps/api/src/**/*.d.ts.map
 apps/api/*.js
-apps/api/*.js.map
 apps/api/*.d.ts
-apps/api/*.d.ts.map
+apps/api/scripts/*.js
+apps/api/scripts/*.d.ts
+apps/api/migrations/*.js
+apps/api/migrations/*.d.ts
+apps/api/drizzle/*.js
+apps/api/drizzle/*.d.ts
+
+# Packages
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/*.js
+packages/*/*.d.ts
+packages/admin/.svelte-kit/
+
+# Tests & Scripts
+tests/**/*.js
+tests/**/*.d.ts
+scripts/*.js
+scripts/*.d.ts
+
+# Root configs
+playwright.config.js
+playwright.config.d.ts
+
 # Keep .svelte.ts files (they are source, not compiled)
 !apps/admin/src/**/*.svelte.ts
 !apps/admin/src/**/*.svelte.js
+!packages/admin/src/**/*.svelte.ts
+!packages/admin/src/**/*.svelte.js
+
+# Keep legitimate config files
+!**/postcss.config.js
+!**/tailwind.config.js
+!**/svelte.config.js
+!**/vite.config.js
+!**/vitest.config.js
+!**/playwright.config.ts
+!**/tsup.config.ts
+!**/drizzle.config.ts
+!**/svelte.config.ts
+
+# Keep CLI binaries and templates
+!packages/cli/bin/*.js
+!packages/cli/templates/**/*.js
+!packages/cli/templates/**/*.d.ts
+
+# Keep Django static files
+!capacitaciones_app/static/**/*.js
 
 # ── Temporary files ──
 *.tmp

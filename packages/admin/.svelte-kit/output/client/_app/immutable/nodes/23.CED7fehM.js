@@ -1,1 +1,0 @@
-import{r as e}from"../chunks/DfgfjzFV.js";const o=()=>{throw e(308,"/g/system-tools/editor")},r=Object.freeze(Object.defineProperty({__proto__:null,load:o},Symbol.toStringTag,{value:"Module"}));export{r as universal};

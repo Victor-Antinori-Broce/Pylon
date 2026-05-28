@@ -1,1 +1,0 @@
-import"../chunks/czsp-qam.js";import{p,g as i,a as m,u as g}from"../chunks/DLU54kKC.js";import{s as n,a as u}from"../chunks/DKSnlQjq.js";import{p as $}from"../chunks/DQfepuYF.js";import{G as c}from"../chunks/CCfaRjI7.js";function I(r,e){p(e,!0);const o=()=>u($,"$page",s),[s,t]=n();let a=g(()=>o().params.id);c(r,{get grimoireId(){return i(a)}}),m(),t()}export{I as component};

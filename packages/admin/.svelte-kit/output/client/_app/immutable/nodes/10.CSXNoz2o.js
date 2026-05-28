@@ -1,1 +1,0 @@
-import{r as e}from"../chunks/DfgfjzFV.js";function o(){throw e(307,"/agents")}const t=Object.freeze(Object.defineProperty({__proto__:null,load:o},Symbol.toStringTag,{value:"Module"}));export{t as universal};
