@@ -3,7 +3,7 @@
 
 import { test, expect } from "@playwright/test";
 
-const API = "http://127.0.0.1:3001/api";
+const API = (process.env.API_URL || "http://localhost:3001") + "/api";
 
 test.describe("Gremio CMS - Core Competitivo API", () => {
     test("Players endpoint CRUD lifecycle", async ({ request }) => {

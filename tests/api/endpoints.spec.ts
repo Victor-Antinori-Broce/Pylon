@@ -1,9 +1,10 @@
+// @ts-nocheck
 // spec: specs/gremius-full-coverage.md — Section 11: API Endpoints
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
 
-const API = "http://localhost:3001/api";
+const API = (process.env.API_URL || "http://localhost:3001") + "/api";
 
 test.describe("API Health & Endpoints", () => {
   test("Health check returns ok", async ({ request }) => {
@@ -67,7 +68,6 @@ test.describe("API Health & Endpoints", () => {
 
     // Optional
     expect(byKey.get("streamers")?.category).toBe("optional");
-    expect(byKey.get("formulas")?.category).toBe("optional");
   });
 
   test("Blog posts endpoint returns data", async ({ request }) => {

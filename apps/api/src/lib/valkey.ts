@@ -41,13 +41,14 @@ function parseUrl(url: string): ConnectionOptions {
  */
 export const valkeyConnection: ConnectionOptions = {
     ...parseUrl(VALKEY_URL),
+    // @ts-ignore - maxRetriesPerRequest can be null in ioredis but types differ
     maxRetriesPerRequest: null,
     enableOfflineQueue: false,
     retryStrategy: (times: number) => {
         if (times > 3) return null;
         return Math.min(times * 500, 3000);
     },
-};
+} as ConnectionOptions;
 
 // ── Direct Client (for cache, leaderboards) ────────────────────
 
@@ -61,7 +62,7 @@ export async function getValkeyClient(): Promise<RedisClientType> {
 
     _client = createClient({ url: VALKEY_URL }) as RedisClientType;
 
-    _client.on("error", (err) => {
+    _client.on("error", (err: Error) => {
         console.warn(`[Valkey] Connection error: ${err.message}`);
     });
 
@@ -89,7 +90,7 @@ export async function isValkeyAvailable(): Promise<boolean> {
         _available = false;
     }
     _lastCheck = Date.now();
-    return _available!;
+    return _available ?? false;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -107,7 +108,7 @@ export async function getPublisher(): Promise<RedisClientType> {
     if (_pubClient && _pubClient.isOpen) return _pubClient;
 
     _pubClient = createClient({ url: VALKEY_URL }) as RedisClientType;
-    _pubClient.on("error", (err) => {
+    _pubClient.on("error", (err: Error) => {
         console.warn(`[Valkey:PUB] Error: ${err.message}`);
     });
     await _pubClient.connect();
@@ -121,7 +122,7 @@ export async function getSubscriber(): Promise<RedisClientType> {
     if (_subClient && _subClient.isOpen) return _subClient;
 
     _subClient = createClient({ url: VALKEY_URL }) as RedisClientType;
-    _subClient.on("error", (err) => {
+    _subClient.on("error", (err: Error) => {
         console.warn(`[Valkey:SUB] Error: ${err.message}`);
     });
     await _subClient.connect();
@@ -139,8 +140,9 @@ export async function publish(channel: string, message: unknown): Promise<void> 
     try {
         const pub = await getPublisher();
         await pub.publish(channel, JSON.stringify(message));
-    } catch (err: any) {
-        console.warn(`[Valkey:PUB] Failed to publish to ${channel}: ${err.message}`);
+    } catch (err: unknown) {
+        const message_err = err instanceof Error ? err.message : String(err);
+        console.warn(`[Valkey:PUB] Failed to publish to ${channel}: ${message_err}`);
     }
 }
 
@@ -158,14 +160,14 @@ export async function subscribe(
     const sub = await getSubscriber();
 
     if (pattern.includes("*")) {
-        await sub.pSubscribe(pattern, (message, channel) => {
+        await sub.pSubscribe(pattern, (message: string, channel: string) => {
             callback(channel, message);
         });
         return async () => {
             await sub.pUnsubscribe(pattern);
         };
     } else {
-        await sub.subscribe(pattern, (message, channel) => {
+        await sub.subscribe(pattern, (message: string, channel: string) => {
             callback(channel, message);
         });
         return async () => {
@@ -212,14 +214,15 @@ export async function getLeaderboardRank(
     if (rank === null) return null;
 
     const score = await client.zScore(leaderboard, userId);
-    return { rank: rank + 1, score: score ?? 0 };
+    return { rank: (rank as number) + 1, score: score ?? 0 };
 }
 
 // ── Cache Helpers ──────────────────────────────────────────────
 
 export async function cacheGet(key: string): Promise<string | null> {
     const client = await getValkeyClient();
-    return client.get(key);
+    const value = await client.get(key);
+    return value as string | null;
 }
 
 export async function cacheSet(

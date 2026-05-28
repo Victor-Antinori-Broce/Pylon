@@ -1,0 +1,10 @@
+node_modules
+dist
+.svelte-kit
+.vscode
+*.lock
+pnpm-lock.yaml
+drizzle/*.sql
+drizzle/meta/*
+_legacy_*
+node_modules/.pnpm

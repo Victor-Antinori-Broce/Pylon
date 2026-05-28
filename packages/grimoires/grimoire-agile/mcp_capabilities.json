@@ -1,0 +1,226 @@
+{
+  "name": "grimoire-agile-mcp",
+  "version": "1.1.0",
+  "description": "MCP Tools para Grimoire Agile - Gestión de proyectos ágil con descripciones semánticamente ricas",
+  "semanticVersioning": {
+    "1.0.0": "Versión inicial con herramientas básicas",
+    "1.1.0": "Descripciones enriquecidas para mejor comprensión de LLMs"
+  },
+  "tools": [
+    {
+      "name": "agile_read_board",
+      "version": "1.1.0",
+      "title": "Read Agile Board - READ-ONLY",
+      "description": "[READ-ONLY: Esta herramienta SOLO consulta, NUNCA modifica datos] OBTIENE el estado actual de un proyecto ágil para visualización del tablero Kanban. CAPACIDADES: Lee issues organizados por estado (To Do, In Progress, Done, etc.), proporciona metadatos visuales de estados (colores hex, nombres, grupos lógicos), incluye información de asignación, prioridades y estimaciones, retorna resumen con conteos por grupo de estado. RESTRICCIONES: Esta herramienta es SOLO LECTURA (read-only), NUNCA crea, modifica ni elimina issues, NUNCA cambia estados de issues, NUNCA asigna tareas. CUÁNDO USAR: Usuario pregunta '¿cómo va el proyecto?', 'muéstrame el tablero', necesitas contexto sobre estado actual antes de proponer cambios, quieres reportar métricas del sprint, consultas de tipo '¿quién está trabajando en X?'. CUÁNDO NO USAR: NUNCA para crear issues (usar agile_submit_intake), NUNCA para modificar issues (no existe herramienta para esto). RELACIÓN CON OTRAS HERRAMIENTAS: Si detectas un problema mientras lees el board, usa agile_submit_intake para reportarlo; esta herramienta te da contexto; agile_submit_intake te permite actuar sobre ese contexto.",
+      "capabilityType": "read-only",
+      "modifiesData": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID del proyecto ágil a consultar"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50,
+            "description": "Máximo número de issues a retornar (1-100)"
+          },
+          "stateGroup": {
+            "type": "string",
+            "enum": ["backlog", "unstarted", "started", "completed", "cancelled"],
+            "description": "Filtrar por grupo de estado: backlog | unstarted | started | completed | cancelled"
+          },
+          "assigneeId": {
+            "type": "string",
+            "description": "Filtrar por ID del asignado (opcional)"
+          }
+        },
+        "required": ["projectId"]
+      },
+      "returns": {
+        "project": {
+          "id": "string",
+          "name": "string",
+          "identifier": "string"
+        },
+        "summary": {
+          "total": "number",
+          "byGroup": {
+            "backlog": "number",
+            "unstarted": "number",
+            "started": "number",
+            "completed": "number",
+            "cancelled": "number"
+          }
+        },
+        "board": [
+          {
+            "state": {
+              "id": "string",
+              "name": "string",
+              "color": "string",
+              "group": "string",
+              "isDefault": "boolean",
+              "isCompleted": "boolean"
+            },
+            "issues": [
+              {
+                "id": "string",
+                "key": "string",
+                "name": "string",
+                "type": "string",
+                "priority": "string",
+                "assigneeId": "string | null",
+                "estimate": "number | null"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agile_submit_intake",
+      "version": "1.1.0",
+      "title": "Submit Intake to Triage - SOLO CANAL DE ESCRITURA PERMITIDO",
+      "description": "[ESCRITURA CONTROLADA: ÚNICA herramienta disponible para proponer cambios al proyecto] ⚠️⚠️⚠️ RESTRICCIÓN CRÍTICA PARA MODELOS DE IA: Esta herramienta es el ÚNICO canal permitido para proponer modificaciones al proyecto. NO existe ninguna otra herramienta que permita crear o modificar issues directamente. QUÉ HACE: Crea una sugerencia (intake) en la bandeja de entrada (tabla agile_intakes) con estado 'pending'. NUNCA escribe directamente en la tabla agile_issues (board visible). ARQUITECTURA DE SEGURIDAD: IA llama agile_submit_intake → CREA intake en agile_intakes (status='pending') → HUMANO revisa en bandeja de entrada → HUMANO decide: [Aprobar] o [Rechazar] → (si aprueba) SISTEMA crea issue en agile_issues (transacción atómica) → Issue visible en board (agile_read_board). CONSECUENCIAS DE ESTA ARQUITECTURA: Las sugerencias de IA NO aparecen inmediatamente en el board, requieren aprobación humana explícita, evita que la IA contamine el backlog con issues no deseados, mantiene el control humano sobre el proyecto. CUÁNDO DEBES USAR ESTA HERRAMIENTA (OBLIGATORIO): Siempre que detectes un bug o error, siempre que tengas una sugerencia de mejora, siempre que quieras proponer una nueva feature, si un usuario te pide 'crear un ticket' o 'reportar un issue', si identificas trabajo técnico que debe hacerse. CUÁNDO NO USAR (NO APLICA): No existe alternativa - esta es la única forma de proponer cambios. NOTA SOBRE URGENCIA: Si consideras que algo es 'urgente', usa suggestedPriority='urgent', pero entiende que aún así requiere aprobación humana. No hay bypass para el proceso de triage.",
+      "capabilityType": "write-controlled",
+      "modifiesData": true,
+      "requiresHumanApproval": true,
+      "writesToTable": "agile_intakes",
+      "neverWritesTo": ["agile_issues"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID del proyecto donde se creará el intake"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Título descriptivo de la sugerencia o bug"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "Descripción detallada del issue (opcional)"
+          },
+          "suggestedType": {
+            "type": "string",
+            "enum": ["issue", "feature", "bug", "improvement", "spike"],
+            "default": "issue",
+            "description": "Tipo sugerido: issue | feature | bug | improvement | spike"
+          },
+          "suggestedPriority": {
+            "type": "string",
+            "enum": ["urgent", "high", "medium", "low"],
+            "default": "medium",
+            "description": "Prioridad sugerida: urgent | high | medium | low"
+          },
+          "payload": {
+            "type": "object",
+            "description": "Datos adicionales FLEXIBLES en formato JSON. Acepta CUALQUIER estructura: logs, metadatos técnicos, contexto de análisis, screenshots en base64, etc.",
+            "additionalProperties": true,
+            "properties": {},
+            "examples": [
+              {
+                "errorLog": "TypeError: Cannot read property 'id' of undefined",
+                "confidence": 0.95,
+                "affectedEndpoints": ["/api/login", "/api/register"],
+                "lastWorkingVersion": "v2.1.0"
+              },
+              {
+                "endpoint": "/api/users",
+                "method": "POST",
+                "statusCode": 500,
+                "requestBody": { "email": "test@example.com" },
+                "responseBody": { "error": "Internal Server Error" }
+              },
+              {
+                "screenshot": "data:image/png;base64,iVBORw0KGgo...",
+                "browser": "Chrome 120.0.0",
+                "os": "Windows 11",
+                "viewport": "1920x1080"
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "default": "ai_agent",
+            "description": "Origen de la sugerencia: ai_agent | api | slack | email | web_form"
+          }
+        },
+        "required": ["projectId", "title"]
+      },
+      "returns": {
+        "success": "boolean",
+        "intake": {
+          "id": "string",
+          "title": "string",
+          "status": "string (pending)",
+          "suggestedType": "string",
+          "suggestedPriority": "string",
+          "createdAt": "string (ISO 8601)"
+        },
+        "nextSteps": [
+          "string"
+        ]
+      },
+      "warning": "Esta herramienta SOLO crea intakes en estado 'pending'. Los issues solo se crean después de aprobación humana. El campo 'payload' es flexible y acepta cualquier objeto JSON."
+    }
+  ],
+  "resources": [],
+  "integration": {
+    "registerFunction": "registerAgileTools",
+    "module": "@gremius/grimoire-agile/mcp",
+    "dependencies": ["@modelcontextprotocol/sdk", "drizzle-orm", "zod"]
+  },
+  "flows": {
+    "ai_detection_to_triage": {
+      "description": "Flujo completo: IA detecta problema → Crea intake → Humano aprueba → Issue en board",
+      "diagram": "IA(llama agile_submit_intake) → agile_intakes(status='pending') → Humano(revisa frontend) → [APROBAR] → Transacción(crea agile_issues) → Board(visible por agile_read_board)",
+      "steps": [
+        "1. IA usa 'agile_submit_intake' para crear sugerencia",
+        "2. Intake queda en status='pending' en bandeja de entrada",
+        "3. Humano revisa en frontend y aprueba/rechaza",
+        "4. Si aprueba, se ejecuta transacción atómica para crear issue",
+        "5. Issue aparece en el board consultable por 'agile_read_board'"
+      ]
+    },
+    "board_visualization": {
+      "description": "Visualización del estado del proyecto",
+      "diagram": "Usuario(pregunta estado) → IA(llama agile_read_board) → Retorna board organizado por estados → IA presenta resumen con métricas",
+      "steps": [
+        "1. IA o humano usa 'agile_read_board' con projectId",
+        "2. Retorna estructura Kanban con issues por estado",
+        "3. Cada estado incluye metadata (color, nombre, grupo)",
+        "4. Issues incluyen prioridad, asignado, tipo",
+        "5. Resumen con conteos totales por grupo"
+      ]
+    }
+  },
+  "semanticGuidelines": {
+    "forLanguageModels": {
+      "toolSelection": [
+        "SIEMPRE usar agile_read_board para consultar estado del proyecto",
+        "NUNCA intentar modificar datos con agile_read_board (es read-only)",
+        "SIEMPRE usar agile_submit_intake para proponer cualquier cambio",
+        "NUNCA asumir que hay otra forma de crear issues",
+        "SI detectas problema mientras lees, CREAR intake inmediatamente"
+      ],
+      "payloadBestPractices": [
+        "Incluir logs de error completos cuando reportes bugs",
+        "Añadir metadatos técnicos: endpoints, versiones, entornos",
+        "Incluir nivel de confianza si es resultado de análisis automático",
+        "Usar estructuras JSON claras y organizadas",
+        "Evitar payloads vacíos - aprovecha la flexibilidad para dar contexto"
+      ]
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "$schema": "../../schemas/grimoire-schema.json",
+  "id": "grimoire-crm",
+  "name": "Gremius CRM",
+  "description": "Complete CRM & Pipeline Management system. Includes contacts, companies, deal pipelines with Kanban view, activities, and sales automation.",
+  "version": "1.0.0",
+  "type": "grimoire",
+  "category": "business",
+  "layer": 3,
+  "author": "Gremius Team",
+  "license": "MIT",
+  "icon": "Briefcase",
+  "mount": {
+    "path": "/api/crm",
+    "router": "createCRMRouter"
+  },
+  "entryPoint": "./index.ts",
+  "exports": {
+    "routes": "./index.ts",
+    "schema": "./crm.schema.ts"
+  },
+  "database": {
+    "tables": [
+      "crm_companies",
+      "crm_contacts",
+      "crm_pipelines",
+      "crm_pipeline_stages",
+      "crm_deals",
+      "crm_activities"
+    ],
+    "enums": [
+      "crm_contact_status",
+      "crm_deal_status",
+      "crm_activity_type",
+      "crm_priority"
+    ]
+  },
+  "features": [
+    "contacts-management",
+    "companies-directory",
+    "deals-pipeline",
+    "kanban-board",
+    "activity-log",
+    "sales-automation",
+    "contact-scoring",
+    "deal-tracking",
+    "pipeline-management",
+    "activity-scheduling"
+  ],
+  "dependencies": {
+    "grimoires": ["grimoire-media"],
+    "core": ["auth"]
+  },
+  "compatibility": {
+    "gremius": ">=0.8.0"
+  },
+  "admin": {
+    "category": "business",
+    "icon": "Briefcase",
+    "defaultView": "contacts",
+    "views": [
+      {
+        "id": "contacts",
+        "type": "grid",
+        "title": "Contacts",
+        "icon": "Users",
+        "table": "crm_contacts"
+      },
+      {
+        "id": "companies",
+        "type": "grid",
+        "title": "Companies",
+        "icon": "Building2",
+        "table": "crm_companies"
+      },
+      {
+        "id": "deals",
+        "type": "kanban",
+        "title": "Deals",
+        "icon": "Kanban",
+        "table": "crm_deals",
+        "groupBy": "status"
+      },
+      {
+        "id": "activities",
+        "type": "grid",
+        "title": "Activities",
+        "icon": "Activity",
+        "table": "crm_activities"
+      }
+    ]
+  },
+  "documentation": {
+    "readme": "./README.md"
+  }
+}

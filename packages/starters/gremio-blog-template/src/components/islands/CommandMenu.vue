@@ -129,7 +129,7 @@ watch(query, (q) => {
 });
 
 async function doSearch(q: string) {
-  const API = import.meta.env?.VITE_API_URL || "http://localhost:3001";
+  const API = import.meta.env?.VITE_API_URL || "http://localhost:3000";
   try {
     const [gamesRes] = await Promise.allSettled([
       fetch(`${API}/api/games?search=${encodeURIComponent(q)}&limit=5`).then(r => r.json()),

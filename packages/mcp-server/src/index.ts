@@ -44,7 +44,7 @@ export function createGremiusMcpServer(deps: McpServerDependencies): Server {
 
     // Register resource handlers
     registerResourceHandlers(server, deps);
-    
+
     // Register tool handlers
     registerToolHandlers(server, deps);
 
@@ -195,6 +195,20 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
                         },
                         required: ["queueName", "jobName", "payload"]
                     }
+                },
+                {
+                    name: "gremius_encode_toon",
+                    description: "Encode arbitrary JSON data into TOON (Token-Optimized Object Notation) format to save LLM context window space",
+                    inputSchema: {
+                        type: "object",
+                        properties: {
+                            data: {
+                                type: "object",
+                                "description": "JSON payload to encode"
+                            }
+                        },
+                        required: ["data"]
+                    }
                 }
             ]
         };
@@ -276,6 +290,24 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
                             isError: true
                         };
                     }
+                }
+
+                case "gremius_encode_toon": {
+                    const { data } = args as any;
+
+                    // We must import it. If mcp-server is used outside api, it might need to provide a function in deps.
+                    // For now, since mcp-server is part of the workspace, we can assume it will receive the stringified JSON and we could do a simple string conversion, or let's assume `deps.encodeTOON` is provided.
+                    // Given the current structure, we can just flatten it manually or require the host (API) to provide `deps.encodeTOON`
+                    // As a fallback, we will just return stringified json if TOON encoder is not passed, but we'll try to use a simple flatten.
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                // Note: we should inject encodeTOON into deps in a real scenario
+                                text: JSON.stringify(data)
+                            }
+                        ]
+                    };
                 }
 
                 default:

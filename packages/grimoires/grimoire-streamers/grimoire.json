@@ -3,9 +3,14 @@
     "name": "Streamers",
     "description": "Live streamer tracking across Twitch, YouTube, and Kick with real-time status sync.",
     "version": "1.0.0",
-    "type": "grimoire",
+  "type": "grimoire",
     "icon": "Tv",
     "tables": [
-        "streamers"
-    ]
+        "streamers",
+        "games_to_streamers"
+    ],
+    "dependencies": {
+        "grimoires": ["grimoire-games", "grimoire-media"],
+        "core": ["auth"]
+    }
 }

@@ -1,0 +1,238 @@
+{
+  "$schema": "../../schemas/grimoire-schema.json",
+  "id": "grimoire-agile",
+  "name": "Agile Tracker",
+  "description": "Sistema de gestión ágil con aprobación humana para sugerencias de IA. Incluye projects, estados personalizables, issues con keys únicas, sprints (cycles), épicas (modules), y bandeja de entrada para triage de IA.",
+  "version": "1.2.0",
+  "type": "grimoire",
+  "category": "productivity",
+  "layer": 3,
+  "author": "Gremius Team",
+  "license": "MIT",
+  "icon": "Kanban",
+  "mount": {
+    "path": "/api/agile"
+  },
+  "entryPoint": "./index.ts",
+  "exports": {
+    "routes": "./index.ts",
+    "schema": "./schema.ts",
+    "mcp": "./mcp.ts"
+  },
+  "tables": [
+    {
+      "name": "agile_projects",
+      "label": "Projects",
+      "icon": "FolderKanban",
+      "searchableFields": ["name", "identifier", "description"],
+      "filterableFields": ["isArchived", "leadId"]
+    },
+    {
+      "name": "agile_issues",
+      "label": "Issues",
+      "icon": "CircleDot",
+      "searchableFields": ["name", "descriptionText", "key"],
+      "filterableFields": ["type", "priority", "stateId", "assigneeId", "cycleId", "moduleId"]
+    },
+    {
+      "name": "agile_cycles",
+      "label": "Sprints",
+      "icon": "Timer",
+      "searchableFields": ["name", "description", "goal"],
+      "filterableFields": ["status", "isActive"]
+    },
+    {
+      "name": "agile_modules",
+      "label": "Epics",
+      "icon": "Component",
+      "searchableFields": ["name", "description"],
+      "filterableFields": ["status", "leadId"]
+    },
+    {
+      "name": "agile_intakes",
+      "label": "Intakes",
+      "icon": "Inbox",
+      "searchableFields": ["title", "description"],
+      "filterableFields": ["status", "source"]
+    },
+    {
+      "name": "agile_states",
+      "label": "States",
+      "icon": "Columns3",
+      "readonly": true
+    },
+    {
+      "name": "agile_labels",
+      "label": "Labels",
+      "icon": "Tag",
+      "searchableFields": ["name"]
+    },
+    {
+      "name": "agile_comments",
+      "label": "Comments",
+      "icon": "MessageSquare",
+      "readonly": true
+    }
+  ],
+  "database": {
+    "tables": [
+      "agile_projects",
+      "agile_states",
+      "agile_issues",
+      "agile_cycles",
+      "agile_modules",
+      "agile_intakes",
+      "agile_comments",
+      "agile_labels",
+      "agile_estimates",
+      "agile_module_issues",
+      "agile_issue_labels",
+      "agile_issue_links",
+      "agile_activity_log"
+    ],
+    "enums": [
+      "agile_issue_type",
+      "agile_issue_priority",
+      "agile_cycle_status",
+      "agile_module_status",
+      "agile_intake_status",
+      "agile_link_type",
+      "agile_estimate_type",
+      "agile_state_group"
+    ]
+  },
+  "admin": {
+    "category": "productivity",
+    "defaultView": "projects",
+    "views": [
+      {
+        "id": "projects",
+        "type": "grid",
+        "title": "Projects",
+        "table": "agile_projects",
+        "icon": "FolderKanban"
+      },
+      {
+        "id": "issues",
+        "type": "grid",
+        "title": "Issues",
+        "table": "agile_issues",
+        "icon": "CircleDot"
+      },
+      {
+        "id": "intakes",
+        "type": "grid",
+        "title": "Intake Triage",
+        "table": "agile_intakes",
+        "icon": "Inbox",
+        "rowActions": [
+          {
+            "id": "approve",
+            "label": "Aprobar",
+            "icon": "Check",
+            "variant": "success",
+            "endpoint": "approve",
+            "confirm": "¿Convertir este intake en issue?",
+            "refresh": true,
+            "showIf": { "field": "status", "equals": "pending" }
+          },
+          {
+            "id": "decline",
+            "label": "Rechazar",
+            "icon": "X",
+            "variant": "danger",
+            "endpoint": "decline",
+            "confirm": "¿Rechazar este intake?",
+            "refresh": true,
+            "showIf": { "field": "status", "equals": "pending" }
+          },
+          {
+            "id": "convert",
+            "label": "Convertir a Issue",
+            "icon": "ArrowRight",
+            "variant": "primary",
+            "endpoint": "convert",
+            "confirm": "¿Crear issue a partir de este intake?",
+            "refresh": true,
+            "showIf": { "field": "status", "equals": "pending" }
+          }
+        ],
+        "bulkActions": [
+          {
+            "id": "bulk-approve",
+            "label": "Aprobar seleccionados",
+            "icon": "Check",
+            "endpoint": "bulk-approve",
+            "confirm": "¿Aprobar todos los intakes seleccionados?",
+            "refresh": true
+          }
+        ]
+      },
+      {
+        "id": "cycles",
+        "type": "grid",
+        "title": "Sprints",
+        "table": "agile_cycles",
+        "icon": "Timer"
+      },
+      {
+        "id": "modules",
+        "type": "grid",
+        "title": "Epics",
+        "table": "agile_modules",
+        "icon": "Component"
+      }
+    ]
+  },
+  "features": [
+    "project-management",
+    "custom-workflows",
+    "kanban-board",
+    "sprint-management",
+    "epic-tracking",
+    "issue-keys",
+    "auto-numbering",
+    "ai-triage",
+    "human-approval",
+    "mcp-integration",
+    "transactional-approval"
+  ],
+  "mcp": {
+    "enabled": true,
+    "tools": [
+      {
+        "name": "agile_read_board",
+        "description": "Obtiene el estado actual del tablero Kanban (read-only)",
+        "type": "read"
+      },
+      {
+        "name": "agile_submit_intake",
+        "description": "Crea sugerencia en bandeja de entrada para triage humano",
+        "type": "write-controlled"
+      }
+    ]
+  },
+  "dependencies": {
+    "grimoires": ["grimoire-media"],
+    "core": ["auth"]
+  },
+  "compatibility": {
+    "gremius": ">=0.7.0"
+  },
+  "documentation": {
+    "readme": "./README.md",
+    "api": "./api_test_scenarios.md",
+    "mcp": "./mcp_capabilities.json"
+  },
+  "keywords": [
+    "agile",
+    "kanban",
+    "scrum",
+    "sprints",
+    "epics",
+    "issues",
+    "project-management",
+    "ai-triage",
+    "mcp"
+  ]
+}

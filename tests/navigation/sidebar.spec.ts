@@ -3,7 +3,7 @@
 
 import { test, expect, type Page } from "@playwright/test";
 
-const ADMIN = "http://localhost:5173";
+const ADMIN = process.env.ADMIN_URL || "http://localhost:5173";
 
 async function loginAsAdmin(page: Page): Promise<boolean> {
   await page.goto(ADMIN);

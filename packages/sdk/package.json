@@ -1,6 +1,6 @@
 {
   "name": "@gremius/sdk",
-  "version": "0.2.0",
+  "version": "0.8.0-beta",
   "description": "GremiusCMS Universal SDK — CRUD in 3 lines. Edge-ready. Type-safe.",
   "type": "module",
   "main": "./dist/index.cjs",

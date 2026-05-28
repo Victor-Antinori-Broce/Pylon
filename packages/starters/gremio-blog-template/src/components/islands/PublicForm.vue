@@ -168,7 +168,7 @@ const props = defineProps<{
   datasetName: string;
 }>();
 
-const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3001") as string;
+const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000") as string;
 
 const visibleFields = computed(() => {
   return [...props.fields]

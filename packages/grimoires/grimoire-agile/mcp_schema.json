@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "grimoire-agile-mcp-tools",
+  "title": "Grimoire Agile MCP Tools Schema",
+  "description": "JSON Schema definitions for Grimoire Agile MCP tools",
+  "tools": {
+    "agile_read_board": {
+      "name": "agile_read_board",
+      "title": "Read Agile Board - READ-ONLY",
+      "description": "[READ-ONLY] Obtiene el estado actual del tablero Kanban. NUNCA modifica datos.",
+      "type": "object",
+      "readOnly": true,
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID del proyecto ágil a consultar"
+        },
+        "limit": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50,
+          "description": "Máximo número de issues a retornar (1-100)"
+        },
+        "stateGroup": {
+          "type": "string",
+          "enum": ["backlog", "unstarted", "started", "completed", "cancelled"],
+          "description": "Filtrar por grupo de estado lógico"
+        },
+        "assigneeId": {
+          "type": "string",
+          "description": "Filtrar por ID del asignado (opcional)"
+        }
+      },
+      "required": ["projectId"],
+      "additionalProperties": false,
+      "returns": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "identifier": { "type": "string" }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "number" },
+              "byGroup": {
+                "type": "object",
+                "properties": {
+                  "backlog": { "type": "number" },
+                  "unstarted": { "type": "number" },
+                  "started": { "type": "number" },
+                  "completed": { "type": "number" },
+                  "cancelled": { "type": "number" }
+                }
+              }
+            }
+          },
+          "board": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "state": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string" },
+                    "name": { "type": "string" },
+                    "color": { "type": "string" },
+                    "group": { "type": "string" },
+                    "isDefault": { "type": "boolean" },
+                    "isCompleted": { "type": "boolean" }
+                  }
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string" },
+                      "key": { "type": "string" },
+                      "name": { "type": "string" },
+                      "type": { "type": "string" },
+                      "priority": { "type": "string" },
+                      "assigneeId": { "type": ["string", "null"] },
+                      "estimate": { "type": ["number", "null"] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "agile_submit_intake": {
+      "name": "agile_submit_intake",
+      "title": "Submit Intake to Triage - SOLO CANAL DE ESCRITURA PERMITIDO",
+      "description": "[ÚNICO CANAL DE ESCRITURA] ÚNICA forma de proponer cambios. Crea sugerencia en bandeja de entrada (agile_intakes) con status='pending'. NUNCA escribe en agile_issues directamente. Requiere aprobación humana.",
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID del proyecto donde se creará el intake"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Título descriptivo de la sugerencia o bug"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 5000,
+          "description": "Descripción detallada del issue (opcional)"
+        },
+        "suggestedType": {
+          "type": "string",
+          "enum": ["issue", "feature", "bug", "improvement", "spike"],
+          "default": "issue",
+          "description": "Tipo sugerido para el issue"
+        },
+        "suggestedPriority": {
+          "type": "string",
+          "enum": ["urgent", "high", "medium", "low"],
+          "default": "medium",
+          "description": "Prioridad sugerida"
+        },
+        "payload": {
+          "type": "object",
+          "description": "Datos adicionales FLEXIBLES en formato JSON. Acepta CUALQUIER estructura: logs, metadatos técnicos, contexto de análisis, screenshots en base64, etc.",
+          "additionalProperties": true,
+          "properties": {},
+          "examples": [
+            {
+              "errorLog": "TypeError: Cannot read property 'id' of undefined",
+              "confidence": 0.95,
+              "affectedEndpoints": ["/api/login", "/api/register"],
+              "lastWorkingVersion": "v2.1.0",
+              "timestamp": "2026-03-18T10:30:00Z"
+            },
+            {
+              "endpoint": "/api/users",
+              "method": "POST",
+              "statusCode": 500,
+              "requestBody": { "email": "test@example.com" },
+              "responseBody": { "error": "Internal Server Error" }
+            },
+            {
+              "screenshot": "data:image/png;base64,iVBORw0KGgo...",
+              "browser": "Chrome 120.0.0",
+              "os": "Windows 11",
+              "viewport": "1920x1080"
+            },
+            {
+              "traceId": "abc123",
+              "spanId": "def456",
+              "service": "auth-service",
+              "pod": "auth-7d9f4b8c5-x2v4p",
+              "logs": [
+                "[ERROR] Connection timeout",
+                "[WARN] Retry attempt 1",
+                "[ERROR] Max retries exceeded"
+              ]
+            }
+          ]
+        },
+        "source": {
+          "type": "string",
+          "default": "ai_agent",
+          "description": "Origen de la sugerencia",
+          "examples": ["ai_agent", "api", "slack", "email", "web_form"]
+        }
+      },
+      "required": ["projectId", "title"],
+      "additionalProperties": false,
+      "returns": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "intake": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "status": { "type": "string", "enum": ["pending"] },
+              "suggestedType": { "type": "string" },
+              "suggestedPriority": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "nextSteps": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "architecture": {
+        "flow": [
+          "1. IA llama agile_submit_intake con datos de la sugerencia",
+          "2. Sistema crea registro en agile_intakes con status='pending'",
+          "3. Intake aparece en bandeja de entrada para revisión humana",
+          "4. Humano revisa y decide: APROBAR o RECHAZAR",
+          "5. Si aprueba: sistema ejecuta transacción atómica para crear issue",
+          "6. Issue aparece en board y es visible por agile_read_board"
+        ],
+        "constraints": [
+          "NUNCA escribe directamente en agile_issues",
+          "SIEMPRE requiere aprobación humana",
+          "NO existe bypass para el proceso de triage",
+          "ÚNICA herramienta disponible para proponer cambios"
+        ],
+        "dataFlow": {
+          "input": "agile_intakes (tabla de triaje)",
+          "afterApproval": "agile_issues (tabla de issues aprobados)",
+          "readOutput": "agile_read_board consulta agile_issues"
+        }
+      }
+    }
+  },
+  "validation": {
+    "notes": [
+      "El campo 'payload' en agile_submit_intake usa 'additionalProperties: true'",
+      "Esto significa que acepta CUALQUIER propiedad adicional sin validación estricta",
+      "El esquema del payload es intencionalmente flexible para permitir diversos contextos",
+      "Los ejemplos muestran casos de uso comunes: logs de error, metadatos HTTP, screenshots, trazas"
+    ]
+  }
+}

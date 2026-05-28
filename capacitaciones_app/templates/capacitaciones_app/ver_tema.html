@@ -1,0 +1,149 @@
+{% extends 'capacitaciones_app/base.html' %}
+{% block title %}{{ tema.titulo }}{% endblock %}
+
+{% block content %}
+<!-- Toast Notifications para Feedback -->
+<!-- Feedback ya enviado -->
+<div id="notificacion-feedback-enviado" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999; display: none;">
+    <div class="alert alert-warning alert-dismissible fade show shadow-lg" role="alert" style="max-width: 350px;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>¡Feedback ya enviado!</strong>
+        <br>Ya enviaste tu comentario para este tema anteriormente.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<!-- Feedback enviado exitosamente -->
+<div id="notificacion-feedback-exitoso" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999; display: none;">
+    <div class="alert alert-success alert-dismissible fade show shadow-lg" role="alert" style="max-width: 350px;">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>¡Feedback enviado!</strong>
+        <br>Gracias por tu comentario sobre este tema.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<div class="container my-5">
+    <h1 class="text-success mb-3">{{ tema.titulo }}</h1>
+
+    <!-- Contenido -->
+    <div class="mb-4">
+        <p>{{ tema.contenido }}</p>
+    </div>
+
+    {% if tema.video_local %}
+    <div class="mb-4">
+        <h5 class="text-success">🎥 Video</h5>
+        <br>
+                <video width="100%" controls>
+            <source src="{{ tema.video_local.url }}" type="video/mp4">
+            Tu navegador no soporta el video.
+        </video>
+    </div>
+    
+{% endif %}
+
+{% if tema.video_externo %}
+    <div class="mb-4">
+        <h5 class="text-success">🎥 Video externo</h5>
+        <br>
+        <div style="width: 100%; height: 600px;">
+            {{ tema.video_externo|safe }}
+        </div>
+    </div>
+{% endif %}
+
+
+
+
+{% if tema.video_youtube %}
+    <div class="mb-4">
+        <h5 class="text-success">🎥 Video de YouTube</h5>
+        <br>
+        <div class="ratio ratio-16x9">
+            <iframe src="{{ tema.video_youtube }}" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+{% endif %}
+
+
+    {% if tema.imagen %}
+        <div class="mb-4 text-center">
+            <h5 class="text-success">🖼 Imagen</h5>
+            <img src="{{ tema.imagen.url }}" class="img-fluid rounded shadow-sm" alt="Imagen del tema">
+        </div>
+    {% endif %}
+
+    {% if tema.documento %}
+        <div class="mb-4">
+            <h5 class="text-success">📄 Documento</h5>
+            <a href="{{ tema.documento.url }}" class="btn btn-outline-primary" download>Descargar documento</a>
+        </div>
+    {% endif %}
+
+    {% if tema.archivos.all %}
+        <div class="mb-4">
+            <h5 class="text-success">📂 Archivos adicionales</h5>
+            <ul class="list-group">
+                {% for archivo in tema.archivos.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ archivo.nombre }}
+                        <a href="{{ archivo.archivo.url }}" class="btn btn-sm btn-outline-primary" download>Descargar</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <!-- Botón de completado -->
+    <div class="mt-4">
+        {% if completado %}
+            <span class="badge bg-success py-2 px-3">✅ Tema completado</span>
+        {% else %}
+            <form method="post" action="{% url 'marcar_tema_completado' tema.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-success">Marcar como completado</button>
+            </form>
+        {% endif %}
+    </div>    <!-- Volver -->
+    <a href="{% url 'detalle_curso' curso.id %}" class="btn btn-outline-secondary mt-4">← Volver al curso</a>
+</div>
+
+<script>
+// Sistema de notificaciones para feedback
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Función para mostrar notificación
+    function mostrarNotificacion(elementId, autoHide = true, hideDelay = 5000) {
+        const notificacion = document.getElementById(elementId);
+        if (notificacion) {
+            notificacion.style.display = 'block';
+            
+            if (autoHide) {
+                setTimeout(() => {
+                    const alert = notificacion.querySelector('.alert');
+                    if (alert) {
+                        alert.classList.remove('show');
+                        setTimeout(() => {
+                            notificacion.style.display = 'none';
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }, 150);
+                    }
+                }, hideDelay);
+            }
+        }
+    }
+    
+    // Verificar feedback ya enviado
+    if (urlParams.get('feedback_ya_enviado') === 'true') {
+        mostrarNotificacion('notificacion-feedback-enviado');
+    }
+    
+    // Verificar feedback enviado exitosamente
+    if (urlParams.get('feedback_enviado_exitoso') === 'true') {
+        mostrarNotificacion('notificacion-feedback-exitoso');
+    }
+});
+</script>
+{% endblock %}

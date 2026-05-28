@@ -291,7 +291,7 @@
             },
             {
                 "check": "Scope 'memory:write' requerido para POST",
-                "result": "PASS", 
+                "result": "PASS",
                 "evidence": "agent-memory.ts:238 usa requireScope('memory:write')"
             },
             {
@@ -465,19 +465,31 @@
             {
                 "name": "HonoAdapter",
                 "purpose": "Registra rutas HTTP en la aplicación Hono",
-                "methods": ["setApp(app: Hono)", "register(trigger, definition)", "isReady()"],
+                "methods": [
+                    "setApp(app: Hono)",
+                    "register(trigger, definition)",
+                    "isReady()"
+                ],
                 "state": "Pending registrations flushed when app is set"
             },
             {
-                "name": "BullMQAdapter", 
+                "name": "BullMQAdapter",
                 "purpose": "Crea Workers de BullMQ para procesamiento asíncrono",
-                "methods": ["setConnection(connection)", "register(trigger, definition)", "shutdown()"],
+                "methods": [
+                    "setConnection(connection)",
+                    "register(trigger, definition)",
+                    "shutdown()"
+                ],
                 "state": "Workers map, Queues map"
             },
             {
                 "name": "MCPAdapter",
                 "purpose": "Expone acciones como tools del servidor MCP",
-                "methods": ["setServer(server)", "register(trigger, definition)", "listTools()"],
+                "methods": [
+                    "setServer(server)",
+                    "register(trigger, definition)",
+                    "listTools()"
+                ],
                 "state": "Tools map, Server reference"
             }
         ]
@@ -1310,5 +1322,194 @@
                 }
             ]
         }
+    },
+    "dataset_creator_integration": {
+        "description": "Dataset Creator - Integration Tests (Frontend → Backend)",
+        "date": "2026-03-29",
+        "summary": {
+            "total": 14,
+            "passed": 14,
+            "failed": 0,
+            "duration": "4.53ms"
+        },
+        "results": [
+            {
+                "name": "Transform native fields to FieldDefinition",
+                "status": "passed",
+                "duration": "0.14ms"
+            },
+            {
+                "name": "Transform calculated fields to KPI fields",
+                "status": "passed",
+                "duration": "0.10ms"
+            },
+            {
+                "name": "Create complete CreateDatasetPayload",
+                "status": "passed",
+                "duration": "1.92ms"
+            },
+            {
+                "name": "Generate slug from label",
+                "status": "passed",
+                "duration": "0.15ms"
+            },
+            {
+                "name": "Valid payload passes schema validation",
+                "status": "passed",
+                "duration": "0.31ms"
+            },
+            {
+                "name": "Payload without name fails validation",
+                "status": "passed",
+                "duration": "0.26ms"
+            },
+            {
+                "name": "Field without key fails validation",
+                "status": "passed",
+                "duration": "0.95ms"
+            },
+            {
+                "name": "Invalid field type fails validation",
+                "status": "passed",
+                "duration": "0.23ms"
+            },
+            {
+                "name": "KPI field type is valid",
+                "status": "passed",
+                "duration": "0.07ms"
+            },
+            {
+                "name": "Removing field cascades to calculated fields",
+                "status": "passed",
+                "duration": "0.08ms"
+            },
+            {
+                "name": "Wizard steps are valid",
+                "status": "passed",
+                "duration": "0.03ms"
+            },
+            {
+                "name": "All calculated field types are supported",
+                "status": "passed",
+                "duration": "0.10ms"
+            },
+            {
+                "name": "Output formats are valid",
+                "status": "passed",
+                "duration": "0.06ms"
+            },
+            {
+                "name": "Formula dependencies are extracted correctly",
+                "status": "passed",
+                "duration": "0.11ms"
+            }
+        ]
+    },
+    "query_engine": {
+        "description": "Query Engine - Traductor JSON a SQL con Auto-Join",
+        "date": "2026-04-13",
+        "summary": {
+            "total": 19,
+            "passed": 19,
+            "failed": 0,
+            "duration": "2.14ms"
+        },
+        "results": [
+            {
+                "name": "validateQuery passes for valid query",
+                "status": "passed",
+                "duration": "0.41ms"
+            },
+            {
+                "name": "validateQuery rejects blacklisted fields in where",
+                "status": "passed",
+                "duration": "0.11ms"
+            },
+            {
+                "name": "validateQuery rejects invalid expand relation",
+                "status": "passed",
+                "duration": "0.07ms"
+            },
+            {
+                "name": "validateQuery accepts valid expand relation",
+                "status": "passed",
+                "duration": "0.06ms"
+            },
+            {
+                "name": "validateQuery reports all errors",
+                "status": "passed",
+                "duration": "0.09ms"
+            },
+            {
+                "name": "getAvailableRelations returns traces for agentIdentities",
+                "status": "passed",
+                "duration": "0.10ms"
+            },
+            {
+                "name": "getAvailableRelations returns steps and agent for agentTraces",
+                "status": "passed",
+                "duration": "0.10ms"
+            },
+            {
+                "name": "getAvailableRelations returns entries for dataSets",
+                "status": "passed",
+                "duration": "0.06ms"
+            },
+            {
+                "name": "getAvailableRelations returns empty array for unknown table",
+                "status": "passed",
+                "duration": "0.07ms"
+            },
+            {
+                "name": "fieldWhiteList contains common fields",
+                "status": "passed",
+                "duration": "0.06ms"
+            },
+            {
+                "name": "fieldWhiteList does not contain blacklisted fields",
+                "status": "passed",
+                "duration": "0.06ms"
+            },
+            {
+                "name": "validateQuery rejects sensitive fields",
+                "status": "passed",
+                "duration": "0.05ms"
+            },
+            {
+                "name": "QueryOptions requires table",
+                "status": "passed",
+                "duration": "0.07ms"
+            },
+            {
+                "name": "QueryOptions accepts all optional fields",
+                "status": "passed",
+                "duration": "0.18ms"
+            },
+            {
+                "name": "QueryOptions orderBy defaults to asc",
+                "status": "passed",
+                "duration": "0.07ms"
+            },
+            {
+                "name": "registerDynamicRelation adds new relation",
+                "status": "passed",
+                "duration": "0.23ms"
+            },
+            {
+                "name": "validateQuery accepts dynamically registered relation",
+                "status": "passed",
+                "duration": "0.07ms"
+            },
+            {
+                "name": "Documentation example: Basic query",
+                "status": "passed",
+                "duration": "0.20ms"
+            },
+            {
+                "name": "Documentation example: Query with operators",
+                "status": "passed",
+                "duration": "0.08ms"
+            }
+        ]
     }
 }

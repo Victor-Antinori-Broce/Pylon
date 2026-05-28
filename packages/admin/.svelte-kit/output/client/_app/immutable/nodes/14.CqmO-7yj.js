@@ -1,0 +1,1 @@
+import{r as s}from"../chunks/DfgfjzFV.js";const c=({url:o})=>{const e=o.searchParams.get("collection")||"blog-posts",t=o.searchParams.get("id"),r=`/g/system-tools/editor?collection=${e}${t?`&id=${t}`:""}`;throw s(308,r)},l=Object.freeze(Object.defineProperty({__proto__:null,load:c},Symbol.toStringTag,{value:"Module"}));export{l as universal};

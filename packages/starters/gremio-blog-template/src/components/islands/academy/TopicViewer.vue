@@ -110,7 +110,7 @@ const emit = defineEmits<{
   completed: [topicId: string];
 }>();
 
-const API = props.apiBase || "http://localhost:3001/api/custom";
+const API = props.apiBase || "http://localhost:3000/api/custom";
 const markingComplete = ref(false);
 const isCompleted = ref(props.completed ?? false);
 

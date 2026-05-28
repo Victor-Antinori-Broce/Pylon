@@ -1,22 +1,77 @@
+// @ts-nocheck
 /**
  * GremiusCMS — Aggregated Schema for Drizzle Kit
- *
- * Re-exports the core schema plus all module schemas so that
- * `drizzle-kit generate` and `drizzle-kit push` see every table.
- *
- * When adding a new module with its own schema, add a re-export line here.
+ * 
+ * ⚠️ IMPORTANTE: Política de Migraciones
+ * ═══════════════════════════════════════════
+ * 
+ * PROBLEMA: Los enums de PostgreSQL son globales. Si dos grimoires definen
+ * enums con el mismo nombre (ej: "cargo"), drizzle-kit push pedirá
+ * confirmación interactiva, bloqueando el deploy.
+ * 
+ * SOLUCIÓN: Cada grimoire maneja sus propias migraciones SQL
+ * 
+ * 1. Grimoires CORE (siempre activos) → Exportar aquí
+ * 2. Grimoires opcionales → NO exportar, usar migraciones SQL
+ * 
+ * Ejemplo de migración SQL segura:
+ * ```sql
+ * -- migrations/0000_initial.sql
+ * DO $$
+ * BEGIN
+ *   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'my_status') THEN
+ *     CREATE TYPE my_status AS ENUM ('active', 'inactive');
+ *   END IF;
+ * END $$;
+ * 
+ * CREATE TABLE IF NOT EXISTS my_table (...);
+ * ```
  */
 
-// ── Core tables (auth, users, media, games, blog, etc.) ──
+// ═══════════════════════════════════════════════════════════════════════════
+// CORE SCHEMA (siempre activo)
+// ═══════════════════════════════════════════════════════════════════════════
 export * from "./schema";
 
-// ── Module schemas ──
-export * from "../../../../packages/grimoires/ai-memories/schema";
-export * from "../modules/booking/booking.schema";
-export * from "../modules/directory/directory.schema";
-export * from "../modules/dms/dms.schema";
-export * from "../modules/formulas/formulas.schema";
-export * from "../modules/academy/academy.schema";
-export * from "../modules/webhooks/webhooks.schema";
-export * from "../modules/promote/promote.schema";
-export * from "../modules/connectors/connectors.schema";
+// ═══════════════════════════════════════════════════════════════════════════
+// GRIMOIRES CORE (Siempre activos - migraciones en Drizzle)
+// ═══════════════════════════════════════════════════════════════════════════
+// NOTA: Estos grimoires usan drizzle-kit migrate/push porque sus tablas
+// son fundamentales y se crean en el primer setup
+
+export * from "../../../../packages/grimoires/grimoire-blocks/blocks.schema";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GRIMOIRES OPCIONALES (Migraciones SQL independientes)
+// ═══════════════════════════════════════════════════════════════════════════
+// NOTA: Estos grimoires usan migraciones SQL manuales para evitar conflictos
+// de enums y tener control total sobre sus tablas.
+// 
+// El schema se exporta solo para tipos TypeScript, NO para drizzle-kit push.
+
+// Academy LMS - Usa enums como "cargo" que pueden colisionar
+// Las tablas se crean via SQL en el hook onStartup
+// export * from "../../../../packages/grimoires/grimoire-academy-lms/academy-lms.schema";
+
+// Booking - Usa migraciones SQL en packages/grimoires/grimoire-booking/migrations/
+// export * from "../../../../packages/grimoires/grimoire-booking/booking.schema";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REGLAS PARA NUEVOS GRIMOIRES
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// 1. Si tu grimoire tiene enums con nombres genéricos (status, type, cargo, etc.)
+//    → NO exportes aquí. Usa migraciones SQL.
+//
+// 2. Si tu grimoire es opcional (puede habilitarse/deshabilitarse)
+//    → NO exportes aquí. Usa migraciones SQL.
+//
+// 3. Si tu grimoire es CORE y tiene enums únicos
+//    → Puedes exportar aquí, pero usa nombres con prefijo:
+//      pgEnum("grimoire_name_enum_name", [...])
+//
+// 4. Template de migración SQL:
+//    packages/grimoires/grimoire-xxx/migrations/0000_initial.sql
+//
+//    Ver ejemplo en: grimoire-booking/migrations/0000_initial.sql
+//

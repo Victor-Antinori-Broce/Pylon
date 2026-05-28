@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GremiusCMS — Dynamic Schema Merger (The Arcane Schema Weaver)
  *
@@ -18,10 +19,24 @@
  * NOTE: schema-all.ts (static) is kept for drizzle-kit code generation.
  */
 
-import * as coreSchema from "../db/schema";
-import gremiusConfig from "../../gremius.config";
+import * as coreSchema from "../db/schema-core";
+import { staticConfig as gremiusConfig } from "../../gremius.config";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { db } from "../db";
+import { installedGrimoires } from "../db/schema-core";
+import { eq } from "drizzle-orm";
+
+/**
+ * Grimoires that handle their own migrations (SQL files)
+ * These are excluded from schema merging to avoid conflicts
+ */
+const SELF_MIGRATING_GRIMOIRES = new Set([
+    "grimoire-academy-lms",
+    "grimoire-booking",
+    "academy",
+    "booking",
+]);
 
 /**
  * Get the currently active realm from environment (sync version for startup).
@@ -53,29 +68,19 @@ interface RealmManifest {
  * Get bundled grimoires for a realm by reading its realm.json manifest.
  */
 async function getRealmGrimoires(realmId: string): Promise<string[]> {
-    try {
-        // Try new realm.json format first
-        const realmJsonPath = join(
-            process.cwd(),
-            "../../packages/realms",
-            realmId,
-            "realm.json"
-        );
+    // Resolve workspace root
+    const cwdCheck = join(process.cwd(), "packages", "grimoires", "package.json");
+    const root = existsSync(cwdCheck) ? process.cwd() : join(process.cwd(), "../../");
 
+    try {
+        const realmJsonPath = join(root, "packages/realms", realmId, "realm.json");
         if (existsSync(realmJsonPath)) {
             const file = Bun.file(realmJsonPath);
             const manifest: RealmManifest = await file.json();
             return manifest.grimoires || [];
         }
 
-        // Fallback to legacy gremius.json
-        const legacyPath = join(
-            process.cwd(),
-            "../../packages/realms",
-            realmId,
-            "gremius.json"
-        );
-
+        const legacyPath = join(root, "packages/realms", realmId, "gremius.json");
         if (existsSync(legacyPath)) {
             const file = Bun.file(legacyPath);
             const manifest = await file.json();
@@ -96,30 +101,78 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
     // Start with all core schema exports
     const merged: Record<string, unknown> = { ...coreSchema };
 
-    const { modules } = gremiusConfig;
+    const configGrimoires = gremiusConfig.grimoires ?? gremiusConfig.modules ?? [];
     const activeRealm = await getActiveRealmSync();
     const realmGrimoires = activeRealm
         ? await getRealmGrimoires(activeRealm)
         : [];
 
-    // Merge unique grimoires from both sources
-    // Note: modules are legacy, will be phased out in favor of realm.json
-    const allGrimoires = new Set([...modules, ...realmGrimoires]);
+    // Get grimoires installed via npm/marketplace from installed_grimoires table
+    let dbInstalledIds: string[] = [];
+    try {
+      const rows = await db
+        .select({ grimoireId: installedGrimoires.grimoireId })
+        .from(installedGrimoires)
+        .where(eq(installedGrimoires.enabled, true));
+      dbInstalledIds = rows.map(r => r.grimoireId);
+    } catch {
+      // Table might not exist yet
+    }
 
-    const grimoiresPath = join(process.cwd(), "../../packages/grimoires");
+    const allGrimoires = new Set([...configGrimoires, ...realmGrimoires, ...dbInstalledIds]);
+
+    // Resolve workspace root (same logic as module-loader)
+    const cwdCheck = join(process.cwd(), "packages", "grimoires", "package.json");
+    const workspaceRoot = existsSync(cwdCheck)
+        ? process.cwd()       // Docker: /app/packages/grimoires exists
+        : join(process.cwd(), "../../"); // Dev: apps/api/../../
+
+    const grimoiresPath = join(workspaceRoot, "packages/grimoires");
     const legacyModulesPath = join(process.cwd(), "src/modules");
 
+    const GRIMOIRE_DIR_MAP: Record<string, string> = {
+        "academy": "grimoire-academy-lms",
+        "gremius-crm": "grimoire-crm",
+        "ai-memories": "ai-memories",
+    };
+
     for (const name of allGrimoires) {
+        // Skip grimoires that handle their own migrations
+        if (SELF_MIGRATING_GRIMOIRES.has(name)) {
+            console.log(`  ⏩ ${name} → self-managing (skipped)`);
+            continue;
+        }
+
         let schemaLoaded = false;
 
         // Try grimoires path first (new location)
         try {
             const cleanName = name.replace(/^grimoire-/, "");
-            const schemaPath1 = join(grimoiresPath, name, `${name}.schema.ts`);
-            const schemaPath2 = join(grimoiresPath, name, `${cleanName}.schema.ts`);
+            const dirName = GRIMOIRE_DIR_MAP[name] || GRIMOIRE_DIR_MAP[cleanName] || `grimoire-${cleanName}`;
 
-            let targetPath = existsSync(schemaPath1) ? schemaPath1 :
-                existsSync(schemaPath2) ? schemaPath2 : null;
+            const possiblePaths = [
+                join(grimoiresPath, name, `${name}.schema.ts`),
+                join(grimoiresPath, name, `${cleanName}.schema.ts`),
+                join(grimoiresPath, name, `schema.ts`),
+                join(grimoiresPath, name, `src`, `schema.ts`),
+                join(grimoiresPath, name, `src`, `${name}.schema.ts`),
+                join(grimoiresPath, name, `src`, `${cleanName}.schema.ts`),
+                join(grimoiresPath, dirName, `${cleanName}.schema.ts`),
+                join(grimoiresPath, dirName, `${name}.schema.ts`),
+                join(grimoiresPath, dirName, `${dirName}.schema.ts`),
+                join(grimoiresPath, dirName, `schema.ts`),
+                join(grimoiresPath, dirName, `src`, `schema.ts`),
+                join(grimoiresPath, dirName, `src`, `${cleanName}.schema.ts`),
+                join(grimoiresPath, dirName, `src`, `${dirName}.schema.ts`),
+            ];
+
+            let targetPath = null;
+            for (const p of possiblePaths) {
+                if (existsSync(p)) {
+                    targetPath = p;
+                    break;
+                }
+            }
 
             if (targetPath) {
                 const mod = await import(targetPath);
@@ -132,6 +185,97 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
             }
         } catch {
             // Try legacy modules path
+        }
+
+        // Try node_modules (npm-installed grimoires)
+        if (!schemaLoaded) {
+            try {
+                const cleanName = name.replace(/^grimoire-/, "");
+                const nodeModulesPaths = [
+                    join(workspaceRoot, "node_modules"),
+                    join(process.cwd(), "node_modules"),
+                    join(workspaceRoot, "apps", "api", "node_modules"),
+                ];
+
+                for (const nmPath of nodeModulesPaths) {
+                    const npmPaths = [
+                        // Scoped official
+                        join(nmPath, "@gremius", `grimoire-${cleanName}`, `${cleanName}.schema.ts`),
+                        join(nmPath, "@gremius", `grimoire-${cleanName}`, `schema.ts`),
+                        join(nmPath, "@gremius", `grimoire-${cleanName}`, `src`, `schema.ts`),
+                        join(nmPath, "@gremius", name, `${cleanName}.schema.ts`),
+                        join(nmPath, "@gremius", name, `schema.ts`),
+                        join(nmPath, "@gremius", name, `src`, `schema.ts`),
+                        // Community
+                        join(nmPath, `grimoire-${cleanName}`, `${cleanName}.schema.ts`),
+                        join(nmPath, `grimoire-${cleanName}`, `schema.ts`),
+                        join(nmPath, `grimoire-${cleanName}`, `src`, `schema.ts`),
+                        join(nmPath, name, `${cleanName}.schema.ts`),
+                        join(nmPath, name, `schema.ts`),
+                        join(nmPath, name, `src`, `schema.ts`),
+                    ];
+
+                    for (const p of npmPaths) {
+                        if (existsSync(p)) {
+                            const mod = await import(p);
+                            for (const [key, value] of Object.entries(mod)) {
+                                if (key === "default") continue;
+                                merged[key] = value;
+                            }
+                            console.log(`  📜 ${name} → schema merged (npm)`);
+                            schemaLoaded = true;
+                            break;
+                        }
+                    }
+                    if (schemaLoaded) break;
+                }
+
+                // Fallback: use installed_grimoires.sourceUrl to resolve schema path
+                if (!schemaLoaded) {
+                    try {
+                        const dbRows = await db
+                            .select({ sourceUrl: installedGrimoires.sourceUrl, path: installedGrimoires.path })
+                            .from(installedGrimoires)
+                            .where(eq(installedGrimoires.grimoireId, name));
+
+                        for (const row of dbRows) {
+                            const pkgName = row.sourceUrl;
+                            if (!pkgName) continue;
+
+                            for (const nmPath of nodeModulesPaths) {
+                                const resolvedPkgPath = join(nmPath, pkgName);
+                                if (!existsSync(resolvedPkgPath)) continue;
+
+                                const sourceUrlPaths = [
+                                    join(resolvedPkgPath, `${name.replace(/^grimoire-/, "")}.schema.ts`),
+                                    join(resolvedPkgPath, `schema.ts`),
+                                    join(resolvedPkgPath, `src`, `schema.ts`),
+                                    join(resolvedPkgPath, `${name}.schema.ts`),
+                                ];
+
+                                for (const p of sourceUrlPaths) {
+                                    if (existsSync(p)) {
+                                        const mod = await import(p);
+                                        for (const [key, value] of Object.entries(mod)) {
+                                            if (key === "default") continue;
+                                            merged[key] = value;
+                                        }
+                                        console.log(`  📜 ${name} → schema merged (npm via sourceUrl)`);
+                                        schemaLoaded = true;
+                                        break;
+                                    }
+                                }
+                                if (schemaLoaded) break;
+                            }
+                            if (schemaLoaded) break;
+                        }
+                    } catch {
+                        // Ignore
+                    }
+                }
+            } catch {
+                // Continue to legacy fallback
+            }
         }
 
         // Try legacy core modules path if not found

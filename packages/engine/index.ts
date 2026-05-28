@@ -145,6 +145,56 @@ export type {
     QueryResult,
 } from "./src/query-parser";
 
+// ── Query Translator (Fase 2 - JSON to SQL with Auto-Join) ──
+export {
+    queryTranslator,
+    validateQueryTranslator,
+    QueryTranslatorError,
+} from "./src/query";
+export type {
+    QueryTranslatorOptions,
+    QueryTranslatorResult,
+    WhereFilter,
+    FieldFilter,
+    FilterOperator,
+    LogicalOperator,
+    OrderBy,
+    RelationDef,
+} from "./src/query";
+
+// ── Gremius QL Engine (Prisma-style JSON to SQL Translator) ──
+export {
+    parseGremiusQuery,
+    validateGremiusQuery,
+    getAvailableRelations as getGremiusRelations,
+    registerDynamicRelation as registerGremiusRelation,
+    debugQuery,
+    GremiusQLError,
+} from "./src/translator";
+export type {
+    GremiusQueryOptions,
+    GremiusQueryResult,
+    WhereFilter as GremiusWhereFilter,
+    FieldFilter as GremiusFieldFilter,
+    FilterOperator as GremiusFilterOperator,
+    LogicalOperator as GremiusLogicalOperator,
+} from "./src/translator";
+
+// ── Batch Processor (ACID Transactions - El Muro de Titanio) ──
+export {
+    BatchProcessor,
+    createBatchProcessor,
+    executeSingle,
+    createWithChildren,
+    BatchProcessorError,
+} from "./src/batch";
+export type {
+    BatchOperation,
+    BatchOperationResult,
+    BatchResult,
+    BatchOperationType,
+} from "./src/batch";
+
 // ── Validator Engine (Declarative Validation with If/Then) ──
 export {
     validate,
@@ -166,17 +216,11 @@ export type {
 } from "./src/validator";
 
 // ── Batch API (ACID Transactions - El Muro de Titanio) ──
-export {
-    BatchProcessor,
-    createBatchProcessor,
-    executeSingle,
-    createWithChildren,
-} from "./src/batch-api";
 export type {
     BatchAction,
-    BatchOperation,
+    BatchApiOperation,
     BatchOptions,
-    OperationResult,
-    BatchResult,
+    BatchApiOperationResult,
+    BatchApiResult,
     BatchError,
 } from "./src/batch-api";

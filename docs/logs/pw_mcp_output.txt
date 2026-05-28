@@ -1,0 +1,260 @@
+
+Running 18 tests using 1 worker
+
+  Γ£ô   1 [chromium] ΓÇ║ tests\api\mcp.spec.ts:28:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 1. Connection & Session Lifecycle ΓÇ║ Should establish SSE connection and return sessionId (25ms)
+  Γ£ô   2 [chromium] ΓÇ║ tests\api\mcp.spec.ts:45:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 1. Connection & Session Lifecycle ΓÇ║ Should reject POST requests without session (51ms)
+  Γ£ô   3 [chromium] ΓÇ║ tests\api\mcp.spec.ts:55:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 1. Connection & Session Lifecycle ΓÇ║ Should reject POST requests with invalid session (20ms)
+  Γ£ÿ   4 [chromium] ΓÇ║ tests\api\mcp.spec.ts:69:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should perform 'initialize' handshake (15ms)
+  Γ£ÿ   5 [chromium] ΓÇ║ tests\api\mcp.spec.ts:91:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should accept 'initialized' notification without response (151ms)
+  Γ£ÿ   6 [chromium] ΓÇ║ tests\api\mcp.spec.ts:104:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should respond to 'ping' requests (56ms)
+  Γ£ÿ   7 [chromium] ΓÇ║ tests\api\mcp.spec.ts:113:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should return error (-32601) for unknown methods (50ms)
+  Γ£ÿ   8 [chromium] ΓÇ║ tests\api\mcp.spec.ts:127:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should list available resources (137ms)
+  Γ£ÿ   9 [chromium] ΓÇ║ tests\api\mcp.spec.ts:140:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should read 'gremius://datasets' resource (53ms)
+  Γ£ÿ  10 [chromium] ΓÇ║ tests\api\mcp.spec.ts:158:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should read 'gremius://grimoires' resource (59ms)
+  Γ£ÿ  11 [chromium] ΓÇ║ tests\api\mcp.spec.ts:171:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should return error (-32002) for unknown resource URI (124ms)
+  Γ£ÿ  12 [chromium] ΓÇ║ tests\api\mcp.spec.ts:190:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should list available tools and their schemas (66ms)
+  Γ£ÿ  13 [chromium] ΓÇ║ tests\api\mcp.spec.ts:207:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should return error (-32601) when calling unknown tool (67ms)
+  Γ£ÿ  14 [chromium] ΓÇ║ tests\api\mcp.spec.ts:221:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should return error (-32602) for 'gremius_query_dataset' missing required arguments (65ms)
+  -  15 [chromium] ΓÇ║ tests\api\mcp.spec.ts:238:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should execute 'gremius_insert_record' successfully
+  -  16 [chromium] ΓÇ║ tests\api\mcp.spec.ts:262:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should execute 'gremius_query_dataset' successfully with limit 5
+  Γ£ÿ  17 [chromium] ΓÇ║ tests\api\mcp.spec.ts:287:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should execute 'gremius_dispatch_worker' successfully on email queue (29ms)
+  Γ£ÿ  18 [chromium] ΓÇ║ tests\api\mcp.spec.ts:312:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should fail gracefully 'gremius_dispatch_worker' with unknown queue (93ms)
+
+
+  1) [chromium] ΓÇ║ tests\api\mcp.spec.ts:69:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should perform 'initialize' handshake 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m1[39m
+    Received: [31mnull[39m
+
+      81 |             const data = await res.json();
+      82 |             expect(data.jsonrpc).toBe("2.0");
+    > 83 |             expect(data.id).toBe(1);
+         |                             ^
+      84 |             expect(data.result.protocolVersion).toBe("2024-11-05");
+      85 |             expect(data.result.serverInfo.name).toBe("gremius-mcp-server");
+      86 |             // Check capabilities
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:83:29
+
+  2) [chromium] ΓÇ║ tests\api\mcp.spec.ts:91:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should accept 'initialized' notification without response 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 14[39m
+
+    [32m- null[39m
+    [31m+ <html>[43m
+    [49m[39m
+    [31m+ <head><title>405 Not Allowed</title></head>[43m
+    [49m[39m
+    [31m+ <body>[43m
+    [49m[39m
+    [31m+ <center><h1>405 Not Allowed</h1></center>[43m
+    [49m[39m
+    [31m+ <hr><center>nginx/1.29.1</center>[43m
+    [49m[39m
+    [31m+ </body>[43m
+    [49m[39m
+    [31m+ </html>[43m
+    [49m[39m
+    [31m+ <!-- a padding to disable MSIE and Chrome friendly error page -->[43m
+    [49m[39m
+    [31m+ <!-- a padding to disable MSIE and Chrome friendly error page -->[43m
+    [49m[39m
+    [31m+ <!-- a padding to disable MSIE and Chrome friendly error page -->[43m
+    [49m[39m
+    [31m+ <!-- a padding to disable MSIE and Chrome friendly error page -->[43m
+    [49m[39m
+    [31m+ <!-- a padding to disable MSIE and Chrome friendly error page -->[43m
+    [49m[39m
+    [31m+ <!-- a padding to disable MSIE and Chrome friendly error page -->[43m
+    [49m[39m
+    [31m+[39m
+
+       99 |             });
+      100 |             const text = await res.text();
+    > 101 |             expect(text).toBe("null"); // Hono `c.json(null)` devuelve "null" string
+          |                          ^
+      102 |         });
+      103 |
+      104 |         test("Should respond to 'ping' requests", async ({ request }) => {
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:101:26
+
+  3) [chromium] ΓÇ║ tests\api\mcp.spec.ts:104:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should respond to 'ping' requests 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      106 |                 data: { jsonrpc: "2.0", method: "ping", id: 42 }
+      107 |             });
+    > 108 |             const data = await res.json();
+          |                          ^
+      109 |             expect(data.result).toEqual({});
+      110 |             expect(data.id).toBe(42);
+      111 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:108:26
+
+  4) [chromium] ΓÇ║ tests\api\mcp.spec.ts:113:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should return error (-32601) for unknown methods 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      115 |                 data: { jsonrpc: "2.0", method: "unknown/method", id: 99 }
+      116 |             });
+    > 117 |             const data = await res.json();
+          |                          ^
+      118 |             expect(data.error.code).toBe(-32601);
+      119 |             expect(data.error.message).toContain("Method not found");
+      120 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:117:26
+
+  5) [chromium] ΓÇ║ tests\api\mcp.spec.ts:127:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should list available resources 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      129 |                 data: { jsonrpc: "2.0", method: "resources/list", id: 100 }
+      130 |             });
+    > 131 |             const data = await res.json();
+          |                          ^
+      132 |             expect(data.result.resources).toBeDefined();
+      133 |             expect(data.result.resources.length).toBeGreaterThanOrEqual(2);
+      134 |
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:131:26
+
+  6) [chromium] ΓÇ║ tests\api\mcp.spec.ts:140:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should read 'gremius://datasets' resource 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      147 |                 }
+      148 |             });
+    > 149 |             const data = await res.json();
+          |                          ^
+      150 |             expect(data.result.contents[0].mimeType).toBe("application/json");
+      151 |             expect(data.result.contents[0].text).toBeDefined();
+      152 |
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:149:26
+
+  7) [chromium] ΓÇ║ tests\api\mcp.spec.ts:158:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should read 'gremius://grimoires' resource 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      165 |                 }
+      166 |             });
+    > 167 |             const data = await res.json();
+          |                          ^
+      168 |             expect(data.result.contents[0].text).toContain("active");
+      169 |         });
+      170 |
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:167:26
+
+  8) [chromium] ΓÇ║ tests\api\mcp.spec.ts:171:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should return error (-32002) for unknown resource URI 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      178 |                 }
+      179 |             });
+    > 180 |             const data = await res.json();
+          |                          ^
+      181 |             expect(data.error.code).toBe(-32002);
+      182 |             expect(data.error.message).toContain("Unknown resource");
+      183 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:180:26
+
+  9) [chromium] ΓÇ║ tests\api\mcp.spec.ts:190:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should list available tools and their schemas 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      192 |                 data: { jsonrpc: "2.0", method: "tools/list", id: 200 }
+      193 |             });
+    > 194 |             const data = await res.json();
+          |                          ^
+      195 |             expect(data.result.tools).toBeDefined();
+      196 |
+      197 |             const toolNames = data.result.tools.map((t: any) => t.name);
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:194:26
+
+  10) [chromium] ΓÇ║ tests\api\mcp.spec.ts:207:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should return error (-32601) when calling unknown tool 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      214 |                 }
+      215 |             });
+    > 216 |             const data = await res.json();
+          |                          ^
+      217 |             expect(data.error.code).toBe(-32601);
+      218 |             expect(data.error.message).toContain("Unknown tool");
+      219 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:216:26
+
+  11) [chromium] ΓÇ║ tests\api\mcp.spec.ts:221:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should return error (-32602) for 'gremius_query_dataset' missing required arguments 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      231 |                 }
+      232 |             });
+    > 233 |             const data = await res.json();
+          |                          ^
+      234 |             expect(data.error.code).toBe(-32602);
+      235 |             expect(data.error.message).toContain("datasetId");
+      236 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:233:26
+
+  12) [chromium] ΓÇ║ tests\api\mcp.spec.ts:287:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should execute 'gremius_dispatch_worker' successfully on email queue 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      305 |                 }
+      306 |             });
+    > 307 |             const data = await res.json();
+          |                          ^
+      308 |             expect(data.result.content[0].type).toBe("text");
+      309 |             expect(data.result.content[0].text).toContain("Job dispatched"); // El BullMQ deber├¡a devolver el Job ID
+      310 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:307:26
+
+  13) [chromium] ΓÇ║ tests\api\mcp.spec.ts:312:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should fail gracefully 'gremius_dispatch_worker' with unknown queue 
+
+    SyntaxError: Unexpected token '<', "<html>
+    <h"... is not valid JSON
+
+      326 |                 }
+      327 |             });
+    > 328 |             const data = await res.json();
+          |                          ^
+      329 |             expect(data.error.code).toBe(-32602);
+      330 |             expect(data.error.message).toContain("Unknown queue");
+      331 |         });
+        at C:\Users\vantinori\Documents\github\cms\tests\api\mcp.spec.ts:328:26
+
+  13 failed
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:69:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should perform 'initialize' handshake 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:91:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should accept 'initialized' notification without response 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:104:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should respond to 'ping' requests 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:113:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 2. JSON-RPC Protocol Implementations ΓÇ║ Should return error (-32601) for unknown methods 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:127:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should list available resources 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:140:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should read 'gremius://datasets' resource 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:158:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should read 'gremius://grimoires' resource 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:171:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 3. Resource Capability Tests ΓÇ║ Should return error (-32002) for unknown resource URI 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:190:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should list available tools and their schemas 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:207:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should return error (-32601) when calling unknown tool 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:221:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should return error (-32602) for 'gremius_query_dataset' missing required arguments 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:287:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should execute 'gremius_dispatch_worker' successfully on email queue 
+    [chromium] ΓÇ║ tests\api\mcp.spec.ts:312:13 ΓÇ║ ≡ƒö┤ MCP Server - Model Context Protocol ΓÇ║ 4. Tool Capability Tests ΓÇ║ Should fail gracefully 'gremius_dispatch_worker' with unknown queue 
+  2 skipped
+  3 passed (43.0s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m
+error: "playwright.cmd" exited with code 1

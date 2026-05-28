@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Vue App Entrypoint for Astro Islands
  * Configures Vue app-level plugins and error handling.

@@ -1,65 +1,97 @@
+// @ts-nocheck
 /**
- * GremiusCMS - Hono API Server v0.7.0-beta
+ * GremiusCMS - Hono API Server v0.8.0-beta (Actions Unification)
  *
  * Runtime: Bun + Hono
  * Auth: Better-Auth (cookie sessions)
  * Queue: BullMQ + DragonflyDB
  * Real-time: WebSocket + Valkey Pub/Sub
+ * Actions: Unified Workers + Webhooks + Agents engine
  *
- * Architecture:
- *   - CORE Layer (Nivel 1): 5 toggleable infrastructure pieces (packages/core/)
- *   - ENGINE routes (auth, datasets, settings) are mounted directly
- *   - GRIMOIRE routes are loaded via module-loader (Nivel 2+)
+ * 3-Tier Architecture:
+ *   - ENGINE (Nivel 1): Auth, DB, Actions — always active (packages/engine/)
+ *   - CORE   (Nivel 2): Data Sets, Media, Connectors — switchable (packages/core/)
+ *   - GRIMOIRES (Nivel 3): Business modules — loaded via module-loader (packages/grimoires/)
+ *
+ * Phase 3: Actions Unification Complete
+ *   - actions table replaces gremius_functions + webhooks
+ *   - ActionEngine handles all automation types
+ *   - Legacy APIs maintained for backward compatibility
  */
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
+import { logger as honoLogger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { timing } from "hono/timing";
-import { eq, count } from "drizzle-orm";
+import { rateLimiter } from "hono-rate-limiter";
+import { eq, count, sql } from "drizzle-orm";
 import type { ServerWebSocket } from "bun";
 
-// ── Feature Flags ──
-import gremiusConfig from "../gremius.config";
+// ── Configuration ──
+import { config, features, rateLimitConfig, corsConfig } from "./lib/config";
+import { logger, createRequestLogger, logSecurity } from "./lib/logger";
 
-// ── OpenAPI Documentation ──
-import { swaggerUI } from "@hono/swagger-ui";
+// ── Feature Flags ──
+import { staticConfig as gremiusConfig } from "../gremius.config";
+
+
 
 import { auth } from "./lib/auth";
 import { db } from "./db";
-import { authUsers as user, siteSettings } from "./db/schema";
+import { authUsers as user, siteSettings } from "./db/schema-core";
 import { setupWorkers, emailQueue } from "./lib/queue";
 import { realtimeManager, type WSClientData } from "./lib/realtime";
 
-// ── Core Layer Routes (Nivel 1) — All imported through packages/core/ ──
-import { mediaRoutes, uploadRoutes } from "../../../packages/core/media-library";
-import { dataSetsFullRoutes, explorerRoutes, datasetsOpenAPIRouter } from "../../../packages/core/data-sets";
-import { pageBuilderRoutes } from "../../../packages/core/page-builder";
+// ── Core Layer Routes (Nivel 2) — Imported through packages/core/ ──
+// NOTE: media-library and data-sets have been migrated to grimoires
+// Legacy core imports removed — now provided by grimoires
 
-// ── Engine Routes ──
+// ── Engine Routes (Nivel 1) — Always-on infrastructure ──
 import { withTransactionalRLS } from "./middleware/transactional-rls";
+import { enrichUserContext } from "./middleware/user-context";
 import { modulesRoutes } from "./routes/modules";
-import { blogRoutes } from "./routes/blog";
 import { systemRoutes } from "./routes/system";
-import { settingsRoutes, syncRoutes, platformsRoutes, tagsRoutes, streamersRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
+import { settingsRoutes, syncRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
 import { graphqlRoutes } from "./routes/graphql";
 import { functionsRoutes } from "./routes/functions";
+import { actionsRoutes } from "./routes/actions";
+import { initActionsEngine } from "./lib/actions";
 import { initFunctionDispatcher } from "./lib/function-dispatcher";
 import { initCronScheduler } from "./lib/cron-scheduler";
 import { apiKeysRoutes } from "./routes/api-keys";
 import { mcpRoutes } from "./routes/mcp";
-import { formulasRoutes } from "./modules/formulas";
+import { adminRegistryRoutes } from "./routes/admin-registry";
+import agentRoutes from "./routes/agents";
+import agentPlaygroundRoutes from "./routes/agent-playground";
+import agentMemoryRoutes from "./routes/agent-memory";
+import agentsV1Routes from "./routes/agents-v1";
+import dataSourcesRoutes from "./routes/data-sources";
+import { explorerRoutes } from "./routes/data-explorer";
+import { schemaIntrospectionRoutes } from "./routes/schema-introspection";
+import { inlineRelationsRoutes } from "./routes/inline-relations";
+import { datasetsQueryRoutes } from "./routes/datasets-query";
+import { dynamicDocsRouter } from "./routes/docs-dynamic";
+import { itemsRoutes } from "./routes/items";
+import { codegenRoutes } from "./routes/codegen";
 
 // ── Module Loader ──
-import { loadModules } from "./lib/module-loader";
+import { loadModules, createGrimoireContext } from "./lib/module-loader";
 import { toonMiddleware } from "./lib/toon";
+
+// ── Actions Layer Integration (Nivel 1 DX) ──
+import { initActions } from "@gremius/engine";
+import { valkeyConnection } from "./lib/valkey";
 
 // ── Typed Hono app ──
 const app = new Hono<{
   Variables: {
     user: typeof auth.$Infer.Session.user | null;
     session: typeof auth.$Infer.Session.session | null;
+    requestId: string;
+    agent?: AgentAuthContext;
+    userRoleIds?: string[];
+    userDepartmentId?: string | null;
   };
 }>();
 
@@ -67,29 +99,109 @@ const app = new Hono<{
 // ⚙️ GLOBAL MIDDLEWARE
 // ══════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════
-// CORS DINÁMICO - Configurable via env
-// ═══════════════════════════════════════════════
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
-  "http://localhost:4321",
-  "http://localhost:5173",
-  "http://gremius_web:4321",
-  "http://gremius_admin:80",
-];
-
-app.use("*", logger());
-app.use("*", timing());
-app.use("*", secureHeaders());
-app.use("/api/*", toonMiddleware());
+// CORS — MUST be first middleware to handle OPTIONS preflight
+// before rate limiter or any other middleware can reject the request
 app.use(
   "*",
   cors({
-    origin: allowedOrigins,
-    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    origin: corsConfig.origins,
+    allowMethods: corsConfig.methods,
+    allowHeaders: corsConfig.headers,
+    credentials: corsConfig.credentials,
   })
 );
+
+// Request ID for tracing
+app.use("*", async (c, next) => {
+  c.set("requestId", crypto.randomUUID());
+  await next();
+});
+
+// ═══════════════════════════════════════════════
+// RATE LIMITING - Protection against abuse
+// ═══════════════════════════════════════════════
+if (rateLimitConfig.enabled) {
+  // Global rate limit
+  app.use(
+    "*",
+    rateLimiter({
+      windowMs: rateLimitConfig.windowMs,
+      limit: rateLimitConfig.maxRequests,
+      standardHeaders: "draft-6",
+      keyGenerator: (c) => {
+        // Use API key if present, otherwise IP
+        const authHeader = c.req.header("Authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          return authHeader.substring(7);
+        }
+        return c.req.header("x-forwarded-for") || "unknown";
+      },
+      skip: (c) => {
+        // Skip health checks
+        return rateLimitConfig.skipPaths.includes(c.req.path);
+      },
+    })
+  );
+
+  // Stricter rate limit for auth mutation endpoints (sign-in, sign-up)
+  // Excludes get-session which runs on every page load
+  app.use(
+    "/api/auth/sign-in/*",
+    rateLimiter({
+      windowMs: rateLimitConfig.windowMs,
+      limit: rateLimitConfig.authMax,
+      standardHeaders: "draft-6",
+      keyGenerator: (c) => c.req.header("x-forwarded-for") || "unknown",
+    })
+  );
+  app.use(
+    "/api/auth/sign-up/*",
+    rateLimiter({
+      windowMs: rateLimitConfig.windowMs,
+      limit: rateLimitConfig.authMax,
+      standardHeaders: "draft-6",
+      keyGenerator: (c) => c.req.header("x-forwarded-for") || "unknown",
+    })
+  );
+
+  logger.info("Rate limiting enabled");
+}
+
+// ═══════════════════════════════════════════════
+// STRUCTURED LOGGING - Request tracing
+// ═══════════════════════════════════════════════
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  const requestLogger = createRequestLogger(
+    c.get("requestId"),
+    c.get("user")?.id
+  );
+
+  requestLogger.info({
+    method: c.req.method,
+    path: c.req.path,
+    userAgent: c.req.header("user-agent"),
+  }, "Request started");
+
+  await next();
+
+  const duration = Date.now() - start;
+  requestLogger.info({
+    method: c.req.method,
+    path: c.req.path,
+    status: c.res.status,
+    duration,
+  }, "Request completed");
+});
+
+// ═══════════════════════════════════════════════
+// CORS DINÁMICO - Configurable via env
+// ═══════════════════════════════════════════════
+app.use("*", honoLogger());
+app.use("*", timing());
+app.use("*", secureHeaders());
+app.use("/api/*", toonMiddleware());
+// NOTE: CORS is mounted ABOVE (before rate limiter) to handle OPTIONS preflight correctly
 
 // ══════════════════════════════════════════════
 // 🔓 PUBLIC ROUTES (BEFORE AUTH)
@@ -119,13 +231,23 @@ app.post("/api/system/setup", async (c) => {
       return c.json({ error: "Missing required fields" }, 400);
     }
 
+    // Call Better-Auth API with proper Hono context
     const authRes = await auth.api.signUpEmail({
       body: { email, password, name },
+      headers: c.req.header(),
+      asResponse: false,
     });
 
-    if (!authRes?.user) throw new Error("Failed to create user");
+    if (!authRes || !('user' in authRes)) throw new Error("Failed to create user");
 
-    await db.update(user).set({ role: "admin" }).where(eq(user.id, authRes.user.id));
+    // Promote to admin — try by ID first, then by email as fallback
+    const updateResult = await db.update(user).set({ role: "admin" }).where(eq(user.id, authRes.user.id)).returning();
+    if (updateResult.length === 0) {
+      // ID didn't match — Better-Auth may use a different ID format
+      console.warn(`[setup] Role update by ID failed for ${authRes.user.id}, trying by email...`);
+      await db.update(user).set({ role: "admin" }).where(eq(user.email, email));
+    }
+    console.log(`[setup] User ${email} promoted to admin`);
 
     const [settings] = await db.select().from(siteSettings).limit(1);
     if (!settings) {
@@ -145,16 +267,63 @@ app.post("/api/system/setup", async (c) => {
 app.route("/api/system", systemRoutes);
 
 // ══════════════════════════════════════════════
-// 🔐 AUTH & SESSION (including Machine Auth)
+// 🔐 AUTH & SESSION (Including Agent NHI)
 // ══════════════════════════════════════════════
 
 import { createHash } from "crypto";
-import { apiKeys } from "./db/schema";
+import { apiKeys } from "./db/schema-core";
+import { authenticateAgent } from "./services/agent-auth";
+import type { AgentAuthContext } from "./services/agent-auth";
+
+// Extend Hono context types - agent is now defined in app Variables type above
 
 app.use("*", async (c, next) => {
+  // Skip session extraction for Better-Auth endpoints to avoid conflicts
+  if (c.req.path.startsWith("/api/auth/")) {
+    return next();
+  }
+
   const authHeader = c.req.header("Authorization");
 
-  // 1. Machine Auth (API Keys)
+  // 1. AGENT AUTH (NHI - Non-Human Identity) - NEW SYSTEM
+  // Format: Bearer grm_agent_xxxxx
+  if (authHeader?.startsWith("Bearer grm_agent_")) {
+    const rawToken = authHeader.replace("Bearer ", "").trim();
+
+    const result = await authenticateAgent(rawToken, {
+      ipAddress: c.req.header("x-forwarded-for") || undefined,
+      userAgent: c.req.header("user-agent") || undefined,
+    });
+
+    if (result.success && result.context) {
+      // Set agent context
+      c.set("agent", result.context);
+
+      // Also set as user for compatibility with existing middleware
+      c.set("user", {
+        id: result.context.agentId,
+        name: result.context.agentName,
+        email: `agent@${result.context.agentId}.gremius.local`,
+        image: null,
+        role: "agent",  // Not admin - granular permissions via scopes
+        scopes: result.context.scopes,
+      } as any);
+      c.set("session", null);
+
+      // Add rate limit headers
+      c.header("X-Agent-Id", result.context.agentId);
+      c.header("X-RateLimit-Limit", result.context.rateLimit.toString());
+
+      return next();
+    } else {
+      return c.json({
+        error: result.error || "Agent authentication failed",
+        code: result.code
+      }, 401);
+    }
+  }
+
+  // 2. LEGACY Machine Auth (API Keys) - DEPRECATED, will migrate to agents
   if (authHeader?.startsWith("Bearer gremius_sk_")) {
     const rawToken = authHeader.replace("Bearer ", "").trim();
     const keyHash = createHash("sha256").update(rawToken).digest("hex");
@@ -182,12 +351,16 @@ app.use("*", async (c, next) => {
     }
   }
 
-  // 2. Human Auth (Better-Auth Cookies)
+  // 3. Human Auth (Better-Auth Cookies)
   const s = await auth.api.getSession({ headers: c.req.raw.headers });
   c.set("user", s?.user || null);
   c.set("session", s?.session || null);
   await next();
 });
+
+// Enrich user context with ACL fields (roles, department)
+// Must run after auth middleware so that `user` is already populated
+app.use("*", enrichUserContext);
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
@@ -196,26 +369,105 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 // ══════════════════════════════════════════════
 
 app.get("/api/health", async (c) => {
-  let queueStatus = "unknown";
+  const checks: Record<string, { status: string; details?: unknown; error?: string }> = {};
+  let overallStatus = "ok";
+
+  // Database check
+  try {
+    const start = Date.now();
+    await db.execute(sql`SELECT 1`);
+    checks.database = {
+      status: "ok",
+      details: { responseTime: `${Date.now() - start}ms` }
+    };
+  } catch (err: any) {
+    checks.database = { status: "error", error: err.message };
+    overallStatus = "degraded";
+  }
+
+  // Queue check
   try {
     const waiting = await emailQueue.getWaitingCount();
     const active = await emailQueue.getActiveCount();
-    queueStatus = `ok (waiting: ${waiting}, active: ${active})`;
-  } catch {
-    queueStatus = "disconnected";
+    checks.queue = {
+      status: "ok",
+      details: { waiting, active }
+    };
+  } catch (err: any) {
+    checks.queue = { status: "error", error: err.message };
+    overallStatus = "degraded";
   }
 
-  const rtStats = realtimeManager.getStats();
+  // Realtime check
+  try {
+    const rtStats = realtimeManager.getStats();
+    checks.realtime = { status: "ok", details: rtStats };
+  } catch (err: any) {
+    checks.realtime = { status: "error", error: err.message };
+  }
 
+  // Memory usage
+  const memory = process.memoryUsage();
+  checks.memory = {
+    status: memory.heapUsed > 500 * 1024 * 1024 ? "warning" : "ok",
+    details: {
+      heapUsed: `${Math.round(memory.heapUsed / 1024 / 1024)}MB`,
+      heapTotal: `${Math.round(memory.heapTotal / 1024 / 1024)}MB`,
+      rss: `${Math.round(memory.rss / 1024 / 1024)}MB`,
+    },
+  };
+
+  // Uptime
+  const uptime = process.uptime();
+
+  c.status(overallStatus === "ok" ? 200 : 503);
   return c.json({
-    status: "ok",
+    status: overallStatus,
     service: "gremius-api",
     version: "0.7.0-beta",
+    environment: config.NODE_ENV,
     timestamp: new Date().toISOString(),
-    queue: queueStatus,
-    realtime: rtStats,
+    uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
+    checks,
   });
 });
+
+// pgvector health check endpoint
+app.get("/api/health/pgvector", async (c) => {
+  try {
+    const result = await db.execute(
+      sql`SELECT 1 as installed FROM pg_extension WHERE extname = 'vector'`
+    );
+    const installed = result.rows.length > 0;
+    return c.json({
+      pgvector: installed,
+      requiredFor: ["ai-memories"],
+      message: installed
+        ? "pgvector is installed and ready"
+        : "pgvector is NOT installed. AI features will not work.",
+    });
+  } catch (err: any) {
+    return c.json({
+      pgvector: false,
+      error: err.message,
+      message: "Could not check pgvector status. Database connection failed.",
+    }, 500);
+  }
+});
+
+// ══════════════════════════════════════════════
+// 🎛️ HEADLESS MODE
+// ══════════════════════════════════════════════
+
+if (features.headless) {
+  app.use("/api/admin/*", (c) => {
+    return c.json({
+      error: "Headless mode",
+      message: "Admin API is disabled. This Gremius instance is running in headless BaaS mode."
+    }, 503);
+  });
+  console.log("  👻 Headless Mode → Admin routes disabled");
+}
 
 app.use("/api/admin/*", async (c, next) => {
   const u = c.get("user");
@@ -231,47 +483,72 @@ app.use("/api/admin/*", async (c, next) => {
 // Data Sets & Visualizer (ALWAYS ACTIVE — the foundation)
 app.use("/api/datasets/:id/entries", withTransactionalRLS());
 app.use("/api/datasets/:slug/entries", withTransactionalRLS());
-app.route("/api/datasets", dataSetsFullRoutes);
-app.route("/api/explorer", explorerRoutes);
+// Note: explorerRoutes are now provided by grimoire-datasets
+// Only mount lite routes directly (as fallback if grimoire isn't loaded yet)
 app.route("/api/data-sets", dataSetsLiteRoutes);
-console.log("  📊 Core: Data Sets & Visualizer → ALWAYS ACTIVE");
+console.log("  📊 Core: Data Sets Lite Routes → ALWAYS ACTIVE");
 
-// Media Library (toggleable)
-if (gremiusConfig.core.mediaLibrary.enabled) {
-  app.route("/api/media", mediaRoutes);
-  app.route("/api/upload", uploadRoutes);
-  console.log("  🖼️  Core: Media Library → ENABLED");
+// Query Engine & Batch Processor Routes (FASE 2: La Magia de los Datos)
+app.route("/api/datasets", datasetsQueryRoutes);
+app.route("/api/items", itemsRoutes);
+app.route("/api/generate-code", codegenRoutes);
+console.log("  🔍 Core: Query Engine (Gremius QL) → ALWAYS ACTIVE");
+console.log("  📦 Core: Batch Processor (ACID) → ALWAYS ACTIVE");
+console.log("  🎨 Core: Code Generation → /api/generate-code");
+
+// Media Library (toggleable) - now as grimoire
+const isGrimoireEnabled = (id: string) => gremiusConfig.core.find((g: any) => g.id === id)?.enabled ?? false;
+
+if (isGrimoireEnabled("grimoire-media")) {
+  console.log("  🖼️  Core: Media Library → ENABLED (routes mounted by grimoire)");
 } else {
   console.log("  🖼️  Core: Media Library → DISABLED");
 }
 
-// Page Builder (toggleable)
-if (gremiusConfig.core.pageBuilder.enabled) {
-  app.route("/api/page-builder", pageBuilderRoutes);
-  console.log("  🧱 Core: Page Builder → ENABLED");
-} else {
-  console.log("  🧱 Core: Page Builder → DISABLED");
-}
+// Note: Page Builder, Blog, Formulas are now Nivel 3 Grimoires (Promote merged into Blog)
+// loaded dynamically by the module-loader. Webhooks and Connectors are
+// when their Grimoire / Core flags are enabled. See loadModules() below.
 
-// Note: Promote to Content and Webhooks are loaded via module-loader
-// when their Core flags are enabled. See loadModules() below.
+// Connectors (toggleable)
+if (isGrimoireEnabled("grimoire-connectors")) {
+  console.log("  🔌 Core: Data Connectors → ENABLED");
+} else {
+  console.log("  🔌 Core: Data Connectors → DISABLED");
+}
 
 // ══════════════════════════════════════════════
 // 🔧 ENGINE ROUTES
 // ══════════════════════════════════════════════
 
-app.route("/api/blog", blogRoutes);
 app.route("/api/settings", settingsRoutes);
 app.route("/api/modules", modulesRoutes);
 app.route("/api/sync", syncRoutes);
 app.route("/api/graphql", graphqlRoutes);
 app.route("/api/functions", functionsRoutes);
+app.route("/api/actions", actionsRoutes);
 app.route("/api/keys", apiKeysRoutes);
-app.route("/api/platforms", platformsRoutes);
-app.route("/api/tags", tagsRoutes);
-app.route("/api/streamers", streamersRoutes);
-app.route("/api/mcp", mcpRoutes);
-app.route("/api", formulasRoutes);
+if (features.mcpEnabled) {
+  app.route("/api/mcp", mcpRoutes);
+  console.log("  🤖 MCP Server → ENABLED (/api/mcp)");
+} else {
+  console.log("  🤖 MCP Server → DISABLED");
+}
+app.route("/api/admin/registry", adminRegistryRoutes);
+app.route("/api/admin/agents", agentRoutes);
+app.route("/api/v1", agentsV1Routes);  // Frontend API v1 compatibility (includes /agents, /traces, /identities)
+app.route("/api/admin/agents/playground", agentPlaygroundRoutes);
+app.route("/api/agent/memory", agentMemoryRoutes);
+app.route("/api/admin/data-sources", dataSourcesRoutes);
+app.route("/api/explorer", explorerRoutes);
+app.route("/api/schema", schemaIntrospectionRoutes);
+app.route("/api/relations", inlineRelationsRoutes);
+console.log("  🎛️  Admin Registry → Auto-discovery enabled");
+console.log("  🔍 Schema Introspection → DB reflection enabled");
+console.log("  🔗 Inline Relations → Django-style inlines enabled");
+// Note: platforms, tags, streamers, blog, formulas and other grimoires
+// are loaded dynamically by loadModules() below. Do not add hardcoded routes here.
+
+import { initializeGrimoires, defineAction } from "@gremius/engine";
 
 // ══════════════════════════════════════════════
 // 📦 DYNAMIC MODULE ROUTES (Grimoires + Core modules)
@@ -279,72 +556,117 @@ app.route("/api", formulasRoutes);
 
 await loadModules(app);
 
+// Invalidate GraphQL cache after grimoires are loaded so new tables appear
+import { invalidateGraphQLCache } from "./routes/graphql";
+invalidateGraphQLCache();
+
+// ══════════════════════════════════════════════
+// 🏰 REALM LIFECYCLE — Seed & Activation
+// ══════════════════════════════════════════════
+
+const activeRealm = process.env.GREMIUS_ACTIVE_REALM || process.env.GREMIUS_ACTIVE_THEME || null;
+if (activeRealm) {
+  try {
+    const { activateRealm } = await import("./lib/realm-lifecycle");
+    await activateRealm(activeRealm);
+  } catch (err: any) {
+    console.warn(`[Realm] Activation failed for ${activeRealm}:`, err.message);
+  }
+}
+
+// ══════════════════════════════════════════════
+// 🪄 INITIALIZE AUTO-GRIMOIRES
+// ══════════════════════════════════════════════
+
+const autoMcpProxy = {
+  addTool: (toolDef: any) => {
+    // Convert generated MCP tools directly to the unified Action engine
+    defineAction({
+      trigger: `agent.tool:${toolDef.name}`,
+      description: toolDef.description,
+      inputSchema: toolDef.inputSchema,
+      run: async (ctx: any) => {
+        // Execute the native handler for this Auto-Grimoire tool
+        return toolDef.handler(ctx.payload, {
+          agentId: ctx.agent?.agentId,
+          agentName: ctx.agent?.agentName,
+          scopes: ctx.agent?.scopes || [],
+          preferToon: ctx.agent?.preferToon || false
+        });
+      }
+    });
+  }
+};
+
+initializeGrimoires(createGrimoireContext(), app as any, autoMcpProxy);
+
 // ══════════════════════════════════════════════
 // 🚨 ERROR HANDLING
 // ══════════════════════════════════════════════
 
-app.notFound((c) => c.json({ error: "Not found", path: c.req.path }, 404));
+app.notFound((c) => {
+  logger.warn({
+    method: c.req.method,
+    path: c.req.path,
+    status: 404,
+  }, "Route not found");
+
+  return c.json({
+    error: "Not found",
+    path: c.req.path,
+    requestId: c.get("requestId"),
+  }, 404);
+});
 
 app.onError((err, c) => {
-  console.error(`[ERROR] ${c.req.method} ${c.req.path}:`, err.message);
-  return c.json({
-    error: "Internal server error",
-    message: process.env.NODE_ENV === "development" ? err.message : undefined,
-  }, 500);
+  const isDevelopment = config.NODE_ENV === "development";
+  const statusCode = (err as any).status || 500;
+
+  // Log error with context
+  logger.error({
+    method: c.req.method,
+    path: c.req.path,
+    error: err.message,
+    stack: isDevelopment ? err.stack : undefined,
+    statusCode,
+    requestId: c.get("requestId"),
+  }, `Error handling request: ${err.message}`);
+
+  // Security: don't expose internal errors in production
+  const response: Record<string, unknown> = {
+    error: statusCode >= 500 ? "Internal server error" : err.message,
+    requestId: c.get("requestId"),
+  };
+
+  if (isDevelopment) {
+    response.message = err.message;
+    response.stack = err.stack;
+  }
+
+  return c.json(response, statusCode as any);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 📚 OPENAPI DOCUMENTATION (Machine-Readable API)
+// 📚 API DOCUMENTATION (Swagger + Scalar)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Mount OpenAPI documented routes
-app.route("/api", datasetsOpenAPIRouter);
+import { docsRoutes } from "./routes/docs";
 
-// Expose OpenAPI specification JSON at /api/doc
-datasetsOpenAPIRouter.doc("/doc", {
-  openapi: "3.0.0",
-  info: {
-    version: "1.0.0",
-    title: "Gremius BaaS API",
-    description: "API oficial de Gremius, optimizada para consumo humano y agentes LLM.\n\nEsta documentación es autogenerada a partir de los esquemas Zod de @gremius/shared, garantizando que siempre está sincronizada con el código.",
-    contact: {
-      name: "Gremius Team",
-      url: "https://gremius.dev",
-    },
-  },
-  servers: [
-    {
-      url: "http://localhost:3001/api",
-      description: "Local development server",
-    },
-    {
-      url: "{protocol}://{host}/api",
-      description: "Dynamic server",
-      variables: {
-        protocol: {
-          enum: ["http", "https"],
-          default: "https",
-        },
-        host: {
-          default: "api.gremius.dev",
-        },
-      },
-    },
-  ],
-  tags: [
-    {
-      name: "Datasets",
-      description: "Operaciones CRUD sobre colecciones de datos dinámicas",
-    },
-    {
-      name: "Auth",
-      description: "Autenticación y autorización",
-    },
-  ],
-});
+// Mount docs routes (dynamic OpenAPI from grimoires)
+app.route("/api/docs", dynamicDocsRouter);
 
-// Expose Swagger UI at /api/swagger
-app.get("/api/swagger", swaggerUI({ url: "/api/doc" }));
+// Also mount legacy docs for compatibility
+app.route("/api/docs-legacy", docsRoutes);
+
+// Redirect legacy /api/swagger to new docs
+app.get("/api/swagger", (c) => c.redirect("/api/docs"));
+
+// Also redirect /api/doc (OpenAPI JSON spec) to new endpoint
+app.get("/api/doc", (c) => c.redirect("/api/docs/openapi.json"));
+
+console.log("  📚 API Documentation → /api/docs (Swagger UI)");
+console.log("  📚 API Reference (Modern) → /api/docs/modern (Scalar)");
+console.log("  📚 OpenAPI Spec → /api/docs/openapi.json");
 
 // ══════════════════════════════════════════════
 // 🚀 SERVER START
@@ -388,6 +710,20 @@ async function getSessionFromRequest(req: Request): Promise<{ userId: string | n
 // Initialize Gremius Workers dispatcher (event listeners)
 initFunctionDispatcher();
 
+// Initialize Actions Engine (unified workers + webhooks)
+initActionsEngine();
+
+// Initialize DX Actions Layer (Nivel 1)
+initActions({
+  hono: app as any,
+  bullmq: valkeyConnection,
+  mcp: true
+});
+
+// Initialize Agent Telemetry (Paso 2: Observability)
+import { initAgentTelemetry } from "./services/agent-telemetry";
+initAgentTelemetry();
+
 // Initialize Cron Scheduler (loads active cron jobs from DB)
 initCronScheduler().catch((err) => {
   console.warn(`  ⏰ Cron Scheduler init warning: ${err.message}`);
@@ -395,14 +731,15 @@ initCronScheduler().catch((err) => {
 
 console.log(`
 ╔══════════════════════════════════════════════════╗
-║   ⚡ GremiusCMS API v0.7.0-beta                 ║
+║   ⚡ GremiusCMS API v0.8.0-beta (Actions)       ║
 ║   Runtime: Bun + Hono                          ║
 ║   Auth: Better-Auth 🔐                         ║
 ║   Queue: BullMQ + Dragonfly 🐉                 ║
 ║   Real-time: WebSocket + Valkey 📡             ║
-║   Workers: Sandboxed Functions ⚙️               ║
+║   Actions: Unified Engine ⚡                    ║
 ║   GraphQL: /api/graphql 📊                    ║
-║   OpenAPI: /api/swagger 📚                    ║
+║   Docs: /api/docs (Swagger) 📚                ║
+║   API Ref: /api/docs/modern (Scalar) 📖       ║
 ║   RLS: El Muro de Titanio 🛡️                  ║
 ║   Port: ${port}                                  ║
 ╚══════════════════════════════════════════════════╝

@@ -1,0 +1,63 @@
+{
+  "name": "@gremius/testing",
+  "version": "0.1.0",
+  "description": "Gremius Testing Framework - Minimalist grimoire testing",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./sandbox-drizzle": {
+      "import": "./dist/sandbox-drizzle.js",
+      "types": "./dist/sandbox-drizzle.d.ts"
+    },
+    "./drizzle": {
+      "import": "./dist/drizzle.js",
+      "types": "./dist/drizzle.d.ts"
+    },
+    "./bun": {
+      "import": "./dist/bun.js",
+      "types": "./dist/bun.d.ts"
+    },
+    "./vitest": {
+      "import": "./dist/vitest.js",
+      "types": "./dist/vitest.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gremius/shared": "workspace:*",
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "vitest": "^2.0.0",
+    "drizzle-orm": "^0.45.0",
+    "pg": "^8.20.0"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    },
+    "pg-mem": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "pg-mem": "^3.0.14"
+  },
+  "keywords": ["gremius", "testing", "grimoires"],
+  "license": "MIT"
+}

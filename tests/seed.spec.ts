@@ -3,8 +3,8 @@
 
 import { test, expect } from "@playwright/test";
 
-const ADMIN = "http://localhost:5173";
-const API = "http://localhost:3001";
+const ADMIN = process.env.ADMIN_URL || "http://localhost:5173";
+const API = process.env.API_URL || "http://localhost:3001";
 
 test("seed — bootstrap admin panel", async ({ page }) => {
   // 1. Verify API is healthy

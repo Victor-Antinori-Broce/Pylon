@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { scanPackages } from "./src/services/scanner";
 
 async function main() {

@@ -17,13 +17,14 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { games } from "../grimoire-games/games.schema";
+// Note: currentGameId references games.id from grimoire-games.
+// We avoid cross-grimoire imports; FK is enforced at application level.
 
 // ═══════════════════════════════════════════════
 // Enums
 // ═══════════════════════════════════════════════
 
-export const streamerPlatformEnum = pgEnum("streamer_platform", [
+export const streamerPlatformEnum = pgEnum("streamers_platform", [
   "twitch",
   "youtube",
   "kick",
@@ -45,11 +46,11 @@ export const streamers = pgTable(
     bio: text("bio"),
     isLive: boolean("is_live").default(false),
     currentStreamTitle: text("current_stream_title"),
-    currentGameId: uuid("current_game_id").references(() => games.id, { onDelete: "set null" }),
+    currentGameId: uuid("current_game_id"), // References games.id from grimoire-games (app-level FK)
     viewerCount: integer("viewer_count").default(0),
     followerCount: integer("follower_count").default(0),
     avatarId: uuid("avatar_id"), // References media.id
-    thumbnailUrl: text("thumbnail_url"),
+    thumbnailId: uuid("thumbnail_id"), // References media.id
     socialLinks: text("social_links"), // JSON string
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -71,7 +72,7 @@ export const gamesToStreamers = pgTable(
   "games_to_streamers",
   {
     gameId: uuid("game_id")
-      .references(() => games.id, { onDelete: "cascade" })
+      // .references(() => games.id) removed to avoid cross-grimoire import
       .notNull(),
     streamerId: uuid("streamer_id")
       .references(() => streamers.id, { onDelete: "cascade" })
@@ -85,15 +86,13 @@ export const gamesToStreamers = pgTable(
 // Relations
 // ═══════════════════════════════════════════════
 
-export const streamersRelations = relations(streamers, ({ one, many }) => ({
-  currentGame: one(games, { 
-    fields: [streamers.currentGameId], 
-    references: [games.id] 
-  }),
+export const streamersRelations = relations(streamers, ({ many }) => ({
+  // currentGame relation removed to avoid cross-grimoire import
+  // Resolve via application-level join using currentGameId
   games: many(gamesToStreamers),
 }));
 
 export const gamesToStreamersRelations = relations(gamesToStreamers, ({ one }) => ({
-  game: one(games, { fields: [gamesToStreamers.gameId], references: [games.id] }),
+  // game: one(games) relation removed to avoid cross-grimoire import
   streamer: one(streamers, { fields: [gamesToStreamers.streamerId], references: [streamers.id] }),
 }));

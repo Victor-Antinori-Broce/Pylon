@@ -14,5 +14,7 @@
       "microsoft_graph": true,
       "sharepoint_sites": true
     }
-  }
+  },
+  "grimoireConfig": {},
+  "seed": null
 }

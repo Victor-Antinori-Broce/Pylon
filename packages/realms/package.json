@@ -1,0 +1,14 @@
+{
+  "name": "@gremius/realms",
+  "version": "0.8.0-beta",
+  "private": true,
+  "type": "module",
+  "description": "GremiusCMS Realms — Multi-tenant domain configurations (e.g., realm-esports, realm-finance).",
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "@gremius/shared": "workspace:*",
+    "@gremius/engine": "workspace:*"
+  }
+}

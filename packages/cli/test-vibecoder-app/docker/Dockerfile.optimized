@@ -1,0 +1,107 @@
+# ===================================================================
+# DEPRECATED - Use docker/Dockerfile.prod instead
+#
+# This was an experimental approach to reduce image size by copying
+# only dist/ bundles. However, Bun runs .ts natively and grimoires
+# use dynamic imports that require the full workspace source tree.
+# The API CMD `bun run dist/index.js` will fail at runtime because
+# dynamic imports from packages/grimoires/ won't resolve.
+#
+# Use: docker build -f docker/Dockerfile.prod --target api .
+# ===================================================================
+# GremiusCMS - Dockerfile OPTIMIZADO (Reduced Size) [DEPRECATED]
+
+FROM oven/bun:1-alpine AS base
+RUN apk add --no-cache nodejs npm
+WORKDIR /app
+RUN npm install -g pnpm@9.15.4
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 1: Dependencies
+# ═══════════════════════════════════════════════════════════════════════════
+FROM base AS dependencies
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/mcp-server/package.json ./packages/mcp-server/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/engine/package.json ./packages/engine/
+COPY packages/core/package.json ./packages/core/
+COPY packages/grimoires/package.json ./packages/grimoires/
+COPY packages/realms/package.json ./packages/realms/
+COPY packages/starters/gremio-blog-template/package.json ./packages/starters/gremio-blog-template/
+
+# Install dependencies
+RUN pnpm install --no-frozen-lockfile
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 2: Builder
+# ═══════════════════════════════════════════════════════════════════════════
+FROM dependencies AS builder
+RUN apk add --no-cache python3 make g++
+
+ARG PUBLIC_API_URL=http://localhost:3000
+ENV PUBLIC_API_URL=${PUBLIC_API_URL}
+ENV VITE_API_URL=${PUBLIC_API_URL}
+
+COPY . .
+
+RUN pnpm --filter @gremius/shared build
+RUN pnpm --filter @gremius/api build
+RUN pnpm --filter @gremius/admin build
+RUN SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm rebuild sharp
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 3: API - MINIMAL RUNTIME
+# ═══════════════════════════════════════════════════════════════════════════
+FROM oven/bun:1-alpine AS api
+RUN apk add --no-cache nodejs npm
+WORKDIR /app
+RUN npm install -g pnpm@9.15.4
+
+RUN apk add --no-cache postgresql-client
+
+# Copy ONLY the compiled API bundle and necessary files
+COPY --from=builder /app/apps/api/dist /app/dist
+COPY --from=builder /app/apps/api/package.json /app/package.json
+COPY --from=builder /app/docker/start-with-check.sh /app/docker/start-with-check.sh
+
+# Copy workspace packages (compiled) WITHOUT node_modules
+COPY --from=builder /app/packages/shared/dist /app/packages/shared/dist
+COPY --from=builder /app/packages/shared/package.json /app/packages/shared/package.json
+
+# Copy grimoires (they're dynamically imported)
+COPY --from=builder /app/packages/grimoires /app/packages/grimoires
+COPY --from=builder /app/packages/realms /app/packages/realms
+COPY --from=builder /app/packages/core /app/packages/core
+COPY --from=builder /app/packages/engine /app/packages/engine
+
+# Copy workspace files needed for pnpm install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install ONLY production dependencies
+RUN pnpm install --prod --no-frozen-lockfile
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["bun", "run", "dist/index.js"]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STAGE 4: Admin
+# ═══════════════════════════════════════════════════════════════════════════
+FROM nginx:alpine AS admin
+COPY --from=builder /app/apps/admin/build /usr/share/nginx/html
+COPY docker/nginx-admin.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]

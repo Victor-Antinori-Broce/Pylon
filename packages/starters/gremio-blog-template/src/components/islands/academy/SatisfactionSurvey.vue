@@ -82,7 +82,7 @@ const emit = defineEmits<{
   submitted: [];
 }>();
 
-const API = props.apiBase || "http://localhost:3001/api/custom";
+const API = props.apiBase || "http://localhost:3000/api/custom";
 
 const rating = ref(0);
 const hoverRating = ref(0);

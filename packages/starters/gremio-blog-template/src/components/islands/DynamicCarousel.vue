@@ -74,7 +74,7 @@ const items = ref<CarouselItem[]>([]);
 const trackRef = ref<HTMLElement | null>(null);
 let autoplayTimer: ReturnType<typeof setInterval> | null = null;
 
-const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3001") as string;
+const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000") as string;
 
 async function fetchData() {
   loading.value = true;

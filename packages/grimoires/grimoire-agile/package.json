@@ -1,0 +1,32 @@
+{
+  "name": "@gremius/grimoire-agile",
+  "version": "1.2.0",
+  "description": "Agile project management with AI triage and human approval (projects, issues, sprints, epics, intakes)",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch"
+  },
+  "keywords": ["gremius", "grimoire", "agile", "kanban", "scrum", "project-management"],
+  "author": "Gremius Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@gremius/shared": "workspace:*",
+    "hono": "^4.7.0",
+    "drizzle-orm": "^0.45.0"
+  },
+  "gremius": {
+    "type": "grimoire",
+    "id": "grimoire-agile",
+    "category": "productivity",
+    "order": 10,
+    "core": false,
+    "defaultEnabled": false,
+    "minVersion": "0.8.0"
+  }
+}

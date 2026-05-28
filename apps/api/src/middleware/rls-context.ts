@@ -30,7 +30,7 @@
  */
 
 import type { Context, Next } from "hono";
-import { db } from "../db";
+import { db, type DatabaseTransaction } from "../db";
 import { sql } from "drizzle-orm";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,6 +44,15 @@ export interface RLSContext {
   userId: string | null;
   role: string | null;
   isMachine: boolean;
+}
+
+/**
+ * Tipo para el usuario en contexto
+ */
+interface ContextUser {
+  id?: string;
+  role?: string;
+  [key: string]: unknown;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -74,7 +83,7 @@ const RLS_ROLE_KEY = "app.current_user_role";
  */
 export function rlsContextMiddleware() {
   return async (c: Context, next: Next) => {
-    const user = c.get("user") as any;
+    const user = c.get("user") as ContextUser | undefined;
     const userId = user?.id || null;
     const userRole = user?.role || "anonymous";
 
@@ -121,6 +130,11 @@ export function rlsContextMiddleware() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Tipo para el callback de transacción RLS
+ */
+type TransactionCallback<T> = (tx: DatabaseTransaction) => Promise<T>;
+
+/**
  * Ejecuta una función dentro de una transacción con contexto RLS inyectado.
  * 
  * ESTA es la función crítica para queries que bypassan el middleware,
@@ -141,7 +155,7 @@ export function rlsContextMiddleware() {
  */
 export async function withRLSTransaction<T>(
   userId: string | null,
-  callback: (tx: typeof db) => Promise<T>
+  callback: TransactionCallback<T>
 ): Promise<T> {
   return await db.transaction(async (tx) => {
     // Inyectar contexto al INICIO de la transacción
@@ -149,7 +163,7 @@ export async function withRLSTransaction<T>(
     await tx.execute(sql`SELECT set_config(${RLS_ROLE_KEY}, ${userId ? "user" : "anonymous"}, true)`);
     
     // Ejecutar la operación dentro de la transacción protegida
-    const result = await callback(tx as typeof db);
+    const result = await callback(tx);
     
     // El RLS se evalúa en cada query dentro de esta transacción
     return result;
@@ -189,14 +203,19 @@ export async function withRLSQuery<T>(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Verifica si el contexto RLS está correctamente configurado.
- * Útil para debugging y health checks.
+ * Resultado de la verificación de contexto RLS
  */
-export async function verifyRLSContext(): Promise<{
+interface RLSVerificationResult {
   userId: string | null;
   role: string | null;
   active: boolean;
-}> {
+}
+
+/**
+ * Verifica si el contexto RLS está correctamente configurado.
+ * Útil para debugging y health checks.
+ */
+export async function verifyRLSContext(): Promise<RLSVerificationResult> {
   try {
     const result = await db.execute<{ 
       user_id: string; 

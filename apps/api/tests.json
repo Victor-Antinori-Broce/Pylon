@@ -11,7 +11,7 @@
           "id": "ws-upgrade",
           "name": "HTTP to WebSocket Upgrade",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "assertions": [
             { "type": "connected", "timeout": 5000 },
             { "type": "message", "match": { "type": "connected", "clientId": "string" } }
@@ -21,7 +21,7 @@
           "id": "ws-auth",
           "name": "Authenticated WebSocket Connection",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "headers": { "Cookie": "{{session_cookie}}" },
           "assertions": [
             { "type": "message", "match": { "type": "connected", "userId": "string" } }
@@ -31,7 +31,7 @@
           "id": "ws-ping-pong",
           "name": "Heartbeat Ping/Pong",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "send": { "type": "ping" },
           "assertions": [
             { "type": "message", "match": { "type": "pong", "timestamp": "number" } }
@@ -47,7 +47,7 @@
           "id": "subscribe-table",
           "name": "Subscribe to Table Channel",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "subscribe", "channel": "table:test-dataset-id" } },
             { "expect": { "type": "subscribed", "channel": "table:test-dataset-id" } }
@@ -57,7 +57,7 @@
           "id": "subscribe-entry",
           "name": "Subscribe to Entry Channel",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "subscribe", "channel": "entry:test-entry-id" } },
             { "expect": { "type": "subscribed", "channel": "entry:test-entry-id" } }
@@ -67,7 +67,7 @@
           "id": "unsubscribe",
           "name": "Unsubscribe from Channel",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "subscribe", "channel": "table:test-dataset" } },
             { "expect": { "type": "subscribed" } },
@@ -79,7 +79,7 @@
           "id": "invalid-channel",
           "name": "Reject Invalid Channel Format",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "subscribe", "channel": "invalid-format" } },
             { "expect": { "type": "error", "message": "string" } }
@@ -98,7 +98,7 @@
           "steps": [
             {
               "action": "ws-connect",
-              "endpoint": "ws://localhost:3001/api/realtime"
+              "endpoint": "ws://localhost:3000/api/realtime"
             },
             {
               "action": "ws-send",
@@ -128,7 +128,7 @@
           "name": "Receive Update Event via Live Query",
           "type": "integration",
           "steps": [
-            { "action": "ws-connect", "endpoint": "ws://localhost:3001/api/realtime" },
+            { "action": "ws-connect", "endpoint": "ws://localhost:3000/api/realtime" },
             { "action": "ws-send", "message": { "type": "subscribe", "channel": "table:{{datasetId}}" } },
             {
               "action": "http-patch",
@@ -150,7 +150,7 @@
           "name": "Receive Delete Event via Live Query",
           "type": "integration",
           "steps": [
-            { "action": "ws-connect", "endpoint": "ws://localhost:3001/api/realtime" },
+            { "action": "ws-connect", "endpoint": "ws://localhost:3000/api/realtime" },
             { "action": "ws-send", "message": { "type": "subscribe", "channel": "table:{{datasetId}}" } },
             {
               "action": "http-delete",
@@ -176,7 +176,7 @@
           "id": "presence-join",
           "name": "Join Presence Room",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "presence:join", "room": "editor:doc-123" } },
             { "expect": { "type": "presence", "room": "editor:doc-123", "count": 1 } }
@@ -187,7 +187,7 @@
           "name": "Multiple Users in Room",
           "type": "concurrent",
           "clients": 3,
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "all": { "send": { "type": "presence:join", "room": "shared-room" } } },
             { "wait": 500 },
@@ -198,7 +198,7 @@
           "id": "presence-leave",
           "name": "Leave Presence Room",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "presence:join", "room": "temp-room" } },
             { "expect": { "type": "presence", "count": 1 } },
@@ -216,7 +216,7 @@
           "name": "10 Concurrent WebSocket Connections",
           "type": "load",
           "clients": 10,
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "actions": [
             { "send": { "type": "subscribe", "channel": "table:load-test" } }
           ],
@@ -230,7 +230,7 @@
           "name": "100 Concurrent WebSocket Connections",
           "type": "load",
           "clients": 100,
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "assertions": [
             { "all-connected": true },
             { "max-connect-time": 5000 }
@@ -241,7 +241,7 @@
           "name": "Broadcast Latency Under Load",
           "type": "load",
           "clients": 50,
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "setup": [
             { "all": { "send": { "type": "subscribe", "channel": "table:latency-test" } } }
           ],
@@ -265,7 +265,7 @@
           "id": "invalid-json",
           "name": "Handle Invalid JSON Message",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send-raw": "not valid json {{{" },
             { "expect": { "type": "error", "message": "Invalid JSON" } }
@@ -275,7 +275,7 @@
           "id": "unknown-type",
           "name": "Handle Unknown Message Type",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "unknown-action" } },
             { "expect": { "type": "error" } }
@@ -285,7 +285,7 @@
           "id": "reconnect",
           "name": "Client Reconnection After Disconnect",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "subscribe", "channel": "table:reconnect-test" } },
             { "expect": { "type": "subscribed" } },
@@ -411,7 +411,7 @@
           "id": "content-subscribe",
           "name": "Subscribe to Content Channel",
           "type": "websocket",
-          "endpoint": "ws://localhost:3001/api/realtime",
+          "endpoint": "ws://localhost:3000/api/realtime",
           "steps": [
             { "send": { "type": "subscribe", "channel": "content:test-post-id" } },
             { "expect": { "type": "subscribed", "channel": "content:test-post-id" } }
@@ -422,7 +422,7 @@
           "name": "Receive Content Update Event",
           "type": "integration",
           "steps": [
-            { "action": "ws-connect", "endpoint": "ws://localhost:3001/api/realtime" },
+            { "action": "ws-connect", "endpoint": "ws://localhost:3000/api/realtime" },
             { "action": "ws-send", "message": { "type": "subscribe", "channel": "content:{{postId}}" } },
             {
               "action": "http-patch",
@@ -457,3 +457,4 @@
     "retries": 3
   }
 }
+

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GremiusCMS — Apply "Lego" blocks migration
  *

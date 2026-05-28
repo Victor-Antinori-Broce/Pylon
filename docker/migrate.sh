@@ -1,19 +1,28 @@
 #!/bin/sh
-# Script de migración seguro para producción
+# Safe database migration script for production
 set -e
 
-echo "🗄️  Ejecutando migraciones de base de datos..."
+echo "Running database migrations..."
 
-# Esperar a que PostgreSQL esté disponible
-echo "⏳ Esperando a PostgreSQL..."
-until pg_isready -h "$DB_HOST" -U "$DB_USER" > /dev/null 2>&1; do
-    echo "   PostgreSQL no está listo... esperando"
+DB_URL="${DATABASE_URL:-postgresql://gremius:gremiuspassword@gremius_db_prod:5432/gremius_prod}"
+
+# Extract host and port from DATABASE_URL
+DB_HOST=$(echo "$DB_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')
+DB_PORT=$(echo "$DB_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+
+# Wait for PostgreSQL
+echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" -q 2>/dev/null; do
+    echo "   PostgreSQL not ready... waiting"
     sleep 2
 done
-echo "   ✅ PostgreSQL está listo"
+echo "   OK - PostgreSQL is ready"
 
-# Ejecutar migraciones con drizzle (método seguro)
-cd /app
-bun run db:migrate
+# Run migrations with drizzle
+cd /app/apps/api
+bunx drizzle-kit migrate
 
-echo "   ✅ Migraciones completadas"
+echo "   OK - Migrations completed"

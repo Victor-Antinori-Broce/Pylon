@@ -114,3 +114,41 @@ export function articleJsonLd(post: {
     },
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PAGINATION UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Respuesta paginada estándar
+ */
+export interface PaginatedResponse<T> {
+  docs: T[];
+  totalDocs: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+/**
+ * Helper para crear respuesta paginada
+ */
+export function createPaginatedResponse<T>(
+  docs: T[],
+  totalDocs: number,
+  page: number,
+  limit: number
+): PaginatedResponse<T> {
+  const totalPages = Math.ceil(totalDocs / limit);
+  return {
+    docs,
+    totalDocs,
+    totalPages,
+    page,
+    limit,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  };
+}

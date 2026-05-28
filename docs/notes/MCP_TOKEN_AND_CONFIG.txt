@@ -1,0 +1,100 @@
+═══════════════════════════════════════════════════════════════════
+MCP CONFIGURATION - PASO 0: VALIDACIÓN DEL TITANIO
+Fecha: 2026-03-19
+Estado: ✅ COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+🔐 TOKEN MCP GENERADO:
+────────────────────────────────────────────────────────────────────
+
+grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g
+
+────────────────────────────────────────────────────────────────────
+
+📋 CONFIGURACIÓN PARA CLAUDE DESKTOP:
+────────────────────────────────────────────────────────────────────
+
+Archivo: %APPDATA%\Claude\claude_desktop_config.json
+
+{
+  "mcpServers": {
+    "gremius": {
+      "command": "bun",
+      "args": ["run", "apps/api/src/mcp-server.ts"],
+      "cwd": "C:\\Users\\vantinori\\Documents\\github\\cms",
+      "env": {
+        "GREMUS_MCP_TOKEN": "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g",
+        "GREMUS_API_URL": "http://localhost:3001",
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}
+
+────────────────────────────────────────────────────────────────────
+
+🚀 INSTRUCCIONES DE INICIO:
+────────────────────────────────────────────────────────────────────
+
+1. INICIAR SERVIDOR GREM:
+   cd apps/api && bun run dev
+
+2. ABRIR CONFIGURACIÓN CLAUDE:
+   - Abre Claude Desktop
+   - Ve a Configuración → Developer → Edit Config
+   - Pega la configuración JSON de arriba
+
+3. REINICIAR CLAUDE DESKTOP
+
+4. PROBAR CONEXIÓN:
+   Escribe: "Lista las herramientas disponibles"
+
+────────────────────────────────────────────────────────────────────
+
+🛠️ COMANDOS ÚTILES:
+────────────────────────────────────────────────────────────────────
+
+# Regenerar token (si es necesario):
+bun run apps/api/scripts/seed-mcp-test.ts
+
+# Ejecutar servidor MCP manualmente:
+bun run apps/api/src/mcp-server.ts
+
+# Ver logs del servidor:
+bun run apps/api/src/mcp-server.ts 2>&1 | tee mcp.log
+
+────────────────────────────────────────────────────────────────────
+
+📊 AGENTE REGISTRADO:
+────────────────────────────────────────────────────────────────────
+
+Nombre: DevBot
+ID: agent_843a72bae29eeb9a
+Tipo: claude-desktop
+Scopes: ["read:issues", "write:intake"]
+Rate Limit: 120 req/min
+Estado: Activo
+
+────────────────────────────────────────────────────────────────────
+
+🔐 SEGURIDAD ZERO-TRUST:
+────────────────────────────────────────────────────────────────────
+
+✅ Token con formato grm_agent_claude-desktop_...
+✅ Hash SHA-256 almacenado en BD
+✅ Scopes validados en cada petición
+✅ Rate limiting activo
+✅ Auditoría en agent_audit_logs
+✅ Middleware RBAC verifica permisos
+
+────────────────────────────────────────────────────────────────────
+
+📚 DOCUMENTACIÓN:
+────────────────────────────────────────────────────────────────────
+
+- Guía completa: MCP_SETUP_GUIDE.md
+- Servidor MCP: apps/api/src/mcp-server.ts
+- Seed script: apps/api/scripts/seed-mcp-test.ts
+- Routes API: apps/api/src/routes/mcp.ts
+
+────────────────────────────────────────────────═══════════════════

@@ -18,5 +18,7 @@
       "primary_color": "#00e5ff",
       "accent_color": "#ff2a6d"
     }
-  }
+  },
+  "grimoireConfig": {},
+  "seed": null
 }

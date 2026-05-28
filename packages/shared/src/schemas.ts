@@ -27,6 +27,7 @@ export const FieldTypeSchema = z.enum([
   "json",
   "richtext",
   "relation",
+  "kpi",
 ]);
 
 export type FieldType = z.infer<typeof FieldTypeSchema>;
@@ -87,11 +88,11 @@ export const FieldDefinitionSchema = z.object({
   key: z.string().min(1, "Field key is required"),
   label: z.string().min(1, "Field label is required"),
   type: FieldTypeSchema,
-  
+
   // Metadata
   helpText: z.string().optional(),
   order: z.number().int().min(0).default(0),
-  
+
   // Validaciones (estilo Django)
   isRequired: z.boolean().default(false),
   isUnique: z.boolean().default(false),
@@ -101,13 +102,13 @@ export const FieldDefinitionSchema = z.object({
   maxValue: z.number().optional(),
   minLength: z.number().int().min(0).optional(),
   maxLength: z.number().int().min(0).optional(),
-  
+
   // Opciones para selects
   options: z.array(SelectOptionSchema).optional(),
-  
+
   // Configuración de relaciones
   relation: RelationConfigSchema.optional(),
-  
+
   // Configuración UI
   width: z.number().optional(),
   hidden: z.boolean().default(false),
@@ -163,14 +164,14 @@ export const DatasetDefinitionSchema = z.object({
   slug: z.string().min(1, "Dataset slug is required"),
   description: z.string().optional(),
   icon: z.string().optional(),
-  
+
   // El corazón: array de fields estructurados
   fields: z.array(FieldDefinitionSchema).min(0),
-  
+
   // Configuración Enterprise
   policyJson: DatasetPolicySchema.nullable().optional(),
   workflowJson: DatasetWorkflowSchema.nullable().optional(),
-  
+
   // Metadata
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
@@ -205,7 +206,6 @@ export const CreateDatasetPayloadSchema = DatasetDefinitionSchema.omit({
   updatedAt: true,
 }).extend({
   // Campos opcionales para creación
-  gameId: z.string().optional(),
   displayConfig: z.object({
     titleField: z.string().optional(),
     sortField: z.string().optional(),
@@ -223,7 +223,6 @@ export const UpdateDatasetPayloadSchema = DatasetDefinitionSchema.partial().omit
   createdAt: true,
   updatedAt: true,
 }).extend({
-  gameId: z.string().optional(),
   displayConfig: z.object({
     titleField: z.string().optional(),
     sortField: z.string().optional(),
@@ -249,7 +248,7 @@ export function validateDatasetDefinition(data: unknown): DatasetDefinition {
  * Valida de forma segura sin lanzar excepciones.
  * Retorna { success: true, data } o { success: false, error }
  */
-export function safeValidateDataset(data: unknown): 
+export function safeValidateDataset(data: unknown):
   | { success: true; data: DatasetDefinition }
   | { success: false; error: z.ZodError } {
   const result = DatasetDefinitionSchema.safeParse(data);

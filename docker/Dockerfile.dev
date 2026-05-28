@@ -1,33 +1,44 @@
-# ═══════════════════════════════════════════════════════════════════════════
-# GremiusCMS - Imagen de Desarrollo con Auto-Setup
-# ═══════════════════════════════════════════════════════════════════════════
+# ===================================================================
+# GremiusCMS - Development Image with Auto-Setup
+#
+# NOTE: For local development, prefer running apps locally with:
+#   pnpm dev:infra   (starts DB, MinIO, Valkey in Docker)
+#   pnpm dev         (starts API + Admin locally with hot reload)
+#
+# This image is for CI/testing or containerized dev environments only.
+# ===================================================================
 
 FROM oven/bun:1-alpine AS base
 
-# Instalar Node.js y pnpm
-RUN apk add --no-cache nodejs npm curl
+# Install Node.js and pnpm
+RUN apk add --no-cache nodejs npm curl postgresql-client
 RUN npm install -g pnpm@9.15.4
 
 WORKDIR /app
 
-# Copiar archivos de configuración del monorepo
+# Copy workspace config
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/web/package.json ./packages/web/
 COPY packages/admin/package.json ./packages/admin/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/engine/package.json ./packages/engine/
+COPY packages/core/package.json ./packages/core/
+COPY packages/grimoires/package.json ./packages/grimoires/
+COPY packages/mcp-server/package.json ./packages/mcp-server/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/realms/package.json ./packages/realms/
 
-# Instalar dependencias
-RUN pnpm install --frozen-lockfile
+# Install dependencies
+RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
-# Copiar todo el código fuente
+# Copy source
 COPY . .
 
 # Script de entrypoint para auto-setup
 COPY docker/docker-entrypoint-dev.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
 
-EXPOSE 3000 3001 4321
+EXPOSE 3000 3001 5173
 
 ENTRYPOINT ["docker-entrypoint-dev.sh"]
 CMD ["pnpm", "dev"]

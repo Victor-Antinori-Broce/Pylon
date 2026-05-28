@@ -1,0 +1,130 @@
+/**
+ * Gremio CMS — Page Builder (Blocks) Schema
+ *
+ * Drizzle ORM schema for dynamic page layouts with block-based content.
+ * Supports drag & drop positioning and multiple block types.
+ */
+import { pgTable, uuid, text, varchar, integer, boolean, timestamp, jsonb, uniqueIndex, index, pgEnum, } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+// ═══════════════════════════════════════════════
+// Enums
+// ═══════════════════════════════════════════════
+export const pageStatusEnum = pgEnum("block_page_status", [
+    "draft",
+    "published",
+    "archived",
+]);
+export const blockTypeEnum = pgEnum("block_content_type", [
+    "hero",
+    "text",
+    "image",
+    "video",
+    "grid",
+    "cards",
+    "quote",
+    "cta",
+    "embed",
+    "divider",
+    "spacer",
+    "custom",
+]);
+// ═══════════════════════════════════════════════
+// Pages Table (Layout containers)
+// ═══════════════════════════════════════════════
+export const pages = pgTable("block_pages", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 500 }).notNull(),
+    slug: varchar("slug", { length: 500 }).notNull().unique(),
+    description: text("description"),
+    status: pageStatusEnum("status").default("draft").notNull(),
+    // SEO & Meta
+    metaTitle: varchar("meta_title", { length: 500 }),
+    metaDescription: text("meta_description"),
+    ogImageId: uuid("og_image_id"), // References media.id
+    // Layout settings
+    layout: varchar("layout", { length: 50 }).default("default").notNull(), // default, full-width, sidebar-left, sidebar-right
+    cssClass: varchar("css_class", { length: 200 }),
+    customCss: text("custom_css"),
+    // Publishing
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    authorId: uuid("author_id"), // References users.id
+    // Settings
+    isHomepage: boolean("is_homepage").default(false).notNull(),
+    requireAuth: boolean("require_auth").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+    uniqueIndex("block_pages_slug_idx").on(t.slug),
+    index("block_pages_status_idx").on(t.status),
+    index("block_pages_homepage_idx").on(t.isHomepage),
+    index("block_pages_published_idx").on(t.publishedAt),
+]);
+// ═══════════════════════════════════════════════
+// Blocks Table (Content blocks within pages)
+// ═══════════════════════════════════════════════
+export const blocks = pgTable("block_contents", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pageId: uuid("page_id")
+        .references(() => pages.id, { onDelete: "cascade" })
+        .notNull(),
+    // Block configuration
+    type: blockTypeEnum("type").notNull(),
+    name: varchar("name", { length: 200 }), // Human-readable label
+    // Positioning (for drag & drop)
+    sortOrder: integer("sort_order").default(0).notNull(),
+    columnSpan: integer("column_span").default(12).notNull(), // 1-12 grid system
+    // Content (varies by block type)
+    content: jsonb("content").$type().notNull(),
+    // Styling
+    cssClass: varchar("css_class", { length: 200 }),
+    backgroundColor: varchar("background_color", { length: 50 }),
+    textColor: varchar("text_color", { length: 50 }),
+    padding: varchar("padding", { length: 50 }), // sm, md, lg, xl
+    // Visibility
+    isVisible: boolean("is_visible").default(true).notNull(),
+    visibleFrom: timestamp("visible_from", { withTimezone: true }),
+    visibleUntil: timestamp("visible_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+    index("block_contents_page_idx").on(t.pageId),
+    index("block_contents_type_idx").on(t.type),
+    index("block_contents_order_idx").on(t.pageId, t.sortOrder),
+]);
+// ═══════════════════════════════════════════════
+// Block Templates (Reusable block presets)
+// ═══════════════════════════════════════════════
+export const blockTemplates = pgTable("block_templates", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: text("description"),
+    category: varchar("category", { length: 100 }).notNull(), // layout, content, media, marketing
+    type: blockTypeEnum("type").notNull(),
+    content: jsonb("content").$type().notNull(),
+    // Default styling
+    cssClass: varchar("css_class", { length: 200 }),
+    backgroundColor: varchar("background_color", { length: 50 }),
+    textColor: varchar("text_color", { length: 50 }),
+    padding: varchar("padding", { length: 50 }),
+    isActive: boolean("is_active").default(true).notNull(),
+    usageCount: integer("usage_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+    index("block_templates_category_idx").on(t.category),
+    index("block_templates_type_idx").on(t.type),
+    index("block_templates_active_idx").on(t.isActive),
+]);
+// ═══════════════════════════════════════════════
+// Relations
+// ═══════════════════════════════════════════════
+export const pagesRelations = relations(pages, ({ many }) => ({
+    blocks: many(blocks),
+}));
+export const blocksRelations = relations(blocks, ({ one }) => ({
+    page: one(pages, {
+        fields: [blocks.pageId],
+        references: [pages.id],
+    }),
+}));
+//# sourceMappingURL=blocks.schema.js.map

@@ -5,8 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1772209617651,
-      "tag": "0000_easy_pandemic",
+      "when": 1774244823104,
+      "tag": "0000_amusing_lethal_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774276184424,
+      "tag": "0001_steady_the_executioner",
       "breakpoints": true
     }
   ]

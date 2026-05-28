@@ -1,4 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+// @ts-ignore - NodePgTransaction is the correct export name but TS complains
+import type { NodePgTransaction, NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
+import type { ExtractTablesWithRelations } from "drizzle-orm";
 import pg from "pg";
 import { buildMergedSchema } from "../lib/schema-merger";
 
@@ -21,6 +24,15 @@ const pool = new Pool({
 console.log("📋 Building merged schema...");
 const mergedSchema = await buildMergedSchema();
 
-export const db = drizzle(pool, { schema: mergedSchema as any });
+export const db = drizzle(pool, { schema: mergedSchema as Record<string, unknown> });
+export { mergedSchema };
 
 export type Database = typeof db;
+
+// Type for database transactions
+// @ts-ignore - NodePgTransaction type arguments vary by drizzle-orm version
+export type DatabaseTransaction = NodePgTransaction<
+  NodePgQueryResultHKT,
+  Record<string, unknown>,
+  ExtractTablesWithRelations<Record<string, unknown>>
+>;

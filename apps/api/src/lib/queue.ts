@@ -10,7 +10,7 @@
  *   - Health check returns "disconnected" instead of crashing.
  */
 
-import { Queue, Worker, type Processor, type ConnectionOptions } from "bullmq";
+import { Queue, Worker, type Processor, type ConnectionOptions, type Job } from "bullmq";
 import { valkeyConnection, isValkeyAvailable, VALKEY_URL } from "./valkey";
 
 const connection: ConnectionOptions = valkeyConnection;
@@ -21,7 +21,7 @@ const checkRedis = isValkeyAvailable;
 // ── Queue Factory (lazy, only when Redis is confirmed available) ──
 const queueRegistry = new Map<string, Queue>();
 
-function getQueue<T = any>(name: string): Queue<T> {
+function getQueue<T = unknown>(name: string): Queue<T> {
   if (queueRegistry.has(name)) return queueRegistry.get(name) as Queue<T>;
 
   const queue = new Queue<T>(name, {
@@ -44,7 +44,7 @@ function getQueue<T = any>(name: string): Queue<T> {
 }
 
 // ── Worker Factory ──
-export function createWorker<T = any>(
+export function createWorker<T = unknown>(
   name: string,
   processor: Processor<T>,
   opts: { concurrency?: number } = {}
@@ -54,17 +54,17 @@ export function createWorker<T = any>(
     concurrency: opts.concurrency ?? 3,
   });
 
-  worker.on("completed", (job) => {
+  worker.on("completed", (job: Job<T>) => {
     console.log(`  ✅ [${name}] Job ${job.id} (${job.name}) completed`);
   });
 
-  worker.on("failed", (job, err) => {
+  worker.on("failed", (job: Job<T> | undefined, err: Error) => {
     console.error(`  ❌ [${name}] Job ${job?.id} (${job?.name}) failed: ${err.message}`);
   });
 
   // Suppress noisy reconnect errors — just log once
   let errorLogged = false;
-  worker.on("error", (err) => {
+  worker.on("error", (err: Error) => {
     if (!errorLogged) {
       console.warn(`  ⚠️  [${name}] Worker connection error (suppressing repeats): ${err.message}`);
       errorLogged = true;
@@ -90,7 +90,7 @@ export interface EmailJobData {
 export interface WebhookJobData {
   url: string;
   event: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 }
 
 /**
@@ -99,7 +99,7 @@ export interface WebhookJobData {
  * NEVER creates a Queue instance unless Redis is confirmed available.
  */
 export const emailQueue = {
-  async add(name: string, data: EmailJobData & Record<string, any>) {
+  async add(name: string, data: EmailJobData & Record<string, unknown>) {
     const available = await checkRedis();
     if (!available) {
       console.warn(`  📧 [QUEUE OFFLINE] Valkey unavailable — skipping job "${name}" for ${data.to}`);
@@ -108,8 +108,9 @@ export const emailQueue = {
     try {
       const queue = getQueue<EmailJobData>("gremius-email");
       return await queue.add(name, data);
-    } catch (err: any) {
-      console.warn(`  📧 [QUEUE ERROR] Could not enqueue "${name}": ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`  📧 [QUEUE ERROR] Could not enqueue "${name}": ${message}`);
       return null;
     }
   },
@@ -157,16 +158,17 @@ export async function setupWorkers(): Promise<void> {
     const { registerEmailWorker } = await import("../jobs/email");
     registerEmailWorker();
     console.log("⚙️  All workers running.\n");
-  } catch (err: any) {
-    console.error(`⚙️  Worker startup error (non-fatal): ${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`⚙️  Worker startup error (non-fatal): ${message}`);
   }
 }
 
 export async function shutdownQueues(): Promise<void> {
-  for (const [name, queue] of queueRegistry) {
+  for (const [, queue] of queueRegistry) {
     try {
       await queue.close();
-      console.log(`  🔌 Queue ${name} closed`);
+      console.log(`  🔌 Queue closed`);
     } catch {
       // Already closed or disconnected
     }

@@ -1,0 +1,75 @@
+/**
+ * GremiusCMS — Content Publishing API (Nivel 2: Core)
+ *
+ * Sistema de publicación de contenido abstracto que permite a cualquier
+ * grimoire promover datos a un "Content Target" (Blog, Docs, Shop, etc.)
+ */
+
+import type { GrimoireContext, ContentTarget, ContentTargetInfo } from "@gremius/shared";
+
+/**
+ * Registry global de Content Targets.
+ * Siempre está disponible en GrimoireContext.contentPublishing.
+ */
+export class ContentPublishingRegistry {
+  private targets = new Map<string, ContentTarget>();
+  private ctx: GrimoireContext;
+
+  constructor(ctx: GrimoireContext) {
+    this.ctx = ctx;
+  }
+
+  register(target: ContentTarget): void {
+    if (this.targets.has(target.id)) {
+      this.ctx.logger.warn(`ContentTarget '${target.id}' is being re-registered by ${target.grimoireId}`);
+    }
+    this.targets.set(target.id, target);
+    this.ctx.logger.info(`ContentTarget registered: '${target.id}' (${target.name})`);
+  }
+
+  unregister(targetId: string): void {
+    const target = this.targets.get(targetId);
+    if (target) {
+      this.targets.delete(targetId);
+      this.ctx.logger.info(`ContentTarget unregistered: '${targetId}' (${target.name})`);
+    }
+  }
+
+  getAvailableTargets(): ContentTargetInfo[] {
+    return Array.from(this.targets.values()).map((target) => ({
+      id: target.id,
+      name: target.name,
+      grimoireId: target.grimoireId,
+      capabilities: target.capabilities,
+    }));
+  }
+
+  hasTarget(targetId: string): boolean {
+    return this.targets.has(targetId);
+  }
+
+  async promote(targetId: string, data: any): Promise<any> {
+    const target = this.targets.get(targetId);
+    if (!target) {
+      throw new Error(`Content target '${targetId}' is not available`);
+    }
+    return target.publish(data, this.ctx);
+  }
+
+  async unpublish(targetId: string, contentId: string): Promise<void> {
+    const target = this.targets.get(targetId);
+    if (!target?.unpublish) {
+      throw new Error(`Content target '${targetId}' does not support unpublish`);
+    }
+    return target.unpublish(contentId, this.ctx);
+  }
+
+  getPublishedUrl(targetId: string, result: any): string {
+    const target = this.targets.get(targetId);
+    if (!target) return result.url;
+    return target.getPublishedUrl(result);
+  }
+}
+
+// Re-exportar tipos para conveniencia
+export type { ContentTarget, ContentTargetInfo } from "@gremius/shared";

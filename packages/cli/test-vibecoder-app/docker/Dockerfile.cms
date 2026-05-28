@@ -1,0 +1,11 @@
+# ===================================================================
+# DEPRECATED - Dockerfile.cms
+#
+# This Dockerfile references apps/cms (Payload CMS) which was removed
+# from the project. GremiusCMS now uses its own Bun + Hono backend.
+#
+# Use instead:
+#   docker build -f docker/Dockerfile.prod --target api -t gremius-api:latest .
+#
+# This file is kept for historical reference only.
+# ===================================================================

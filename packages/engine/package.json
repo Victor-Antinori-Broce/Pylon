@@ -1,0 +1,17 @@
+{
+  "name": "@gremius/engine",
+  "version": "0.8.0-beta",
+  "private": true,
+  "type": "module",
+  "description": "GremiusCMS Engine — The Unstoppable Motor (Nivel 1). Auth, DB, Workers, RLS, Cache, Storage, TOON.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "@gremius/shared": "workspace:*",
+    "bullmq": "^5.0.0",
+    "zod": "^3.23.0"
+  }
+}

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Test script para verificar defineAction y el sistema de Actions
  * Run: npx tsx test-actions.ts

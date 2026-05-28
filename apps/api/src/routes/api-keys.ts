@@ -19,8 +19,8 @@ export const apiKeysRoutes = new Hono<{
 
 // Ensure only admins can manage keys
 apiKeysRoutes.use("*", async (c, next) => {
-    const user = c.get("user");
-    if (!user || user.role !== "admin") {
+    const _user = c.get("user");
+    if (!_user || _user.role !== "admin") {
         return c.json({ error: "Unauthorized. Admin role required." }, 403);
     }
     await next();
@@ -28,7 +28,7 @@ apiKeysRoutes.use("*", async (c, next) => {
 
 // ── GET /api/keys — List all API keys ──
 apiKeysRoutes.get("/", async (c) => {
-    const user = c.get("user")!;
+    void c.get("user"); // User available for future auth checks
 
     const keys = await db
         .select({
@@ -52,7 +52,7 @@ const createKeySchema = z.object({
 });
 
 apiKeysRoutes.post("/", zValidator("json", createKeySchema), async (c) => {
-    const user = c.get("user")!;
+    const _user = c.get("user")!;
     const body = c.req.valid("json");
 
     // Generate a secure 256-bit token
@@ -71,7 +71,7 @@ apiKeysRoutes.post("/", zValidator("json", createKeySchema), async (c) => {
         keyHash,
         hint,
         expiresAt,
-        createdById: user.id
+        createdById: _user.id
     }).returning();
 
     return c.json({

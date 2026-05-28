@@ -121,7 +121,7 @@ const selectedGenres = ref(new Set<string>());
 const selectedPlatforms = ref(new Set<string>());
 const minScore = ref(0);
 
-const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3001") as string;
+const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000") as string;
 
 const allGenres = computed(() => {
   const set = new Set<string>();

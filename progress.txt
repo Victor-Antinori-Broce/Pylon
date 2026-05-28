@@ -1,148 +1,651 @@
-# GremiusCMS - El Muro de Titanio (Batch API + Validator Engine)
-# Updated: 2026-03-29
+═══════════════════════════════════════════════════════════════════
+FASE 1: CORE GENÉRICO — Desacoplamiento de Dominio Gaming
+Fecha: 2026-04-19
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
 
-## ═══ RESUMEN EJECUTIVO ═══
+OBJETIVO
+--------
+Transformar el schema monolítico de GremiusCMS en un core 100% dominio-
+agnóstico, extrayendo las tablas gaming/blog/streamer a sus grimoires
+correspondientes sin romper la compatibilidad con el CMS de gaming.
 
-✅ **Paso 3 Completado: El Muro de Titanio**
+ARCHIVOS CREADOS
+----------------
+1. apps/api/src/db/schema-core.ts
+   - Schema base con SOLO tablas de infraestructura:
+     • Auth (authUsers, authSessions, authAccounts, authVerifications)
+     • API Keys, Media, Data Sets, Data Entries, Site Settings
+     • Formulas, Modules, Installed Grimoires
+     • Actions, Action Executions
+     • Agent System (identities, apiKeys, memory, auditLogs, traces, steps, feedback)
+     • Data Sources
+   - SIN tablas de dominio: games, platforms, tags, streamers, blogPosts,
+     gameCollections, gameCollectionEntries, ni tablas de unión.
+   - SIN FK gaming en dataSets (eliminada gameId).
+   - Relaciones dataSets limpias (solo entries, sin game).
 
-| Componente | Estado | Tests |
-|------------|--------|-------|
-| Validator Engine | ✅ | 28/28 |
-| Batch API (ACID) | ✅ | 4/4 |
-| Query Engine | ✅ | 19/19 |
-| Dataset Creator | ✅ | 34/34 |
-| **TOTAL** | ✅ | **85/85** |
+ARCHIVOS MODIFICADOS
+--------------------
+2. apps/api/src/db/schema.ts
+   - Convertido en "Backward Compatibility Layer".
+   - Re-exporta schema-core + tablas gaming desde grimoires vía imports
+     nombrados (evita conflictos de enums duplicados).
+   - Legacy imports como `import { games } from "../db/schema"` siguen
+     funcionando durante la transición.
 
-## ═══ IMPLEMENTACIÓN ═══
+3. apps/api/src/lib/schema-merger.ts
+   - Base de schema cambiada de `../db/schema` a `../db/schema-core`.
+   - El runtime ahora construye el schema mergeado a partir del core
+     genérico + grimoires activos.
 
-### 1. Validator Engine (`packages/engine/src/validator.ts`)
+4. apps/api/src/db/schema-all.ts
+   - Revertido a exportar `./schema` (compat layer) para mantener
+     compatibilidad con drizzle-kit push/migrate.
+   - drizzle-kit sigue viendo todas las tablas (core + gaming).
 
-Motor de validación declarativa con soporte para:
+5. apps/api/gremius.config.ts
+   - Agregados grimoires gaming a BASE_FEATURE_GRIMOIRES:
+     • grimoire-games (enabled: true)
+     • grimoire-streamers (enabled: true)
+     • grimoire-esports (enabled: true)
+   - Esto asegura que staticConfig los incluya y el schema-merger
+     los cargue correctamente en runtime.
 
-```typescript
-// Reglas básicas
-const schema = {
-  name: { required: true, min: 3, max: 100 },
-  age: { type: "number", min: 0, max: 150 },
-  email: { pattern: "^[^@]+@[^@]+$" },
-  role: { enum: ["admin", "user"] },
-};
+6. apps/api/src/routes/collections.ts
+   - Imports de dominio gaming movidos de `../db/schema` a
+     `../../../../packages/grimoires/grimoire-games/games.schema`.
+   - Import core `media` permanece en `../db/schema`.
 
-// Lógica condicional if/then
-const schemaWithCondition = {
-  type: { enum: ["combat", "support"] },
-  strength: {
-    type: "number",
-    if: { field: "type", eq: "combat" },
-    then: { min: 10 },
-  },
-};
+7. apps/api/src/routes/blog.ts
+   - Imports de dominio movidos a sus grimoires respectivos:
+     • blogPosts, blogPostsToTags, blogPostsToGames → grimoire-blog
+     • tags, games → grimoire-games
+   - Imports core `authUsers`, `media` permanecen en `../db/schema`.
 
-// Uso
-const result = validate(data, schema);
-// { valid: true/false, errors: [...], data: {...} }
-```
+8. apps/api/src/routes/datasets.ts
+   - Eliminadas referencias a `gameId` en insert y update de dataSets.
 
-**Features:**
-- ✅ `required`, `type`, `min`, `max`, `enum`, `pattern`
-- ✅ Condicionales: `if/then/else` con operadores `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`
-- ✅ Validaciones custom con función `validate`
-- ✅ Composición de schemas
-- ✅ Opciones: `stripUnknown`, `allowUnknown`, `abortEarly`
+9. apps/api/src/routes/crud.ts
+   - Eliminada referencia a `gameId` en insert de dataSets.
 
-### 2. Batch API (`packages/engine/src/batch-api.ts`)
+10. apps/api/src/routes/datasets-openapi.ts
+    - Eliminado `gameId` del schema Zod CreateDatasetPayloadSchema.
 
-API de escritura batch con garantías ACID:
+11. packages/shared/src/schemas.ts
+    - Eliminado `gameId` de CreateDatasetPayloadSchema y
+      UpdateDatasetPayloadSchema.
+    - Paquete recompilado con `pnpm exec tsc`.
 
-```typescript
-const batch = new BatchProcessor();
+VERIFICACIÓN
+------------
+• TypeScript check (tsc --noEmit) ejecutado en apps/api.
+• Ningún error nuevo detectado en los archivos modificados.
+• Errores pre-existentes en agents-v1.ts, openapi-aggregator.ts y
+  docs-dynamic.ts NO fueron introducidos por esta fase.
+• El CMS de gaming sigue funcionando mediante dogfooding:
+  schema.ts (compat) re-exporta las tablas de los grimoires.
 
-const result = await batch.execute({
-  operations: [
-    { 
-      table: agentIdentities, 
-      action: "insert", 
-      data: { name: "Agent 1", type: "combat" },
-      key: "agent1",
-      validation: agentIdentitySchema
-    },
-    { 
-      table: agentApiKeys, 
-      action: "insert", 
-      data: { keyHash: "abc123" },
-      dependsOn: ["agent1"]
-    }
-  ]
-});
+NOTAS TÉCNICAS
+--------------
+- La eliminación de la columna `gameId` de `data_sets` requiere una
+  migración de base de datos cuando se decida aplicar el schema real.
+  Por ahora, drizzle-kit sigue viendo la columna vía schema.ts compat.
+- Los enums `contentStatusEnum` existen tanto en core como en grimoire-games.
+  El schema-merger sobrescribe el del core con el del grimoire (misma
+  definición), sin generar conflictos en runtime.
 
-if (!result.success) {
-  // Rollback automático, ningún dato persistido
-  console.log(result.errors);
-}
-```
+═══════════════════════════════════════════════════════════════════
+FASE 2: RUNTIME EXTENSIBLE — Grimoires desde NPM
+Fecha: 2026-04-19
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
 
-**Features:**
-- ✅ Transacciones ACID con `db.transaction()`
-- ✅ Validación previa a escritura
-- ✅ Dependencias entre operaciones
-- ✅ Rollback automático en fallos
-- ✅ Acciones: `insert`, `update`, `delete`, `upsert`
-- ✅ Helper `createWithChildren()` para relaciones padre-hijo
+OBJETIVO
+--------
+Permitir que Gremius se extienda sin modificar el monorepo:
+instalar grimoires desde npm, resolver dependencias automáticamente,
+y registrarlos en la base de datos.
 
-## ═══ TESTS EJECUTADOS ═══
+ARCHIVOS CREADOS
+----------------
+1. packages/cli/src/commands/install.ts
+   - Comando `gremius install <grimoire>` implementado:
+     • Detecta package manager (pnpm/npm/yarn)
+     • Ejecuta instalación del paquete
+     • Lee grimoire.json / package.json con campo gremius
+     • Instala dependencias de grimoires recursivamente
+     • Ejecuta migraciones SQL desde <pkg>/migrations/
+     • Registra en tabla installed_grimoires de PostgreSQL
+     • Muestra instrucciones de reinicio
 
-### Validator Engine (28 tests)
-```
-✅ Basic Rules: 8/8
-✅ If/Then Logic: 5/5
-✅ Custom Validations: 2/2
-✅ Utilities: 5/5
-✅ Batch API Simulation: 4/4
-✅ Edge Cases: 4/4
-```
+2. packages/cli/templates/grimoire-npm-package/
+   - Template estándar de paquete npm para grimoires:
+     • package.json (con campo gremius.type = "grimoire")
+     • grimoire.json (manifest completo)
+     • index.ts (entry point + GrimoireDefinition)
+     • schema.ts (Drizzle ORM schema)
+     • routes.ts (Hono router factory)
+     • migrations/0000_initial.sql (DDL idempotente)
+     • README.md (documentación completa)
 
-### Escenarios Validados
+ARCHIVOS MODIFICADOS
+--------------------
+3. apps/api/src/lib/module-loader.ts
+   - Agregada función sortGrimoiresByDependencies():
+     • Ordenamiento topológico de grimoires por dependencies.grimoires
+     • Detecta ciclos y lanza error descriptivo
+   - Loop de carga ahora usa sortedGrimoires en lugar de resolvedGrimoires
+   - Grimoires con dependencias se cargan DESPUÉS de sus dependencias
 
-**Escenario 1: Escritura Atómica**
-```
-Given: Payload con Agent + 3 Skills
-When: Una Skill falla validación
-Then: Rollback completo, Agent no existe, error 400
-```
-✅ IMPLEMENTADO
+4. apps/api/src/lib/schema-merger.ts
+   - Agregada búsqueda de schemas en node_modules:
+     • @gremius/grimoire-xxx
+     • grimoire-xxx (community)
+     • Scoped packages (@scope/grimoire-xxx)
+   - Schema-merger ahora puede cargar tablas de grimoires instalados
+     vía npm, no solo desde packages/grimoires/ local.
 
-**Escenario 2: Validación Condicional**
-```
-Given: Regla "IF type='combat' THEN strength>10"
-When: Personaje 'combat' con strength=5
-Then: Rechazo antes de tocar la DB
-```
-✅ IMPLEMENTADO
+5. packages/cli/src/index.ts
+   - Registrado nuevo comando:
+     gremius install <grimoire> [--dev]
 
-## ═══ GIT LOG ═══
+VERIFICACIÓN
+------------
+• CLI compila sin errores (tsc --noEmit en packages/cli).
+• module-loader.ts y schema-merger.ts compilan sin errores.
+• Ningún error nuevo en apps/api tras los cambios.
 
-```
-[COMMIT PENDIENTE] feat: implement Batch API and Validator Engine (El Muro de Titanio)
-[3ad730b] feat: connect DatasetCreator to API and add integration tests
-[52104ac] feat: implement Query Engine with Auto-Join (Anti N+1)
-[ab35007] test: add comprehensive dataset creator tests
-[cdd3332] feat: implement actions engine core
-[cb8eab4] chore: restore titanio database schema
-```
+PRÓXIMAS FASES
+--------------
+Fase 3: API Unificada (/api/items/{collection})
+Fase 4: Admin 100% Dinámico
+Fase 5: Multi-Tenancy (opcional)
 
-## ═══ ARCHIVOS CREADOS ═══
+NOTAS TÉCNICAS
+--------------
+- El comando install requiere DATABASE_URL para registrar en
+  installed_grimoires. Si no está disponible, instala el paquete pero
+  omite el registro en DB.
+- Las migraciones se ejecutan vía postgres.js en orden alfabético.
+  Se recomienda usar IF NOT EXISTS para idempotencia.
+- El schema-merger carga schemas .ts directamente desde node_modules.
+  En producción bundleado, los grimoires deben compilar su schema a .js
+  o usar el fallback de migraciones SQL.
+- El orden topológico en module-loader usa el campo dependencies.grimoires
+  del manifest. También soporta el formato legacy dependencies: string[].
 
-```
-packages/engine/src/validator.ts        (600 líneas)
-packages/engine/src/batch-api.ts        (650 líneas)
-packages/engine/test-batch-validator.ts (700 líneas)
-```
+═══════════════════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════════════════
+FASE 1: CORE GENÉRICO — Desacoplamiento de Dominio Gaming
+Fecha: 2026-04-19
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
 
-## ═══ ESTADO FINAL ═══
+OBJETIVO
+--------
+Transformar el schema monolítico de GremiusCMS en un core 100% dominio-
+agnóstico, extrayendo las tablas gaming/blog/streamer a sus grimoires
+correspondientes sin romper la compatibilidad con el CMS de gaming.
 
-✅ **85 tests pasando (100%)**
-✅ Validator Engine con if/then
-✅ Batch API ACID completo
-✅ Dataset Creator conectado
-✅ Query Engine con Auto-Join
-✅ Actions Engine implementado
+ARCHIVOS CREADOS
+----------------
+1. apps/api/src/db/schema-core.ts
+   - Schema base con SOLO tablas de infraestructura:
+     • Auth (authUsers, authSessions, authAccounts, authVerifications)
+     • API Keys, Media, Data Sets, Data Entries, Site Settings
+     • Formulas, Modules, Installed Grimoires
+     • Actions, Action Executions
+     • Agent System (identities, apiKeys, memory, auditLogs, traces, steps, feedback)
+     • Data Sources
+   - SIN tablas de dominio: games, platforms, tags, streamers, blogPosts,
+     gameCollections, gameCollectionEntries, ni tablas de unión.
+   - SIN FK gaming en dataSets (eliminada gameId).
+   - Relaciones dataSets limpias (solo entries, sin game).
+
+ARCHIVOS MODIFICADOS
+--------------------
+2. apps/api/src/db/schema.ts
+   - Convertido en "Backward Compatibility Layer".
+   - Re-exporta schema-core + tablas gaming desde grimoires vía imports
+     nombrados (evita conflictos de enums duplicados).
+   - Legacy imports como `import { games } from "../db/schema"` siguen
+     funcionando durante la transición.
+
+3. apps/api/src/lib/schema-merger.ts
+   - Base de schema cambiada de `../db/schema` a `../db/schema-core`.
+   - El runtime ahora construye el schema mergeado a partir del core
+     genérico + grimoires activos.
+
+4. apps/api/src/db/schema-all.ts
+   - Revertido a exportar `./schema` (compat layer) para mantener
+     compatibilidad con drizzle-kit push/migrate.
+   - drizzle-kit sigue viendo todas las tablas (core + gaming).
+
+5. apps/api/gremius.config.ts
+   - Agregados grimoires gaming a BASE_FEATURE_GRIMOIRES:
+     • grimoire-games (enabled: true)
+     • grimoire-streamers (enabled: true)
+     • grimoire-esports (enabled: true)
+   - Esto asegura que staticConfig los incluya y el schema-merger
+     los cargue correctamente en runtime.
+
+6. apps/api/src/routes/collections.ts
+   - Imports de dominio gaming movidos de `../db/schema` a
+     `../../../../packages/grimoires/grimoire-games/games.schema`.
+   - Import core `media` permanece en `../db/schema`.
+
+7. apps/api/src/routes/blog.ts
+   - Imports de dominio movidos a sus grimoires respectivos:
+     • blogPosts, blogPostsToTags, blogPostsToGames → grimoire-blog
+     • tags, games → grimoire-games
+   - Imports core `authUsers`, `media` permanecen en `../db/schema`.
+
+8. apps/api/src/routes/datasets.ts
+   - Eliminadas referencias a `gameId` en insert y update de dataSets.
+
+9. apps/api/src/routes/crud.ts
+   - Eliminada referencia a `gameId` en insert de dataSets.
+
+10. apps/api/src/routes/datasets-openapi.ts
+    - Eliminado `gameId` del schema Zod CreateDatasetPayloadSchema.
+
+11. packages/shared/src/schemas.ts
+    - Eliminado `gameId` de CreateDatasetPayloadSchema y
+      UpdateDatasetPayloadSchema.
+    - Paquete recompilado con `pnpm exec tsc`.
+
+VERIFICACIÓN
+------------
+• TypeScript check (tsc --noEmit) ejecutado en apps/api.
+• Ningún error nuevo detectado en los archivos modificados.
+• Errores pre-existentes en agents-v1.ts, openapi-aggregator.ts y
+  docs-dynamic.ts NO fueron introducidos por esta fase.
+• El CMS de gaming sigue funcionando mediante dogfooding:
+  schema.ts (compat) re-exporta las tablas de los grimoires.
+
+NOTAS TÉCNICAS
+--------------
+- La eliminación de la columna `gameId` de `data_sets` requiere una
+  migración de base de datos cuando se decida aplicar el schema real.
+  Por ahora, drizzle-kit sigue viendo la columna vía schema.ts compat.
+- Los enums `contentStatusEnum` existen tanto en core como en grimoire-games.
+  El schema-merger sobrescribe el del core con el del grimoire (misma
+  definición), sin generar conflictos en runtime.
+
+═══════════════════════════════════════════════════════════════════
+FASE 2: RUNTIME EXTENSIBLE — Grimoires desde NPM
+Fecha: 2026-04-19
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+OBJETIVO
+--------
+Permitir que Gremius se extienda sin modificar el monorepo:
+instalar grimoires desde npm, resolver dependencias automáticamente,
+y registrarlos en la base de datos.
+
+ARCHIVOS CREADOS
+----------------
+1. packages/cli/src/commands/install.ts
+   - Comando `gremius install <grimoire>` implementado:
+     • Detecta package manager (pnpm/npm/yarn)
+     • Ejecuta instalación del paquete
+     • Lee grimoire.json / package.json con campo gremius
+     • Instala dependencias de grimoires recursivamente
+     • Ejecuta migraciones SQL desde <pkg>/migrations/
+     • Registra en tabla installed_grimoires de PostgreSQL
+     • Muestra instrucciones de reinicio
+
+2. packages/cli/templates/grimoire-npm-package/
+   - Template estándar de paquete npm para grimoires:
+     • package.json (con campo gremius.type = "grimoire")
+     • grimoire.json (manifest completo)
+     • index.ts (entry point + GrimoireDefinition)
+     • schema.ts (Drizzle ORM schema)
+     • routes.ts (Hono router factory)
+     • migrations/0000_initial.sql (DDL idempotente)
+     • README.md (documentación completa)
+
+ARCHIVOS MODIFICADOS
+--------------------
+3. apps/api/src/lib/module-loader.ts
+   - Agregada función sortGrimoiresByDependencies():
+     • Ordenamiento topológico de grimoires por dependencies.grimoires
+     • Detecta ciclos y lanza error descriptivo
+   - Loop de carga ahora usa sortedGrimoires en lugar de resolvedGrimoires
+   - Grimoires con dependencias se cargan DESPUÉS de sus dependencias
+
+4. apps/api/src/lib/schema-merger.ts
+   - Agregada búsqueda de schemas en node_modules:
+     • @gremius/grimoire-xxx
+     • grimoire-xxx (community)
+     • Scoped packages (@scope/grimoire-xxx)
+   - Schema-merger ahora puede cargar tablas de grimoires instalados
+     vía npm, no solo desde packages/grimoires/ local.
+
+5. packages/cli/src/index.ts
+   - Registrado nuevo comando:
+     gremius install <grimoire> [--dev]
+
+VERIFICACIÓN
+------------
+• CLI compila sin errores (tsc --noEmit en packages/cli).
+• module-loader.ts y schema-merger.ts compilan sin errores.
+• Ningún error nuevo en apps/api tras los cambios.
+
+═══════════════════════════════════════════════════════════════════
+FASE 3: API AUTO-GENERADA — REST Unificado + OpenAPI + GraphQL + SDK
+Fecha: 2026-04-19
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+OBJETIVO
+--------
+Cualquier dataset o grimoire expone REST + GraphQL automáticamente,
+con OpenAPI spec dinámica y SDK auto-generado para el frontend.
+
+ARCHIVOS CREADOS
+----------------
+1. apps/api/src/routes/items.ts
+   - Router unificado `/api/items/{collection}` que funciona para:
+     • Datasets (JSONB en data_entries)
+     • Tablas nativas de grimoires (PostgreSQL)
+   - Endpoints estándar REST:
+     GET    /api/items/:collection         → listar con filtros
+     GET    /api/items/:collection/:id     → obtener uno
+     POST   /api/items/:collection         → crear
+     PATCH  /api/items/:collection/:id     → actualizar
+     DELETE /api/items/:collection/:id     → eliminar
+   - Query params: limit, offset, sort, where (JSON)
+   - Soporte de auth opcional (reads públicos, mutations protegidas)
+   - Broadcast de mutaciones vía realtime
+
+2. packages/cli/src/commands/generate-sdk.ts
+   - Comando `gremius generate-sdk`:
+     • Consume `/api/docs/openapi.json` en runtime
+     • Genera hooks React/TypeScript listos para usar
+     • Hook genérico `useGremiusItems(collection)` con CRUD completo
+     • Hooks específicos por operación desde la spec
+
+ARCHIVOS MODIFICADOS
+--------------------
+3. apps/api/src/index.ts
+   - Montado router itemsRoutes en `/api/items`
+   - Log de inicialización incluye "Unified Items API"
+
+4. apps/api/src/db/index.ts
+   - Exportado `mergedSchema` para acceso runtime desde routers
+   - Permite a `items.ts` y `graphql.ts` descubrir tablas dinámicamente
+
+5. apps/api/src/lib/openapi-aggregator.ts
+   - Agregados paths estáticos de "Unified Items" a la spec:
+     • /items/{collection} (GET, POST)
+     • /items/{collection}/{id} (GET, PATCH, DELETE)
+   - Tag "Unified Items" documentado en OpenAPI
+   - La spec ahora incluye tanto grimoires como endpoints unificados
+
+6. apps/api/src/routes/graphql.ts
+   - Agregado campo dinámico `items(collection, id, page, limit, where)`
+     • Funciona para datasets y tablas nativas
+     • Devuelve JSON flexible (GraphQLJSON)
+   - Agregado campo `collections` que lista:
+     • datasets registrados
+     • tablas nativas disponibles en mergedSchema
+   - GraphQL ahora es un wrapper dinámico sobre el REST unificado
+
+7. packages/cli/src/index.ts
+   - Registrado nuevo comando:
+     gremius generate-sdk [--lang typescript] [--output dir] [--base-url url]
+
+VERIFICACIÓN
+------------
+• TypeScript check sin errores nuevos en apps/api ni packages/cli.
+• items.ts, graphql.ts, db/index.ts, openapi-aggregator.ts compilan.
+• generate-sdk.ts compila correctamente.
+
+NOTAS TÉCNICAS
+--------------
+- El endpoint /api/items/{collection} detecta automáticamente si la
+  colección es un dataset (buscando en data_sets.slug) o una tabla nativa
+  (buscando en mergedSchema). Usa SQL raw para tablas nativas cuando
+  Drizzle no puede resolver la tabla dinámicamente.
+- GraphQL usa GraphQLJSON para devolver estructuras flexibles. En una
+  versión futura se pueden generar tipos GraphQL estáticos a partir del
+  schema del dataset o de la tabla.
+- generate-sdk requiere que la API esté corriendo para leer la spec.
+  En modo CI/CD, la spec puede cachearse previamente.
+- Los hooks generados usan fetch nativo con credentials: 'include' para
+  soportar cookies de sesión (Better-Auth).
+
+═══════════════════════════════════════════════════════════════════
+FASE C: GRIMORIES COMO TEMPLATES — Templates Preconfigurados
+Fecha: 2026-04-22
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+OBJETIVO
+--------
+Convertir grimoires en templates que un vibecoder pueda activar sin saber
+qué es un "grimoire". Cada template = un Realm preconfigurado con datasets,
+grimoires y seed data.
+
+ARCHIVOS CREADOS
+----------------
+1. packages/cli/templates/blog/seed.sql
+   - Inserta datasets: posts, tags
+   - Seed data: 3 tags + 1 post de ejemplo
+   - UUID fijo para datasets: 11111111-1111-1111-1111-111111111111/12
+
+2. packages/cli/templates/saas/seed.sql
+   - Inserta datasets: teams, team_members, invoices
+   - Seed data: 1 equipo de ejemplo (Acme Corp)
+   - UUID fijo para datasets: 22222222-2222-2222-2222-222222222222/23/24
+
+3. packages/cli/templates/ecommerce/seed.sql
+   - Inserta datasets: products, categories, orders
+   - Seed data: 2 categorías + 1 producto de ejemplo
+   - UUID fijo para datasets: 33333333-3333-3333-3333-333333333333/34/35
+
+ARCHIVOS MODIFICADOS
+--------------------
+4. packages/cli/src/commands/init.ts
+   - detecta automáticamente si el template tiene seed.sql
+   - pasa `hasSeedSql` a `generateVibecoderDockerCompose()`
+   - copia seed.sql al proyecto generado (líneas 167-177)
+
+5. packages/cli/src/commands/init.ts — generateVibecoderDockerCompose()
+   - ahora acepta parámetro `hasSeedSql: boolean`
+   - cuando es true, agrega volumen:
+     ./seed.sql:/docker-entrypoint-initdb.d/99_seed.sql:ro
+   - PostgreSQL ejecuta seed.sql automáticamente en primer arranque
+
+VERIFICACIÓN
+------------
+• Templates blog, saas, ecommerce tienen seed.sql funcional.
+• init.ts compila sin errores nuevos.
+• docker-compose generado incluye volumen condicional para seed.sql.
+• UUIDs fijos evitan duplicados en re-inicializaciones (ON CONFLICT DO NOTHING).
+
+NOTAS TÉCNICAS
+--------------
+- Los seed.sql usan INSERT con UUIDs fijos + ON CONFLICT DO NOTHING para
+  ser idempotentes si el contenedor se reinicia.
+- El schema de data_sets usa formato interno: {fieldName, fieldType, required,
+  options, defaultValue}. Se mapearon los tipos del realm.json al interno.
+- La imagen pgvector/pgvector:pg16 soporta /docker-entrypoint-initdb.d/
+  nativamente para scripts .sql.
+
+═══════════════════════════════════════════════════════════════════
+FASE D — DEUDA TÉCNICA CORREGIDA
+Fecha: 2026-04-22
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+OBJETIVO
+--------
+Corregir los 3 gaps de deuda técnica identificados en la revisión de Fase D:
+1. RLS inexistente en items.ts
+2. GraphQL con tipos hardcodeados de gaming
+3. getNativeTable con heurística simple (solo ±s)
+
+ARCHIVOS MODIFICADOS
+--------------------
+1. apps/api/src/routes/items.ts (REFACTOR MAYOR)
+   - Renombrado import `db` → `rawDb`
+   - Agregado helper `getDb(c)` que devuelve `c.get("tx") || rawDb`
+   - Agregado middleware `withTransactionalRLS()` en TODAS las rutas:
+     • Reads: transacción RLS (políticas aplicadas consistentemente)
+     • Mutations: requireAuth + transacción RLS
+   - Refactorizadas todas las funciones helper para recibir `db` como parámetro:
+     • findDatasetBySlug(db, slug)
+     • resolveCollection(db, collection)
+   - Mejorado `getNativeTable()` con resolución robusta de plural/singular:
+     • Mapa de plurales irregulares (children→child, people→person, etc.)
+     • Soporte para terminaciones -ies, -es, -ches, -shes, -xes, -zes
+     • Búsqueda case-insensitive en todas las claves de mergedSchema
+     • Set de candidates para evitar duplicados
+
+2. apps/api/src/routes/graphql.ts (REFACTOR MAYOR)
+   - queryFields reestructurado: campos universales primero, legacy condicional
+   - Campos universales (siempre disponibles):
+     • items(collection, id, page, limit, where)
+     • collections
+     • media
+     • dataEntries
+   - Campos legacy cargados condicionalmente desde mergedSchema:
+     • blogPost / blogPosts  → solo si existe mergedSchema.blogPosts
+     • game / games          → solo si existe mergedSchema.games
+     • tags                  → solo si existe mergedSchema.tags
+     • platforms             → solo si existe mergedSchema.platforms
+     • streamers             → solo si existe mergedSchema.streamers
+   - Si Gremius corre sin grimoires gaming, el schema GraphQL es 100% genérico.
+
+VERIFICACIÓN
+------------
+• items.ts compila sin errores nuevos.
+• graphql.ts compila sin errores nuevos.
+• Handlers de items.ts usan transacción RLS (c.get("tx")) en lugar de db raw.
+• GraphQL schema se adapta dinámicamente a los grimoires activos.
+
+NOTAS TÉCNICAS
+--------------
+- `withTransactionalRLS()` envuelve cada petición en transacción PostgreSQL
+  e inyecta app.current_user_id. Las queries dentro del handler usan la
+  misma transacción (c.get("tx")), garantizando que RLS se aplique.
+- Para lecturas públicas, el middleware RLS igual se aplica para consistencia.
+  Si una tabla no tiene políticas RLS, PostgreSQL ignora el contexto sin
+  penalidad de performance significativa.
+- GraphQL tipos estáticos (BlogPostType, GameType, etc.) siguen definidos en
+  el archivo por requerimiento de graphql-js, pero sus campos en QueryRoot
+  solo se registran si la tabla existe. Esto evita errores de resolución.
+
+═══════════════════════════════════════════════════════════════════
+FASE F: AUTH ZERO-CONFIG
+Fecha: 2026-04-22
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+OBJETIVO
+--------
+Auth email/password habilitado por defecto, RLS owner-only en datasets nuevos,
+y social auth configurable con un solo comando CLI.
+
+ARCHIVOS MODIFICADOS
+--------------------
+1. apps/api/src/routes/datasets.ts
+   - POST /datasets ahora aplica policyJson por defecto si no se especifica:
+     • readAccess: "authenticated"
+     • writeAccess: "authenticated"
+     • enableRLS: true
+     • rlsRules: [{ field: "ownerId", operator: "eq", value: "{{current_user_id}}" }]
+
+2. apps/api/src/routes/crud.ts
+   - POST /datasets (legacy endpoint) también aplica la misma policy por defecto.
+
+ARCHIVOS CREADOS
+----------------
+3. packages/cli/src/commands/auth.ts
+   - addProvider(providerId, options): agrega variables OAuth al .env
+   - listProviders(): muestra providers activos con valores enmascarados
+   - removeProvider(providerId): elimina variables OAuth del .env
+   - Soporta: google, github, microsoft (azure ad)
+   - Requiere: --client-id y --client-secret
+
+4. packages/cli/src/index.ts
+   - Registrados comandos:
+     gremius auth add <provider> --client-id <id> --client-secret <secret>
+     gremius auth list
+     gremius auth remove <provider>
+
+VERIFICACIÓN
+------------
+• datasets.ts y crud.ts compilan sin errores nuevos.
+• auth.ts e index.ts del CLI compilan sin errores nuevos.
+• Better-Auth ya tenía email/password enabled=true (sin cambios necesarios).
+
+═══════════════════════════════════════════════════════════════════
+FASE H: ADMIN 100% DINÁMICO
+Fecha: 2026-04-22
+Estado: COMPLETADO
+═══════════════════════════════════════════════════════════════════
+
+OBJETIVO
+--------
+Eliminar rutas estáticas de dominio del sidebar y unificar TODO bajo la ruta
+dinámica /g/[grimoireId] que renderiza vistas genéricas desde grimoire.json.
+
+ARCHIVO MODIFICADO
+------------------
+1. packages/admin/src/lib/components/layout/SidebarLayout.svelte
+   - Todos los nav items de grimoires ahora apuntan a /g/{moduleKey}:
+     • DataSets        → /g/grimoire-datasets
+     • Media Library   → /g/grimoire-media
+     • Page Builder    → /g/grimoire-blocks
+     • Blog Posts      → /g/grimoire-blog
+     • Data Visualizer → /g/grimoire-data-visualizer
+     • Academy         → /g/grimoire-academy-lms
+     • Documents       → /g/grimoire-dms
+     • Booking         → /g/grimoire-booking
+     • Directory       → /g/grimoire-directory
+     • Gremius CRM     → /g/grimoire-crm
+     • Contabilidad    → /g/grimoire-conta
+     • Games           → /g/grimoire-games
+     • Streamers       → /g/grimoire-streamers
+     • Esports         → /g/grimoire-esports (nuevo)
+   - Eliminados del sidebar los nav items de tablas individuales:
+     • platforms, tags, collections (ya están en /g/grimoire-games)
+     • teams, players, matches, tournaments (ya están en /g/grimoire-esports)
+   - Los filesystem modules ya usaban /g/{m.key} (sin cambios).
+   - Las rutas estáticas legacy (/games, /blog, /crm, etc.) siguen existiendo
+     como archivos para no romper bookmarks, pero ya no se exponen en nav.
+
+ESTADO PREVIO YA EXISTENTE
+--------------------------
+• packages/admin/src/routes/g/[id]/+page.svelte — ruta dinámica (ya existía)
+• packages/admin/src/lib/components/admin/GrimoirePage.svelte — renderizado híbrido
+• packages/admin/src/lib/grimoire-loader.ts — auto-detección de vistas
+• packages/admin/src/lib/grimoire-views.ts — registry de overrides
+
+VERIFICACIÓN
+------------
+• SidebarLayout.svelte compila sin errores nuevos.
+• La ruta /g/[id] ya usaba GrimoirePage con renderizado desde registry.
+• No se rompe compatibilidad: las rutas legacy siguen accesibles directamente.
+
+NOTAS TÉCNICAS
+--------------
+- GrimoirePage.svelte soporta dos modos:
+  1. LEGACY: carga vista custom monolítica desde GRIMOIRE_VIEW_REGISTRY
+  2. HYBRID: renderiza tabs con DataExplorer (grid/kanban/calendar) +
+     vistas custom type="custom" declaradas en grimoire.json
+- El grimoire-loader.ts hace auto-detección de vistas por convención:
+  /src/views/{grimoire}/{PascalCase}View.svelte
+- Si un grimoire no tiene vista custom, usa DataExplorer con config
+  auto-generada desde /api/admin/registry.
+
+PRÓXIMAS FASES
+--------------
+Fase 5: Multi-Tenancy (opcional)
+
+═══════════════════════════════════════════════════════════════════

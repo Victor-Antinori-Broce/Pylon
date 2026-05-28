@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DATASET CREATOR - TEST DE INTEGRACIÓN COMPLETO

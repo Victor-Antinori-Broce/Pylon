@@ -1,0 +1,1 @@
+import{r as e}from"../chunks/DfgfjzFV.js";const r=()=>{throw e(308,"/g/grimoire-academy-lms")},t=Object.freeze(Object.defineProperty({__proto__:null,load:r},Symbol.toStringTag,{value:"Module"}));export{t as universal};

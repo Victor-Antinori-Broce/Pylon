@@ -1,0 +1,298 @@
+{
+  "_comment": "Casos de prueba para validación anti-alucinaciones (Fase 2)",
+  "testSuite": "FASE2_VALIDATION",
+  "description": "Tests de validación declarativa con Zod para prevenir datos inválidos",
+  "version": "1.0.0",
+  "createdAt": "2026-03-29",
+  
+  "tests": [
+    {
+      "id": "VAL-001",
+      "name": "Rechazar mana_cost negativo",
+      "category": "numeric_range",
+      "description": "Un skill con mana_cost negativo debe ser rechazado",
+      "input": {
+        "dataset": "skills",
+        "data": {
+          "name": "Test Skill",
+          "mana_cost": -10,
+          "damage": 100,
+          "cooldown_seconds": 5
+        }
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "mana_cost",
+            "message": "Number must be greater than or equal to 0"
+          }
+        ]
+      },
+      "aiRecoveryHint": "El campo 'mana_cost' debe ser un número positivo (>= 0). Los skills no pueden tener costo de mana negativo."
+    },
+    {
+      "id": "VAL-002",
+      "name": "Rechazar rareza inválida",
+      "category": "numeric_range",
+      "description": "Un personaje con rareza mayor a 5 debe ser rechazado",
+      "input": {
+        "dataset": "characters",
+        "data": {
+          "name": "God Character",
+          "rarity": 10,
+          "element": "pyro",
+          "hp": 1000,
+          "atk": 100,
+          "def": 50
+        }
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "rarity",
+            "message": "Number must be less than or equal to 5"
+          }
+        ]
+      },
+      "aiRecoveryHint": "La rareza debe estar entre 3 (raro) y 5 (legendario). No existen rarezas superiores a 5 en este sistema."
+    },
+    {
+      "id": "VAL-003",
+      "name": "Rechazar elemento inválido",
+      "category": "enum_validation",
+      "description": "Un personaje con elemento 'darkness' debe ser rechazado",
+      "input": {
+        "dataset": "characters",
+        "data": {
+          "name": "Dark Knight",
+          "rarity": 5,
+          "element": "darkness",
+          "hp": 1000,
+          "atk": 100,
+          "def": 50
+        }
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "element",
+            "message": "Elemento inválido. Opciones: pyro, hydro, electro, cryo, anemo, geo, dendro"
+          }
+        ]
+      },
+      "aiRecoveryHint": "Los elementos válidos son: pyro (fuego), hydro (agua), electro (rayo), cryo (hielo), anemo (viento), geo (tierra), dendro (naturaleza)."
+    },
+    {
+      "id": "VAL-004",
+      "name": "Rechazar slug con mayúsculas",
+      "category": "pattern_validation",
+      "description": "Un slug con mayúsculas debe ser rechazado",
+      "input": {
+        "dataset": "characters",
+        "data": {
+          "name": "Test Character",
+          "rarity": 4,
+          "element": "pyro",
+          "slug": "Test-Character-123",
+          "hp": 1000,
+          "atk": 100,
+          "def": 50
+        }
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "slug",
+            "message": "Slug solo puede contener minúsculas, números y guiones"
+          }
+        ]
+      },
+      "aiRecoveryHint": "El slug debe estar en minúsculas, sin espacios, usando solo guiones (-) como separadores. Ejemplo: 'test-character-123'"
+    },
+    {
+      "id": "VAL-005",
+      "name": "Batch transaccional - Rollback",
+      "category": "batch_validation",
+      "description": "Si una operación del batch falla, todas deben hacer rollback",
+      "input": {
+        "transaction": true,
+        "operations": [
+          {
+            "op": "create",
+            "dataset": "characters",
+            "data": {
+              "name": "Hero",
+              "rarity": 5,
+              "element": "pyro",
+              "hp": 1000,
+              "atk": 100,
+              "def": 50
+            },
+            "alias": "hero"
+          },
+          {
+            "op": "create",
+            "dataset": "skills",
+            "data": {
+              "name": "Impossible Skill",
+              "character_id": "@ref:hero.id",
+              "mana_cost": -50
+            }
+          }
+        ]
+      },
+      "expectedResult": {
+        "success": false,
+        "rolledBack": true,
+        "error": {
+          "op": 1,
+          "message": "Validation failed: mana_cost: Number must be >= 0"
+        }
+      },
+      "note": "El personaje 'Hero' NO debe crearse porque el batch hace rollback"
+    },
+    {
+      "id": "VAL-006",
+      "name": "Validación condicional if/then",
+      "category": "conditional_validation",
+      "description": "Si elemento es pyro, weapon_type no puede ser bow",
+      "input": {
+        "dataset": "characters",
+        "data": {
+          "name": "Pyro Archer",
+          "rarity": 4,
+          "element": "pyro",
+          "weapon_type": "bow",
+          "hp": 1000,
+          "atk": 100,
+          "def": 50
+        },
+        "conditionalRules": [
+          {
+            "if": { "field": "element", "eq": "pyro" },
+            "then": { "field": "weapon_type", "neq": "bow", "message": "Pyro no puede usar arcos" }
+          }
+        ]
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "weapon_type",
+            "message": "Pyro no puede usar arcos"
+          }
+        ]
+      },
+      "aiRecoveryHint": "Los personajes Pyro no pueden usar arcos según las reglas del juego. Opciones válidas: sword, claymore, polearm, catalyst."
+    },
+    {
+      "id": "VAL-007",
+      "name": "Validación de referencia circular",
+      "category": "reference_validation",
+      "description": "No debe permitir referencias circulares en @ref",
+      "input": {
+        "operations": [
+          {
+            "op": "create",
+            "dataset": "skills",
+            "data": {
+              "name": "Circular",
+              "character_id": "@ref:skill1.id"
+            },
+            "alias": "skill1"
+          }
+        ]
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "character_id",
+            "message": "Referencia no encontrada: skill1"
+          }
+        ]
+      },
+      "note": "No se puede referenciar un alias que se define en la misma operación"
+    },
+    {
+      "id": "VAL-008",
+      "name": "Aceptar datos válidos",
+      "category": "positive_test",
+      "description": "Un personaje completamente válido debe pasar",
+      "input": {
+        "dataset": "characters",
+        "data": {
+          "name": "Hu Tao",
+          "rarity": 5,
+          "element": "pyro",
+          "weapon_type": "polearm",
+          "hp": 15552,
+          "atk": 106,
+          "def": 876,
+          "slug": "hu-tao",
+          "mana_cost": 0
+        }
+      },
+      "expectedResult": {
+        "success": true,
+        "errors": []
+      }
+    },
+    {
+      "id": "VAL-009",
+      "name": "Rechazar nombre vacío",
+      "category": "required_validation",
+      "description": "Un personaje sin nombre debe ser rechazado",
+      "input": {
+        "dataset": "characters",
+        "data": {
+          "name": "",
+          "rarity": 5,
+          "element": "pyro",
+          "hp": 1000,
+          "atk": 100,
+          "def": 50
+        }
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "name",
+            "message": "String must contain at least 1 character(s)"
+          }
+        ]
+      },
+      "aiRecoveryHint": "El nombre del personaje es obligatorio y debe tener al menos 1 carácter."
+    },
+    {
+      "id": "VAL-010",
+      "name": "Rechazar cooldown excesivo",
+      "category": "numeric_range",
+      "description": "Un skill con cooldown > 3600 segundos debe ser rechazado",
+      "input": {
+        "dataset": "skills",
+        "data": {
+          "name": "Slow Skill",
+          "mana_cost": 10,
+          "damage": 100,
+          "cooldown_seconds": 7200
+        }
+      },
+      "expectedResult": {
+        "success": false,
+        "errors": [
+          {
+            "field": "cooldown_seconds",
+            "message": "Number must be less than or equal to 3600"
+          }
+        ]
+      },
+      "aiRecoveryHint": "El cooldown máximo permitido es 3600 segundos (1 hora). Considera usar un sistema de carga diferente para habilidades más lentas."
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "grimoire-example",
+  "name": "Example Grimoire",
+  "description": "A standard grimoire package for GremiusCMS",
+  "version": "1.0.0",
+  "type": "grimoire",
+  "icon": "Box",
+  "tables": [
+    {
+      "name": "examples",
+      "label": "Examples",
+      "icon": "Box",
+      "description": "Example records"
+    }
+  ],
+  "dependencies": {
+    "grimoires": ["grimoire-media"],
+    "core": ["auth"]
+  },
+  "admin": {
+    "category": "content",
+    "views": [
+      {
+        "id": "grid",
+        "type": "grid",
+        "title": "All Examples",
+        "table": "examples"
+      }
+    ]
+  },
+  "mount": {
+    "path": "/api/examples"
+  }
+}

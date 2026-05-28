@@ -1,32 +1,49 @@
-# ── GremiusCMS Admin - Vue 3 + Vite ──
+# ===================================================================
+# DEPRECATED - Do not use this Dockerfile
+#
+# This standalone Admin Dockerfile has known issues:
+#   1. Uses `bun install` but the project uses pnpm as package manager
+#   2. Copies from `dist` but SvelteKit adapter-static outputs to `build/`
+#   3. Missing VITE_API_URL env var (uses PUBLIC_API_URL which Vite ignores)
+#
+# Use instead:
+#   docker build -f docker/Dockerfile.prod --target admin -t gremius-admin:latest .
+#
+# See docker-compose.yml for the correct production setup.
+# ===================================================================
 
-FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
 
-ARG VITE_API_URL=http://localhost:3001
-ENV VITE_API_URL=${VITE_API_URL}
+RUN apk add --no-cache nodejs npm && npm install -g pnpm@9.15.4
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc* ./
-COPY apps/admin/package.json ./apps/admin/
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/admin/package.json ./packages/admin/
 COPY packages/shared/package.json ./packages/shared/
 
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
-COPY packages/shared/ ./packages/shared/
-COPY apps/admin/ ./apps/admin/
-COPY tsconfig.json ./
+COPY packages/admin ./packages/admin
+COPY packages/shared ./packages/shared
 
-RUN pnpm --filter @gremius/shared build || true
-RUN pnpm --filter @gremius/admin build
+RUN pnpm --filter @gremius/shared build
 
-# ── Production (nginx) ──
-FROM nginx:alpine AS runtime
+WORKDIR /app/packages/admin
+ENV NODE_ENV=production
+ARG PUBLIC_API_URL=http://localhost:3000
+ENV PUBLIC_API_URL=${PUBLIC_API_URL}
+ENV VITE_API_URL=${PUBLIC_API_URL}
+RUN pnpm run build
 
-COPY --from=builder /app/apps/admin/dist/ /usr/share/nginx/html/
+# Production stage with nginx
+FROM nginx:alpine AS production
 
-# SPA fallback
-RUN echo 'server { listen 80; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+# SvelteKit adapter-static outputs to build/, not dist/
+COPY --from=builder /app/packages/admin/build /usr/share/nginx/html
+COPY docker/nginx-admin.conf /etc/nginx/conf.d/default.conf
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

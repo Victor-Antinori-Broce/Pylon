@@ -7,8 +7,55 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+// @ts-ignore - Path alias
 import { db } from "../db";
+// @ts-ignore - Path alias
 import { authUsers, authSessions, authAccounts, authVerifications } from "../db/schema";
+
+// Build trusted origins dynamically from environment
+function buildTrustedOrigins(): string[] {
+    const origins = new Set<string>();
+
+    // Always trust the API itself
+    const authUrl = process.env.BETTER_AUTH_URL || "http://localhost:3001";
+    origins.add(authUrl);
+
+    // Admin panel
+    const adminUrl = process.env.ADMIN_URL || "http://localhost:5173";
+    origins.add(adminUrl);
+
+    // Web frontend (if configured)
+    const webUrl = process.env.WEB_URL || "http://localhost:4321";
+    origins.add(webUrl);
+
+    // ALLOWED_ORIGINS from config (comma-separated)
+    const allowedOrigins = process.env.ALLOWED_ORIGINS;
+    if (allowedOrigins) {
+        allowedOrigins.split(",").forEach((o) => origins.add(o.trim()));
+    }
+
+    // Common dev ports as fallbacks
+    if (process.env.NODE_ENV !== "production") {
+        origins.add("http://localhost:3000");
+        origins.add("http://localhost:3001");
+        origins.add("http://localhost:5173");
+        origins.add("http://localhost:4321");
+    }
+
+    return Array.from(origins).filter(Boolean);
+}
+
+// Better-Auth plugin context types
+interface AuthContext {
+    path: string;
+    response?: {
+        user?: {
+            id: string;
+            email: string;
+            name?: string;
+        };
+    };
+}
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -37,27 +84,23 @@ export const auth = betterAuth({
     // Auth providers
     emailAndPassword: {
         enabled: true,
+        minPasswordLength: 8,
     },
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Social & Enterprise OAuth Providers (Condicionales)
-    // ═══════════════════════════════════════════════════════════════════════
+    // Social & Enterprise OAuth Providers (conditional)
     socialProviders: {
-        // GitHub - Para desarrolladores (solo si está configurado)
         ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET && {
             github: {
                 clientId: process.env.GITHUB_CLIENT_ID,
                 clientSecret: process.env.GITHUB_CLIENT_SECRET,
             },
         }),
-        // Google - Para usuarios generales (solo si está configurado)
         ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && {
             google: {
                 clientId: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             },
         }),
-        // Microsoft (Azure AD) - Para clientes empresariales B2B (solo si está configurado)
         ...(process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET && {
             microsoft: {
                 clientId: process.env.AZURE_AD_CLIENT_ID,
@@ -74,34 +117,37 @@ export const auth = betterAuth({
                 type: "string",
                 required: false,
                 defaultValue: "user",
-                input: false, // don't allow setting via signup
+                input: false,
             },
         },
     },
 
-    // Trusted origins (for CORS / cookies)
-    trustedOrigins: [
-        "http://localhost:4321",
-        "http://localhost:5173",
-        process.env.ADMIN_URL || "http://localhost:5173",
-        process.env.WEB_URL || "http://localhost:4321",
-    ],
+    // Trusted origins — built dynamically from environment
+    trustedOrigins: buildTrustedOrigins(),
 
-    // plugins: [
-    //     {
-    //         id: "gremius-hooks",
-    //         hooks: {
-    //             after: {
-    //                 signUp: async (ctx) => {
-    //                     if (ctx.response && (ctx.response as any).user) {
-    //                         const { hooks } = await import("./events");
-    //                         hooks.emit("auth:register", (ctx.response as any).user);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // ]
+    // Lifecycle Hooks — Emit events for Workers/Functions to react to
+    plugins: [
+        {
+            id: "gremius-hooks",
+            hooks: {
+                after: [
+                    {
+                        matcher: (context: AuthContext) => context.path === "/sign-up/email",
+                        handler: async (ctx: AuthContext) => {
+                            try {
+                                if (ctx.response?.user) {
+                                    const { hooks } = await import("./events");
+                                    hooks.emit("auth:register", ctx.response.user);
+                                }
+                            } catch {
+                                // Non-fatal: event emission failure should not break auth
+                            }
+                        },
+                    } as unknown as { matcher: (context: unknown) => boolean; handler: (ctx: unknown) => Promise<void> },
+                ],
+            },
+        },
+    ],
 });
 
 export type Session = typeof auth.$Infer.Session;

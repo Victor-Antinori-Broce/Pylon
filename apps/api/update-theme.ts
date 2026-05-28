@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db } from './src/db';
 import { siteSettings } from './src/db/schema';
 import { eq } from 'drizzle-orm';

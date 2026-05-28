@@ -1,0 +1,114 @@
+name: Publish to NPM
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        default: 'sdk'
+        type: choice
+        options:
+          - sdk
+          - shared
+          - all
+
+env:
+  NODE_VERSION: "20"
+  NPM_REGISTRY: "https://registry.npmjs.org"
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.NPM_REGISTRY }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+  publish-sdk:
+    name: Publish @gremius/sdk
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event.inputs.package == 'sdk' || github.event.inputs.package == 'all' || startsWith(github.ref, 'refs/tags/v')
+    defaults:
+      run:
+        working-directory: packages/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.NPM_REGISTRY }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-shared:
+    name: Publish @gremius/shared
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event.inputs.package == 'shared' || github.event.inputs.package == 'all' || startsWith(github.ref, 'refs/tags/v')
+    defaults:
+      run:
+        working-directory: packages/shared
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.NPM_REGISTRY }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

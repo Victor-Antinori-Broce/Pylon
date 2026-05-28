@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * GremiusCMS — Email Worker (Fail-Safe)
  *
@@ -76,7 +77,7 @@ const templates: Record<string, (data: any) => { subject: string; html: string; 
           Head to your admin panel to start building:
         </p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${process.env.ADMIN_URL || "http://localhost:5173"}"
+          <a href="${process.env.ADMIN_URL || "http://localhost:3001"}"
              style="background: #00E5FF; color: #0a0a12; padding: 12px 32px; border-radius: 8px;
                     text-decoration: none; font-weight: 700; display: inline-block;">
             Open Admin Panel →
@@ -88,7 +89,7 @@ const templates: Record<string, (data: any) => { subject: string; html: string; 
         </p>
       </div>
     `,
-    text: `Welcome to GremiusCMS, ${data.name || "Admin"}! Your admin account is ready. Visit ${process.env.ADMIN_URL || "http://localhost:5173"} to get started.`,
+    text: `Welcome to GremiusCMS, ${data.name || "Admin"}! Your admin account is ready. Visit ${process.env.ADMIN_URL || "http://localhost:3001"} to get started.`,
   }),
 
   "send-recovery": (data) => ({

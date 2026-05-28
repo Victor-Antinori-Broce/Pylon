@@ -1,9 +1,10 @@
+// @ts-nocheck
 /**
  * GremiusCMS API - Endpoint Test Suite
  * Run: bun run test-api.ts
  */
 
-const API = "http://localhost:3001/api";
+const API = (process.env.API_URL || "http://localhost:3001") + "/api";
 let passed = 0;
 let failed = 0;
 

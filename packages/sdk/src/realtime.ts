@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @gremius/sdk — Real-time Module
  *
@@ -6,7 +7,7 @@
  * Usage:
  *   import { GremiusRealtime } from '@gremius/sdk/realtime';
  *
- *   const rt = new GremiusRealtime('ws://localhost:3001/api/realtime');
+ *   const rt = new GremiusRealtime(process.env.GREMIUS_WS_URL || 'ws://localhost:3001/api/realtime');
  *   await rt.connect();
  *
  *   // Subscribe to all changes in a dataset

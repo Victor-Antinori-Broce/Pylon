@@ -25,6 +25,14 @@ import {
 export type { PolicyJson, RLSUser } from "../lib/rls-builder";
 
 /**
+ * Interface for workflow configuration
+ */
+interface WorkflowJson {
+  requireApproval?: boolean;
+  [key: string]: unknown;
+}
+
+/**
  * Check read permission for a dataset.
  *  - NULL policy → admin-only
  *  - 'public' → anyone
@@ -34,7 +42,7 @@ export type { PolicyJson, RLSUser } from "../lib/rls-builder";
  * FASE DE RESCATE: Ahora delega a rls-builder para consistencia.
  */
 export async function checkDatasetReadAccess(c: Context, datasetId: string): Promise<boolean> {
-    const user = c.get("user") as RLSUser;
+    const user = c.get("user") as RLSUser | undefined;
 
     const [dataset] = await db
         .select({ policyJson: dataSets.policyJson })
@@ -45,7 +53,7 @@ export async function checkDatasetReadAccess(c: Context, datasetId: string): Pro
     if (!dataset) return false;
 
     const policy = dataset.policyJson as PolicyJson | null;
-    return rlsCheckRead(policy, user);
+    return rlsCheckRead(policy, user ?? null);
 }
 
 /**
@@ -57,7 +65,7 @@ export async function checkDatasetReadAccess(c: Context, datasetId: string): Pro
  * FASE DE RESCATE: Ahora delega a rls-builder para consistencia.
  */
 export async function checkDatasetWriteAccess(c: Context, datasetId: string): Promise<boolean> {
-    const user = c.get("user") as RLSUser;
+    const user = c.get("user") as RLSUser | undefined;
 
     const [dataset] = await db
         .select({ policyJson: dataSets.policyJson })
@@ -68,7 +76,7 @@ export async function checkDatasetWriteAccess(c: Context, datasetId: string): Pr
     if (!dataset) return false;
 
     const policy = dataset.policyJson as PolicyJson | null;
-    return rlsCheckWrite(policy, user);
+    return rlsCheckWrite(policy, user ?? null);
 }
 
 /**
@@ -76,11 +84,9 @@ export async function checkDatasetWriteAccess(c: Context, datasetId: string): Pr
  * - No workflowJson → 'published' (instant)
  * - requireApproval → 'draft' (needs review)
  */
-export function resolveEntryStatus(workflowJson: any): "published" | "draft" {
+export function resolveEntryStatus(workflowJson: WorkflowJson | null | undefined): "published" | "draft" {
     if (!workflowJson || !workflowJson.requireApproval) {
         return "published";
     }
     return "draft";
 }
-
-

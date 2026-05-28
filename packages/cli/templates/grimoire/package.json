@@ -1,0 +1,59 @@
+{
+  "name": "grimoire-example",
+  "version": "1.0.0",
+  "description": "Example GremiusCMS grimoire — use this as a template to build your own.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "migrations",
+    "grimoire.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "gremius",
+    "grimoire",
+    "cms",
+    "plugin"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "peerDependencies": {
+    "@gremius/shared": ">=0.8.0",
+    "hono": ">=4.0.0",
+    "drizzle-orm": ">=0.30.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "gremius": {
+    "type": "grimoire",
+    "id": "grimoire-example",
+    "name": "Example Grimoire",
+    "description": "A minimal example grimoire demonstrating the package structure.",
+    "category": "optional",
+    "mount": {
+      "path": "/api/example",
+      "requireAuth": true
+    },
+    "dependencies": {
+      "grimoires": []
+    },
+    "tables": [
+      {
+        "name": "exampleItems",
+        "label": "Example Items",
+        "icon": "box",
+        "description": "Sample table for the example grimoire",
+        "searchableFields": ["title"],
+        "filterableFields": ["status"]
+      }
+    ]
+  }
+}

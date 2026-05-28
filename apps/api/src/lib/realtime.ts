@@ -60,7 +60,8 @@ class RealtimeManager {
     private clients = new Map<string, WSClient>();
     private channelSubscribers = new Map<string, Set<string>>(); // channel → Set<clientId>
     private presenceRooms = new Map<string, Map<string, { id: string; name?: string }>>(); // room → Map<clientId, user>
-    private valkeySubscriptions = new Map<string, () => Promise<void>>(); // channel → unsubscribe fn
+    // @ts-ignore - Private property, may be used in future
+    private _valkeySubscriptions = new Map<string, () => Promise<void>>(); // channel → unsubscribe fn
     private initialized = false;
 
     /**
@@ -86,8 +87,9 @@ class RealtimeManager {
 
             this.initialized = true;
             console.log("  📡 Real-time Manager initialized (Valkey Pub/Sub)");
-        } catch (err: any) {
-            console.warn(`  ⚠️  Real-time Manager: Valkey not available (${err.message})`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.warn(`  ⚠️  Real-time Manager: Valkey not available (${message})`);
         }
     }
 
@@ -269,6 +271,43 @@ class RealtimeManager {
     }
 
     // ═══════════════════════════════════════════════════════════
+    // Public API for GrimoireContext
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Broadcast a message to a channel.
+     * Used by GrimoireContext.realtime.broadcast()
+     */
+    broadcast(channel: string, message: unknown): void {
+        // Publish to Valkey for horizontal scaling (async, fire-and-forget)
+        getValkeyClient().then((valkey) => {
+            if (valkey) {
+                valkey.publish(channel, JSON.stringify(message)).catch(() => {
+                    // Valkey publish failed, ignore
+                });
+            }
+        }).catch(() => {
+            // Valkey not available, broadcast locally only
+        });
+        
+        // Also broadcast locally
+        this.broadcastToChannel(channel, JSON.stringify(message));
+    }
+
+    /**
+     * Send a message to a specific user.
+     * Used by GrimoireContext.realtime.sendToUser()
+     */
+    sendToUser(userId: string, message: unknown): void {
+        // Find all clients for this user
+        for (const [, client] of this.clients) {
+            if (client.userId === userId) {
+                this.send(client.socket, message);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // Message Handling
     // ═══════════════════════════════════════════════════════════
 
@@ -309,8 +348,11 @@ class RealtimeManager {
                 this.send(client.socket, { type: "pong", timestamp: Date.now() });
                 break;
 
-            default:
-                this.sendError(client.socket, `Unknown message type: ${(msg as any).type}`);
+            default: {
+                // Unknown message type
+                const unknownMsg = msg as { type?: string };
+                this.sendError(client.socket, `Unknown message type: ${unknownMsg.type ?? 'undefined'}`);
+            }
         }
     }
 

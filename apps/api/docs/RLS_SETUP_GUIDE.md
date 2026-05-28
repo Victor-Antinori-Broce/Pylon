@@ -77,7 +77,7 @@ bun run dev
 
 # 2. En otra terminal, testear con curl (autenticado)
 curl -H "Cookie: session=..." \
-     http://localhost:3001/api/datasets/test/entries
+     http://localhost:3000/api/datasets/test/entries
 
 # 3. Verificar en logs que el contexto RLS se inyecta:
 # [RLS] Iniciando transacción para usuario: user-xxx

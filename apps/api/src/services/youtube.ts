@@ -4,7 +4,8 @@
 
 const YT_API_URL = "https://www.googleapis.com/youtube/v3";
 
-interface YouTubeVideo {
+/** YouTube video data structure */
+export interface YouTubeVideo {
   id: string;
   title: string;
   description: string;
@@ -13,6 +14,32 @@ interface YouTubeVideo {
   channelTitle: string;
   viewCount: number;
   duration: string;
+}
+
+// YouTube API response types
+interface YouTubeSearchItem {
+  id: { videoId: string };
+  snippet: {
+    title: string;
+    description: string;
+    thumbnails: { high: { url: string } };
+    publishedAt: string;
+    channelTitle: string;
+  };
+}
+
+interface YouTubeVideoDetailsItem {
+  id: string;
+  statistics: { viewCount: string };
+  contentDetails: { duration: string };
+}
+
+interface YouTubeSearchResponse {
+  items: YouTubeSearchItem[];
+}
+
+interface YouTubeVideoDetailsResponse {
+  items: YouTubeVideoDetailsItem[];
 }
 
 async function ytFetch<T>(endpoint: string, params: string): Promise<T> {
@@ -25,19 +52,18 @@ async function ytFetch<T>(endpoint: string, params: string): Promise<T> {
 
 export async function searchTrailers(gameName: string, maxResults = 5): Promise<YouTubeVideo[]> {
   const query = encodeURIComponent(`${gameName} official trailer`);
-  const data = await ytFetch<{
-    items: Array<{
-      id: { videoId: string };
-      snippet: { title: string; description: string; thumbnails: { high: { url: string } }; publishedAt: string; channelTitle: string };
-    }>;
-  }>("/search", `q=${query}&part=snippet&type=video&maxResults=${maxResults}&order=relevance`);
+  const data = await ytFetch<YouTubeSearchResponse>(
+    "/search",
+    `q=${query}&part=snippet&type=video&maxResults=${maxResults}&order=relevance`
+  );
 
   if (!data.items?.length) return [];
 
   const videoIds = data.items.map((i) => i.id.videoId).join(",");
-  const details = await ytFetch<{
-    items: Array<{ id: string; statistics: { viewCount: string }; contentDetails: { duration: string } }>;
-  }>("/videos", `id=${videoIds}&part=statistics,contentDetails`);
+  const details = await ytFetch<YouTubeVideoDetailsResponse>(
+    "/videos",
+    `id=${videoIds}&part=statistics,contentDetails`
+  );
 
   const detailsMap = new Map(details.items.map((d) => [d.id, d]));
 
@@ -57,12 +83,10 @@ export async function searchTrailers(gameName: string, maxResults = 5): Promise<
 }
 
 export async function getLatestVideos(channelId: string, maxResults = 10): Promise<YouTubeVideo[]> {
-  const data = await ytFetch<{
-    items: Array<{
-      id: { videoId: string };
-      snippet: { title: string; description: string; thumbnails: { high: { url: string } }; publishedAt: string; channelTitle: string };
-    }>;
-  }>("/search", `channelId=${channelId}&part=snippet&type=video&maxResults=${maxResults}&order=date`);
+  const data = await ytFetch<YouTubeSearchResponse>(
+    "/search",
+    `channelId=${channelId}&part=snippet&type=video&maxResults=${maxResults}&order=date`
+  );
 
   return data.items.map((item) => ({
     id: item.id.videoId,

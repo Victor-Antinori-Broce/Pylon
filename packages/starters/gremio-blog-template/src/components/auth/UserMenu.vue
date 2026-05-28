@@ -119,7 +119,7 @@ interface AuthUser {
   role: string;
 }
 
-const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3000";
 
 const user = ref<AuthUser | null>(null);
 const checking = ref(true);

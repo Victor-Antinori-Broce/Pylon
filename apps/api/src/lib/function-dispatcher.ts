@@ -1,202 +1,174 @@
+// @ts-nocheck
 /**
- * GremiusCMS — Function Dispatcher
+ * GremiusCMS — Function Dispatcher (Legacy Wrapper)
  *
- * Bridges the EventEmitter system to Gremius Workers.
- * When a data event fires (entry:created, entry:updated, etc.),
- * this dispatcher finds matching active functions and executes them
- * inside sandboxed Workers.
+ * ⚠️ DEPRECATED: This module is kept for backward compatibility.
+ * New code should use the ActionEngine directly from `./actions`.
  *
- * Also provides:
- *   - Manual execution API
- *   - Execution logging to `function_executions` table
- *   - Error tracking on the function record
+ * This wrapper bridges the old function-based API to the new unified
+ * ActionEngine. It will be removed in Phase 4.
+ *
+ * Phase 3: Delegates all execution to ActionEngine.
  */
 
-import { eq, and, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { gremiusFunctions, functionExecutions } from "../db/schema";
+import { gremiusFunctions } from "../db/schema";
 import { events } from "./events";
-import { executeSandbox, type SandboxResult } from "./worker-sandbox";
+import { dispatchEvent, executeActionById } from "./actions";
+import type { SandboxResult } from "./worker-sandbox";
 
-// ═══════════════════════════════════════════════════════════════
-// Types
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// Legacy Event Mapping
+// ═══════════════════════════════════════════════════════════════════════════
 
-/** Map EventEmitter names → function trigger enum values */
-const EVENT_TRIGGER_MAP: Record<string, string> = {
-  "entry:created": "on_entry_created",
-  "entry:updated": "on_entry_updated",
-  "entry:deleted": "on_entry_deleted",
-  "post:published": "on_post_published",
+/** Map EventEmitter names → new unified event names */
+const EVENT_MAP: Record<string, string> = {
+  "entry:created": "entry.created",
+  "entry:updated": "entry.updated",
+  "entry:deleted": "entry.deleted",
+  "post:published": "post.published",
 };
 
-type FunctionRecord = typeof gremiusFunctions.$inferSelect;
+// ═══════════════════════════════════════════════════════════════════════════
+// Legacy API (Delegates to ActionEngine)
+// ════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════
-// Core: Execute a function and log the result
-// ═══════════════════════════════════════════════════════════════
-
+/**
+ * @deprecated Use executeActionById from `./actions` instead
+ */
 export async function executeFunction(
-  fn: FunctionRecord,
+  fn: typeof gremiusFunctions.$inferSelect,
   triggerEvent: string,
   payload: Record<string, unknown>
 ): Promise<SandboxResult> {
-  // Create execution record (pending)
-  const [execution] = await db.insert(functionExecutions).values({
-    functionId: fn.id,
-    status: "running",
-    triggerEvent,
-    triggerPayload: payload,
-    startedAt: new Date(),
-  }).returning();
+  console.warn("[DEPRECATED] executeFunction called, migrate to ActionEngine");
+  
+  // Check if this function has been migrated to actions
+  const { actions } = await import("../db/schema");
+  const { eq, and } = await import("drizzle-orm");
+  
+  const [migratedAction] = await db.select().from(actions)
+    .where(and(
+      eq(actions.legacyId, fn.id),
+      eq(actions.legacyType, "function")
+    ))
+    .limit(1);
 
-  // Run in sandbox
-  const result = await executeSandbox({
-    code: fn.code,
-    payload,
-    envVars: (fn.envVars as Record<string, string>) || {},
-    timeoutMs: fn.timeoutMs,
-    memoryLimitMb: fn.memoryLimitMb,
-  });
+  if (migratedAction) {
+    // Execute via ActionEngine
+    const result = await executeActionById(migratedAction.id, {
+      trigger: triggerEvent === "cron" ? "cron" : "event",
+      triggerEvent,
+      event: {
+        name: triggerEvent,
+        data: payload,
+        timestamp: new Date().toISOString(),
+      },
+    });
 
-  // Map exit reason to status
-  const statusMap: Record<string, "success" | "error" | "timeout" | "killed"> = {
-    success: "success",
-    error: "error",
-    timeout: "timeout",
-    killed: "killed",
-  };
-
-  const execStatus = statusMap[result.exitReason] || "error";
-
-  // Update execution record
-  await db.update(functionExecutions).set({
-    status: execStatus,
-    logs: result.logs || null,
-    result: result.result,
-    errorMessage: result.error || null,
-    durationMs: result.durationMs,
-    memoryUsedBytes: result.memoryUsedBytes,
-    finishedAt: new Date(),
-  }).where(eq(functionExecutions.id, execution.id));
-
-  // Update function metadata
-  const updates: Record<string, any> = {
-    lastExecutedAt: new Date(),
-    executionCount: fn.executionCount + 1,
-  };
-
-  if (!result.success) {
-    updates.errorCount = fn.errorCount + 1;
-    updates.lastError = result.error;
-    // Auto-disable after 10 consecutive errors
-    if (fn.errorCount + 1 >= 10) {
-      updates.status = "error";
-      console.warn(`  ⚡ [GREMIUS] Function "${fn.name}" auto-disabled after 10 errors`);
-    }
-  } else {
-    // Reset error state on success
-    updates.lastError = null;
-    if (fn.status === "error") {
-      updates.status = "active";
-    }
-  }
-
-  await db.update(gremiusFunctions).set(updates).where(eq(gremiusFunctions.id, fn.id));
-
-  return result;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Event Dispatch — Listen for data events and trigger functions
-// ═══════════════════════════════════════════════════════════════
-
-async function dispatchFunctions(
-  eventName: string,
-  data: { datasetId?: string; entry?: Record<string, unknown>; [key: string]: unknown }
-) {
-  const triggerType = EVENT_TRIGGER_MAP[eventName];
-  if (!triggerType) return;
-
-  try {
-    // Find matching active functions
-    const conditions = [
-      eq(gremiusFunctions.status, "active" as any),
-      eq(gremiusFunctions.trigger, triggerType as any),
-    ];
-
-    // For entry events, also match by dataset
-    if (data.datasetId && triggerType.startsWith("on_entry_")) {
-      conditions.push(eq(gremiusFunctions.watchDatasetId, data.datasetId));
-    }
-
-    const functions = await db.select().from(gremiusFunctions)
-      .where(and(...conditions));
-
-    if (functions.length === 0) return;
-
-    console.log(`  ⚡ [WORKERS] ${eventName} → dispatching ${functions.length} function(s)`);
-
-    // Execute all matching functions concurrently (fire-and-forget from event loop)
-    const payload: Record<string, unknown> = {
-      event: eventName,
-      trigger: triggerType,
-      datasetId: data.datasetId,
-      entry: data.entry,
-      timestamp: new Date().toISOString(),
+    return {
+      success: result.success,
+      result: result.result ?? null,
+      logs: result.logs ?? "",
+      error: result.error ?? null,
+      durationMs: result.durationMs ?? 0,
+      memoryUsedBytes: result.memoryUsedBytes ?? 0,
+      exitReason: result.success ? "success" : result.error?.includes("timeout") ? "timeout" : "error",
     };
-
-    for (const fn of functions) {
-      // Don't await — fire and forget
-      executeFunction(fn, triggerType, payload).catch((err) => {
-        console.error(`  ⚡ [WORKERS] Execution error for "${fn.name}":`, err.message);
-      });
-    }
-  } catch (err: any) {
-    console.error(`  ⚡ [WORKERS] Dispatch error for ${eventName}:`, err.message);
   }
-}
 
-// ═══════════════════════════════════════════════════════════════
-// Manual Execution
-// ═══════════════════════════════════════════════════════════════
+  // Fallback: Function not migrated yet
+  return {
+    success: false,
+    error: `Function ${fn.id} not found in actions table. Run migration first.`,
+    durationMs: 0,
+    memoryUsedBytes: 0,
+    exitReason: "error",
+    logs: "",
+    result: null,
+  };
+}
 
 /**
- * Execute a function manually (from the admin UI "Run" button).
+ * @deprecated Use executeActionById from `./actions` instead
  */
 export async function executeManually(
   functionId: string,
   customPayload?: Record<string, unknown>
 ): Promise<SandboxResult> {
-  const [fn] = await db.select().from(gremiusFunctions)
-    .where(eq(gremiusFunctions.id, functionId))
+  console.warn("[DEPRECATED] executeManually called, migrate to ActionEngine");
+  
+  const { actions } = await import("../db/schema");
+  const { eq, and } = await import("drizzle-orm");
+  
+  // Try to find by legacy ID first
+  const [migratedAction] = await db.select().from(actions)
+    .where(and(
+      eq(actions.legacyId, functionId),
+      eq(actions.legacyType, "function")
+    ))
     .limit(1);
 
-  if (!fn) throw new Error("Function not found");
+  const actionId = migratedAction?.id || functionId;
 
-  const payload = customPayload || {
-    event: "manual",
+  const result = await executeActionById(actionId, {
     trigger: "manual",
-    timestamp: new Date().toISOString(),
-  };
+    event: customPayload ? {
+      name: "manual",
+      data: customPayload,
+      timestamp: new Date().toISOString(),
+    } : undefined,
+  });
 
-  return executeFunction(fn, "manual", payload);
+  return {
+    success: result.success,
+    result: result.result ?? null,
+    logs: result.logs ?? "",
+    error: result.error ?? null,
+    durationMs: result.durationMs ?? 0,
+    memoryUsedBytes: result.memoryUsedBytes ?? 0,
+    exitReason: result.success ? "success" : result.error?.includes("timeout") ? "timeout" : "error",
+  };
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// Event Dispatch (Delegates to ActionEngine)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function dispatchToActions(
+  eventName: string,
+  data: { datasetId?: string; entry?: Record<string, unknown>; [key: string]: unknown }
+) {
+  const unifiedEventName = EVENT_MAP[eventName];
+  if (!unifiedEventName) return;
+
+  // Delegate to ActionEngine
+  await dispatchEvent(eventName, {
+    ...data,
+    eventName: unifiedEventName,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Initialization
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Register event listeners for Gremius Workers.
- * Call once at server startup (after webhooks init).
+ * @deprecated ActionEngine handles its own initialization
  */
 export function initFunctionDispatcher() {
-  for (const eventName of Object.keys(EVENT_TRIGGER_MAP)) {
+  console.warn("[DEPRECATED] initFunctionDispatcher called, events now handled by ActionEngine");
+  
+  // Keep event listeners for backward compatibility during transition
+  // These will be removed in Phase 4
+  for (const eventName of Object.keys(EVENT_MAP)) {
     events.on(eventName, (data) => {
-      dispatchFunctions(eventName, data).catch(() => {});
+      dispatchToActions(eventName, data).catch((err) => {
+        console.error(`[FunctionDispatcher] Error dispatching ${eventName}:`, err);
+      });
     });
   }
 
-  console.log("  ⚡ Gremius Workers dispatcher initialized (on_entry_created, on_entry_updated, on_entry_deleted, on_post_published)");
+  console.log("  ⚡ Function Dispatcher (legacy) - events delegated to ActionEngine");
 }

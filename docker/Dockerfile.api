@@ -1,40 +1,68 @@
-# ── GremiusCMS API - Bun + Hono ──
-# ~150MB final image vs ~500MB+ with Payload/Next.js
+# ===================================================================
+# DEPRECATED - Do not use this Dockerfile
+#
+# This standalone API Dockerfile has known issues:
+#   1. Uses `bun install` but the project uses pnpm as package manager
+#   2. Missing workspace packages: engine, core, grimoires, realms
+#   3. Dynamic imports from grimoires will fail at runtime
+#
+# Use instead:
+#   docker build -f docker/Dockerfile.prod --target api -t gremius-api:latest .
+#
+# See docker-compose.yml for the correct production setup.
+# ===================================================================
+#
+# Keeping this file for reference only. Will be removed in a future version.
+#
+# Original build command was:
+#   docker build -f docker/Dockerfile.api -t gremius/api .
+# ===================================================================
 
-FROM oven/bun:1-alpine AS builder
+FROM oven/bun:1-alpine AS base
 WORKDIR /app
 
-# Copy workspace root
-COPY package.json bun.lock* ./
+RUN apk add --no-cache postgresql-client
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/mcp-server/package.json ./packages/mcp-server/
+COPY packages/engine/package.json ./packages/engine/
+COPY packages/core/package.json ./packages/core/
+COPY packages/grimoires/package.json ./packages/grimoires/
+COPY packages/realms/package.json ./packages/realms/
 
-# Install dependencies
-RUN bun install --frozen-lockfile || bun install
+RUN apk add --no-cache nodejs npm && npm install -g pnpm@9.15.4
+RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
-# Copy source
-COPY packages/shared/ ./packages/shared/
-COPY apps/api/ ./apps/api/
-COPY tsconfig.json ./
+COPY apps/api ./apps/api
+COPY packages/shared ./packages/shared
+COPY packages/mcp-server ./packages/mcp-server
+COPY packages/engine ./packages/engine
+COPY packages/core ./packages/core
+COPY packages/grimoires ./packages/grimoires
+COPY packages/realms ./packages/realms
+COPY docker ./docker
 
-# Build shared package
-WORKDIR /app/packages/shared
-RUN bun run build || true
-
-# Build API
+RUN pnpm --filter @gremius/shared build
 WORKDIR /app/apps/api
-RUN bun build src/index.ts --outdir dist --target bun
+RUN bun run build
 
-# ── Production ──
-FROM oven/bun:1-alpine AS runtime
+FROM oven/bun:1-alpine AS production
 WORKDIR /app
 
-COPY --from=builder /app/apps/api/dist/ ./dist/
-COPY --from=builder /app/apps/api/package.json ./
-COPY --from=builder /app/node_modules/ ./node_modules/
-COPY --from=builder /app/apps/api/drizzle/ ./drizzle/
+RUN apk add --no-cache postgresql-client curl
 
-USER bun
-EXPOSE 3001
+COPY --from=base /app /app
 
-CMD ["bun", "run", "dist/index.js"]
+RUN mkdir -p uploads logs
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+EXPOSE 3000
+
+CMD ["sh", "/app/docker/start-with-check.sh"]

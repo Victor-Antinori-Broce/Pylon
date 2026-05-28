@@ -1,0 +1,43 @@
+{
+  "name": "@gremius/grimoire-crm",
+  "version": "1.0.0",
+  "description": "Gremius Grimoire - CRM & Kanban Pipeline (contacts, companies, deals, activities)",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch",
+    "test": "vitest run --config=tests/vitest.config.ts",
+    "test:watch": "vitest --config=tests/vitest.config.ts",
+    "test:coverage": "vitest run --config=tests/vitest.config.ts --coverage",
+    "test:integration": "npx playwright test tests/crm.integration.spec.ts"
+  },
+  "keywords": ["gremius", "grimoire", "crm", "kanban", "sales", "pipeline"],
+  "author": "Gremius Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
+  },
+  "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2"
+  },
+  "peerDependencies": {
+    "@gremius/shared": "workspace:*",
+    "hono": "^4.7.0",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^3.23.0"
+  },
+  "gremius": {
+    "type": "grimoire",
+    "id": "grimoire-crm",
+    "category": "business",
+    "layer": 3,
+    "core": false,
+    "defaultEnabled": false,
+    "minVersion": "0.8.0"
+  }
+}

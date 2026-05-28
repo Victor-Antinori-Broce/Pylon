@@ -1,0 +1,1 @@
+{"version":3,"file":"bun.d.ts","sourceRoot":"","sources":["bun.ts"],"names":[],"mappings":"AAAA;;;;;;;;;;;;;;;;;;;GAmBG;AAEH,OAAO,KAAK,EAAE,aAAa,EAAE,WAAW,EAAE,MAAM,YAAY,CAAC;AAG7D;;GAEG;AACH,wBAAsB,iBAAiB,CAAC,MAAM,EAAE,aAAa,GAAG,OAAO,CAAC,WAAW,CAAC,CAWnF;AAED;;GAEG;AACH,wBAAgB,aAAa,CAAC,MAAM,EAAE,aAAa;;;;;EAmBlD;AAED,OAAO,EAAE,iBAAiB,EAAE,CAAC;AAC7B,cAAc,YAAY,CAAC"}

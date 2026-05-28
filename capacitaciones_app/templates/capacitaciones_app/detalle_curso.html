@@ -1,0 +1,395 @@
+{% extends 'capacitaciones_app/base.html' %}
+{% block title %}{{ curso.titulo }}{% endblock %}
+
+{% block content %}
+<!-- Toast Notifications -->
+<!-- Encuesta ya completada -->
+<div id="notificacion-encuesta" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999; display: none;">
+    <div class="alert alert-info alert-dismissible fade show shadow-lg" role="alert" style="max-width: 350px;">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>¡Ya completaste esta encuesta!</strong>
+        <br>No puedes volver a completar la encuesta de satisfacción de este curso.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<!-- Quiz completado exitosamente -->
+<div id="notificacion-quiz" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999; display: none;">
+    <div class="alert alert-success alert-dismissible fade show shadow-lg" role="alert" style="max-width: 350px;">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>¡Quiz completado exitosamente!</strong>
+        <br>Tu puntaje: <span id="puntaje-quiz"></span>/100 - ¡Aprobado!
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<!-- Certificado ya descargado -->
+<div id="notificacion-certificado" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999; display: none;">
+    <div class="alert alert-warning alert-dismissible fade show shadow-lg" role="alert" style="max-width: 350px;">
+        <i class="fas fa-certificate me-2"></i>
+        <strong>¡Certificado ya descargado!</strong>
+        <br>Ya descargaste el certificado de este curso anteriormente.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<!-- 🌀 Contenedor principal con transición -->
+<div 
+    x-data="{ visible: false }"
+    x-init="requestAnimationFrame(() => visible = true)"
+    :class="{ 'fade-in': visible }"
+    class="fade-wrapper">
+
+    <div class="container my-5">
+
+        <!-- 🔰 Encabezado -->
+        <div class="row align-items-center">
+            <div class="col-md-9">
+                <h1 class="fw-bold text-success">{{ curso.titulo }}</h1>
+                <p><strong>Descripción:</strong> {{ curso.descripcion }}</p>
+                <p><strong>Inicio:</strong> {{ curso.fecha_inicio }} | <strong>Fin:</strong> {{ curso.fecha_fin }}</p>
+            </div>
+            <div class="col-md-3 text-center">
+                {% if curso.portada %}
+                    <img src="{{ curso.portada.url }}" alt="Portada" class="img-fluid rounded shadow" style="max-height: 150px;">
+                {% else %}
+                    <div class="avatar-iniciales" style="background-color: {{ color_portada }};">
+                        {{ curso.titulo|slice:":2"|upper }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 📈 Progreso -->
+        {% if progreso %}
+            <div class="mt-4">
+                <p><strong>Progreso:</strong> {{ progreso_percent }}%</p>
+                <div class="progress" style="height: 24px;">
+                    <div class="progress-bar bg-success" role="progressbar"
+                        style="width: {{ progreso_percent }}%;" aria-valuenow="{{ progreso_percent }}"
+                        aria-valuemin="0" aria-valuemax="100">
+                        {{ progreso_percent }}%
+                    </div>
+                </div>
+                {% if curso_completado %}
+                    <div class="alert alert-success mt-3 d-flex align-items-center" role="alert">
+                        <span style="font-size: 1.2em; margin-right: 8px;">🎉</span>
+                        ¡Felicidades! Has completado este curso.
+                    </div>
+                {% endif %}
+
+
+            </div>
+        {% endif %}
+
+        {% comment %} Botón para descargar certificado (solo si el curso está completado) {% endcomment %}
+<div class="mt-4 text-center">
+  {% if curso_completado %}
+    <a 
+      href="{% url 'certificado' curso.id %}" 
+      class="btn btn-success"
+    >
+      Descargar Certificado
+    </a>
+  {% else %}
+    <button 
+      class="btn btn-outline-secondary" 
+      disabled 
+      title="Completa todos los temas y quizzes para habilitar el certificado"
+    >
+      Descargar Certificado
+    </button>
+  {% endif %}
+</div>
+
+
+
+        <!-- 📚 Contenido del curso -->
+        <h5 class="text-success mt-5">Contenido del curso</h5>
+        <div class="accordion" id="accordionModulos">
+            {% for modulo in curso.modulos.all|dictsort:"orden" %}
+                <div class="accordion-item mb-2">
+                    <h2 class="accordion-header" id="heading-{{ modulo.id }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapse-{{ modulo.id }}"
+                                aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                                aria-controls="collapse-{{ modulo.id }}">
+                            {{ modulo.orden }}. {{ modulo.titulo }}
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ modulo.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                         aria-labelledby="heading-{{ modulo.id }}" data-bs-parent="#accordionModulos">
+                        <div class="accordion-body">
+                            {% if modulo.temas.all %}
+                                <ul class="list-group">
+                                    {% for tema in modulo.temas.all|dictsort:"orden" %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                {% if tema.id in temas_completados_ids %}
+                                                    <span class="badge bg-success me-2">✅</span>
+                                                {% endif %}
+                                                <strong>{{ tema.orden }}. {{ tema.titulo }}</strong>
+                                            </div>
+                                            <a href="{% url 'ver_tema' curso.id tema.id %}" class="btn btn-sm btn-outline-success">
+                                                Ir al tema
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted">Este módulo no tiene temas aún.</p>
+                            {% endif %}
+
+                            {% if modulo.quiz %}
+                                <div class="mt-3 text-end">
+                                    <a href="{% url 'quiz_modulo' curso.id modulo.id %}" class="btn btn-outline-primary">
+                                        📝 Realizar Quiz del Módulo
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">Este curso aún no tiene módulos definidos.</p>
+            {% endfor %}
+        </div>        <!-- 🎨 Estilos neumórficos CORREGIDOS -->
+<style>
+/* Contenedor principal */
+.fade-wrapper {
+    opacity: 0;
+    transform: translateY(10px);
+}
+.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.fade-out {
+    opacity: 0;
+}
+
+/* Botones neumórficos - NO aplicar al acordeón */
+.btn:not(.accordion-button) {
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff;
+    background-color: #e0e5ec;
+    color: #6c757d;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border: 2px solid #198754; /* Marco verde */
+}
+.btn:not(.accordion-button):hover {
+    box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+    background-color: #d1d9e6;
+    color: #495057;
+}
+
+/* Progreso neumórfico */
+.progress {
+    background-color: #e0e5ec;
+    border-radius: 12px;
+    box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+    overflow: hidden;
+}
+.progress-bar {
+    background-color: #198754;
+    border-radius: 12px;
+    box-shadow: 4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff;
+}
+
+/* ACORDEÓN FUNCIONAL - Estilos mínimos que NO interfieren con Bootstrap */
+.accordion-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.accordion-button {
+    color: #198754;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #198754;
+    color: white;
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.accordion-body {
+    background-color: #ffffff;
+    padding: 1.25rem;
+}
+
+/* FORZAR VISIBILIDAD DEL CONTENIDO DEL ACORDEÓN */
+.accordion-collapse.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+}
+
+.accordion-collapse.show .accordion-body {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.accordion-collapse.show .list-group {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.accordion-collapse.show .list-group-item {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Botones dentro del acordeón */
+.accordion-body .btn {
+    box-shadow: none;
+    background-color: transparent;
+    border: 1px solid #198754;
+    color: #198754;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+}
+
+.accordion-body .btn:hover {
+    background-color: #198754;
+    color: white;
+    box-shadow: none;
+}
+
+.accordion-body .btn-outline-primary {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.accordion-body .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Lista de temas */
+.list-group-item {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    margin-bottom: 0.25rem;
+    background-color: #f8f9fa;
+}
+
+.list-group-item:hover {
+    background-color: #e9ecef;
+    transition: background-color 0.3s ease;
+}
+
+/* Tipografía */
+h1 {
+    font-size: 2.5rem;
+    color: #198754;
+}
+h5 {
+    font-size: 1.5rem;
+    color: #198754;
+}
+p {
+    font-size: 1rem;
+    color: #6c757d;
+}
+</style>
+
+        <!-- Contenedor para los botones -->
+        <div class="d-flex justify-content-between mt-4">
+            <!-- Botón volver con efecto -->
+            <a href="{% url 'lista_cursos' %}" 
+                class="btn"
+                x-data="{ cargando: false }"
+                @click.prevent="cargando = true; setTimeout(() => window.location.href = $el.href, 600)"
+                :class="{ 'fade-out': cargando }"
+                style="transition: opacity 0.6s ease;">
+                ← Volver a cursos
+            </a>
+
+            <!-- Botón Encuesta de Satisfacción -->
+            {% if temas_y_quizzes_completados %}
+                <a href="{% url 'encuesta_satisfaccion_curso' %}?curso_id={{ curso.id }}" 
+                    class="btn"
+                    style="transition: opacity 0.6s ease;">
+                    📝 Encuesta de Satisfacción
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary" disabled title="Debes completar todos los temas del curso para realizar la encuesta.">
+                    📝 Encuesta de Satisfacción
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 🎉 Confeti si completado -->
+{% if cert_warning %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ cert_warning }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+{% endif %}
+
+<script>
+// Sistema de notificaciones toast expandido
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Función para mostrar notificación
+    function mostrarNotificacion(elementId, autoHide = true, hideDelay = 5000) {
+        const notificacion = document.getElementById(elementId);
+        if (notificacion) {
+            notificacion.style.display = 'block';
+            
+            if (autoHide) {
+                setTimeout(() => {
+                    const alert = notificacion.querySelector('.alert');
+                    if (alert) {
+                        alert.classList.remove('show');
+                        setTimeout(() => {
+                            notificacion.style.display = 'none';
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }, 150);
+                    }
+                }, hideDelay);
+            }
+        }    }
+    
+    // Verificar encuesta ya completada
+    if (urlParams.get('encuesta_ya_completada') === 'true') {
+        mostrarNotificacion('notificacion-encuesta');
+    }
+    
+    // Verificar quiz completado exitosamente
+    if (urlParams.get('quiz_completado_exitoso') === 'true') {
+        const puntaje = urlParams.get('puntaje');
+        const elementoPuntaje = document.getElementById('puntaje-quiz');
+        if (elementoPuntaje && puntaje) {
+            elementoPuntaje.textContent = puntaje;
+        }
+        mostrarNotificacion('notificacion-quiz');
+    }
+      // Verificar certificado ya descargado
+    if (urlParams.get('certificado_ya_descargado') === 'true') {
+        mostrarNotificacion('notificacion-certificado');
+    }
+});
+</script>
+
+{% endblock %}

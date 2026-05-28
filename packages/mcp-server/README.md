@@ -1,77 +1,111 @@
 # @gremius/mcp-server
 
-Model Context Protocol (MCP) Server para Gremius CMS. Permite que agentes de IA (Claude, Cursor, etc.) interactúen con el backend de Gremius.
+Enterprise-grade [Model Context Protocol](https://modelcontextprotocol.io) server for Gremius CMS. Connects AI agents (Claude, Cursor, Windsurf, VS Code Copilot) to your Gremius backend.
 
-## 🎯 Qué es MCP
-
-El [Model Context Protocol](https://modelcontextprotocol.io) es un protocolo estándar para conectar agentes de IA con fuentes de datos y herramientas externas. Gremius expone:
-
-- **Resources**: Datasets, grimoires, configuración
-- **Tools**: Query, insert, dispatch de workers
-
-## 📦 Instalación
+## 🚀 Quick Start
 
 ```bash
-pnpm install @gremius/mcp-server
+# Via CLI (auto-starts Docker container)
+gremius mcp
+
+# Via Docker
+docker run -p 3002:3002 -e GREMIUS_API_URL=http://localhost:3001 gremius/mcp:latest
+
+# Via npx
+npx @gremius/mcp-server
 ```
 
-## 🔧 Uso
-
-### Como librería (desde la API)
-
-```typescript
-import { createGremiusMcpServer } from "@gremius/mcp-server";
-
-const server = createGremiusMcpServer({
-    db,
-    schema: { dataSets, dataEntries },
-    queue: { addJob: async (queue, job, payload) => {...} },
-    grimoireRegistry: []
-});
-```
-
-### Como proceso stdio (CLI)
+## 🔧 IDE Setup
 
 ```bash
-# En desarrollo
-bun run src/index.ts
-
-# Construido
-bun run dist/index.js
+# Auto-generate config for your IDE
+gremius mcp --ide cursor    # Creates .cursor/mcp.json
+gremius mcp --ide claude    # Prints Claude Desktop config
+gremius mcp --ide vscode    # Prints VS Code config
+gremius mcp --ide windsurf  # Prints Windsurf config
 ```
 
-## 🌐 Endpoints SSE (API)
+Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
 
-La API expone MCP sobre SSE en `/api/mcp`:
+### Cursor
 
+```json
+// .cursor/mcp.json
+{
+  "mcpServers": {
+    "gremius": {
+      "url": "http://localhost:3002/sse"
+    }
+  }
+}
 ```
-GET  /api/mcp       # Conexión SSE
-POST /api/mcp       # Mensajes JSON-RPC
+
+### Claude Desktop
+
+```json
+// claude_desktop_config.json
+{
+  "mcpServers": {
+    "gremius": {
+      "command": "npx",
+      "args": ["-y", "@gremius/mcp-server"],
+      "env": {
+        "GREMIUS_API_URL": "http://localhost:3001",
+        "GREMIUS_API_TOKEN": "<your-api-key>"
+      }
+    }
+  }
+}
 ```
 
-## 🛠️ Tools Disponibles
+## 🛠️ Tools (11)
 
-| Tool | Descripción |
+| Tool | Description |
 |------|-------------|
-| `gremius_query_dataset` | Query registros de un dataset |
-| `gremius_insert_record` | Insertar nuevo registro |
-| `gremius_dispatch_worker` | Encolar job en BullMQ |
+| `gremius_list_tables` | Discover all data tables with row counts |
+| `gremius_query_table` | Query records with pagination, sort, filter. Supports TOON format |
+| `gremius_create_record` | Create a new record in any table |
+| `gremius_update_record` | Update a record by ID |
+| `gremius_delete_record` | Delete a record by ID |
+| `gremius_get_schema` | Get JSON Schema for a table (fields, types, relations) |
+| `gremius_list_modules` | List all grimoire modules + status |
+| `gremius_toggle_module` | Enable/disable a module |
+| `gremius_encode_toon` | Encode JSON → TOON (60% fewer tokens) |
+| `gremius_list_datasets` | List dynamic datasets |
+| `gremius_api_request` | Raw API request (escape hatch) |
 
-## 📚 Resources Disponibles
+## 📚 Resources (5)
 
-| Resource | URI | Descripción |
-|----------|-----|-------------|
-| Datasets | `gremius://datasets` | Lista de datasets activos |
-| Grimoires | `gremius://grimoires` | Módulos grimoire activos |
+| Resource | URI |
+|----------|-----|
+| Tables | `gremius://tables` |
+| Modules | `gremius://modules` |
+| Health | `gremius://health` |
+| Datasets | `gremius://datasets` |
+| Schema | `gremius://schema/{table}` (template) |
 
-## 🔐 Seguridad
+## 🔐 Authentication
 
-- Las llamadas a tools respetan RLS de PostgreSQL
-- Requiere autenticación via API key o session
-- Rate limiting aplicado en la API
+Set `GREMIUS_API_TOKEN` to a valid API key (`gremius_sk_*`):
 
-## 📄 Especificación MCP
+```bash
+GREMIUS_API_TOKEN=gremius_sk_xxx gremius mcp
+```
 
-- **Protocol Version**: 2024-11-05
-- **Transport**: SSE (Server-Sent Events)
-- **Format**: JSON-RPC 2.0
+## 📡 Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Server health + tool count |
+| `GET /sse` | SSE transport for MCP clients |
+| `POST /messages` | JSON-RPC messages |
+| `GET /ide-config` | List supported IDEs |
+| `GET /ide-config/:ide` | Get config for specific IDE |
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GREMIUS_API_URL` | `http://localhost:3001` | Gremius API base URL |
+| `GREMIUS_API_TOKEN` | (empty) | API authentication key |
+| `PORT` | `3002` | MCP server port |

@@ -1,0 +1,33 @@
+{
+  "name": "@gremius/grimoire-datasets",
+  "version": "1.0.0",
+  "description": "Gremius Core Grimoire - DataSets (Dynamic data collections with auto-API)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch"
+  },
+  "keywords": ["gremius", "grimoire", "core", "datasets"],
+  "author": "Gremius Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@gremius/shared": "workspace:*",
+    "hono": "^4.7.0",
+    "drizzle-orm": "^0.45.0",
+    "zod": "^3.23.0"
+  },
+  "gremius": {
+    "type": "grimoire",
+    "id": "grimoire-datasets",
+    "category": "core",
+    "order": 0,
+    "core": true,
+    "defaultEnabled": true,
+    "minVersion": "0.8.0"
+  }
+}

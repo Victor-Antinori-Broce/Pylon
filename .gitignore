@@ -29,6 +29,12 @@ Thumbs.db
 # ── Payload CMS ──
 apps/cms/media/
 
+# ── Grimoires/Modules build artifacts ──
+packages/grimoires/*/dist/
+packages/grimoires/*/node_modules/
+packages/realms/*/dist/
+packages/realms/*/node_modules/
+
 # ── Logs ──
 *.log
 npm-debug.log*
@@ -36,3 +42,55 @@ pnpm-debug.log*
 
 # ── Coverage ──
 coverage/
+
+# ── Docker volumes ──
+docker/data/
+*.volume/
+
+# ── Test results ──
+test-results/
+playwright-report/
+*.test-results.*
+
+# ── Build artifacts ──
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# ── Compiled .ts artifacts in source directories ──
+# These MUST NOT be tracked — they cause SvelteKit "Multiple layout module"
+# crashes and pollute the source tree.
+apps/admin/src/**/*.js
+apps/admin/src/**/*.js.map
+apps/admin/src/**/*.d.ts
+apps/admin/src/**/*.d.ts.map
+apps/api/src/**/*.js
+apps/api/src/**/*.js.map
+apps/api/src/**/*.d.ts
+apps/api/src/**/*.d.ts.map
+apps/api/*.js
+apps/api/*.js.map
+apps/api/*.d.ts
+apps/api/*.d.ts.map
+# Keep .svelte.ts files (they are source, not compiled)
+!apps/admin/src/**/*.svelte.ts
+!apps/admin/src/**/*.svelte.js
+
+# ── Temporary files ──
+*.tmp
+*.temp
+.cache/
+
+# ── Local config overrides ──
+docker-compose.override.yml
+*.local.yml
+
+# ── Secrets (safety) ──
+*.pem
+*.key
+secrets/
+
+# ── System files ──
+*.pid
+*.seed
+*.pid.lock

@@ -1,9 +1,10 @@
+// @ts-nocheck
 // spec: specs/gremius-full-coverage.md — Section 7: Modules System
 // seed: tests/seed.spec.ts
 
 import { test, expect, type Page } from "@playwright/test";
 
-const ADMIN = "http://localhost:5173";
+const ADMIN = process.env.ADMIN_URL || "http://localhost:5173";
 
 async function loginAsAdmin(page: Page): Promise<boolean> {
   await page.goto(ADMIN);

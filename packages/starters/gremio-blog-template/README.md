@@ -15,7 +15,7 @@ pnpm --filter @gremius/starter-blog dev
 Create a `.env` file:
 
 ```env
-PUBLIC_API_URL=http://localhost:3001
+PUBLIC_API_URL=http://localhost:3000
 PUBLIC_SITE_URL=http://localhost:4321
 ```
 

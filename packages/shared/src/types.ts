@@ -229,12 +229,5 @@ export interface SiteSettings {
   footerText?: string;
 }
 
-export interface PaginatedResponse<T> {
-  docs: T[];
-  totalDocs: number;
-  totalPages: number;
-  page: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
+// PaginatedResponse se define y exporta desde utils.ts
+export type { PaginatedResponse } from "./utils";

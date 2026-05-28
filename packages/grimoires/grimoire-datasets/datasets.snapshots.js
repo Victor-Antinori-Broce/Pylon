@@ -1,0 +1,375 @@
+// @ts-nocheck
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DATASETS SNAPSHOTS - Denormalización y Snapshots Inmutables
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Sistema de snapshots para guardar datos relacionados en el momento de creación.
+ * Crítico para builds de gaming donde los ítems/cambios afectan históricos.
+ *
+ * Features:
+ * - Snapshots automáticos en create/update
+ * - Inmutabilidad de builds históricos
+ * - Restauración a versiones anteriores
+ * - Comparación de snapshots
+ * - Auditoría completa
+ */
+import { z } from "zod";
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCHEMAS ZOD
+// ═══════════════════════════════════════════════════════════════════════════════
+export const snapshotFieldSchema = z.object({
+    source: z.string(),
+    snapshot: z.array(z.string()),
+    as: z.string().optional(),
+});
+export const snapshotConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    on: z.array(z.enum(["create", "update", "manual", "scheduled"])).default(["create"]),
+    fields: z.array(snapshotFieldSchema).default([]),
+    calculated: z.array(z.string()).optional(),
+    retention: z.number().int().min(0).default(0),
+});
+// ═══════════════════════════════════════════════════════════════════════════════
+// SNAPSHOT ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+import { eq, sql } from "drizzle-orm";
+/**
+ * Verifica si se debe generar snapshot según la configuración
+ */
+export function shouldSnapshot(config, trigger) {
+    if (!config.enabled)
+        return false;
+    return config.on.includes(trigger);
+}
+/**
+ * Genera un snapshot de un entry con sus relaciones
+ */
+export async function generateSnapshot(ctx, entry, config, trigger, options) {
+    const snapshot = {
+        timestamp: new Date().toISOString(),
+        version: "1.0",
+        data: {},
+        meta: {
+            triggeredBy: trigger,
+            reason: options?.reason,
+            source: options?.source,
+        },
+    };
+    // Si hay campos relacionados que snapshotear
+    if (config.fields.length > 0) {
+        for (const field of config.fields) {
+            const relatedId = entry.data[field.source];
+            if (!relatedId) {
+                snapshot.data[field.as || field.source] = null;
+                continue;
+            }
+            // Determinar la tabla relacionada desde el schema
+            const relatedData = await fetchRelatedData(ctx, relatedId, field);
+            if (relatedData) {
+                // Filtrar solo los campos solicitados
+                const snapshotData = {};
+                for (const key of field.snapshot) {
+                    snapshotData[key] = relatedData[key];
+                }
+                snapshot.data[field.as || field.source] = snapshotData;
+            }
+            else {
+                snapshot.data[field.as || field.source] = null;
+            }
+        }
+    }
+    // Incluir campos calculados si se proporcionaron
+    if (options?.calculatedValues && config.calculated) {
+        snapshot.calculated = {};
+        for (const calcField of config.calculated) {
+            if (options.calculatedValues[calcField] !== undefined) {
+                snapshot.calculated[calcField] = options.calculatedValues[calcField];
+            }
+        }
+    }
+    return snapshot;
+}
+/**
+ * Guarda un snapshot en el entry
+ */
+export async function saveSnapshot(ctx, entryId, snapshot, config) {
+    const { db } = ctx;
+    const { dataEntries } = await import("./datasets.schema");
+    // Obtener entry actual
+    const [entry] = await db.instance
+        .select()
+        .from(dataEntries)
+        .where(eq(dataEntries.id, entryId))
+        .limit(1);
+    if (!entry) {
+        throw new Error(`Entry not found: ${entryId}`);
+    }
+    // Construir historial de snapshots
+    const existingSnapshots = entry.data._snapshots || [];
+    // Agregar nuevo snapshot al inicio (más reciente primero)
+    const newSnapshots = [snapshot, ...existingSnapshots];
+    // Aplicar retención si está configurada
+    if (config.retention && config.retention > 0) {
+        while (newSnapshots.length > config.retention) {
+            newSnapshots.pop();
+        }
+    }
+    // Actualizar entry con el snapshot
+    const updatedData = {
+        ...entry.data,
+        _snapshot: snapshot, // Último snapshot (acceso rápido)
+        _snapshots: newSnapshots, // Historial completo
+    };
+    await db.instance
+        .update(dataEntries)
+        .set({
+        data: updatedData,
+        updatedAt: new Date(),
+    })
+        .where(eq(dataEntries.id, entryId));
+    ctx.logger.debug(`📸 Snapshot saved for entry ${entryId}`);
+}
+/**
+ * Obtiene el snapshot actual de un entry
+ */
+export async function getCurrentSnapshot(ctx, entryId) {
+    const { db } = ctx;
+    const { dataEntries } = await import("./datasets.schema");
+    const [entry] = await db.instance
+        .select()
+        .from(dataEntries)
+        .where(eq(dataEntries.id, entryId))
+        .limit(1);
+    if (!entry)
+        return null;
+    return entry.data._snapshot || null;
+}
+/**
+ * Obtiene el historial de snapshots de un entry
+ */
+export async function getSnapshotHistory(ctx, entryId) {
+    const { db } = ctx;
+    const { dataEntries } = await import("./datasets.schema");
+    const [entry] = await db.instance
+        .select()
+        .from(dataEntries)
+        .where(eq(dataEntries.id, entryId))
+        .limit(1);
+    if (!entry)
+        return [];
+    return entry.data._snapshots || [];
+}
+/**
+ * Compara dos snapshots y retorna las diferencias
+ */
+export function compareSnapshots(oldSnapshot, newSnapshot) {
+    const differences = [];
+    const allKeys = new Set([
+        ...Object.keys(oldSnapshot?.data || {}),
+        ...Object.keys(newSnapshot.data),
+    ]);
+    for (const key of allKeys) {
+        const oldValue = oldSnapshot?.data?.[key];
+        const newValue = newSnapshot.data[key];
+        differences.push({
+            field: key,
+            oldValue,
+            newValue,
+            changed: JSON.stringify(oldValue) !== JSON.stringify(newValue),
+        });
+    }
+    return differences;
+}
+/**
+ * Restaura un entry a un snapshot anterior
+ */
+export async function restoreToSnapshot(ctx, entryId, snapshotTimestamp) {
+    const { db } = ctx;
+    const { dataEntries } = await import("./datasets.schema");
+    const [entry] = await db.instance
+        .select()
+        .from(dataEntries)
+        .where(eq(dataEntries.id, entryId))
+        .limit(1);
+    if (!entry) {
+        throw new Error(`Entry not found: ${entryId}`);
+    }
+    const snapshots = entry.data._snapshots || [];
+    const targetSnapshot = snapshots.find((s) => s.timestamp === snapshotTimestamp);
+    if (!targetSnapshot) {
+        throw new Error(`Snapshot not found: ${snapshotTimestamp}`);
+    }
+    // Crear snapshot del estado actual antes de restaurar
+    const currentSnapshot = {
+        timestamp: new Date().toISOString(),
+        version: "1.0",
+        data: { ...entry.data },
+        meta: {
+            triggeredBy: "restore",
+            reason: "Auto-snapshot before restore",
+            source: "restore_operation",
+        },
+    };
+    // Restaurar datos del snapshot
+    const restoredData = {
+        ...targetSnapshot.data,
+        _snapshot: targetSnapshot,
+        _snapshots: [currentSnapshot, ...snapshots],
+        _restoredFrom: snapshotTimestamp,
+        _restoredAt: new Date().toISOString(),
+    };
+    await db.instance
+        .update(dataEntries)
+        .set({
+        data: restoredData,
+        updatedAt: new Date(),
+    })
+        .where(eq(dataEntries.id, entryId));
+    ctx.logger.info(`⏪ Entry ${entryId} restored to snapshot ${snapshotTimestamp}`);
+    return true;
+}
+/**
+ * Crea un snapshot manual de un entry
+ */
+export async function createManualSnapshot(ctx, entryId, config, options) {
+    const { db } = ctx;
+    const { dataEntries } = await import("./datasets.schema");
+    const [entry] = await db.instance
+        .select()
+        .from(dataEntries)
+        .where(eq(dataEntries.id, entryId))
+        .limit(1);
+    if (!entry) {
+        throw new Error(`Entry not found: ${entryId}`);
+    }
+    const snapshot = await generateSnapshot(ctx, entry, config, "manual", {
+        reason: options?.reason || "Manual snapshot",
+        calculatedValues: options?.calculatedValues,
+    });
+    await saveSnapshot(ctx, entryId, snapshot, config);
+    return snapshot;
+}
+// ═══════════════════════════════════════════════════════════════════════════════
+// SNAPSHOT AUTO-CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
+/**
+ * Detecta configuración de snapshot automática desde el schema del dataset
+ */
+export function detectSnapshotConfig(dataset) {
+    const schema = dataset.schema;
+    if (!schema?.snapshot?.enabled) {
+        return null;
+    }
+    return snapshotConfigSchema.parse(schema.snapshot);
+}
+/**
+ * Aplica snapshot automático en hooks de create/update
+ */
+export async function autoSnapshotOnCreate(ctx, entry, dataset) {
+    const config = detectSnapshotConfig(dataset);
+    if (!config || !shouldSnapshot(config, "create")) {
+        return;
+    }
+    const snapshot = await generateSnapshot(ctx, entry, config, "create");
+    await saveSnapshot(ctx, entry.id, snapshot, config);
+}
+export async function autoSnapshotOnUpdate(ctx, entry, dataset, oldEntry) {
+    const config = detectSnapshotConfig(dataset);
+    if (!config || !shouldSnapshot(config, "update")) {
+        return;
+    }
+    // Verificar si cambió algún campo que requiere snapshot
+    const fieldsToWatch = config.fields.map((f) => f.source);
+    const hasChanged = fieldsToWatch.some((field) => {
+        return JSON.stringify(entry.data[field]) !== JSON.stringify(oldEntry?.data?.[field]);
+    });
+    if (!hasChanged) {
+        return;
+    }
+    const snapshot = await generateSnapshot(ctx, entry, config, "update");
+    await saveSnapshot(ctx, entry.id, snapshot, config);
+}
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPERS PRIVADOS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function fetchRelatedData(ctx, relatedId, field) {
+    const { db } = ctx;
+    // Inferir tabla relacionada desde el nombre del campo
+    // Ej: weapon_id -> weapons, characterId -> characters
+    const tableName = inferTableName(field.source);
+    try {
+        // Usar raw query para obtener datos de tabla dinámica
+        const result = await db.instance.execute(sql `SELECT * FROM ${sql.identifier(tableName)} WHERE id = ${relatedId} LIMIT 1`);
+        return result.rows[0] || null;
+    }
+    catch (error) {
+        ctx.logger.warn(`Failed to fetch related data from ${tableName}:`, error);
+        return null;
+    }
+}
+function inferTableName(fieldName) {
+    // Convertir field name a posible nombre de tabla
+    // weapon_id -> weapons
+    // characterId -> characters
+    let base = fieldName
+        .replace(/_id$/, "")
+        .replace(/Id$/, "")
+        .toLowerCase();
+    // Pluralizar
+    if (!base.endsWith("s")) {
+        base += "s";
+    }
+    return base;
+}
+// ═══════════════════════════════════════════════════════════════════════════════
+// UTILIDADES PARA GAMING
+// ═══════════════════════════════════════════════════════════════════════════════
+/**
+ * Configuración predefinida para builds de POE/Diablo
+ */
+export const GAMING_BUILD_SNAPSHOT_CONFIG = {
+    enabled: true,
+    on: ["create", "update"],
+    fields: [
+        { source: "weapon_id", snapshot: ["name", "base_dps", "mods", "rarity"], as: "weapon" },
+        { source: "character_id", snapshot: ["name", "class", "level", "ascendancy"], as: "character" },
+        { source: "helmet_id", snapshot: ["name", "defense", "mods"], as: "helmet" },
+        { source: "chest_id", snapshot: ["name", "defense", "mods"], as: "chest" },
+        { source: "gloves_id", snapshot: ["name", "defense", "mods"], as: "gloves" },
+        { source: "boots_id", snapshot: ["name", "defense", "mods"], as: "boots" },
+    ],
+    calculated: ["total_dps", "total_life", "total_resistances", "ehp"],
+    retention: 10, // Mantener últimas 10 versiones
+};
+/**
+ * Compara dos builds para mostrar diff visual
+ */
+export function diffBuilds(build1, build2) {
+    const diff = compareSnapshots(build1, build2);
+    return diff
+        .filter((d) => d.changed)
+        .map((d) => ({
+        item: d.field,
+        oldValue: d.oldValue,
+        newValue: d.newValue,
+        change: detectChangeType(d.field, d.oldValue, d.newValue),
+    }));
+}
+function detectChangeType(field, oldVal, newVal) {
+    // Para campos numéricos relacionados con stats
+    const buffFields = ["dps", "life", "mana", "armor", "evasion", "resistances", "damage"];
+    const nerfFields = ["cost", "requirements"];
+    const isBuffField = buffFields.some((f) => field.includes(f));
+    const isNerfField = nerfFields.some((f) => field.includes(f));
+    if (typeof oldVal === "number" && typeof newVal === "number") {
+        if (isBuffField) {
+            return newVal > oldVal ? "buff" : "nerf";
+        }
+        if (isNerfField) {
+            return newVal < oldVal ? "buff" : "nerf";
+        }
+    }
+    return "neutral";
+}
+//# sourceMappingURL=datasets.snapshots.js.map

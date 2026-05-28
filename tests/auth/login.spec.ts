@@ -3,7 +3,7 @@
 
 import { test, expect } from "@playwright/test";
 
-const ADMIN = "http://localhost:5173";
+const ADMIN = process.env.ADMIN_URL || "http://localhost:5173";
 
 test.describe("Authentication Flow", () => {
   test("1.1 Successful admin login", async ({ page }) => {

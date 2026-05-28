@@ -1,12 +1,129 @@
+# ===================================================================
+# GremiusCMS .dockerignore
+# Excludes files not needed in Docker build context
+# ===================================================================
+
+# Dependencies (reinstalled inside Docker)
 **/node_modules
+
+# Build outputs (rebuilt inside Docker)
 **/dist
 **/build
 **/.astro
 **/.next
 **/.turbo
+**/.svelte-kit
+
+# Git
 .git
+.gitattributes
+
+# Environment files (secrets must be passed via env vars / compose)
+.env
 .env.local
 .env.*.local
+apps/api/.env
+packages/admin/.env
+.env.test
+
+# Logs
 *.log
+apps/api/api.log
+apps/api/api.err
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Test artifacts
+playwright-report
+test-results
+pw_mcp_output.txt
+tests.json
+
+# IDE / Editor
+.vscode
+.claude
+
+# Build diagnostics (not needed in image)
+build-diag*.txt
+progress.txt
+gremius_progress.txt
+
+# Legacy / experimental folders
+Pylon
+pylon1
+_legacy*
+
+# Documentation / analysis markdown (not runtime)
+AI_MEMORIES_ANALYSIS.md
+AI_MEMORIES_COMPLETION.md
+analisis*.md
+ANALISIS_*.md
+ARCHITECTURE*.md
+AUDITORIA_*.md
+CALCULATED_FIELDS_MIGRATION.md
+CAMBIOS_REALIZADOS.md
+CHANGELOG.md
+CODE_QUALITY.md
+CONFIGURATION_AUDIT.md
+DATASETS_*.md
+DEUDA_TECNICA.md
+DI_MIGRATION_REPORT.md
+DOCKER-SETUP.md
+DOCKER_BUILD_VERIFICATION_REPORT.md
+ENDPOINT_*.md
+ENGINE_CORE_INTEGRATION.md
+FINAL_*.md
+gremius.md
+GRIMOIRE*.md
+jiira.md
+KCD.md
+legacyrefactor.md
+MCP_*.md
+MCP_*.txt
+MEJORAS_MCP.md
+MIGRATION_ZERO_CONFIG.md
+NPM_PACKAGE_AUDIT.md
+PGVECTOR_SETUP.md
+PLUGIN_SYSTEM.md
+PORTS_AUDIT_REPORT.md
+PROGRESS.md
+PUBLISH_GUIDE.md
+QUALITY_IMPROVEMENTS.md
+START-GUIDE.md
+STARTUP_GUIDE.md
+TEST_*.md
+TOON_PGVECTOR_AUDIT.md
+VALIDATION_*.md
+VERIFICATION_SUMMARY.md
+
+# Specs / docs directories
+specs
+docs
+
+# Compiled .js/.d.ts artifacts in source (should not be in git either)
+apps/api/src/**/*.js
+apps/api/src/**/*.d.ts
+apps/api/src/**/*.js.map
+apps/api/src/**/*.d.ts.map
+apps/api/*.d.ts
+apps/api/*.d.ts.map
+apps/api/*.js
+apps/api/*.js.map
+apps/api/tsc-errors.txt
+packages/admin/src/**/*.js
+packages/admin/src/**/*.d.ts
+packages/admin/src/**/*.js.map
+packages/admin/src/**/*.d.ts.map
+
+# Windows scripts
+start.bat
+scripts/dev-start-full.ps1
+scripts/dev-start-simple.ps1
+
+# Playwright config artifacts
+playwright.config.d.ts
+playwright.config.d.ts.map
+playwright.config.js
+playwright.config.js.map

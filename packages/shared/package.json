@@ -1,29 +1,67 @@
 {
   "name": "@gremius/shared",
-  "version": "0.7.0-beta",
-  "private": true,
+  "version": "0.8.0-beta",
+  "description": "Shared types, schemas, and utilities for GremiusCMS",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./*": {
-      "import": "./dist/*.js",
-      "types": "./dist/*.d.ts"
+    "./schemas": {
+      "import": "./dist/schemas.js",
+      "types": "./dist/schemas.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils.js",
+      "types": "./dist/utils.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/constants.js",
+      "types": "./dist/constants.d.ts"
     }
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch",
+    "typecheck": "pnpm exec tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": [
+    "gremius",
+    "cms",
+    "baas",
+    "types",
+    "schemas",
+    "zod",
+    "typescript"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourorg/gremius.git",
+    "directory": "packages/shared"
+  },
+  "bugs": {
+    "url": "https://github.com/yourorg/gremius/issues"
+  },
+  "homepage": "https://docs.gremius.dev",
   "dependencies": {
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

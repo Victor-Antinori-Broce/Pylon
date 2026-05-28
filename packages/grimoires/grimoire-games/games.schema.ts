@@ -3,6 +3,8 @@
  * 
  * Drizzle ORM schema for games, collections, and junction tables.
  * This schema is dynamically merged by schema-merger.ts when Gremio CMS is active.
+ * 
+ * Dependencies: grimoire-media (for cover art, screenshots, platform icons)
  */
 
 import {
@@ -30,17 +32,23 @@ interface PageBlock {
   order: number;
 }
 
+// ─── Focal Point Type ───────────────────────────
+export interface FocalPoint {
+  x: number; // 0-100 (percentage from left)
+  y: number; // 0-100 (percentage from top)
+}
+
 // ═══════════════════════════════════════════════
 // Enums
 // ═══════════════════════════════════════════════
 
-export const contentStatusEnum = pgEnum("content_status", [
+export const contentStatusEnum = pgEnum("games_content_status", [
   "draft",
   "published",
   "archived",
 ]);
 
-export const tagCategoryEnum = pgEnum("tag_category", [
+export const tagCategoryEnum = pgEnum("games_tag_category", [
   "genre",
   "feature",
   "topic",
@@ -73,7 +81,12 @@ export const games = pgTable(
     publisher: varchar("publisher", { length: 200 }),
     metacriticScore: integer("metacritic_score"),
     userRating: real("user_rating"),
+    
+    // Media fields (references grimoire-media)
     coverArtId: uuid("cover_art_id"), // References media.id
+    coverFocalPoint: jsonb("cover_focal_point").$type<FocalPoint>(),
+    // Focal point for smart cropping: { x: 50, y: 50 } (center by default)
+    
     trailerUrl: text("trailer_url"),
     externalIds: jsonb("external_ids").$type<{
       igdbId?: number;
@@ -81,9 +94,17 @@ export const games = pgTable(
       twitchGameId?: string;
     }>(),
     specs: jsonb("specs").$type<Record<string, unknown>>(),
+    
+    // Screenshots with media references
     screenshots: jsonb("screenshots").$type<
-      Array<{ mediaId: string; caption?: string }>
+      Array<{ 
+        mediaId: string; 
+        caption?: string;
+        focalPoint?: FocalPoint;
+        order?: number;
+      }>
     >(),
+    
     blocks: jsonb("blocks").default([]).$type<PageBlock[]>(),
     isFeaturedOnHome: boolean("is_featured_on_home").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -94,6 +115,7 @@ export const games = pgTable(
     index("games_status_idx").on(t.status),
     index("games_metacritic_idx").on(t.metacriticScore),
     index("games_release_idx").on(t.releaseDate),
+    index("games_cover_art_idx").on(t.coverArtId),
   ]
 );
 
@@ -109,7 +131,10 @@ export const platforms = pgTable(
     slug: varchar("slug", { length: 100 }).notNull(),
     shortName: varchar("short_name", { length: 20 }),
     manufacturer: varchar("manufacturer", { length: 100 }),
+    
+    // Media field (references grimoire-media)
     iconId: uuid("icon_id"), // References media.id
+    
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("platforms_slug_idx").on(t.slug)]
@@ -238,3 +263,98 @@ export const gamesToTagsRelations = relations(gamesToTags, ({ one }) => ({
   game: one(games, { fields: [gamesToTags.gameId], references: [games.id] }),
   tag: one(tags, { fields: [gamesToTags.tagId], references: [tags.id] }),
 }));
+
+// ═══════════════════════════════════════════════
+// Media Transform URL Helpers
+// ═══════════════════════════════════════════════
+
+/**
+ * Generate a transform URL for media assets
+ * Uses grimoire-media's transform endpoints
+ */
+export function getMediaTransformUrl(
+  mediaId: string | null | undefined,
+  preset: "hero" | "card" | "thumbnail" | "gallery" | "original" = "original",
+  focalPoint?: FocalPoint
+): string | null {
+  if (!mediaId) return null;
+  
+  const baseUrl = `/api/media/transform/${mediaId}`;
+  const params = new URLSearchParams();
+  
+  params.append("preset", preset);
+  
+  // Add focal point for smart cropping if provided
+  if (focalPoint) {
+    params.append("fpx", focalPoint.x.toString());
+    params.append("fpy", focalPoint.y.toString());
+  }
+  
+  const queryString = params.toString();
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+}
+
+/**
+ * Generate a preset URL using grimoire-media's preset endpoint
+ */
+export function getMediaPresetUrl(
+  mediaId: string | null | undefined,
+  preset: string
+): string | null {
+  if (!mediaId) return null;
+  return `/api/media/preset/${mediaId}/${preset}`;
+}
+
+/**
+ * Build cover art URLs with all available transforms
+ */
+export function buildCoverArtUrls(
+  mediaId: string | null | undefined,
+  focalPoint?: FocalPoint
+): {
+  hero: string | null;
+  card: string | null;
+  thumbnail: string | null;
+  original: string | null;
+} {
+  return {
+    hero: getMediaPresetUrl(mediaId, "hero"),
+    card: getMediaPresetUrl(mediaId, "card"),
+    thumbnail: getMediaPresetUrl(mediaId, "thumbnail"),
+    original: getMediaTransformUrl(mediaId, "original"),
+  };
+}
+
+/**
+ * Build screenshot URLs with gallery transforms
+ */
+export function buildScreenshotUrls(
+  screenshot: { mediaId: string; focalPoint?: FocalPoint } | null | undefined
+): {
+  gallery: string | null;
+  thumbnail: string | null;
+  original: string | null;
+} | null {
+  if (!screenshot?.mediaId) return null;
+  
+  return {
+    gallery: getMediaPresetUrl(screenshot.mediaId, "gallery"),
+    thumbnail: getMediaPresetUrl(screenshot.mediaId, "thumbnail"),
+    original: getMediaTransformUrl(screenshot.mediaId, "original", screenshot.focalPoint),
+  };
+}
+
+/**
+ * Build platform icon URLs
+ */
+export function buildPlatformIconUrls(
+  iconId: string | null | undefined
+): {
+  thumbnail: string | null;
+  original: string | null;
+} {
+  return {
+    thumbnail: getMediaPresetUrl(iconId, "thumbnail"),
+    original: getMediaTransformUrl(iconId, "original"),
+  };
+}

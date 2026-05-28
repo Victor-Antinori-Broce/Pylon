@@ -8,7 +8,7 @@ Este documento explica las decisiones de arquitectura de alto nivel del proyecto
 - **`apps/api/` (Core):**
   Aquí reside el núcleo de la aplicación. Contiene la API principal construida sobre Bun y Hono, configuraciones globales, middlewares, y la capa de base de datos base (esquemas y migraciones core). Es responsable de proveer las primitivas sobre las que operan los demás módulos y de manejar la seguridad, la autenticación y el enrutamiento principal.
 
-- **`apps/admin/` (Admin UI):**
+- **`packages/admin/` (Admin UI):**
   Panel de administración construido con React. Permite gestionar datasets, contenido, usuarios, y configuración del sistema.
 
 - **`packages/grimoires/` (Grimorios/Código Mágico):**

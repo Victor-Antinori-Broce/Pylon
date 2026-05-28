@@ -2,7 +2,7 @@
 
 import { test, expect } from "@playwright/test";
 
-const API = "http://localhost:3001/api";
+const API = (process.env.API_URL || "http://localhost:3001") + "/api";
 
 // We need a valid dataset ID for webhook tests.
 // Fetch one dynamically from the seeded data.

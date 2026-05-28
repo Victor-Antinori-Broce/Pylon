@@ -1,0 +1,220 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# GremiusCMS — Docker Compose AUTOMÁTICO
+#
+# 🚀 USO SIMPLE: docker compose -f docker-compose.automatic.yml up -d
+#
+# Este archivo hace TODO automáticamente:
+#   ✓ Inicia PostgreSQL, Valkey, MinIO
+#   ✓ Corre migraciones automáticamente
+#   ✓ Instala grimoires desde gremius.config.ts
+#   ✓ Registra plugins en la base de datos
+#   ✓ Inicia API y Admin
+#
+# No necesitas correr comandos manuales. Solo:
+#   docker compose -f docker-compose.automatic.yml up -d
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # PostgreSQL 16 + pgvector
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_db:
+    image: pgvector/pgvector:pg16
+    container_name: gremius_db_auto
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gremius
+      POSTGRES_PASSWORD: gremiuspassword
+      POSTGRES_DB: gremius
+    volumes:
+      - gremius_postgres_auto:/var/lib/postgresql/data
+      - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gremius -d gremius"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - gremius_net_auto
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # MinIO (S3-compatible storage)
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_minio:
+    image: minio/minio:latest
+    container_name: gremius_minio_auto
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: gremius_minio
+      MINIO_ROOT_PASSWORD: gremius_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - gremius_minio_auto:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - gremius_net_auto
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Valkey (Redis-compatible)
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_cache:
+    image: valkey/valkey:7-alpine
+    container_name: gremius_cache_auto
+    restart: unless-stopped
+    command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - gremius_valkey_auto:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - gremius_net_auto
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # API - Con AUTO-SETUP completo
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.prod
+      target: api
+    container_name: gremius_api_auto
+    restart: unless-stopped
+    depends_on:
+      gremius_db:
+        condition: service_healthy
+      gremius_minio:
+        condition: service_healthy
+      gremius_cache:
+        condition: service_healthy
+    environment:
+      # Server
+      - NODE_ENV=production
+      - PORT=3000
+      # Database
+      - DATABASE_URL=postgresql://gremius:gremiuspassword@gremius_db_auto:5432/gremius
+      # Valkey
+      - REDIS_URL=redis://gremius_cache_auto:6379
+      - VALKEY_URL=redis://gremius_cache_auto:6379
+      # S3/MinIO
+      - S3_ENDPOINT=http://gremius_minio_auto:9000
+      - S3_PUBLIC_URL=http://localhost:9000
+      - S3_ACCESS_KEY=gremius_minio
+      - S3_SECRET_KEY=gremius_minio_secret
+      - S3_BUCKET=gremius-uploads
+      - S3_REGION=us-east-1
+      # Auth
+      - BETTER_AUTH_SECRET=your-secret-key-change-in-production
+      - BETTER_AUTH_URL=http://localhost:3000
+      # URLs
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
+      - ADMIN_URL=http://localhost:3001
+      # Features
+      - ENABLE_SWAGGER=true
+      - ENABLE_MCP=true
+      - GREMIUS_AUTO_SETUP=true
+      # Logging
+      - LOG_LEVEL=info
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount para desarrollo: cambios en grimoires se reflejan sin rebuild
+      - ./packages/grimoires:/app/packages/grimoires:ro
+      - ./apps/api/gremius.config.ts:/app/apps/api/gremius.config.ts:ro
+    networks:
+      - gremius_net_auto
+    command: ["sh", "/app/docker/start-with-check.sh"]
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Admin Panel
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_admin:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.prod
+      target: admin
+      args:
+        - PUBLIC_API_URL=http://localhost:3000
+    container_name: gremius_admin_auto
+    restart: unless-stopped
+    depends_on:
+      gremius_api:
+        condition: service_started
+    ports:
+      - "3001:80"
+    networks:
+      - gremius_net_auto
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Setup Helper (one-shot container for initial setup tasks)
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_setup:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.prod
+      target: api
+    container_name: gremius_setup_auto
+    depends_on:
+      gremius_db:
+        condition: service_healthy
+      gremius_api:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://gremius:gremiuspassword@gremius_db_auto:5432/gremius
+      - API_URL=http://gremius_api_auto:3000
+    networks:
+      - gremius_net_auto
+    command: >
+      sh -c "
+        echo '⏳ Waiting for API to be ready...' &&
+        sleep 10 &&
+        echo '🔍 Checking API health...' &&
+        wget -q --spider http://gremius_api_auto:3000/api/health &&
+        echo '✅ API is ready!' &&
+        echo '' &&
+        echo '🎉 GremiusCMS is fully operational!' &&
+        echo '' &&
+        echo '═══════════════════════════════════════════════════════════════' &&
+        echo '  🚀 GremiusCMS Started Successfully' &&
+        echo '═══════════════════════════════════════════════════════════════' &&
+        echo '' &&
+        echo '  📚 API + Swagger:   http://localhost:3000/api/swagger' &&
+        echo '  🔧 Admin Panel:     http://localhost:3001' &&
+        echo '  💾 MinIO Console:   http://localhost:9001' &&
+        echo '  🔌 MCP Endpoint:    http://localhost:3000/api/mcp' &&
+        echo '' &&
+        echo '═══════════════════════════════════════════════════════════════'
+      "
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+volumes:
+  gremius_postgres_auto:
+    name: gremius_postgres_auto
+  gremius_minio_auto:
+    name: gremius_minio_auto
+  gremius_valkey_auto:
+    name: gremius_valkey_auto
+
+networks:
+  gremius_net_auto:
+    name: gremius_net_auto
+    driver: bridge

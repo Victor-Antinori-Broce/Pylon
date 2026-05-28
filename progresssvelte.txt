@@ -1,0 +1,240 @@
+═══════════════════════════════════════════════════════════════════════════════
+  GREMiusCMS — ADMIN SVELTE / HYBRID RENDERING PROGRESS LOG
+  Fecha: 2026-04-26
+  Versión: 0.8.0-beta
+═══════════════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 1: BACKEND — Leer admin.views de grimoire.json                        │
+│  Estado: ✅ COMPLETADO                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Archivo modificado: apps/api/src/services/admin-registry.ts
+
+Cambios:
+  • AdminViewConfig extendida con groupBy, dateField, titleField, icon
+  • Nueva función extractViewsFromManifest() — lee admin.views como fuente primaria
+  • buildGrimoireAdminConfig() ahora usa extractViewsFromManifest() + fallback legacy
+  • buildRealmGrimoireConfig() ahora usa extractViewsFromManifest() + fallback legacy
+  • Normalización de tipos inválidos: "list" → "grid", "dashboard" → "custom"
+  • hasCustomView ahora es inteligente: true solo si hay vistas type:"custom"
+    declaradas, o si estamos en fallback legacy y detectamos archivo .svelte
+  • defaultView respeta grimoire.json admin.defaultView
+  • detectCustomView() simplificada drásticamente — usa getViewPath() para evitar
+    falsos positivos de archivos compartidos (PostsView.svelte, Media.svelte, etc.)
+
+Impacto:
+  • Backend ya no fuerza monolitos para grimoires que declaran admin.views
+  • Grimoires sin admin.views siguen funcionando con fallback legacy
+  • Esports ya no reporta hasCustomView:true incorrectamente
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 1b: FRONTEND — Registrar vistas custom y eliminar monolitos           │
+│  Estado: ✅ COMPLETADO                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Archivo modificado: packages/admin/src/lib/grimoire-loader.ts
+
+Eliminados del GRIMOIRE_VIEW_REGISTRY:
+  • crm, grimoire-crm, gremius-crm (monolitos)
+  • conta, grimoire-conta (monolitos)
+  • agile, grimoire-agile (monolitos)
+
+Agregados al GRIMOIRE_VIEW_REGISTRY (vistas custom por ID):
+  • "grimoire-blog-posts" → PostsView.svelte
+  • "grimoire-blocks-pages" → BlocksView.svelte
+  • "grimoire-dms-dashboard" → DMSView.svelte
+  • "grimoire-academy-lms-dashboard" → AcademyView.svelte
+  • "grimoire-games-collections" → GamesView.svelte
+
+Vistas custom preexistentes mantenidas:
+  • grimoire-crm-dashboard → CrmDashboard.svelte
+  • grimoire-crm-deal-form → DealForm.svelte
+  • grimoire-conta-journal-form → JournalForm.svelte
+  • grimoire-conta-reports → ReportsView.svelte
+  • grimoire-conta-disbursement-form → DisbursementForm.svelte
+  • grimoire-conta-template-form → TemplateForm.svelte
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 1c: GRIMOIRE.JSON — Correcciones de desalineación                     │
+│  Estado: ✅ COMPLETADO                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+grimoire-games/grimoire.json:
+  • Agregada vista "collections" (type:"custom", icon:"Library")
+
+grimoire-conta/grimoire.json:
+  • Agregadas 4 vistas custom:
+    - journal-form (Nuevo Asiento)
+    - reports (Reportes)
+    - disbursement-form (Gastos Reembolsables)
+    - template-form (Nueva Plantilla)
+
+grimoire-datasets/grimoire.json:
+  • Eliminado defaultView:"list" inválido (no tenía admin.views)
+
+grimoire-crm/grimoire.json:
+  • deals: agregado groupBy:"status", renombrado título "Deal Pipeline" → "Deals"
+
+grimoire-agile/grimoire.json:
+  • Eliminadas vistas board(kanban) y list(inválido)
+  • Agregada vista issues(grid)
+  • defaultView cambiado "board" → "projects"
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 2: API CLIENT TIPADO                                                  │
+│  Estado: ✅ COMPLETADO                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Archivos creados:
+  • packages/admin/src/lib/services/crm.ts     — 348 líneas, CRUD completo
+  • packages/admin/src/lib/services/conta.ts   — 510 líneas, CRUD completo
+  • packages/admin/src/lib/services/agile.ts   — 262 líneas, CRUD completo
+
+Cobertura:
+  • CRM: companies, contacts, pipelines, deals, activities, kanban, stats
+  • Conta: accounts, journals, ledger, templates, disbursements, reports
+  • Agile: projects, issues, cycles, modules, intakes, comments
+
+Nota: Los strings sueltos tipo api.get("/agile/projects") fueron reemplazados
+por métodos tipados en todos los grimoires.
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASO 3: SETTINGS GENERAL + CLEANUP                                         │
+│  Estado: ✅ COMPLETADO                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Settings General:
+  • saveGeneralSettings() en Settings.svelte conectado a PATCH /api/settings
+  • Persistencia real: siteName, siteDescription, siteUrl, branding.logoUrl
+  • Carga real desde GET /api/settings en loadSettings()
+
+Cleanup realizado:
+  • Vistas huérfanas eliminadas: WorkersView, WebhooksView (no existen en disco)
+  • Componentes obsoletos CRM eliminados: CompanyList, CompanyForm, ContactList,
+    ContactForm, ActivityList, ActivityForm, DealList (no existen en views/crm/)
+  • Componentes obsoletos Conta eliminados: AccountList, AccountForm, JournalList,
+    LedgerList, TemplateList, DisbursementList (no existen en views/conta/)
+  • Monolitos eliminados: CRMView.svelte, ContaView.svelte, AgileView.svelte
+
+Pendiente menor:
+  • Mover tipos inline de Settings.svelte (Agent, AgentKey, AuditLog, DataSource)
+    a @gremius/shared
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ESTADO ACTUAL DEL ADMIN — POST REFACTOR                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────┬────────┬───────┬──────────────────────────────────────┐
+│ Grimoire            │ Custom │ Views │ Renderizado                          │
+├─────────────────────┼────────┼───────┼──────────────────────────────────────┤
+│ grimoire-academy-lms│ YES    │ 11    │ Hybrid — dashboard(custom) + grids   │
+│ grimoire-agile      │ no     │ 5     │ DataExplorer puro — 5 grids          │
+│ grimoire-blocks     │ YES    │ 2     │ Hybrid — pages(custom) + templates   │
+│ grimoire-blog       │ YES    │ 3     │ Hybrid — posts(custom) + grids       │
+│ grimoire-booking    │ no     │ 3     │ DataExplorer puro — 3 grids          │
+│ grimoire-conta      │ YES    │ 9     │ Hybrid — 5 grids + 4 custom forms    │
+│ grimoire-crm        │ no     │ 4     │ DataExplorer puro — 3 grids + kanban │
+│ grimoire-datasets   │ YES    │ 0     │ Legacy — DataSets.svelte             │
+│ grimoire-directory  │ no     │ 4     │ DataExplorer puro — 4 grids          │
+│ grimoire-dms        │ YES    │ 5     │ Hybrid — dashboard(custom) + grids   │
+│ grimoire-esports    │ no     │ 0     │ Auto-generated grids                 │
+│ grimoire-games      │ YES    │ 3     │ Hybrid — 2 DataExplorer + collections│
+│ grimoire-media      │ YES    │ 0     │ Legacy — Media.svelte                │
+│ grimoire-streamers  │ YES    │ 0     │ Legacy — StreamersView.svelte        │
+└─────────────────────┴────────┴───────┴──────────────────────────────────────┘
+
+Métricas actuales:
+  • % tablas en DataExplorer: ~75% (supera meta de >70%)
+  • Custom views CRM: 2 (CrmDashboard, DealForm) — meta era 3-5
+  • Custom views Conta: 4 (JournalForm, ReportsView, DisbursementForm, TemplateForm)
+  • Custom views Agile: 0 — puro DataExplorer
+  • Llamadas API con strings sueltos: 0
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PASOS PENDIENTES (actualizado 2026-04-26)                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+PASO 4: DataExplorer enhancements
+  • Kanban con nombres legibles para relaciones (stateId → state.name)
+  • Row actions para intakes (approve/decline buttons en grid)
+  • Inline relations en forms (CompanyForm mostrando contacts)
+  Estado: ❌ NO INICIADO
+
+PASO 5: Testing
+  • Cobertura actual ~15%, meta 60%
+  • Tests críticos: Auth, RLS, Datasets, Grimoires, MCP
+  • Tests E2E: Login → Crear dataset → Agregar entrada
+  Estado: ❌ EN PROGRESO MUY TEMPRANO
+
+PASO 6: Scheduling / Publicación Programada
+  • Campo publishAt en entries
+  • Cron job que revisa cada minuto
+  • UI en admin para programar publicación
+  Estado: ❌ NO INICIADO
+
+PASO 7: Analytics / Usage Metrics
+  • Dashboard de producto (MAU, DAU, entries por día)
+  • Popularidad de datasets
+  • API usage por endpoint
+  Estado: ❌ NO INICIADO
+
+PASO 8: Multi-idioma (i18n)
+  • Localización de UI del admin
+  • Traducción de contenido en datasets
+  Estado: ❌ NO INICIADO
+
+PASO 9: CDN / Edge Caching
+  • Cloudflare o Nginx como reverse proxy con cache
+  • Assets estáticos del admin
+  Estado: ❌ NO INICIADO
+
+PASO 10: Backup Automático
+  • pg_dump diario a S3/MinIO
+  • Point-in-time recovery
+  Estado: ❌ NO INICIADO
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  DECISIONES TOMADAS                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Filosofía aplicada: "Django Admin pero más dinámico"
+  • CRM: Puro DataExplorer. Kanban básico con groupBy:"status" (suficiente
+    para operar). NO dashboards, NO timelines (eso es producto).
+  • Agile: Puro DataExplorer en grids. Board kanban eliminado del admin
+    (es app de producto, debe ir al realm).
+  • Conta: Hybrid. Grids para listados + custom forms para lógica de negocio
+    (partida doble, reportes) que el DataExplorer no puede expresar.
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ARCHIVOS MODIFICADOS / CREADOS EN ESTE PROYECTO                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Backend:
+  apps/api/src/services/admin-registry.ts
+
+Frontend:
+  packages/admin/src/lib/grimoire-loader.ts
+  packages/admin/src/lib/services/crm.ts
+  packages/admin/src/lib/services/conta.ts
+  packages/admin/src/lib/services/agile.ts
+  packages/admin/src/views/Settings.svelte
+
+Grimoire manifests:
+  packages/grimoires/grimoire-crm/grimoire.json
+  packages/grimoires/grimoire-agile/grimoire.json
+  packages/grimoires/grimoire-conta/grimoire.json
+  packages/grimoires/grimoire-games/grimoire.json
+  packages/grimoires/grimoire-datasets/grimoire.json
+
+
+═══════════════════════════════════════════════════════════════════════════════

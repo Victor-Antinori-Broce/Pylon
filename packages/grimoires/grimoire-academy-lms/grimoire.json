@@ -1,0 +1,217 @@
+{
+  "$schema": "../../schemas/grimoire-schema.json",
+  "id": "grimoire-academy-lms",
+  "name": "Academy LMS",
+  "description": "Learning Management System completo con cursos, módulos, temas, quizzes, progreso de estudiantes, grupos de asignación, Learning Paths, encuestas de satisfacción, certificados PDF y exportación Excel.",
+  "version": "1.1.0",
+  "type": "grimoire",
+  "category": "content",
+  "layer": 3,
+  "icon": "GraduationCap",
+  "author": "Gremius Team",
+  "license": "MIT",
+  "mount": {
+    "path": "/api/academy",
+    "router": "academyLMSRoutes"
+  },
+  "exports": {
+    "routes": "./src/index.ts",
+    "schema": "./academy-lms.schema.ts",
+    "default": "./src/index.ts"
+  },
+  "database": {
+    "tables": [
+      "perfil_usuario_capacitaciones",
+      "cursos",
+      "grupos_asignacion",
+      "grupo_usuarios",
+      "grupo_supervisores",
+      "modulos",
+      "temas",
+      "archivos_adicionales",
+      "quizzes",
+      "preguntas",
+      "opciones",
+      "progreso_cursos",
+      "progreso_modulos",
+      "progreso_temas",
+      "respuestas_usuario",
+      "resultados_quiz",
+      "asignaciones",
+      "feedback",
+      "encuestas_satisfaccion",
+      "certificados",
+      "actividad_log",
+      "learning_paths",
+      "learning_path_cursos",
+      "progreso_learning_paths",
+      "asignaciones_learning_path"
+    ],
+    "enums": [
+      "rol_capacitaciones",
+      "tipo_curso",
+      "metodo_asignacion",
+      "departamento",
+      "cargo",
+      "lugar",
+      "rol_encuesta"
+    ]
+  },
+  "features": [
+    "courses-crud",
+    "modules-crud",
+    "topics-crud",
+    "quizzes-crud",
+    "progress-tracking",
+    "assignment-groups",
+    "learning-paths",
+    "surveys",
+    "certificates-pdf",
+    "excel-export",
+    "youtube-integration",
+    "user-sync",
+    "dashboard-analytics"
+  ],
+  "admin": {
+    "enabled": true,
+    "category": "content",
+    "defaultView": "grid-courses",
+    "icon": "GraduationCap",
+    "title": "Academy",
+    "order": 10,
+    "views": [
+      {
+        "id": "dashboard",
+        "type": "dashboard",
+        "title": "Dashboard",
+        "icon": "LayoutDashboard",
+        "description": "Métricas y estadísticas del LMS"
+      },
+      {
+        "id": "grid-courses",
+        "type": "grid",
+        "title": "Cursos",
+        "icon": "BookOpen",
+        "table": "cursos",
+        "description": "Gestión de cursos disponibles"
+      },
+      {
+        "id": "grid-modules",
+        "type": "grid",
+        "title": "Módulos",
+        "icon": "Layers",
+        "table": "modulos",
+        "description": "Módulos de los cursos"
+      },
+      {
+        "id": "grid-topics",
+        "type": "grid",
+        "title": "Temas",
+        "icon": "FileText",
+        "table": "temas",
+        "description": "Temas y contenido"
+      },
+      {
+        "id": "grid-quizzes",
+        "type": "grid",
+        "title": "Quizzes",
+        "icon": "HelpCircle",
+        "table": "quizzes",
+        "description": "Evaluaciones y quizzes"
+      },
+      {
+        "id": "grid-groups",
+        "type": "grid",
+        "title": "Grupos",
+        "icon": "Users",
+        "table": "grupos_asignacion",
+        "description": "Grupos de asignación"
+      },
+      {
+        "id": "grid-assignments",
+        "type": "grid",
+        "title": "Asignaciones",
+        "icon": "UserPlus",
+        "table": "asignaciones",
+        "description": "Asignaciones de cursos"
+      },
+      {
+        "id": "grid-learning-paths",
+        "type": "grid",
+        "title": "Learning Paths",
+        "icon": "Route",
+        "table": "learning_paths",
+        "description": "Rutas de aprendizaje"
+      },
+      {
+        "id": "grid-surveys",
+        "type": "grid",
+        "title": "Encuestas",
+        "icon": "ClipboardList",
+        "table": "encuestas_satisfaccion",
+        "description": "Encuestas de satisfacción"
+      },
+      {
+        "id": "grid-progress",
+        "type": "grid",
+        "title": "Progreso",
+        "icon": "TrendingUp",
+        "table": "progreso_cursos",
+        "description": "Progreso de estudiantes"
+      },
+      {
+        "id": "grid-certificates",
+        "type": "grid",
+        "title": "Certificados",
+        "icon": "Award",
+        "table": "certificados",
+        "description": "Certificados generados"
+      }
+    ],
+    "quickActions": [
+      {
+        "id": "create-course",
+        "label": "Nuevo Curso",
+        "icon": "Plus",
+        "view": "grid-courses",
+        "action": "create"
+      },
+      {
+        "id": "assign-course",
+        "label": "Asignar Curso",
+        "icon": "UserPlus",
+        "view": "grid-assignments",
+        "action": "create"
+      },
+      {
+        "id": "export-progress",
+        "label": "Exportar Progreso",
+        "icon": "Download",
+        "action": "custom",
+        "endpoint": "/api/academy/exportar/progreso"
+      }
+    ]
+  },
+  "dependencies": {
+    "required": ["grimoire-media"],
+    "optional": []
+  },
+  "optionalDependencies": {
+    "npm": {
+      "pdfkit": "^0.14.0",
+      "exceljs": "^4.4.0"
+    }
+  },
+  "compatibility": {
+    "gremius": ">=0.7.0"
+  },
+  "documentation": {
+    "readme": "./README.md",
+    "api": "./API.md"
+  },
+  "toggle": {
+    "enabledByDefault": false,
+    "canDisable": true,
+    "requiresRestart": false
+  }
+}

@@ -1,0 +1,94 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/academy": [
+		"src/routes/academy/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/actions": [
+		"src/routes/+layout.ts"
+	],
+	"/admin/connectors": [
+		"src/routes/+layout.ts"
+	],
+	"/agents": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/agents/traces": [
+		"src/routes/+layout.ts"
+	],
+	"/agents/[id]": [
+		"src/routes/+layout.ts"
+	],
+	"/ai-agents": [
+		"src/routes/ai-agents/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/booking": [
+		"src/routes/booking/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/builder": [
+		"src/routes/builder/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/collections": [
+		"src/routes/+layout.ts"
+	],
+	"/content/edit": [
+		"src/routes/content/edit/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/dashboard": [
+		"src/routes/+layout.ts"
+	],
+	"/data-viewer": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets/new": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets/[id]/edit": [
+		"src/routes/+layout.ts"
+	],
+	"/datasets/[id]/entries": [
+		"src/routes/+layout.ts"
+	],
+	"/directory": [
+		"src/routes/+layout.ts"
+	],
+	"/directory/org-chart": [
+		"src/routes/+layout.ts"
+	],
+	"/editor": [
+		"src/routes/editor/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/grimoires": [
+		"src/routes/+layout.ts"
+	],
+	"/g/[id]": [
+		"src/routes/+layout.ts"
+	],
+	"/g/[id]/[viewId]": [
+		"src/routes/+layout.ts"
+	],
+	"/mcp": [
+		"src/routes/+layout.ts"
+	],
+	"/realms": [
+		"src/routes/+layout.ts"
+	],
+	"/settings": [
+		"src/routes/+layout.ts"
+	],
+	"/traces": [
+		"src/routes/+layout.ts"
+	]
+}

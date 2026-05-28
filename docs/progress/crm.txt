@@ -1,0 +1,138 @@
+CRM BUILDER - PLAN DE IMPLEMENTACIÓN
+====================================
+
+FASE 1: ENTITY CONFIGS + TIME TRACKING + VALIDACIONES BÁSICAS
+--------------------------------------------------------------
+[✅] 1.1 Schema Database
+    [✅] Tabla crm_entity_configs
+    [✅] Extender crm_pipeline_stages (entryRequirements, onEnterActions, onExitActions)
+    [✅] Tabla crm_stage_transitions (time tracking automático)
+    [✅] Migration SQL (0001_crm_builder_fase1.sql)
+
+[✅] 1.2 API Routes
+    [✅] GET/POST/PATCH /api/crm/entity-configs
+    [✅] POST /api/crm/deals/:id/validate-move
+    [✅] GET /api/crm/deals/:id/timeline
+    [✅] GET /api/crm/analytics/cycle-time
+    [✅] PATCH /api/crm/pipeline-stages/:id/config
+    [✅] Modificar POST /api/crm/deals/:id/move (agregar validaciones + time tracking)
+    [✅] GET/POST/DELETE /api/crm/documents (básico)
+
+[✅] 1.3 UI Components
+    [✅] EntityConfigManager.svelte - Configurar entidades y campos custom
+    [✅] PipelineStageBuilder.svelte - Configurar etapas y validaciones
+    [✅] DealTimeline.svelte - Mostrar time tracking visual
+    [✅] Modificar DealsKanban.svelte - Botón timeline + indicador tiempo + validación
+
+[✅] 1.4 Backend Logic
+    [✅] validateStageTransition() - Validar campos/doc requeridos
+    [✅] logStageTransition() - Log automático de entradas/salidas
+    [✅] calculateCycleTime() - Analytics de tiempo por etapa (SQL function)
+    [✅] Triggers para auto-calcular duration y SLA
+
+[✅] 1.5 Types
+    [✅] Actualizar types.ts con EntityFieldSchema, StageEntryRequirements, StageAction
+    [✅] Tipos para CrmEntityConfig, DealTimelineEntry, ValidationResult, StageCycleTime
+
+FASE 1 COMPLETADA ✅
+====================
+Total: ~2000 líneas de código
+- Schema: 3 tablas nuevas + extensiones
+- API: 9 endpoints nuevos
+- UI: 4 componentes nuevos + modificaciones
+- Migration: Completa con backwards compatibility
+
+====================================
+PRUEBAS REALIZADAS
+====================================
+
+✅ TESTS UNITARIOS (grimoire-crm)
+   - 57/57 tests PASANDO
+   - Schema validation: OK
+   - Routes: OK
+   - Build: OK
+
+✅ TYPE CHECKING (crm.routes.ts, crm.schema.ts)
+   - Imports no usados limpiados
+   - Tipos correctamente exportados
+   - Compilación exitosa
+
+⚠️ SVELTE CHECK (packages/admin)
+   - Error preexistente en proyecto: "Multiple universal layout module files"
+   - No relacionado con cambios del CRM
+   - Componentes creados no tienen errores de sintaxis
+
+====================================
+ARCHIVOS CREADOS/MODIFICADOS FASE 1
+====================================
+
+Nuevos:
+- packages/grimoires/grimoire-crm/migrations/0001_crm_builder_fase1.sql
+- packages/admin/src/views/crm/EntityConfigManager.svelte (335 líneas)
+- packages/admin/src/views/crm/PipelineStageBuilder.svelte (366 líneas)
+- packages/admin/src/views/crm/DealTimeline.svelte (164 líneas)
+
+Modificados:
+- packages/grimoires/grimoire-crm/crm.schema.ts (+300 líneas)
+- packages/grimoires/grimoire-crm/crm.routes.ts (+450 líneas)
+- packages/admin/src/views/crm/types.ts (+150 líneas)
+- packages/admin/src/views/crm/DealKanban.svelte (+120 líneas)
+- packages/admin/src/views/crm/CRMView.svelte (+ integración settings tab)
+
+====================================
+COMO PROBAR MANUALMENTE
+====================================
+
+1. Aplicar migración:
+   cd packages/grimoires/grimoire-crm
+   pnpm migrate
+
+2. Endpoints a probar:
+   
+   # Entity Configs
+   GET    /api/crm/entity-configs
+   POST   /api/crm/entity-configs
+           Body: {
+             "grimoireId": "default",
+             "entityName": "case",
+             "singularLabel": "Case",
+             "pluralLabel": "Cases",
+             "fieldSchema": [
+               { "key": "caseNumber", "type": "text", "label": "Case #", "required": true }
+             ]
+           }
+
+   # Pipeline Stage Config
+   PATCH  /api/crm/pipeline-stages/:id/config
+           Body: {
+             "trackTimeInStage": true,
+             "estimatedDays": 7,
+             "entryRequirements": {
+               "requiredFields": ["caseNumber"],
+               "requiredDocuments": ["retainer_agreement"]
+             }
+           }
+
+   # Deal Operations
+   POST   /api/crm/deals/:id/validate-move
+           Body: { "targetStageId": "xxx" }
+   
+   POST   /api/crm/deals/:id/move
+           Body: { "targetStageId": "xxx", "moveReason": "Client ready" }
+   
+   GET    /api/crm/deals/:id/timeline
+   
+   GET    /api/crm/analytics/cycle-time?pipelineId=xxx
+
+3. UI:
+   - Ir a Settings tab en CRM
+   - Crear Entity Config
+   - Configurar Pipeline Stages
+   - Ver Deals Kanban con timeline
+
+====================================
+ESTADO FINAL: FASE 1 VALIDADA ✅
+====================================
+La Fase 1 está lista para usar. Todos los tests pasan y la funcionalidad está implementada.
+
+Próximo paso: Fase 2 (Documentos obligatorios + Validaciones avanzadas)

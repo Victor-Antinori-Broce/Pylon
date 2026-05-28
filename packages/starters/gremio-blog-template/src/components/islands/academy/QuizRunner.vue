@@ -152,7 +152,7 @@ defineEmits<{
   showCertificate: [];
 }>();
 
-const API = props.apiBase || "http://localhost:3001/api/custom";
+const API = props.apiBase || "http://localhost:3000/api/custom";
 
 const loading = ref(true);
 const error = ref<string | null>(null);

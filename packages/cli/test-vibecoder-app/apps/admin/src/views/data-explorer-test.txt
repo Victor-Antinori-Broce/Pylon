@@ -1,0 +1,371 @@
+<script lang="ts">
+  /**
+   * Página de prueba para verificar DataExplorer + DatasetCreator
+   * 
+   * Esta página demuestra:
+   * 1. DataExplorer con funcionalidad vieja (CRUD básico)
+   * 2. DataExplorer con funcionalidad nueva (field types extensibles)
+   * 3. DatasetCreator con campos calculados
+   */
+  import DataExplorer from "$lib/components/DataExplorer.svelte";
+  import DatasetCreator from "./datasets/DatasetCreator.svelte";
+  import { FormulaBuilder, KpiCreator } from "$lib/components/calculated-fields";
+  import { Tabs, TabItem } from "flowbite-svelte"; // Asumiendo que existe, si no usaré tabs simples
+  import { Table2, Calculator, Plus, TestTube, Save } from "lucide-svelte";
+  
+  // ============================
+  // TEST 1: DataExplorer BÁSICO (Funcionalidad vieja)
+  // ============================
+  const basicData = [
+    { id: "1", name: "John Doe", email: "john@example.com", age: 30, active: true, status: "active" },
+    { id: "2", name: "Jane Smith", email: "jane@example.com", age: 25, active: false, status: "inactive" },
+    { id: "3", name: "Bob Wilson", email: "bob@example.com", age: 35, active: true, status: "pending" },
+  ];
+  
+  const basicConfig = {
+    table: "users",
+    label: "Users (Basic CRUD)",
+    columns: [
+      { field: "name", label: "Name" },
+      { field: "email", label: "Email" },
+      { field: "age", label: "Age" },
+    ],
+    searchableFields: ["name", "email"],
+    filterableFields: ["status"],
+  };
+  
+  // ============================
+  // TEST 2: DataExplorer CON FIELD TYPES (Funcionalidad nueva)
+  // ============================
+  const advancedData = [
+    { 
+      id: "1", 
+      product: "Laptop", 
+      price: 1200, 
+      quantity: 2, 
+      discount: 10,
+      status: "published",
+      createdAt: "2026-03-15",
+      active: true
+    },
+    { 
+      id: "2", 
+      product: "Mouse", 
+      price: 25, 
+      quantity: 5, 
+      discount: 0,
+      status: "draft",
+      createdAt: "2026-03-10",
+      active: false
+    },
+    { 
+      id: "3", 
+      product: "Keyboard", 
+      price: 80, 
+      quantity: 3, 
+      discount: 5,
+      status: "published",
+      createdAt: "2026-03-01",
+      active: true
+    },
+  ];
+  
+  // Configuración CON field types extensibles
+  const advancedConfig = {
+    table: "products",
+    label: "Products (With Field Types)",
+    columns: [
+      { 
+        field: "product", 
+        label: "Product",
+        fieldConfig: { type: "text" }
+      },
+      { 
+        field: "price", 
+        label: "Price",
+        fieldConfig: { type: "number" }
+      },
+      { 
+        field: "quantity", 
+        label: "Qty",
+        fieldConfig: { type: "number" }
+      },
+      { 
+        field: "status", 
+        label: "Status",
+        fieldConfig: { 
+          type: "status-badge",
+          options: {
+            colors: {
+              published: "bg-green-500/10 text-green-500",
+              draft: "bg-yellow-500/10 text-yellow-500",
+              archived: "bg-gray-500/10 text-gray-400"
+            }
+          }
+        }
+      },
+      { 
+        field: "active", 
+        label: "Active",
+        fieldConfig: { type: "boolean" }
+      },
+      { 
+        field: "createdAt", 
+        label: "Created",
+        fieldConfig: { type: "date" }
+      },
+      // Campo calculado: Total
+      {
+        field: "total",
+        label: "Total",
+        fieldConfig: {
+          type: "calculated",
+          options: {
+            calculate: (row: any) => {
+              const total = row.price * row.quantity * (1 - row.discount / 100);
+              return `$${total.toFixed(2)}`;
+            }
+          }
+        }
+      },
+      // Campo calculado: Días desde creación
+      {
+        field: "daysAgo",
+        label: "Age",
+        fieldConfig: {
+          type: "calculated",
+          options: {
+            calculate: (row: any) => {
+              const created = new Date(row.createdAt);
+              const now = new Date();
+              const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+              return `${days} days`;
+            }
+          }
+        }
+      }
+    ],
+    searchableFields: ["product"],
+    filterableFields: ["status", "active"],
+  };
+  
+  // ============================
+  // TEST 3: FormulaBuilder (Componente nuevo)
+  // ============================
+  let formulaValue = $state("{price} * {quantity}");
+  
+  const formulaFields = [
+    { name: "price", label: "Price", type: "number" },
+    { name: "quantity", label: "Quantity", type: "number" },
+    { name: "discount", label: "Discount %", type: "number" },
+    { name: "tax", label: "Tax %", type: "number" },
+  ];
+  
+  // ============================
+  // TEST 4: KpiCreator (Modal/Wizard)
+  // ============================
+  let showKpiCreator = $state(false);
+  let createdKpis = $state<any[]>([]);
+  
+  function handleKpiSave(kpi: any) {
+    createdKpis = [...createdKpis, kpi];
+    showKpiCreator = false;
+  }
+  
+  // ============================
+  // Tabs
+  // ============================
+  let activeTab = $state("basic");
+</script>
+
+<div class="max-w-6xl mx-auto space-y-6 p-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
+        <TestTube class="w-6 h-6 text-gremius-cyan" />
+        DataExplorer & DatasetCreator Test
+      </h1>
+      <p class="text-gremius-subtle mt-1">
+        Verificación de funcionalidad vieja + nueva
+      </p>
+    </div>
+  </div>
+  
+  <!-- Tabs -->
+  <div class="flex items-center gap-2 border-b border-gremius-border">
+    <button
+      class="px-4 py-2 text-sm font-medium transition-colors {activeTab === 'basic' ? 'text-gremius-cyan border-b-2 border-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text'}"
+      onclick={() => activeTab = "basic"}
+    >
+      <Table2 class="w-4 h-4 inline mr-2" />
+      1. Basic DataExplorer
+    </button>
+    <button
+      class="px-4 py-2 text-sm font-medium transition-colors {activeTab === 'advanced' ? 'text-gremius-cyan border-b-2 border-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text'}"
+      onclick={() => activeTab = "advanced"}
+    >
+      <Table2 class="w-4 h-4 inline mr-2" />
+      2. Advanced Field Types
+    </button>
+    <button
+      class="px-4 py-2 text-sm font-medium transition-colors {activeTab === 'formula' ? 'text-gremius-cyan border-b-2 border-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text'}"
+      onclick={() => activeTab = "formula"}
+    >
+      <Calculator class="w-4 h-4 inline mr-2" />
+      3. Formula Builder
+    </button>
+    <button
+      class="px-4 py-2 text-sm font-medium transition-colors {activeTab === 'kpi' ? 'text-gremius-cyan border-b-2 border-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text'}"
+      onclick={() => activeTab = "kpi"}
+    >
+      <Plus class="w-4 h-4 inline mr-2" />
+      4. KPI Creator
+    </button>
+    <button
+      class="px-4 py-2 text-sm font-medium transition-colors {activeTab === 'dataset' ? 'text-gremius-cyan border-b-2 border-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text'}"
+      onclick={() => activeTab = "dataset"}
+    >
+      <Plus class="w-4 h-4 inline mr-2" />
+      5. Dataset Creator
+    </button>
+  </div>
+  
+  <!-- Content -->
+  <div class="py-4">
+    {#if activeTab === "basic"}
+      <!-- TEST 1: DataExplorer Básico -->
+      <div class="space-y-4">
+        <div class="p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border">
+          <h2 class="font-medium text-gremius-text mb-2">✅ Test 1: DataExplorer Básico (Funcionalidad Vieja)</h2>
+          <p class="text-sm text-gremius-subtle">
+            CRUD simple sin field types configurados. Usa columnas básicas.
+          </p>
+          <ul class="text-xs text-gremius-subtle mt-2 list-disc list-inside">
+            <li>Búsqueda: {basicConfig.searchableFields.join(", ")}</li>
+            <li>Filtros: {basicConfig.filterableFields.join(", ")}</li>
+            <li>Sin fieldConfig (usa defaults)</li>
+          </ul>
+        </div>
+        
+        <DataExplorer
+          table="users"
+          config={basicConfig}
+          data={basicData}
+        />
+      </div>
+      
+    {:else if activeTab === "advanced"}
+      <!-- TEST 2: DataExplorer con Field Types -->
+      <div class="space-y-4">
+        <div class="p-4 bg-gremius-cyan/10 rounded-lg border border-gremius-cyan/20">
+          <h2 class="font-medium text-gremius-text mb-2">🆕 Test 2: DataExplorer con Field Types (Funcionalidad Nueva)</h2>
+          <p class="text-sm text-gremius-subtle">
+            Usa fieldRegistry con componentes especializados por tipo.
+          </p>
+          <ul class="text-xs text-gremius-subtle mt-2 list-disc list-inside">
+            <li>status-badge: Colores automáticos por valor</li>
+            <li>boolean: Checkbox visual</li>
+            <li>date: Formato de fecha</li>
+            <li>calculated: Campos calculados en frontend</li>
+          </ul>
+        </div>
+        
+        <DataExplorer
+          table="products"
+          config={advancedConfig}
+          data={advancedData}
+        />
+      </div>
+      
+    {:else if activeTab === "formula"}
+      <!-- TEST 3: FormulaBuilder -->
+      <div class="space-y-4">
+        <div class="p-4 bg-gremius-cyan/10 rounded-lg border border-gremius-cyan/20">
+          <h2 class="font-medium text-gremius-text mb-2">🆕 Test 3: FormulaBuilder (Componente Nuevo)</h2>
+          <p class="text-sm text-gremius-subtle">
+            Constructor visual de fórmulas con drag & drop de campos.
+          </p>
+        </div>
+        
+        <div class="max-w-2xl">
+          <FormulaBuilder
+            availableFields={formulaFields}
+            bind:value={formulaValue}
+          />
+        </div>
+        
+        <div class="p-4 bg-gremius-surface/50 rounded-lg">
+          <h3 class="text-sm font-medium text-gremius-text mb-2">Fórmula actual:</h3>
+          <code class="text-gremius-cyan font-mono">{formulaValue}</code>
+        </div>
+      </div>
+      
+    {:else if activeTab === "kpi"}
+      <!-- TEST 4: KpiCreator -->
+      <div class="space-y-4">
+        <div class="p-4 bg-gremius-cyan/10 rounded-lg border border-gremius-cyan/20">
+          <h2 class="font-medium text-gremius-text mb-2">🆕 Test 4: KPI Creator (Wizard)</h2>
+          <p class="text-sm text-gremius-subtle">
+            Wizard de 3 pasos para crear campos calculados completos.
+          </p>
+        </div>
+        
+        <button
+          class="btn-primary flex items-center gap-2"
+          onclick={() => showKpiCreator = true}
+        >
+          <Plus class="w-4 h-4" />
+          Crear Nuevo KPI
+        </button>
+        
+        {#if createdKpis.length > 0}
+          <div class="space-y-2">
+            <h3 class="text-sm font-medium text-gremius-text">KPIs Creados:</h3>
+            {#each createdKpis as kpi}
+              <div class="p-3 bg-gremius-surface/50 rounded-lg flex items-center justify-between">
+                <div>
+                  <span class="font-medium text-gremius-text">{kpi.label}</span>
+                  <code class="text-xs text-gremius-subtle ml-2">{kpi.name}</code>
+                  <span class="text-xs px-2 py-0.5 bg-gremius-cyan/10 text-gremius-cyan rounded ml-2">{kpi.type}</span>
+                </div>
+                {#if kpi.isKpi}
+                  <span class="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded">⭐ KPI</span>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      
+    {:else if activeTab === "dataset"}
+      <!-- TEST 5: DatasetCreator -->
+      <div class="space-y-4">
+        <div class="p-4 bg-gremius-cyan/10 rounded-lg border border-gremius-cyan/20">
+          <h2 class="font-medium text-gremius-text mb-2">🆕 Test 5: DatasetCreator Completo</h2>
+          <p class="text-sm text-gremius-subtle">
+            Wizard de 4 pasos: Info → Campos → Calculados → Review
+          </p>
+        </div>
+        
+        <DatasetCreator />
+      </div>
+    {/if}
+  </div>
+  
+  <!-- Modal: KpiCreator -->
+  {#if showKpiCreator}
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <KpiCreator
+        availableFields={formulaFields}
+        onSave={handleKpiSave}
+        onCancel={() => showKpiCreator = false}
+      />
+    </div>
+  {/if}
+</div>
+
+<style>
+  .btn-primary {
+    @apply px-4 py-2 bg-gremius-cyan text-black font-medium rounded-lg hover:brightness-110 transition-all;
+  }
+</style>

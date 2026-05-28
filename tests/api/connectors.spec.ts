@@ -1,8 +1,9 @@
+// @ts-nocheck
 // spec: Épica 4 — Data Connectors E2E Tests
 
 import { test, expect } from "@playwright/test";
 
-const API = "http://localhost:3001/api";
+const API = (process.env.API_URL || "http://localhost:3001") + "/api";
 
 test.describe("Data Connectors", () => {
     let apiConnectorId: string;

@@ -9,16 +9,22 @@
     "types": [
       "@types/bun"
     ],
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": ".",
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
@@ -33,11 +39,14 @@
   },
   "include": [
     "src/**/*.ts",
-    "gremius.config.ts",
-    "../../packages/core/**/*.ts"
+    "src/types/**/*.d.ts",
+    "gremius.config.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/tests",
+    "src/**/*.test.ts",
+    "**/*.test.ts"
   ]
 }

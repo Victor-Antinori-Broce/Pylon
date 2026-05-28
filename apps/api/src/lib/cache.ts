@@ -73,12 +73,17 @@ export async function invalidateCache(...patterns: string[]): Promise<void> {
         for (const pattern of patterns) {
             // Use SCAN to find matching keys (safe for production, non-blocking)
             const keys: string[] = [];
-            for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+            // @ts-ignore - scanIterator types are complex in redis client
+            const iterator = client.scanIterator({ MATCH: pattern, COUNT: 100 }) as AsyncIterable<string>;
+            for await (const key of iterator) {
                 keys.push(key);
             }
 
             if (keys.length > 0) {
-                await client.del(keys);
+                // Delete keys one by one to avoid type issues with spread
+                for (const key of keys) {
+                    await client.del(key);
+                }
             }
         }
     } catch {

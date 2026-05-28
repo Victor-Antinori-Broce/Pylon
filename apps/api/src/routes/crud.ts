@@ -1,51 +1,18 @@
 import { Hono } from "hono";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+// @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "../db";
+// @ts-ignore - Path alias @/ not resolved by tsc
 import {
-  platforms, tags, dataSets, dataEntries, streamers, siteSettings, games,
+  dataSets, dataEntries, siteSettings,
 } from "../db/schema";
+// @ts-ignore - Path alias not resolved by tsc
+import { requireAuth } from "../middleware/auth";
+import { invalidateGraphQLCache } from "./graphql";
+import type { AppVariables } from "../types/hono";
 
-// ── Platforms ──
-export const platformsRoutes = new Hono();
-
-platformsRoutes.get("/", async (c) => {
-  const docs = await db.select().from(platforms).orderBy(platforms.name);
-  return c.json({ docs, totalDocs: docs.length });
-});
-
-platformsRoutes.post("/", async (c) => {
-  const body = await c.req.json();
-  const [row] = await db.insert(platforms).values({
-    name: body.name,
-    slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    shortName: body.shortName,
-    manufacturer: body.manufacturer,
-    iconId: body.iconId,
-  }).returning();
-  return c.json(row, 201);
-});
-
-// ── Tags ──
-export const tagsRoutes = new Hono();
-
-tagsRoutes.get("/", async (c) => {
-  const docs = await db.select().from(tags).orderBy(tags.name);
-  return c.json({ docs, totalDocs: docs.length });
-});
-
-tagsRoutes.post("/", async (c) => {
-  const body = await c.req.json();
-  const [row] = await db.insert(tags).values({
-    name: body.name,
-    slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    color: body.color,
-    category: body.category,
-  }).returning();
-  return c.json(row, 201);
-});
-
-// ── Data Sets ──
-export const dataSetsRoutes = new Hono();
+// ── Data Sets Lite (fallback when grimoire-datasets isn't loaded) ──
+export const dataSetsRoutes = new Hono<{ Variables: AppVariables }>();
 
 dataSetsRoutes.get("/", async (c) => {
   const limit = Math.min(Number(c.req.query("limit")) || 50, 200);
@@ -68,54 +35,47 @@ dataSetsRoutes.get("/:id/entries", async (c) => {
   return c.json({ docs, totalDocs: docs.length });
 });
 
-dataSetsRoutes.post("/", async (c) => {
+dataSetsRoutes.post("/", requireAuth, async (c) => {
   const body = await c.req.json();
   const [row] = await db.insert(dataSets).values({
     name: body.name,
     slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     description: body.description,
-    gameId: body.gameId,
     icon: body.icon,
     schema: body.schema,
     displayConfig: body.displayConfig,
+    policyJson: body.policyJson || {
+      readAccess: "authenticated",
+      writeAccess: "authenticated",
+      enableRLS: true,
+      rlsRules: [
+        { field: "ownerId", operator: "eq", value: "{{current_user_id}}" }
+      ]
+    },
   }).returning();
+  await invalidateGraphQLCache();
   return c.json(row, 201);
 });
 
-dataSetsRoutes.post("/:id/entries", async (c) => {
+dataSetsRoutes.post("/:id/entries", requireAuth, async (c) => {
   const body = await c.req.json();
   const entries = Array.isArray(body) ? body : [body];
   const rows = await db.insert(dataEntries).values(
-    entries.map((e: any) => ({
-      title: e.title,
-      dataSetId: c.req.param("id"),
-      data: e.data,
-      thumbnailId: e.thumbnailId,
-      sortOrder: e.sortOrder || 0,
-      status: e.status || "published",
-    }))
+    entries.map((e: any) => {
+      const ownerId = e.ownerId ?? c.get("user")?.id ?? null;
+      return {
+        title: e.title,
+        dataSetId: c.req.param("id"),
+        data: { ...(e.data || {}), ownerId },
+        thumbnailId: e.thumbnailId,
+        sortOrder: e.sortOrder || 0,
+        status: e.status || "published",
+        ownerId,
+      };
+    })
   ).returning();
+  await invalidateGraphQLCache();
   return c.json(rows, 201);
-});
-
-// ── Streamers ──
-export const streamersRoutes = new Hono();
-
-streamersRoutes.get("/", async (c) => {
-  const docs = await db.select().from(streamers).orderBy(desc(streamers.followerCount));
-  return c.json({ docs, totalDocs: docs.length });
-});
-
-streamersRoutes.post("/", async (c) => {
-  const body = await c.req.json();
-  const [row] = await db.insert(streamers).values({
-    displayName: body.displayName,
-    slug: body.slug || body.displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    platform: body.platform,
-    channelId: body.channelId,
-    channelUrl: body.channelUrl,
-  }).returning();
-  return c.json(row, 201);
 });
 
 // ── Site Settings (singleton) ──
@@ -148,7 +108,6 @@ settingsRoutes.patch("/", async (c) => {
 // Auth is now handled by Better-Auth in lib/auth.ts
 // Mounted via app.on(["POST", "GET"], "/api/auth/*") in index.ts
 
-
 // ── Sync Routes ──
 export const syncRoutes = new Hono();
 
@@ -159,14 +118,9 @@ syncRoutes.post("/igdb/search", async (c) => {
   return c.json(results);
 });
 
+// NOTE: IGDB import moved to grimoire-games. The core BaaS does not depend on gaming domain tables.
 syncRoutes.post("/igdb/import/:igdbId", async (c) => {
-  const igdbId = Number(c.req.param("igdbId"));
-  const { getGameById, transformIGDBGame } = await import("../services/igdb");
-  const igdbGame = await getGameById(igdbId);
-  if (!igdbGame) return c.json({ error: "Game not found on IGDB" }, 404);
-  const data = transformIGDBGame(igdbGame);
-  const [game] = await db.insert(games).values(data as any).returning();
-  return c.json(game, 201);
+  return c.json({ error: "IGDB import is handled by grimoire-games. Install it with: gremius install grimoire-games" }, 501);
 });
 
 syncRoutes.post("/twitch/status", async (c) => {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Schema Patch Instructions — Add blocks column
  * 

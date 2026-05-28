@@ -1,0 +1,34 @@
+{
+  "name": "@gremius/grimoire-blog",
+  "version": "2.0.0",
+  "description": "Gremius Core Grimoire - Blog & Content Publishing (rich text, SEO, scheduling)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch"
+  },
+  "keywords": ["gremius", "grimoire", "core", "blog", "cms", "publishing"],
+  "author": "Gremius Team",
+  "license": "MIT",
+  "devDependencies": {
+    "pg-mem": "^3.0.14",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@gremius/shared": "workspace:*",
+    "hono": "^4.7.0",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^3.23.0"
+  },
+  "gremius": {
+    "type": "grimoire-core",
+    "id": "grimoire-blog",
+    "category": "core",
+    "order": 3,
+    "core": true,
+    "defaultEnabled": true,
+    "minVersion": "0.8.0"
+  }
+}

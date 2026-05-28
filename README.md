@@ -26,8 +26,7 @@ gremiuscms/
 │   ├── api/                  # Hono + Drizzle API (Bun)
 │   │   ├── gremius.config.ts   # Module activation
 │   │   └── src/modules/      # Core & optional modules
-│   ├── admin/                # Vue 3 Admin Panel (Vite)
-│   └── web/                  # Astro 5 SSR frontend
+│   └── admin/                # Svelte 5 Admin Panel (Vite)
 ├── packages/
 │   ├── shared/               # Types & utilities
 │   └── themes/               # Theme packages with bundled modules
@@ -93,9 +92,9 @@ pnpm db:seed # Optional: initial admin and test data
 ```bash
 pnpm dev
 ```
-- **API**: [http://localhost:3001](http://localhost:3001)
-- **Admin**: [http://localhost:5173](http://localhost:5173)
-- **Web**: [http://localhost:4321](http://localhost:4321)
+- **API**: [http://localhost:3000](http://localhost:3000)
+- **Admin**: [http://localhost:3001](http://localhost:3001)
+- **Web**: [http://localhost:3002](http://localhost:3002)
 
 ---
 

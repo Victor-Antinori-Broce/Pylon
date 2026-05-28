@@ -56,8 +56,8 @@
  * @see https://www.postgresql.org/docs/current/ddl-rowsecurity.html
  */
 
-import { Context, Next } from "hono";
-import { db } from "../db";
+import type { Context, Next } from "hono";
+import { db, type DatabaseTransaction } from "../db";
 import { sql } from "drizzle-orm";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -82,6 +82,11 @@ export interface RLSContext {
   isAdmin: boolean;
 }
 
+/**
+ * Tipo para transacción de Drizzle
+ */
+type TransactionType = DatabaseTransaction;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // UTILIDADES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -104,7 +109,7 @@ export interface RLSContext {
  * ```
  */
 export async function setRLSContext(
-  tx: typeof db,
+  tx: TransactionType,
   user: RLSUser | null
 ): Promise<void> {
   const userId = user?.id ?? "";
@@ -130,7 +135,7 @@ export async function setRLSContext(
  * 
  * @param tx - Transacción de Drizzle
  */
-export async function clearRLSContext(tx: typeof db): Promise<void> {
+export async function clearRLSContext(tx: TransactionType): Promise<void> {
   await tx.execute(sql`SELECT set_config('app.current_user_id', '', false)`);
   await tx.execute(sql`SELECT set_config('app.current_user_role', '', false)`);
 }
@@ -142,18 +147,18 @@ export async function clearRLSContext(tx: typeof db): Promise<void> {
  * @param tx - Transacción de Drizzle
  * @returns Contexto RLS actual
  */
-export async function getRLSContext(tx: typeof db): Promise<RLSContext> {
+export async function getRLSContext(tx: TransactionType): Promise<RLSContext> {
   const [userIdResult, userRoleResult] = await Promise.all([
-    tx.execute<{ set_config: string }>(
+    tx.execute(
       sql`SELECT current_setting('app.current_user_id', true)`
-    ),
-    tx.execute<{ set_config: string }>(
+    ) as Promise<{ rows: { current_setting: string }[] }>,
+    tx.execute(
       sql`SELECT current_setting('app.current_user_role', true)`
-    ),
+    ) as Promise<{ rows: { current_setting: string }[] }>,
   ]);
 
-  const userId = userIdResult[0]?.set_config || null;
-  const userRole = userRoleResult[0]?.set_config || null;
+  const userId = userIdResult.rows[0]?.current_setting || null;
+  const userRole = userRoleResult.rows[0]?.current_setting || null;
 
   return {
     userId,
@@ -298,7 +303,7 @@ export function withRLSContextOnly() {
  */
 export async function withRLSContext<T>(
   user: RLSUser | null,
-  fn: (tx: typeof db) => Promise<T>
+  fn: (tx: TransactionType) => Promise<T>
 ): Promise<T> {
   return await db.transaction(async (tx) => {
     await setRLSContext(tx, user);
@@ -322,7 +327,7 @@ export async function withRLSContext<T>(
  * });
  * ```
  */
-export async function withAdminRLS<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+export async function withAdminRLS<T>(fn: (tx: TransactionType) => Promise<T>): Promise<T> {
   return await db.transaction(async (tx) => {
     await setRLSContext(tx, { id: "admin", role: "admin" });
     return await fn(tx);

@@ -1,25 +1,35 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# GremiusCMS — PRODUCCIÓN Completa
+# GremiusCMS — Docker Compose
 #
-# 🚀 USO: docker compose up -d
+# 🚀 USO RÁPIDO: docker compose up -d
 #
-# Este archivo levanta TODO el sistema listo para producción:
-#   - Infraestructura (PostgreSQL, MinIO, Valkey)
-#   - API (Bun + Hono)
-#   - Web Frontend
-#   - Admin Panel
+# DUAL MODE (Opción A + B coexisten):
+#   • Default (Vibecoder):  Pull de imágenes pre-builded  →  30 segundos
+#   • --build (Developer):  Build desde source local      →  5-10 minutos
 #
-# Una vez levantado, accede a:
-#   • Panel Admin: http://localhost:3001/admin
-#   • API Docs:    http://localhost:3000/docs
-#   • Web:         http://localhost:3001
+#   docker compose up -d              # Vibecoder: usa imágenes publicadas
+#   docker compose up -d --build      # Developer: build desde código fuente
+#
+# PERFILES DISPONIBLES:
+#   • (sin perfil)  — Solo core: Postgres + Valkey + API + Admin
+#   • --profile s3  — Añade MinIO para storage S3-compatible
+#   • --profile full — Todos los servicios incluyendo MinIO
+#
+# DEFAULT PARA DESARROLLO LOCAL:
+#   MinIO está incluido por defecto para desarrollo sin dependencias externas.
+#   En producción usa AWS S3, Cloudflare R2, u otro provider.
+#
+# Acceso local (con --profile s3):
+#   • API + Swagger: http://localhost:3000/api/swagger
+#   • Admin Panel:   http://localhost:3001
+#   • MinIO Console: http://localhost:9001
 #
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
 
   # ═══════════════════════════════════════════════════════════════════════
-  # PostgreSQL 16 con pgvector
+  # PostgreSQL 16 con pgvector (REQUERIDO)
   # ═══════════════════════════════════════════════════════════════════════
   gremius_db:
     image: pgvector/pgvector:pg16
@@ -32,6 +42,8 @@ services:
     volumes:
       - gremius_postgres_prod:/var/lib/postgresql/data
       - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gremius} -d ${POSTGRES_DB:-gremius_prod}" ]
       interval: 10s
@@ -41,12 +53,36 @@ services:
       - gremius_net_prod
 
   # ═══════════════════════════════════════════════════════════════════════
-  # MinIO (S3-compatible storage)
+  # Valkey 7 (REQUERIDO) - Cache, Pub/Sub, Queue backend
+  # ═══════════════════════════════════════════════════════════════════════
+  gremius_state:
+    image: valkey/valkey:7-alpine
+    container_name: gremius_state_prod
+    restart: unless-stopped
+    command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
+    ports:
+      - "${VALKEY_PORT:-6379}:6379"
+    volumes:
+      - gremius_valkey_prod:/data
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - gremius_net_prod
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # MinIO (OPCIONAL) - S3-compatible storage para desarrollo local
+  #
+  # PERFILES: s3, full, dev
+  # En producción se recomienda usar AWS S3, R2, u otro provider cloud.
   # ═══════════════════════════════════════════════════════════════════════
   gremius_minio:
     image: minio/minio:latest
     container_name: gremius_minio_prod
     restart: unless-stopped
+    profiles: ["s3", "full", "dev"]
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-gremius_minio}
@@ -65,25 +101,40 @@ services:
       - gremius_net_prod
 
   # ═══════════════════════════════════════════════════════════════════════
-  # Valkey (Redis-compatible cache)
+  # MinIO Init (OPCIONAL) - Crea bucket automáticamente
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_cache:
-    image: valkey/valkey:7-alpine
-    container_name: gremius_cache_prod
-    restart: unless-stopped
-    command: valkey-server --maxmemory 256mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+  gremius_minio_init:
+    image: minio/mc:latest
+    container_name: gremius_minio_init_prod
+    profiles: ["s3", "full", "dev"]
+    depends_on:
+      gremius_minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo 'Waiting for MinIO...' &&
+        sleep 3 &&
+        mc alias set local http://gremius_minio_prod:9000 ${S3_ACCESS_KEY:-gremius_minio} ${S3_SECRET_KEY:-gremius_minio_secret_2025} &&
+        mc mb local/${S3_BUCKET:-gremius-media} --ignore-existing &&
+        echo 'Bucket created: ${S3_BUCKET:-gremius-media}'
+      "
     networks:
       - gremius_net_prod
 
   # ═══════════════════════════════════════════════════════════════════════
-  # API - Backend (Bun + Hono)
+  # API - Backend (Bun + Hono) (REQUERIDO)
+  #
+  # DUAL MODE:
+  #   • Vibecoder (default):  docker compose up -d
+  #     Usa imagen pre-builded: gremius/api:latest
+  #   • Developer:            docker compose up -d --build
+  #     Build desde source con Dockerfile.prod
+  #
+  # Para forzar build sin afectar otros servicios:
+  #   docker compose up -d --build gremius_api
   # ═══════════════════════════════════════════════════════════════════════
   gremius_api:
+    image: ${GREMIUS_API_IMAGE:-gremius/api:latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
@@ -93,44 +144,67 @@ services:
     depends_on:
       gremius_db:
         condition: service_healthy
-      gremius_minio:
+      gremius_state:
         condition: service_healthy
-      gremius_cache:
-        condition: service_healthy
+      # MinIO es opcional - el API funciona con Local storage si no está
     environment:
+      # Server
       - NODE_ENV=production
       - PORT=3000
+      # Database
       - DATABASE_URL=postgresql://${POSTGRES_USER:-gremius}:${POSTGRES_PASSWORD:-gremiuspassword}@gremius_db_prod:5432/${POSTGRES_DB:-gremius_prod}
-      - REDIS_URL=redis://gremius_cache_prod:6379
+      # Valkey
+      - REDIS_URL=redis://gremius_state_prod:6379
+      # Storage Configuration (configurable vía Media Library settings)
+      - DEFAULT_STORAGE_PROVIDER=${DEFAULT_STORAGE_PROVIDER:-local}
+      # MinIO/S3 (usado si DEFAULT_STORAGE_PROVIDER=minio)
       - S3_ENDPOINT=http://gremius_minio_prod:9000
+      - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:9000}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY:-gremius_minio}
       - S3_SECRET_KEY=${S3_SECRET_KEY:-gremius_minio_secret_2025}
-      - S3_BUCKET=${S3_BUCKET:-gremius-uploads}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-change-me-in-production}
-      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
+      - S3_BUCKET=${S3_BUCKET:-gremius-media}
+      - S3_REGION=${S3_REGION:-us-east-1}
+      # Local Storage (usado si DEFAULT_STORAGE_PROVIDER=local)
+      - STORAGE_LOCAL_PATH=/app/uploads
+      - STORAGE_LOCAL_URL=http://localhost:3000/uploads
+      # Auth
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required - set it in .env}
+      - BETTER_AUTH_URL=http://localhost:${API_PORT:-3000}
+      # CORS
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:3001
+      - ADMIN_URL=http://localhost:3001
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Features
+      - ENABLE_SWAGGER=true
+      - ENABLE_MCP=true
+      # Rate limiting
+      - RATE_LIMIT_ENABLED=true
     ports:
       - "${API_PORT:-3000}:3000"
     networks:
       - gremius_net_prod
-    # Comando que ejecuta migraciones seguras y luego inicia
-    command: ["sh", "-c", "echo 'Running migrations...' && bun run db:migrate && echo 'Starting API...' && bun run start"]
+    command: [ "sh", "/app/docker/start-with-check.sh" ]
 
   # ═══════════════════════════════════════════════════════════════════════
-  # Admin Panel - Frontend
+  # Admin Panel - Frontend (SvelteKit) (REQUERIDO)
+  #
+  # DUAL MODE: Igual que API
   # ═══════════════════════════════════════════════════════════════════════
   gremius_admin:
+    image: ${GREMIUS_ADMIN_IMAGE:-gremius/admin:latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: admin
-      args:
-        - PUBLIC_API_URL=http://localhost:3000
+      # No PUBLIC_API_URL needed - admin uses relative /api/* URLs
+      # which nginx proxies to the API container internally
     container_name: gremius_admin_prod
     restart: unless-stopped
     depends_on:
       - gremius_api
     ports:
-      - "5173:80"
+      - "${ADMIN_PORT:-3001}:80"
     networks:
       - gremius_net_prod
 
@@ -138,9 +212,11 @@ volumes:
   gremius_postgres_prod:
     name: gremius_postgres_prod
     driver: local
-
   gremius_minio_prod:
     name: gremius_minio_prod
+    driver: local
+  gremius_valkey_prod:
+    name: gremius_valkey_prod
     driver: local
 
 networks:
