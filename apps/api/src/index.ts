@@ -323,7 +323,9 @@ app.use("*", async (c, next) => {
     }
   }
 
-  // 2. LEGACY Machine Auth (API Keys) - DEPRECATED, will migrate to agents
+  // 2. LEGACY Machine Auth (API Keys) - DEPRECATED
+  // Migration: Use Agent NHI tokens (grm_agent_*) instead.
+  // Sunset date: 2026-08-01 — gremius_sk_* keys will stop working after this date.
   if (authHeader?.startsWith("Bearer gremius_sk_")) {
     const rawToken = authHeader.replace("Bearer ", "").trim();
     const keyHash = createHash("sha256").update(rawToken).digest("hex");
@@ -337,6 +339,11 @@ app.use("*", async (c, next) => {
 
       // Update lastUsedAt asynchronously (fire and forget)
       db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, apiKey.id)).execute().catch(() => { });
+
+      // Deprecation warnings
+      logger.warn({ keyId: apiKey.id, path: c.req.path }, "[DEPRECATION] Legacy API key (gremius_sk_*) used. Migrate to Agent NHI (grm_agent_*).");
+      c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+      c.header("Sunset", "2026-08-01");
 
       // Inject synthetic Admin user
       c.set("user", {

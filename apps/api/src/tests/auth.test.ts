@@ -1,24 +1,31 @@
-// @ts-nocheck
 /**
  * Auth Module Tests
- * 
+ *
  * Tests for authentication functionality including:
  * - User registration
  * - User login
  * - Session management
- * - API key authentication
+ * - Agent NHI authentication (grm_agent_*)
+ *
+ * Legacy API keys (gremius_sk_*) are deprecated. Tests cover the new
+ * Agent NHI system which replaces them.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { db } from "../db";
-import { authUsers, apiKeys } from "../db/schema";
+import { authUsers, agentIdentities, agentApiKeys } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { createHash } from "crypto";
-import { 
-  isDatabaseAvailable, 
-  clearTestData, 
+// import { createHash } from "crypto"; // Not needed for Agent NHI tests
+import {
+  createAgent,
+  authenticateAgent,
+  revokeApiKey,
+} from "../services/agent-auth";
+import {
+  isDatabaseAvailable,
+  clearTestData,
   createTestUserData,
-  generateTestId 
+  generateTestId,
 } from "./setup";
 
 // Skip tests if database is not available
@@ -63,7 +70,7 @@ describe("Auth Module", () => {
       expect(result).toBeDefined();
       expect(result.email).toBe(testUser.email);
       expect(result.name).toBe(testUser.name);
-      
+
       userId = result.id;
     });
 
@@ -108,113 +115,116 @@ describe("Auth Module", () => {
     });
   });
 
-  describe("API Key Management", () => {
-    let apiKeyId: string;
-    let testUserId: string;
+  describe("Agent NHI Management (replaces legacy API keys)", () => {
+    let agentId: string;
+    let plainApiKey: string;
 
-    beforeAll(async () => {
-      if (!dbAvailable) return;
-      
-      // Create test user for API key tests
-      const [user] = await db
-        .insert(authUsers)
-        .values({
-          id: generateTestId(),
-          email: `apikey-test-${Date.now()}@example.com`,
-          name: "API Key Test User",
-          role: "user",
-        })
-        .returning();
-      
-      testUserId = user.id;
-    });
-
-    it("should create API key for user", async () => {
+    it("should create an agent with API key", async () => {
       if (!dbAvailable) return;
 
-      const apiKeyToken = `gremius_sk_${generateTestId()}`;
-      const keyHash = createHash("sha256").update(apiKeyToken).digest("hex");
-
-      const [result] = await db
-        .insert(apiKeys)
-        .values({
-          name: "Test API Key",
-          keyHash,
-          userId: testUserId,
-          permissions: ["read", "write"],
-        })
-        .returning();
+      const result = await createAgent({
+        name: "Test Machine Agent",
+        type: "machine",
+        description: "Test agent for auth module",
+        scopes: ["read:datasets", "write:datasets"],
+        rateLimit: 120,
+      });
 
       expect(result).toBeDefined();
-      expect(result.name).toBe("Test API Key");
-      expect(result.keyHash).toBe(keyHash);
-      
-      apiKeyId = result.id;
+      expect(result.agent).toBeDefined();
+      expect(result.plainApiKey).toBeDefined();
+      expect(result.plainApiKey.startsWith("grm_agent_")).toBe(true);
+      expect(result.agent.name).toBe("Test Machine Agent");
+      expect(result.agent.type).toBe("machine");
+
+      agentId = result.agent.id;
+      plainApiKey = result.plainApiKey;
     });
 
-    it("should find API key by hash", async () => {
+    it("should authenticate agent with valid API key", async () => {
       if (!dbAvailable) return;
 
-      const [result] = await db
+      const authResult = await authenticateAgent(plainApiKey);
+
+      expect(authResult.success).toBe(true);
+      expect(authResult.context).toBeDefined();
+      expect(authResult.context!.agentId).toBe(agentId);
+      expect(authResult.context!.agentName).toBe("Test Machine Agent");
+      expect(authResult.context!.scopes).toContain("read:datasets");
+      expect(authResult.context!.scopes).toContain("write:datasets");
+      expect(authResult.context!.rateLimit).toBe(120);
+    });
+
+    it("should reject invalid API key format", async () => {
+      if (!dbAvailable) return;
+
+      const authResult = await authenticateAgent("invalid_key_format");
+
+      expect(authResult.success).toBe(false);
+      expect(authResult.code).toBe("INVALID_KEY_FORMAT");
+    });
+
+    it("should reject unknown API key", async () => {
+      if (!dbAvailable) return;
+
+      const fakeKey = "grm_agent_test_" + "a".repeat(32);
+      const authResult = await authenticateAgent(fakeKey);
+
+      expect(authResult.success).toBe(false);
+      expect(authResult.code).toBe("INVALID_KEY");
+    });
+
+    it("should update last_used_at on authentication", async () => {
+      if (!dbAvailable) return;
+
+      // Authenticate first
+      await authenticateAgent(plainApiKey);
+
+      // Check that lastUsedAt was updated
+      const [keyRecord] = await db
         .select()
-        .from(apiKeys)
-        .where(eq(apiKeys.id, apiKeyId))
+        .from(agentApiKeys)
+        .where(eq(agentApiKeys.agentId, agentId))
         .limit(1);
 
-      expect(result).toBeDefined();
-      expect(result.userId).toBe(testUserId);
+      expect(keyRecord).toBeDefined();
+      expect(keyRecord.lastUsedAt).toBeDefined();
     });
 
-    it("should update API key last used", async () => {
+    it("should revoke agent API key", async () => {
       if (!dbAvailable) return;
 
-      const now = new Date();
-      
-      const [result] = await db
-        .update(apiKeys)
-        .set({ lastUsedAt: now })
-        .where(eq(apiKeys.id, apiKeyId))
-        .returning();
-
-      expect(result).toBeDefined();
-      expect(result.lastUsedAt).toBeDefined();
-    });
-
-    it("should set API key expiration", async () => {
-      if (!dbAvailable) return;
-
-      const expiredDate = new Date(Date.now() - 1000); // 1 second ago
-      
-      const [result] = await db
-        .update(apiKeys)
-        .set({ expiresAt: expiredDate })
-        .where(eq(apiKeys.id, apiKeyId))
-        .returning();
-
-      expect(result).toBeDefined();
-      expect(result.expiresAt).toBeDefined();
-      expect(result.expiresAt!.getTime()).toBeLessThan(Date.now());
-    });
-
-    it("should delete API key", async () => {
-      if (!dbAvailable) return;
-
-      await db.delete(apiKeys).where(eq(apiKeys.id, apiKeyId));
-
-      const [result] = await db
+      const [keyRecord] = await db
         .select()
-        .from(apiKeys)
-        .where(eq(apiKeys.id, apiKeyId))
+        .from(agentApiKeys)
+        .where(eq(agentApiKeys.agentId, agentId))
         .limit(1);
 
-      expect(result).toBeUndefined();
+      expect(keyRecord).toBeDefined();
+      await revokeApiKey(keyRecord.id);
+
+      const [afterRevoke] = await db
+        .select()
+        .from(agentApiKeys)
+        .where(eq(agentApiKeys.id, keyRecord.id))
+        .limit(1);
+
+      expect(afterRevoke).toBeUndefined();
+    });
+
+    it("should fail authentication after revocation", async () => {
+      if (!dbAvailable) return;
+
+      const authResult = await authenticateAgent(plainApiKey);
+
+      expect(authResult.success).toBe(false);
+      expect(authResult.code).toBe("INVALID_KEY");
     });
 
     afterAll(async () => {
       if (!dbAvailable) return;
-      if (testUserId) {
-        await db.delete(apiKeys).where(eq(apiKeys.userId, testUserId));
-        await db.delete(authUsers).where(eq(authUsers.id, testUserId));
+      if (agentId) {
+        await db.delete(agentIdentities).where(eq(agentIdentities.id, agentId));
       }
     });
   });
@@ -223,8 +233,8 @@ describe("Auth Module", () => {
     it("should validate role assignments", async () => {
       if (!dbAvailable) return;
 
-      const validRoles = ["admin", "editor", "user"];
-      
+      const validRoles = ["admin", "editor", "user"] as const;
+
       for (const role of validRoles) {
         const [user] = await db
           .insert(authUsers)
@@ -237,7 +247,7 @@ describe("Auth Module", () => {
           .returning();
 
         expect(user.role).toBe(role);
-        
+
         // Cleanup
         await db.delete(authUsers).where(eq(authUsers.id, user.id));
       }

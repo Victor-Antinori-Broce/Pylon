@@ -5,8 +5,10 @@
  * via the standard MCP protocol over Streamable HTTP (SSE + POST).
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * SECURITY: All MCP connections require a valid gremius_sk_ API key.
- * This is mandatory — MCP tools can insert, query, and dispatch jobs.
+ * SECURITY: All MCP connections require a valid Agent NHI token (grm_agent_*)
+ * or a legacy API key (gremius_sk_* — deprecated, sunset 2026-08-01).
+ * Agents must have the 'mcp:connect' scope. MCP tools can insert, query,
+ * and dispatch jobs.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Endpoints:
@@ -209,14 +211,15 @@ mcpRoutes.use("*", async (c, next) => {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // Fallback: Autenticar como API Key Humana (gremius_sk_xxx)
+    // Fallback: Legacy Human API Key (gremius_sk_xxx) — DEPRECATED
+    // Migrate to Agent NHI tokens (grm_agent_xxx) before 2026-08-01.
     // ═══════════════════════════════════════════════════════════════
     if (!rawToken.startsWith("gremius_sk_")) {
         return c.json({
             jsonrpc: "2.0",
             error: {
                 code: -32000,
-                message: "Invalid API key format. Expected: gremius_sk_xxx or grm_agent_xxx",
+                message: "Invalid API key format. Expected: grm_agent_xxx (new) or gremius_sk_xxx (deprecated)",
             },
             id: null,
         }, 401);
@@ -253,6 +256,11 @@ mcpRoutes.use("*", async (c, next) => {
         .execute()
         .catch(() => { });
 
+    // Deprecation warnings
+    logger.warn({ keyId: apiKey.id, type: "mcp" }, "[DEPRECATION] Legacy API key (gremius_sk_*) used in MCP. Migrate to Agent NHI (grm_agent_*).");
+    c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+    c.header("Sunset", "2026-08-01");
+
     c.set("mcpAuth", {
         type: 'human',
         agentId: `machine-${apiKey.id}`,
@@ -264,7 +272,7 @@ mcpRoutes.use("*", async (c, next) => {
         agentId: `machine-${apiKey.id}`,
         agentName: apiKey.name,
         type: 'human'
-    }, "MCP human user authenticated");
+    }, "MCP legacy human user authenticated");
 
     await next();
 });

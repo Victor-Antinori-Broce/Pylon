@@ -60,8 +60,8 @@ const DEFAULT_INFO = {
 
 Three methods supported:
 1. **Session Cookie** - For web users (Better-Auth)
-2. **API Key** - Bearer token for integrations
-3. **Agent Token** - For AI agents (grm_agent_*)
+2. **Agent Token** - For AI agents and machine integrations (grm_agent_*) — recommended
+3. **Legacy API Key** - Bearer token (gremius_sk_*) — **DEPRECATED**, sunset 2026-08-01. Migrate to grm_agent_*
 
 \`\`\`
 Authorization: Bearer your_token_here

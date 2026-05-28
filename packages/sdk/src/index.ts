@@ -10,7 +10,7 @@
  *
  * const gremius = new GremiusClient({
  *   url: 'https://api.example.com',
- *   apiKey: 'gremius_sk_123'
+ *   apiKey: 'grm_agent_xxx'  // Agent NHI token (recommended)
  * });
  *
  * // CRUD via Explorer
@@ -418,10 +418,10 @@ export class GremiusClient {
    *
    * @example
    * // JSON mode (default)
-   * const gremius = new GremiusClient({ url: 'http://localhost:3000', apiKey: 'gremius_sk_xxx' });
+   * const gremius = new GremiusClient({ url: 'http://localhost:3000', apiKey: 'grm_agent_xxx' });
    *
    * // TOON mode (for AI agents — 60% fewer tokens)
-   * const agent = new GremiusClient({ url: 'http://localhost:3000', apiKey: 'gremius_sk_xxx', format: 'toon' });
+   * const agent = new GremiusClient({ url: 'http://localhost:3000', apiKey: 'grm_agent_xxx', format: 'toon' });
    */
   constructor(config: GremiusClientConfig) {
     this.httpClient = new HttpClient(config);
@@ -501,8 +501,8 @@ export class GremiusClient {
  * Create a Gremius client with a simple function call.
  *
  * @example
- * const gremius = createClient('http://localhost:3000', 'gremius_sk_xxx');
- * const toon = createClient('http://localhost:3000', 'gremius_sk_xxx', 'toon');
+ * const gremius = createClient('http://localhost:3000', 'grm_agent_xxx');
+ * const toon = createClient('http://localhost:3000', 'grm_agent_xxx', 'toon');
  */
 export function createClient(
   url: string,

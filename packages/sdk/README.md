@@ -38,7 +38,7 @@ import { GremiusClient } from '@gremius/sdk';
 // Initialize client
 const gremius = new GremiusClient({
   url: 'https://api.yourgame.com',
-  apiKey: 'gremius_sk_your_api_key'
+  apiKey: 'grm_agent_your_agent_token'  // Agent NHI token (recommended)
 });
 
 // Read data

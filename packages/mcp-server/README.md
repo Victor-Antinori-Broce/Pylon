@@ -86,9 +86,13 @@ Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
 
 ## 🔐 Authentication
 
-Set `GREMIUS_API_TOKEN` to a valid API key (`gremius_sk_*`):
+Set `GREMIUS_API_TOKEN` to a valid Agent NHI token (`grm_agent_*`) or legacy API key (`gremius_sk_*` — deprecated, sunset 2026-08-01):
 
 ```bash
+# Recommended: Agent NHI token
+GREMIUS_API_TOKEN=grm_agent_xxx gremius mcp
+
+# Deprecated: Legacy API key (will be removed)
 GREMIUS_API_TOKEN=gremius_sk_xxx gremius mcp
 ```
 

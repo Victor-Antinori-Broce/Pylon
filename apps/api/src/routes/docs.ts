@@ -36,8 +36,8 @@ const openAPIConfig = {
 
 Tres métodos soportados:
 1. **Session Cookie** (Better-Auth) - Para usuarios humanos
-2. **API Key** (Bearer token) - Para integraciones
-3. **Agent Token** (grm_agent_*) - Para agents AI
+2. **Agent Token** (grm_agent_*) - Para agents AI e integraciones máquina (recomendado)
+3. **Legacy API Key** (gremius_sk_*) - **DEPRECATED**, sunset 2026-08-01. Migrar a grm_agent_*
 
 \`\`\`
 Authorization: Bearer your_token_here
