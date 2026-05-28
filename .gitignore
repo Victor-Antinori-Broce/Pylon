@@ -114,10 +114,33 @@ playwright.config.d.ts
 !**/drizzle.config.ts
 !**/svelte.config.ts
 
+# CLI test app (generated, should not be tracked)
+packages/cli/test-vibecoder-app/
+
 # Keep CLI binaries and templates
 !packages/cli/bin/*.js
 !packages/cli/templates/**/*.js
 !packages/cli/templates/**/*.d.ts
+
+# Grimoires compiled artifacts (in grimoire root dirs)
+packages/grimoires/*/*.js
+packages/grimoires/*/*.d.ts
+packages/grimoires/*/src/**/*.js
+packages/grimoires/*/src/**/*.d.ts
+packages/grimoires/*/tests/*.js
+packages/grimoires/*/tests/*.d.ts
+packages/grimoires/*/services/*.js
+packages/grimoires/*/services/*.d.ts
+
+# Starters compiled artifacts
+packages/starters/*/*.js
+packages/starters/*/*.d.ts
+packages/starters/**/*.js
+packages/starters/**/*.d.ts
+
+# Tests compiled artifacts
+tests/**/*.js
+tests/**/*.d.ts
 
 # Keep Django static files
 !capacitaciones_app/static/**/*.js
