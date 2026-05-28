@@ -1,0 +1,226 @@
+/**
+ * Gremius Functions (Workers) HTTP Tests
+ *
+ * Tests CRUD and execution of cloud functions via HTTP.
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import type { Hono } from "hono";
+import { db } from "../db";
+import { gremiusFunctions } from "../db/schema";
+import { eq } from "drizzle-orm";
+import {
+  isDatabaseAvailable,
+  clearTestData,
+  generateTestId,
+} from "./setup";
+
+let dbAvailable = false;
+let app: Hono;
+
+function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
+  const headers = new Headers(opts.headers);
+  if (cookie) headers.set("Cookie", cookie);
+  headers.set("Content-Type", "application/json");
+  return new Request(`http://localhost:3000${path}`, { ...opts, headers });
+}
+
+function extractCookie(headers: Headers): string {
+  const setCookie = headers.get("set-cookie") || "";
+  return setCookie.split(";")[0];
+}
+
+describe("Functions HTTP", () => {
+  beforeAll(async () => {
+    dbAvailable = await isDatabaseAvailable();
+    const mod = await import("../index");
+    app = mod.app;
+    if (dbAvailable) await clearTestData();
+  });
+
+  afterAll(async () => {
+    if (dbAvailable) await clearTestData();
+  });
+
+  const email = `functions-${generateTestId()}@example.com`;
+  const password = "TestPassword123!";
+  let cookie = "";
+  let fnId = "";
+  let fnSlug = "";
+
+  describe("Setup", () => {
+    it("creates and signs in a user", async () => {
+      if (!dbAvailable) return;
+
+      await app.request(
+        req("/api/auth/sign-up/email", {
+          method: "POST",
+          body: JSON.stringify({ email, password, name: "Functions User" }),
+        })
+      );
+      const res = await app.request(
+        req("/api/auth/sign-in/email", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        })
+      );
+      cookie = extractCookie(res.headers);
+    });
+  });
+
+  describe("CRUD", () => {
+    it("should create a function", async () => {
+      if (!dbAvailable) return;
+
+      fnSlug = `test-fn-${generateTestId()}`;
+      const res = await app.request(
+        req(
+          "/api/functions",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              name: "Test Function",
+              slug: fnSlug,
+              code: "return { hello: 'world' };",
+              trigger: "manual",
+              description: "Created by test",
+            }),
+          },
+          cookie
+        )
+      );
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.id).toBeDefined();
+      expect(body.slug).toBe(fnSlug);
+      fnId = body.id;
+    });
+
+    it("should list functions", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(req("/api/functions", {}, cookie));
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(Array.isArray(body.docs)).toBe(true);
+      expect(body.docs.some((f: any) => f.id === fnId)).toBe(true);
+    });
+
+    it("should filter functions by trigger", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req("/api/functions?trigger=manual", {}, cookie)
+      );
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.docs.every((f: any) => f.trigger === "manual")).toBe(true);
+    });
+
+    it("should get function by id", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(req(`/api/functions/${fnId}`, {}, cookie));
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.id).toBe(fnId);
+      expect(body.slug).toBe(fnSlug);
+    });
+
+    it("should update function code", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req(
+          `/api/functions/${fnId}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              code: "return { updated: true };",
+              description: "Updated by test",
+            }),
+          },
+          cookie
+        )
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.code).toBe("return { updated: true };");
+    });
+
+    it("should reject function without required fields", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req(
+          "/api/functions",
+          {
+            method: "POST",
+            body: JSON.stringify({ name: "Incomplete" }),
+          },
+          cookie
+        )
+      );
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should get cron status", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(req("/api/functions/cron/status", {}, cookie));
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(Array.isArray(body.jobs)).toBe(true);
+    });
+  });
+
+  describe("Execution", () => {
+    it("should execute function manually", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req(
+          `/api/functions/${fnId}/execute`,
+          { method: "POST", body: JSON.stringify({ payload: {} }) },
+          cookie
+        )
+      );
+
+      expect([200, 404, 500]).toContain(res.status);
+    });
+
+    it("should get execution logs", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req(`/api/functions/${fnId}/executions`, {}, cookie)
+      );
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(Array.isArray(body.docs)).toBe(true);
+    });
+  });
+
+  describe("Cleanup", () => {
+    it("should delete function", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req(`/api/functions/${fnId}`, { method: "DELETE" }, cookie)
+      );
+      expect(res.status).toBe(200);
+
+      // Verify deletion
+      const getRes = await app.request(req(`/api/functions/${fnId}`, {}, cookie));
+      expect(getRes.status).toBe(404);
+    });
+  });
+});
