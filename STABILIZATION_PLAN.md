@@ -352,17 +352,23 @@ Sumados a los 71 existentes = **~150 tests** para declarar beta.
 **Tiempo estimado:** 3–4 días  
 **Bloqueante para:** Fase 7 (Release)
 
-### 6.1 Determinar el estado real del admin
+### 6.1 Determinar el estado real del admin ✅ COMPLETED
 
-**Preguntas a responder:**
-- ¿El Svelte admin en `packages/admin/` compila y corre?
-- ¿Qué vistas funcionan y cuáles están rotas?
-- ¿El Vue legacy en `apps/admin/src/_legacy_vue_archive/` se puede eliminar?
+**Resultados:**
+- ✅ `packages/admin/` compila y builda exitosamente (`svelte-check`: 0 errores, 315 warnings a11y/CSS; `vite build`: success en ~53s)
+- ✅ `apps/admin/` **ya fue eliminado** en migración anterior. No existe.
+- ✅ `apps/admin/src/_legacy_vue_archive/` **ya fue eliminado**. No existe.
+- ✅ Directorios vacíos `Pylon/` y `pylon1/` eliminados (artifacts basura)
 
-**Tareas:**
-- [ ] `cd packages/admin && pnpm install && pnpm dev`
-- [ ] Probar flujo completo: Login → Dashboard → Datasets → Entries → Settings
-- [ ] Documentar vistas rotas en un `packages/admin/ROADMAP.md`
+**Warnings restantes (no bloqueantes):**
+- 315 warnings de `svelte-check`, mayormente:
+  - `a11y_label_has_associated_control` — labels sin `for` explícito
+  - `element_invalid_self_closing_tag` — self-closing en non-void elements
+  - `css_unknown_at_rule` — `@apply` de Tailwind no reconocido por el checker
+
+**Tareas pendientes:**
+- [ ] Probar flujo completo con servidor corriendo: Login → Dashboard → Datasets → Entries → Settings
+- [ ] Documentar vistas rotas en un `packages/admin/ROADMAP.md` (si las hay)
 
 ### 6.2 Decisión: ¿matar o revivir vistas rotas?
 
@@ -374,12 +380,17 @@ Sumados a los 71 existentes = **~150 tests** para declarar beta.
 **Opción B (Si hay tiempo):**
 - Arreglar las vistas críticas (Datasets, Entries, Auth)
 
-### 6.3 Eliminar archivos Vue legacy
+### 6.3 Archivos Vue legacy — ESTADO
 
-**Tareas:**
-- [ ] Confirmar que `apps/admin/` fue reemplazado por `packages/admin/`
-- [ ] Eliminar `apps/admin/` por completo (ya está en git history si se necesita)
-- [ ] Eliminar `apps/admin/src/_legacy_vue_archive/`
+**Eliminados:**
+- ✅ `apps/admin/` — eliminado en migración anterior
+- ✅ `apps/admin/src/_legacy_vue_archive/` — eliminado en migración anterior
+- ✅ `Pylon/`, `pylon1/` — directorios vacíos eliminados
+
+**Nota:** `packages/starters/gremio-blog-template/` usa Astro + Vue islands como starter template oficial. Esto NO es legacy — es un producto activo que ofrece Vue como opción de frontend. No eliminar.
+
+**Orphan code pendiente de decisión:**
+- ⚠️ `capacitaciones_app/` — App Django LMS de 63 archivos + 29 migraciones. No referenciada en docker-compose ni package.json. Aparece en `module-registry.ts` como tablas relacionadas a `grimoire-academy-lms`. **Requiere confirmación del usuario para eliminar.**
 
 ### Criterio de salida
 > `pnpm dev` en `packages/admin` arranca sin errores.  
