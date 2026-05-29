@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * GremiusCMS — Real-time Test Script

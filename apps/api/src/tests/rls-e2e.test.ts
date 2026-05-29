@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * RLS End-to-End Tests

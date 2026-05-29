@@ -1,9 +1,9 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 // @ts-ignore - NodePgTransaction is the correct export name but TS complains
-import type { NodePgTransaction, NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
+import type { NodePgDatabase, NodePgTransaction, NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
 import type { ExtractTablesWithRelations } from "drizzle-orm";
 import pg from "pg";
-import { buildMergedSchema } from "../lib/schema-merger";
+import * as coreSchema from "./schema-core";
 
 const { Pool } = pg;
 
@@ -11,21 +11,42 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgres://gremius:gremiuspassword@localhost:5432/gremius_dev";
 
-// Connection pool
-const pool = new Pool({
-  connectionString,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+let _db: NodePgDatabase<any>;
+let _mergedSchema: any;
 
-// ── Dynamic Schema Merger ──
-// Merges core schema + active module schemas from gremius.config.ts
-console.log("📋 Building merged schema...");
-const mergedSchema = await buildMergedSchema();
+async function initDb() {
+  const isTest = process.env.NODE_ENV === "test";
+  const pool = new Pool({
+    connectionString,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: isTest ? 1000 : 2000,
+  });
 
-export const db = drizzle(pool, { schema: mergedSchema as Record<string, unknown> });
-export { mergedSchema };
+  if (isTest) {
+    try {
+      await pool.query("SELECT 1");
+    } catch {
+      // PostgreSQL not available in test → fall back to pg-mem
+      console.log("📋 PostgreSQL not available, using pg-mem for tests...");
+      const { getPgMemDb } = await import("../tests/pg-mem-db");
+      _db = await getPgMemDb();
+      _mergedSchema = coreSchema;
+      return;
+    }
+  }
+
+  // Normal path (dev / prod / test with real PG)
+  const { buildMergedSchema } = await import("../lib/schema-merger");
+  console.log("📋 Building merged schema...");
+  _mergedSchema = await buildMergedSchema();
+  _db = drizzle(pool, { schema: _mergedSchema as Record<string, unknown> });
+}
+
+await initDb();
+
+export const db = _db;
+export { _mergedSchema as mergedSchema };
 
 export type Database = typeof db;
 

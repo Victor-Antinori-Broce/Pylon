@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Modules (Grimoires) Tests

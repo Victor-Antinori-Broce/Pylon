@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Gremius Functions (Workers) HTTP Tests

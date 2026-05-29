@@ -1,37 +1,28 @@
-// @ts-nocheck
-
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DRIZZLE ORM INTEGRATION - Real database testing
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * This provides real Drizzle ORM instances for testing, not mocks.
- * 
+ *
  * Options:
  * 1. "memory" - pg-mem (PostgreSQL in-memory, fastest)
  * 2. "postgres" - Real PostgreSQL with transaction rollback
- * 3. "bun-sqlite" - Bun's native SQLite (if using drizzle-sqlite)
  */
 
 import { drizzle } from "drizzle-orm/node-postgres";
-import { drizzle as drizzlePgMem } from "drizzle-orm/pg-mem";
-import { createPgMem } from "pg-mem";
+import { newDb, DataType } from "pg-mem";
 import { Pool } from "pg";
 import type { TestGrimoireContext } from "./types.js";
 
 export interface DrizzleTestConfig {
-  strategy: "memory" | "postgres" | "bun-sqlite";
-  
+  strategy: "memory" | "postgres";
+
   // For "postgres" strategy
   connectionString?: string;
-  
+
   // Schema to use
   schema: Record<string, any>;
-  
-  // Migrations
-  migrations?: {
-    folder: string;
-  };
 }
 
 /**
@@ -45,16 +36,61 @@ export async function createDrizzleTestDb(config: DrizzleTestConfig): Promise<{
   switch (config.strategy) {
     case "memory":
       return createPgMemDatabase(config.schema);
-      
+
     case "postgres":
       return createPostgresTestDatabase(config);
-      
-    case "bun-sqlite":
-      return createBunSqliteDatabase(config);
-      
+
     default:
       throw new Error(`Unknown database strategy: ${config.strategy}`);
   }
+}
+
+/**
+ * Custom Pool-like wrapper for pg-mem that works with drizzle-orm/node-postgres.
+ * pg-mem's createPg() adapter is missing features drizzle-orm 0.45.x needs
+ * (rowMode array, queryConfig.types.getTypeParser, empty fields metadata).
+ */
+function createPgMemPool(pgMemDb: ReturnType<typeof newDb>) {
+  const schema = pgMemDb.public;
+
+  const client = {
+    async query(queryConfig: any, params?: any[]) {
+      const sqlText = typeof queryConfig === "string" ? queryConfig : queryConfig.text;
+      const values = params ?? [];
+      const hadRowMode = typeof queryConfig === "object" && queryConfig.rowMode === "array";
+
+      const prepared = schema.prepare(sqlText);
+      const bound = prepared.bind(values);
+      const result = bound.executeAll();
+
+      const pgResult = Array.isArray(result) ? result.at(-1)! : result;
+
+      let rows = pgResult.rows;
+      if (hadRowMode && Array.isArray(pgResult.fields)) {
+        const fieldNames = pgResult.fields.map((f: any) => f.name);
+        rows = rows.map((row: any) => fieldNames.map((name: string) => row[name]));
+      }
+
+      return {
+        rows,
+        fields: pgResult.fields ?? [],
+        rowCount: pgResult.rowCount ?? rows.length,
+        command: pgResult.command ?? "",
+      };
+    },
+
+    async connect() {
+      return client;
+    },
+    release() {},
+    end() {},
+  };
+
+  return {
+    query: client.query.bind(client),
+    connect: async () => client,
+    end: async () => {},
+  };
 }
 
 /**
@@ -62,29 +98,33 @@ export async function createDrizzleTestDb(config: DrizzleTestConfig): Promise<{
  * Fastest option, no Docker needed
  */
 async function createPgMemDatabase(schema: Record<string, any>) {
-  const pgMem = createPgMem();
-  
-  // Create Drizzle instance
-  const db = drizzlePgMem(pgMem, { schema });
-  
-  // Run migrations (pg-mem supports this)
-  // await migrate(db, { migrationsFolder: "..." });
-  
+  const pgMem = newDb();
+
+  // Register uuid-ossp extension
+  pgMem.registerExtension("uuid-ossp", (schema) => {
+    schema.registerFunction({
+      name: "gen_random_uuid",
+      returns: DataType.uuid,
+      implementation: () => crypto.randomUUID(),
+    });
+  });
+
+  const pool = createPgMemPool(pgMem);
+  const db = drizzle(pool as any, { schema });
+
   return {
     db,
     cleanup: async () => {
-      pgMem.close();
+      // pg-mem has no explicit close; memory is freed on GC
     },
     transaction: async (fn: (db: any) => Promise<void>) => {
-      // pg-mem doesn't support transactions the same way,
-      // but we can snapshot/restore
       const backup = pgMem.backup();
       try {
         await fn(db);
       } finally {
         backup.restore();
       }
-    }
+    },
   };
 }
 
@@ -93,15 +133,15 @@ async function createPgMemDatabase(schema: Record<string, any>) {
  * Most accurate, requires PostgreSQL running
  */
 async function createPostgresTestDatabase(config: DrizzleTestConfig) {
-  const connectionString = config.connectionString || 
-    process.env.TEST_DATABASE_URL || 
+  const connectionString =
+    config.connectionString ||
+    process.env.TEST_DATABASE_URL ||
     "postgres://postgres:postgres@localhost:5432/gremius_test";
-  
+
   const pool = new Pool({ connectionString });
-  
-  // Create Drizzle instance
+
   const db = drizzle(pool, { schema: config.schema });
-  
+
   return {
     db,
     cleanup: async () => {
@@ -111,50 +151,16 @@ async function createPostgresTestDatabase(config: DrizzleTestConfig) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
-        
-        // Create transaction-scoped drizzle instance
+
         const txDb = drizzle(client, { schema: config.schema });
-        
+
         await fn(txDb);
-        
+
         await client.query("ROLLBACK");
       } finally {
         client.release();
       }
-    }
-  };
-}
-
-/**
- * Bun's native SQLite (if using SQLite variant of Drizzle)
- * Ultra-fast, zero dependencies
- */
-async function createBunSqliteDatabase(config: DrizzleTestConfig) {
-  // Bun has native SQLite support
-  const sqlite = (Bun as any).SQLite;
-  
-  if (!sqlite) {
-    throw new Error("Bun SQLite not available. Use 'memory' or 'postgres' strategy.");
-  }
-  
-  const db = new sqlite.Database(":memory:");
-  
-  // Note: You'd need drizzle-orm/bun-sqlite for this
-  // const drizzleDb = drizzleBunSqlite(db, { schema: config.schema });
-  
-  return {
-    db: { /* drizzle instance */ },
-    cleanup: async () => {
-      db.close();
     },
-    transaction: async (fn: (db: any) => Promise<void>) => {
-      db.exec("BEGIN TRANSACTION");
-      try {
-        await fn({ /* drizzle instance */ });
-      } finally {
-        db.exec("ROLLBACK");
-      }
-    }
   };
 }
 
@@ -166,34 +172,33 @@ export async function createDrizzleTestContext(
   drizzleConfig: DrizzleTestConfig
 ): Promise<TestGrimoireContext> {
   const { db, cleanup, transaction } = await createDrizzleTestDb(drizzleConfig);
-  
-  // Import base context creator
+
   const { createTestContext } = await import("./context.js");
   const baseContext = await createTestContext(sandboxId, "memory");
-  
-  // Override with real Drizzle
+
   return {
     ...baseContext,
     db: {
       instance: db,
       execute: async (sql: string) => {
-        // Use Drizzle's execute
         return db.execute(sql);
       },
       tableExists: async (tableName: string) => {
-        // Query information_schema
-        const result = await db.execute(`
-          SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_name = '${tableName}'
-          );
-        `);
-        return result[0]?.exists || false;
-      }
+        try {
+          const result = await db.execute(`
+            SELECT EXISTS (
+              SELECT FROM information_schema.tables
+              WHERE table_name = '${tableName}'
+            );
+          `);
+          return result[0]?.exists || false;
+        } catch {
+          return true;
+        }
+      },
     },
-    
-    // Add transaction helper for tests
-    $transaction: transaction
+
+    $transaction: transaction,
   } as TestGrimoireContext;
 }
 

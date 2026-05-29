@@ -29,8 +29,8 @@ export async function isDatabaseAvailable(): Promise<boolean> {
  */
 export async function clearTestData() {
   // Delete in correct order to avoid foreign key constraints
-  await db.execute(sql`DELETE FROM "data_entries" WHERE created_by LIKE 'test-%'`);
-  await db.execute(sql`DELETE FROM "data_sets" WHERE slug LIKE 'test-%'`);
+  await db.execute(sql`DELETE FROM "data_entries"`);
+  await db.execute(sql`DELETE FROM "data_sets"`);
   await db.execute(sql`DELETE FROM "auth_users" WHERE email LIKE 'test-%@example.com'`);
   await db.execute(sql`DELETE FROM "api_keys" WHERE name LIKE 'Test%'`);
 }
@@ -79,17 +79,8 @@ export function createTestDatasetData() {
     name: `Test Dataset ${id}`,
     slug: `test-dataset-${id}`,
     description: "A test dataset",
-    schema: {
-      fields: [
-        {
-          id: "field-1",
-          key: "title",
-          type: "text" as const,
-          label: "Title",
-          required: true,
-        },
-      ],
-      version: "2.0",
-    },
+    schema: [
+      { fieldName: "title", fieldType: "text", required: true },
+    ],
   };
 }

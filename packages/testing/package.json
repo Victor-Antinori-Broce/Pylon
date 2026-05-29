@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "@gremius/shared": "workspace:*",
-    "hono": "^4.7.0"
+    "hono": "^4.7.0",
+    "postgres": "^3.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
