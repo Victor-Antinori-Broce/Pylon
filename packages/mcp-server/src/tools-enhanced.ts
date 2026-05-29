@@ -13,13 +13,14 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import type { McpServerDependencies } from "./index";
 
 export function registerEnhancedTools(
-  server: McpServer, 
+  server: McpServer,
   deps: McpServerDependencies
 ) {
-  const { db, schema, queue, grimoireRegistry } = deps;
+  const { db, schema, queue: _queue, grimoireRegistry: _grimoireRegistry } = deps;
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // INTELLIGENT QUERY TOOL
@@ -48,7 +49,7 @@ The AI analyzes the dataset schema and builds appropriate filters automatically.
       }),
       outputSchema: z.any()
     },
-    async ({ dataset, query, limit, includeRelated }) => {
+    async ({ dataset, query, limit, includeRelated: _includeRelated }) => {
       try {
         // First, get dataset schema for context
         const [datasetInfo] = await db
@@ -89,7 +90,7 @@ The AI analyzes the dataset schema and builds appropriate filters automatically.
         // Apply sorting
         if (parsedQuery.sort) {
           dbQuery = dbQuery.orderBy(
-            parsedQuery.sort.direction === 'desc' 
+            (parsedQuery.sort as any).direction === 'desc' 
               ? desc(schema.dataEntries.createdAt)
               : asc(schema.dataEntries.createdAt)
           );
@@ -216,7 +217,7 @@ For complete code, use the CLI: gremius generate-grimoire --name ${name} --outpu
       }),
       outputSchema: z.any()
     },
-    async ({ dataset, includeSampleData, includeRelations }) => {
+    async ({ dataset, includeSampleData, includeRelations: _includeRelations }) => {
       try {
         // Find dataset
         const [datasetInfo] = await db
@@ -321,7 +322,7 @@ All operations are executed atomically - if one fails, all are rolled back.`,
 
         // Execute in transaction if requested
         if (transaction) {
-          await db.transaction(async (tx) => {
+          await db.transaction(async (tx: any) => {
             for (const op of operations) {
               const result = await executeBatchOperation(tx, datasetInfo.id, op);
               results.push(result);
@@ -370,7 +371,7 @@ All operations are executed atomically - if one fails, all are rolled back.`,
       }),
       outputSchema: z.any()
     },
-    async ({ code, grimoireName, checkTypeSafety, checkSecurity }) => {
+    async ({ code, grimoireName, checkTypeSafety: _checkTypeSafety, checkSecurity }) => {
       try {
         const issues: Array<{ type: string; message: string; line?: number }> = [];
         const suggestions: string[] = [];
@@ -425,7 +426,7 @@ All operations are executed atomically - if one fails, all are rolled back.`,
   // UTILITY FUNCTIONS
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  function parseNaturalLanguageQuery(query: string, schema: any) {
+  function parseNaturalLanguageQuery(query: string, _schema: any) {
     // Simplified NLP - in production this would use proper NLP/LLM
     const filters: Array<{ field: string; operator: string; value: any }> = [];
     let sort: { field: string; direction: 'asc' | 'desc' } | null = null;
@@ -577,8 +578,5 @@ export const grimoire = defineGrimoire({
     }
   }
 }
-
-// Import sql helpers
-import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export default { registerEnhancedTools };

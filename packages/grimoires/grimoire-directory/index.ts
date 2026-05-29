@@ -45,7 +45,7 @@ export const grimoire = defineGrimoire({
     onDisable: async (ctx) => { ctx.logger.info("⛔ Directory grimoire disabled"); },
   },
   admin: {
-    category: "enterprise",
+    category: "system",
     views: [
       { id: "grid-employees", type: "grid", title: "Employees", table: "directory_employees" },
       { id: "grid-departments", type: "grid", title: "Departments", table: "directory_departments" },

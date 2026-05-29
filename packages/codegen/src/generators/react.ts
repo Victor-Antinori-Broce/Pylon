@@ -69,7 +69,7 @@ export interface ${pascalName}Page {
 function generateReactHooks(
   collection: CollectionInfo,
   pascalName: string,
-  camelName: string,
+  _camelName: string,
   endpoint: string
 ): GeneratedFile {
   const pk = collection.primaryKey || "id";
@@ -274,8 +274,8 @@ export function ${pascalName}List({ onSelect, pageSize = 50 }: ${pascalName}List
 function generateReactForm(
   collection: CollectionInfo,
   pascalName: string,
-  camelName: string,
-  endpoint: string
+  _camelName: string,
+  _endpoint: string
 ): GeneratedFile {
   const pk = collection.primaryKey || "id";
   const editableColumns = collection.columns.filter((c) => c.name !== pk && !c.isRelation);

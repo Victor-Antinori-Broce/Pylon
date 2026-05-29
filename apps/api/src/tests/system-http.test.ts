@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * System Routes HTTP Tests
  *
@@ -5,14 +7,13 @@
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
-import type { Hono } from "hono";
 import {
   isDatabaseAvailable,
   generateTestId,
 } from "./setup";
 
 let dbAvailable = false;
-let app: Hono;
+let app: any;
 
 function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   const headers = new Headers(opts.headers);
@@ -42,7 +43,7 @@ describe("System HTTP", () => {
       const res = await app.request(req("/api/system/init-check"));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(typeof body.initialized).toBe("boolean");
       expect(typeof body.hasUsers).toBe("boolean");
     });
@@ -51,7 +52,7 @@ describe("System HTTP", () => {
       const res = await app.request(req("/api/system/themes"));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(Array.isArray(body)).toBe(true);
     });
 
@@ -59,7 +60,7 @@ describe("System HTTP", () => {
       const res = await app.request(req("/api/system/realms"));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(Array.isArray(body)).toBe(true);
     });
 

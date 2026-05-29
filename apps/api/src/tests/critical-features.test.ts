@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TESTS: Critical Features (Rate Limiting, Search, Observability)
@@ -132,7 +133,7 @@ describe("📊 Observability", () => {
     const res = await app.request("/api/health");
     
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as any;
     expect(body).toHaveProperty("status");
     expect(body).toHaveProperty("checks");
     expect(body).toHaveProperty("timestamp");
@@ -148,7 +149,7 @@ describe("📊 Observability", () => {
     const res = await app.request("/");
     
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as any;
     expect(body).toHaveProperty("message");
     expect(body).toHaveProperty("version");
     expect(body).toHaveProperty("stats");

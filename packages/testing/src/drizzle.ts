@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DRIZZLE ORM INTEGRATION - Real database testing

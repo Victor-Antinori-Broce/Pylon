@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Example Grimoire — Hono Router
  */

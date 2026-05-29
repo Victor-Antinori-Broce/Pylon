@@ -183,6 +183,8 @@ export interface ContentTarget {
   publish(data: PromotionData, ctx: GrimoireContext): Promise<PublishResult>;
   getPublishedUrl(result: PublishResult): string;
   unpublish?(contentId: string, ctx: GrimoireContext): Promise<void>;
+  update?(contentId: string, data: Partial<PromotionData>, ctx: GrimoireContext): Promise<PublishResult>;
+  getStatus?(contentId: string, ctx: GrimoireContext): Promise<string>;
 }
 
 export interface GrimoireContentPublishing {

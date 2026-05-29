@@ -14,7 +14,7 @@ function parseSQLStatements(sql: string): string[] {
   const statements: string[] = [];
   let current = "";
   let inDollarQuote = false;
-  let dollarTag = "";
+
 
   for (let i = 0; i < sql.length; i++) {
     const char = sql[i];
@@ -23,7 +23,7 @@ function parseSQLStatements(sql: string): string[] {
     // Detectar inicio de bloque DO $$
     if (!inDollarQuote && char === "$" && sql.slice(i, i + 2) === "$$") {
       inDollarQuote = true;
-      dollarTag = "$$";
+      void 0;
       i++; // skip second $
       current += "$";
       continue;
@@ -32,7 +32,7 @@ function parseSQLStatements(sql: string): string[] {
     // Detectar fin de bloque $$
     if (inDollarQuote && char === "$" && sql.slice(i, i + 2) === "$$") {
       inDollarQuote = false;
-      dollarTag = "";
+      void 0;
       i++; // skip second $
       current += "$";
       continue;

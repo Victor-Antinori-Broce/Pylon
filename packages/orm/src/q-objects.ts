@@ -18,13 +18,6 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
  */
 
 type FilterCondition = Record<string, any>;
-type Operator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in' | 'isNull' | 'isNotNull';
-
-interface Filter {
-  field: string;
-  operator: Operator;
-  value?: any;
-}
 
 export class Q {
   private conditions: Array<Q | FilterCondition> = [];

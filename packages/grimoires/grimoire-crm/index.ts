@@ -198,7 +198,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
 
   // Admin configuration
   admin: {
-    category: "business",
+    category: "system",
     views: adminConfig.views,
   },
 

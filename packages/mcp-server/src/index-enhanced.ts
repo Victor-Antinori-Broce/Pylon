@@ -15,17 +15,7 @@ import { z } from "zod";
 import { registerEnhancedTools } from "./tools-enhanced.js";
 import { registerProjectContext } from "./project-context.js";
 
-export interface McpServerDependencies {
-  db: any;
-  schema: {
-    dataSets: any;
-    dataEntries: any;
-  };
-  queue: {
-    addJob: (queueName: string, jobName: string, payload: any) => Promise<string | null>;
-  };
-  grimoireRegistry: Record<string, any>;
-}
+import type { McpServerDependencies } from "./index";
 
 /**
  * Create enhanced MCP server with all tools and resources
@@ -167,10 +157,11 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
       description: "All datasets in the system",
       mimeType: "application/json"
     },
-    async () => {
+    async (uri) => {
       const allDatasets = await db.select().from(schema.dataSets);
       return {
         contents: [{
+          uri: uri.href,
           text: JSON.stringify(allDatasets.map((ds: any) => ({
             id: ds.id,
             name: ds.name,
@@ -191,9 +182,10 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
       description: "Active grimoire modules",
       mimeType: "application/json"
     },
-    async () => {
+    async (uri) => {
       return {
         contents: [{
+          uri: uri.href,
           text: JSON.stringify(Object.values(deps.grimoireRegistry || {}).map((g: any) => ({
             id: g.id,
             name: g.name,

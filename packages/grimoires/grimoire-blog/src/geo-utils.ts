@@ -18,8 +18,8 @@
  * - BLUF Writing Style: https://www.plainlanguage.gov/guidelines/organize/whenever-possible-use-the-bluf-botton-line-up-front/
  */
 
-import type { FAQItem, FocalPoint } from "./schema.local";
-import { getFeaturedImageUrl, getOGImageUrl } from "./seo-utils";
+import type { FAQItem } from "./schema.local";
+import { getOGImageUrl } from "./seo-utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -801,21 +801,21 @@ export function buildAPIPayload(
           : undefined,
       ogImageWidth: 1200,
       ogImageHeight: 630,
-      featuredImageId: post.featuredImageId,
-      featuredImageFocalPoint: post.featuredImageFocalPoint || undefined,
+      featuredImageId: post.featuredImageId ?? undefined,
+      featuredImageFocalPoint: post.featuredImageFocalPoint ?? undefined,
     },
     
     geo_ai: {
       bluf,
       schema_faq: faqSchema,
-      dataset_url: post.datasetUrl || undefined,
+      dataset_url: post.datasetUrl ?? undefined,
       reading_time: post.readingTime || Math.ceil(wordCount / 200),
       word_count: wordCount,
     },
     
     content: {
       body: post.content,
-      excerpt: post.excerpt,
+      excerpt: post.excerpt ?? undefined,
       toc: extractTOC(post.content),
     },
   };

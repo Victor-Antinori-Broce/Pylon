@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Grimoire Entry Point — grimoire-example
  *

@@ -310,7 +310,7 @@ export function getMediaPresetUrl(
  */
 export function buildCoverArtUrls(
   mediaId: string | null | undefined,
-  focalPoint?: FocalPoint
+  _focalPoint?: FocalPoint
 ): {
   hero: string | null;
   card: string | null;

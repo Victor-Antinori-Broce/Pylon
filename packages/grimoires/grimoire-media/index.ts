@@ -14,8 +14,6 @@ import { Hono } from "hono";
 import { createMediaRouter } from "./media.routes";
 import { createTransformRouter } from "./transform.routes";
 import { adminConfig } from "./admin";
-import { media, mediaFolders } from "./media.schema";
-
 // Tables array for grimoire definition
 const tables = ["media", "media_folders"];
 import { sql } from "drizzle-orm";
@@ -67,15 +65,8 @@ const hooks: NonNullable<GrimoireDefinition['hooks']> = {
         ctx.logger.info("[Media] ✓ Tables verified");
       }
     } catch (err) {
-      ctx.logger.error("[Media] Failed to verify tables:", err);
+      ctx.logger.error("[Media] Failed to verify tables:", err as Record<string, unknown>);
     }
-  },
-
-  /**
-   * onShutdown: Cleanup
-   */
-  onShutdown: async (ctx: GrimoireContext) => {
-    ctx.logger.info("[Media] Shutting down...");
   },
 
   /**

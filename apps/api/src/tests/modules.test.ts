@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * Modules (Grimoires) Tests
  * 
@@ -143,7 +144,7 @@ describe("Grimoire Registry", () => {
       it(`should have ${expected.key} as ${expected.category}`, () => {
         const grimoire = GRIMOIRE_REGISTRY.find((g) => g.key === expected.key);
         expect(grimoire).toBeDefined();
-        expect(grimoire!.category).toBe(expected.category);
+        expect((grimoire as any).category).toBe(expected.category);
       });
     }
   });

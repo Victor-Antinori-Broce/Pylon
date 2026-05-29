@@ -67,7 +67,7 @@ describe("Auth HTTP", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe(testEmail);
       expect(body.user.name).toBe(testName);
@@ -155,7 +155,7 @@ describe("Auth HTTP", () => {
       const res = await app.request(req("/api/auth/get-session", {}, cookie));
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.user).toBeDefined();
       expect(body.user.id).toBe(userId);
       expect(body.user.email).toBe(testEmail);
@@ -167,7 +167,7 @@ describe("Auth HTTP", () => {
       const res = await app.request(req("/api/auth/get-session"));
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.user).toBeNull();
     });
 
@@ -179,7 +179,7 @@ describe("Auth HTTP", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.user).toBeNull();
     });
   });
@@ -226,7 +226,7 @@ describe("Auth HTTP", () => {
       const sessionRes = await app.request(
         req("/api/auth/get-session", {}, cookie)
       );
-      const body = await sessionRes.json();
+      const body = await sessionRes.json() as any;
       expect(body.user).toBeNull();
     });
   });

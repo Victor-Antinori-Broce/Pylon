@@ -13,9 +13,7 @@ import {
     agileProjects,
     agileIssues,
     agileStates,
-    agileIntakes,
-    issueTypeEnum,
-    issuePriorityEnum
+    agileIntakes
 } from "./agile.schema";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
@@ -86,7 +84,7 @@ export function registerAgileTools(server: any, db: Database) {
             }),
             outputSchema: z.any()
         },
-        async ({ projectId, limit = 50, stateGroup, assigneeId }) => {
+        async ({ projectId, limit = 50, stateGroup, assigneeId }: { projectId: string; limit?: number; stateGroup?: string; assigneeId?: string }) => {
             try {
                 // Verificar que el proyecto existe
                 const [project] = await db
@@ -148,21 +146,21 @@ export function registerAgileTools(server: any, db: Database) {
 
                 // Aplicar filtros
                 if (stateGroup) {
-                    issuesQuery = issuesQuery.where(
+                    issuesQuery = (issuesQuery as any).where(
                         and(
                             eq(agileIssues.projectId, projectId),
-                            eq(agileStates.group, stateGroup)
+                            eq(agileStates.group, stateGroup as any)
                         )
-                    ) as any;
+                    );
                 }
 
                 if (assigneeId) {
-                    issuesQuery = issuesQuery.where(
+                    issuesQuery = (issuesQuery as any).where(
                         and(
                             eq(agileIssues.projectId, projectId),
                             eq(agileIssues.assigneeId, assigneeId)
                         )
-                    ) as any;
+                    );
                 }
 
                 const issues = await issuesQuery
@@ -332,6 +330,14 @@ export function registerAgileTools(server: any, db: Database) {
             suggestedPriority, 
             payload = {},
             source = "ai_agent"
+        }: {
+            projectId: string;
+            title: string;
+            description?: string;
+            suggestedType: string;
+            suggestedPriority: string;
+            payload?: Record<string, any>;
+            source?: string;
         }) => {
             try {
                 // Verificar que el proyecto existe
@@ -368,7 +374,7 @@ export function registerAgileTools(server: any, db: Database) {
                         status: "pending",
                         createdBy: "mcp-agent",
                         createdByName: "MCP Agent"
-                    })
+                    } as any)
                     .returning();
 
                 const result = {
@@ -556,11 +562,11 @@ export async function executeAgileTool(
                     .where(eq(agileIssues.projectId, projectId));
 
                 if (stateGroup) {
-                    query = query.where(and(eq(agileIssues.projectId, projectId), eq(agileStates.group, stateGroup))) as any;
+                    query = (query as any).where(and(eq(agileIssues.projectId, projectId), eq(agileStates.group, stateGroup)));
                 }
 
                 if (assigneeId) {
-                    query = query.where(and(eq(agileIssues.projectId, projectId), eq(agileIssues.assigneeId, assigneeId))) as any;
+                    query = (query as any).where(and(eq(agileIssues.projectId, projectId), eq(agileIssues.assigneeId, assigneeId)));
                 }
 
                 const issues = await query.limit(limit);

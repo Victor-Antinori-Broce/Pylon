@@ -226,7 +226,7 @@ function generateSvelteForm(
   collection: CollectionInfo,
   pascalName: string,
   camelName: string,
-  endpoint: string
+  _endpoint: string
 ): GeneratedFile {
   const pk = collection.primaryKey || "id";
   const editableColumns = collection.columns.filter((c) => c.name !== pk && !c.isRelation);

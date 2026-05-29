@@ -10,7 +10,7 @@
  * - Initialize project context
  */
 
-import { Command } from "commander";
+// import { Command } from "commander"; // Not used directly
 import chalk from "chalk";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -344,8 +344,8 @@ function generateIndexFile(
   pascalName: string,
   options: { description?: string; features?: string[] }
 ): string {
-  const hasCrud = options.features?.includes("crud");
-  const hasRelations = options.features?.includes("relations");
+  // const hasCrud = options.features?.includes("crud");
+  // const hasRelations = options.features?.includes("relations");
   const hasWebhooks = options.features?.includes("webhooks");
   
   return `/**
@@ -590,13 +590,13 @@ function generatePackageJson(name: string): string {
   }, null, 2);
 }
 
-async function runSecurityChecks(grimoire?: string): Promise<any[]> {
+async function runSecurityChecks(_grimoire?: string): Promise<any[]> {
   const issues: any[] = [];
   // Implementation...
   return issues;
 }
 
-async function validateGrimoire(name: string): Promise<any[]> {
+async function validateGrimoire(_name: string): Promise<any[]> {
   const issues: any[] = [];
   // Implementation...
   return issues;

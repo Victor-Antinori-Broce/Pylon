@@ -1,6 +1,6 @@
-import type { PgTable, TableConfig } from 'drizzle-orm/pg-core';
+import type { PgTable } from 'drizzle-orm/pg-core';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { SQL, sql, eq, and, or, like, gt, lt, gte, lte, ne, inArray, asc, desc, count, avg, sum, min, max } from 'drizzle-orm';
+import { SQL, sql, eq, and, ne, inArray, asc, desc, count, avg, sum, min, max } from 'drizzle-orm';
 
 export type FilterOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in' | 'isNull' | 'isNotNull';
 
@@ -24,10 +24,8 @@ export class QuerySet<T extends PgTable<any>, TResult = any> {
   private prefetches: string[] = [];
   private annotations: Map<string, SQL> = new Map();
   private orderFields: { sql: SQL; direction: 'asc' | 'desc' }[] = [];
-  private selectFields: (keyof TResult)[] | null = null;
   private limitValue?: number;
   private offsetValue?: number;
-  private distinctValue = false;
 
   constructor(
     private db: PostgresJsDatabase,
@@ -162,7 +160,7 @@ export class QuerySet<T extends PgTable<any>, TResult = any> {
   }
 
   distinct(): QuerySet<T, TResult> {
-    this.distinctValue = true;
+    // TODO: implement DISTINCT support
     return this;
   }
 
@@ -173,7 +171,7 @@ export class QuerySet<T extends PgTable<any>, TResult = any> {
     let query = this.db.select().from(this.table);
     
     // Aplicar joins (select_related)
-    for (const [name, join] of this.joins) {
+    for (const [_name, join] of this.joins) {
       if (join.type === 'left') {
         query = (query as any).leftJoin(join.table, join.on);
       } else {

@@ -83,7 +83,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       ]);
 
       // Transform logo IDs to URLs
-      const companiesWithLogo = companies.map(company => ({
+      const companiesWithLogo = companies.map((company: typeof crmCompanies.$inferSelect) => ({
         ...company,
         logoUrl: company.logoId ? `/api/media/preset/${company.logoId}/small` : null,
       }));
@@ -288,7 +288,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       const conditions = [];
       if (orgId) conditions.push(eq(crmContacts.organizationId, orgId));
       if (companyId) conditions.push(eq(crmContacts.companyId, companyId));
-      if (status) conditions.push(eq(crmContacts.status, status));
+      if (status) conditions.push(eq(crmContacts.status, status as any));
       if (assignedTo) conditions.push(eq(crmContacts.assignedTo, assignedTo));
 
       if (conditions.length > 0) {
@@ -312,7 +312,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       ]);
 
       // Transform avatar IDs to URLs
-      const contactsWithAvatar = contacts.map(contact => ({
+      const contactsWithAvatar = contacts.map((contact: typeof crmContacts.$inferSelect) => ({
         ...contact,
         avatarUrl: contact.avatarId ? `/api/media/preset/${contact.avatarId}/thumbnail` : null,
       }));
@@ -810,7 +810,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       if (orgId) conditions.push(eq(crmDeals.organizationId, orgId));
       if (pipelineId) conditions.push(eq(crmDeals.pipelineId, pipelineId));
       if (stageId) conditions.push(eq(crmDeals.stageId, stageId));
-      if (status) conditions.push(eq(crmDeals.status, status));
+      if (status) conditions.push(eq(crmDeals.status, status as any));
       if (contactId) conditions.push(eq(crmDeals.contactId, contactId));
       if (companyId) conditions.push(eq(crmDeals.companyId, companyId));
       if (assignedTo) conditions.push(eq(crmDeals.assignedTo, assignedTo));
@@ -919,16 +919,16 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       // Get related data
       const [contact, company, stage, pipeline] = await Promise.all([
         deal.contactId
-          ? db.instance.select().from(crmContacts).where(eq(crmContacts.id, deal.contactId)).then(r => r[0] || null)
+          ? db.instance.select().from(crmContacts).where(eq(crmContacts.id, deal.contactId)).then((r: (typeof crmContacts.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
         deal.companyId
-          ? db.instance.select().from(crmCompanies).where(eq(crmCompanies.id, deal.companyId)).then(r => r[0] || null)
+          ? db.instance.select().from(crmCompanies).where(eq(crmCompanies.id, deal.companyId)).then((r: (typeof crmCompanies.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
         deal.stageId
-          ? db.instance.select().from(crmPipelineStages).where(eq(crmPipelineStages.id, deal.stageId)).then(r => r[0] || null)
+          ? db.instance.select().from(crmPipelineStages).where(eq(crmPipelineStages.id, deal.stageId)).then((r: (typeof crmPipelineStages.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
         deal.pipelineId
-          ? db.instance.select().from(crmPipelines).where(eq(crmPipelines.id, deal.pipelineId)).then(r => r[0] || null)
+          ? db.instance.select().from(crmPipelines).where(eq(crmPipelines.id, deal.pipelineId)).then((r: (typeof crmPipelines.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
       ]);
 
@@ -1043,12 +1043,12 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
           eq(crmDeals.pipelineId, pipelineId),
           eq(crmDeals.status, "open")
         ))
-        .orderBy(asc(crmDeals.order));
+        .orderBy(asc(crmDeals.createdAt));
 
       // Group deals by stage
-      const stagesWithDeals = stages.map(stage => ({
+      const stagesWithDeals = stages.map((stage: typeof crmPipelineStages.$inferSelect) => ({
         ...stage,
-        deals: deals.filter(d => d.stageId === stage.id),
+        deals: deals.filter((d: typeof crmDeals.$inferSelect) => d.stageId === stage.id),
       }));
 
       return c.json({
@@ -1150,7 +1150,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       if (contactId) conditions.push(eq(crmActivities.contactId, contactId));
       if (companyId) conditions.push(eq(crmActivities.companyId, companyId));
       if (dealId) conditions.push(eq(crmActivities.dealId, dealId));
-      if (type) conditions.push(eq(crmActivities.type, type));
+      if (type) conditions.push(eq(crmActivities.type, type as any));
       if (assignedTo) conditions.push(eq(crmActivities.assignedTo, assignedTo));
       if (completed === "true") conditions.push(sql`${crmActivities.completedAt} IS NOT NULL`);
       if (completed === "false") conditions.push(sql`${crmActivities.completedAt} IS NULL`);
@@ -1382,12 +1382,12 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
           .select({ count: sql<number>`count(*)` })
           .from(crmContacts)
           .where(buildOrgWhere(crmContacts))
-          .then(r => r[0]?.count ?? 0),
+          .then((r: { count: number }[]) => r[0]?.count ?? 0),
         db.instance
           .select({ count: sql<number>`count(*)` })
           .from(crmCompanies)
           .where(buildOrgWhere(crmCompanies))
-          .then(r => r[0]?.count ?? 0),
+          .then((r: { count: number }[]) => r[0]?.count ?? 0),
         db.instance
           .select({
             total: sql<number>`count(*)`,
@@ -1400,17 +1400,17 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
           })
           .from(crmDeals)
           .where(buildOrgWhere(crmDeals))
-          .then(r => r[0]),
+          .then((r: { total: number; open: number; won: number; lost: number; totalValue: number; openValue: number; wonValue: number }[]) => r[0]),
         db.instance
           .select({ count: sql<number>`count(*)` })
           .from(crmActivities)
           .where(buildOrgWhere(crmActivities))
-          .then(r => r[0]?.count ?? 0),
+          .then((r: { count: number }[]) => r[0]?.count ?? 0),
         db.instance
           .select({ count: sql<number>`count(*)` })
           .from(crmActivities)
           .where(overdueConditions.length > 1 ? and(...overdueConditions) : undefined)
-          .then(r => r[0]?.count ?? 0),
+          .then((r: { count: number }[]) => r[0]?.count ?? 0),
       ]);
 
       return c.json({
@@ -1658,7 +1658,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         .from(crmDocuments)
         .where(eq(crmDocuments.dealId, dealId));
 
-      const uploadedTypes = new Set(uploadedDocs.map(d => d.type));
+      const uploadedTypes = new Set(uploadedDocs.map((d: { type: string | null }) => d.type));
 
       for (const docType of requirements.requiredDocuments) {
         if (!uploadedTypes.has(docType)) {

@@ -91,7 +91,7 @@ describe("Actions Engine HTTP", () => {
       );
 
       expect(res.status).toBe(201);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.id).toBeDefined();
       expect(body.slug).toBe(actionSlug);
       actionId = body.id;
@@ -103,7 +103,7 @@ describe("Actions Engine HTTP", () => {
       const res = await app.request(req("/api/actions", {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(Array.isArray(body)).toBe(true);
       expect(body.some((a: any) => a.id === actionId)).toBe(true);
     });
@@ -114,7 +114,7 @@ describe("Actions Engine HTTP", () => {
       const res = await app.request(req(`/api/actions/${actionId}`, {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.id).toBe(actionId);
       expect(body.slug).toBe(actionSlug);
     });
@@ -137,7 +137,7 @@ describe("Actions Engine HTTP", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.name).toBe("Updated Test Action");
     });
 
@@ -179,7 +179,7 @@ describe("Actions Engine HTTP", () => {
       );
 
       expect(createRes.status).toBe(201);
-      const action = await createRes.json();
+      const action = await createRes.json() as any;
 
       const execRes = await app.request(
         req(
@@ -206,7 +206,7 @@ describe("Actions Engine HTTP", () => {
       const res = await app.request(req("/api/actions/stats/overview", {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(typeof body).toBe("object");
     });
   });

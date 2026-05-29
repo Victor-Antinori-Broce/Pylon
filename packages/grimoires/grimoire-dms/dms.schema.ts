@@ -16,7 +16,8 @@ import {
   jsonb,
   index,
   uniqueIndex,
-  pgEnum
+  pgEnum,
+  type AnyPgColumn
 } from "drizzle-orm/pg-core";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -75,7 +76,7 @@ export const dmsCategories = pgTable("dms_categories", {
   color: varchar("color", { length: 7 }).default("#6366f1"),
   
   // Jerarquía
-  parentId: uuid("parent_id").references(() => dmsCategories.id, { onDelete: "set null" }),
+  parentId: uuid("parent_id").references((): AnyPgColumn => dmsCategories.id, { onDelete: "set null" }),
   level: integer("level").default(0).notNull(), // 0 = root, 1 = subcategoría, etc.
   path: varchar("path", { length: 1000 }).default("").notNull(), // Path materializado "root/sub/sub2"
   
@@ -378,7 +379,7 @@ export const dmsDocumentComments = pgTable("dms_document_comments", {
   id: uuid("id").primaryKey().defaultRandom(),
   documentId: uuid("document_id").references(() => dmsDocuments.id, { onDelete: "cascade" }).notNull(),
   versionId: uuid("version_id").references(() => dmsDocumentVersions.id, { onDelete: "cascade" }),
-  parentId: uuid("parent_id").references(() => dmsDocumentComments.id, { onDelete: "cascade" }),
+  parentId: uuid("parent_id").references((): AnyPgColumn => dmsDocumentComments.id, { onDelete: "cascade" }),
   userId: uuid("user_id").notNull(),
   content: text("content").notNull(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
@@ -430,4 +431,7 @@ export type NewDmsDocumentFile = typeof dmsDocumentFiles.$inferInsert;
 export type NewDmsWorkflowNotification = typeof dmsWorkflowNotifications.$inferInsert;
 export type NewDmsDocumentSlugHistory = typeof dmsDocumentSlugHistory.$inferInsert;
 export type NewDmsDocumentComment = typeof dmsDocumentComments.$inferInsert;
+export type NewDmsDocumentRelation = typeof dmsDocumentRelations.$inferInsert;
+export type NewDmsDocumentAcknowledgment = typeof dmsDocumentAcknowledgments.$inferInsert;
+export type NewDmsAccessLog = typeof dmsAccessLog.$inferInsert;
 export type NewDmsDocumentDiagram = typeof dmsDocumentDiagrams.$inferInsert;

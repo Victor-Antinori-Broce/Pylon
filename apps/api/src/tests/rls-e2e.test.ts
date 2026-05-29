@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * RLS End-to-End Tests
  *
@@ -71,7 +72,7 @@ describe("RLS E2E", () => {
       );
       cookieA = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieA));
-      userAId = (await s.json()).user.id;
+      userAId = (await s.json() as any).user.id;
     });
 
     it("creates user B and signs in", async () => {
@@ -91,7 +92,7 @@ describe("RLS E2E", () => {
       );
       cookieB = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieB));
-      userBId = (await s.json()).user.id;
+      userBId = (await s.json() as any).user.id;
     });
 
     it("creates admin and signs in", async () => {
@@ -111,7 +112,7 @@ describe("RLS E2E", () => {
       );
       cookieAdmin = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieAdmin));
-      adminId = (await s.json()).user.id;
+      adminId = (await s.json() as any).user.id;
       await db.update(authUsers).set({ role: "admin" }).where(eq(authUsers.id, adminId));
     });
 
@@ -132,7 +133,7 @@ describe("RLS E2E", () => {
           cookieA
         )
       );
-      datasetId = (await res.json()).id;
+      datasetId = (await res.json() as any).id;
     });
 
     it("user A inserts an entry", async () => {
@@ -152,7 +153,7 @@ describe("RLS E2E", () => {
           cookieA
         )
       );
-      entryAId = (await res.json())[0].id;
+      entryAId = (await res.json() as any)[0].id;
     });
   });
 
@@ -163,7 +164,7 @@ describe("RLS E2E", () => {
       const res = await app.request(
         req(`/api/data-sets/${datasetId}/entries`, {}, cookieA)
       );
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.docs.some((e: any) => e.id === entryAId)).toBe(true);
     });
 
@@ -173,7 +174,7 @@ describe("RLS E2E", () => {
       const res = await app.request(
         req(`/api/data-sets/${datasetId}/entries`, {}, cookieB)
       );
-      const body = await res.json();
+      const body = await res.json() as any;
       // If RLS is enforced at route level, user B sees nothing.
       // If not, this test documents the gap.
       const hasAccess = body.docs.some((e: any) => e.id === entryAId);
@@ -188,7 +189,7 @@ describe("RLS E2E", () => {
         req(`/api/data-sets/${datasetId}/entries`, {}, cookieAdmin)
       );
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(Array.isArray(body.docs)).toBe(true);
     });
   });

@@ -25,7 +25,7 @@ export interface McpServerDependencies {
     queue: {
         addJob: (queueName: string, jobName: string, payload: any) => Promise<string | null>;
     };
-    grimoireRegistry: any[];
+    grimoireRegistry: Record<string, any>;
 }
 
 export function createGremiusMcpServer(deps: McpServerDependencies): Server {

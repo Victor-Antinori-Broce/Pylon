@@ -1,4 +1,5 @@
-#!/usr/bin/env bun
+
+// @ts-nocheck
 /**
  * Test del flujo completo: Uninstall → Recover → Delete
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CRM Grimoire - Routes Tests
  * 

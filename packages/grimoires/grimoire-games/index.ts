@@ -67,7 +67,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
   tables,
 
   admin: {
-    category: "gaming",
+    category: "esports",
     views: [
       { id: "games", type: "grid", title: "Games", table: "games" },
       { id: "platforms", type: "grid", title: "Platforms", table: "platforms" },

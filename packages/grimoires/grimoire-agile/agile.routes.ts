@@ -83,7 +83,7 @@ export function createAgileRouter(ctx: GrimoireContext): Hono {
             .orderBy(asc(agileProjects.name));
 
         // Add cover image URLs to response
-        const projectsWithCovers = projects.map((project) => ({
+        const projectsWithCovers = projects.map((project: any) => ({
             ...project,
             coverImage: buildCoverImageUrls(project.coverImageId),
         }));
@@ -376,7 +376,7 @@ export function createAgileRouter(ctx: GrimoireContext): Hono {
 
         // Step 3: TRANSACTION - Insert issue + Update intake atomically
         try {
-            const result = await db.instance.transaction(async (tx) => {
+            const result = await db.instance.transaction(async (tx: any) => {
                 const [issue] = await tx
                     .insert(agileIssues)
                     .values({
@@ -571,7 +571,7 @@ export function createAgileRouter(ctx: GrimoireContext): Hono {
             .limit(parseInt(query.limit || "50"));
 
         return c.json({
-            docs: issues.map((issue) => ({
+            docs: issues.map((issue: any) => ({
                 ...issue,
                 state: issue.stateId
                     ? { id: issue.stateId, name: issue.stateName, color: issue.stateColor, group: issue.stateGroup }

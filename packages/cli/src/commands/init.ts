@@ -461,7 +461,7 @@ async function createDeveloperProject(
   }
 }
 
-function printDeveloperOutput(projectPath: string, projectName: string) {
+function printDeveloperOutput(_projectPath: string, projectName: string) {
   console.log(chalk.cyan('\n📁 Project structure:'));
   console.log(`  ${projectName}/`);
   console.log('  ├── docker-compose.yml    # Infrastructure services');
@@ -500,11 +500,11 @@ function findMonorepoRoot(): string | null {
   return null;
 }
 
-function customizeEnvForProject(envContent: string, projectName: string): string {
-  return envContent
-    .replace(/PUBLIC_SITE_NAME=.*/g, `PUBLIC_SITE_NAME=${projectName}`)
-    .replace(/POSTGRES_DB=gremius_dev/g, `POSTGRES_DB=${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`);
-}
+// function customizeEnvForProject(envContent: string, projectName: string): string {
+//   return envContent
+//     .replace(/PUBLIC_SITE_NAME=.*/g, `PUBLIC_SITE_NAME=${projectName}`)
+//     .replace(/POSTGRES_DB=gremius_dev/g, `POSTGRES_DB=${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`);
+// }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GENERATORS — Vibecoder

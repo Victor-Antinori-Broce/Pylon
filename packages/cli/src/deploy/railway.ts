@@ -164,7 +164,7 @@ export async function deployToRailway(
     if (options.preview) args.push("--environment", "preview");
     if (options.region) args.push("--region", options.region);
 
-    const result = await execa("railway", args, {
+    await execa("railway", args, {
       cwd: projectRoot,
       stdio: "pipe",
     });

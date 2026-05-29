@@ -61,7 +61,7 @@ export class F {
 /**
  * Wrapper para usar F() expressions en updates
  */
-export class ExpressionWrapper<T = any> {
+export class ExpressionWrapper<_T = any> {
   constructor(private expression: F | SQL) {}
 
   toSQL(): SQL {

@@ -84,7 +84,7 @@ export function registerProjectContext(
           data: {
             datasets: {
               total: datasets.length,
-              items: datasets.map(ds => ({
+              items: datasets.map((ds: any) => ({
                 id: ds.id,
                 name: ds.name,
                 slug: ds.slug,
@@ -176,7 +176,7 @@ export const grimoire = defineGrimoire({
       list: async () => {
         const datasets = await db.select().from(schema.dataSets);
         return {
-          resources: datasets.map(ds => ({
+          resources: datasets.map((ds: any) => ({
             uri: `gremius://dataset/${ds.id}/schema`,
             name: `Schema: ${ds.name}`
           }))

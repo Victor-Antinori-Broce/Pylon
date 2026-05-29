@@ -10,7 +10,7 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import type { GrimoireContext, GrimoireRouterFactory } from "@gremius/shared";
 import { blogPosts, blogPostsToTags, blogPostsToGames } from "./schema";
 import { blogContentTarget } from "./content-target";
@@ -19,25 +19,17 @@ import {
   validateSEO, 
   validateWhatsAppImage,
   SEO_LIMITS,
-  generateTitle,
-  generateMetaDescription,
   type SiteSEOConfig,
-  type AuthorInfo,
-  type FeaturedImage,
 } from "./seo-utils";
 
 import {
   validateBLUF,
   sanitizeHTML,
   sanitizeFAQText,
-  generateFAQPageSchema,
-  generateArticleSchema,
   buildAPIPayload,
-  extractTOC,
-  ALLOWED_HTML_TAGS,
 } from "./geo-utils";
 
-import type { FAQItem, BlogPostStatus } from "./schema";
+import type { FAQItem } from "./schema";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ZOD SCHEMAS
@@ -136,7 +128,7 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     const limit = Math.min(Number(c.req.query("limit")) || 12, 100);
     const page = Math.max(Number(c.req.query("page")) || 1, 1);
     const offset = (page - 1) * limit;
-    const status = c.req.query("status") || "published";
+    const status = (c.req.query("status") || "published") as "draft" | "published" | "scheduled" | "archived";
 
     // Cache key
     const cacheKey = `blog:list:${page}:${limit}:${status}`;
@@ -228,8 +220,8 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
 
       return c.json({
         ...post,
-        tagIds: postTags.map((r) => r.tagId),
-        gameIds: postGames.map((r) => r.gameId),
+        tagIds: postTags.map((r: { tagId: string }) => r.tagId),
+        gameIds: postGames.map((r: { gameId: string }) => r.gameId),
       });
     } catch (err: any) {
       ctx.logger.error("Failed to get blog post", { slug, error: err.message });
@@ -1027,7 +1019,7 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     }
   }
 
-  async function fetchGrimoireRecord(ctx: GrimoireContext, grimoireId: string, table: string, recordId: string): Promise<Record<string, any> | null> {
+  async function fetchGrimoireRecord(ctx: GrimoireContext, _grimoireId: string, table: string, recordId: string): Promise<Record<string, any> | null> {
     try {
       const safeTable = sanitizeIdentifier(table);
       const result = await ctx.db.instance.execute(

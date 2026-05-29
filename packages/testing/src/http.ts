@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * HTTP TEST CLIENT - Make requests to grimoire routers

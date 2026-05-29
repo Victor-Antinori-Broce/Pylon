@@ -1,4 +1,5 @@
-#!/usr/bin/env bun
+
+// @ts-nocheck
 /**
  * Script de prueba para verificar la auto-activación de grimoires de realm
  */

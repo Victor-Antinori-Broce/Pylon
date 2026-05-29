@@ -467,7 +467,7 @@ export function createDMSRouter(ctx: GrimoireContext) {
       ? await dbInstance
           .select({ id: dmsCategories.id, name: dmsCategories.name })
           .from(dmsCategories)
-          .where(inArray(dmsCategories.id, categoryIds))
+          .where(inArray(dmsCategories.id, categoryIds as string[]))
       : [];
     const categoryMap = new Map(categories.map((c: any) => [c.id, c.name]));
 

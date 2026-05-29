@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs/promises';
 import path from 'path';
 import ora from 'ora';
-import { findProjectRoot } from '../utils/project.js';
+// import { findProjectRoot } from '../utils/project.js';
 
 interface SdkOptions {
   lang?: string;

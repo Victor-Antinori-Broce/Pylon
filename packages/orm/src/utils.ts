@@ -41,7 +41,7 @@ export function createCustomManager<T extends PgTable<any>>(
  * Define relaciones para un modelo
  */
 export function defineRelations<T extends PgTable<any>>(
-  table: T,
+  _table: T,
   relationsConfig: Record<string, Omit<RelationConfig, 'targetTable'> & { targetTable: PgTable<any> }>
 ): Record<string, RelationConfig> {
   const relations: Record<string, RelationConfig> = {};

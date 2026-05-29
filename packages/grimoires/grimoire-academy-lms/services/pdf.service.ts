@@ -12,7 +12,7 @@
  */
 
 import { Buffer } from "buffer";
-import type PDFDocumentType from "pdfkit";
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LAZY LOADING DE DEPENDENCIAS OPCIONALES
@@ -114,12 +114,12 @@ export async function generarCertificadoOverlay(
   }
 
   const page = pages[0];
-  const { width, height } = page.getSize();
+  const { width, height: _height } = page.getSize();
 
   // Font estándar
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+  // const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
   // Helper para dibujar texto centrado o en coordenadas
   function drawText(
@@ -403,7 +403,7 @@ export async function generarCertificadoPDF(
 /**
  * Dibuja un fondo por defecto para el certificado
  */
-function drawDefaultBackground(doc: PDFDocumentType, color: string): void {
+function drawDefaultBackground(doc: any, color: string): void {
   doc.rect(0, 0, doc.page.width, doc.page.height).fill("#ffffff");
 
   doc

@@ -1,6 +1,5 @@
+// @ts-ignore
 import sharp, { type Sharp, type OutputInfo } from 'sharp';
-import path from 'path';
-import fs from 'fs/promises';
 
 export interface TransformOptions {
   width?: number;

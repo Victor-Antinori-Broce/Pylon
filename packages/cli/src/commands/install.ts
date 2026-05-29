@@ -168,7 +168,7 @@ async function registerGrimoireInDb(
 async function updateGremiusConfig(
   projectRoot: string,
   grimoireId: string,
-  grimoireName: string
+  _grimoireName: string
 ): Promise<boolean> {
   const configPath = path.join(projectRoot, 'apps', 'api', 'gremius.config.ts');
   try {

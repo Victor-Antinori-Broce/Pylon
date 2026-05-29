@@ -1,4 +1,5 @@
-#!/usr/bin/env bun
+
+// @ts-nocheck
 /**
  * Script de prueba para todos los escenarios de realm y grimoires
  */

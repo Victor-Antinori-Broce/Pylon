@@ -151,7 +151,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
     
     // Admin UI configuration
     admin: {
-        category: "productivity",
+        category: "system",
         views: [
             { id: "projects", type: "grid", title: "Projects", table: "agile_projects" },
             { id: "board", type: "custom", title: "Board View" },

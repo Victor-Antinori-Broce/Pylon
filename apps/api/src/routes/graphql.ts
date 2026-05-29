@@ -53,7 +53,7 @@ async function getGlobalSchemaVersion(): Promise<number> {
   try {
     const client = await getValkeyClient();
     const val = await client.get(SCHEMA_CACHE_KEY);
-    return val ? parseInt(val, 10) : 0;
+    return val && typeof val === 'string' ? parseInt(val, 10) : 0;
   } catch {
     return 0;
   }

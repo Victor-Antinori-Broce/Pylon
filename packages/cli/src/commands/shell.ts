@@ -3,7 +3,7 @@ import { createInterface } from 'readline';
 import { loadDatabase, closeDatabase } from '../utils/database.js';
 import { loadGrimoires } from '../utils/grimoires.js';
 
-export async function shellCommand(options: { typescript?: boolean }) {
+export async function shellCommand(_options: { typescript?: boolean }) {
   console.log(chalk.blue('🐚 Gremius Interactive Shell\n'));
   console.log(chalk.gray('Type .help for commands, .exit to quit\n'));
   

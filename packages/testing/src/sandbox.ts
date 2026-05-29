@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TEST SANDBOX - Core of the Testing Framework

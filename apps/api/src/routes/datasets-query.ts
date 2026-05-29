@@ -178,7 +178,7 @@ datasetsQueryRoutes.post(
           ...body.where,
           dataSetId: { eq: datasetId }, // Filtrar por dataset
         },
-      });
+      } as any);
 
       return c.json(result, 200);
 
@@ -233,7 +233,7 @@ datasetsQueryRoutes.post(
     }
 
     try {
-      const result = await parseGremiusQuery(table, body);
+      const result = await parseGremiusQuery(table, body as any);
       return c.json(result, 200);
     } catch (error) {
       console.error("[QueryEngine] Error:", error);
@@ -433,7 +433,7 @@ datasetsQueryRoutes.post(
       }, 400);
     }
 
-    const validation = validateGremiusQuery(table, body);
+    const validation = validateGremiusQuery(table, body as any);
 
     return c.json(validation, validation.valid ? 200 : 400);
   }
@@ -469,7 +469,7 @@ datasetsQueryRoutes.post(
       return c.json({ error: `Table "${tableName}" not found` }, 400);
     }
 
-    const debug = debugQuery(table, body);
+    const debug = debugQuery(table, body as any);
 
     return c.json({
       table: tableName,

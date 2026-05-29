@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /**
  * Dataset CRUD + Entries HTTP Tests
  *
@@ -71,7 +72,7 @@ describe("Dataset HTTP CRUD", () => {
 
       cookieA = extractCookie(res.headers);
       const session = await app.request(req("/api/auth/get-session", {}, cookieA));
-      const body = await session.json();
+      const body = await session.json() as any;
       userAId = body.user.id;
     });
 
@@ -94,7 +95,7 @@ describe("Dataset HTTP CRUD", () => {
 
       cookieB = extractCookie(res.headers);
       const session = await app.request(req("/api/auth/get-session", {}, cookieB));
-      const body = await session.json();
+      const body = await session.json() as any;
       userBId = body.user.id;
     });
   });
@@ -125,7 +126,7 @@ describe("Dataset HTTP CRUD", () => {
       );
 
       expect(res.status).toBe(201);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.id).toBeDefined();
       expect(body.name).toContain("HTTP Test Dataset");
       datasetId = body.id;
@@ -152,7 +153,7 @@ describe("Dataset HTTP CRUD", () => {
       const res = await app.request(req("/api/data-sets", {}, cookieA));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(Array.isArray(body.docs)).toBe(true);
       expect(body.docs.length).toBeGreaterThan(0);
       expect(body.docs.some((d: any) => d.id === datasetId)).toBe(true);
@@ -164,7 +165,7 @@ describe("Dataset HTTP CRUD", () => {
       const res = await app.request(req("/api/data-sets?limit=1", {}, cookieA));
       expect(res.status).toBe(200);
 
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.docs.length).toBeLessThanOrEqual(1);
     });
   });
@@ -189,7 +190,7 @@ describe("Dataset HTTP CRUD", () => {
       );
 
       expect(res.status).toBe(201);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(Array.isArray(body)).toBe(true);
       expect(body[0].title).toBe("Test Entry A");
       entryId = body[0].id;
@@ -203,7 +204,7 @@ describe("Dataset HTTP CRUD", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
       expect(body.docs.length).toBeGreaterThan(0);
       expect(body.docs[0].title).toBe("Test Entry A");
     });
@@ -232,7 +233,7 @@ describe("Dataset HTTP CRUD", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await res.json() as any;
 
       // RLS should filter entries created by user A when queried by user B
       // Note: The lite CRUD route may not enforce RLS; this tests the ideal behavior.
@@ -250,7 +251,7 @@ describe("Dataset HTTP CRUD", () => {
 
       // Need slug of the dataset
       const dsRes = await app.request(req("/api/data-sets", {}, cookieA));
-      const dsBody = await dsRes.json();
+      const dsBody = await dsRes.json() as any;
       const ds = dsBody.docs.find((d: any) => d.id === datasetId);
       if (!ds) return;
 

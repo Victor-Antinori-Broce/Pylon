@@ -105,7 +105,7 @@ describe("MCP Server", () => {
 
       expect([200, 404]).toContain(res.status);
       if (res.status === 200) {
-        const body = await res.json();
+        const body = await res.json() as any;
         expect(body.jsonrpc).toBe("2.0");
         expect(body.id).toBe(1);
       }
@@ -159,7 +159,7 @@ describe("MCP Server", () => {
 
       expect([200, 404]).toContain(res.status);
       if (res.status === 200) {
-        const body = await res.json();
+        const body = await res.json() as any;
         expect(body.jsonrpc).toBe("2.0");
       }
     });

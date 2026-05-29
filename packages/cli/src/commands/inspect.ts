@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs/promises';
 import path from 'path';
 import { loadDatabase, closeDatabase } from '../utils/database.js';
-import { findProjectRoot } from '../utils/project.js';
+// import { findProjectRoot } from '../utils/project.js';
 import { sql } from 'drizzle-orm';
 
 export async function inspectCommand(target: string) {

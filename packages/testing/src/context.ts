@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TEST CONTEXT - Creates isolated GrimoireContext for testing

@@ -13,10 +13,7 @@ import type {
   CRMStats,
   KanbanData,
   DealTimelineEntry,
-  ValidationResult,
   CrmEntityConfig,
-  CrmPipelineStageExtended,
-  StageCycleTime,
 } from "$views/crm/types";
 
 const API_BASE = "/api/crm";

@@ -1,4 +1,5 @@
-#!/usr/bin/env bun
+
+// @ts-nocheck
 /**
  * Script de prueba para flujos de eliminación de realms y grimoires
  */

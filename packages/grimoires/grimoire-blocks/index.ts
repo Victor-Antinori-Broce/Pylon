@@ -16,8 +16,6 @@ import { defineGrimoire } from "@gremius/shared";
 // GrimoireHooks removed from @gremius/shared — inline the type
 type GrimoireHooks = Record<string, (...args: any[]) => void | Promise<void>>;
 import { createBlocksRouter } from "./blocks.routes";
-import { pages, blocks, blockTemplates } from "./blocks.schema";
-
 // Tables array for grimoire definition
 const tables = ["block_pages", "block_contents", "block_templates"];
 import { sql } from "drizzle-orm";
@@ -103,7 +101,7 @@ const hooks: GrimoireHooks = {
         ctx.logger.info("[PageBuilder] ✓ Tables verified");
       }
     } catch (err) {
-      ctx.logger.error("[PageBuilder] Failed to verify tables:", err);
+      ctx.logger.error("[PageBuilder] Failed to verify tables:", err as Record<string, unknown>);
     }
   },
 

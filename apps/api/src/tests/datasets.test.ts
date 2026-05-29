@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Datasets Module Tests
  * 
@@ -9,7 +8,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { db } from "../db";
 import { dataSets, dataEntries } from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { 
   isDatabaseAvailable, 
   clearTestData,
@@ -48,33 +47,18 @@ describe("Datasets Module", () => {
           name: `Test Dataset ${testSlug}`,
           slug: testSlug,
           description: "A test dataset for unit tests",
-          schema: {
-            fields: [
-              {
-                id: "field-1",
-                key: "title",
-                type: "text",
-                label: "Title",
-                required: true,
-              },
-              {
-                id: "field-2",
-                key: "count",
-                type: "number",
-                label: "Count",
-                required: false,
-              },
-            ],
-            version: "2.0",
-          },
+          schema: [
+            { fieldName: "title", fieldType: "text", required: true },
+            { fieldName: "count", fieldType: "number" },
+          ],
         })
         .returning();
 
       expect(result).toBeDefined();
       expect(result.name).toContain("Test Dataset");
       expect(result.slug).toBe(testSlug);
-      expect(result.schema).toHaveProperty("fields");
-      expect(result.schema.fields).toHaveLength(2);
+      expect(Array.isArray(result.schema)).toBe(true);
+      expect(result.schema).toHaveLength(2);
 
       datasetId = result.id;
     });
@@ -96,45 +80,22 @@ describe("Datasets Module", () => {
     it("should update dataset schema", async () => {
       if (!dbAvailable) return;
 
-      const newSchema = {
-        fields: [
-          {
-            id: "field-1",
-            key: "title",
-            type: "text",
-            label: "Title",
-            required: true,
-          },
-          {
-            id: "field-2",
-            key: "count",
-            type: "number",
-            label: "Count",
-            required: false,
-          },
-          {
-            id: "field-3",
-            key: "description",
-            type: "text",
-            label: "Description",
-            required: false,
-          },
-        ],
-        version: "2.1",
-      };
+      const newSchema = [
+        { fieldName: "title", fieldType: "text", required: true },
+        { fieldName: "count", fieldType: "number" },
+        { fieldName: "description", fieldType: "text" },
+      ];
 
       const [result] = await db
         .update(dataSets)
         .set({
-          schema: newSchema,
-          updatedAt: new Date(),
+          schema: newSchema as any,
         })
         .where(eq(dataSets.id, datasetId))
         .returning();
 
       expect(result).toBeDefined();
-      expect(result.schema.fields).toHaveLength(3);
-      expect(result.schema.version).toBe("2.1");
+      expect(result.schema).toHaveLength(3);
     });
 
     it("should list all datasets", async () => {
@@ -174,12 +135,9 @@ describe("Datasets Module", () => {
         .values({
           name: `Entry Test Dataset ${generateTestId()}`,
           slug: `entry-test-${generateTestId()}`,
-          schema: {
-            fields: [
-              { id: "f1", key: "title", type: "text", label: "Title", required: true },
-            ],
-            version: "2.0",
-          },
+          schema: [
+            { fieldName: "title", fieldType: "text", required: true },
+          ],
         })
         .returning();
 
@@ -188,7 +146,7 @@ describe("Datasets Module", () => {
 
     afterAll(async () => {
       if (!dbAvailable) return;
-      await db.delete(dataEntries).where(eq(dataEntries.datasetId, datasetId));
+      await db.delete(dataEntries).where(eq(dataEntries.dataSetId, datasetId));
       await db.delete(dataSets).where(eq(dataSets.id, datasetId));
     });
 
@@ -198,7 +156,8 @@ describe("Datasets Module", () => {
       const [result] = await db
         .insert(dataEntries)
         .values({
-          datasetId,
+          dataSetId: datasetId,
+          title: "Test Entry",
           data: {
             title: "Test Entry",
             count: 42,
@@ -208,7 +167,7 @@ describe("Datasets Module", () => {
         .returning();
 
       expect(result).toBeDefined();
-      expect(result.datasetId).toBe(datasetId);
+      expect(result.dataSetId).toBe(datasetId);
       expect(result.data).toHaveProperty("title");
       expect(result.status).toBe("published");
 
@@ -221,10 +180,10 @@ describe("Datasets Module", () => {
       const results = await db
         .select()
         .from(dataEntries)
-        .where(eq(dataEntries.datasetId, datasetId));
+        .where(eq(dataEntries.dataSetId, datasetId));
 
       expect(results.length).toBeGreaterThan(0);
-      expect(results[0].datasetId).toBe(datasetId);
+      expect(results[0].dataSetId).toBe(datasetId);
     });
 
     it("should update an entry", async () => {
@@ -281,7 +240,7 @@ describe("Datasets Module", () => {
         .values({
           name: `Complex Data Test`,
           slug: `complex-test-${generateTestId()}`,
-          schema: { fields: [], version: "2.0" },
+          schema: [],
         })
         .returning();
 
@@ -301,7 +260,8 @@ describe("Datasets Module", () => {
       const [entry] = await db
         .insert(dataEntries)
         .values({
-          datasetId: dataset.id,
+          dataSetId: dataset.id,
+          title: "Complex Entry",
           data: complexData,
           status: "published",
         })
@@ -324,13 +284,14 @@ describe("Datasets Module", () => {
         .values({
           name: `Concurrent Test`,
           slug: `concurrent-test-${generateTestId()}`,
-          schema: { fields: [], version: "2.0" },
+          schema: [],
         })
         .returning();
 
       const promises = Array.from({ length: 5 }, (_, i) =>
         db.insert(dataEntries).values({
-          datasetId: dataset.id,
+          dataSetId: dataset.id,
+          title: `Concurrent Entry ${i}`,
           data: { index: i },
           status: "published",
         }).returning()
@@ -340,7 +301,7 @@ describe("Datasets Module", () => {
       expect(results).toHaveLength(5);
 
       // Cleanup
-      await db.delete(dataEntries).where(eq(dataEntries.datasetId, dataset.id));
+      await db.delete(dataEntries).where(eq(dataEntries.dataSetId, dataset.id));
       await db.delete(dataSets).where(eq(dataSets.id, dataset.id));
     });
   });

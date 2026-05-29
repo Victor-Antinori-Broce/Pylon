@@ -142,7 +142,7 @@ export async function listProviders() {
   console.log(chalk.cyan('\n📋 Configured Auth Providers:\n'));
 
   let anyConfigured = false;
-  for (const [id, provider] of Object.entries(PROVIDERS)) {
+  for (const [_id, provider] of Object.entries(PROVIDERS)) {
     const clientIdKey = `${provider.envPrefix}_CLIENT_ID`;
     const hasClientId = new RegExp(`^${clientIdKey}=.+$`, 'm').test(envContent);
 

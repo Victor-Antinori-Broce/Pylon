@@ -89,12 +89,12 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
         transformer.destroy();
 
         // Upload transformed image
-        await ctx.storage.upload(transformKey, result.buffer, `image/${result.format}`);
+        await (ctx.storage as any).upload(transformKey, result.buffer, `image/${result.format}`);
 
         // Return the transformed image
         c.header("Content-Type", `image/${result.format}`);
         c.header("Cache-Control", "public, max-age=31536000"); // 1 year
-        return c.body(result.buffer);
+        return c.body(result.buffer as any);
 
       } finally {
         // Cleanup temp file
@@ -214,7 +214,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
 
     try {
       // List all transforms for this image
-      const transforms = await ctx.storage.list(`transforms/${id}/`);
+      const transforms = await (ctx.storage as any).list(`transforms/${id}/`);
 
       // Delete all transforms
       for (const transform of transforms) {

@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import fs from 'fs/promises';
 import path from 'path';
-import { findProjectRoot } from '../utils/project.js';
+// import { findProjectRoot } from '../utils/project.js';
 
 function toCamelCase(str: string): string {
   return str
