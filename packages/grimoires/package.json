@@ -1,6 +1,6 @@
 {
   "name": "@gremius/grimoires",
-  "version": "0.8.0-beta",
+  "version": "0.9.0-beta",
   "private": true,
   "type": "module",
   "description": "GremiusCMS Grimoires — Business modules loaded dynamically (Nivel 3). Blog, CRM, DMS, Academy, etc.",

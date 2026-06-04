@@ -1,6 +1,6 @@
 {
   "name": "@gremius/mcp-server",
-  "version": "0.8.0-beta",
+  "version": "0.9.0-beta",
   "description": "Gremius Model Context Protocol (MCP) Server for AI Agents",
   "type": "module",
   "main": "dist/index.js",

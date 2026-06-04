@@ -1,6 +1,6 @@
 {
   "name": "@gremius/shared",
-  "version": "0.8.0-beta",
+  "version": "0.9.0-beta",
   "description": "Shared types, schemas, and utilities for GremiusCMS",
   "type": "module",
   "main": "./dist/index.js",
