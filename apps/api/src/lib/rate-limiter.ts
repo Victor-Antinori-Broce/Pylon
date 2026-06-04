@@ -111,11 +111,12 @@ export async function checkRateLimit(
   c: Context<{ Variables: AppVariables }>,
   config: RateLimitConfig = DEFAULT_CONFIG
 ): Promise<RateLimitResult> {
-  const valkey = await getValkeyClient();
   const key = generateKey(c, config);
   const now = Date.now();
   const windowMs = config.window * 1000;
   const reset = now + windowMs;
+
+  const valkey = await getValkeyClient();
 
   // Si no hay Valkey, permitir (fail open para no bloquear)
   if (!valkey) {
@@ -174,23 +175,27 @@ export function rateLimit(config?: Partial<RateLimitConfig>) {
       return await next();
     }
 
-    const result = await checkRateLimit(c, finalConfig);
+    try {
+      const result = await checkRateLimit(c, finalConfig);
 
-    // Headers siempre presentes
-    c.header("X-RateLimit-Limit", String(result.limit));
-    c.header("X-RateLimit-Remaining", String(result.remaining));
-    c.header("X-RateLimit-Reset", String(result.reset));
+      // Headers siempre presentes
+      c.header("X-RateLimit-Limit", String(result.limit));
+      c.header("X-RateLimit-Remaining", String(result.remaining));
+      c.header("X-RateLimit-Reset", String(result.reset));
 
-    if (!result.allowed) {
-      c.header("Retry-After", String(result.retryAfter || 60));
-      return c.json(
-        {
-          error: "Rate Limit Exceeded",
-          message: finalConfig.message,
-          retryAfter: result.retryAfter,
-        },
-        429
-      );
+      if (!result.allowed) {
+        c.header("Retry-After", String(result.retryAfter || 60));
+        return c.json(
+          {
+            error: "Rate Limit Exceeded",
+            message: finalConfig.message,
+            retryAfter: result.retryAfter,
+          },
+          429
+        );
+      }
+    } catch {
+      // Valkey unreachable — fail open (don't block requests)
     }
 
     await next();
@@ -213,22 +218,26 @@ export function globalRateLimit() {
     const pathConfig = RATE_LIMIT_CONFIGS[c.req.path];
     const config = pathConfig || { limit: 300, window: 60 }; // 300 req/min default
 
-    const result = await checkRateLimit(c, config);
+    try {
+      const result = await checkRateLimit(c, config);
 
-    c.header("X-RateLimit-Limit", String(result.limit));
-    c.header("X-RateLimit-Remaining", String(result.remaining));
-    c.header("X-RateLimit-Reset", String(Math.ceil(result.reset / 1000)));
+      c.header("X-RateLimit-Limit", String(result.limit));
+      c.header("X-RateLimit-Remaining", String(result.remaining));
+      c.header("X-RateLimit-Reset", String(Math.ceil(result.reset / 1000)));
 
-    if (!result.allowed) {
-      c.header("Retry-After", String(result.retryAfter || 60));
-      return c.json(
-        {
-          error: "Rate Limit Exceeded",
-          message: config.message || "Too many requests. Please slow down.",
-          retryAfter: result.retryAfter,
-        },
-        429
-      );
+      if (!result.allowed) {
+        c.header("Retry-After", String(result.retryAfter || 60));
+        return c.json(
+          {
+            error: "Rate Limit Exceeded",
+            message: config.message || "Too many requests. Please slow down.",
+            retryAfter: result.retryAfter,
+          },
+          429
+        );
+      }
+    } catch {
+      // Valkey unreachable — fail open (don't block requests)
     }
 
     await next();

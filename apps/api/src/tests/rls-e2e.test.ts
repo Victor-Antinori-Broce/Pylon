@@ -1,4 +1,3 @@
-
 /**
  * RLS End-to-End Tests
  *
@@ -8,7 +7,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { app } from "../index";
 import { db } from "../db";
-import { dataSets, dataEntries, authUsers } from "../db/schema";
+import { authUsers } from "../db/schema";
 import { eq } from "drizzle-orm";
 import {
   isDatabaseAvailable,
@@ -47,8 +46,8 @@ describe("RLS E2E", () => {
   let cookieA = "";
   let cookieB = "";
   let cookieAdmin = "";
-  let userAId = "";
-  let userBId = "";
+  let _userAId = "";
+  let _userBId = "";
   let adminId = "";
   let datasetId = "";
   let entryAId = "";
@@ -71,7 +70,7 @@ describe("RLS E2E", () => {
       );
       cookieA = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieA));
-      userAId = (await s.json() as any).user.id;
+      _userAId = (await s.json() as any).user.id;
     });
 
     it("creates user B and signs in", async () => {
@@ -91,7 +90,7 @@ describe("RLS E2E", () => {
       );
       cookieB = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieB));
-      userBId = (await s.json() as any).user.id;
+      _userBId = (await s.json() as any).user.id;
     });
 
     it("creates admin and signs in", async () => {

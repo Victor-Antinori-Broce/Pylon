@@ -136,7 +136,7 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
       "certificados",
       "actividad_log"
     ],
-    dependsOn: ["users"],
+    dependsOn: [],
     referencedBy: [],
   },
   {

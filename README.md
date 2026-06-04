@@ -2,19 +2,20 @@
 
 **The High-Performance, Modular BaaS/CMS Hybrid**
 
-GremiusCMS is a next-generation content management system built for high-performance sites. Powered by Astro 5, Hono, and Bun, it features a modular auto-discovery architecture, a "Lego-style" Page Builder, and native AI optimization.
+GremiusCMS is a next-generation content management system built for high-performance sites. Powered by Bun, Hono, and Drizzle, it features a modular auto-discovery architecture, a dynamic Page Builder, and native AI optimization via MCP.
 
 ---
 
 ## 🚀 Key Features
 
-- **Modular Architecture**: Dual-source module loading from core and theme bundles.
+- **Modular Architecture**: Dual-source module loading from core and realm bundles.
 - **BaaS/CMS Hybrid**: Use as pure BaaS or promote data to CMS content with slugs and SEO.
-- **Lego Page Builder**: Dynamic block-based layout system (Hero, Smart Grid, Interactive Maps, etc.).
+- **Dynamic Page Builder**: Block-based layout system (Hero, Smart Grid, Interactive Maps, etc.).
 - **AI-Optimized (TOON)**: Native support for **Token-Optimized Object Notation** for ultra-efficient AI responses.
 - **Enterprise Infra**: **Valkey** for high-speed caching, queues, and leaderboards.
-- **Modern Stack**: Built with **Astro 5**, **Vue 3 Islands**, **Hono**, **Bun**, and **Drizzle ORM**.
+- **Modern Stack**: Built with **Astro 5**, **Svelte 5**, **Hono**, **Bun**, and **Drizzle ORM**.
 - **Secure by Default**: Powered by **Better-Auth** with JWT and session management.
+- **AI-Native MCP**: Model Context Protocol server for Claude, Cursor, and compatible agents.
 
 ---
 
@@ -24,13 +25,22 @@ GremiusCMS is a next-generation content management system built for high-perform
 gremiuscms/
 ├── apps/
 │   ├── api/                  # Hono + Drizzle API (Bun)
-│   │   ├── gremius.config.ts   # Module activation
-│   │   └── src/modules/      # Core & optional modules
-│   └── admin/                # Svelte 5 Admin Panel (Vite)
+│   │   ├── src/
+│   │   │   ├── db/           # Core schema & migrations
+│   │   │   ├── routes/       # HTTP routes (CRUD, Auth, MCP, GraphQL)
+│   │   │   ├── lib/          # Module loader, OpenAPI aggregator
+│   │   │   └── tests/        # Integration tests
+│   │   └── gremius.config.ts # Grimoire activation
+│   └── web/                  # Frontend (Astro 5)
 ├── packages/
-│   ├── shared/               # Types & utilities
-│   └── themes/               # Theme packages with bundled modules
-│       └── gremio-cms/       # Gaming theme (games, streamers, etc.)
+│   ├── admin/                # Svelte 5 Admin Panel (Vite)
+│   ├── shared/               # Types, Zod schemas, utilities
+│   ├── sdk/                  # Official JS/TS SDK (@gremius/sdk)
+│   ├── mcp-server/           # MCP Server for AI agents
+│   ├── cli/                  # CLI tool (npx gremius)
+│   ├── grimoires/            # Business modules (games, blog, media, etc.)
+│   ├── realms/               # Theme ecosystems bundling grimoires
+│   └── starters/             # Starter templates (Astro, SaaS, etc.)
 └── docker/                   # Infrastructure definitions
 ```
 
@@ -63,7 +73,7 @@ Schema Engine, Auth Manager, API Gateway, Valkey, Media Hub, Module Loader
 | `blog` | Blog posts with scheduling |
 
 ### Theme Modules (Auto-loaded)
-Bundled with themes like **Gremio CMS**:
+Bundled with realms like **Gremio CMS**:
 - `games` — Game catalog with IGDB sync
 - `streamers` — Twitch/YouTube/Kick integration
 - `platforms` — Gaming platforms
@@ -75,7 +85,7 @@ Bundled with themes like **Gremio CMS**:
 
 ### 1. Infrastructure (Docker)
 ```bash
-cp apps/api/.env.example apps/api/.env
+cp .env.example .env
 docker compose up -d
 ```
 Infrastructure includes: **PostgreSQL 16**, **Valkey** (Cache & Queues), and **MinIO** (S3 Storage).
@@ -98,9 +108,9 @@ pnpm dev
 
 ---
 
-## 🏰 Realms (formerly Themes)
+## 🏰 Realms
 
-Realms are business ecosystems that bundle grimoires (formerly modules) and provide custom styling. Realms define which grimoires are active via `realm.json`.
+Realms are business ecosystems that bundle grimoires (modules) and provide custom styling. Realms define which grimoires are active via `realm.json`.
 
 ### Creating a Realm
 ```
@@ -132,9 +142,49 @@ GremiusCMS natively supports **TOON (Token-Optimized Object Notation)**. This fo
 - **Request via Header**: `Accept: application/vnd.toon`
 - **Request via Query**: `?format=toon`
 
+### MCP Server
+Connect Claude Desktop, Cursor, or any MCP-compatible agent:
+
+```json
+{
+  "mcpServers": {
+    "gremius": {
+      "command": "npx",
+      "args": ["-y", "@gremius/mcp-server"],
+      "env": {
+        "GREMIUS_API_URL": "http://localhost:3000",
+        "GREMIUS_API_TOKEN": "grm_agent_xxx"
+      }
+    }
+  }
+}
+```
+
 ---
 
-## 🧱 Lego Page Builder & Vue Islands
+## 📦 Official SDK
+
+```bash
+npm install @gremius/sdk
+```
+
+```typescript
+import { GremiusClient } from '@gremius/sdk';
+
+const gremius = new GremiusClient({
+  url: 'https://api.yourgame.com',
+  apiKey: 'grm_agent_your_token'
+});
+
+const games = await gremius.from('games').list();
+const game = await gremius.from('games').create({ title: 'New Game' });
+```
+
+[Full SDK Documentation →](packages/sdk/README.md)
+
+---
+
+## 🧱 Page Builder & Astro Islands
 
 The frontend uses a **Partial Hydration** model with Astro Islands. Zero JavaScript is shipped for static content.
 
@@ -145,7 +195,7 @@ The frontend uses a **Partial Hydration** model with Astro Islands. Zero JavaScr
 - **Comparison Slider**: Before/After visuals
 - **Game Map**: Interactive pan/zoom world maps
 
-### Interactive Islands (Vue 3)
+### Interactive Islands (Svelte 5)
 - **DataTable**: Pro-grade data management
 - **GameBuilder**: Custom loadout and stat planning
 - **CommandMenu**: Global shortcut-based navigation

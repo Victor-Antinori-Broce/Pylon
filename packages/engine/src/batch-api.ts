@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * BATCH API - El Muro de Titanio (Escrituras Atómicas)

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DATASETS SNAPSHOTS - Denormalización y Snapshots Inmutables
@@ -102,7 +101,7 @@ export const snapshotConfigSchema = z.object({
 // SNAPSHOT ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 /**
  * Verifica si se debe generar snapshot según la configuración
@@ -140,7 +139,7 @@ export async function generateSnapshot(
   // Si hay campos relacionados que snapshotear
   if (config.fields.length > 0) {
     for (const field of config.fields) {
-      const relatedId = entry.data[field.source];
+      const relatedId = (entry.data as any)[field.source];
       
       if (!relatedId) {
         snapshot.data[field.as || field.source] = null;
@@ -447,7 +446,7 @@ export async function autoSnapshotOnUpdate(
   // Verificar si cambió algún campo que requiere snapshot
   const fieldsToWatch = config.fields.map((f) => f.source);
   const hasChanged = fieldsToWatch.some((field) => {
-    return JSON.stringify(entry.data[field]) !== JSON.stringify(oldEntry?.data?.[field]);
+    return JSON.stringify((entry.data as any)[field]) !== JSON.stringify((oldEntry?.data as any)?.[field]);
   });
 
   if (!hasChanged) {
@@ -481,7 +480,7 @@ async function fetchRelatedData(
     
     return result.rows[0] || null;
   } catch (error) {
-    ctx.logger.warn(`Failed to fetch related data from ${tableName}:`, error);
+    ctx.logger.warn(`Failed to fetch related data from ${tableName}:`, error as any);
     return null;
   }
 }

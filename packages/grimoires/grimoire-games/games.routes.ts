@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Gremio CMS — Games Module Routes (DI Version)
@@ -25,13 +24,6 @@ import {
   gameCollections,
   gameCollectionEntries,
 } from "./games.schema";
-
-import {
-  buildCoverArtUrls,
-  buildScreenshotUrls,
-  type FocalPoint,
-} from "./games.schema";
-
 
 
 /**
@@ -95,7 +87,7 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
 
     // Enrich with media transform URLs if requested
     const enrichedDocs = includeMedia
-      ? docs.map((game) => enrichGameWithMediaUrls(game))
+      ? docs.map((game: any) => enrichGameWithMediaUrls(game))
       : docs;
 
     return c.json({
@@ -142,8 +134,8 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
     // Build response
     const response: any = {
       ...game,
-      platforms: gamePlatforms.map((r) => r.platform),
-      tags: gameTags.map((r) => r.tag),
+      platforms: gamePlatforms.map((r: any) => r.platform),
+      tags: gameTags.map((r: any) => r.tag),
     };
 
     // Enrich with media URLs if requested
@@ -306,7 +298,7 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
 
     // Fetch entries + games for each collection
     const result = await Promise.all(
-      collections.map(async (col) => {
+      collections.map(async (col: any) => {
         const entries = await dbInstance
           .select({
             sortOrder: gameCollectionEntries.sortOrder,
@@ -317,7 +309,7 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
           .where(eq(gameCollectionEntries.collectionId, col.id))
           .orderBy(asc(gameCollectionEntries.sortOrder));
 
-        const gamesWithCovers = entries.map((e) => ({
+        const gamesWithCovers = entries.map((e: any) => ({
           ...e.game,
           _sortOrder: e.sortOrder,
         }));
@@ -351,11 +343,11 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
       .orderBy(asc(gameCollectionEntries.sortOrder));
 
     // Fetch full game data for each entry
-    const gameIds = entries.map((e) => e.gameId);
+    const gameIds = entries.map((e: any) => e.gameId);
     const gameRows =
       gameIds.length > 0
         ? await Promise.all(
-            gameIds.map(async (gid) => {
+            gameIds.map(async (gid: any) => {
               const [g] = await dbInstance
                 .select()
                 .from(games)

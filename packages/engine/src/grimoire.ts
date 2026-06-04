@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * Gremius Engine — Auto-API & MCP Generator (Nivel 1: Core Infrastructure)
@@ -48,8 +47,8 @@ import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { MySqlTable } from "drizzle-orm/mysql-core";
 import { getTableName, InferSelectModel, InferInsertModel } from "drizzle-orm";
 import { eq, and, desc, asc, sql, count } from "drizzle-orm";
-import type { ActionDefinition, ActionContext, ActionResult } from "./actions";
-import { defineAction, initActions } from "./actions";
+import type { ActionDefinition } from "./actions";
+import { defineAction } from "./actions";
 import type { GrimoireContext } from "@gremius/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -299,7 +298,7 @@ function inferMCPSchemaFromModel(
  * Generate CRUD routes for a Drizzle model
  */
 function generateModelRoutes(
-  grimoireId: string,
+  _grimoireId: string,
   model: DrizzleModel,
   basePath: string,
   routes: GeneratedRoute[]
@@ -362,11 +361,8 @@ function registerAutoRoutes(
   models: DrizzleModel[],
   hono: Hono,
   db: any,
-  options: GrimoireOptions["api"]
+  _options: GrimoireOptions["api"]
 ): void {
-  const requireAuth = options?.requireAuth ?? true;
-  const requiredScopes = options?.requiredScopes ?? [];
-
   for (const route of routes) {
     const model = models.find((m) => getTableName(m) === route.tableName);
     if (!model) continue;
@@ -403,8 +399,6 @@ function createRouteHandler(
 ) {
   return async (c: HonoContext) => {
     try {
-      const tableName = route.tableName;
-
       switch (route.operation) {
         case "list": {
           const limit = Math.min(parseInt(c.req.query("limit") ?? "50"), 100);
@@ -482,7 +476,7 @@ function createRouteHandler(
  * Generate MCP tools for a Drizzle model
  */
 function generateModelTools(
-  grimoireId: string,
+  _grimoireId: string,
   model: DrizzleModel,
   prefix: string,
   tools: GeneratedTool[]
@@ -502,7 +496,7 @@ function generateModelTools(
     name: readToolName,
     description: `Query records from the ${tableName} table. Supports filtering, pagination, and sorting.`,
     inputSchema: inferMCPSchemaFromModel(model, "read"),
-    handler: async (args: any, extra: any) => {
+    handler: async (_args: any, _extra: any) => {
       // Implementation will be injected by MCP adapter
       return { content: [{ type: "text", text: "Tool not yet implemented" }] };
     },
@@ -520,7 +514,7 @@ function generateModelTools(
     name: createToolName,
     description: `Create a new record in the ${tableName} table. Provide field values according to the schema.`,
     inputSchema: inferMCPSchemaFromModel(model, "create"),
-    handler: async (args: any, extra: any) => {
+    handler: async (_args: any, _extra: any) => {
       return { content: [{ type: "text", text: "Tool not yet implemented" }] };
     },
   });
@@ -566,7 +560,7 @@ function createMCPTool(
     name: meta.name,
     description: meta.description,
     inputSchema: inferMCPSchemaFromModel(model, meta.operation),
-    handler: async (args: any, extra: any) => {
+    handler: async (args: any, _extra: any) => {
       try {
         switch (meta.operation) {
           case "read": {

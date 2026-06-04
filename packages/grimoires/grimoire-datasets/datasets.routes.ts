@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * DataSets Routes
  * 
@@ -7,10 +6,8 @@
  */
 
 import { Hono } from "hono";
-import { eq, and, desc, asc, sql, count } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import { dataSets, dataEntries } from "./datasets.schema";
 import { dataSetCalculatedFields } from "./datasets.calculated.schema";
 import {
@@ -34,16 +31,11 @@ import {
   createManualSnapshot,
   restoreToSnapshot,
   compareSnapshots,
-  generateSnapshot,
-  saveSnapshot,
-  shouldSnapshot,
   detectSnapshotConfig,
 } from "./datasets.snapshots";
 import {
   suggestIndexesForDataset,
   getIndexStats,
-  createIndex,
-  dropIndex,
   applyAutoIndexes,
   generateIndexReport,
   applyIndexConfig,
@@ -306,7 +298,7 @@ export function createDatasetsRouter(ctx: GrimoireContext): Hono {
       }
       
       // Evaluar campos calculados para cada entry
-      docsWithCalculated = docs.map(doc => {
+      docsWithCalculated = docs.map((doc: any) => {
         const calculated: Record<string, any> = {};
         
         // Merge data con el entry para evaluación
@@ -329,7 +321,7 @@ export function createDatasetsRouter(ctx: GrimoireContext): Hono {
             const value = evaluateCalculatedField(field, evalContext);
             calculated[field.name] = formatCalculatedValue(value, field.format || undefined);
           } catch (err) {
-            ctx.logger.warn(`Error evaluating calculated field "${field.name}":`, err);
+            ctx.logger.warn(`Error evaluating calculated field "${field.name}":`, err as any);
             calculated[field.name] = null;
           }
         }
@@ -344,7 +336,7 @@ export function createDatasetsRouter(ctx: GrimoireContext): Hono {
     // Agregar URLs de thumbnails si se solicitan
     let docsWithThumbnails = docsWithCalculated;
     if (includeThumbnailUrl) {
-      docsWithThumbnails = docsWithCalculated.map(doc => {
+      docsWithThumbnails = docsWithCalculated.map((doc: any) => {
         if (doc.thumbnailId) {
           return {
             ...doc,

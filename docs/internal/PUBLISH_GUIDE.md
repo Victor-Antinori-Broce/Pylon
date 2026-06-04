@@ -25,7 +25,7 @@
 
 | Package | Status | Version | Command |
 |---------|--------|---------|---------|
-| `@gremius/sdk` | ✅ Ready | 0.2.0 → 1.0.0 | See below |
+| `@gremius/sdk` | ✅ Ready | 0.8.0-beta | See below |
 | `@gremius/shared` | ✅ Ready | 0.7.0-beta → 0.7.0 | See below |
 
 ---
@@ -35,9 +35,10 @@
 ### Step 1: Update Versions
 
 ```bash
-# For SDK (major release)
+# For SDK
+# Note: SDK follows the same version as the monorepo
 cd packages/sdk
-npm version 1.0.0
+npm version 0.9.0-beta
 
 # For Shared (patch release)
 cd packages/shared

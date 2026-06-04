@@ -1,13 +1,12 @@
-// @ts-nocheck
 /**
  * @gremius/sdk — Real-time Module
  *
  * Provides WebSocket connection management and Live Query subscriptions.
  *
  * Usage:
- *   import { GremiusRealtime } from '@gremius/sdk/realtime';
+ *   import { GremiusRealtime, createRealtime } from '@gremius/sdk/realtime';
  *
- *   const rt = new GremiusRealtime(process.env.GREMIUS_WS_URL || 'ws://localhost:3001/api/realtime');
+ *   const rt = createRealtime('http://localhost:3000');
  *   await rt.connect();
  *
  *   // Subscribe to all changes in a dataset
@@ -70,6 +69,16 @@ export class GremiusRealtime {
     private clientId: string | null = null;
     private userId: string | null = null;
 
+    /** Get the server-assigned client ID */
+    getClientId(): string | null {
+        return this.clientId;
+    }
+
+    /** Get the authenticated user ID (if any) */
+    getUserId(): string | null {
+        return this.userId;
+    }
+
     // Subscriptions
     private channelHandlers = new Map<string, Set<MessageHandler>>();
     private presenceHandlers = new Map<string, Set<PresenceHandler>>();
@@ -77,8 +86,8 @@ export class GremiusRealtime {
 
     // Reconnection
     private reconnectAttempts = 0;
-    private maxReconnectAttempts = 10;
-    private reconnectDelay = 1000;
+    private readonly maxReconnectAttempts = 10;
+    private readonly reconnectDelay = 1000;
     private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Pending subscriptions (to restore after reconnect)
@@ -87,7 +96,7 @@ export class GremiusRealtime {
 
     // Heartbeat
     private pingInterval: ReturnType<typeof setInterval> | null = null;
-    private pingTimeout = 30000;
+    private readonly pingTimeout = 30000;
 
     constructor(url: string) {
         this.url = url;
@@ -118,9 +127,9 @@ export class GremiusRealtime {
                     // Wait for "connected" message from server
                 };
 
-                this.ws.onmessage = (event) => {
-                    this.handleMessage(event.data);
-                    
+                this.ws.onmessage = (event: MessageEvent) => {
+                    this.handleMessage(event.data as string);
+
                     // Resolve promise on first connection
                     if (this.state === "connecting") {
                         this.setState("connected");
@@ -136,8 +145,8 @@ export class GremiusRealtime {
                     }
                 };
 
-                this.ws.onerror = (error) => {
-                    console.error("[GremiusRealtime] WebSocket error:", error);
+                this.ws.onerror = (_error: Event) => {
+                    console.error("[GremiusRealtime] WebSocket error");
                     if (this.state === "connecting") {
                         reject(new Error("Failed to connect"));
                     }
@@ -155,7 +164,7 @@ export class GremiusRealtime {
     disconnect(): void {
         this.setState("disconnected");
         this.stopHeartbeat();
-        
+
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
@@ -182,7 +191,7 @@ export class GremiusRealtime {
      */
     onStateChange(handler: StateHandler): () => void {
         this.stateHandlers.add(handler);
-        return () => this.stateHandlers.delete(handler);
+        return () => { this.stateHandlers.delete(handler); };
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -191,7 +200,7 @@ export class GremiusRealtime {
 
     /**
      * Subscribe to a channel for live updates.
-     * 
+     *
      * @param channel Channel name (e.g., "table:datasetId" or "entry:entryId")
      * @param handler Callback for mutation events
      * @returns Unsubscribe function
@@ -201,7 +210,8 @@ export class GremiusRealtime {
         if (!this.channelHandlers.has(channel)) {
             this.channelHandlers.set(channel, new Set());
         }
-        this.channelHandlers.get(channel)!.add(handler);
+        const handlers = this.channelHandlers.get(channel)!;
+        handlers.add(handler);
 
         // Track for reconnection
         this.pendingChannels.add(channel);
@@ -213,10 +223,10 @@ export class GremiusRealtime {
 
         // Return unsubscribe function
         return () => {
-            const handlers = this.channelHandlers.get(channel);
-            if (handlers) {
-                handlers.delete(handler);
-                if (handlers.size === 0) {
+            const h = this.channelHandlers.get(channel);
+            if (h) {
+                h.delete(handler);
+                if (h.size === 0) {
                     this.channelHandlers.delete(channel);
                     this.pendingChannels.delete(channel);
                     if (this.state === "connected") {
@@ -273,13 +283,14 @@ export class GremiusRealtime {
         if (!this.presenceHandlers.has(room)) {
             this.presenceHandlers.set(room, new Set());
         }
-        this.presenceHandlers.get(room)!.add(handler);
+        const handlers = this.presenceHandlers.get(room)!;
+        handlers.add(handler);
 
         return () => {
-            const handlers = this.presenceHandlers.get(room);
-            if (handlers) {
-                handlers.delete(handler);
-                if (handlers.size === 0) {
+            const h = this.presenceHandlers.get(room);
+            if (h) {
+                h.delete(handler);
+                if (h.size === 0) {
                     this.presenceHandlers.delete(room);
                 }
             }
@@ -296,7 +307,9 @@ export class GremiusRealtime {
         for (const handler of this.stateHandlers) {
             try {
                 handler(state);
-            } catch {}
+            } catch {
+                // ignore handler errors
+            }
         }
     }
 
@@ -309,15 +322,15 @@ export class GremiusRealtime {
     private handleMessage(raw: string): void {
         let msg: InternalMessage;
         try {
-            msg = JSON.parse(raw);
+            msg = JSON.parse(raw) as InternalMessage;
         } catch {
             return;
         }
 
         switch (msg.type) {
             case "connected":
-                this.clientId = msg.clientId || null;
-                this.userId = msg.userId || null;
+                this.clientId = msg.clientId ?? null;
+                this.userId = msg.userId ?? null;
                 break;
 
             case "message":
@@ -327,7 +340,9 @@ export class GremiusRealtime {
                         for (const handler of handlers) {
                             try {
                                 handler(msg.data as MutationEvent);
-                            } catch {}
+                            } catch {
+                                // ignore handler errors
+                            }
                         }
                     }
                 }
@@ -340,7 +355,9 @@ export class GremiusRealtime {
                         for (const handler of handlers) {
                             try {
                                 handler(msg.users);
-                            } catch {}
+                            } catch {
+                                // ignore handler errors
+                            }
                         }
                     }
                 }
@@ -417,14 +434,14 @@ export class GremiusRealtime {
 
 /**
  * Create a GremiusRealtime instance with sensible defaults.
- * 
- * @param baseUrl Base URL of the Gremius API (e.g., "http://localhost:3001")
+ *
+ * @param baseUrl Base URL of the Gremius API (e.g., "http://localhost:3000")
  */
 export function createRealtime(baseUrl: string): GremiusRealtime {
     const wsUrl = baseUrl
         .replace(/^http:/, "ws:")
         .replace(/^https:/, "wss:")
         .replace(/\/$/, "") + "/api/realtime";
-    
+
     return new GremiusRealtime(wsUrl);
 }

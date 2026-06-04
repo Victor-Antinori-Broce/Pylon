@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * ZOD VALIDATOR - Protección Anti-Alucinaciones
@@ -29,7 +28,7 @@
  */
 
 import { z, ZodSchema, ZodError, ZodObject, ZodRawShape } from "zod";
-import type { ValidationRule, ValidationSchema, ValidationResult } from "./validator";
+import type { ValidationRule, ValidationSchema } from "./validator";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS ZOD PREDEFINIDOS - Anti-Alucinaciones

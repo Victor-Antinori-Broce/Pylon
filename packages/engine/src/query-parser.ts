@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * QUERY ENGINE - Traductor JSON a SQL con Auto-Join
@@ -28,7 +27,6 @@
 import {
   eq,
   and,
-  or,
   not,
   gt,
   gte,
@@ -52,7 +50,7 @@ import * as schema from "../../../apps/api/src/db/schema";
 // TIPOS Y CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export interface QueryOptions<T = any> {
+export interface QueryOptions<_T = any> {
   /** Tabla principal */
   table: PgTable;
   /** Filtros where */
@@ -503,9 +501,7 @@ export async function parseQuery<T = any>(
   query = query.limit(limitSafe).offset(offsetSafe);
 
   // Ejecutar con expansiones (Anti N+1)
-  const startTime = performance.now();
   const data = await executeWithExpansions<T>(options, query);
-  const duration = performance.now() - startTime;
 
   // Contar total (sin limit/offset)
   let totalQuery = db.select({ count: sql<number>`count(*)` }).from(table);

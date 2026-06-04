@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Media Library Schema
@@ -6,7 +5,7 @@
  * Drizzle ORM schema for media assets and folders.
  */
 
-import { pgTable, uuid, varchar, text, timestamp, jsonb, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
 
 /**
  * Media - Stored files metadata

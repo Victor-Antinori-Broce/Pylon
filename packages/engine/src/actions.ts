@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * Gremius Engine — Actions Layer (Nivel 1: Core Infrastructure)

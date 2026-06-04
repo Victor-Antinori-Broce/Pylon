@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Gremio CMS — Streamers Module Routes (DI Version)

@@ -1,12 +1,10 @@
-// @ts-nocheck
 /**
  * DataSets Schema
  * 
  * Drizzle ORM schema for dynamic data collections.
  */
 
-import { pgTable, uuid, varchar, text, timestamp, jsonb, integer, boolean, foreignKey } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgTable, uuid, varchar, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
 
 /**
  * Data Sets - Collection definitions

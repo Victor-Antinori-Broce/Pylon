@@ -91,14 +91,18 @@ import { GremiusClient } from '@gremius/sdk';
 
 const gremius = new GremiusClient({
   url: 'http://localhost:3000',
-  apiKey: 'your-api-key'
+  apiKey: 'grm_agent_your_token'
 });
 
-// CRUD operations
-const posts = await gremius.collection('posts').get();
-const newPost = await gremius.collection('posts').insert({ title: 'Hello' });
-await gremius.collection('posts').update(newPost.id, { title: 'Updated' });
-await gremius.collection('posts').delete(newPost.id);
+// Explorer API — primary CRUD
+const posts = await gremius.from('posts').list();
+const post = await gremius.from('posts').get('uuid-123');
+const newPost = await gremius.from('posts').create({ title: 'Hello' });
+await gremius.from('posts').update(newPost.id, { title: 'Updated' });
+await gremius.from('posts').delete(newPost.id);
+
+// Legacy Dataset API (backward compat)
+const legacy = await gremius.collection('posts').get();
 ```
 
 #### GremiusRealtime (WebSocket)
@@ -180,7 +184,7 @@ const gremius = new GremiusClient({
   url: import.meta.env.VITE_API_URL || 'http://localhost:3000'
 });
 
-const data = await gremius.collection('posts').get({ limit: 10 });
+const data = await gremius.from('posts').list({ limit: 10 });
 ```
 
 ### Using Realtime

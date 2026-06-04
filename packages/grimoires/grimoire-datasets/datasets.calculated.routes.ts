@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * DataSets Calculated Fields - API Routes
  * 
@@ -13,7 +12,7 @@
  */
 
 import { Hono } from "hono";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
 import { dataSetCalculatedFields } from "./datasets.calculated.schema";
 import {

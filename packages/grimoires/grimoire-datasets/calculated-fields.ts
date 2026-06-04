@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Calculated Fields / KPI System
  * 

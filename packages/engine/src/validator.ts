@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * VALIDATOR ENGINE - Motor de Validación Declarativa
@@ -304,7 +303,7 @@ function validateMin(
   customMessage?: string
 ): ValidationError | null {
   let valid = true;
-  let actual: number;
+  let actual: number = 0;
 
   if (typeof value === "string" || Array.isArray(value)) {
     actual = value.length;
@@ -338,7 +337,7 @@ function validateMax(
   customMessage?: string
 ): ValidationError | null {
   let valid = true;
-  let actual: number;
+  let actual: number = 0;
 
   if (typeof value === "string" || Array.isArray(value)) {
     actual = value.length;

@@ -1,4 +1,3 @@
-
 /**
  * Gremius Functions (Workers) HTTP Tests
  *
@@ -6,9 +5,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "../db";
-import { gremiusFunctions } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { app } from "../index";
+
 import {
   isDatabaseAvailable,
   clearTestData,
@@ -16,7 +14,6 @@ import {
 } from "./setup";
 
 let dbAvailable = false;
-let app: any;
 
 function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   const headers = new Headers(opts.headers);
@@ -33,8 +30,6 @@ function extractCookie(headers: Headers): string {
 describe("Functions HTTP", () => {
   beforeAll(async () => {
     dbAvailable = await isDatabaseAvailable();
-    const mod = await import("../index");
-    app = mod.app;
     if (dbAvailable) await clearTestData();
   });
 

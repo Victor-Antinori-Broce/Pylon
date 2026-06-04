@@ -1,12 +1,9 @@
-// @ts-nocheck
-
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TEST SANDBOX - Core of the Testing Framework
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { Hono } from "hono";
 import type { GrimoireDefinition } from "@gremius/shared";
 import type { SandboxConfig, TestSandbox, TestGrimoire, TestGrimoireContext } from "./types.js";
 import { createTestContext } from "./context.js";
@@ -140,22 +137,22 @@ async function loadGrimoire(
     }
     
     // Wrap context to capture events
-    const contextWithEventTracking: TestGrimoireContext = {
+    const contextWithEventTracking = {
       ...context,
       events: {
-        ...context.events,
+        ...(context as any).events,
         emit: (name: string, data: any) => {
           events.all.push({ name, data, timestamp: new Date() });
-          return context.events.emit(name, data);
+          return (context as any).events.emit(name, data);
         }
       }
-    };
+    } as TestGrimoireContext;
     
     // Create router
     const router = definition.createRouter(contextWithEventTracking);
     
     // Invoke helper for direct function access
-    const invoke = async <T>(method: string, ...args: any[]): Promise<T> => {
+    const invoke = async <T>(method: string, ..._args: any[]): Promise<T> => {
       // This is a placeholder - in a real implementation,
       // you'd expose internal grimoire functions
       throw new Error(`Direct method invocation not implemented for ${method}`);

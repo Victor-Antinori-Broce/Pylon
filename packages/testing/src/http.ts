@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * HTTP TEST CLIENT - Make requests to grimoire routers
@@ -38,11 +36,11 @@ export function createTestHttpClient(
   // Middleware to inject test context
   app.use("*", async (c, next) => {
     if (requestContext.user) {
-      c.set("user", requestContext.user);
-      c.set("testUser", requestContext.user);
+      (c as any).set("user", requestContext.user);
+      (c as any).set("testUser", requestContext.user);
     }
     if (requestContext.token) {
-      c.set("token", requestContext.token);
+      (c as any).set("token", requestContext.token);
     }
     await next();
   });

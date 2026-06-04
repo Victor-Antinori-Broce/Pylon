@@ -3,10 +3,16 @@
  *
  * Provides an in-memory PostgreSQL instance for tests when
  * a real PostgreSQL server is not available.
+ *
+ * Loads Drizzle migrations from:
+ *   - apps/api/drizzle/          (generated migrations)
+ *   - apps/api/src/db/migrations/ (manual migrations)
  */
 
 import { drizzle } from "drizzle-orm/node-postgres";
 import { newDb, DataType } from "pg-mem";
+import { readFileSync, readdirSync } from "fs";
+import { join } from "path";
 import * as coreSchema from "../db/schema-core";
 
 let memDbInstance: ReturnType<typeof drizzle> | null = null;
@@ -59,110 +65,91 @@ function createPgMemPool(pgMemDb: ReturnType<typeof newDb>) {
   };
 }
 
-const CORE_SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS auth_users (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  email_verified BOOLEAN DEFAULT FALSE,
-  image TEXT,
-  role TEXT DEFAULT 'user',
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
+/**
+ * Parse migration SQL into executable statements for pg-mem.
+ * Handles:
+ *   - DO $$ BEGIN ... EXCEPTION blocks (extracts CREATE TYPE)
+ *   - PL/pgSQL functions/triggers (removes them)
+ *   - TIMESTAMPTZ → TIMESTAMP WITH TIME ZONE
+ *   - statement-breakpoint markers
+ */
+function extractStatements(sql: string): string[] {
+  // Normalize TIMESTAMPTZ shorthand
+  let cleaned = sql.replace(/\bTIMESTAMPTZ\b/gi, "TIMESTAMP WITH TIME ZONE");
 
-CREATE TABLE IF NOT EXISTS data_sets (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(200) NOT NULL,
-  slug VARCHAR(200) NOT NULL UNIQUE,
-  description TEXT,
-  icon VARCHAR(10),
-  schema JSONB NOT NULL DEFAULT '[]',
-  display_config JSONB,
-  policy_json JSONB,
-  workflow_json JSONB,
-  content_config JSONB,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
+  // Extract CREATE TYPE from DO ... EXCEPTION blocks (drizzle style)
+  cleaned = cleaned.replace(
+    /DO\s*\$\$\s*BEGIN\s*(CREATE\s+TYPE[\s\S]*?;)\s*EXCEPTION[\s\S]*?END\s*\$\$\s*;?\s*(?:-->\s*statement-breakpoint)?/gi,
+    "$1\n"
+  );
 
-CREATE TABLE IF NOT EXISTS data_entries (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(500) NOT NULL,
-  data_set_id UUID NOT NULL,
-  owner_id TEXT,
-  data JSONB NOT NULL,
-  thumbnail_id UUID,
-  sort_order INTEGER DEFAULT 0,
-  status TEXT DEFAULT 'published' NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
+  // Remove remaining DO blocks entirely
+  cleaned = cleaned.replace(/DO\s*\$\$[\s\S]*?\$\$\s*;?/gi, "");
 
-CREATE TABLE IF NOT EXISTS actions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(200) NOT NULL,
-  slug VARCHAR(200) NOT NULL UNIQUE,
-  description TEXT,
-  type TEXT NOT NULL,
-  trigger TEXT NOT NULL,
-  trigger_config JSONB DEFAULT '{}',
-  config JSONB DEFAULT '{}',
-  status TEXT DEFAULT 'active' NOT NULL,
-  last_executed_at TIMESTAMP,
-  last_error TEXT,
-  execution_count INTEGER DEFAULT 0,
-  error_count INTEGER DEFAULT 0,
-  created_by_id TEXT,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
+  // Remove PL/pgSQL functions and triggers
+  cleaned = cleaned.replace(
+    /CREATE\s+OR\s+REPLACE\s+FUNCTION[\s\S]*?\$\$[\s\S]*?\$\$\s*LANGUAGE\s+plpgsql\s*;?/gi,
+    ""
+  );
+  cleaned = cleaned.replace(
+    /CREATE\s+TRIGGER[\s\S]*?EXECUTE\s+(?:FUNCTION|PROCEDURE)[\s\S]*?;/gi,
+    ""
+  );
 
-CREATE TABLE IF NOT EXISTS gremius_functions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(200) NOT NULL,
-  slug VARCHAR(200) NOT NULL UNIQUE,
-  description TEXT,
-  code TEXT,
-  trigger TEXT,
-  config JSONB DEFAULT '{}',
-  status TEXT DEFAULT 'active' NOT NULL,
-  created_by_id TEXT,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
+  // Remove statement breakpoints and line comments
+  cleaned = cleaned.replace(/-->\s*statement-breakpoint\n?/g, "\n");
+  cleaned = cleaned.replace(/\n\s*--.*$/gm, "");
 
-CREATE TABLE IF NOT EXISTS api_keys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(200) NOT NULL,
-  key_hash TEXT NOT NULL,
-  scopes JSONB DEFAULT '[]',
-  rate_limit INTEGER DEFAULT 60,
-  expires_at TIMESTAMP,
-  last_used_at TIMESTAMP,
-  created_by_id TEXT,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS media (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  url TEXT NOT NULL,
-  type TEXT,
-  size INTEGER,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS site_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  key VARCHAR(200) NOT NULL UNIQUE,
-  value TEXT,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
-`;
+  return cleaned
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
 
 /**
- * Initialize pg-mem with core schema.
+ * Run all .sql files in a directory against pg-mem.
+ */
+function runMigrations(pgMem: ReturnType<typeof newDb>, dir: string) {
+  let totalOk = 0;
+  let totalFail = 0;
+
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+
+  for (const file of files) {
+    const sql = readFileSync(join(dir, file), "utf-8");
+    const stmts = extractStatements(sql);
+
+    let ok = 0;
+    let fail = 0;
+    for (const stmt of stmts) {
+      try {
+        pgMem.public.none(stmt + ";");
+        ok++;
+      } catch (e) {
+        fail++;
+        const msg = (e as Error).message;
+        const isBenign =
+          msg.includes("already exists") ||
+          msg.includes("does not exist") ||
+          msg.includes("cannot find column") ||
+          msg.includes("duplicate_object") ||
+          msg.includes("duplicate column name");
+        if (!isBenign) {
+          console.warn(`[pg-mem] ${file}:`, msg.substring(0, 120));
+        }
+      }
+    }
+    totalOk += ok;
+    totalFail += fail;
+  }
+
+  return { ok: totalOk, fail: totalFail };
+}
+
+/**
+ * Initialize pg-mem with full schema from migrations.
  */
 export async function initPgMemDb() {
   if (memDbInstance) return memDbInstance;
@@ -170,22 +157,27 @@ export async function initPgMemDb() {
   const pgMem = newDb();
   pgMemInstance = pgMem;
 
-  pgMem.registerExtension("uuid-ossp", (schema) => {
-    schema.registerFunction({
-      name: "gen_random_uuid",
-      returns: DataType.uuid,
-      implementation: () => crypto.randomUUID(),
-    });
+  // Register gen_random_uuid directly on public schema (works with DEFAULT in CREATE TABLE)
+  pgMem.public.registerFunction({
+    name: "gen_random_uuid",
+    returns: DataType.uuid,
+    implementation: () => crypto.randomUUID(),
   });
 
-  // Create core tables
-  for (const stmt of CORE_SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean)) {
-    try {
-      pgMem.public.none(stmt + ";");
-    } catch (e) {
-      // Some statements may fail on re-runs or unsupported features; ignore for now
-      console.warn("[pg-mem] SQL init warning:", (e as Error).message);
-    }
+  // Load Drizzle-generated migrations
+  const drizzleDir = join(import.meta.dir, "../../drizzle");
+  const r1 = runMigrations(pgMem, drizzleDir);
+
+  // Load manual migrations
+  const manualDir = join(import.meta.dir, "../db/migrations");
+  const r2 = runMigrations(pgMem, manualDir);
+
+  const total = r1.ok + r2.ok + r1.fail + r2.fail;
+  if (total > 0) {
+    console.log(
+      `[pg-mem] Migrations: ${r1.ok + r2.ok}/${total} statements OK` +
+        (r1.fail + r2.fail > 0 ? ` (${r1.fail + r2.fail} benign failures ignored)` : "")
+    );
   }
 
   const pool = createPgMemPool(pgMem);

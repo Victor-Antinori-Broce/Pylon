@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * DataSets Calculated Fields - Backend
  * 
@@ -205,7 +204,7 @@ export function evaluateExpression(expression: string, context: EvaluationContex
   const { row } = context;
   
   // Reemplazar referencias a campos: {fieldName} -> valor
-  let processedExpr = expression.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, fieldName) => {
+  let processedExpr = expression.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (_match, fieldName) => {
     const value = row[fieldName];
     
     // Manejar diferentes tipos
@@ -217,7 +216,7 @@ export function evaluateExpression(expression: string, context: EvaluationContex
       return `"${value.replace(/"/g, '\\"')}"`;
     }
     if (value instanceof Date) {
-      return value.getTime();
+      return String(value.getTime());
     }
     return String(value);
   });

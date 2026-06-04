@@ -152,8 +152,8 @@ START: What does the user want?
 ## 6. Auth & Security Context
 
 Gremius MCP accepts two credential types:
-- **Human API Key:** `gremius_sk_xxx` — full access.
-- **Agent NHI:** `grm_agent_xxx` — scoped access with rate limits.
+- **Agent NHI (recommended):** `grm_agent_xxx` — scoped access with rate limits and audit logs.
+- **Legacy API Key (deprecated):** `gremius_sk_xxx` — full access. Will be removed in v0.9.0.
 
 If the agent does not have `mcp:connect` scope, all tool calls will return 403. If auth is not enabled on the instance, RLS policies may block dataset queries — call `gremius_enable_auth` first.
 

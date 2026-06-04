@@ -16,6 +16,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./realtime": {
+      "import": {
+        "types": "./dist/realtime/realtime.d.ts",
+        "default": "./dist/realtime/realtime.js"
+      },
+      "require": {
+        "types": "./dist/realtime/realtime.d.cts",
+        "default": "./dist/realtime/realtime.cjs"
+      }
     }
   },
   "files": [
@@ -37,7 +47,9 @@
     "sdk",
     "typescript",
     "edge",
-    "serverless"
+    "serverless",
+    "realtime",
+    "websocket"
   ],
   "license": "MIT",
   "engines": {

@@ -171,7 +171,7 @@ export async function createDrizzleTestContext(
   sandboxId: string,
   drizzleConfig: DrizzleTestConfig
 ): Promise<TestGrimoireContext> {
-  const { db, cleanup, transaction } = await createDrizzleTestDb(drizzleConfig);
+  const { db, cleanup: _cleanup, transaction } = await createDrizzleTestDb(drizzleConfig);
 
   const { createTestContext } = await import("./context.js");
   const baseContext = await createTestContext(sandboxId, "memory");

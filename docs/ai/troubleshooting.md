@@ -118,8 +118,8 @@ SYMPTOM:  Any MCP call returns 401 or "Invalid API key".
 CAUSE:    Token missing, wrong format, expired, or not hashed in DB.
 FIX:
   1. VERIFY token format:
-     ├─ Human keys: gremius_sk_xxx
-     └─ Agent NHI:  grm_agent_xxx
+     ├─ Agent NHI (recommended):  grm_agent_xxx
+     └─ Legacy API keys (deprecated): gremius_sk_xxx
   2. IF token is missing from env:
      └─ Run: bun run apps/api/scripts/seed-mcp-test.ts
      └─ Copy token from progress.txt into env/GREMUS_MCP_TOKEN.

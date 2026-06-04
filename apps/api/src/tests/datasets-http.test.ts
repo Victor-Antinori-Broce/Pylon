@@ -1,4 +1,3 @@
-
 /**
  * Dataset CRUD + Entries HTTP Tests
  *
@@ -8,9 +7,6 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { app } from "../index";
-import { db } from "../db";
-import { dataSets, dataEntries, authUsers } from "../db/schema";
-import { eq } from "drizzle-orm";
 import {
   isDatabaseAvailable,
   clearTestData,

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * GRIMOIRE-BLOG SANDBOX TEST
@@ -27,7 +26,7 @@ describe("grimoire-blog with sandbox", () => {
     mockContext = {
       db: {
         instance: {},
-        execute: async (sql: string) => [],
+        execute: async (_sql: string) => [],
         tableExists: async () => true
       },
       cache: {
@@ -59,7 +58,7 @@ describe("grimoire-blog with sandbox", () => {
           }
           await next();
         },
-        optionalAuth: async (c: any, next: any) => await next(),
+        optionalAuth: async (_c: any, next: any) => await next(),
         getSession: async () => null
       },
       storage: {
@@ -87,7 +86,7 @@ describe("grimoire-blog with sandbox", () => {
         info: (msg: string) => console.log(`[ℹ️ Blog] ${msg}`),
         warn: (msg: string) => console.log(`[⚠️ Blog] ${msg}`),
         error: (msg: string) => console.log(`[❌ Blog] ${msg}`),
-        debug: (msg: string) => {}
+        debug: (_msg: string) => {}
       },
       config: {
         siteName: "Test Site",
@@ -164,7 +163,7 @@ describe("grimoire-blog with sandbox", () => {
       
       // Should return 401 response, not call next
       expect(nextCalled).toBe(false);
-      expect(result.status).toBe(401);
+      expect((result as any).status).toBe(401);
     });
     
     it("auth middleware allows requests with user", async () => {
@@ -196,7 +195,7 @@ describe("grimoire-blog with sandbox", () => {
       const result = await middleware(c as any, next);
       
       expect(nextCalled).toBe(false);
-      expect(result.status).toBe(403);
+      expect((result as any).status).toBe(403);
     });
   });
 

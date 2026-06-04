@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DATASETS AUTO-INDEXES - Índices Automáticos Inteligentes
@@ -112,7 +111,7 @@ export const indexConfigSchema = z.object({
 // INDEX MANAGER
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 /**
  * Analiza el schema de un dataset y sugiere índices óptimos
@@ -273,7 +272,7 @@ export async function createIndex(
     ctx.logger.info(`📈 Created index: ${suggestion.id}`);
     return true;
   } catch (error) {
-    ctx.logger.error(`Failed to create index ${suggestion.id}:`, error);
+    ctx.logger.error(`Failed to create index ${suggestion.id}:`, error as any);
     return false;
   }
 }
@@ -290,7 +289,7 @@ export async function dropIndex(
     ctx.logger.info(`🗑️ Dropped index: ${indexName}`);
     return true;
   } catch (error) {
-    ctx.logger.error(`Failed to drop index ${indexName}:`, error);
+    ctx.logger.error(`Failed to drop index ${indexName}:`, error as any);
     return false;
   }
 }

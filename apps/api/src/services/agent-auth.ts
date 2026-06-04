@@ -305,15 +305,28 @@ export function hasScope(
   agentContext: AgentAuthContext,
   requiredScope: string
 ): boolean {
-  // Scopes con wildcard, ej: "read:*" permite "read:users", "read:posts", etc.
-  return agentContext.scopes.some(scope => {
+  const grantedScopes = agentContext.scopes || [];
+
+  // 1. Super-scope: admin:* o admin permiten TODO
+  if (grantedScopes.includes("admin:*") || grantedScopes.includes("admin")) {
+    return true;
+  }
+
+  // 2. Verificar cada scope concedido
+  return grantedScopes.some(scope => {
     // Match exacto
     if (scope === requiredScope) return true;
     
-    // Match con wildcard
+    // Match con wildcard de recurso (ej: "read:*" permite "read:users")
     if (scope.endsWith(':*')) {
-      const prefix = scope.slice(0, -1);
+      const prefix = scope.slice(0, -1); // "read:*" -> "read:"
       return requiredScope.startsWith(prefix);
+    }
+    
+    // Match con wildcard de acción (ej: "*:database" permite "read:database")
+    if (scope.startsWith('*:')) {
+      const suffix = scope.slice(1); // "*:database" -> ":database"
+      return requiredScope.endsWith(suffix);
     }
     
     return false;

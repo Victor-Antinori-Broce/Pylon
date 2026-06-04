@@ -958,6 +958,10 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
         const finalMountPath = grimoireDef.mountPath || customMountPath || mountPath;
         app.route(finalMountPath, router);
         routerMounted = true;
+
+        // Debug: log router routes
+        console.log(`  [DEBUG ${grimoire.id}] Router type: ${router?.constructor?.name}`);
+        console.log(`  [DEBUG ${grimoire.id}] Router routes:`, (router as any)?.routes?.map((r: any) => `${r.method.toUpperCase()} ${r.path}`) || 'N/A');
         modern.push(grimoire.id);
         cachedLoadedGrimoires.push(grimoireDef);
 

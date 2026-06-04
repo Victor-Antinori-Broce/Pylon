@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Media Library Routes
@@ -11,7 +10,7 @@
  */
 
 import { Hono } from "hono";
-import { eq, and, desc, like, sql } from "drizzle-orm";
+import { eq, desc, like, sql } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
 import type { StorageConfig } from "./config.schema";
 import { media, mediaFolders } from "./media.schema";
@@ -64,7 +63,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
     
     // Generate signed URLs for private files
     const docsWithUrls = await Promise.all(
-      docs.map(async (doc) => {
+      docs.map(async (doc: any) => {
         let url = doc.publicUrl;
         
         // If no public URL, generate signed URL
@@ -419,7 +418,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
       
       // Delete thumbnails
       if (existing.thumbnails) {
-        for (const [size, info] of Object.entries(existing.thumbnails as Record<string, { key: string }>)) {
+        for (const [_size, info] of Object.entries(existing.thumbnails as Record<string, { key: string }>)) {
           try {
             await ctx.storage.delete(info.key);
           } catch {

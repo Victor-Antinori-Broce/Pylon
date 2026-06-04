@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- SDK: Subpath export `@gremius/sdk/realtime` with full type definitions
+- SDK: `getClientId()` and `getUserId()` getters on `GremiusRealtime`
+
+### Changed
+- SDK: `realtime.ts` — removed `@ts-nocheck`, fully typed with strict mode
+- SDK: `tsup.config.ts` — now builds both `index` and `realtime` as separate entries
+- SDK: `README.md` — completely rewritten with correct `from()` API, TOON, error handling, and edge runtime examples
+- README (root): Updated architecture diagram (`packages/admin` instead of `apps/admin`, Svelte 5 instead of Vue, `packages/realms` instead of `packages/themes`)
+- Docs: `PUBLISH_GUIDE.md` and `MCP_SDK_AUDIT.md` updated to reflect current SDK version and API
+- Docs: AI prompts (`mcp-tools.md`, `claude-system-prompt.md`, `troubleshooting.md`) now recommend Agent NHI (`grm_agent_*`) over deprecated legacy API keys (`gremius_sk_*`)
+
+### Fixed
+- SDK: TypeScript strict mode now passes (`tsc --noEmit`) for both `index.ts` and `realtime.ts`
+- SDK: Build artifacts cleaned from `src/` (`.js`, `.d.ts`, `.map` files)
 
 ## [0.7.0-beta] - 2026-03-06
 

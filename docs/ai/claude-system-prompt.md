@@ -151,8 +151,8 @@ Always decode TOON before presenting to the user:
 ## 8. Auth Context
 
 - **Human users:** Session cookie from Better-Auth (`/api/auth/signin`)
-- **Agents (you):** `grm_agent_xxx` token with `mcp:connect` scope
-- **API keys:** `gremius_sk_xxx` for machine-to-machine
+- **Agents (you):** `grm_agent_xxx` token with `mcp:connect` scope (recommended)
+- **Legacy API keys:** `gremius_sk_xxx` — deprecated, migrate to Agent NHI
 
 If a tool returns `403`, the agent token may lack scope. Tell the user to regenerate it with broader scopes.
 

@@ -57,17 +57,39 @@ let _client: RedisClientType | null = null;
 /**
  * Returns a connected Valkey client (lazy singleton).
  */
+async function connectWithTimeout(
+    client: RedisClientType,
+    timeoutMs: number
+): Promise<void> {
+    await Promise.race([
+        client.connect(),
+        new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Valkey connection timeout")), timeoutMs)
+        ),
+    ]);
+}
+
 export async function getValkeyClient(): Promise<RedisClientType> {
     if (_client && _client.isOpen) return _client;
 
-    _client = createClient({ url: VALKEY_URL }) as RedisClientType;
+    const client = createClient({
+        url: VALKEY_URL,
+        socket: { connectTimeout: 1000 },
+    }) as RedisClientType;
 
-    _client.on("error", (err: Error) => {
+    client.on("error", (err: Error) => {
         console.warn(`[Valkey] Connection error: ${err.message}`);
     });
 
-    await _client.connect();
-    return _client;
+    try {
+        await connectWithTimeout(client, 2000);
+        _client = client;
+        return _client;
+    } catch (err) {
+        try { client.disconnect(); } catch { /* ignore */ }
+        _client = null;
+        throw err;
+    }
 }
 
 // ── Availability Check ─────────────────────────────────────────

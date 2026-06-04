@@ -21,7 +21,12 @@
     "test:modules": "bun test src/tests/modules.test.ts",
     "test:rls": "bun test src/tests/rls.test.ts",
     "test:coverage": "bun test --coverage",
-    "test:realtime": "bun run src/tests/realtime.test.ts"
+    "test:realtime": "bun run src/tests/realtime.test.ts",
+    "test:db:up": "powershell -ExecutionPolicy Bypass -File ../../scripts/test-db-up.ps1",
+    "test:db:down": "powershell -ExecutionPolicy Bypass -File ../../scripts/test-db-down.ps1",
+    "test:all": "pnpm test:db:up && bun test src/tests/ && pnpm test:db:down",
+    "test:memory": "cross-env GREMIUS_TEST_DB=memory bun test",
+    "auth:migrate": "bun run scripts/migrate-api-keys-to-agents.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^5.5.0",

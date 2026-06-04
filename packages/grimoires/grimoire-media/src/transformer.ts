@@ -58,7 +58,7 @@ export class ImageTransformer {
 
     return {
       buffer,
-      info: info as OutputInfo,
+      info: info as unknown as OutputInfo,
       format: info.format || 'unknown',
     };
   }

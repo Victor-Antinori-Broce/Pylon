@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * DATASETS IMPORT/EXPORT - Importación y Exportación de Datos
@@ -18,7 +17,7 @@
 
 import { z } from "zod";
 import type { GrimoireContext } from "@gremius/shared";
-import type { DataSet, DataEntry, FieldDefinition } from "./datasets.schema";
+import type { DataEntry, FieldDefinition } from "./datasets.schema";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS Y SCHEMAS
@@ -160,7 +159,8 @@ export async function exportDatasets(
 ): Promise<ExportPackage> {
   const startTime = Date.now();
   const { db } = ctx;
-  const { dataSets, dataEntries, dataSetCalculatedFields } = await import("./datasets.schema");
+  const { dataSets, dataEntries } = await import("./datasets.schema");
+  const { dataSetCalculatedFields } = await import("./datasets.calculated.schema");
 
   const exportPackage: ExportPackage = {
     metadata: {
@@ -302,7 +302,7 @@ export function exportToJSONL(dataset: ExportedDataset): string {
 // IMPORT ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { eq, asc, gte, lte, inArray, sql } from "drizzle-orm";
+import { eq, asc, gte, lte } from "drizzle-orm";
 
 /**
  * Importa datos a un dataset
@@ -427,7 +427,7 @@ export async function importToDataset(
           .limit(1);
 
         if (existing) {
-          const mergedData = { ...existing.data, ...entry.data };
+          const mergedData = { ...(existing.data as any), ...(entry.data as any) };
           await db.instance
             .update(dataEntries)
             .set({

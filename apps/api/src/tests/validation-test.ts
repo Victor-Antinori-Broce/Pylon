@@ -1,4 +1,3 @@
-
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * VALIDATION TEST - Verifica que no hay errores 500/400
@@ -21,10 +20,10 @@ import { observabilityRoutes } from "../lib/observability";
 const app = new Hono<{ Variables: AppVariables }>();
 
 // Mock context helper
-function createMockContext(path: string, headers: Record<string, string> = {}) {
+function createMockContext(_path: string, headers: Record<string, string> = {}) {
   return {
     req: {
-      path,
+      path: _path,
       header: (name: string) => headers[name] || undefined,
     },
     get: () => null,
@@ -41,7 +40,7 @@ describe("🔒 Rate Limiter - Sin errores 500/400", () => {
     expect(Object.keys(RATE_LIMIT_CONFIGS).length).toBeGreaterThan(0);
     
     // Verificar que cada config tiene los campos requeridos
-    for (const [path, config] of Object.entries(RATE_LIMIT_CONFIGS)) {
+    for (const [_path, config] of Object.entries(RATE_LIMIT_CONFIGS)) {
       expect(config.limit).toBeGreaterThan(0);
       expect(config.window).toBeGreaterThan(0);
       expect(config.message).toBeDefined();

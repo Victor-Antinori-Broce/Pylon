@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Gremius Core Grimoire - DataSets
  * 
@@ -13,8 +12,7 @@
  * - Relations between datasets
  */
 
-import { Hono } from "hono";
-import type { GrimoireContext, GrimoireDefinition } from "@gremius/shared";
+import type { GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 import { createDatasetsRouter } from "./datasets.routes";
 import { adminConfig } from "./datasets.admin";
@@ -52,8 +50,8 @@ export const grimoire = defineGrimoire({
     category: "core",
     order: 0, // First in sidebar
     icon: "Database",
-    views: adminConfig.views,
-  },
+    views: adminConfig.views as any,
+  } as any,
 
   // Hooks
   hooks: {

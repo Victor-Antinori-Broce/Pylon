@@ -11,42 +11,101 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgres://gremius:gremiuspassword@localhost:5432/gremius_dev";
 
-let _db: NodePgDatabase<any>;
 let _mergedSchema: any;
+let _dbInstance: NodePgDatabase<any> | null = null;
+export let isPgMem = false;
 
-async function initDb() {
+/**
+ * Determine which database backend to use for tests.
+ *
+ * - GREMIUS_TEST_DB=postgres (default) → Real PostgreSQL
+ * - GREMIUS_TEST_DB=memory          → pg-mem in-memory
+ */
+function getTestDbMode(): "postgres" | "memory" {
+  const mode = process.env.GREMIUS_TEST_DB?.toLowerCase();
+  if (mode === "memory") return "memory";
+  return "postgres";
+}
+
+async function initDb(): Promise<NodePgDatabase<any>> {
   const isTest = process.env.NODE_ENV === "test";
+
+  if (isTest) {
+    const mode = getTestDbMode();
+
+    if (mode === "memory") {
+      console.log("📋 Test mode: GREMIUS_TEST_DB=memory — using pg-mem");
+      const { getPgMemDb } = await import("../tests/pg-mem-db");
+      isPgMem = true;
+      return await getPgMemDb();
+    }
+
+    // --- PostgreSQL real (default for tests) ---
+    const testPool = new Pool({
+      connectionString,
+      max: 5,
+      idleTimeoutMillis: 5000,
+      connectionTimeoutMillis: 3000,
+    });
+
+    try {
+      await testPool.query("SELECT 1");
+      console.log("📋 Test mode: GREMIUS_TEST_DB=postgres — using real PostgreSQL");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("");
+      console.error("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
+      console.error("❌  PostgreSQL test database is not reachable!");
+      console.error("❌");
+      console.error("❌  Expected at:", connectionString);
+      console.error("❌  Error:", message);
+      console.error("❌");
+      console.error("❌  To start the test database:");
+      console.error("❌    pnpm test:db:up       (from apps/api)");
+      console.error("❌    ./scripts/test-db-up  (from root)");
+      console.error("❌");
+      console.error("❌  Or use pg-mem instead:");
+      console.error("❌    GREMIUS_TEST_DB=memory pnpm test");
+      console.error("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
+      console.error("");
+      throw new Error(
+        `PostgreSQL test database unreachable. ${message}\n` +
+        `Run: pnpm test:db:up   or   GREMIUS_TEST_DB=memory pnpm test`
+      );
+    }
+
+    const { buildMergedSchema } = await import("../lib/schema-merger");
+    _mergedSchema = await buildMergedSchema();
+    return drizzle(testPool, { schema: _mergedSchema as Record<string, unknown> });
+  }
+
+  // --- Normal path (dev / prod) ---
   const pool = new Pool({
     connectionString,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: isTest ? 1000 : 2000,
+    connectionTimeoutMillis: 2000,
   });
 
-  if (isTest) {
-    try {
-      await pool.query("SELECT 1");
-    } catch {
-      // PostgreSQL not available in test → fall back to pg-mem
-      console.log("📋 PostgreSQL not available, using pg-mem for tests...");
-      const { getPgMemDb } = await import("../tests/pg-mem-db");
-      _db = await getPgMemDb();
-      _mergedSchema = coreSchema;
-      return;
-    }
-  }
-
-  // Normal path (dev / prod / test with real PG)
   const { buildMergedSchema } = await import("../lib/schema-merger");
   console.log("📋 Building merged schema...");
   _mergedSchema = await buildMergedSchema();
-  _db = drizzle(pool, { schema: _mergedSchema as Record<string, unknown> });
+  return drizzle(pool, { schema: _mergedSchema as Record<string, unknown> });
 }
 
-await initDb();
+/**
+ * Lazily initialize the database singleton.
+ * This avoids re-initialization when multiple test files import `../db`.
+ */
+async function getDbInstance(): Promise<NodePgDatabase<any>> {
+  if (!_dbInstance) {
+    _dbInstance = await initDb();
+  }
+  return _dbInstance;
+}
 
-export const db = _db;
-export { _mergedSchema as mergedSchema };
+export const db = await getDbInstance();
+export const mergedSchema = _mergedSchema ?? coreSchema;
 
 export type Database = typeof db;
 

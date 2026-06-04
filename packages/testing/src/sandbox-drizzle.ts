@@ -7,7 +7,6 @@
  * Uses REAL Drizzle ORM with pg-mem or PostgreSQL transactions
  */
 
-import { Hono } from "hono";
 import type { GrimoireDefinition } from "@gremius/shared";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { newDb, DataType } from "pg-mem";
@@ -356,7 +355,7 @@ async function loadGrimoire(
   grimoireId: string,
   context: TestGrimoireContext,
   events: ReturnType<typeof createTestEvents>,
-  drizzleInstance: any
+  _drizzleInstance: any
 ): Promise<TestGrimoire | null> {
   try {
     const path = `../../../packages/grimoires/${grimoireId}/index.ts`;
@@ -384,7 +383,7 @@ async function loadGrimoire(
     return {
       definition,
       router,
-      invoke: async <T>(method: string, ...args: any[]): Promise<T> => {
+      invoke: async <T>(method: string, ..._args: any[]): Promise<T> => {
         throw new Error(`Direct invocation not implemented: ${method}`);
       },
     };

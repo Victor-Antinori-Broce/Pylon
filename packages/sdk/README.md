@@ -1,18 +1,19 @@
 # @gremius/sdk
 
-Official JavaScript/TypeScript SDK for GremiusCMS - The Gaming-First BaaS/CMS.
+Official JavaScript/TypeScript SDK for GremiusCMS — The Modular BaaS/CMS.
 
 [![npm version](https://badge.fury.io/js/@gremius%2Fsdk.svg)](https://www.npmjs.com/package/@gremius/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- 🎮 **Gaming-First** - Built for game data, tournaments, and esports
-- 🔥 **Edge-Ready** - Works in Cloudflare Workers, Vercel Edge, Deno Deploy
-- 📝 **Type-Safe** - Full TypeScript support with auto-generated types
-- 🚀 **Zero Dependencies** - Lightweight, only uses native fetch
-- ⚡ **Fast** - Optimized for performance with caching support
-- 🔒 **Secure** - Built-in authentication and API key support
+- 🎮 **Gaming-First** — Built for game data, tournaments, and esports
+- 🔥 **Edge-Ready** — Works in Cloudflare Workers, Vercel Edge, Deno Deploy
+- 📝 **Type-Safe** — Full TypeScript support with generic table types
+- 🚀 **Zero Dependencies** — Lightweight, only uses native `fetch` and `WebSocket`
+- ⚡ **Fast** — TOON format support for AI agents (60% fewer tokens)
+- 🔒 **Secure** — Agent NHI tokens (`grm_agent_*`) + Bearer auth
+- 🔄 **Real-time** — Live Query subscriptions via WebSocket
 
 ## Installation
 
@@ -23,9 +24,6 @@ npm install @gremius/sdk
 # bun
 bun add @gremius/sdk
 
-# yarn
-yarn add @gremius/sdk
-
 # pnpm
 pnpm add @gremius/sdk
 ```
@@ -35,28 +33,17 @@ pnpm add @gremius/sdk
 ```typescript
 import { GremiusClient } from '@gremius/sdk';
 
-// Initialize client
 const gremius = new GremiusClient({
   url: 'https://api.yourgame.com',
-  apiKey: 'grm_agent_your_agent_token'  // Agent NHI token (recommended)
+  apiKey: 'grm_agent_your_agent_token'
 });
 
-// Read data
-const posts = await gremius.collection('posts').get();
-
-// Create entry
-const newPost = await gremius.collection('posts').insert({
-  title: 'Hello World',
-  content: 'My first post!'
-});
-
-// Update entry
-await gremius.collection('posts').update(newPost.id, {
-  title: 'Updated Title'
-});
-
-// Delete entry
-await gremius.collection('posts').delete(newPost.id);
+// Explorer API — primary way to interact with data
+const games = await gremius.from('games').list();
+const game = await gremius.from('games').get('uuid-123');
+const newGame = await gremius.from('games').create({ title: 'New Game' });
+await gremius.from('games').update(newGame.id, { status: 'published' });
+await gremius.from('games').delete(newGame.id);
 ```
 
 ## Usage
@@ -68,95 +55,211 @@ import { GremiusClient } from '@gremius/sdk';
 
 const gremius = new GremiusClient({
   url: 'https://api.yourgame.com',
-  // Optional: API key for authentication
+  // Optional: Agent NHI token for authentication
   apiKey: process.env.GREMIUS_API_KEY
 });
 ```
 
-### CRUD Operations
+### CRUD via Explorer API (Recommended)
 
-#### Read (Get All)
+The `.from(table)` method returns a `TableRef` with full CRUD capabilities:
 
-```typescript
-const posts = await gremius.collection('posts').get();
-console.log(posts.docs); // Array of entries
-console.log(posts.totalDocs); // Total count
-```
-
-#### Read (With Pagination)
+#### List with pagination, sorting, and filtering
 
 ```typescript
-const posts = await gremius.collection('posts').get({
+const games = await gremius.from('games').list();
+console.log(games.data);           // Array of records
+console.log(games.pagination);     // { page, limit, total, totalPages, hasNextPage, hasPrevPage }
+
+// With options
+const filtered = await gremius.from('games').list({
   limit: 10,
   page: 1,
-  sort: '-createdAt',
-  status: 'published'
+  sort: 'title',
+  dir: 'asc',
+  filter_field: 'status',
+  filter_op: 'equals',
+  filter_value: 'published'
 });
 ```
 
-#### Read (By ID)
+#### Get by ID
 
 ```typescript
-const post = await gremius.collection('posts').getById('123');
-if (post) {
-  console.log(post.title);
-}
+const game = await gremius.from('games').get('uuid-123');
 ```
 
 #### Create
 
 ```typescript
-const newPost = await gremius.collection('posts').insert({
-  title: 'New Post',
-  content: 'Content here...',
-  tags: ['gaming', 'news']
+const newGame = await gremius.from('games').create({
+  title: 'Elden Ring',
+  slug: 'elden-ring',
+  platforms: ['ps5', 'pc']
 });
 ```
 
 #### Update
 
 ```typescript
-await gremius.collection('posts').update('123', {
-  title: 'Updated Title'
+await gremius.from('games').update('uuid-123', {
+  status: 'published'
 });
 ```
 
 #### Delete
 
 ```typescript
-await gremius.collection('posts').delete('123');
+await gremius.from('games').delete('uuid-123');
+```
+
+#### Dropdown options (for foreign keys)
+
+```typescript
+const platforms = await gremius.from('platforms').options();
+// [{ value: 'uuid-1', label: 'PlayStation 5' }, ...]
 ```
 
 ### TypeScript Support
 
 ```typescript
-interface Post {
+interface Game {
   id: string;
   title: string;
-  content: string;
-  tags: string[];
+  slug: string;
+  status: 'draft' | 'published';
+  platforms: string[];
   createdAt: string;
 }
 
-// Type-safe collection
-const posts = gremius.collection<Post>('posts');
-const allPosts = await posts.get();
-// allPosts.docs is typed as Post[]
+// Type-safe table reference
+const games = gremius.from<Game>('games');
+const allGames = await games.list();
+// allGames.data is typed as Game[]
+```
+
+### Schema Introspection
+
+```typescript
+// Get column types, editability, and relations for a table
+const schema = await gremius.schema('games');
+console.log(schema.columns);
+// [{ name: 'title', type: 'text', editable: true, nullable: false }, ...]
+
+// List all available tables
+const tables = await gremius.tables();
+// [{ key: 'games', label: 'Games', icon: 'gamepad', rowCount: 42 }, ...]
+```
+
+### Module Management
+
+```typescript
+// List all grimoires (modules)
+const modules = await gremius.modules.list();
+
+// Toggle a grimoire on/off
+await gremius.modules.toggle('academy');
+
+// Get only enabled modules
+const enabled = await gremius.modules.enabled();
+```
+
+### TOON Format (for AI Agents)
+
+TOON reduces token usage by ~60% compared to JSON:
+
+```typescript
+const agent = new GremiusClient({
+  url: 'https://api.yourgame.com',
+  apiKey: 'grm_agent_xxx',
+  format: 'toon'
+});
+
+const toonData = await agent.from('games').list();
+// Returns parsed TOON data (same structure, optimized wire format)
 ```
 
 ### Error Handling
 
 ```typescript
+import { GremiusClient, GremiusError } from '@gremius/sdk';
+
 try {
-  const posts = await gremius.collection('posts').get();
+  const games = await gremius.from('games').list();
 } catch (error) {
-  if (error.message.includes('401')) {
-    console.error('Authentication failed');
-  } else if (error.message.includes('404')) {
-    console.error('Collection not found');
+  if (error instanceof GremiusError) {
+    console.error(`HTTP ${error.statusCode}:`, error.message);
   } else {
-    console.error('Request failed:', error.message);
+    console.error('Network or unknown error:', error);
   }
+}
+```
+
+### Real-time Subscriptions
+
+```typescript
+import { createRealtime } from '@gremius/sdk/realtime';
+
+const rt = createRealtime('https://api.yourgame.com');
+
+rt.onStateChange((state) => {
+  console.log('Connection:', state); // 'connecting' | 'connected' | 'reconnecting' | 'disconnected'
+});
+
+await rt.connect();
+
+// Subscribe to dataset changes
+const unsub = rt.subscribeToDataset('games-dataset-id', (event) => {
+  console.log('Change:', event.event, event.entry);
+});
+
+// Presence (who's online)
+rt.joinRoom('editor:doc-123');
+rt.onPresence('editor:doc-123', (users) => {
+  console.log('Online users:', users);
+});
+
+// Cleanup
+unsub();
+rt.disconnect();
+```
+
+### Health Check
+
+```typescript
+const healthy = await gremius.ping();
+console.log('API is', healthy ? 'up' : 'down');
+```
+
+## Edge Runtime Support
+
+Works in all edge runtimes with zero dependencies:
+
+```typescript
+// Cloudflare Workers
+export default {
+  async fetch(request: Request, env: Env) {
+    const gremius = new GremiusClient({
+      url: env.GREMIUS_URL,
+      apiKey: env.GREMIUS_API_KEY
+    });
+
+    const games = await gremius.from('games').list();
+    return Response.json(games);
+  }
+};
+
+// Vercel Edge
+export const config = { runtime: 'edge' };
+
+export default async function handler(req: Request) {
+  const gremius = new GremiusClient({
+    url: process.env.GREMIUS_URL!,
+    apiKey: process.env.GREMIUS_API_KEY
+  });
+
+  const games = await gremius.from('games').list();
+  return new Response(JSON.stringify(games));
 }
 ```
 
@@ -166,9 +269,10 @@ try {
 interface GremiusClientConfig {
   /** Base URL of your Gremius API */
   url: string;
-  
-  /** API Key for authentication (optional) */
+  /** Agent NHI token for authentication (optional) */
   apiKey?: string;
+  /** Response format: 'json' (default) or 'toon' */
+  format?: 'json' | 'toon';
 }
 ```
 
@@ -182,63 +286,44 @@ Main class for interacting with GremiusCMS API.
 
 Creates a new client instance.
 
+#### `from<T>(table: string): TableRef<T>`
+
+Returns a table reference for Explorer-based CRUD operations. **This is the recommended API.**
+
+#### `schema(table: string): Promise<SchemaInfo>`
+
+Returns column definitions, types, and relation info for a table.
+
+#### `tables(): Promise<TableListItem[]>`
+
+Lists all available tables with metadata.
+
 #### `collection<T>(name: string): CollectionRef<T>`
 
-Returns a collection reference for CRUD operations.
+Legacy Dataset API (backward compatibility). Use `.from()` for new code.
 
-### CollectionRef
+#### `ping(): Promise<boolean>`
 
-Reference to a dataset/collection.
+Health check — returns `true` if the API is reachable.
 
-#### `get(options?: GetOptions): Promise<ListResponse<T>>`
+### TableRef
 
-Get all entries with optional filtering.
+Primary CRUD interface. Returned by `.from(table)`.
 
-#### `getById(id: string): Promise<T | null>`
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `list` | `(options?: ListOptions) => Promise<ListResponse<T>>` | List with pagination, sort, filter |
+| `get` | `(id: string) => Promise<T>` | Get single record by ID |
+| `create` | `(data: Partial<T>) => Promise<T>` | Create new record |
+| `update` | `(id: string, data: Partial<T>) => Promise<T>` | Update existing record |
+| `delete` | `(id: string) => Promise<void>` | Delete record |
+| `options` | `() => Promise<OptionItem[]>` | Get dropdown options for FKs |
 
-Get a single entry by ID.
-
-#### `insert(data: Omit<T, 'id'>): Promise<T>`
-
-Create a new entry.
-
-#### `update(id: string, data: Partial<T>): Promise<T>`
-
-Update an existing entry.
-
-#### `delete(id: string): Promise<void>`
-
-Delete an entry.
-
-## Edge Runtime Support
-
-Works in all edge runtimes:
+### GremiusError
 
 ```typescript
-// Cloudflare Workers
-export default {
-  async fetch(request: Request, env: Env) {
-    const gremius = new GremiusClient({
-      url: env.GREMIUS_URL,
-      apiKey: env.GREMIUS_API_KEY
-    });
-    
-    const posts = await gremius.collection('posts').get();
-    return Response.json(posts);
-  }
-};
-
-// Vercel Edge
-export const config = { runtime: 'edge' };
-
-export default async function handler(req: Request) {
-  const gremius = new GremiusClient({
-    url: process.env.GREMIUS_URL!,
-    apiKey: process.env.GREMIUS_API_KEY
-  });
-  
-  const posts = await gremius.collection('posts').get();
-  return new Response(JSON.stringify(posts));
+class GremiusError extends Error {
+  statusCode: number; // HTTP status code
 }
 ```
 
@@ -247,7 +332,7 @@ export default async function handler(req: Request) {
 ### Next.js App Router
 
 ```typescript
-// app/posts/page.tsx
+// app/games/page.tsx
 import { GremiusClient } from '@gremius/sdk';
 
 const gremius = new GremiusClient({
@@ -255,13 +340,13 @@ const gremius = new GremiusClient({
   apiKey: process.env.GREMIUS_API_KEY
 });
 
-export default async function PostsPage() {
-  const posts = await gremius.collection('posts').get();
-  
+export default async function GamesPage() {
+  const games = await gremius.from('games').list({ limit: 10 });
+
   return (
     <ul>
-      {posts.docs.map(post => (
-        <li key={post.id}>{post.title}</li>
+      {games.data.map(game => (
+        <li key={game.id}>{game.title}</li>
       ))}
     </ul>
   );
@@ -279,12 +364,12 @@ const gremius = new GremiusClient({
   apiKey: import.meta.env.GREMIUS_API_KEY
 });
 
-const posts = await gremius.collection('posts').get();
+const games = await gremius.from('games').list();
 ---
 
 <ul>
-  {posts.docs.map(post => (
-    <li>{post.title}</li>
+  {games.data.map(game => (
+    <li>{game.title}</li>
   ))}
 </ul>
 ```
@@ -301,8 +386,8 @@ const gremius = new GremiusClient({
 });
 
 export async function load() {
-  const posts = await gremius.collection('posts').get();
-  return { posts };
+  const games = await gremius.from('games').list();
+  return { games };
 }
 ```
 

@@ -230,6 +230,29 @@ pnpm db:studio        # Ver estado
 pnpm db:push --force  # Resetear (⚠️ borra datos)
 ```
 
+### Tests fallan por timeout o PostgreSQL no disponible
+
+```bash
+# Levantar PostgreSQL dedicado para tests (puerto 5433)
+pnpm test:db:up
+
+# Correr tests con PostgreSQL real (recomendado)
+cd apps/api
+pnpm test
+
+# O en una sola línea (levanta DB, corre tests, baja DB)
+pnpm test:all
+
+# Para usar pg-mem en memoria (más rápido pero menos compatible)
+GREMIUS_TEST_DB=memory pnpm test
+
+# Bajar PostgreSQL de tests
+pnpm test:db:down
+```
+
+> **Recomendación:** Usa PostgreSQL real para tests. Es el estándar en CI y
+> garantiza compatibilidad total. `pg-mem` es útil para desarrollo rápido sin Docker.
+
 ### Contenedor no inicia (solo Vibecoder)
 
 ```bash
@@ -238,6 +261,30 @@ docker compose logs -f gremius_api
 
 # Reconstruir imágenes
 docker compose up -d --build
+```
+
+---
+
+## 🔐 Autenticación y Agentes (NHI)
+
+GremiusCMS v0.8.0+ utiliza un sistema de identidades no humanas (**Agents NHI**) con tokens `grm_agent_*`.
+
+- **Legacy API Keys**: Los tokens `gremius_sk_*` están **deprecados** y dejarán de funcionar el **2026-08-01**.
+- **Migración**: Ejecuta `pnpm auth:migrate` para convertir tus llaves legacy en Agentes.
+- **RBAC granular**: Los agentes usan *scopes* para limitar su acceso:
+  - `admin:*`: Super-usuario (acceso total).
+  - `read:*` / `write:*`: Wildcards de acción.
+  - `*:dataset`: Acceso total a un recurso específico.
+  - `dataset:read`, `media:write`, `mcp:connect`, etc.
+
+Para crear un nuevo agente:
+```bash
+# Usa el playground en el admin o la API:
+POST /api/admin/agents
+{
+  "name": "Mi Bot",
+  "scopes": ["dataset:read", "mcp:connect"]
+}
 ```
 
 ---
@@ -260,6 +307,13 @@ pnpm dev:start                    # Script con healthchecks
 pnpm dev:infra                    # Solo infraestructura Docker
 pnpm dev:down                     # Detener infraestructura
 pnpm dev                          # Solo apps (infra ya lista)
+
+# === 🧪 TESTS ===
+pnpm test:db:up                   # Levantar PostgreSQL de tests (puerto 5433)
+pnpm test:db:down                 # Bajar PostgreSQL de tests
+pnpm test:all                     # Tests con PostgreSQL real (cierra DB al final)
+cd apps/api && pnpm test          # Tests rápidos (asume DB levantada)
+GREMIUS_TEST_DB=memory pnpm test  # Tests con pg-mem (sin Docker)
 ```
 
 ---

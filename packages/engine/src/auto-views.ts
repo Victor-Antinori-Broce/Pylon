@@ -1,6 +1,5 @@
-// @ts-nocheck
 /**
- * Auto-Views placeholder - corrompido durante migración
+ * Auto-Views placeholder - corrompido durante migraciï¿½n
  */
 export function generateAutoViews() {
   return {};

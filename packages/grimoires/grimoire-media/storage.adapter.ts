@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 /**
  * Storage Adapter
@@ -16,12 +15,14 @@ let getSignedUrl: any;
 
 async function loadAwsSdk() {
   if (!S3Client) {
+    // @ts-ignore
     const s3 = await import("@aws-sdk/client-s3");
     S3Client = s3.S3Client;
     HeadBucketCommand = s3.HeadBucketCommand;
     PutObjectCommand = s3.PutObjectCommand;
     GetObjectCommand = s3.GetObjectCommand;
     DeleteObjectCommand = s3.DeleteObjectCommand;
+    // @ts-ignore
     const presigner = await import("@aws-sdk/s3-request-presigner");
     getSignedUrl = presigner.getSignedUrl;
   }
@@ -193,7 +194,7 @@ export async function createStorageAdapter(config: StorageConfig): Promise<Stora
 // ═══════════════════════════════════════════════════════════════════════════
 
 class MinioAdapter implements StorageAdapter {
-  private client: S3Client;
+  private client: any;
   private bucket: string;
   private publicUrl: string | undefined;
 
@@ -266,7 +267,7 @@ class MinioAdapter implements StorageAdapter {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class S3Adapter implements StorageAdapter {
-  private client: S3Client;
+  private client: any;
   private bucket: string;
   private publicUrl: string | undefined;
 
@@ -392,7 +393,7 @@ class LocalAdapter implements StorageAdapter {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class R2Adapter implements StorageAdapter {
-  private client: S3Client;
+  private client: any;
   private bucket: string;
   private publicUrl: string | undefined;
 

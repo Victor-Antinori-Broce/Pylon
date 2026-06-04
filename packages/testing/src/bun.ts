@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * BUN TEST RUNNER INTEGRATION
@@ -64,5 +62,4 @@ export function createBunTest(config: SandboxConfig) {
   };
 }
 
-export { createTestSandbox };
 export * from "./types.js";

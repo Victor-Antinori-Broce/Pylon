@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TEST CONTEXT - Creates isolated GrimoireContext for testing
@@ -14,13 +12,13 @@ import type { TestGrimoireContext } from "./types.js";
  */
 export async function createTestContext(
   sandboxId: string,
-  databaseStrategy: "memory" | "transaction" | "postgres" = "memory"
+  _databaseStrategy: "memory" | "transaction" | "postgres" = "memory"
 ): Promise<TestGrimoireContext> {
   // In-memory storage for this sandbox
   const memoryStore = new Map<string, any>();
   const eventListeners = new Map<string, Array<(data: any) => void>>();
   
-  const context: TestGrimoireContext = {
+  const context = {
     sandboxId,
     
     // Mock database - in real implementation this would connect to test DB
@@ -158,7 +156,7 @@ export async function createTestContext(
       siteUrl: "http://localhost:3001",
       environment: "test"
     }
-  };
+  } as TestGrimoireContext;
   
   return context;
 }

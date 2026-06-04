@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * GREMIUS QL ENGINE - Traductor Prisma JSON a Drizzle SQL
@@ -39,7 +38,6 @@ import {
   lte,
   inArray,
   ilike,
-  like,
   and,
   or,
   not,

@@ -5,7 +5,7 @@
  * for all test suites.
  */
 
-import { db } from "../db";
+import { db, isPgMem } from "../db";
 import { sql } from "drizzle-orm";
 
 // Test database URL from environment or default
@@ -13,12 +13,14 @@ export const TEST_DATABASE_URL = process.env.DATABASE_URL ||
   "postgres://gremius:gremiuspassword@localhost:5433/gremius_test";
 
 /**
- * Check if database is available
+ * Check if a REAL PostgreSQL database is available.
+ * Returns false when falling back to pg-mem, since pg-mem
+ * does not fully support drizzle-orm 0.45.x for integration tests.
  */
 export async function isDatabaseAvailable(): Promise<boolean> {
   try {
     await db.execute(sql`SELECT 1`);
-    return true;
+    return !isPgMem;
   } catch {
     return false;
   }
