@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
+import { app } from "../index";
 import {
   isDatabaseAvailable,
   generateTestId,
@@ -24,8 +25,6 @@ function extractCookie(headers: Headers): string {
   const setCookie = headers.get("set-cookie") || "";
   return setCookie.split(";")[0];
 }
-
-import { app } from "../index";
 
 describe("System HTTP", () => {
   beforeAll(async () => {
