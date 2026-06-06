@@ -1,6 +1,6 @@
 {
   "name": "@gremius/vector-search",
-  "version": "1.0.0",
+  "version": "0.9.0-beta",
   "description": "Vector search extension for Gremius datasets — semantic search with embeddings",
   "type": "module",
   "main": "./dist/index.js",

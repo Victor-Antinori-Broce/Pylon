@@ -27,6 +27,8 @@ beforeAll(async () => {
   ]);
   // Register features
   registerCriticalFeatures(app);
+  // Mock auth endpoint for rate-limit testing
+  app.post("/api/auth/login", (c) => c.json({ success: true }));
   // Mock context
   createMockContext(app);
 });

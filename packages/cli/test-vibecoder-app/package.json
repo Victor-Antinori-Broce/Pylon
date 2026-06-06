@@ -1,6 +1,6 @@
 {
   "name": "gremius-cms",
-  "version": "0.8.0-beta",
+  "version": "0.9.0-beta",
   "private": true,
   "description": "GremiusCMS - High-Performance Open Source Gaming CMS (Bun + Hono + Drizzle)",
   "license": "MIT",

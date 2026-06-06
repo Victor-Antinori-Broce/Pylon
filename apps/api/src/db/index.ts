@@ -22,13 +22,13 @@ export let isPgMem = false;
 /**
  * Determine which database backend to use for tests.
  *
- * - GREMIUS_TEST_DB=postgres (default) → Real PostgreSQL
- * - GREMIUS_TEST_DB=memory          → pg-mem in-memory
+ * - GREMIUS_TEST_DB=memory (default) → pg-mem in-memory
+ * - GREMIUS_TEST_DB=postgres         → Real PostgreSQL
  */
 function getTestDbMode(): "postgres" | "memory" {
   const mode = process.env.GREMIUS_TEST_DB?.toLowerCase();
-  if (mode === "memory") return "memory";
-  return "postgres";
+  if (mode === "postgres") return "postgres";
+  return "memory";
 }
 
 async function initDb(): Promise<NodePgDatabase<any>> {

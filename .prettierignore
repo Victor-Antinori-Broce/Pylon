@@ -10,3 +10,4 @@ _legacy_*
 node_modules/.pnpm
 apps/api/tests.json
 packages/testing/diag.ts
+packages/grimoires/grimoire-blog/SEO_GUIDE.md

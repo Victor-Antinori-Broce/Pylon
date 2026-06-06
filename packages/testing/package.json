@@ -1,6 +1,6 @@
 {
   "name": "@gremius/testing",
-  "version": "0.1.0",
+  "version": "0.9.0-beta",
   "description": "Gremius Testing Framework - Minimalist grimoire testing",
   "type": "module",
   "main": "./dist/index.js",

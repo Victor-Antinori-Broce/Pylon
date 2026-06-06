@@ -1,6 +1,6 @@
 {
   "name": "@gremius/cli",
-  "version": "0.1.0",
+  "version": "0.9.0-beta",
   "type": "module",
   "bin": {
     "gremius": "./dist/index.js",

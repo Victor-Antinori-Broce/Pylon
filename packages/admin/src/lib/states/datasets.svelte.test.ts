@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { DatasetDefinition, CreateDatasetPayload } from "@gremius/shared";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
