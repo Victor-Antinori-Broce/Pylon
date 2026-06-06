@@ -1,18 +1,19 @@
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
   import { TrendingUp, Users, Building2, Briefcase, Activity, Settings } from "lucide-svelte";
 
-  import CompanyList from "./CompanyList.svelte";
-  import CompanyForm from "./CompanyForm.svelte";
-  import ContactList from "./ContactList.svelte";
-  import ContactForm from "./ContactForm.svelte";
-  import DealList from "./DealList.svelte";
-  import DealForm from "./DealForm.svelte";
-  import ActivityList from "./ActivityList.svelte";
   import ActivityForm from "./ActivityForm.svelte";
-  import PipelineList from "./PipelineList.svelte";
+  import ActivityList from "./ActivityList.svelte";
+  import CompanyForm from "./CompanyForm.svelte";
+  import CompanyList from "./CompanyList.svelte";
+  import ContactForm from "./ContactForm.svelte";
+  import ContactList from "./ContactList.svelte";
   import CrmDashboard from "./CrmDashboard.svelte";
+  import DealForm from "./DealForm.svelte";
+  import DealList from "./DealList.svelte";
+  import PipelineList from "./PipelineList.svelte";
+
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: TrendingUp },
@@ -23,7 +24,7 @@
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  let activeTab = $derived($page.url.searchParams.get("tab") || "dashboard");
+  const activeTab = $derived($page.url.searchParams.get("tab") || "dashboard");
   let subView = $state<"list" | "form">("list");
   let selectedId = $state<string | null>(null);
 

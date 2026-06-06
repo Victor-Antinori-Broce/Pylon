@@ -8,9 +8,9 @@
  * de datasets funcionan correctamente sin errores 404/500.
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
 import { Hono } from "hono";
-import { createDatasetsRouter } from "./datasets.routes";
+import { describe, it, expect } from "vitest";
+
 import {
   exportDatasets,
   importToDataset,
@@ -20,19 +20,6 @@ import {
   exportToCSV,
   exportToJSONL,
 } from "./datasets.import-export";
-import {
-  generateSnapshot,
-  saveSnapshot,
-  getCurrentSnapshot,
-  getSnapshotHistory,
-  compareSnapshots,
-  restoreToSnapshot,
-  createManualSnapshot,
-  shouldSnapshot,
-  detectSnapshotConfig,
-  GAMING_BUILD_SNAPSHOT_CONFIG,
-  diffBuilds,
-} from "./datasets.snapshots";
 import {
   suggestIndexesForDataset,
   getIndexStats,
@@ -46,6 +33,20 @@ import {
   indexConfigSchema,
   indexDefinitionSchema,
 } from "./datasets.indexes";
+import { createDatasetsRouter } from "./datasets.routes";
+import {
+  generateSnapshot,
+  saveSnapshot,
+  getCurrentSnapshot,
+  getSnapshotHistory,
+  compareSnapshots,
+  restoreToSnapshot,
+  createManualSnapshot,
+  shouldSnapshot,
+  detectSnapshotConfig,
+  GAMING_BUILD_SNAPSHOT_CONFIG,
+  diffBuilds,
+} from "./datasets.snapshots";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VALIDACIÓN DE EXPORTS
@@ -104,7 +105,7 @@ describe("📋 SCHEMA VALIDATION", () => {
       includeSchema: true,
       format: "json" as const,
     };
-    
+
     const result = exportConfigSchema.safeParse(validConfig);
     expect(result.success).toBe(true);
   });
@@ -113,7 +114,7 @@ describe("📋 SCHEMA VALIDATION", () => {
     const invalidConfig = {
       datasets: [], // Empty array should fail
     };
-    
+
     const result = exportConfigSchema.safeParse(invalidConfig);
     expect(result.success).toBe(false);
   });
@@ -124,7 +125,7 @@ describe("📋 SCHEMA VALIDATION", () => {
       idField: "id",
       validate: true,
     };
-    
+
     const result = importConfigSchema.safeParse(validConfig);
     expect(result.success).toBe(true);
   });
@@ -137,7 +138,7 @@ describe("📋 SCHEMA VALIDATION", () => {
       ],
       autoDetect: true,
     };
-    
+
     const result = indexConfigSchema.safeParse(validConfig);
     expect(result.success).toBe(true);
   });
@@ -211,10 +212,10 @@ describe("⚙️ BUSINESS LOGIC VALIDATION", () => {
       };
 
       const comparison = compareSnapshots(oldSnapshot as any, newSnapshot as any);
-      
+
       expect(comparison).toBeInstanceOf(Array);
       expect(comparison.length).toBe(2);
-      
+
       const dpsChange = comparison.find((c) => c.field === "weapon");
       expect(dpsChange?.changed).toBe(true);
     });
@@ -223,13 +224,11 @@ describe("⚙️ BUSINESS LOGIC VALIDATION", () => {
   describe("Indexes", () => {
     it("should suggest btree for relation fields", () => {
       const schema = {
-        fields: [
-          { key: "weapon_id", type: "relation", label: "Weapon" },
-        ],
+        fields: [{ key: "weapon_id", type: "relation", label: "Weapon" }],
       };
 
       const suggestions = suggestIndexesForDataset("builds", schema);
-      
+
       expect(suggestions.length).toBeGreaterThan(0);
       expect(suggestions[0].type).toBe("btree");
       expect(suggestions[0].field).toBe("weapon_id");
@@ -241,17 +240,17 @@ describe("⚙️ BUSINESS LOGIC VALIDATION", () => {
       };
 
       const suggestions = suggestIndexesForDataset("builds", schema);
-      
+
       const ginSuggestion = suggestions.find((s) => s.type === "gin");
       expect(ginSuggestion).toBeDefined();
     });
 
     it("should return gaming config for POE", () => {
       const config = getGameIndexConfig("poe");
-      
+
       expect(config).toBeDefined();
       expect(config.indexes.length).toBeGreaterThan(0);
-      
+
       const leagueIndex = config.indexes.find((i) => i.name?.includes("league"));
       expect(leagueIndex).toBeDefined();
     });
@@ -290,30 +289,30 @@ describe("🔌 ENDPOINTS VALIDATION", () => {
     { method: "GET", path: "/slug/:slug" },
     { method: "PATCH", path: "/:id" },
     { method: "DELETE", path: "/:id" },
-    
+
     // Entries
     { method: "GET", path: "/:id/entries" },
     { method: "POST", path: "/:id/entries" },
     { method: "GET", path: "/:id/entries/:entryId" },
     { method: "PATCH", path: "/:id/entries/:entryId" },
     { method: "DELETE", path: "/:id/entries/:entryId" },
-    
+
     // Calculated Fields
     { method: "GET", path: "/:id/calculated-fields" },
     { method: "POST", path: "/:id/calculated-fields" },
-    
+
     // Import/Export
     { method: "POST", path: "/export" },
     { method: "POST", path: "/import" },
     { method: "POST", path: "/import/package" },
-    
+
     // Snapshots
     { method: "GET", path: "/:id/entries/:entryId/snapshot" },
     { method: "GET", path: "/:id/entries/:entryId/snapshots" },
     { method: "POST", path: "/:id/entries/:entryId/snapshots" },
     { method: "POST", path: "/:id/entries/:entryId/restore" },
     { method: "POST", path: "/:id/entries/:entryId/compare" },
-    
+
     // Indexes
     { method: "GET", path: "/:id/indexes/suggest" },
     { method: "GET", path: "/indexes/stats" },
@@ -351,17 +350,17 @@ describe("🎮 GAMING CONFIGURATIONS", () => {
 
   it("should have recommended gaming indexes", () => {
     expect(GAMING_RECOMMENDED_INDEXES.length).toBeGreaterThan(5);
-    
+
     const btreeIndexes = GAMING_RECOMMENDED_INDEXES.filter((i) => i.type === "btree");
     const ginIndexes = GAMING_RECOMMENDED_INDEXES.filter((i) => i.type === "gin");
-    
+
     expect(btreeIndexes.length).toBeGreaterThan(0);
     expect(ginIndexes.length).toBeGreaterThan(0);
   });
 
   it("should support all major games", () => {
     const games = ["poe", "diablo", "wow", "genshin"] as const;
-    
+
     games.forEach((game) => {
       const config = getGameIndexConfig(game);
       expect(config).toBeDefined();

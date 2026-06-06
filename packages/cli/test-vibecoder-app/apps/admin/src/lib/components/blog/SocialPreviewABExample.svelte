@@ -11,8 +11,9 @@
   - Testear cuál versión tiene mejor SEO
 -->
 <script lang="ts">
+  import { GitCompare } from 'lucide-svelte';
+
   import SocialPreview from './SocialPreview.svelte';
-  import { GitCompare, Loader2 } from 'lucide-svelte';
 
   // Datos de ejemplo para la comparación
   const variantA = {
@@ -90,7 +91,7 @@
     showComparison?: boolean;
   }
 
-  let { showComparison = true }: Props = $props();
+  const { showComparison = true }: Props = $props();
 </script>
 
 <div class="ab-example">

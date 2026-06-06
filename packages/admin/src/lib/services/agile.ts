@@ -107,7 +107,9 @@ export async function getAgileProjects(): Promise<AgileProject[]> {
   return res.json();
 }
 
-export async function getAgileProject(id: string): Promise<AgileProject & { states: AgileState[] }> {
+export async function getAgileProject(
+  id: string
+): Promise<AgileProject & { states: AgileState[] }> {
   const res = await fetch(`${API_BASE}/projects/${id}`, { credentials: "include" });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -138,7 +140,10 @@ export async function getAgileIssue(key: string): Promise<AgileIssue> {
   return res.json();
 }
 
-export async function createAgileIssue(projectId: string, data: Partial<AgileIssue>): Promise<AgileIssue> {
+export async function createAgileIssue(
+  projectId: string,
+  data: Partial<AgileIssue>
+): Promise<AgileIssue> {
   const res = await fetch(`${API_BASE}/${projectId}/issues`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -149,7 +154,10 @@ export async function createAgileIssue(projectId: string, data: Partial<AgileIss
   return res.json();
 }
 
-export async function updateAgileIssue(key: string, data: Partial<AgileIssue>): Promise<AgileIssue> {
+export async function updateAgileIssue(
+  key: string,
+  data: Partial<AgileIssue>
+): Promise<AgileIssue> {
   const res = await fetch(`${API_BASE}/issues/${key}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -185,7 +193,10 @@ export async function getAgileIntakes(projectId: string): Promise<AgileIntake[]>
   return res.json();
 }
 
-export async function createAgileIntake(projectId: string, data: Partial<AgileIntake>): Promise<AgileIntake> {
+export async function createAgileIntake(
+  projectId: string,
+  data: Partial<AgileIntake>
+): Promise<AgileIntake> {
   const res = await fetch(`${API_BASE}/${projectId}/intakes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -231,7 +242,10 @@ export async function getAgileCycles(projectId: string): Promise<AgileCycle[]> {
   return res.json();
 }
 
-export async function createAgileCycle(projectId: string, data: Partial<AgileCycle>): Promise<AgileCycle> {
+export async function createAgileCycle(
+  projectId: string,
+  data: Partial<AgileCycle>
+): Promise<AgileCycle> {
   const res = await fetch(`${API_BASE}/${projectId}/cycles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -250,7 +264,10 @@ export async function getAgileModules(projectId: string): Promise<AgileModule[]>
   return res.json();
 }
 
-export async function createAgileModule(projectId: string, data: Partial<AgileModule>): Promise<AgileModule> {
+export async function createAgileModule(
+  projectId: string,
+  data: Partial<AgileModule>
+): Promise<AgileModule> {
   const res = await fetch(`${API_BASE}/${projectId}/modules`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

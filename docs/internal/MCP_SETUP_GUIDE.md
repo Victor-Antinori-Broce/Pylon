@@ -30,6 +30,7 @@ bun run seed:mcp
 ```
 
 Esto generará:
+
 - Un agente "DevBot" en la base de datos
 - Un token con formato `grm_agent_...`
 - Configuración para Claude Desktop
@@ -80,11 +81,13 @@ Esto generará:
 ### Test 1: Verificar herramientas disponibles
 
 Escribe en Claude:
+
 ```
 Lista las herramientas que tienes disponibles
 ```
 
 **Respuesta esperada:**
+
 ```
 Tengo disponibles las siguientes herramientas de Gremius:
 
@@ -102,11 +105,13 @@ Tengo disponibles las siguientes herramientas de Gremius:
 ### Test 2: Verificar estado de la API
 
 Escribe:
+
 ```
 Verifica el estado de la conexión con Gremius
 ```
 
 **Respuesta esperada:**
+
 ```
 ✅ Gremius API está saludable!
 
@@ -126,11 +131,13 @@ Checks:
 ### Test 3: Listar datasets
 
 Escribe:
+
 ```
 Muestra los datasets disponibles en Gremius
 ```
 
 **Respuesta esperada:**
+
 ```
 📊 Datasets disponibles (3):
 
@@ -166,6 +173,7 @@ Claude Desktop → Token grm_agent_xxx → Middleware → Validación → Acceso
 ```
 
 Esto significa que el agente puede:
+
 - ✅ Leer datasets y entradas
 - ✅ Escribir en datasets (crear/actualizar)
 - ❌ No puede acceder a funciones de admin
@@ -174,15 +182,15 @@ Esto significa que el agente puede:
 
 ## 🛠️ Herramientas MCP Disponibles
 
-| Herramienta | Descripción | Scopes Requeridos |
-|-------------|-------------|-------------------|
-| `gremius_list_datasets` | Lista todos los datasets | `read:issues` |
-| `gremius_search_entries` | Busca en datasets | `read:issues` |
-| `gremius_create_entry` | Crea nueva entrada | `write:intake` |
-| `gremius_read_entry` | Lee entrada específica | `read:issues` |
-| `gremius_update_entry` | Actualiza entrada | `write:intake` |
-| `gremius_get_dataset_schema` | Obtiene esquema | `read:issues` |
-| `gremius_health_check` | Verifica conexión | - |
+| Herramienta                  | Descripción              | Scopes Requeridos |
+| ---------------------------- | ------------------------ | ----------------- |
+| `gremius_list_datasets`      | Lista todos los datasets | `read:issues`     |
+| `gremius_search_entries`     | Busca en datasets        | `read:issues`     |
+| `gremius_create_entry`       | Crea nueva entrada       | `write:intake`    |
+| `gremius_read_entry`         | Lee entrada específica   | `read:issues`     |
+| `gremius_update_entry`       | Actualiza entrada        | `write:intake`    |
+| `gremius_get_dataset_schema` | Obtiene esquema          | `read:issues`     |
+| `gremius_health_check`       | Verifica conexión        | -                 |
 
 ---
 
@@ -191,6 +199,7 @@ Esto significa que el agente puede:
 ### Error: "GREMUS_MCP_TOKEN no está configurado"
 
 **Solución:**
+
 ```bash
 # Generar token
 bun run apps/api/scripts/seed-mcp-test.ts
@@ -203,11 +212,13 @@ bun run apps/api/scripts/seed-mcp-test.ts
 ### Error: "Invalid agent API key"
 
 **Causas:**
+
 1. Token no registrado en base de datos
 2. Token expirado
 3. Agente desactivado
 
 **Solución:**
+
 ```bash
 # Verificar que PostgreSQL esté corriendo
 docker compose up -d db
@@ -227,8 +238,9 @@ EOF
 ### Error: "Agent does not have MCP scope"
 
 **Solución:** Actualizar scopes del agente:
+
 ```sql
-UPDATE agent_identities 
+UPDATE agent_identities
 SET scopes = '["read:issues", "write:intake", "mcp:connect"]'
 WHERE name = 'DevBot';
 ```
@@ -238,6 +250,7 @@ WHERE name = 'DevBot';
 ### Error: "Connection refused" al conectar
 
 **Verificar:**
+
 1. Gremius API corriendo:
    ```bash
    cd apps/api && bun run dev
@@ -259,7 +272,7 @@ En Claude Desktop → Developer → MCP Logs
 
 ```sql
 -- Ver últimas acciones del agente
-SELECT * FROM agent_audit_logs 
+SELECT * FROM agent_audit_logs
 WHERE agent_id = 'agent_xxx'
 ORDER BY created_at DESC
 LIMIT 10;
@@ -275,13 +288,13 @@ sequenceDiagram
     participant MCP as MCP Server
     participant API as Gremius API
     participant DB as PostgreSQL
-    
+
     CD->>MCP: Inicia con GREMUS_MCP_TOKEN
     MCP->>API: GET /api/health
     API->>DB: Verifica token
     DB-->>API: Token válido + Scopes
     API-->>MCP: ✅ Conectado
-    
+
     CD->>MCP: "Lista datasets"
     MCP->>API: GET /api/data-sets
     API->>DB: Query datasets
@@ -294,13 +307,13 @@ sequenceDiagram
 
 ## 📁 Archivos Relacionados
 
-| Archivo | Propósito |
-|---------|-----------|
-| `apps/api/src/mcp-server.ts` | Servidor MCP standalone |
-| `apps/api/src/routes/mcp.ts` | Endpoints MCP HTTP/SSE |
-| `apps/api/scripts/seed-mcp-test.ts` | Generador de tokens |
-| `progress.txt` | Token guardado |
-| `MCP_SETUP_GUIDE.md` | Esta guía |
+| Archivo                             | Propósito               |
+| ----------------------------------- | ----------------------- |
+| `apps/api/src/mcp-server.ts`        | Servidor MCP standalone |
+| `apps/api/src/routes/mcp.ts`        | Endpoints MCP HTTP/SSE  |
+| `apps/api/scripts/seed-mcp-test.ts` | Generador de tokens     |
+| `progress.txt`                      | Token guardado          |
+| `MCP_SETUP_GUIDE.md`                | Esta guía               |
 
 ---
 

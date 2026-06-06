@@ -1,17 +1,17 @@
 /* Gremius Corporate — Light Enterprise Theme */
 :root {
-    --gremius-bg: #FAF9F8;
-    --gremius-card: #FFFFFF;
-    --gremius-text: #323130;
-    --gremius-text-dim: #605E5C;
-    --gremius-subtle: #A19F9D;
-    --gremius-border: #E1DFDD;
+  --gremius-bg: #faf9f8;
+  --gremius-card: #ffffff;
+  --gremius-text: #323130;
+  --gremius-text-dim: #605e5c;
+  --gremius-subtle: #a19f9d;
+  --gremius-border: #e1dfdd;
 
-    --gremius-cyan: #0078D4;
-    --gremius-purple: #8764B8;
-    --gremius-pink: #E3008C;
-    --gremius-green: #107C10;
-    --gremius-amber: #FFB900;
+  --gremius-cyan: #0078d4;
+  --gremius-purple: #8764b8;
+  --gremius-pink: #e3008c;
+  --gremius-green: #107c10;
+  --gremius-amber: #ffb900;
 
-    --gremius-heading: #201F1E;
+  --gremius-heading: #201f1e;
 }

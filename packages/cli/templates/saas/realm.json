@@ -2,11 +2,7 @@
   "name": "SaaS",
   "description": "SaaS starter with teams, subscriptions, and user management",
   "template": "saas",
-  "grimoires": [
-    "grimoire-auth",
-    "grimoire-datasets",
-    "grimoire-media"
-  ],
+  "grimoires": ["grimoire-auth", "grimoire-datasets", "grimoire-media"],
   "datasets": [
     {
       "name": "teams",
@@ -34,7 +30,11 @@
         "teamId": { "type": "relation", "target": "teams", "required": true },
         "amount": { "type": "number", "required": true },
         "currency": { "type": "string", "default": "USD" },
-        "status": { "type": "enum", "options": ["pending", "paid", "overdue"], "default": "pending" },
+        "status": {
+          "type": "enum",
+          "options": ["pending", "paid", "overdue"],
+          "default": "pending"
+        },
         "dueDate": { "type": "datetime" }
       }
     }

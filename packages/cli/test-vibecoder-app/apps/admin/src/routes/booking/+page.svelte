@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { CalendarDays, Clock, Users, DoorOpen, Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { CalendarDays, Clock, Users, DoorOpen, Plus, ChevronLeft, ChevronRight, CheckCircle } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   // Types
   interface Room {

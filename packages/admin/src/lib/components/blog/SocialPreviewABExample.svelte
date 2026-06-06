@@ -11,31 +11,34 @@
   - Testear cuál versión tiene mejor SEO
 -->
 <script lang="ts">
-  import SocialPreview from './SocialPreview.svelte';
-  import { GitCompare, Loader2 } from 'lucide-svelte';
+  import { GitCompare } from "lucide-svelte";
+
+  import SocialPreview from "./SocialPreview.svelte";
 
   // Datos de ejemplo para la comparación
   const variantA = {
     title: "10 Estrategias SEO para 2024 | Mi Blog",
-    metaDescription: "Descubre las mejores técnicas de SEO para este año. Guía completa con ejemplos prácticos.",
+    metaDescription:
+      "Descubre las mejores técnicas de SEO para este año. Guía completa con ejemplos prácticos.",
     canonicalUrl: "https://ejemplo.com/blog/seo-2024",
     openGraph: {
       title: "🚀 10 Estrategias SEO que funcionan en 2024",
-      description: "Descubre las tácticas SEO probadas que aumentaron el tráfico orgánico de 500+ empresas.",
+      description:
+        "Descubre las tácticas SEO probadas que aumentaron el tráfico orgánico de 500+ empresas.",
       url: "https://ejemplo.com/blog/seo-2024",
       image: {
         url: "https://ejemplo.com/images/seo-strategy-a.jpg",
         width: 1200,
         height: 630,
-        isWhatsAppCompatible: true
+        isWhatsAppCompatible: true,
       },
-      siteName: "Mi Blog"
+      siteName: "Mi Blog",
     },
     twitterCard: {
       card: "summary_large_image",
       title: "10 Estrategias SEO para 2024 🧵",
       description: "Descubre las tácticas SEO probadas...",
-      image: "https://ejemplo.com/images/seo-strategy-a.jpg"
+      image: "https://ejemplo.com/images/seo-strategy-a.jpg",
     },
     whatsAppValidation: {
       isValid: true,
@@ -43,34 +46,36 @@
         format: true,
         fileSize: true,
         dimensions: true,
-        isAbsoluteUrl: true
+        isAbsoluteUrl: true,
       },
       warnings: [],
-      recommendations: []
-    }
+      recommendations: [],
+    },
   };
 
   const variantB = {
     title: "Guía SEO 2024: Cómo posicionar en Google | Mi Blog",
-    metaDescription: "Aprende a posicionar tu web en Google con nuestra guía SEO 2024. Estrategias actualizadas y efectivas.",
+    metaDescription:
+      "Aprende a posicionar tu web en Google con nuestra guía SEO 2024. Estrategias actualizadas y efectivas.",
     canonicalUrl: "https://ejemplo.com/blog/seo-2024",
     openGraph: {
       title: "Guía Completa SEO 2024: Domina Google",
-      description: "Todo lo que necesitas saber para posicionar tu web en Google este año. Casos reales.",
+      description:
+        "Todo lo que necesitas saber para posicionar tu web en Google este año. Casos reales.",
       url: "https://ejemplo.com/blog/seo-2024",
       image: {
         url: "https://ejemplo.com/images/seo-guide-b.jpg",
         width: 1200,
         height: 630,
-        isWhatsAppCompatible: false
+        isWhatsAppCompatible: false,
       },
-      siteName: "Mi Blog"
+      siteName: "Mi Blog",
     },
     twitterCard: {
       card: "summary_large_image",
       title: "Guía SEO 2024: Domina Google 🚀",
       description: "Todo lo que necesitas saber para posicionar...",
-      image: "https://ejemplo.com/images/seo-guide-b.jpg"
+      image: "https://ejemplo.com/images/seo-guide-b.jpg",
     },
     whatsAppValidation: {
       isValid: false,
@@ -78,11 +83,11 @@
         format: true,
         fileSize: false,
         dimensions: true,
-        isAbsoluteUrl: true
+        isAbsoluteUrl: true,
       },
       warnings: ["Image file size (450KB) exceeds WhatsApp limit of 300KB"],
-      recommendations: ["Compress image to under 300KB using TinyPNG"]
-    }
+      recommendations: ["Compress image to under 300KB using TinyPNG"],
+    },
   };
 
   // Props
@@ -90,7 +95,7 @@
     showComparison?: boolean;
   }
 
-  let { showComparison = true }: Props = $props();
+  const { showComparison = true }: Props = $props();
 </script>
 
 <div class="ab-example">
@@ -98,18 +103,18 @@
     <GitCompare size={24} />
     <h2>Comparación A/B de Open Graph</h2>
   </div>
-  
+
   <p class="ab-description">
-    Compara dos versiones diferentes de títulos, descripciones o imágenes 
-    para ver cuál funciona mejor en redes sociales.
+    Compara dos versiones diferentes de títulos, descripciones o imágenes para ver cuál funciona
+    mejor en redes sociales.
   </p>
 
   {#if showComparison}
     <div class="comparison-container">
-      <SocialPreview 
+      <SocialPreview
         comparisonMode={true}
-        variantA={variantA}
-        variantB={variantB}
+        {variantA}
+        {variantB}
         labelA="Título Emocional + Emoji"
         labelB="Título Descriptivo"
       />

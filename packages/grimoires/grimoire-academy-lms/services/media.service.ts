@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Academy LMS - Media Service
- * 
+ *
  * Servicio para integración con Media Library de Gremius.
  * Maneja subida, procesamiento y gestión de archivos multimedia.
  */
@@ -65,7 +65,10 @@ export const mediaFileSchema = z.object({
 
 export const uploadOptionsSchema = z.object({
   tipo: z.enum(["image", "video", "document", "audio", "any"]).default("any"),
-  maxSize: z.number().positive().default(10 * 1024 * 1024), // 10MB default
+  maxSize: z
+    .number()
+    .positive()
+    .default(10 * 1024 * 1024), // 10MB default
   allowedTypes: z.array(z.string()).optional(),
   generarThumbnail: z.boolean().default(true),
   optimizarImagen: z.boolean().default(true),
@@ -80,24 +83,13 @@ export const uploadOptionsSchema = z.object({
 export const validacionesPorTipo: Record<MediaType, MediaValidation> = {
   image: {
     maxSize: 10 * 1024 * 1024, // 10MB
-    allowedTypes: [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "image/svg+xml",
-    ],
+    allowedTypes: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"],
     maxWidth: 4096,
     maxHeight: 4096,
   },
   video: {
     maxSize: 500 * 1024 * 1024, // 500MB
-    allowedTypes: [
-      "video/mp4",
-      "video/webm",
-      "video/ogg",
-      "video/quicktime",
-    ],
+    allowedTypes: ["video/mp4", "video/webm", "video/ogg", "video/quicktime"],
   },
   document: {
     maxSize: 50 * 1024 * 1024, // 50MB
@@ -137,16 +129,12 @@ export function validarArchivo(
 
   // Validar tamaño
   if (validacion.maxSize && file.size > validacion.maxSize) {
-    errores.push(
-      `Tamaño máximo permitido: ${formatBytes(validacion.maxSize)}`
-    );
+    errores.push(`Tamaño máximo permitido: ${formatBytes(validacion.maxSize)}`);
   }
 
   // Validar tipo MIME
   if (validacion.allowedTypes && !validacion.allowedTypes.includes(file.type)) {
-    errores.push(
-      `Tipo de archivo no permitido. Permitidos: ${validacion.allowedTypes.join(", ")}`
-    );
+    errores.push(`Tipo de archivo no permitido. Permitidos: ${validacion.allowedTypes.join(", ")}`);
   }
 
   return errores.length === 0 ? { valido: true } : { valido: false, errores };
@@ -278,7 +266,10 @@ export interface MediaLibraryClient {
  * Genera URL para obtener imagen con preset de transformación
  * Usa los endpoints de grimoire-media
  */
-export function getMediaPresetUrl(mediaId: string, preset: "thumbnail" | "medium" | "large" | "original" = "original"): string {
+export function getMediaPresetUrl(
+  mediaId: string,
+  preset: "thumbnail" | "medium" | "large" | "original" = "original"
+): string {
   return `/api/media/preset/${mediaId}/${preset}`;
 }
 

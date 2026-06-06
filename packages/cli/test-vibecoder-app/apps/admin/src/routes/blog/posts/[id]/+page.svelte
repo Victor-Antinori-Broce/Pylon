@@ -1,7 +1,8 @@
 <script>
+  import { onMount } from "svelte";
+
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { onMount } from "svelte";
   
   onMount(() => {
     // Redirect from old /blog/posts/[id] to /posts/[id]

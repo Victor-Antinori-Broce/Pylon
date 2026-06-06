@@ -2,17 +2,21 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * ESTADO GLOBAL REACTIVO - Svelte 5 Runes
  * ═══════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Este archivo implementa el estado global para datasets usando el nuevo
  * sistema de reactividad de Svelte 5 ($state, $derived).
- * 
+ *
  * ⚠️ IMPORTANTE: No usar stores antiguos (writable, readable, derived).
  * Svelte 5 Runes proporciona reactividad fina sin boilerplate.
- * 
+ *
  * Patrón: Clase Reactiva con $state + Instancia Singleton
  */
 
-import type { DatasetDefinition, CreateDatasetPayload, UpdateDatasetPayload } from "@gremius/shared";
+import type {
+  DatasetDefinition,
+  CreateDatasetPayload,
+  UpdateDatasetPayload,
+} from "@gremius/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de API
@@ -28,25 +32,25 @@ export class DatasetStore {
   // ─── Estado Reactivo Core ───
   /** Lista de datasets cargados */
   datasets = $state<DatasetDefinition[]>([]);
-  
+
   /** Estado de carga para operaciones async */
   isLoading = $state<boolean>(false);
-  
+
   /** Dataset seleccionado actualmente (para edición/vista detalle) */
   selectedDataset = $state<DatasetDefinition | null>(null);
-  
+
   /** Error actual si existe */
   error = $state<string | null>(null);
 
   // ─── Estado Derivado ($derived) ───
   /** Cantidad total de datasets */
   totalCount = $derived<number>(this.datasets.length);
-  
+
   /** Datasets ordenados por nombre */
   sortedDatasets = $derived<DatasetDefinition[]>(
     [...this.datasets].sort((a, b) => a.name.localeCompare(b.name))
   );
-  
+
   /** Indica si hay datasets cargados */
   hasDatasets = $derived<boolean>(this.datasets.length > 0);
 
@@ -61,14 +65,14 @@ export class DatasetStore {
   async fetchDatasets(): Promise<void> {
     this.isLoading = true;
     this.error = null;
-    
+
     try {
       const response = await fetch(`${API_URL}/api/datasets`, { credentials: "include" });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       // La API retorna { docs: DatasetDefinition[], totalDocs: number }
       this.datasets = data.docs || [];
@@ -86,14 +90,14 @@ export class DatasetStore {
   async fetchDatasetById(id: string): Promise<DatasetDefinition | null> {
     this.isLoading = true;
     this.error = null;
-    
+
     try {
       const response = await fetch(`${API_URL}/api/datasets/${id}`, { credentials: "include" });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const dataset: DatasetDefinition = await response.json();
       this.selectedDataset = dataset;
       return dataset;
@@ -113,7 +117,7 @@ export class DatasetStore {
   async createDataset(payload: CreateDatasetPayload): Promise<DatasetDefinition | null> {
     this.isLoading = true;
     this.error = null;
-    
+
     try {
       const response = await fetch(`${API_URL}/api/datasets`, {
         method: "POST",
@@ -121,12 +125,12 @@ export class DatasetStore {
         credentials: "include",
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
-      
+
       const newDataset: DatasetDefinition = await response.json();
       // Mutación reactiva: agrega al array
       this.datasets = [...this.datasets, newDataset];
@@ -143,10 +147,13 @@ export class DatasetStore {
   /**
    * Actualiza un dataset existente
    */
-  async updateDataset(id: string, payload: UpdateDatasetPayload): Promise<DatasetDefinition | null> {
+  async updateDataset(
+    id: string,
+    payload: UpdateDatasetPayload
+  ): Promise<DatasetDefinition | null> {
     this.isLoading = true;
     this.error = null;
-    
+
     try {
       const response = await fetch(`${API_URL}/api/datasets/${id}`, {
         method: "PATCH",
@@ -154,24 +161,22 @@ export class DatasetStore {
         credentials: "include",
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
-      
+
       const updatedDataset: DatasetDefinition = await response.json();
-      
+
       // Actualiza en el array local
-      this.datasets = this.datasets.map(ds => 
-        ds.id === id ? updatedDataset : ds
-      );
-      
+      this.datasets = this.datasets.map((ds) => (ds.id === id ? updatedDataset : ds));
+
       // Si está seleccionado, actualiza también
       if (this.selectedDataset?.id === id) {
         this.selectedDataset = updatedDataset;
       }
-      
+
       return updatedDataset;
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to update dataset";
@@ -188,25 +193,25 @@ export class DatasetStore {
   async deleteDataset(id: string): Promise<boolean> {
     this.isLoading = true;
     this.error = null;
-    
+
     try {
       const response = await fetch(`${API_URL}/api/datasets/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       // Remueve del array local
-      this.datasets = this.datasets.filter(ds => ds.id !== id);
-      
+      this.datasets = this.datasets.filter((ds) => ds.id !== id);
+
       // Si estaba seleccionado, limpia
       if (this.selectedDataset?.id === id) {
         this.selectedDataset = null;
       }
-      
+
       return true;
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to delete dataset";
@@ -252,18 +257,18 @@ export class DatasetStore {
 
 /**
  * Instancia única del DatasetStore para uso global.
- * 
+ *
  * Uso en componentes Svelte:
  * ```svelte
  * <script>
  *   import { datasetStore } from '$lib/states/datasets.svelte';
- *   
+ *
  *   // Acceso directo a estado reactivo
  *   $effect(() => {
  *     datasetStore.fetchDatasets();
  *   });
  * </script>
- * 
+ *
  * {#if datasetStore.isLoading}
  *   <p>Loading...</p>
  * {:else}

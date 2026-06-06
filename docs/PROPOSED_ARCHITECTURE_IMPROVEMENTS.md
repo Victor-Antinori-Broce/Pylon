@@ -3,6 +3,7 @@
 ## 1. Desacoplar Grimoires de apps/api/src/
 
 ### Estado Actual (Problemático)
+
 ```
 apps/api/src/routes/blog.ts         ← Implementación real
 packages/grimoires/grimoire-blog/   ← Solo re-exporta
@@ -10,6 +11,7 @@ packages/grimoires/grimoire-blog/   ← Solo re-exporta
 ```
 
 ### Arquitectura Propuesta
+
 ```
 packages/
 ├── shared/                         ← Contratos y utilidades compartidas
@@ -67,9 +69,13 @@ export const blogModule = {
   // Metadata para el loader
   tables: ["blog_posts", "blog_posts_to_tags"],
   hooks: {
-    onEnable: async () => { /* migraciones */ },
-    onDisable: async () => { /* cleanup */ }
-  }
+    onEnable: async () => {
+      /* migraciones */
+    },
+    onDisable: async () => {
+      /* cleanup */
+    },
+  },
 };
 ```
 
@@ -80,14 +86,14 @@ export const blogModule = {
 export async function loadGrimoires(app: Hono) {
   for (const grimoireName of enabledGrimoires) {
     const mod = await import(`@gremius/grimoire-${grimoireName}`);
-    
+
     // Inyectar dependencias
     if (mod.blogModule) {
       globalThis.__gremius_db__ = createDbContext();
       globalThis.__gremius_cache__ = createCacheContext();
-      
+
       app.route(`/api/${grimoireName}`, mod.blogModule.router);
-      
+
       // Registrar hooks
       if (mod.blogModule.hooks?.onEnable) {
         await mod.blogModule.hooks.onEnable();
@@ -105,7 +111,7 @@ export async function loadGrimoires(app: Hono) {
 
 ```typescript
 // Build-time detection - no extensible
-const viewModules = import.meta.glob('/src/views/**/*.svelte');
+const viewModules = import.meta.glob("/src/views/**/*.svelte");
 ```
 
 ### Arquitectura Propuesta: Remote Component Loading
@@ -122,7 +128,7 @@ interface RemoteView {
 const viewRegistry = new Map<string, RemoteView>();
 
 // 1. Registrar vistas locales (build-time)
-const localViews = import.meta.glob('/src/views/**/*.svelte', { eager: false });
+const localViews = import.meta.glob("/src/views/**/*.svelte", { eager: false });
 for (const [path, loader] of Object.entries(localViews)) {
   const id = extractViewId(path);
   viewRegistry.set(id, { id, load: loader as any });
@@ -136,12 +142,12 @@ export function registerRemoteView(id: string, url: string) {
       // Cargar desde CDN o servidor de grimoires
       const response = await fetch(url);
       const code = await response.text();
-      
+
       // Usar Svelte compile en runtime o cargar como ESM
-      return import(/* @vite-ignore */ URL.createObjectURL(
-        new Blob([code], { type: 'application/javascript' })
-      ));
-    }
+      return import(
+        /* @vite-ignore */ URL.createObjectURL(new Blob([code], { type: "application/javascript" }))
+      );
+    },
   });
 }
 
@@ -149,7 +155,7 @@ export function registerRemoteView(id: string, url: string) {
 export async function loadView(grimoireId: string): Promise<Component | null> {
   const view = viewRegistry.get(grimoireId);
   if (!view) return null;
-  
+
   const module = await view.load();
   return module.default;
 }
@@ -160,11 +166,11 @@ export async function loadView(grimoireId: string): Promise<Component | null> {
 ```svelte
 <!-- packages/admin/src/lib/components/admin/GrimoirePage.svelte (mejorado) -->
 <script>
-  import { onMount } from 'svelte';
-  import { SlotRegistry } from '$lib/slots';
-  
+  import { onMount } from "svelte";
+  import { SlotRegistry } from "$lib/slots";
+
   export let grimoireId: string;
-  
+
   // Slots permiten a grimoires inyectar UI sin vistas completas
   const slots = SlotRegistry.getSlotsFor(grimoireId);
 </script>
@@ -176,7 +182,7 @@ export async function loadView(grimoireId: string): Promise<Component | null> {
       <svelte:component this={action.component} {...action.props} />
     {/each}
   </svelte:fragment>
-  
+
   <svelte:fragment slot="custom-cell" let:column let:row>
     {#if slots.cellRenderers[column]}
       <svelte:component this={slots.cellRenderers[column]} {row} {column} />
@@ -237,17 +243,20 @@ export async function loadView(grimoireId: string): Promise<Component | null> {
 ## Prioridad de Implementación
 
 ### Fase 1: Desacoplamiento (Alta Prioridad)
+
 - [ ] Crear abstracciones en `@gremius/shared`
 - [ ] Mover `blog` a su grimoire
 - [ ] Mover `formulas` a su grimoire
 - [ ] Actualizar `module-loader` para inyección de dependencias
 
 ### Fase 2: UI Dinámica Mejorada (Media Prioridad)
+
 - [ ] Implementar `SlotRegistry`
 - [ ] Añadir soporte para vistas lazy-loaded
 - [ ] Crear sistema de remote views básico
 
 ### Fase 3: Module Federation (Baja Prioridad)
+
 - [ ] Evaluar si es necesario
 - [ ] Implementar solo si hay grimoires de terceros
 

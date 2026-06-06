@@ -1,21 +1,22 @@
 /**
  * @gremius/grimoire-games — Game Library & IGDB Integration (Modern)
- * 
+ *
  * Game library management with:
  * - Games (IGDB integration, metadata)
  * - Platforms (PC, Console, Mobile)
  * - Tags (genre, feature, topic)
  * - Collections (curated sections)
- * 
+ *
  * Layer: Grimoire Core (Nivel 3 — loaded via module-loader)
  * Mount: /api/games
- * 
+ *
  * @version 1.0.0
  */
 
 import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 import { Hono } from "hono";
+
 import { createGamesRouter } from "./games.routes";
 
 // Re-export schema for schema-merger
@@ -41,10 +42,10 @@ const tables = [
 
 export function createGrimoireGames(ctx: GrimoireContext): Hono {
   const app = new Hono();
-  
+
   // Mount all routes with DI
   app.route("/", createGamesRouter(ctx));
-  
+
   return app;
 }
 
@@ -59,7 +60,8 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
   id: "grimoire-games",
   name: "Game Library",
   version: "2.1.0",
-  description: "Game library with IGDB integration, collections, screenshots, and trailers. Enhanced with grimoire-media support for cover art transforms, focal points, and optimized image delivery.",
+  description:
+    "Game library with IGDB integration, collections, screenshots, and trailers. Enhanced with grimoire-media support for cover art transforms, focal points, and optimized image delivery.",
   icon: "Gamepad2",
   mountPath: "/api/games",
   createRouter: createGrimoireGames,

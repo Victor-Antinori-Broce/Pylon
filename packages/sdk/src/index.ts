@@ -42,16 +42,16 @@ export interface GremiusClientConfig {
   /** API Key for authentication (Bearer token) */
   apiKey?: string;
   /** Response format: 'json' (default) or 'toon' (Token-Optimized Object Notation) */
-  format?: 'json' | 'toon';
+  format?: "json" | "toon";
 }
 
 export interface ListOptions {
   limit?: number;
   page?: number;
   sort?: string;
-  dir?: 'asc' | 'desc';
+  dir?: "asc" | "desc";
   filter_field?: string;
-  filter_op?: 'contains' | 'equals' | 'gt' | 'lt' | 'gte' | 'lte';
+  filter_op?: "contains" | "equals" | "gt" | "lt" | "gte" | "lte";
   filter_value?: string;
 }
 
@@ -99,37 +99,35 @@ export interface OptionItem {
 // TOON Parser
 // ═══════════════════════════════════════════════════════════════
 
-const TOON_MIME = 'application/vnd.toon';
+const TOON_MIME = "application/vnd.toon";
 
 /**
  * Parse TOON format into JavaScript objects.
  * TOON format: key:value lines, separated by --- for arrays.
  */
 function parseTOON(toonString: string): any {
-  const records = toonString.split('\n---\n');
+  const records = toonString.split("\n---\n");
 
   if (records.length === 1) {
     return parseTOONRecord(records[0]);
   }
 
-  return records
-    .filter(r => r.trim())
-    .map(r => parseTOONRecord(r));
+  return records.filter((r) => r.trim()).map((r) => parseTOONRecord(r));
 }
 
 function parseTOONRecord(record: string): Record<string, any> {
   const obj: Record<string, any> = {};
-  const lines = record.trim().split('\n');
+  const lines = record.trim().split("\n");
 
   for (const line of lines) {
-    const colonIdx = line.indexOf(':');
+    const colonIdx = line.indexOf(":");
     if (colonIdx === -1) continue;
 
     const key = line.slice(0, colonIdx).trim();
     const value = line.slice(colonIdx + 1).trim();
 
     // Skip type hints
-    if (key.startsWith('~')) continue;
+    if (key.startsWith("~")) continue;
 
     // Handle nested paths: user.name → { user: { name: value } }
     setNestedValue(obj, key, parseValue(value));
@@ -140,7 +138,7 @@ function parseTOONRecord(record: string): Record<string, any> {
 
 function setNestedValue(obj: Record<string, any>, path: string, value: any): void {
   // Handle array notation: items[0].name
-  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+  const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".");
   let current = obj;
 
   for (let i = 0; i < parts.length - 1; i++) {
@@ -158,11 +156,11 @@ function setNestedValue(obj: Record<string, any>, path: string, value: any): voi
 }
 
 function parseValue(value: string): any {
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  if (value === 'null' || value === '') return null;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (value === "null" || value === "") return null;
   const num = Number(value);
-  if (!isNaN(num) && value !== '') return num;
+  if (!isNaN(num) && value !== "") return num;
   return value;
 }
 
@@ -173,39 +171,39 @@ function parseValue(value: string): any {
 class HttpClient {
   private baseUrl: string;
   private apiKey?: string;
-  private format: 'json' | 'toon';
+  private format: "json" | "toon";
 
   constructor(config: GremiusClientConfig) {
-    this.baseUrl = config.url.replace(/\/$/, '');
+    this.baseUrl = config.url.replace(/\/$/, "");
     this.apiKey = config.apiKey;
-    this.format = config.format || 'json';
+    this.format = config.format || "json";
   }
 
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
-    overrideFormat?: 'json' | 'toon'
+    overrideFormat?: "json" | "toon"
   ): Promise<T> {
     const format = overrideFormat || this.format;
     let url = `${this.baseUrl}/api${path}`;
 
     // Add format=toon as query param for TOON mode
-    if (format === 'toon') {
-      const sep = url.includes('?') ? '&' : '?';
+    if (format === "toon") {
+      const sep = url.includes("?") ? "&" : "?";
       url += `${sep}format=toon`;
     }
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
-    if (format === 'toon') {
-      headers['Accept'] = TOON_MIME;
+    if (format === "toon") {
+      headers["Accept"] = TOON_MIME;
     }
 
     if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      headers["Authorization"] = `Bearer ${this.apiKey}`;
     }
 
     const res = await fetch(url, {
@@ -228,7 +226,7 @@ class HttpClient {
     }
 
     // Parse response based on content type
-    const contentType = res.headers.get('content-type') || '';
+    const contentType = res.headers.get("content-type") || "";
     if (contentType.includes(TOON_MIME)) {
       const text = await res.text();
       return parseTOON(text) as T;
@@ -237,20 +235,20 @@ class HttpClient {
     return res.json();
   }
 
-  get<T>(path: string, format?: 'json' | 'toon'): Promise<T> {
-    return this.request<T>('GET', path, undefined, format);
+  get<T>(path: string, format?: "json" | "toon"): Promise<T> {
+    return this.request<T>("GET", path, undefined, format);
   }
 
   post<T>(path: string, body: unknown): Promise<T> {
-    return this.request<T>('POST', path, body, 'json'); // Always JSON for writes
+    return this.request<T>("POST", path, body, "json"); // Always JSON for writes
   }
 
   patch<T>(path: string, body: unknown): Promise<T> {
-    return this.request<T>('PATCH', path, body, 'json');
+    return this.request<T>("PATCH", path, body, "json");
   }
 
   del<T>(path: string): Promise<T> {
-    return this.request<T>('DELETE', path, undefined, 'json');
+    return this.request<T>("DELETE", path, undefined, "json");
   }
 }
 
@@ -259,9 +257,12 @@ class HttpClient {
 // ═══════════════════════════════════════════════════════════════
 
 export class GremiusError extends Error {
-  constructor(message: string, public statusCode: number) {
+  constructor(
+    message: string,
+    public statusCode: number
+  ) {
     super(message);
-    this.name = 'GremiusError';
+    this.name = "GremiusError";
   }
 }
 
@@ -273,7 +274,7 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
   constructor(
     private tableName: string,
     private client: HttpClient
-  ) { }
+  ) {}
 
   /**
    * List records with pagination, sorting, and filtering.
@@ -283,17 +284,17 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
    */
   async list(options: ListOptions = {}): Promise<ListResponse<T>> {
     const params = new URLSearchParams();
-    if (options.limit) params.set('limit', String(options.limit));
-    if (options.page) params.set('page', String(options.page));
-    if (options.sort) params.set('sort', options.sort);
-    if (options.dir) params.set('dir', options.dir);
-    if (options.filter_field) params.set('filter_field', options.filter_field);
-    if (options.filter_op) params.set('filter_op', options.filter_op);
-    if (options.filter_value) params.set('filter_value', options.filter_value);
+    if (options.limit) params.set("limit", String(options.limit));
+    if (options.page) params.set("page", String(options.page));
+    if (options.sort) params.set("sort", options.sort);
+    if (options.dir) params.set("dir", options.dir);
+    if (options.filter_field) params.set("filter_field", options.filter_field);
+    if (options.filter_op) params.set("filter_op", options.filter_op);
+    if (options.filter_value) params.set("filter_value", options.filter_value);
 
     const query = params.toString();
     return this.client.get<ListResponse<T>>(
-      `/explorer/${this.tableName}${query ? `?${query}` : ''}`
+      `/explorer/${this.tableName}${query ? `?${query}` : ""}`
     );
   }
 
@@ -304,9 +305,14 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
    */
   async get(id: string): Promise<T> {
     // Explorer doesn't have a single-record GET, so we use filter
-    const result = await this.list({ filter_field: 'id', filter_op: 'equals', filter_value: id, limit: 1 });
+    const result = await this.list({
+      filter_field: "id",
+      filter_op: "equals",
+      filter_value: id,
+      limit: 1,
+    });
     const record = result.data?.[0];
-    if (!record) throw new GremiusError('Record not found', 404);
+    if (!record) throw new GremiusError("Record not found", 404);
     return record;
   }
 
@@ -359,17 +365,19 @@ export class CollectionRef<T extends Record<string, unknown> = Record<string, un
   constructor(
     private collectionName: string,
     private client: HttpClient
-  ) { }
+  ) {}
 
-  async get(options: { limit?: number; page?: number; status?: string; sort?: string } = {}): Promise<{ docs: T[]; totalDocs: number }> {
+  async get(
+    options: { limit?: number; page?: number; status?: string; sort?: string } = {}
+  ): Promise<{ docs: T[]; totalDocs: number }> {
     const params = new URLSearchParams();
-    if (options.limit) params.set('limit', String(options.limit));
-    if (options.page) params.set('page', String(options.page));
-    if (options.status) params.set('status', options.status);
-    if (options.sort) params.set('sort', options.sort);
+    if (options.limit) params.set("limit", String(options.limit));
+    if (options.page) params.set("page", String(options.page));
+    if (options.status) params.set("status", options.status);
+    if (options.sort) params.set("sort", options.sort);
     const query = params.toString();
     return this.client.get<{ docs: T[]; totalDocs: number }>(
-      `/datasets/${this.collectionName}/entries${query ? `?${query}` : ''}`
+      `/datasets/${this.collectionName}/entries${query ? `?${query}` : ""}`
     );
   }
 
@@ -383,11 +391,11 @@ export class CollectionRef<T extends Record<string, unknown> = Record<string, un
 // ═══════════════════════════════════════════════════════════════
 
 class ModulesAPI {
-  constructor(private client: HttpClient) { }
+  constructor(private client: HttpClient) {}
 
   /** List all modules with their status */
   async list(): Promise<ModuleInfo[]> {
-    const result = await this.client.get<{ docs: ModuleInfo[] }>('/modules');
+    const result = await this.client.get<{ docs: ModuleInfo[] }>("/modules");
     return result.docs;
   }
 
@@ -399,7 +407,7 @@ class ModulesAPI {
   /** Get modules that are currently enabled */
   async enabled(): Promise<ModuleInfo[]> {
     const all = await this.list();
-    return all.filter(m => m.enabled);
+    return all.filter((m) => m.enabled);
   }
 }
 
@@ -436,9 +444,7 @@ export class GremiusClient {
    * const games = await gremius.from('games').list();
    * const newGame = await gremius.from('games').create({ title: 'Hi' });
    */
-  from<T extends Record<string, unknown> = Record<string, unknown>>(
-    table: string
-  ): TableRef<T> {
+  from<T extends Record<string, unknown> = Record<string, unknown>>(table: string): TableRef<T> {
     return new TableRef<T>(table, this.httpClient);
   }
 
@@ -461,7 +467,7 @@ export class GremiusClient {
    * const tables = await gremius.tables();
    */
   async tables(): Promise<Array<{ key: string; label: string; icon: string; rowCount: number }>> {
-    const result = await this.httpClient.get<{ tables: any[] }>('/explorer/tables');
+    const result = await this.httpClient.get<{ tables: any[] }>("/explorer/tables");
     return result.tables;
   }
 
@@ -485,7 +491,7 @@ export class GremiusClient {
    */
   async ping(): Promise<boolean> {
     try {
-      await this.httpClient.get('/health');
+      await this.httpClient.get("/health");
       return true;
     } catch {
       return false;
@@ -507,7 +513,7 @@ export class GremiusClient {
 export function createClient(
   url: string,
   apiKey?: string,
-  format: 'json' | 'toon' = 'json'
+  format: "json" | "toon" = "json"
 ): GremiusClient {
   return new GremiusClient({ url, apiKey, format });
 }

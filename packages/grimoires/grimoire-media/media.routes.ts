@@ -1,21 +1,21 @@
-
 /**
  * Media Library Routes
- * 
+ *
  * REST API endpoints for file uploads and media management.
- * 
+ *
  * ⚠️ CRITICAL: Route order matters in Hono!
  * Specific routes must be registered BEFORE parameterized routes.
  * Example: `/folders` must come before `/:id`
  */
 
-import { Hono } from "hono";
-import { eq, desc, like, sql } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { eq, desc, like, sql } from "drizzle-orm";
+import { Hono } from "hono";
+
 import type { StorageConfig } from "./config.schema";
+import { MediaGrimoireConfig, defaultMediaConfig, validateMediaConfig } from "./config.schema";
 import { media, mediaFolders } from "./media.schema";
 import { testStorageConnection } from "./storage.adapter";
-import { MediaGrimoireConfig, defaultMediaConfig, validateMediaConfig } from "./config.schema";
 
 /**
  * Create Media router with DI
@@ -60,12 +60,12 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
     }
 
     const docs = await query;
-    
+
     // Generate signed URLs for private files
     const docsWithUrls = await Promise.all(
       docs.map(async (doc: any) => {
         let url = doc.publicUrl;
-        
+
         // If no public URL, generate signed URL
         if (!url) {
           try {
@@ -128,11 +128,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
 
         try {
           // Get signed upload URL
-          const uploadUrl = await ctx.storage.getSignedUploadUrl(
-            key,
-            file.type,
-            3600
-          );
+          const uploadUrl = await ctx.storage.getSignedUploadUrl(key, file.type, 3600);
 
           // Upload to S3/MinIO
           const uploadRes = await fetch(uploadUrl, {
@@ -150,7 +146,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
           // Get dimensions for images
           let width: number | undefined;
           let height: number | undefined;
-          
+
           if (file.type.startsWith("image/")) {
             // Note: In production, you'd use a library like sharp or image-size
             // For now, we'll skip dimensions
@@ -196,7 +192,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
       }
 
       const allSuccess = results.every((r) => r.success);
-      
+
       return c.json(
         {
           success: allSuccess,
@@ -218,10 +214,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
    * GET /folders - List folders
    */
   app.get("/folders", async (c) => {
-    const docs = await ctx.db.instance
-      .select()
-      .from(mediaFolders)
-      .orderBy(mediaFolders.path);
+    const docs = await ctx.db.instance.select().from(mediaFolders).orderBy(mediaFolders.path);
 
     return c.json({ docs });
   });
@@ -237,9 +230,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
     }
 
     const slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const path = body.parentId 
-      ? `${body.parentPath || ""}/${slug}`
-      : `/${slug}`;
+    const path = body.parentId ? `${body.parentPath || ""}/${slug}` : `/${slug}`;
 
     const [doc] = await ctx.db.instance
       .insert(mediaFolders)
@@ -265,7 +256,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
   app.get("/config", ctx.auth.requireAuth, async (c) => {
     try {
       // Load from database or return default
-      const config = await loadConfig(ctx) || defaultMediaConfig;
+      const config = (await loadConfig(ctx)) || defaultMediaConfig;
       return c.json({ config });
     } catch (err: any) {
       ctx.logger.error("Failed to load config:", err);
@@ -307,14 +298,17 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
       const storage = body.storage as StorageConfig;
 
       const result = await testStorageConnection(storage);
-      
+
       return c.json(result);
     } catch (err: any) {
       ctx.logger.error("Storage test failed:", err);
-      return c.json({ 
-        success: false, 
-        message: err.message || "Connection test failed" 
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          message: err.message || "Connection test failed",
+        },
+        500
+      );
     }
   });
 
@@ -328,11 +322,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
   app.get("/:id", async (c) => {
     const id = c.req.param("id");
 
-    const [doc] = await ctx.db.instance
-      .select()
-      .from(media)
-      .where(eq(media.id, id))
-      .limit(1);
+    const [doc] = await ctx.db.instance.select().from(media).where(eq(media.id, id)).limit(1);
 
     if (!doc) {
       return c.json({ error: "Media not found" }, 404);
@@ -351,7 +341,9 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
     // Generate thumbnail URLs
     const thumbnails: Record<string, string> = {};
     if (doc.thumbnails) {
-      for (const [size, info] of Object.entries(doc.thumbnails as Record<string, { key: string }>)) {
+      for (const [size, info] of Object.entries(
+        doc.thumbnails as Record<string, { key: string }>
+      )) {
         try {
           thumbnails[size] = await ctx.storage.getSignedDownloadUrl(info.key, 3600);
         } catch {
@@ -374,11 +366,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
     const id = c.req.param("id");
     const body = await c.req.json();
 
-    const [existing] = await ctx.db.instance
-      .select()
-      .from(media)
-      .where(eq(media.id, id))
-      .limit(1);
+    const [existing] = await ctx.db.instance.select().from(media).where(eq(media.id, id)).limit(1);
 
     if (!existing) {
       return c.json({ error: "Media not found" }, 404);
@@ -402,11 +390,7 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
   app.delete("/:id", ctx.auth.requireAuth, async (c) => {
     const id = c.req.param("id");
 
-    const [existing] = await ctx.db.instance
-      .select()
-      .from(media)
-      .where(eq(media.id, id))
-      .limit(1);
+    const [existing] = await ctx.db.instance.select().from(media).where(eq(media.id, id)).limit(1);
 
     if (!existing) {
       return c.json({ error: "Media not found" }, 404);
@@ -415,10 +399,12 @@ export function createMediaRouter(ctx: GrimoireContext): Hono {
     // Delete from storage
     try {
       await ctx.storage.delete(existing.key);
-      
+
       // Delete thumbnails
       if (existing.thumbnails) {
-        for (const [_size, info] of Object.entries(existing.thumbnails as Record<string, { key: string }>)) {
+        for (const [_size, info] of Object.entries(
+          existing.thumbnails as Record<string, { key: string }>
+        )) {
           try {
             await ctx.storage.delete(info.key);
           } catch {
@@ -452,7 +438,7 @@ async function loadConfig(ctx: GrimoireContext): Promise<MediaGrimoireConfig | n
       WHERE key = 'grimoire-media' 
       LIMIT 1
     `);
-    
+
     if (result.rows?.[0]) {
       return JSON.parse((result.rows[0] as any).value);
     }

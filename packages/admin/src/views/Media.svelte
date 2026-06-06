@@ -1,20 +1,19 @@
 <script lang="ts">
   /**
    * Media.svelte
-   * 
+   *
    * Vista de gestión de Media Library con pestañas:
    * - Library: Browse y gestión de archivos
    * - Folders: Gestión de carpetas
    * - Upload: Subida de archivos
    * - Settings: Configuración de storage
    */
-  import { onMount } from "svelte";
-  import { 
-    Image, 
-    Plus, 
-    X, 
-    Loader2, 
-    Trash2, 
+  import {
+    Image,
+    Plus,
+    X,
+    Loader2,
+    Trash2,
     Search,
     Grid3X3,
     List,
@@ -27,11 +26,13 @@
     Server,
     HardDrive,
     Cloud,
-    RefreshCw
+    RefreshCw,
   } from "lucide-svelte";
+  import { onMount } from "svelte";
   import { slide, fade } from "svelte/transition";
-  import { mediaStore } from "$lib/states/media.svelte";
+
   import { grimoireConfigStore } from "$lib/states/grimoire-config.svelte";
+  import { mediaStore } from "$lib/states/media.svelte";
   // Inline storage providers config (avoiding import from unbuilt package)
   const storageProviders = [
     {
@@ -40,11 +41,21 @@
       description: "Self-hosted S3-compatible storage. Good for local development.",
       icon: "Server",
       fields: [
-        { key: "endpoint", label: "Endpoint URL", type: "url", placeholder: "http://localhost:9000" },
+        {
+          key: "endpoint",
+          label: "Endpoint URL",
+          type: "url",
+          placeholder: "http://localhost:9000",
+        },
         { key: "bucket", label: "Bucket Name", type: "text", placeholder: "gremius-media" },
         { key: "accessKey", label: "Access Key", type: "text", placeholder: "minioadmin" },
         { key: "secretKey", label: "Secret Key", type: "password", placeholder: "••••••••" },
-        { key: "publicUrl", label: "Public URL (optional)", type: "url", placeholder: "http://localhost:9000/gremius-media" },
+        {
+          key: "publicUrl",
+          label: "Public URL (optional)",
+          type: "url",
+          placeholder: "http://localhost:9000/gremius-media",
+        },
         { key: "useSSL", label: "Use SSL", type: "checkbox" },
       ],
     },
@@ -57,7 +68,12 @@
         { key: "region", label: "Region", type: "text", placeholder: "us-east-1" },
         { key: "bucket", label: "Bucket Name", type: "text", placeholder: "my-bucket" },
         { key: "accessKeyId", label: "Access Key ID", type: "text", placeholder: "AKIA..." },
-        { key: "secretAccessKey", label: "Secret Access Key", type: "password", placeholder: "••••••••" },
+        {
+          key: "secretAccessKey",
+          label: "Secret Access Key",
+          type: "password",
+          placeholder: "••••••••",
+        },
       ],
     },
     {
@@ -67,7 +83,12 @@
       icon: "HardDrive",
       fields: [
         { key: "basePath", label: "Base Path", type: "text", placeholder: "/data/media" },
-        { key: "publicUrl", label: "Public URL", type: "url", placeholder: "http://localhost:3001/media" },
+        {
+          key: "publicUrl",
+          label: "Public URL",
+          type: "url",
+          placeholder: "http://localhost:3001/media",
+        },
       ],
     },
   ];
@@ -78,7 +99,7 @@
   let newFolderName = $state("");
   let fileInput: HTMLInputElement | null = $state(null);
   let copiedId = $state<string | null>(null);
-  
+
   // Config state
   let config: any = $state(grimoireConfigStore.getDefaultMediaConfig());
   let testResult = $state<{ success: boolean; message: string } | null>(null);
@@ -137,7 +158,7 @@
   async function handleCopyUrl(url: string, id: string) {
     await navigator.clipboard.writeText(url);
     copiedId = id;
-    setTimeout(() => copiedId = null, 2000);
+    setTimeout(() => (copiedId = null), 2000);
   }
 
   // ─── Handlers de Settings ───
@@ -154,7 +175,12 @@
 
   function setProvider(providerId: string) {
     const defaultConfigs: Record<string, any> = {
-      minio: { provider: "minio", endpoint: "http://localhost:9000", bucket: "gremius-media", useSSL: false },
+      minio: {
+        provider: "minio",
+        endpoint: "http://localhost:9000",
+        bucket: "gremius-media",
+        useSSL: false,
+      },
       s3: { provider: "s3", region: "us-east-1", bucket: "" },
       local: { provider: "local", path: "./uploads", publicUrl: "http://localhost:3001/uploads" },
       r2: { provider: "r2", accountId: "", bucket: "" },
@@ -168,7 +194,7 @@
   }
 
   // Get current provider fields
-  const currentProvider = $derived(storageProviders.find(p => p.id === config.storage.provider));
+  const currentProvider = $derived(storageProviders.find((p) => p.id === config.storage.provider));
 </script>
 
 <div class="space-y-6 animate-fade-in">
@@ -176,14 +202,14 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center">
+        <div
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center"
+        >
           <Image class="w-5 h-5 text-gremius-cyan" />
         </div>
         Media Library
       </h1>
-      <p class="text-sm text-gremius-subtle mt-1">
-        Manage your images, videos, and documents.
-      </p>
+      <p class="text-sm text-gremius-subtle mt-1">Manage your images, videos, and documents.</p>
     </div>
   </div>
 
@@ -197,7 +223,7 @@
         class:border-transparent={activeTab !== "library"}
         class:text-gremius-subtle={activeTab !== "library"}
         class:hover:text-gremius-text={activeTab !== "library"}
-        onclick={() => activeTab = "library"}
+        onclick={() => (activeTab = "library")}
       >
         <Image class="w-4 h-4" />
         Library
@@ -209,7 +235,7 @@
         class:border-transparent={activeTab !== "folders"}
         class:text-gremius-subtle={activeTab !== "folders"}
         class:hover:text-gremius-text={activeTab !== "folders"}
-        onclick={() => activeTab = "folders"}
+        onclick={() => (activeTab = "folders")}
       >
         <Folder class="w-4 h-4" />
         Folders
@@ -221,7 +247,7 @@
         class:border-transparent={activeTab !== "upload"}
         class:text-gremius-subtle={activeTab !== "upload"}
         class:hover:text-gremius-text={activeTab !== "upload"}
-        onclick={() => activeTab = "upload"}
+        onclick={() => (activeTab = "upload")}
       >
         <Upload class="w-4 h-4" />
         Upload
@@ -233,7 +259,7 @@
         class:border-transparent={activeTab !== "settings"}
         class:text-gremius-subtle={activeTab !== "settings"}
         class:hover:text-gremius-text={activeTab !== "settings"}
-        onclick={() => activeTab = "settings"}
+        onclick={() => (activeTab = "settings")}
       >
         <Settings class="w-4 h-4" />
         Settings
@@ -268,14 +294,18 @@
         <div class="flex items-center gap-2">
           <div class="flex items-center bg-gremius-surface rounded-lg p-1">
             <button
-              class="p-1.5 rounded transition-colors {mediaStore.viewMode === 'grid' ? 'bg-gremius-card text-gremius-text' : 'text-gremius-subtle hover:text-gremius-text'}"
-              onclick={() => mediaStore.setViewMode('grid')}
+              class="p-1.5 rounded transition-colors {mediaStore.viewMode === 'grid'
+                ? 'bg-gremius-card text-gremius-text'
+                : 'text-gremius-subtle hover:text-gremius-text'}"
+              onclick={() => mediaStore.setViewMode("grid")}
             >
               <Grid3X3 class="w-4 h-4" />
             </button>
             <button
-              class="p-1.5 rounded transition-colors {mediaStore.viewMode === 'list' ? 'bg-gremius-card text-gremius-text' : 'text-gremius-subtle hover:text-gremius-text'}"
-              onclick={() => mediaStore.setViewMode('list')}
+              class="p-1.5 rounded transition-colors {mediaStore.viewMode === 'list'
+                ? 'bg-gremius-card text-gremius-text'
+                : 'text-gremius-subtle hover:text-gremius-text'}"
+              onclick={() => mediaStore.setViewMode("list")}
             >
               <List class="w-4 h-4" />
             </button>
@@ -285,7 +315,7 @@
 
       <!-- Breadcrumb -->
       <div class="flex items-center gap-2 text-sm">
-        <button 
+        <button
           class="text-gremius-cyan hover:underline"
           onclick={() => mediaStore.selectFolder(null)}
         >
@@ -305,33 +335,44 @@
           <p class="text-gremius-subtle">Loading files...</p>
         </div>
       {:else if mediaStore.filteredFiles.length === 0}
-        <div 
+        <div
           class="card p-12 text-center border-2 border-dashed border-gremius-border/50 hover:border-gremius-cyan/30 transition-colors"
           ondrop={handleDrop}
           ondragover={handleDragOver}
           role="region"
           aria-label="Drop files here"
         >
-          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gremius-cyan/10 flex items-center justify-center">
+          <div
+            class="w-16 h-16 mx-auto mb-4 rounded-full bg-gremius-cyan/10 flex items-center justify-center"
+          >
             <Image class="w-8 h-8 text-gremius-cyan/50" />
           </div>
           <h3 class="text-lg font-medium text-gremius-text mb-2">No Files Yet</h3>
           <p class="text-sm text-gremius-subtle max-w-md mx-auto mb-6">
             Upload your first file or drag and drop files here.
           </p>
-          <button class="btn-primary inline-flex items-center gap-2" onclick={() => activeTab = "upload"}>
+          <button
+            class="btn-primary inline-flex items-center gap-2"
+            onclick={() => (activeTab = "upload")}
+          >
             <Upload class="w-4 h-4" />
             Upload Files
           </button>
         </div>
-      {:else if mediaStore.viewMode === 'grid'}
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {:else if mediaStore.viewMode === "grid"}
+        <div
+          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+        >
           {#each mediaStore.filteredFiles as file}
-            <div class="group relative card overflow-hidden hover:ring-2 hover:ring-gremius-cyan/30 transition-all">
-              <div class="aspect-square bg-gremius-surface flex items-center justify-center overflow-hidden">
-                {#if file.mimeType.startsWith('image/')}
-                  <img 
-                    src={mediaStore.getFileUrl(file, 'small')} 
+            <div
+              class="group relative card overflow-hidden hover:ring-2 hover:ring-gremius-cyan/30 transition-all"
+            >
+              <div
+                class="aspect-square bg-gremius-surface flex items-center justify-center overflow-hidden"
+              >
+                {#if file.mimeType.startsWith("image/")}
+                  <img
+                    src={mediaStore.getFileUrl(file, "small")}
                     alt={file.altText || file.filename}
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -344,11 +385,13 @@
                 <p class="text-sm font-medium text-gremius-text truncate">{file.filename}</p>
                 <p class="text-xs text-gremius-subtle">{mediaStore.formatFileSize(file.size)}</p>
               </div>
-              <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
                 <button
                   class="p-1.5 rounded-lg bg-gremius-card/90 hover:bg-gremius-card text-gremius-text-dim hover:text-gremius-cyan transition-colors"
                   title="Copy URL"
-                  onclick={() => handleCopyUrl(file.url || file.publicUrl || '', file.id)}
+                  onclick={() => handleCopyUrl(file.url || file.publicUrl || "", file.id)}
                 >
                   {#if copiedId === file.id}
                     <Check class="w-3.5 h-3.5 text-green-500" />
@@ -372,20 +415,41 @@
           <table class="w-full text-left">
             <thead>
               <tr class="border-b border-gremius-border bg-gremius-surface/50">
-                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle">File</th>
-                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle">Type</th>
-                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle">Size</th>
-                <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle text-right">Actions</th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle"
+                  >File</th
+                >
+                <th
+                  class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle"
+                  >Type</th
+                >
+                <th
+                  class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle"
+                  >Size</th
+                >
+                <th
+                  class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gremius-subtle text-right"
+                  >Actions</th
+                >
               </tr>
             </thead>
             <tbody>
               {#each mediaStore.filteredFiles as file}
-                <tr class="border-b border-gremius-border/50 hover:bg-gremius-surface/30 transition-colors group">
+                <tr
+                  class="border-b border-gremius-border/50 hover:bg-gremius-surface/30 transition-colors group"
+                >
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {#if file.mimeType.startsWith('image/')}
-                          <img src={mediaStore.getFileUrl(file, 'small')} alt="" class="w-full h-full object-cover" loading="lazy" />
+                      <div
+                        class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center overflow-hidden flex-shrink-0"
+                      >
+                        {#if file.mimeType.startsWith("image/")}
+                          <img
+                            src={mediaStore.getFileUrl(file, "small")}
+                            alt=""
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                          />
                         {:else}
                           <span class="text-lg">{mediaStore.getFileIcon(file.mimeType)}</span>
                         {/if}
@@ -394,15 +458,29 @@
                     </div>
                   </td>
                   <td class="px-4 py-3">
-                    <span class="text-xs text-gremius-subtle bg-gremius-surface px-2 py-0.5 rounded">{file.mimeType.split('/')[1]}</span>
+                    <span class="text-xs text-gremius-subtle bg-gremius-surface px-2 py-0.5 rounded"
+                      >{file.mimeType.split("/")[1]}</span
+                    >
                   </td>
-                  <td class="px-4 py-3 text-sm text-gremius-text-dim">{mediaStore.formatFileSize(file.size)}</td>
+                  <td class="px-4 py-3 text-sm text-gremius-text-dim"
+                    >{mediaStore.formatFileSize(file.size)}</td
+                  >
                   <td class="px-4 py-3 text-right">
-                    <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button class="p-1.5 rounded-lg hover:bg-gremius-cyan/10 text-gremius-text-dim hover:text-gremius-cyan" onclick={() => handleCopyUrl(file.url || file.publicUrl || '', file.id)}>
-                        {#if copiedId === file.id}<Check class="w-4 h-4 text-green-500" />{:else}<span class="text-xs">Copy</span>{/if}
+                    <div
+                      class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <button
+                        class="p-1.5 rounded-lg hover:bg-gremius-cyan/10 text-gremius-text-dim hover:text-gremius-cyan"
+                        onclick={() => handleCopyUrl(file.url || file.publicUrl || "", file.id)}
+                      >
+                        {#if copiedId === file.id}<Check
+                            class="w-4 h-4 text-green-500"
+                          />{:else}<span class="text-xs">Copy</span>{/if}
                       </button>
-                      <button class="p-1.5 rounded-lg hover:bg-gremius-pink/10 text-gremius-text-dim hover:text-gremius-pink" onclick={() => handleDeleteFile(file.id)}>
+                      <button
+                        class="p-1.5 rounded-lg hover:bg-gremius-pink/10 text-gremius-text-dim hover:text-gremius-pink"
+                        onclick={() => handleDeleteFile(file.id)}
+                      >
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -415,18 +493,21 @@
       {/if}
     </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
-  <!-- TAB: FOLDERS -->
-  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB: FOLDERS -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
   {:else if activeTab === "folders"}
     <div class="space-y-4" in:fade>
       <div class="flex justify-end">
-        <button class="btn-primary inline-flex items-center gap-2" onclick={() => showNewFolderDialog = true}>
+        <button
+          class="btn-primary inline-flex items-center gap-2"
+          onclick={() => (showNewFolderDialog = true)}
+        >
           <Plus class="w-4 h-4" />
           New Folder
         </button>
       </div>
-      
+
       {#if mediaStore.folders.length === 0}
         <div class="card p-12 text-center">
           <Folder class="w-12 h-12 text-gremius-subtle mx-auto mb-4" />
@@ -436,8 +517,13 @@
       {:else}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {#each mediaStore.folders as folder}
-            <div class="card p-4 flex items-center gap-3 hover:ring-2 hover:ring-gremius-cyan/30 transition-all cursor-pointer"
-                 onclick={() => { mediaStore.selectFolder(folder); activeTab = "library"; }}>
+            <div
+              class="card p-4 flex items-center gap-3 hover:ring-2 hover:ring-gremius-cyan/30 transition-all cursor-pointer"
+              onclick={() => {
+                mediaStore.selectFolder(folder);
+                activeTab = "library";
+              }}
+            >
               <Folder class="w-8 h-8 text-gremius-cyan" />
               <div>
                 <p class="font-medium text-gremius-text">{folder.name}</p>
@@ -449,12 +535,12 @@
       {/if}
     </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
-  <!-- TAB: UPLOAD -->
-  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB: UPLOAD -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
   {:else if activeTab === "upload"}
     <div class="max-w-2xl mx-auto" in:fade>
-      <div 
+      <div
         class="card p-12 text-center border-2 border-dashed border-gremius-border/50 hover:border-gremius-cyan/30 transition-colors"
         ondrop={handleDrop}
         ondragover={handleDragOver}
@@ -475,7 +561,10 @@
           onchange={handleFileSelect}
           accept={config.features.allowedTypes.join(",")}
         />
-        <button class="btn-primary inline-flex items-center gap-2" onclick={() => fileInput?.click()}>
+        <button
+          class="btn-primary inline-flex items-center gap-2"
+          onclick={() => fileInput?.click()}
+        >
           <Plus class="w-4 h-4" />
           Select Files
         </button>
@@ -489,7 +578,10 @@
             <div class="flex items-center gap-3">
               <span class="text-sm text-gremius-subtle truncate flex-1">{progress.filename}</span>
               <div class="w-24 h-2 bg-gremius-surface rounded-full overflow-hidden">
-                <div class="h-full bg-gremius-cyan transition-all duration-300" style="width: {progress.progress}%"></div>
+                <div
+                  class="h-full bg-gremius-cyan transition-all duration-300"
+                  style="width: {progress.progress}%"
+                ></div>
               </div>
             </div>
           {/each}
@@ -497,9 +589,9 @@
       {/if}
     </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
-  <!-- TAB: SETTINGS -->
-  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB: SETTINGS -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
   {:else if activeTab === "settings"}
     <div class="max-w-3xl mx-auto space-y-6" in:fade>
       <!-- Storage Provider -->
@@ -508,17 +600,22 @@
           <Server class="w-5 h-5 text-gremius-cyan" />
           Storage Provider
         </h3>
-        
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {#each storageProviders as provider}
             <button
-              class="p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 {config.storage.provider === provider.id ? 'border-gremius-cyan bg-gremius-cyan/5' : 'border-gremius-border hover:border-gremius-cyan/50'}"
+              class="p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 {config
+                .storage.provider === provider.id
+                ? 'border-gremius-cyan bg-gremius-cyan/5'
+                : 'border-gremius-border hover:border-gremius-cyan/50'}"
               onclick={() => setProvider(provider.id)}
             >
-              <div class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center flex-shrink-0">
-                {#if provider.id === 'minio'}
+              <div
+                class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center flex-shrink-0"
+              >
+                {#if provider.id === "minio"}
                   <Server class="w-5 h-5 text-gremius-cyan" />
-                {:else if provider.id === 'local'}
+                {:else if provider.id === "local"}
                   <HardDrive class="w-5 h-5 text-gremius-cyan" />
                 {:else}
                   <Cloud class="w-5 h-5 text-gremius-cyan" />
@@ -535,22 +632,24 @@
         <!-- Provider-specific fields -->
         {#if currentProvider}
           <div class="space-y-4 border-t border-gremius-border pt-6">
-            <h4 class="text-sm font-medium text-gremius-text">{currentProvider.label} Configuration</h4>
+            <h4 class="text-sm font-medium text-gremius-text">
+              {currentProvider.label} Configuration
+            </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {#each currentProvider.fields as field}
-                <div class={field.type === 'checkbox' ? 'flex items-center gap-2' : ''}>
-                  {#if field.type !== 'checkbox'}
+                <div class={field.type === "checkbox" ? "flex items-center gap-2" : ""}>
+                  {#if field.type !== "checkbox"}
                     <label class="block text-sm text-gremius-subtle mb-1">{field.label}</label>
                   {/if}
-                  
-                  {#if field.type === 'checkbox'}
+
+                  {#if field.type === "checkbox"}
                     <input
                       type="checkbox"
                       class="w-4 h-4 rounded border-gremius-border bg-gremius-surface text-gremius-cyan focus:ring-gremius-cyan"
                       bind:checked={config.storage[field.key]}
                     />
                     <label class="text-sm text-gremius-text">{field.label}</label>
-                  {:else if field.type === 'password'}
+                  {:else if field.type === "password"}
                     <input
                       type="password"
                       class="input w-full"
@@ -586,9 +685,13 @@
               Test Connection
             {/if}
           </button>
-          
+
           {#if testResult}
-            <div class="flex items-center gap-2 text-sm" class:text-green-500={testResult.success} class:text-gremius-pink={!testResult.success}>
+            <div
+              class="flex items-center gap-2 text-sm"
+              class:text-green-500={testResult.success}
+              class:text-gremius-pink={!testResult.success}
+            >
               {#if testResult.success}
                 <Check class="w-4 h-4" />
               {:else}
@@ -615,7 +718,7 @@
               bind:checked={config.features.thumbnails}
             />
           </div>
-          
+
           <div class="flex items-center justify-between p-3 bg-gremius-surface/50 rounded-lg">
             <div>
               <p class="font-medium text-gremius-text">Image Optimization</p>
@@ -627,7 +730,7 @@
               bind:checked={config.features.imageOptimization}
             />
           </div>
-          
+
           <div class="flex items-center justify-between p-3 bg-gremius-surface/50 rounded-lg">
             <div>
               <p class="font-medium text-gremius-text">Signed URLs</p>
@@ -670,7 +773,7 @@
         {:else}
           <div></div>
         {/if}
-        
+
         <button
           class="btn-primary inline-flex items-center gap-2"
           onclick={handleSaveConfig}
@@ -691,11 +794,17 @@
 
 <!-- New Folder Dialog -->
 {#if showNewFolderDialog}
-  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" transition:fade>
+  <div
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+    transition:fade
+  >
     <div class="card p-6 w-full max-w-md mx-4" transition:slide>
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gremius-text">New Folder</h3>
-        <button class="text-gremius-subtle hover:text-gremius-text" onclick={() => showNewFolderDialog = false}>
+        <button
+          class="text-gremius-subtle hover:text-gremius-text"
+          onclick={() => (showNewFolderDialog = false)}
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
@@ -704,10 +813,10 @@
         placeholder="Folder name"
         class="input w-full mb-4"
         bind:value={newFolderName}
-        onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
+        onkeydown={(e) => e.key === "Enter" && handleCreateFolder()}
       />
       <div class="flex justify-end gap-2">
-        <button class="btn-secondary" onclick={() => showNewFolderDialog = false}>Cancel</button>
+        <button class="btn-secondary" onclick={() => (showNewFolderDialog = false)}>Cancel</button>
         <button class="btn-primary" onclick={handleCreateFolder} disabled={!newFolderName.trim()}>
           Create
         </button>

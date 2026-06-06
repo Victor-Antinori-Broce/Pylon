@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Plus, Layout, Database } from "lucide-svelte";
   import { api } from "$lib/api";
   import PageFromDataset from "$lib/components/blocks/PageFromDataset.svelte";
+  import { Plus, Database } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Page {
     id: string;
@@ -112,7 +112,7 @@
     <div class="space-y-3">
       {#each pages as page}
         <a
-          href={`/builder`}
+          href="/builder"
           class="card p-4 flex items-center justify-between group hover:border-gremius-cyan/30 transition-colors"
         >
           <div class="flex items-center gap-4">

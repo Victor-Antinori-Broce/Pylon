@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
 
-  let { value, config, mode, onChange }: FieldComponentProps = $props();
+  const { value, config, mode, onChange }: FieldComponentProps = $props();
   
-  let displayValue = $derived(value ?? "—");
-  let isEditing = $state(mode === "edit");
+  const displayValue = $derived(value ?? "—");
+  const isEditing = $state(mode === "edit");
 </script>
 
 {#if mode === "view" || mode === "inline"}

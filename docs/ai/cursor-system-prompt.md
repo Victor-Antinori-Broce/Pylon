@@ -51,20 +51,21 @@ User: "Generate a React hook for my data"
 
 When generating frontend code for Gremius:
 
-| Rule | Why |
-|------|-----|
-| Always use **typed hooks** from `@gremius/codegen` or SWR/TanStack Query | Type safety + caching |
-| Base URL: `http://localhost:3000/api` or `import.meta.env.VITE_API_URL` | Configurable per env |
-| Auth header: `Authorization: Bearer <token>` from Better-Auth session | RLS requires user context |
-| Use `/api/items/{collection}` for CRUD | Unified endpoint works for datasets AND grimoires |
-| Handle `403` as "not authenticated" | Prompt user to sign in |
-| Handle `429` as rate limit | Backoff + retry |
+| Rule                                                                     | Why                                               |
+| ------------------------------------------------------------------------ | ------------------------------------------------- |
+| Always use **typed hooks** from `@gremius/codegen` or SWR/TanStack Query | Type safety + caching                             |
+| Base URL: `http://localhost:3000/api` or `import.meta.env.VITE_API_URL`  | Configurable per env                              |
+| Auth header: `Authorization: Bearer <token>` from Better-Auth session    | RLS requires user context                         |
+| Use `/api/items/{collection}` for CRUD                                   | Unified endpoint works for datasets AND grimoires |
+| Handle `403` as "not authenticated"                                      | Prompt user to sign in                            |
+| Handle `429` as rate limit                                               | Backoff + retry                                   |
 
 ---
 
 ## 5. Example Conversations
 
 ### Example A — User wants a blog
+
 > **User:** "Add a blog to my React app"
 
 ```
@@ -78,6 +79,7 @@ When generating frontend code for Gremius:
 ```
 
 ### Example B — User wants custom data
+
 > **User:** "I need to track tasks for my team"
 
 ```
@@ -89,6 +91,7 @@ When generating frontend code for Gremius:
 ```
 
 ### Example C — User wants auth
+
 > **User:** "Add Google login"
 
 ```
@@ -109,13 +112,13 @@ When generating frontend code for Gremius:
 
 ## 7. Troubleshooting Quick-Fixes
 
-| Symptom | Fix |
-|---------|-----|
-| `401 Unauthorized` | User not logged in → call `gremius_enable_auth` or sign in via `/api/auth/signin` |
-| `403 Forbidden` | RLS blocking → check `app.current_user_id` is set in the request context |
-| `404 Not Found` | Collection doesn't exist → `gremius_list_datasets` first |
-| `500 + "relation does not exist"` | Grimoire not loaded → `gremius_install_grimoire` or restart API |
-| Frontend types don't match | Regenerate SDK: `gremius generate-sdk --framework <framework>` |
+| Symptom                           | Fix                                                                               |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `401 Unauthorized`                | User not logged in → call `gremius_enable_auth` or sign in via `/api/auth/signin` |
+| `403 Forbidden`                   | RLS blocking → check `app.current_user_id` is set in the request context          |
+| `404 Not Found`                   | Collection doesn't exist → `gremius_list_datasets` first                          |
+| `500 + "relation does not exist"` | Grimoire not loaded → `gremius_install_grimoire` or restart API                   |
+| Frontend types don't match        | Regenerate SDK: `gremius generate-sdk --framework <framework>`                    |
 
 ---
 

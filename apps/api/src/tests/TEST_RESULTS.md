@@ -26,6 +26,7 @@
 ## Test Suites
 
 ### 1. Grimoire Registry Tests (`modules.test.ts`)
+
 **Status:** ✅ Passing (39 tests)
 
 ```
@@ -91,6 +92,7 @@
 ---
 
 ### 2. Auth Module Tests (`auth.test.ts`)
+
 **Status:** ✅ Passing (10 tests)
 
 ```
@@ -117,6 +119,7 @@
 ---
 
 ### 3. Datasets Module Tests (`datasets.test.ts`)
+
 **Status:** ✅ Passing (12 tests)
 
 ```
@@ -145,6 +148,7 @@
 ---
 
 ### 4. Row Level Security Tests (`rls.test.ts`)
+
 **Status:** ✅ Passing (10 tests)
 
 ```
@@ -175,6 +179,7 @@
 ---
 
 ### 5. Real-time Tests (`realtime.test.ts`)
+
 **Status:** ✅ Existing (included in count)
 
 Tests for WebSocket real-time functionality.  
@@ -220,6 +225,7 @@ bun test
 **File:** `src/tests/setup.ts`
 
 Provides:
+
 - `isDatabaseAvailable()` - Check DB connection
 - `clearTestData()` - Cleanup test data
 - `generateTestId()` - Generate unique IDs
@@ -231,14 +237,14 @@ Provides:
 
 ### By Module
 
-| Module | Tests | DB Required | Status |
-|--------|-------|-------------|--------|
-| Grimoire Registry | 39 | No | ✅ 100% |
-| Auth | 10 | Yes | ✅ Passing |
-| Datasets | 12 | Yes | ✅ Passing |
-| RLS | 10 | Yes | ✅ Passing |
-| Real-time | - | Yes | ✅ Included |
-| **Total** | **71** | - | **✅ 100%** |
+| Module            | Tests  | DB Required | Status      |
+| ----------------- | ------ | ----------- | ----------- |
+| Grimoire Registry | 39     | No          | ✅ 100%     |
+| Auth              | 10     | Yes         | ✅ Passing  |
+| Datasets          | 12     | Yes         | ✅ Passing  |
+| RLS               | 10     | Yes         | ✅ Passing  |
+| Real-time         | -      | Yes         | ✅ Included |
+| **Total**         | **71** | -           | **✅ 100%** |
 
 ### Test Categories
 
@@ -300,6 +306,7 @@ Tests are automatically run in GitHub Actions CI pipeline:
 ## Conclusion
 
 All 71 tests are passing successfully. The test suite covers:
+
 - ✅ Grimoire registry functionality
 - ✅ Authentication and authorization
 - ✅ Dataset CRUD operations

@@ -5,14 +5,14 @@
  * Conecta con el MCP server para procesar mensajes.
  */
 
-import { Hono } from "hono";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { agentIdentities, agentTraces, agentTraceSteps } from "@/db/schema";
+import { logger } from "@/lib/logger";
 import { eq } from "drizzle-orm";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { logger } from "@/lib/logger";
+import { Hono } from "hono";
 
 const playgroundRouter = new Hono();
 

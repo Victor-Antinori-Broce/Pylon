@@ -1,12 +1,12 @@
 /**
  * Code Action Handler
- * 
+ *
  * Executes JavaScript/TypeScript code in a sandboxed environment.
  * This replaces the old worker-sandbox.ts with a unified interface.
  */
 
-import type { Action, ActionContext, ActionResult } from "../types";
 import { executeSandbox } from "../../worker-sandbox";
+import type { Action, ActionContext, ActionResult } from "../types";
 
 interface CodeActionConfig {
   code: string;
@@ -20,7 +20,7 @@ export async function executeCodeAction(
   context: ActionContext
 ): Promise<ActionResult> {
   const startTime = Date.now();
-  
+
   const config = action.config as CodeActionConfig;
 
   if (!config.code) {

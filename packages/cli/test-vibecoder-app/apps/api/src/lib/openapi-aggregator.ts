@@ -14,10 +14,11 @@
  * - Supports tags, webhooks, and reusable components
  */
 
-import type { OpenAPIObject, PathItemObject, OperationObject, ParameterObject, SchemaObject } from "openapi3-ts/oas30";
-import { zodToJsonSchema } from "zod-to-json-schema";
-import type { ZodTypeAny } from "zod";
 import type { GrimoireDefinition, GrimoireOpenApiPath, OpenApiMethod } from "@gremius/shared";
+import type { OpenAPIObject, PathItemObject, OperationObject, ParameterObject, SchemaObject } from "openapi3-ts/oas30";
+import type { ZodTypeAny } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 import { logger } from "./logger";
 
 /**

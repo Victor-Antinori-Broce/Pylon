@@ -1,21 +1,22 @@
 /**
  * @gremius/grimoire-esports — Esports Tournament System (Modern)
- * 
+ *
  * Complete esports competitive ecosystem with:
  * - Players (profiles, management)
  * - Teams (rosters, organization)
  * - Tournaments (bracket generation)
  * - Matches (tracking, results)
- * 
+ *
  * Layer: Grimoire Core (Nivel 3 — loaded via module-loader)
  * Mount: /api/esports
- * 
+ *
  * @version 1.0.0
  */
 
 import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 import { Hono } from "hono";
+
 import { createEsportsRouter } from "./esports.routes";
 
 // Re-export schema for schema-merger
@@ -53,7 +54,8 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
   id: "grimoire-esports",
   name: "Esports Tournaments",
   version: "1.0.0",
-  description: "Complete esports competitive ecosystem with players, teams, tournaments, and matches",
+  description:
+    "Complete esports competitive ecosystem with players, teams, tournaments, and matches",
   icon: "Trophy",
   mountPath: "/api/esports",
   createRouter: createGrimoireEsports,
@@ -80,7 +82,12 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
       ctx.logger.info("🏆 Esports grimoire initialized");
 
       // Verify required tables
-      const requiredTables = ["esports_players", "esports_teams", "esports_tournaments", "esports_matches"];
+      const requiredTables = [
+        "esports_players",
+        "esports_teams",
+        "esports_tournaments",
+        "esports_matches",
+      ];
       const missingTables: string[] = [];
 
       for (const table of requiredTables) {

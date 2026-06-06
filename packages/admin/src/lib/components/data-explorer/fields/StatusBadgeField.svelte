@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
 
-  let { value, config }: FieldComponentProps = $props();
-  
+  const { value, config }: FieldComponentProps = $props();
+
   // Colores por defecto para estados comunes
   const defaultColors: Record<string, string> = {
     draft: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
@@ -14,13 +14,16 @@
     approved: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     rejected: "bg-red-500/10 text-red-500 border-red-500/20",
   };
-  
-  let statusColors = $derived({ ...defaultColors, ...config.options?.colors });
-  let statusClass = $derived(
-    statusColors[String(value)?.toLowerCase()] || "bg-gremius-surface text-gremius-text-dim border-gremius-border"
+
+  const statusColors = $derived({ ...defaultColors, ...config.options?.colors });
+  const statusClass = $derived(
+    statusColors[String(value)?.toLowerCase()] ||
+      "bg-gremius-surface text-gremius-text-dim border-gremius-border"
   );
 </script>
 
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {statusClass}">
+<span
+  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {statusClass}"
+>
   {value ?? "—"}
 </span>

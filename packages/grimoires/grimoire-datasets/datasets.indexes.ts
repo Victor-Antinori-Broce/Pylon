@@ -121,23 +121,20 @@ export function suggestIndexesForDataset(
   schema: { fields: any[] }
 ): IndexSuggestion[] {
   const suggestions: IndexSuggestion[] = [];
-  
+
   for (const field of schema.fields) {
     const suggestion = analyzeFieldForIndex(datasetSlug, field);
     if (suggestion) {
       suggestions.push(suggestion);
     }
   }
-  
+
   return suggestions;
 }
 
-function analyzeFieldForIndex(
-  table: string,
-  field: any
-): IndexSuggestion | null {
+function analyzeFieldForIndex(table: string, field: any): IndexSuggestion | null {
   const fieldName = field.key || field.name;
-  
+
   // Reglas de sugerencia basadas en tipo de campo
   switch (field.type) {
     case "relation":
@@ -155,7 +152,7 @@ function analyzeFieldForIndex(
         sql: `CREATE INDEX idx_${table}_${fieldName}_btree ON data_entries ((data->>'${fieldName}'));`,
         createdAt: new Date().toISOString(),
       };
-      
+
     case "text":
       if (field.validation?.pattern || field.unique) {
         // Campos con pattern o unique son buenos candidatos
@@ -173,7 +170,7 @@ function analyzeFieldForIndex(
         };
       }
       break;
-      
+
     case "number":
       // Números son frecuentemente usados en rangos y sorting
       return {
@@ -188,7 +185,7 @@ function analyzeFieldForIndex(
         sql: `CREATE INDEX idx_${table}_${fieldName}_btree ON data_entries (((data->>'${fieldName}')::numeric));`,
         createdAt: new Date().toISOString(),
       };
-      
+
     case "date":
     case "datetime":
       // Fechas son casi siempre filtradas y ordenadas
@@ -204,7 +201,7 @@ function analyzeFieldForIndex(
         sql: `CREATE INDEX idx_${table}_${fieldName}_btree ON data_entries (((data->>'${fieldName}')::timestamp));`,
         createdAt: new Date().toISOString(),
       };
-      
+
     case "multiselect":
     case "tags":
       // Arrays son perfectos para GIN
@@ -221,18 +218,16 @@ function analyzeFieldForIndex(
         createdAt: new Date().toISOString(),
       };
   }
-  
+
   return null;
 }
 
 /**
  * Obtiene estadísticas actuales de índices
  */
-export async function getIndexStats(
-  ctx: GrimoireContext
-): Promise<IndexStats[]> {
+export async function getIndexStats(ctx: GrimoireContext): Promise<IndexStats[]> {
   const { db } = ctx;
-  
+
   const result = await db.instance.execute(sql`
     SELECT 
       schemaname,
@@ -246,7 +241,7 @@ export async function getIndexStats(
     AND tablename IN ('data_entries', 'data_sets')
     ORDER BY pg_relation_size(indexrelid) DESC;
   `);
-  
+
   return result.rows.map((row: any) => ({
     name: row.indexname,
     table: row.tablename,
@@ -280,10 +275,7 @@ export async function createIndex(
 /**
  * Elimina un índice
  */
-export async function dropIndex(
-  ctx: GrimoireContext,
-  indexName: string
-): Promise<boolean> {
+export async function dropIndex(ctx: GrimoireContext, indexName: string): Promise<boolean> {
   try {
     await ctx.db.instance.execute(sql`DROP INDEX IF EXISTS ${sql.identifier(indexName)}`);
     ctx.logger.info(`🗑️ Dropped index: ${indexName}`);
@@ -303,10 +295,10 @@ export async function applyAutoIndexes(
   minConfidence: "high" | "medium" = "high"
 ): Promise<{ created: string[]; failed: string[] }> {
   const result = { created: [] as string[], failed: [] as string[] };
-  
+
   const confidenceLevels = { high: 2, medium: 1, low: 0 };
   const minLevel = confidenceLevels[minConfidence];
-  
+
   for (const suggestion of suggestions) {
     if (confidenceLevels[suggestion.confidence] >= minLevel) {
       const success = await createIndex(ctx, suggestion);
@@ -317,7 +309,7 @@ export async function applyAutoIndexes(
       }
     }
   }
-  
+
   return result;
 }
 
@@ -333,26 +325,26 @@ export async function analyzeQueryPerformance(
   datasetId: string
 ): Promise<QueryStats[]> {
   const { db } = ctx;
-  
+
   // Obtener campos del dataset
   const { dataSets } = await import("./datasets.schema");
-  
+
   const [dataset] = await db.instance
     .select()
     .from(dataSets)
     .where(eq(dataSets.id, datasetId))
     .limit(1);
-  
+
   if (!dataset) {
     throw new Error(`Dataset not found: ${datasetId}`);
   }
-  
+
   const schema = dataset.schema as { fields: any[] } | null;
   const stats: QueryStats[] = [];
-  
+
   for (const field of schema?.fields || []) {
     const fieldName = field.key || field.name;
-    
+
     // Simular análisis (en producción esto leería de pg_stat_statements)
     const fieldStats: QueryStats = {
       field: fieldName,
@@ -364,19 +356,17 @@ export async function analyzeQueryPerformance(
       avgScanTime: Math.random() * 100,
       lastQueryAt: new Date().toISOString(),
     };
-    
+
     stats.push(fieldStats);
   }
-  
+
   return stats.sort((a, b) => b.totalQueries - a.totalQueries);
 }
 
 /**
  * Genera reporte de índices recomendados
  */
-export async function generateIndexReport(
-  ctx: GrimoireContext
-): Promise<{
+export async function generateIndexReport(ctx: GrimoireContext): Promise<{
   existing: IndexStats[];
   suggested: IndexSuggestion[];
   unused: string[];
@@ -384,11 +374,11 @@ export async function generateIndexReport(
 }> {
   const existing = await getIndexStats(ctx);
   const suggested: IndexSuggestion[] = [];
-  
+
   // Analizar todos los datasets
   const { dataSets } = await import("./datasets.schema");
   const datasets = await ctx.db.instance.select().from(dataSets);
-  
+
   for (const dataset of datasets) {
     const schema = dataset.schema as { fields: any[] } | null;
     if (schema?.fields) {
@@ -396,26 +386,28 @@ export async function generateIndexReport(
       suggested.push(...dsSuggestions);
     }
   }
-  
+
   // Filtrar sugerencias que ya existen
   const existingNames = new Set(existing.map((e) => e.name));
   const newSuggestions = suggested.filter((s) => !existingNames.has(s.id));
-  
+
   // Detectar índices no usados (mock - en prod usar pg_stat_user_indexes)
   const unused = existing
     .filter((e) => e.scans === 0 && !e.name.includes("primary"))
     .map((e) => e.name);
-  
+
   const recommendations: string[] = [];
-  
+
   if (newSuggestions.length > 0) {
-    recommendations.push(`Create ${newSuggestions.length} suggested indexes for better performance`);
+    recommendations.push(
+      `Create ${newSuggestions.length} suggested indexes for better performance`
+    );
   }
-  
+
   if (unused.length > 0) {
     recommendations.push(`Consider removing ${unused.length} unused indexes to save space`);
   }
-  
+
   return {
     existing,
     suggested: newSuggestions,
@@ -437,34 +429,34 @@ export async function applyIndexConfig(
   config: IndexConfig
 ): Promise<{ created: string[]; removed: string[]; errors: string[] }> {
   const result = { created: [] as string[], removed: [] as string[], errors: [] as string[] };
-  
+
   // Obtener dataset
   const { db } = ctx;
   const { dataSets } = await import("./datasets.schema");
-  
+
   const [dataset] = await db.instance
     .select()
     .from(dataSets)
     .where(eq(dataSets.id, datasetId))
     .limit(1);
-  
+
   if (!dataset) {
     throw new Error(`Dataset not found: ${datasetId}`);
   }
-  
+
   // Crear índices definidos
   for (const index of config.indexes) {
     try {
       const indexName = index.name || generateIndexName(dataset.slug, index);
       const indexSql = buildIndexSQL("data_entries", indexName, index);
-      
+
       await db.instance.execute(sql.raw(indexSql));
       result.created.push(indexName);
     } catch (error: any) {
       result.errors.push(`Failed to create index: ${error.message}`);
     }
   }
-  
+
   return result;
 }
 
@@ -475,14 +467,16 @@ function generateIndexName(table: string, index: IndexDefinition): string {
 
 function buildIndexSQL(table: string, name: string, index: IndexDefinition): string {
   const unique = index.unique ? "UNIQUE" : "";
-  const fields = index.fields.map((f) => {
-    // Para JSONB, acceder al campo dentro de data
-    const jsonPath = `(data->>'${f}')`;
-    return index.type === "btree" && index.desc ? `${jsonPath} DESC` : jsonPath;
-  }).join(", ");
-  
+  const fields = index.fields
+    .map((f) => {
+      // Para JSONB, acceder al campo dentro de data
+      const jsonPath = `(data->>'${f}')`;
+      return index.type === "btree" && index.desc ? `${jsonPath} DESC` : jsonPath;
+    })
+    .join(", ");
+
   let sql = `CREATE ${unique} INDEX ${name} ON ${table} `;
-  
+
   if (index.type === "gin") {
     sql += `USING gin (${fields})`;
   } else if (index.type === "gist") {
@@ -492,11 +486,11 @@ function buildIndexSQL(table: string, name: string, index: IndexDefinition): str
   } else {
     sql += `(${fields})`;
   }
-  
+
   if (index.where) {
     sql += ` WHERE ${index.where}`;
   }
-  
+
   return sql;
 }
 
@@ -535,13 +529,13 @@ export const GAMING_RECOMMENDED_INDEXES: IndexDefinition[] = [
   { type: "btree", fields: ["created_at"], desc: true, name: "idx_builds_created" },
   { type: "gin", fields: ["tags"], name: "idx_builds_tags" },
   { type: "btree", fields: ["author_id", "created_at"], name: "idx_builds_author_created" },
-  
+
   // Índices para items
   { type: "btree", fields: ["rarity"], name: "idx_items_rarity" },
   { type: "btree", fields: ["item_type"], name: "idx_items_type" },
   { type: "btree", fields: ["base_dps"], desc: true, name: "idx_items_dps" },
   { type: "gin", fields: ["mods"], name: "idx_items_mods" },
-  
+
   // Índices para búsqueda de texto
   { type: "gin", fields: ["name"], name: "idx_search_name" },
 ];
@@ -555,7 +549,7 @@ export function getGameIndexConfig(gameType: "poe" | "diablo" | "wow" | "genshin
     autoDetect: true,
     threshold: 50,
   };
-  
+
   switch (gameType) {
     case "poe":
       return {
@@ -568,7 +562,7 @@ export function getGameIndexConfig(gameType: "poe" | "diablo" | "wow" | "genshin
           { type: "btree", fields: ["total_dps"], desc: true, name: "idx_poe_dps" },
         ],
       };
-      
+
     case "diablo":
       return {
         ...base,
@@ -579,7 +573,7 @@ export function getGameIndexConfig(gameType: "poe" | "diablo" | "wow" | "genshin
           { type: "btree", fields: ["tier"], name: "idx_d4_tier" },
         ],
       };
-      
+
     case "genshin":
       return {
         ...base,
@@ -590,10 +584,8 @@ export function getGameIndexConfig(gameType: "poe" | "diablo" | "wow" | "genshin
           { type: "btree", fields: ["artifact_rating"], desc: true, name: "idx_gi_rating" },
         ],
       };
-      
+
     default:
       return base;
   }
 }
-
-

@@ -7,7 +7,11 @@
     <!-- Already submitted state -->
     <div v-if="submitted" class="survey-done">
       <svg class="done-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+        <path
+          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
       <p class="done-text">¡Gracias por tu retroalimentación!</p>
     </div>
@@ -33,8 +37,17 @@
             @mouseleave="hoverRating = 0"
             :aria-label="`${star} estrellas`"
           >
-            <svg viewBox="0 0 24 24" :fill="rating >= star || hoverRating >= star ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.5">
-              <path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg
+              viewBox="0 0 24 24"
+              :fill="rating >= star || hoverRating >= star ? 'currentColor' : 'none'"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <path
+                d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
         </div>
@@ -58,13 +71,9 @@
       <div v-if="error" class="survey-error">{{ error }}</div>
 
       <!-- Submit -->
-      <button
-        class="survey-submit"
-        :disabled="submitting || rating === 0"
-        @click="submit"
-      >
+      <button class="survey-submit" :disabled="submitting || rating === 0" @click="submit">
         <span v-if="submitting" class="spinner-small" />
-        {{ submitting ? 'Enviando...' : 'Enviar encuesta' }}
+        {{ submitting ? "Enviando..." : "Enviar encuesta" }}
       </button>
     </div>
   </div>
@@ -150,7 +159,7 @@ async function submit() {
 }
 
 .done-text {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.9rem;
   color: #34d399;
 }
@@ -164,7 +173,7 @@ async function submit() {
 }
 
 .survey-title {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 1.2rem;
   font-weight: 700;
   color: #f1f5f9;
@@ -172,7 +181,7 @@ async function submit() {
 }
 
 .survey-desc {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.4);
   margin-bottom: 1.5rem;
@@ -186,7 +195,7 @@ async function submit() {
 
 .rating-label {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.6);
@@ -222,7 +231,7 @@ async function submit() {
 .rating-text {
   display: block;
   margin-top: 0.4rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.35);
   min-height: 1rem;
@@ -235,7 +244,7 @@ async function submit() {
 
 .comments-label {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.6);
@@ -249,7 +258,7 @@ async function submit() {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.8);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   resize: vertical;
   transition: border-color 0.2s;
@@ -280,7 +289,7 @@ async function submit() {
   border-radius: 0.5rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
   border: none;
@@ -312,6 +321,8 @@ async function submit() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

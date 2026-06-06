@@ -65,12 +65,8 @@
           "name": "api_keys_created_by_id_auth_users_id_fk",
           "tableFrom": "api_keys",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -191,9 +187,7 @@
         "auth_users_email_unique": {
           "name": "auth_users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -347,12 +341,8 @@
           "name": "blog_posts_author_id_auth_users_id_fk",
           "tableFrom": "blog_posts",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["author_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -360,12 +350,8 @@
           "name": "blog_posts_featured_image_id_media_id_fk",
           "tableFrom": "blog_posts",
           "tableTo": "media",
-          "columnsFrom": [
-            "featured_image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["featured_image_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -421,12 +407,8 @@
           "name": "blog_posts_to_games_post_id_blog_posts_id_fk",
           "tableFrom": "blog_posts_to_games",
           "tableTo": "blog_posts",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["post_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -434,12 +416,8 @@
           "name": "blog_posts_to_games_game_id_games_id_fk",
           "tableFrom": "blog_posts_to_games",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -495,12 +473,8 @@
           "name": "blog_posts_to_tags_post_id_blog_posts_id_fk",
           "tableFrom": "blog_posts_to_tags",
           "tableTo": "blog_posts",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["post_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -508,12 +482,8 @@
           "name": "blog_posts_to_tags_tag_id_tags_id_fk",
           "tableFrom": "blog_posts_to_tags",
           "tableTo": "tags",
-          "columnsFrom": [
-            "tag_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -647,12 +617,8 @@
           "name": "data_entries_data_set_id_data_sets_id_fk",
           "tableFrom": "data_entries",
           "tableTo": "data_sets",
-          "columnsFrom": [
-            "data_set_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["data_set_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -660,12 +626,8 @@
           "name": "data_entries_owner_id_auth_users_id_fk",
           "tableFrom": "data_entries",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -673,12 +635,8 @@
           "name": "data_entries_thumbnail_id_media_id_fk",
           "tableFrom": "data_entries",
           "tableTo": "media",
-          "columnsFrom": [
-            "thumbnail_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thumbnail_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -790,12 +748,8 @@
           "name": "data_sets_game_id_games_id_fk",
           "tableFrom": "data_sets",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1018,12 +972,8 @@
           "name": "function_executions_function_id_gremius_functions_id_fk",
           "tableFrom": "function_executions",
           "tableTo": "gremius_functions",
-          "columnsFrom": [
-            "function_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["function_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1093,12 +1043,8 @@
           "name": "game_collection_entries_collection_id_game_collections_id_fk",
           "tableFrom": "game_collection_entries",
           "tableTo": "game_collections",
-          "columnsFrom": [
-            "collection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["collection_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1106,12 +1052,8 @@
           "name": "game_collection_entries_game_id_games_id_fk",
           "tableFrom": "game_collection_entries",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1396,12 +1338,8 @@
           "name": "games_cover_art_id_media_id_fk",
           "tableFrom": "games",
           "tableTo": "media",
-          "columnsFrom": [
-            "cover_art_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["cover_art_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1457,12 +1395,8 @@
           "name": "games_to_platforms_game_id_games_id_fk",
           "tableFrom": "games_to_platforms",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1470,12 +1404,8 @@
           "name": "games_to_platforms_platform_id_platforms_id_fk",
           "tableFrom": "games_to_platforms",
           "tableTo": "platforms",
-          "columnsFrom": [
-            "platform_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["platform_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1531,12 +1461,8 @@
           "name": "games_to_streamers_game_id_games_id_fk",
           "tableFrom": "games_to_streamers",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1544,12 +1470,8 @@
           "name": "games_to_streamers_streamer_id_streamers_id_fk",
           "tableFrom": "games_to_streamers",
           "tableTo": "streamers",
-          "columnsFrom": [
-            "streamer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["streamer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1605,12 +1527,8 @@
           "name": "games_to_tags_game_id_games_id_fk",
           "tableFrom": "games_to_tags",
           "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["game_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1618,12 +1536,8 @@
           "name": "games_to_tags_tag_id_tags_id_fk",
           "tableFrom": "games_to_tags",
           "tableTo": "tags",
-          "columnsFrom": [
-            "tag_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1831,12 +1745,8 @@
           "name": "gremius_functions_watch_dataset_id_data_sets_id_fk",
           "tableFrom": "gremius_functions",
           "tableTo": "data_sets",
-          "columnsFrom": [
-            "watch_dataset_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["watch_dataset_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1844,12 +1754,8 @@
           "name": "gremius_functions_created_by_id_auth_users_id_fk",
           "tableFrom": "gremius_functions",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1962,12 +1868,8 @@
           "name": "media_uploaded_by_id_auth_users_id_fk",
           "tableFrom": "media",
           "tableTo": "auth_users",
-          "columnsFrom": [
-            "uploaded_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploaded_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2137,12 +2039,8 @@
           "name": "platforms_icon_id_media_id_fk",
           "tableFrom": "platforms",
           "tableTo": "media",
-          "columnsFrom": [
-            "icon_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["icon_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2368,12 +2266,8 @@
           "name": "streamers_avatar_id_media_id_fk",
           "tableFrom": "streamers",
           "tableTo": "media",
-          "columnsFrom": [
-            "avatar_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["avatar_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2767,12 +2661,8 @@
           "name": "blocks_page_id_pages_id_fk",
           "tableFrom": "blocks",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2966,9 +2856,7 @@
         "pages_slug_unique": {
           "name": "pages_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -2980,41 +2868,22 @@
     "public.blog_status": {
       "name": "blog_status",
       "schema": "public",
-      "values": [
-        "draft",
-        "published",
-        "scheduled"
-      ]
+      "values": ["draft", "published", "scheduled"]
     },
     "public.content_status": {
       "name": "content_status",
       "schema": "public",
-      "values": [
-        "draft",
-        "published",
-        "archived"
-      ]
+      "values": ["draft", "published", "archived"]
     },
     "public.execution_status": {
       "name": "execution_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "running",
-        "success",
-        "error",
-        "timeout",
-        "killed"
-      ]
+      "values": ["pending", "running", "success", "error", "timeout", "killed"]
     },
     "public.function_status": {
       "name": "function_status",
       "schema": "public",
-      "values": [
-        "active",
-        "inactive",
-        "error"
-      ]
+      "values": ["active", "inactive", "error"]
     },
     "public.function_trigger": {
       "name": "function_trigger",
@@ -3032,30 +2901,17 @@
     "public.streamer_platform": {
       "name": "streamer_platform",
       "schema": "public",
-      "values": [
-        "twitch",
-        "youtube",
-        "kick"
-      ]
+      "values": ["twitch", "youtube", "kick"]
     },
     "public.tag_category": {
       "name": "tag_category",
       "schema": "public",
-      "values": [
-        "genre",
-        "feature",
-        "topic",
-        "series"
-      ]
+      "values": ["genre", "feature", "topic", "series"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "admin",
-        "editor",
-        "user"
-      ]
+      "values": ["admin", "editor", "user"]
     },
     "public.block_type": {
       "name": "block_type",
@@ -3078,11 +2934,7 @@
     "public.page_status": {
       "name": "page_status",
       "schema": "public",
-      "values": [
-        "draft",
-        "published",
-        "archived"
-      ]
+      "values": ["draft", "published", "archived"]
     }
   },
   "schemas": {},

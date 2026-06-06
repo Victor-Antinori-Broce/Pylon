@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { CalendarDays, ArrowLeft, DoorOpen, Clock, Users, Save, Loader2, AlertCircle } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { CalendarDays, ArrowLeft, DoorOpen, Clock, Users, Save, Loader2, AlertCircle } from "lucide-svelte";
+  import { onMount } from "svelte";
+
+  import { goto } from "$app/navigation";
 
   interface Room {
     id: string;
@@ -71,7 +72,7 @@
     return new Date(`${date}T${time}:00`).toISOString();
   }
 
-  let selectedRoom = $derived(rooms.find(r => r.id === roomId));
+  const selectedRoom = $derived(rooms.find(r => r.id === roomId));
 
   async function handleSubmit() {
     error = null;

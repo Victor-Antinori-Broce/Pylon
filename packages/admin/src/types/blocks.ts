@@ -38,7 +38,7 @@ export interface HeroBlockData {
 }
 
 export interface RichtextBlockData {
-  content: string;        // Markdown or HTML
+  content: string; // Markdown or HTML
   format: "markdown" | "html";
 }
 
@@ -118,11 +118,11 @@ export interface ComparisonSliderBlockData {
 
 export interface SmartGridBlockData {
   datasetId: string;
-  columns: string[];              // visible column keys (empty = show all)
-  initialSort?: string;           // field key to sort by default
-  initialFilter?: Record<string, any>;  // e.g. { type: "Sword" }
+  columns: string[]; // visible column keys (empty = show all)
+  initialSort?: string; // field key to sort by default
+  initialFilter?: Record<string, any>; // e.g. { type: "Sword" }
   enableGrouping: boolean;
-  groupByField?: string;          // field key to group by
+  groupByField?: string; // field key to group by
 }
 
 // ─── Block Registry ───────────────────────────────────────────
@@ -164,19 +164,33 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
       overlay: "gradient",
     } satisfies HeroBlockData as any,
     fields: [
-      { key: "title", label: "Title", type: "text", required: true, placeholder: "Hero headline..." },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        required: true,
+        placeholder: "Hero headline...",
+      },
       { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Supporting text..." },
       { key: "imageUrl", label: "Background Image", type: "url", placeholder: "https://..." },
       { key: "ctaLabel", label: "CTA Button Text", type: "text", placeholder: "Get Started" },
       { key: "ctaUrl", label: "CTA Button URL", type: "url", placeholder: "/games" },
-      { key: "ctaSecondaryLabel", label: "Secondary CTA Text", type: "text", placeholder: "Learn More" },
+      {
+        key: "ctaSecondaryLabel",
+        label: "Secondary CTA Text",
+        type: "text",
+        placeholder: "Learn More",
+      },
       { key: "ctaSecondaryUrl", label: "Secondary CTA URL", type: "url" },
       {
-        key: "overlay", label: "Overlay Style", type: "select", options: [
+        key: "overlay",
+        label: "Overlay Style",
+        type: "select",
+        options: [
           { label: "Dark", value: "dark" },
           { label: "Gradient", value: "gradient" },
           { label: "None", value: "none" },
-        ]
+        ],
       },
     ],
   },
@@ -189,12 +203,21 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     category: "content",
     defaultData: { content: "", format: "markdown" } satisfies RichtextBlockData as any,
     fields: [
-      { key: "content", label: "Content", type: "textarea", required: true, placeholder: "Write in Markdown..." },
       {
-        key: "format", label: "Format", type: "select", options: [
+        key: "content",
+        label: "Content",
+        type: "textarea",
+        required: true,
+        placeholder: "Write in Markdown...",
+      },
+      {
+        key: "format",
+        label: "Format",
+        type: "select",
+        options: [
           { label: "Markdown", value: "markdown" },
           { label: "HTML", value: "html" },
-        ]
+        ],
       },
     ],
   },
@@ -207,13 +230,22 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     category: "media",
     defaultData: { images: [], layout: "grid", columns: 3 } satisfies ImageGalleryBlockData as any,
     fields: [
-      { key: "images", label: "Images (JSON)", type: "json", required: true, helpText: '[{"url":"...","alt":"...","caption":"..."}]' },
       {
-        key: "layout", label: "Layout", type: "select", options: [
+        key: "images",
+        label: "Images (JSON)",
+        type: "json",
+        required: true,
+        helpText: '[{"url":"...","alt":"...","caption":"..."}]',
+      },
+      {
+        key: "layout",
+        label: "Layout",
+        type: "select",
+        options: [
           { label: "Grid", value: "grid" },
           { label: "Masonry", value: "masonry" },
           { label: "Carousel", value: "carousel" },
-        ]
+        ],
       },
       { key: "columns", label: "Columns", type: "number" },
     ],
@@ -225,12 +257,33 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     description: "Interactive pannable map with markers",
     color: "#76FF03",
     category: "interactive",
-    defaultData: { mapImageUrl: "", mapTitle: "Map", markers: [], categories: [] } satisfies GameMapBlockData as any,
+    defaultData: {
+      mapImageUrl: "",
+      mapTitle: "Map",
+      markers: [],
+      categories: [],
+    } satisfies GameMapBlockData as any,
     fields: [
-      { key: "mapImageUrl", label: "Map Image URL", type: "url", required: true, placeholder: "https://..." },
+      {
+        key: "mapImageUrl",
+        label: "Map Image URL",
+        type: "url",
+        required: true,
+        placeholder: "https://...",
+      },
       { key: "mapTitle", label: "Map Title", type: "text", placeholder: "World Map" },
-      { key: "markers", label: "Markers (JSON)", type: "json", helpText: '[{"id":"1","label":"Town","x":50,"y":30}]' },
-      { key: "categories", label: "Categories (JSON)", type: "json", helpText: '[{"name":"Towns","color":"#00E5FF","icon":"🏘️"}]' },
+      {
+        key: "markers",
+        label: "Markers (JSON)",
+        type: "json",
+        helpText: '[{"id":"1","label":"Town","x":50,"y":30}]',
+      },
+      {
+        key: "categories",
+        label: "Categories (JSON)",
+        type: "json",
+        helpText: '[{"name":"Towns","color":"#00E5FF","icon":"🏘️"}]',
+      },
     ],
   },
   {
@@ -240,15 +293,29 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     description: "Live stream embed with chat option",
     color: "#FF2A6D",
     category: "interactive",
-    defaultData: { channelName: "", platform: "twitch", showChat: false, autoplay: false } satisfies StreamerWidgetBlockData as any,
+    defaultData: {
+      channelName: "",
+      platform: "twitch",
+      showChat: false,
+      autoplay: false,
+    } satisfies StreamerWidgetBlockData as any,
     fields: [
-      { key: "channelName", label: "Channel Name", type: "text", required: true, placeholder: "ninja" },
       {
-        key: "platform", label: "Platform", type: "select", options: [
+        key: "channelName",
+        label: "Channel Name",
+        type: "text",
+        required: true,
+        placeholder: "ninja",
+      },
+      {
+        key: "platform",
+        label: "Platform",
+        type: "select",
+        options: [
           { label: "Twitch", value: "twitch" },
           { label: "YouTube", value: "youtube" },
           { label: "Kick", value: "kick" },
-        ]
+        ],
       },
       { key: "showChat", label: "Show Chat", type: "boolean" },
       { key: "autoplay", label: "Autoplay", type: "boolean" },
@@ -263,14 +330,23 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     category: "media",
     defaultData: { url: "", caption: "", aspectRatio: "16:9" } satisfies EmbedBlockData as any,
     fields: [
-      { key: "url", label: "Embed URL", type: "url", required: true, placeholder: "https://youtube.com/watch?v=..." },
+      {
+        key: "url",
+        label: "Embed URL",
+        type: "url",
+        required: true,
+        placeholder: "https://youtube.com/watch?v=...",
+      },
       { key: "caption", label: "Caption", type: "text" },
       {
-        key: "aspectRatio", label: "Aspect Ratio", type: "select", options: [
+        key: "aspectRatio",
+        label: "Aspect Ratio",
+        type: "select",
+        options: [
           { label: "16:9", value: "16:9" },
           { label: "4:3", value: "4:3" },
           { label: "1:1", value: "1:1" },
-        ]
+        ],
       },
     ],
   },
@@ -286,13 +362,16 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
       { key: "title", label: "Title", type: "text", placeholder: "Note" },
       { key: "content", label: "Content", type: "textarea", required: true },
       {
-        key: "variant", label: "Variant", type: "select", options: [
+        key: "variant",
+        label: "Variant",
+        type: "select",
+        options: [
           { label: "Info", value: "info" },
           { label: "Warning", value: "warning" },
           { label: "Success", value: "success" },
           { label: "Danger", value: "danger" },
           { label: "Tip", value: "tip" },
-        ]
+        ],
       },
     ],
   },
@@ -306,12 +385,15 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     defaultData: { style: "gradient" } satisfies DividerBlockData as any,
     fields: [
       {
-        key: "style", label: "Style", type: "select", options: [
+        key: "style",
+        label: "Style",
+        type: "select",
+        options: [
           { label: "Line", value: "line" },
           { label: "Gradient", value: "gradient" },
           { label: "Dots", value: "dots" },
           { label: "Space", value: "space" },
-        ]
+        ],
       },
     ],
   },
@@ -323,20 +405,32 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     description: "Auto-populated carousel of Games or Streamers",
     color: "#FF6E40",
     category: "interactive",
-    defaultData: { source: "games", sortBy: "date", limit: 8, autoplay: false } satisfies DynamicCarouselBlockData as any,
+    defaultData: {
+      source: "games",
+      sortBy: "date",
+      limit: 8,
+      autoplay: false,
+    } satisfies DynamicCarouselBlockData as any,
     fields: [
       {
-        key: "source", label: "Data Source", type: "select", required: true, options: [
+        key: "source",
+        label: "Data Source",
+        type: "select",
+        required: true,
+        options: [
           { label: "Games", value: "games" },
           { label: "Streamers", value: "streamers" },
-        ]
+        ],
       },
       {
-        key: "sortBy", label: "Sort By", type: "select", options: [
+        key: "sortBy",
+        label: "Sort By",
+        type: "select",
+        options: [
           { label: "Release Date", value: "date" },
           { label: "Score", value: "score" },
           { label: "Name", value: "name" },
-        ]
+        ],
       },
       { key: "limit", label: "Max Items", type: "number" },
       { key: "autoplay", label: "Autoplay", type: "boolean" },
@@ -349,12 +443,21 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     description: "Dynamic genre, platform, and score filters for the grid",
     color: "#69F0AE",
     category: "interactive",
-    defaultData: { enableGenreFilter: true, enablePlatformFilter: true, enableScoreSlider: false } satisfies SmartFilterBlockData as any,
+    defaultData: {
+      enableGenreFilter: true,
+      enablePlatformFilter: true,
+      enableScoreSlider: false,
+    } satisfies SmartFilterBlockData as any,
     fields: [
       { key: "enableGenreFilter", label: "Enable Genre Filter", type: "boolean" },
       { key: "enablePlatformFilter", label: "Enable Platform Filter", type: "boolean" },
       { key: "enableScoreSlider", label: "Enable Score Slider", type: "boolean" },
-      { key: "targetDatasetId", label: "Target Dataset ID (optional)", type: "text", helpText: "Leave empty to filter Games" },
+      {
+        key: "targetDatasetId",
+        label: "Target Dataset ID (optional)",
+        type: "text",
+        helpText: "Leave empty to filter Games",
+      },
     ],
   },
   {
@@ -364,10 +467,27 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     description: "Before/After image comparison with draggable handle",
     color: "#B388FF",
     category: "media",
-    defaultData: { beforeImageUrl: "", afterImageUrl: "", beforeLabel: "Before", afterLabel: "After" } satisfies ComparisonSliderBlockData as any,
+    defaultData: {
+      beforeImageUrl: "",
+      afterImageUrl: "",
+      beforeLabel: "Before",
+      afterLabel: "After",
+    } satisfies ComparisonSliderBlockData as any,
     fields: [
-      { key: "beforeImageUrl", label: "Before Image", type: "image", required: true, placeholder: "https://..." },
-      { key: "afterImageUrl", label: "After Image", type: "image", required: true, placeholder: "https://..." },
+      {
+        key: "beforeImageUrl",
+        label: "Before Image",
+        type: "image",
+        required: true,
+        placeholder: "https://...",
+      },
+      {
+        key: "afterImageUrl",
+        label: "After Image",
+        type: "image",
+        required: true,
+        placeholder: "https://...",
+      },
       { key: "beforeLabel", label: "Before Label", type: "text", placeholder: "Before" },
       { key: "afterLabel", label: "After Label", type: "text", placeholder: "After" },
     ],
@@ -379,12 +499,35 @@ export const BLOCK_REGISTRY: BlockDefinition[] = [
     description: "AirTable-style data grid with sort, search, and grouping",
     color: "#00BFA5",
     category: "interactive",
-    defaultData: { datasetId: "", columns: [], initialSort: "", initialFilter: {}, enableGrouping: false, groupByField: "" } satisfies SmartGridBlockData as any,
+    defaultData: {
+      datasetId: "",
+      columns: [],
+      initialSort: "",
+      initialFilter: {},
+      enableGrouping: false,
+      groupByField: "",
+    } satisfies SmartGridBlockData as any,
     fields: [
-      { key: "datasetId", label: "Dataset ID", type: "text", required: true, placeholder: "Paste dataset UUID..." },
-      { key: "columns", label: "Visible Columns (JSON)", type: "json", helpText: '["name", "damage", "rarity"] — empty array shows all' },
+      {
+        key: "datasetId",
+        label: "Dataset ID",
+        type: "text",
+        required: true,
+        placeholder: "Paste dataset UUID...",
+      },
+      {
+        key: "columns",
+        label: "Visible Columns (JSON)",
+        type: "json",
+        helpText: '["name", "damage", "rarity"] — empty array shows all',
+      },
       { key: "initialSort", label: "Default Sort Field", type: "text", placeholder: "e.g. name" },
-      { key: "initialFilter", label: "Initial Filter (JSON)", type: "json", helpText: '{"rarity": "Legendary"}' },
+      {
+        key: "initialFilter",
+        label: "Initial Filter (JSON)",
+        type: "json",
+        helpText: '{"rarity": "Legendary"}',
+      },
       { key: "enableGrouping", label: "Enable Grouping", type: "boolean" },
       { key: "groupByField", label: "Group By Field", type: "text", placeholder: "e.g. rarity" },
     ],

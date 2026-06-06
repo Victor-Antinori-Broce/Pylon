@@ -11,7 +11,6 @@
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
-
   gremius_db:
     image: pgvector/pgvector:pg16
     container_name: ${PROJECT_NAME:-gremius}_db

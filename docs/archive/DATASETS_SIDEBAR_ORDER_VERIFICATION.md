@@ -16,18 +16,18 @@ Cada item del sidebar tiene una propiedad `order` que determina su posición:
 const allNavItems: NavItem[] = [
   // Dashboard: Sin order (siempre primero)
   { path: "/", label: "Dashboard", icon: BookOpen },
-  
+
   // ═══ CORE GRIMOIRES ═══
   // DataSets: order: 0 (SIEMPRE segundo cuando está habilitado)
   { path: "/datasets", label: "DataSets", ..., order: 0, category: "core" },
-  
+
   // Otros Core: order: 1, 2, 3...
   { path: "/media", label: "Media Library", ..., order: 1, category: "core" },
   { path: "/blocks", label: "Page Builder", ..., order: 2, category: "core" },
-  
+
   // ═══ OPTIONAL ═══
   { path: "/posts", label: "Blog Posts", ..., order: 10, category: "optional" },
-  
+
   // ═══ REALM ═══
   { path: "/games", label: "Games", ..., order: 20, category: "realm" },
 ];
@@ -38,13 +38,13 @@ const allNavItems: NavItem[] = [
 ```typescript
 let visibleNavItems = $derived(
   [
-    ...allNavItems.filter(item => !item.moduleKey || moduleStore.enabledKeys.has(item.moduleKey)),
-    ...filesystemNavItems
+    ...allNavItems.filter((item) => !item.moduleKey || moduleStore.enabledKeys.has(item.moduleKey)),
+    ...filesystemNavItems,
   ].sort((a, b) => {
     // Dashboard (no order) always comes first
     if (a.path === "/") return -1;
     if (b.path === "/") return 1;
-    
+
     // Then sort by order (undefined order goes to end)
     const orderA = a.order ?? 999;
     const orderB = b.order ?? 999;
@@ -58,6 +58,7 @@ let visibleNavItems = $derived(
 ## 🧪 Escenarios de Prueba
 
 ### Escenario 1: DataSets Encendido (Default)
+
 ```
 Sidebar:
 1. Dashboard                    ← Siempre primero
@@ -68,6 +69,7 @@ Sidebar:
 ```
 
 ### Escenario 2: Apagar DataSets
+
 ```bash
 PATCH /api/modules/grimoire-datasets
 { "enabled": false }
@@ -82,6 +84,7 @@ Sidebar:
 ```
 
 ### Escenario 3: Volver a Encender DataSets
+
 ```bash
 PATCH /api/modules/grimoire-datasets
 { "enabled": true }
@@ -121,6 +124,7 @@ El orden no se almacena en la base de datos, se define en el código:
 ```
 
 Cuando un grimoire se apaga:
+
 1. Se filtra del array (`filter`)
 2. El orden de los items restantes se mantiene
 3. Cuando se enciende, se vuelve a agregar y se re-ordena
@@ -128,9 +132,8 @@ Cuando un grimoire se apaga:
 ### 3. Reactividad Garantizada
 
 ```typescript
-let visibleNavItems = $derived(
-  // ... lógica de filtrado y ordenamiento
-);
+let visibleNavItems = $derived();
+// ... lógica de filtrado y ordenamiento
 ```
 
 - `$derived` recalcula automáticamente cuando `moduleStore.enabledKeys` cambia
@@ -142,12 +145,14 @@ let visibleNavItems = $derived(
 ## 📊 Comparación: Antes vs Después
 
 ### Antes (Sin ordenamiento explícito)
+
 ```
 Problema: El orden dependía del orden del array original
 Riesgo: Si se agregaban items dinámicamente, podían aparecer en cualquier lugar
 ```
 
 ### Después (Con ordenamiento explícito)
+
 ```
 Solución: Propiedad 'order' en cada item
 Garantía: DataSets siempre tiene order: 0, por lo que siempre está después de Dashboard
@@ -157,12 +162,12 @@ Garantía: DataSets siempre tiene order: 0, por lo que siempre está después de
 
 ## 🎯 Reglas de Negocio Cumplidas
 
-| Requisito | Implementación | Estado |
-|-----------|---------------|--------|
-| DataSets debe estar abajo del Dashboard | `order: 0` (Dashboard no tiene order, siempre primero) | ✅ |
-| Ningún otro grimoire puede ir arriba de DataSets | Todos los demás tienen `order >= 1` | ✅ |
-| Orden se mantiene al aprender/encender | Lógica `$derived` con `sort()` | ✅ |
-| Orden persiste después de reinicio | Hardcodeado en el código fuente | ✅ |
+| Requisito                                        | Implementación                                         | Estado |
+| ------------------------------------------------ | ------------------------------------------------------ | ------ |
+| DataSets debe estar abajo del Dashboard          | `order: 0` (Dashboard no tiene order, siempre primero) | ✅     |
+| Ningún otro grimoire puede ir arriba de DataSets | Todos los demás tienen `order >= 1`                    | ✅     |
+| Orden se mantiene al aprender/encender           | Lógica `$derived` con `sort()`                         | ✅     |
+| Orden persiste después de reinicio               | Hardcodeado en el código fuente                        | ✅     |
 
 ---
 
@@ -174,12 +179,12 @@ Para verificar que el orden funciona correctamente, abrir DevTools en el navegad
 // En la consola del navegador (con la app de admin abierta)
 
 // Verificar que DataSets tiene order: 0
-const navItems = await (await fetch('/api/modules')).json();
-const dataSets = navItems.docs.find(m => m.key === 'grimoire-datasets');
+const navItems = await (await fetch("/api/modules")).json();
+const dataSets = navItems.docs.find((m) => m.key === "grimoire-datasets");
 console.log(dataSets); // Debería mostrar el grimoire con su configuración
 
 // El orden real se ve en el DOM
-const sidebarItems = document.querySelectorAll('aside nav a');
+const sidebarItems = document.querySelectorAll("aside nav a");
 sidebarItems.forEach((item, index) => {
   console.log(`${index}: ${item.textContent.trim()}`);
 });

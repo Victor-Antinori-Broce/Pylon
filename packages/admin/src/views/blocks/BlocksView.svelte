@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { Plus, Database } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { Plus, Layout, Database } from "lucide-svelte";
+
   import { api } from "$lib/api";
   import PageFromDataset from "$lib/components/blocks/PageFromDataset.svelte";
 
@@ -30,19 +31,27 @@
 
   function statusColor(status: string): string {
     switch (status) {
-      case "published": return "bg-gremius-green/10 text-gremius-green border-gremius-green/20";
-      case "draft": return "bg-gremius-yellow/10 text-gremius-yellow border-gremius-yellow/20";
-      case "archived": return "bg-gremius-subtle/10 text-gremius-subtle border-gremius-subtle/20";
-      default: return "bg-gremius-surface text-gremius-text-dim";
+      case "published":
+        return "bg-gremius-green/10 text-gremius-green border-gremius-green/20";
+      case "draft":
+        return "bg-gremius-yellow/10 text-gremius-yellow border-gremius-yellow/20";
+      case "archived":
+        return "bg-gremius-subtle/10 text-gremius-subtle border-gremius-subtle/20";
+      default:
+        return "bg-gremius-surface text-gremius-text-dim";
     }
   }
 
   function layoutIcon(layout: string): string {
     switch (layout) {
-      case "landing": return "🎯";
-      case "content": return "📝";
-      case "sidebar": return "📑";
-      default: return "📄";
+      case "landing":
+        return "🎯";
+      case "content":
+        return "📝";
+      case "sidebar":
+        return "📑";
+      default:
+        return "📄";
     }
   }
 
@@ -85,9 +94,9 @@
       <p class="text-sm text-gremius-text-dim mt-0.5">Manage your landing pages and content</p>
     </div>
     <div class="flex items-center gap-2">
-      <button 
+      <button
         class="btn-ghost inline-flex items-center gap-2"
-        onclick={() => showDatasetModal = true}
+        onclick={() => (showDatasetModal = true)}
       >
         <Database class="w-4 h-4" />
         From Dataset
@@ -100,7 +109,9 @@
 
   {#if loading}
     <div class="flex justify-center py-20">
-      <div class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+      <div
+        class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+      ></div>
     </div>
   {:else if pages.length === 0}
     <div class="card p-16 text-center">
@@ -112,15 +123,19 @@
     <div class="space-y-3">
       {#each pages as page}
         <a
-          href={`/builder`}
+          href="/builder"
           class="card p-4 flex items-center justify-between group hover:border-gremius-cyan/30 transition-colors"
         >
           <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center text-xl">
+            <div
+              class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center text-xl"
+            >
               {layoutIcon(page.layout)}
             </div>
             <div>
-              <h3 class="font-semibold text-gremius-text group-hover:text-gremius-cyan transition-colors">
+              <h3
+                class="font-semibold text-gremius-text group-hover:text-gremius-cyan transition-colors"
+              >
                 {page.title}
               </h3>
               <p class="text-xs text-gremius-subtle mt-0.5">
@@ -138,8 +153,8 @@
 </div>
 
 <!-- From Dataset Modal -->
-<PageFromDataset 
+<PageFromDataset
   isOpen={showDatasetModal}
-  onClose={() => showDatasetModal = false}
+  onClose={() => (showDatasetModal = false)}
   onSelect={handleDatasetSelect}
 />

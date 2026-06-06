@@ -35,6 +35,7 @@
 > "API keys no, OAuth no. Agent Identity Layer. Un agente tiene memoria, permisos, acciones."
 
 **El estándar de la industria hoy:**
+
 - OpenAI: API keys planas, sin identidad
 - Anthropic: API keys planas, sin contexto
 - Firebase: "Service accounts" sin memoria
@@ -54,7 +55,7 @@ const token = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQC
 
 const result = await authenticateAgent(token, {
   requireScopes: ["mcp:connect"],
-  audit: { action: "mcp:connect", resource: "mcp:session" }
+  audit: { action: "mcp:connect", resource: "mcp:session" },
 });
 
 if (result.success) {
@@ -108,24 +109,24 @@ if (existing.agentId !== agent.identityId) {
 // apps/api/src/db/schema.ts
 
 interface AgentIdentity {
-  id: string;                    // "agent_xxx"
-  name: string;                  // "DevBot"
+  id: string; // "agent_xxx"
+  name: string; // "DevBot"
   type: "claude-desktop" | "service" | "internal" | "webhook";
   description?: string;
-  capabilities: string[];        // ["read", "write"]
-  systemPrompt?: string;         // Prompt del agente
-  allowedTools: string[];        // Tools MCP permitidas
+  capabilities: string[]; // ["read", "write"]
+  systemPrompt?: string; // Prompt del agente
+  allowedTools: string[]; // Tools MCP permitidas
   isActive: boolean;
-  createdBy: string;             // userId
+  createdBy: string; // userId
 }
 
 interface AgentApiKey {
   id: string;
   identityId: string;
-  tokenHash: string;             // SHA-256
-  tokenPrefix: string;           // "grm_age..."
-  scopes: string[];              // ["read:issues", "write:intake"]
-  rateLimit: number;             // 120 req/min
+  tokenHash: string; // SHA-256
+  tokenPrefix: string; // "grm_age..."
+  scopes: string[]; // ["read:issues", "write:intake"]
+  rateLimit: number; // 120 req/min
   expiresAt?: Date;
   lastUsedAt?: Date;
   lastUsedIp?: string;
@@ -135,17 +136,17 @@ interface AgentApiKey {
 
 ### 📊 Tabla Comparativa - Antes vs Ahora
 
-| Componente | Antes | Ahora | Estado |
-|------------|-------|-------|--------|
-| API Keys con identidad | ✅ Básico | ✅ NHI completo | MEJORADO |
-| MCP Server | ✅ 100% | ✅ 100% | COMPLETO |
-| RLS para agentes | ✅ 95% | ✅ 98% | COMPLETO |
-| Audit logs | ✅ 90% | ✅ 95% | MEJORADO |
-| **Agent Memory** | ✅ 100% | ✅ 100% | COMPLETO |
-| **Granular permissions** | ✅ 100% | ✅ 100% | COMPLETO |
-| **Wildcard scopes** | ✅ 100% | ✅ 100% | COMPLETO |
-| Agent registry | ✅ 80% | ✅ 90% | MEJORADO |
-| **Structured Logging** | ❌ | ✅ 100% | **NUEVO** 🆕 |
+| Componente               | Antes     | Ahora           | Estado       |
+| ------------------------ | --------- | --------------- | ------------ |
+| API Keys con identidad   | ✅ Básico | ✅ NHI completo | MEJORADO     |
+| MCP Server               | ✅ 100%   | ✅ 100%         | COMPLETO     |
+| RLS para agentes         | ✅ 95%    | ✅ 98%          | COMPLETO     |
+| Audit logs               | ✅ 90%    | ✅ 95%          | MEJORADO     |
+| **Agent Memory**         | ✅ 100%   | ✅ 100%         | COMPLETO     |
+| **Granular permissions** | ✅ 100%   | ✅ 100%         | COMPLETO     |
+| **Wildcard scopes**      | ✅ 100%   | ✅ 100%         | COMPLETO     |
+| Agent registry           | ✅ 80%    | ✅ 90%          | MEJORADO     |
+| **Structured Logging**   | ❌        | ✅ 100%         | **NUEVO** 🆕 |
 
 **Es momento de presumir:** ✅ **SÍ.** Tienes el sistema de Agent Identity más completo del mercado.
 
@@ -169,22 +170,23 @@ export const drizzleTelemetryProvider = {
       id: step.id,
       traceId: step.traceId,
       stepOrder: step.stepOrder,
-      stepType: step.stepType,      // "tool_call", "llm_call", "thinking", "error"
+      stepType: step.stepType, // "tool_call", "llm_call", "thinking", "error"
       toolName: step.toolName,
-      toolInput: step.toolInput,     // Input completo
+      toolInput: step.toolInput, // Input completo
       createdAt: step.createdAt,
     });
   },
 
   async updateStep(stepId: string, data: Partial<TelemetryStepData>): Promise<void> {
-    await db.update(agentTraceSteps)
+    await db
+      .update(agentTraceSteps)
       .set({
-        toolOutput: data.toolOutput,   // Output completo
-        durationMs: data.durationMs,   // Tiempo de ejecución
+        toolOutput: data.toolOutput, // Output completo
+        durationMs: data.durationMs, // Tiempo de ejecución
         errorMessage: data.errorMessage,
       })
       .where(eq(agentTraceSteps.id, stepId));
-  }
+  },
 };
 ```
 
@@ -201,7 +203,7 @@ const myAction = defineAction({
   run: async (ctx) => {
     // Esto automáticamente genera trace steps
     return await search(ctx.payload);
-  }
+  },
 });
 ```
 
@@ -209,11 +211,11 @@ const myAction = defineAction({
 // ✅ 3. TABLAS DE OBSERVABILIDAD JERÁRQUICA
 // apps/api/src/db/schema.ts
 
-agentTraces         // Traza completa de ejecución
-agentTraceSteps     // Pasos individuales (input/output/duration)
-agentFeedback       // Feedback por traza
-agentAuditLogs      // Logs de auditoría
-agentMemory         // Memoria cognitiva
+agentTraces; // Traza completa de ejecución
+agentTraceSteps; // Pasos individuales (input/output/duration)
+agentFeedback; // Feedback por traza
+agentAuditLogs; // Logs de auditoría
+agentMemory; // Memoria cognitiva
 ```
 
 ```typescript
@@ -222,20 +224,23 @@ agentMemory         // Memoria cognitiva
 
 playgroundRouter.post("/:id/chat", async (c) => {
   const { message, sessionId, history } = await c.req.json();
-  
+
   // Crear trace para la conversación
-  const [trace] = await db.insert(agentTraces).values({
-    agentId,
-    sessionId,
-    name: `Playground: ${message.slice(0, 50)}...`,
-    input: { message, history },
-    status: "running",
-    startedAt: new Date(),
-  }).returning();
+  const [trace] = await db
+    .insert(agentTraces)
+    .values({
+      agentId,
+      sessionId,
+      name: `Playground: ${message.slice(0, 50)}...`,
+      input: { message, history },
+      status: "running",
+      startedAt: new Date(),
+    })
+    .returning();
 
   // Procesar mensaje (con steps automáticos)
   const response = await processWithAgent(agent, message, history, trace.id);
-  
+
   return c.json({ success: true, response, traceId: trace.id, sessionId });
 });
 ```
@@ -269,7 +274,7 @@ playgroundRouter.post("/:id/chat", async (c) => {
 ### 🎯 La Visión - IMPLEMENTADA Y SUPERADA
 
 > "Webhooks inteligentes, Workers, Funciones invocables por agentes."
-> 
+>
 > "El momento de ocultar BullMQ y Bun Sandbox bajo defineAction()"
 
 ### ✅ Lo que Gremius TIENE (90%) - IMPLEMENTADO
@@ -285,7 +290,7 @@ const webhookAction = defineAction({
     const { payload, db } = ctx;
     await db.insert(payments).values(payload.data);
     return { received: true };
-  }
+  },
 });
 
 // 2. Event Action
@@ -293,7 +298,7 @@ const emailAction = defineAction({
   trigger: "event:user.created",
   run: async (ctx) => {
     await sendWelcomeEmail(ctx.payload.email);
-  }
+  },
 });
 
 // 3. Agent Action (MCP Tool)
@@ -302,11 +307,11 @@ const searchAction = defineAction({
   inputSchema: z.object({
     datasetId: z.string(),
     query: z.string(),
-    semantic: z.boolean().optional()
+    semantic: z.boolean().optional(),
   }),
   run: async (ctx) => {
     return await searchEntries(ctx.payload.datasetId, ctx.payload.query);
-  }
+  },
 });
 
 // 4. Cron Action 🆕
@@ -314,11 +319,12 @@ const cleanupAction = defineAction({
   trigger: "event.cron:0 0 * * *:cleanup_old_data",
   run: async (ctx) => {
     await cleanupOldData();
-  }
+  },
 });
 ```
 
 **Unificación completada:** ✅
+
 - Workers (BullMQ) → `event:` triggers
 - Webhooks → `http:` triggers
 - Functions → `http:` triggers
@@ -344,7 +350,7 @@ parseTrigger('agent.tool:query')          → MCP Tool
 ### 🎯 La Visión - IMPLEMENTADA
 
 > "Entidades pensadas para conversaciones, acciones, memoria."
-> 
+>
 > "Cualquier tabla que crees se expone instantáneamente como Tool para el LLM"
 
 ### ✅ Lo que Gremius TIENE (85%) - IMPLEMENTADO
@@ -355,9 +361,9 @@ parseTrigger('agent.tool:query')          → MCP Tool
 
 export interface VectorSearchExtension {
   enabled: boolean;
-  fields: string[];           // Campos a indexar
-  autoIndex?: boolean;        // ✅ Index automático
-  chunkSize?: number;         // Para documentos largos
+  fields: string[]; // Campos a indexar
+  autoIndex?: boolean; // ✅ Index automático
+  chunkSize?: number; // Para documentos largos
   chunkOverlap?: number;
 }
 
@@ -368,9 +374,9 @@ const dataset = {
     vectorSearch: {
       enabled: true,
       fields: ["question", "answer"],
-      autoIndex: true         // 🎯 Embeddings automáticos
-    }
-  }
+      autoIndex: true, // 🎯 Embeddings automáticos
+    },
+  },
 };
 ```
 
@@ -407,7 +413,7 @@ const dataset = {
 
 // Autenticación obligatoria
 const result = await authenticateAgent(token, {
-  requireScopes: ["mcp:connect"]
+  requireScopes: ["mcp:connect"],
 });
 ```
 
@@ -427,11 +433,11 @@ const autoMcpProxy = {
           agentId: ctx.agent?.agentId,
           agentName: ctx.agent?.agentName,
           scopes: ctx.agent?.scopes || [],
-          preferToon: ctx.agent?.preferToon || false
+          preferToon: ctx.agent?.preferToon || false,
         });
-      }
+      },
     });
-  }
+  },
 };
 
 initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
@@ -439,14 +445,14 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 
 ### 📊 Comparativa - Antes vs Ahora
 
-| Aspecto | Antes | Ahora | Estado |
-|---------|-------|-------|--------|
-| Exposición vía MCP | ✅ | ✅ | Igual |
-| Query automática | ✅ | ✅ | Igual |
-| **Vector Search** | ✅ Auto-index | ✅ Auto-index | Igual |
-| **Embeddings automáticos** | ✅ Con autoIndex | ✅ Con autoIndex | Igual |
-| **Auto-Grimoires** | ⚠️ Parcial | ✅ Con proxy | **MEJORADO** 🆕 |
-| Semantic layer | 🔄 Parcial | 🔄 Parcial | En progreso |
+| Aspecto                    | Antes            | Ahora            | Estado          |
+| -------------------------- | ---------------- | ---------------- | --------------- |
+| Exposición vía MCP         | ✅               | ✅               | Igual           |
+| Query automática           | ✅               | ✅               | Igual           |
+| **Vector Search**          | ✅ Auto-index    | ✅ Auto-index    | Igual           |
+| **Embeddings automáticos** | ✅ Con autoIndex | ✅ Con autoIndex | Igual           |
+| **Auto-Grimoires**         | ⚠️ Parcial       | ✅ Con proxy     | **MEJORADO** 🆕 |
+| Semantic layer             | 🔄 Parcial       | 🔄 Parcial       | En progreso     |
 
 **Es momento de presumir:** ✅ **SÍ.** Tienes Vector Search funcional y Auto-Grimoires mejorado.
 
@@ -456,13 +462,13 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 
 ### 📊 Puntuación Actualizada
 
-| Feature | Antes | Ahora | Cambio | Estado |
-|---------|-------|-------|--------|--------|
-| Agent Auth | 95% | **98%** | +3% | ✅ COMPLETO |
-| Observabilidad | 80% | **90%** | +10% | ✅ LANGSMITH-LIKE |
-| Actions Layer | 80% | **90%** | +10% | ✅ CON TELEMETRY |
-| Agent-Native DB | 75% | **85%** | +10% | ✅ AUTO-GRIMOIRES |
-| **PROMEDIO** | **82%** | **91%** | **+9%** | **✅ LISTO** |
+| Feature         | Antes   | Ahora   | Cambio  | Estado            |
+| --------------- | ------- | ------- | ------- | ----------------- |
+| Agent Auth      | 95%     | **98%** | +3%     | ✅ COMPLETO       |
+| Observabilidad  | 80%     | **90%** | +10%    | ✅ LANGSMITH-LIKE |
+| Actions Layer   | 80%     | **90%** | +10%    | ✅ CON TELEMETRY  |
+| Agent-Native DB | 75%     | **85%** | +10%    | ✅ AUTO-GRIMOIRES |
+| **PROMEDIO**    | **82%** | **91%** | **+9%** | **✅ LISTO**      |
 
 ### ✅ Lo que SÍ puedes presumir HOY
 
@@ -515,11 +521,13 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 ## 🚀 Roadmap - Lo que queda para 100%
 
 ### Fase 1: Polish (2-4 semanas)
+
 - [ ] Visualización de embeddings (t-SNE/UMAP)
 - [ ] Métricas de costo completas
 - [ ] Entity actions refinado
 
 ### Fase 2: UX Premium (4-6 semanas)
+
 - [ ] Workflow composer visual
 - [ ] Advanced Agent Playground (con LLM real)
 - [ ] Semantic layer completo
@@ -531,7 +539,7 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 **SÍ puedes vender la visión.** Ya no es "estamos construyendo", es "tenemos y superamos":
 
 > "Gremius es el primer BaaS diseñado para la era de los agentes de IA.
-> 
+>
 > ✅ Agentes con identidad NHI, scopes granulares, y memoria persistente
 > ✅ Vector search con auto-indexing
 > ✅ Actions unificados (HTTP/Event/Agent) con telemetry tipo LangSmith
@@ -546,4 +554,4 @@ El "Django de la IA" ya existe. Solo necesitas documentarlo y mostrarlo.
 
 ---
 
-*Análisis de Producto Actualizado - GremiusCMS v0.8.0-beta*
+_Análisis de Producto Actualizado - GremiusCMS v0.8.0-beta_

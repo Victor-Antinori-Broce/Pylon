@@ -7,15 +7,8 @@
   "author": "GremiusCMS Team",
   "industry": "gaming",
   "keywords": ["esports", "gaming", "tournaments", "teams", "competitive", "streamers"],
-  "grimoires": [
-    "grimoire-games",
-    "grimoire-esports",
-    "grimoire-streamers"
-  ],
-  "optional_grimoires": [
-    "grimoire-crm",
-    "grimoire-blog"
-  ],
+  "grimoires": ["grimoire-games", "grimoire-esports", "grimoire-streamers"],
+  "optional_grimoires": ["grimoire-crm", "grimoire-blog"],
   "config": {
     "theme": {
       "css_entry": "variables.css",

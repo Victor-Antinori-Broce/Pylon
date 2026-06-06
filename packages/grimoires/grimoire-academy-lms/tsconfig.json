@@ -16,14 +16,6 @@
     "sourceMap": true,
     "composite": false
   },
-  "include": [
-    "*.ts",
-    "src/**/*.ts",
-    "services/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests"
-  ]
+  "include": ["*.ts", "src/**/*.ts", "services/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests"]
 }

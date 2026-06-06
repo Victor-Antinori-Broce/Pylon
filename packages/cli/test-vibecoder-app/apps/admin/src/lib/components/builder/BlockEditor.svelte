@@ -3,6 +3,7 @@
    * BlockEditor.svelte — Edit form for a single block's data
    */
   import { X, Trash2, Check, Sparkles, FileText, Images, Map, Tv, Code2, AlertTriangle, Minus, Clapperboard, SlidersHorizontal, Columns, Table2 } from "lucide-svelte";
+
   import { getBlockDef, type PageBlock } from "../../../types/blocks";
 
   interface Props {
@@ -12,15 +13,15 @@
     onClose?: () => void;
   }
   
-  let { block, onUpdate, onDelete, onClose }: Props = $props();
+  const { block, onUpdate, onDelete, onClose }: Props = $props();
 
   const iconMap: Record<string, typeof Sparkles> = {
     Sparkles, FileText, Images, Map, Tv, Code2, AlertTriangle, Minus,
     Clapperboard, SlidersHorizontal, Columns, Table2,
   };
 
-  let blockDef = $derived(getBlockDef(block.type));
-  let jsonErrors: Record<string, string> = $state({});
+  const blockDef = $derived(getBlockDef(block.type));
+  const jsonErrors: Record<string, string> = $state({});
 
   function updateField(key: string, value: any) {
     const updated = { ...block, data: { ...block.data, [key]: value } };

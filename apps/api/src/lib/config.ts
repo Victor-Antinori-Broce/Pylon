@@ -42,10 +42,16 @@ const envSchema = z.object({
   WEB_URL: z.string().default("http://localhost:4321"),
 
   // Security
-  ALLOWED_ORIGINS: z.string().transform((s) => s.split(",")).default("http://localhost:3001,http://localhost:5173"),
+  ALLOWED_ORIGINS: z
+    .string()
+    .transform((s) => s.split(","))
+    .default("http://localhost:3001,http://localhost:5173"),
 
   // Rate Limiting
-  RATE_LIMIT_ENABLED: z.string().transform((s) => s === "true").default("true"),
+  RATE_LIMIT_ENABLED: z
+    .string()
+    .transform((s) => s === "true")
+    .default("true"),
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default("900000"), // 15 minutes
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default("100"),
   RATE_LIMIT_AUTH_MAX: z.string().transform(Number).default("20"),
@@ -54,9 +60,18 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 
   // Features
-  ENABLE_SWAGGER: z.string().transform((s) => s === "true").default("true"),
-  ENABLE_MCP: z.string().transform((s) => s === "true").default("true"),
-  HEADLESS: z.string().transform((s) => s === "true").default("false"),
+  ENABLE_SWAGGER: z
+    .string()
+    .transform((s) => s === "true")
+    .default("true"),
+  ENABLE_MCP: z
+    .string()
+    .transform((s) => s === "true")
+    .default("true"),
+  HEADLESS: z
+    .string()
+    .transform((s) => s === "true")
+    .default("false"),
 });
 
 // Parse and validate environment
@@ -66,11 +81,13 @@ function loadConfig() {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const issues = error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
-      console.error(`\nConfiguration validation failed (NODE_ENV=${process.env.NODE_ENV || "undefined"}):\n${issues}\n`);
+      console.error(
+        `\nConfiguration validation failed (NODE_ENV=${process.env.NODE_ENV || "undefined"}):\n${issues}\n`
+      );
       if (isProduction) {
         console.error(
           "HINT: In production, BETTER_AUTH_SECRET must be explicitly set (min 32 chars).\n" +
-          "Generate one with: openssl rand -base64 48\n"
+            "Generate one with: openssl rand -base64 48\n"
         );
       }
       process.exit(1);

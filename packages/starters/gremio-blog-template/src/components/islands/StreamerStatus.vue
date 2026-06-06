@@ -33,11 +33,15 @@
 
       <!-- Live badge overlay -->
       <div class="absolute top-3 left-3 flex items-center gap-2">
-        <span class="flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
+        <span
+          class="flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white uppercase tracking-wider"
+        >
           <span class="w-2 h-2 rounded-full bg-white animate-pulse" />
           Live
         </span>
-        <span class="rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-[11px] text-white/80">
+        <span
+          class="rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-[11px] text-white/80"
+        >
           {{ platformLabel }}
         </span>
       </div>
@@ -53,22 +57,23 @@
     </div>
 
     <!-- Channel info bar -->
-    <div class="flex items-center justify-between px-5 py-3 border-t border-white/[0.06] bg-white/[0.02]">
+    <div
+      class="flex items-center justify-between px-5 py-3 border-t border-white/[0.06] bg-white/[0.02]"
+    >
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-gremius-pink/10 border border-gremius-pink/20 flex items-center justify-center">
-          <span class="text-xs font-bold text-gremius-pink">{{ channelName?.[0]?.toUpperCase() || '?' }}</span>
+        <div
+          class="w-8 h-8 rounded-full bg-gremius-pink/10 border border-gremius-pink/20 flex items-center justify-center"
+        >
+          <span class="text-xs font-bold text-gremius-pink">{{
+            channelName?.[0]?.toUpperCase() || "?"
+          }}</span>
         </div>
         <div>
           <p class="text-sm font-medium text-gremius-text">{{ channelName }}</p>
           <p class="text-[10px] text-zinc-500">{{ platformLabel }}</p>
         </div>
       </div>
-      <a
-        :href="channelUrl"
-        target="_blank"
-        rel="noopener"
-        class="gremius-btn-ghost text-xs"
-      >
+      <a :href="channelUrl" target="_blank" rel="noopener" class="gremius-btn-ghost text-xs">
         Open Channel →
       </a>
     </div>
@@ -78,16 +83,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-const props = withDefaults(defineProps<{
-  channelName: string;
-  platform?: "twitch" | "youtube" | "kick";
-  showChat?: boolean;
-  autoplay?: boolean;
-}>(), {
-  platform: "twitch",
-  showChat: false,
-  autoplay: false,
-});
+const props = withDefaults(
+  defineProps<{
+    channelName: string;
+    platform?: "twitch" | "youtube" | "kick";
+    showChat?: boolean;
+    autoplay?: boolean;
+  }>(),
+  {
+    platform: "twitch",
+    showChat: false,
+    autoplay: false,
+  }
+);
 
 const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
 
@@ -98,10 +106,14 @@ const platformLabel = computed(() => {
 
 const channelUrl = computed(() => {
   switch (props.platform) {
-    case "twitch": return `https://twitch.tv/${props.channelName}`;
-    case "youtube": return `https://youtube.com/channel/${props.channelName}`;
-    case "kick": return `https://kick.com/${props.channelName}`;
-    default: return "#";
+    case "twitch":
+      return `https://twitch.tv/${props.channelName}`;
+    case "youtube":
+      return `https://youtube.com/channel/${props.channelName}`;
+    case "kick":
+      return `https://kick.com/${props.channelName}`;
+    default:
+      return "#";
   }
 });
 </script>

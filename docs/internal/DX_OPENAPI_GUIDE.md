@@ -20,12 +20,10 @@ Los grimoires ahora pueden definir su propia documentación OpenAPI declarativa:
 export const grimoire = defineGrimoire({
   id: "grimoire-blog",
   name: "Blog",
-  
+
   // ✅ OpenAPI Specification
   openApi: {
-    tags: [
-      { name: "Blog", description: "Blog posts management" }
-    ],
+    tags: [{ name: "Blog", description: "Blog posts management" }],
     schemas: {
       Post: PostSchema,
       CreatePost: CreatePostSchema,
@@ -38,17 +36,20 @@ export const grimoire = defineGrimoire({
         tags: ["Blog"],
         query: z.object({ limit: z.number().optional() }),
         responses: {
-          200: { description: "List of posts", schema: z.array(PostSchema) }
-        }
-      }
-    ]
+          200: { description: "List of posts", schema: z.array(PostSchema) },
+        },
+      },
+    ],
   },
-  
-  createRouter: (ctx) => { /* ... */ }
+
+  createRouter: (ctx) => {
+    /* ... */
+  },
 });
 ```
 
 **Endpoints generados automáticamente:**
+
 - `GET /api/docs/openapi.json` - Spec completo de todos los grimoires
 - `GET /api/docs/:grimoire/openapi.json` - Spec de un grimoire específico
 - `GET /api/docs/` - Swagger UI
@@ -62,23 +63,23 @@ Nuevas herramientas para agentes de IA:
 
 #### Herramientas
 
-| Tool | Descripción |
-|------|-------------|
-| `gremius_intelligent_query` | Queries en lenguaje natural |
+| Tool                        | Descripción                     |
+| --------------------------- | ------------------------------- |
+| `gremius_intelligent_query` | Queries en lenguaje natural     |
 | `gremius_generate_grimoire` | Genera boilerplate de grimoires |
 | `gremius_introspect_schema` | Inspecciona schemas de datasets |
-| `gremius_batch_operations` | Operaciones CRUD en batch |
-| `gremius_validate_code` | Valida código TypeScript |
+| `gremius_batch_operations`  | Operaciones CRUD en batch       |
+| `gremius_validate_code`     | Valida código TypeScript        |
 
 #### Resources
 
-| Resource | URI | Descripción |
-|----------|-----|-------------|
-| Project Context | `gremius://project-context` | Estado completo del proyecto |
-| Dataset Schema | `gremius://dataset/{id}/schema` | Schema de un dataset |
-| Grimoire Capabilities | `gremius://grimoire/{id}/capabilities` | Endpoints de un grimoire |
-| API Operations | `gremius://api-operations` | Todas las operaciones |
-| Development Guide | `gremius://dev-guide` | Guía de desarrollo |
+| Resource              | URI                                    | Descripción                  |
+| --------------------- | -------------------------------------- | ---------------------------- |
+| Project Context       | `gremius://project-context`            | Estado completo del proyecto |
+| Dataset Schema        | `gremius://dataset/{id}/schema`        | Schema de un dataset         |
+| Grimoire Capabilities | `gremius://grimoire/{id}/capabilities` | Endpoints de un grimoire     |
+| API Operations        | `gremius://api-operations`             | Todas las operaciones        |
+| Development Guide     | `gremius://dev-guide`                  | Guía de desarrollo           |
 
 ### 3. CLI para Agentes
 
@@ -119,12 +120,14 @@ gremius generate-sdk \
 ## 📁 Archivos Creados/Modificados
 
 ### Shared Types
+
 ```
 packages/shared/src/grimoire-api.ts       # + OpenAPI types
 packages/shared/src/index.ts              # + Exports
 ```
 
 ### OpenAPI Aggregator
+
 ```
 apps/api/src/lib/openapi-aggregator.ts    # Nuevo
 apps/api/src/routes/docs-dynamic.ts       # Nuevo
@@ -132,6 +135,7 @@ apps/api/src/index.ts                     # + Import & route
 ```
 
 ### MCP Server
+
 ```
 packages/mcp-server/src/tools-enhanced.ts    # Nuevo
 packages/mcp-server/src/project-context.ts   # Nuevo
@@ -139,6 +143,7 @@ packages/mcp-server/src/index-enhanced.ts    # Nuevo
 ```
 
 ### CLI
+
 ```
 packages/cli/src/commands/agent.ts        # Nuevo
 packages/cli/src/index.ts                 # + Commands
@@ -204,26 +209,28 @@ import { Hono } from "hono";
 import { defineGrimoire } from "@gremius/shared";
 import { z } from "zod";
 
-const GameSchema = z.object({
-  id: z.string().uuid().openapi({ example: "550e8400..." }),
-  title: z.string().openapi({ example: "The Witcher 3" }),
-  rating: z.number().min(0).max(10).openapi({ example: 9.5 }),
-  releasedAt: z.string().datetime().openapi({ example: "2015-05-19T00:00:00Z" }),
-}).openapi("Game");
+const GameSchema = z
+  .object({
+    id: z.string().uuid().openapi({ example: "550e8400..." }),
+    title: z.string().openapi({ example: "The Witcher 3" }),
+    rating: z.number().min(0).max(10).openapi({ example: 9.5 }),
+    releasedAt: z.string().datetime().openapi({ example: "2015-05-19T00:00:00Z" }),
+  })
+  .openapi("Game");
 
 export const grimoire = defineGrimoire({
   id: "grimoire-games",
   name: "Games",
   version: "2.0.0",
   description: "Video game catalog with ratings",
-  
+
   openApi: {
     tags: [
-      { 
-        name: "Games", 
+      {
+        name: "Games",
         description: "Video game catalog management",
-        externalDocs: { url: "https://docs.gremius.dev/games" }
-      }
+        externalDocs: { url: "https://docs.gremius.dev/games" },
+      },
     ],
     schemas: {
       Game: GameSchema,
@@ -247,13 +254,13 @@ export const grimoire = defineGrimoire({
             schema: z.object({
               data: z.array(GameSchema),
               total: z.number(),
-            })
+            }),
           },
           500: {
             description: "Server error",
-            schema: z.object({ error: z.string() })
-          }
-        }
+            schema: z.object({ error: z.string() }),
+          },
+        },
       },
       {
         method: "post",
@@ -266,9 +273,9 @@ export const grimoire = defineGrimoire({
         responses: {
           201: { description: "Created", schema: GameSchema },
           400: { description: "Invalid input", schema: z.object({ error: z.string() }) },
-          401: { description: "Unauthorized", schema: z.object({ error: z.string() }) }
-        }
-      }
+          401: { description: "Unauthorized", schema: z.object({ error: z.string() }) },
+        },
+      },
     ],
     webhooks: {
       gameCreated: {
@@ -279,30 +286,30 @@ export const grimoire = defineGrimoire({
               "application/json": {
                 schema: z.object({
                   event: z.literal("game.created"),
-                  data: GameSchema
-                })
-              }
-            }
-          }
-        }
-      }
-    }
+                  data: GameSchema,
+                }),
+              },
+            },
+          },
+        },
+      },
+    },
   },
-  
+
   createRouter: (ctx) => {
     const router = new Hono();
-    
+
     router.get("/games", async (c) => {
       // Implementation
     });
-    
+
     router.post("/games", ctx.auth.requireAuth, async (c) => {
       // Implementation
       ctx.events.emit("game.created", newGame);
     });
-    
+
     return router;
-  }
+  },
 });
 ```
 

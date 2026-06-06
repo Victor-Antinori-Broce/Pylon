@@ -25,11 +25,11 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
   ErrorCode,
-  McpError
+  McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 
 const app = new Hono();
 
@@ -115,7 +115,7 @@ function encodeTOON(data: any, prefix = "", lines: string[] = []): string[] {
 
 function toTOON(data: any): string {
   if (Array.isArray(data)) {
-    return data.map(item => encodeTOON(item).join("\n")).join("\n---\n") + "\n";
+    return data.map((item) => encodeTOON(item).join("\n")).join("\n---\n") + "\n";
   }
   return encodeTOON(data).join("\n") + "\n";
 }
@@ -149,7 +149,8 @@ const TOOL_DEFINITIONS = [
   // ── Explorer CRUD ──
   {
     name: "gremius_list_tables",
-    description: "List all available data tables in Gremius with their row counts. Use this first to discover what data exists.",
+    description:
+      "List all available data tables in Gremius with their row counts. Use this first to discover what data exists.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -157,31 +158,58 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: "gremius_query_table",
-    description: "Query records from any Gremius table with pagination, sorting, and filtering. Returns data + column metadata.",
+    description:
+      "Query records from any Gremius table with pagination, sorting, and filtering. Returns data + column metadata.",
     inputSchema: {
       type: "object",
       properties: {
-        table: { type: "string", description: "Table name (e.g., 'games', 'blogPosts', 'courses')" },
-        limit: { type: "number", description: "Max records to return (default: 25, max: 100)", default: 25 },
+        table: {
+          type: "string",
+          description: "Table name (e.g., 'games', 'blogPosts', 'courses')",
+        },
+        limit: {
+          type: "number",
+          description: "Max records to return (default: 25, max: 100)",
+          default: 25,
+        },
         page: { type: "number", description: "Page number for pagination", default: 1 },
         sort: { type: "string", description: "Field name to sort by" },
-        dir: { type: "string", enum: ["asc", "desc"], description: "Sort direction", default: "desc" },
+        dir: {
+          type: "string",
+          enum: ["asc", "desc"],
+          description: "Sort direction",
+          default: "desc",
+        },
         filter_field: { type: "string", description: "Field to filter on" },
-        filter_op: { type: "string", enum: ["contains", "equals", "gt", "lt", "gte", "lte"], description: "Filter operator" },
+        filter_op: {
+          type: "string",
+          enum: ["contains", "equals", "gt", "lt", "gte", "lte"],
+          description: "Filter operator",
+        },
         filter_value: { type: "string", description: "Filter value" },
-        format: { type: "string", enum: ["json", "toon"], description: "Response format. Use 'toon' for 60% fewer tokens.", default: "json" },
+        format: {
+          type: "string",
+          enum: ["json", "toon"],
+          description: "Response format. Use 'toon' for 60% fewer tokens.",
+          default: "json",
+        },
       },
       required: ["table"],
     },
   },
   {
     name: "gremius_create_record",
-    description: "Create a new record in a Gremius table. Returns the created record with generated ID.",
+    description:
+      "Create a new record in a Gremius table. Returns the created record with generated ID.",
     inputSchema: {
       type: "object",
       properties: {
         table: { type: "string", description: "Table name" },
-        data: { type: "object", description: "Record data as key-value pairs. Use gremius_get_schema first to see available fields." },
+        data: {
+          type: "object",
+          description:
+            "Record data as key-value pairs. Use gremius_get_schema first to see available fields.",
+        },
       },
       required: ["table", "data"],
     },
@@ -214,7 +242,8 @@ const TOOL_DEFINITIONS = [
   // ── Schema ──
   {
     name: "gremius_get_schema",
-    description: "Get the JSON Schema for a table. Shows field names, types, required fields, FK relations, and API endpoints. Essential before creating/updating records.",
+    description:
+      "Get the JSON Schema for a table. Shows field names, types, required fields, FK relations, and API endpoints. Essential before creating/updating records.",
     inputSchema: {
       type: "object",
       properties: {
@@ -246,7 +275,8 @@ const TOOL_DEFINITIONS = [
   // ── TOON ──
   {
     name: "gremius_encode_toon",
-    description: "Encode any JSON data into TOON (Token-Optimized Object Notation) format. TOON uses ~60% fewer LLM tokens than JSON. Use this when you need to include large datasets in your context.",
+    description:
+      "Encode any JSON data into TOON (Token-Optimized Object Notation) format. TOON uses ~60% fewer LLM tokens than JSON. Use this when you need to include large datasets in your context.",
     inputSchema: {
       type: "object",
       properties: {
@@ -258,7 +288,8 @@ const TOOL_DEFINITIONS = [
   // ── Datasets (legacy) ──
   {
     name: "gremius_list_datasets",
-    description: "List all dynamic datasets in Gremius (spreadsheet-like collections). For static tables, use gremius_list_tables instead.",
+    description:
+      "List all dynamic datasets in Gremius (spreadsheet-like collections). For static tables, use gremius_list_tables instead.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -267,14 +298,25 @@ const TOOL_DEFINITIONS = [
   // ── Escape Hatch ──
   {
     name: "gremius_api_request",
-    description: "Make a raw HTTP request to any Gremius API endpoint. Use this for APIs not covered by other tools.",
+    description:
+      "Make a raw HTTP request to any Gremius API endpoint. Use this for APIs not covered by other tools.",
     inputSchema: {
       type: "object",
       properties: {
-        method: { type: "string", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"], default: "GET", description: "HTTP method" },
+        method: {
+          type: "string",
+          enum: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+          default: "GET",
+          description: "HTTP method",
+        },
         path: { type: "string", description: "API path starting with /api/ (e.g., '/api/health')" },
         body: { type: "object", description: "Request body for POST/PUT/PATCH" },
-        format: { type: "string", enum: ["json", "toon"], description: "Response format", default: "json" },
+        format: {
+          type: "string",
+          enum: ["json", "toon"],
+          description: "Response format",
+          default: "json",
+        },
       },
       required: ["path"],
     },
@@ -412,7 +454,17 @@ function createStandaloneMcpServer() {
         }
 
         case "gremius_query_table": {
-          const { table, limit = 25, page = 1, sort, dir, filter_field, filter_op, filter_value, format = "json" } = args as any;
+          const {
+            table,
+            limit = 25,
+            page = 1,
+            sort,
+            dir,
+            filter_field,
+            filter_op,
+            filter_value,
+            format = "json",
+          } = args as any;
           const params = new URLSearchParams();
           params.set("limit", String(Math.min(limit, 100)));
           params.set("page", String(page));
@@ -422,7 +474,12 @@ function createStandaloneMcpServer() {
           if (filter_op) params.set("filter_op", filter_op);
           if (filter_value) params.set("filter_value", filter_value);
 
-          const data = await apiRequest(`/explorer/${table}?${params.toString()}`, "GET", undefined, format as any);
+          const data = await apiRequest(
+            `/explorer/${table}?${params.toString()}`,
+            "GET",
+            undefined,
+            format as any
+          );
 
           if (format === "toon" && typeof data === "string") {
             return { content: [{ type: "text", text: data }] };
@@ -434,13 +491,27 @@ function createStandaloneMcpServer() {
         case "gremius_create_record": {
           const { table, data: recordData } = args as any;
           const result = await apiRequest(`/explorer/${table}`, "POST", recordData);
-          return { content: [{ type: "text", text: `Record created successfully:\n${JSON.stringify(result, null, 2)}` }] };
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record created successfully:\n${JSON.stringify(result, null, 2)}`,
+              },
+            ],
+          };
         }
 
         case "gremius_update_record": {
           const { table, id, data: updateData } = args as any;
           const result = await apiRequest(`/explorer/${table}/${id}`, "PATCH", updateData);
-          return { content: [{ type: "text", text: `Record updated successfully:\n${JSON.stringify(result, null, 2)}` }] };
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Record updated successfully:\n${JSON.stringify(result, null, 2)}`,
+              },
+            ],
+          };
         }
 
         case "gremius_delete_record": {
@@ -465,7 +536,14 @@ function createStandaloneMcpServer() {
         case "gremius_toggle_module": {
           const { key } = args as any;
           const result = await apiRequest(`/modules/${key}/toggle`, "POST", {});
-          return { content: [{ type: "text", text: `Module '${key}' toggled:\n${JSON.stringify(result, null, 2)}` }] };
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Module '${key}' toggled:\n${JSON.stringify(result, null, 2)}`,
+              },
+            ],
+          };
         }
 
         // ── TOON ──
@@ -477,10 +555,12 @@ function createStandaloneMcpServer() {
           const savings = Math.round((1 - toonLen / jsonLen) * 100);
 
           return {
-            content: [{
-              type: "text",
-              text: `# TOON Encoded (${savings}% smaller than JSON)\n\n${toonOutput}`
-            }],
+            content: [
+              {
+                type: "text",
+                text: `# TOON Encoded (${savings}% smaller than JSON)\n\n${toonOutput}`,
+              },
+            ],
           };
         }
 
@@ -615,10 +695,13 @@ app.get("/ide-config/:ide", (c) => {
 
   const cfg = configs[ide];
   if (!cfg) {
-    return c.json({
-      error: `Unknown IDE: ${ide}`,
-      available: Object.keys(configs),
-    }, 404);
+    return c.json(
+      {
+        error: `Unknown IDE: ${ide}`,
+        available: Object.keys(configs),
+      },
+      404
+    );
   }
 
   return c.json({

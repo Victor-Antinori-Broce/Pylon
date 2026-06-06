@@ -15,7 +15,7 @@ interface AgentActionConfig {
 
 export async function executeAgentAction(
   action: Action,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _context: ActionContext
 ): Promise<ActionResult> {
   const startTime = Date.now();

@@ -8,15 +8,15 @@
 
 ## Resumen Ejecutivo
 
-| Categoría | Estado | Detalles |
-|-----------|--------|----------|
-| Build de packages/shared | ✅ PASS | Compilación exitosa, sin errores de tipo |
-| Build de apps/api | ✅ PASS | Bundle de 6.85MB generado correctamente |
-| Type checking | ✅ PASS | Sin errores de TypeScript |
-| Imports de grimoires | ✅ PASS | No hay dependencias cruzadas inválidas |
-| Carga de grimoires modernos | ✅ PASS | blog y formulas cargan con DI |
-| Backward compatibility | ✅ PASS | Grimoires legacy (games) funcionan |
-| Exportación de schemas | ✅ PASS | Todas las tablas exportadas correctamente |
+| Categoría                   | Estado  | Detalles                                  |
+| --------------------------- | ------- | ----------------------------------------- |
+| Build de packages/shared    | ✅ PASS | Compilación exitosa, sin errores de tipo  |
+| Build de apps/api           | ✅ PASS | Bundle de 6.85MB generado correctamente   |
+| Type checking               | ✅ PASS | Sin errores de TypeScript                 |
+| Imports de grimoires        | ✅ PASS | No hay dependencias cruzadas inválidas    |
+| Carga de grimoires modernos | ✅ PASS | blog y formulas cargan con DI             |
+| Backward compatibility      | ✅ PASS | Grimoires legacy (games) funcionan        |
+| Exportación de schemas      | ✅ PASS | Todas las tablas exportadas correctamente |
 
 ---
 
@@ -35,10 +35,12 @@
 ```
 
 **Archivos generados:**
+
 - `packages/shared/dist/index.js`
 - `packages/shared/dist/*.d.ts` (declaraciones de tipos)
 
 **Exports verificados:**
+
 - ✅ `defineGrimoire`
 - ✅ `createGrimoireRouter`
 - ✅ `GrimoireError`
@@ -60,6 +62,7 @@ Bundled 2432 modules in 629ms
 ```
 
 **Observaciones:**
+
 - Todos los imports resueltos correctamente
 - No hay errores de bundling
 - Tamaño del bundle consistente con builds anteriores
@@ -72,6 +75,7 @@ Bundled 2432 modules in 629ms
 **Resultado:** ✅ SIN ERRORES
 
 **Verificaciones:**
+
 - No hay errores de tipo en packages/shared
 - No hay errores de tipo en apps/api
 - Todos los imports tienen tipos correctos
@@ -81,6 +85,7 @@ Bundled 2432 modules in 629ms
 ### 4. Validación de Imports en Grimoires
 
 **Búsqueda de imports prohibidos:**
+
 ```bash
 findstr /s /i "apps.api" packages\grimoires\grimoire-blog\src\*.ts
 findstr /s /i "apps.api" packages\grimoires\grimoire-formulas\src\*.ts
@@ -100,6 +105,7 @@ Los únicos imports de `apps/api/src` son en los archivos de schema, que re-expo
 #### Grimoires Modernos (Dependency Injection)
 
 **✅ blog**
+
 ```
 ID: blog
 Name: Blog Posts
@@ -110,6 +116,7 @@ Mount: /api/blog
 ```
 
 **✅ formulas**
+
 ```
 ID: formulas
 Name: Fórmulas KPI
@@ -122,6 +129,7 @@ Mount: /api/custom
 #### Grimoires Legacy (Backward Compatibility)
 
 **✅ games**
+
 ```
 Has router: true
 Has init: false
@@ -131,9 +139,11 @@ Mode: Legacy (direct router export)
 #### Schema Exports
 
 **✅ blog schema**
+
 - Exports: `blogPosts`, `blogPostsToTags`, `blogPostsToGames`
 
 **✅ formulas schema**
+
 - Exports: `formulas`
 
 ---
@@ -145,6 +155,7 @@ Mode: Legacy (direct router export)
 **Grimoire Legacy de prueba:** `grimoire-games`
 
 **Estructura (sin cambios):**
+
 ```typescript
 import { gamesRoutes } from "./games.routes";
 const app = new Hono();
@@ -160,18 +171,19 @@ export const gamesModuleRoutes = app;
 
 ### Componentes Testeados
 
-| Componente | Tipo | Estado |
-|------------|------|--------|
-| @gremius/shared | Package | ✅ |
-| grimoire-blog | Modern | ✅ |
-| grimoire-formulas | Modern | ✅ |
-| grimoire-games | Legacy | ✅ |
-| module-loader.ts | Core | ✅ |
-| apps/api build | Integration | ✅ |
+| Componente        | Tipo        | Estado |
+| ----------------- | ----------- | ------ |
+| @gremius/shared   | Package     | ✅     |
+| grimoire-blog     | Modern      | ✅     |
+| grimoire-formulas | Modern      | ✅     |
+| grimoire-games    | Legacy      | ✅     |
+| module-loader.ts  | Core        | ✅     |
+| apps/api build    | Integration | ✅     |
 
 ### APIs Verificadas
 
 **Grimoire Blog:**
+
 - ✅ `GET /api/blog` - Listar posts
 - ✅ `GET /api/blog/:id` - Obtener post
 - ✅ `GET /api/blog/slug/:slug` - Obtener por slug
@@ -181,6 +193,7 @@ export const gamesModuleRoutes = app;
 - ✅ `POST /api/blog/:id/publish` - Publicar post
 
 **Grimoire Formulas:**
+
 - ✅ `GET /api/custom/formulas` - Listar fórmulas
 - ✅ `GET /api/custom/formulas/:id` - Obtener fórmula
 - ✅ `POST /api/custom/formulas` - Crear fórmula
@@ -194,25 +207,25 @@ export const gamesModuleRoutes = app;
 
 ### Tamaños de Build
 
-| Componente | Tamaño | Estado |
-|------------|--------|--------|
-| packages/shared | ~18KB | ✅ |
+| Componente      | Tamaño | Estado         |
+| --------------- | ------ | -------------- |
+| packages/shared | ~18KB  | ✅             |
 | apps/api bundle | 6.85MB | ✅ Consistente |
 
 ### Tiempos de Build
 
-| Operación | Tiempo | Estado |
-|-----------|--------|--------|
-| Build shared | ~2s | ✅ Rápido |
-| Build API | ~14s | ✅ Normal |
+| Operación    | Tiempo | Estado    |
+| ------------ | ------ | --------- |
+| Build shared | ~2s    | ✅ Rápido |
+| Build API    | ~14s   | ✅ Normal |
 
 ### Dependencias
 
-| Grimoire | Deps externas | Estado |
-|----------|---------------|--------|
-| blog | @gremius/shared | ✅ Solo contratos |
+| Grimoire | Deps externas   | Estado            |
+| -------- | --------------- | ----------------- |
+| blog     | @gremius/shared | ✅ Solo contratos |
 | formulas | @gremius/shared | ✅ Solo contratos |
-| games | N/A (legacy) | ✅ No cambió |
+| games    | N/A (legacy)    | ✅ No cambió      |
 
 ---
 
@@ -258,6 +271,7 @@ export const gamesModuleRoutes = app;
 ✅ **La refactorización ha sido exitosa y no rompe ninguna funcionalidad existente.**
 
 Los grimoires `blog` y `formulas` ahora son:
+
 - Autocontenidos
 - Independientes de `apps/api/src`
 - Testeables con inyección de dependencias

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Plus, ChevronRight, Gamepad2 } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { Plus, ChevronRight } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface GameCollection {
     id: string;

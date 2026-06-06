@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
   import { Users, Building2, Briefcase, TrendingUp } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
+
   import type { CRMStats } from "./types";
 
   let stats = $state<CRMStats | null>(null);

@@ -10,9 +10,10 @@
     GitPullRequest, Zap, CheckCircle
   } from "lucide-svelte";
   import { slide } from "svelte/transition";
+
   import {
     FIELD_TYPE_OPTIONS, generateSlug, generateFieldKey, createEmptyField,
-    type FieldDefinition, type FieldType, type DatasetDefinition, type RelationType, type RelationTarget,
+    type FieldDefinition, type FieldType, type DatasetDefinition, type RelationType,
   } from "../../../types/datasets";
 
   // ─── Props ──────────────────────────────────────────
@@ -23,7 +24,7 @@
     onCancel?: () => void;
   }
   
-  let { definition, allDatasets = [], onSave, onCancel }: Props = $props();
+  const { definition, allDatasets = [], onSave, onCancel }: Props = $props();
 
   // ─── Tab system ─────────────────────────────────────
   type TabId = "fields" | "security" | "workflow";
@@ -67,10 +68,10 @@
   });
 
   // ─── Computed ───────────────────────────────────────
-  let selectedField = $derived(localDef.fields.find((f) => f.id === selectedFieldId) || null);
-  let otherDatasets = $derived(allDatasets.filter((d) => d.id !== localDef.id));
+  const selectedField = $derived(localDef.fields.find((f) => f.id === selectedFieldId) || null);
+  const otherDatasets = $derived(allDatasets.filter((d) => d.id !== localDef.id));
   
-  let validationErrors = $derived.by(() => {
+  const validationErrors = $derived.by(() => {
     const errs: string[] = [];
     if (!localDef.name.trim()) errs.push("Dataset name is required");
     if (localDef.fields.length === 0) errs.push("Add at least one field");
@@ -84,7 +85,7 @@
     return errs;
   });
   
-  let canSave = $derived(validationErrors().length === 0);
+  const canSave = $derived(validationErrors().length === 0);
 
   // ─── Enterprise: Enable / Disable ───────────────────
   function enablePolicy() {

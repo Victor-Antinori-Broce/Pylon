@@ -34,6 +34,7 @@ gremius new my-shop --realm ecommerce --grimoires stripe payments
 ```
 
 **Available Realms (Starters):**
+
 - `default` - Core functionality (datasets, media, blocks)
 - `esports` - Gaming platform with tournaments, teams, matches
 - `blog` - Content publishing with SEO
@@ -231,23 +232,23 @@ export const grimoire = defineGrimoire({
   id: "grimoire-myfeature",
   name: "My Feature",
   version: "1.0.0",
-  
+
   createRouter: (ctx) => {
     const router = new Hono();
-    
+
     router.get("/", async (c) => {
       const data = await ctx.db.instance.select().from(myTable);
       return c.json(data);
     });
-    
+
     return router;
   },
-  
+
   hooks: {
     onStartup: async (ctx) => {
       ctx.logger.info("MyFeature grimoire started!");
-    }
-  }
+    },
+  },
 });
 ```
 

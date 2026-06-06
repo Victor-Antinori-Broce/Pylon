@@ -1,8 +1,10 @@
 <script lang="ts">
-  import PageBuilder from "$lib/components/builder/PageBuilder.svelte";
   import { Save, ArrowLeft, Eye } from "lucide-svelte";
-  import { goto } from "$app/navigation";
+
+  import PageBuilder from "$lib/components/builder/PageBuilder.svelte";
   import type { PageBlock } from "$types/blocks";
+
+  import { goto } from "$app/navigation";
 
   let pageTitle = $state("New Page");
   let pageSlug = $state("");
@@ -23,16 +25,28 @@
 </script>
 
 <div class="h-[calc(100vh-4rem)] flex flex-col">
-  <div class="flex items-center justify-between px-6 py-4 border-b border-gremius-border bg-gremius-card">
+  <div
+    class="flex items-center justify-between px-6 py-4 border-b border-gremius-border bg-gremius-card"
+  >
     <div class="flex items-center gap-4">
       <button onclick={() => goto("/")} class="btn-ghost p-2">
         <ArrowLeft class="w-5 h-5" />
       </button>
       <div>
-        <input bind:value={pageTitle} type="text" placeholder="Page Title" class="bg-transparent text-xl font-bold text-gremius-text outline-none border-b border-transparent focus:border-gremius-cyan/50 transition-colors placeholder:text-gremius-subtle" />
+        <input
+          bind:value={pageTitle}
+          type="text"
+          placeholder="Page Title"
+          class="bg-transparent text-xl font-bold text-gremius-text outline-none border-b border-transparent focus:border-gremius-cyan/50 transition-colors placeholder:text-gremius-subtle"
+        />
         <div class="flex items-center gap-2 mt-1">
           <span class="text-xs text-gremius-subtle">/</span>
-          <input bind:value={pageSlug} type="text" placeholder="page-slug" class="bg-transparent text-xs text-gremius-text-dim outline-none border-b border-transparent focus:border-gremius-cyan/50 transition-colors placeholder:text-gremius-subtle/50 font-mono" />
+          <input
+            bind:value={pageSlug}
+            type="text"
+            placeholder="page-slug"
+            class="bg-transparent text-xs text-gremius-text-dim outline-none border-b border-transparent focus:border-gremius-cyan/50 transition-colors placeholder:text-gremius-subtle/50 font-mono"
+          />
         </div>
       </div>
     </div>
@@ -43,7 +57,9 @@
       </button>
       <button onclick={handleSave} disabled={saving} class="btn-primary btn-sm gap-1.5">
         {#if saving}
-          <span class="w-4 h-4 border-2 border-gremius-bg border-t-transparent rounded-full animate-spin"></span>
+          <span
+            class="w-4 h-4 border-2 border-gremius-bg border-t-transparent rounded-full animate-spin"
+          ></span>
           Saving...
         {:else}
           <Save class="w-4 h-4" /> Save Page
@@ -53,6 +69,6 @@
   </div>
 
   <div class="flex-1 p-6 overflow-hidden">
-    <PageBuilder {blocks} onChange={(b) => blocks = b} />
+    <PageBuilder {blocks} onChange={(b) => (blocks = b)} />
   </div>
 </div>

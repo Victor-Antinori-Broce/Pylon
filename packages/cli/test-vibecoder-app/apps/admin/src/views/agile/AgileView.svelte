@@ -8,14 +8,12 @@
    * - Vista Kanban de issues por proyecto
    * - Gestión de intakes (triage)
    */
-  import { onMount } from "svelte";
-  import { 
-    Kanban, Plus, FolderKanban, CircleDot, Timer, 
-    Component, Inbox, Settings2, ChevronLeft, Trash2,
-    AlertCircle, CheckCircle2, XCircle, Clock, Search,
-    Filter, MoreHorizontal, User, Calendar, X
-  } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { 
+    Kanban, Plus, FolderKanban, Inbox, Settings2,
+    AlertCircle, CheckCircle2, XCircle, Clock, Search, User, X
+  } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // TYPES
@@ -245,7 +243,7 @@
   // COMPUTED
   // ═══════════════════════════════════════════════════════════════════════════════
   
-  let filteredIssues = $derived(
+  const filteredIssues = $derived(
     issues.filter(issue => {
       const matchesSearch = !searchQuery || 
         issue.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -255,7 +253,7 @@
     })
   );
 
-  let issuesByState = $derived.by(() => {
+  const issuesByState = $derived.by(() => {
     const grouped: Record<string, Issue[]> = {};
     states.forEach(state => {
       grouped[state.id] = filteredIssues.filter(i => i.stateId === state.id);
@@ -263,7 +261,7 @@
     return grouped;
   });
 
-  let pendingIntakes = $derived(intakes.filter(i => i.status === "pending"));
+  const pendingIntakes = $derived(intakes.filter(i => i.status === "pending"));
 
   function getPriorityColor(priority: string): string {
     const colors: Record<string, string> = {

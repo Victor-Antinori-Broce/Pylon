@@ -11,13 +11,15 @@
 ### 1. CLI Potente - `manage.py` Equivalente ⭐ PRIORITARIO
 
 #### Estado Actual
+
 ```bash
 bun run dev              # Inicia dev server
-bun run build            # Build producción  
+bun run build            # Build producción
 bun run migrate          # Corre migrations (básico)
 ```
 
 #### Lo que necesita (como Django)
+
 ```bash
 # Migrations
 python manage.py makemigrations             # Auto-detecta cambios
@@ -59,6 +61,7 @@ python manage.py send_newsletter            # Comandos personalizados
 ```
 
 #### Solución Propuesta
+
 ```bash
 gremius makemigrations              # Auto-detecta cambios en schemas
 gremius migrate                     # Aplica migraciones
@@ -97,6 +100,7 @@ gremius run <grimoire>:<command>    # Comandos custom
 ### 2. Admin Panel Auto-generado Completo ⭐ PRIORITARIO
 
 #### Django Admin (Estándar de oro)
+
 ```python
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
@@ -108,7 +112,7 @@ class PostAdmin(admin.ModelAdmin):
     ordering = ['status', '-publish_date']
     list_editable = ['status']
     list_per_page = 25
-    
+
     fieldsets = (
         ('Contenido', {
             'fields': ('title', 'slug', 'content')
@@ -122,16 +126,17 @@ class PostAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
-    
+
     inlines = [CommentInline, AttachmentInline]
-    
+
     actions = ['make_published', 'export_csv']
-    
+
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 ```
 
 #### Gremius Actual (Básico)
+
 ```svelte
 <!-- Admin SvelteKit actual:
 - Lista de entradas ✅
@@ -141,56 +146,63 @@ class PostAdmin(admin.ModelAdmin):
 ```
 
 #### Lo que falta
-| Feature | Django | Gremius | Prioridad |
-|---------|--------|---------|-----------|
-| **Auto-discover admin** | ✅ Sin configuración | ⚠️ Manual | 🔴 Alta |
-| **List view completa** | ✅ Filtros, búsqueda, ordenamiento | ⚠️ Básico | 🔴 Alta |
-| **Fieldsets** | ✅ Secciones colapsables | ❌ No | 🟡 Media |
-| **Inlines** | ✅ Edición de relaciones | ❌ No | 🔴 Alta |
-| **Bulk actions** | ✅ Delete/export masivo | ❌ No | 🟡 Media |
-| **Advanced filters** | ✅ Por rango de fechas, etc | ⚠️ Básico | 🟡 Media |
-| **Dashboard widgets** | ✅ Arrastrar al dashboard | ❌ No | 🟢 Baja |
-| **Audit log completo** | ✅ Quién cambió qué, diff | ❌ No | 🟡 Media |
-| **Keyboard shortcuts** | ✅ Atajos de teclado | ❌ No | 🟢 Baja |
-| **Mobile responsive** | ✅ Admin móvil | ⚠️ Parcial | 🟡 Media |
+
+| Feature                 | Django                             | Gremius    | Prioridad |
+| ----------------------- | ---------------------------------- | ---------- | --------- |
+| **Auto-discover admin** | ✅ Sin configuración               | ⚠️ Manual  | 🔴 Alta   |
+| **List view completa**  | ✅ Filtros, búsqueda, ordenamiento | ⚠️ Básico  | 🔴 Alta   |
+| **Fieldsets**           | ✅ Secciones colapsables           | ❌ No      | 🟡 Media  |
+| **Inlines**             | ✅ Edición de relaciones           | ❌ No      | 🔴 Alta   |
+| **Bulk actions**        | ✅ Delete/export masivo            | ❌ No      | 🟡 Media  |
+| **Advanced filters**    | ✅ Por rango de fechas, etc        | ⚠️ Básico  | 🟡 Media  |
+| **Dashboard widgets**   | ✅ Arrastrar al dashboard          | ❌ No      | 🟢 Baja   |
+| **Audit log completo**  | ✅ Quién cambió qué, diff          | ❌ No      | 🟡 Media  |
+| **Keyboard shortcuts**  | ✅ Atajos de teclado               | ❌ No      | 🟢 Baja   |
+| **Mobile responsive**   | ✅ Admin móvil                     | ⚠️ Parcial | 🟡 Media  |
 
 #### Solución Propuesta
+
 ```typescript
 // Configuración de admin por dataset
 export const postAdminConfig = {
   list: {
-    display: ['title', 'author.name', 'status', 'publishDate'],
-    filters: ['status', 'author', 'category', { date: 'range' }],
-    search: ['title', 'content'],
-    ordering: ['-publishDate', 'title'],
+    display: ["title", "author.name", "status", "publishDate"],
+    filters: ["status", "author", "category", { date: "range" }],
+    search: ["title", "content"],
+    ordering: ["-publishDate", "title"],
     perPage: 25,
-    editable: ['status'],
-    actions: ['publish', 'unpublish', 'delete', 'export']
+    editable: ["status"],
+    actions: ["publish", "unpublish", "delete", "export"],
   },
-  
+
   form: {
     layout: [
-      { section: 'Contenido', fields: ['title', 'slug', 'content'] },
-      { section: 'Metadata', fields: ['author', 'status', 'category', 'tags'], collapsible: true },
-      { section: 'SEO', fields: ['metaTitle', 'metaDescription'], collapsible: true, defaultCollapsed: true }
+      { section: "Contenido", fields: ["title", "slug", "content"] },
+      { section: "Metadata", fields: ["author", "status", "category", "tags"], collapsible: true },
+      {
+        section: "SEO",
+        fields: ["metaTitle", "metaDescription"],
+        collapsible: true,
+        defaultCollapsed: true,
+      },
     ],
     widgets: {
-      content: 'rich-text',
-      tags: 'multi-select',
-      author: 'search-select',
-      category: 'tree-select'
+      content: "rich-text",
+      tags: "multi-select",
+      author: "search-select",
+      category: "tree-select",
     },
     inlines: [
-      { name: 'comments', fields: ['author', 'content', 'approved'], perPage: 5 },
-      { name: 'attachments', fields: ['file', 'description'], perPage: 3 }
-    ]
+      { name: "comments", fields: ["author", "content", "approved"], perPage: 5 },
+      { name: "attachments", fields: ["file", "description"], perPage: 3 },
+    ],
   },
-  
+
   permissions: {
-    view: ['admin', 'editor'],
-    edit: ['admin', 'editor'],
-    delete: ['admin']
-  }
+    view: ["admin", "editor"],
+    edit: ["admin", "editor"],
+    delete: ["admin"],
+  },
 };
 ```
 
@@ -199,6 +211,7 @@ export const postAdminConfig = {
 ### 3. ORM Avanzado - QuerySets ⭐ PRIORITARIO
 
 #### Django ORM (Muy potente)
+
 ```python
 posts = Post.objects.filter(
     status='published'
@@ -223,15 +236,16 @@ Post.objects.filter(id=1).update(views=F('views') + 1)
 ```
 
 #### Gremius Actual (Drizzle básico)
+
 ```typescript
 // Actual: Drizzle relations básico
 const posts = await db.query.posts.findMany({
-  where: eq(posts.status, 'published'),
+  where: eq(posts.status, "published"),
   with: {
     author: true,
     category: true,
-    tags: true
-  }
+    tags: true,
+  },
 });
 
 // Falta:
@@ -243,17 +257,19 @@ const posts = await db.query.posts.findMany({
 ```
 
 #### Lo que falta
-| Feature | Django | Gremius | Prioridad |
-|---------|--------|---------|-----------|
-| **select_related** | ✅ JOINs automáticos | ❌ No | 🔴 Alta |
-| **prefetch_related** | ✅ Queries optimizadas | ❌ No | 🔴 Alta |
-| **annotate** | ✅ Aggregaciones | ⚠️ Manual | 🔴 Alta |
-| **F() expressions** | ✅ Updates atómicos | ❌ No | 🟡 Media |
-| **Q() objects** | ✅ Queries OR/AND complejas | ⚠️ Manual | 🟡 Media |
-| **Managers** | ✅ Lógica de negocio encapsulada | ❌ No | 🔴 Alta |
-| **Raw SQL** | ✅ Cuando es necesario | ✅ Drizzle raw | ✅ Sí |
+
+| Feature              | Django                           | Gremius        | Prioridad |
+| -------------------- | -------------------------------- | -------------- | --------- |
+| **select_related**   | ✅ JOINs automáticos             | ❌ No          | 🔴 Alta   |
+| **prefetch_related** | ✅ Queries optimizadas           | ❌ No          | 🔴 Alta   |
+| **annotate**         | ✅ Aggregaciones                 | ⚠️ Manual      | 🔴 Alta   |
+| **F() expressions**  | ✅ Updates atómicos              | ❌ No          | 🟡 Media  |
+| **Q() objects**      | ✅ Queries OR/AND complejas      | ⚠️ Manual      | 🟡 Media  |
+| **Managers**         | ✅ Lógica de negocio encapsulada | ❌ No          | 🔴 Alta   |
+| **Raw SQL**          | ✅ Cuando es necesario           | ✅ Drizzle raw | ✅ Sí     |
 
 #### Solución Propuesta
+
 ```typescript
 class QuerySet<T extends Table> {
   filter(conditions: FilterConditions<T>): this;
@@ -263,7 +279,7 @@ class QuerySet<T extends Table> {
   orderBy(...fields: string[]): this;
   limit(n: number): this;
   offset(n: number): this;
-  
+
   async execute(): Promise<Populated<T>[]>;
   async count(): Promise<number>;
   async exists(): Promise<boolean>;
@@ -272,22 +288,21 @@ class QuerySet<T extends Table> {
 
 // Uso
 const posts = await Post.objects
-  .filter({ status: 'published' })
-  .selectRelated('author', 'category')
-  .prefetchRelated('tags', 'comments.author')
+  .filter({ status: "published" })
+  .selectRelated("author", "category")
+  .prefetchRelated("tags", "comments.author")
   .annotate({
-    commentCount: count('comments'),
-    avgRating: avg('ratings.value')
+    commentCount: count("comments"),
+    avgRating: avg("ratings.value"),
   })
-  .orderBy('-publishDate')
+  .orderBy("-publishDate")
   .limit(20)
   .execute();
 
 // Managers
 class PublishedManager extends Manager<Post> {
   getQuerySet() {
-    return super.getQuerySet()
-      .filter({ status: 'published', publishDate: { lte: new Date() } });
+    return super.getQuerySet().filter({ status: "published", publishDate: { lte: new Date() } });
   }
 }
 
@@ -296,7 +311,7 @@ posts.published = new PublishedManager(posts);
 
 // Uso
 await posts.published.all();
-await posts.objects.filter({ authorId: '123' }).execute();
+await posts.objects.filter({ authorId: "123" }).execute();
 ```
 
 ---
@@ -304,6 +319,7 @@ await posts.objects.filter({ authorId: '123' }).execute();
 ### 4. Sistema de Migrations Automáticas ⭐ PRIORITARIO
 
 #### Django Migrations (Joyas de la corona)
+
 ```bash
 python manage.py makemigrations     # Auto-detecta cambios
 python manage.py migrate            # Aplica migraciones
@@ -313,6 +329,7 @@ python manage.py migrate blog 0001 --reverse  # Rollback
 ```
 
 **Features:**
+
 - ✅ Auto-detección de cambios en models
 - ✅ Migra datos (RunPython)
 - ✅ Squash de migraciones
@@ -321,6 +338,7 @@ python manage.py migrate blog 0001 --reverse  # Rollback
 - ✅ Validación antes de aplicar
 
 #### Gremius Actual
+
 ```bash
 cd apps/api
 bunx drizzle-kit generate   # Genera SQL desde schema.ts
@@ -329,6 +347,7 @@ bunx drizzle-kit push       # Fuerza cambios (¡peligroso!)
 ```
 
 **Problemas actuales:**
+
 - ❌ No hay auto-detección por grimoire
 - ❌ Si olvidas migrar, crashea en runtime
 - ❌ No hay dashboard de migraciones en admin
@@ -336,6 +355,7 @@ bunx drizzle-kit push       # Fuerza cambios (¡peligroso!)
 - ❌ No hay squashing
 
 #### Solución Propuesta
+
 ```bash
 gremius makemigrations              # Auto-detecta cambios en schemas
 gremius migrate                     # Aplica migraciones
@@ -384,6 +404,7 @@ export const grimoire = defineGrimoire({
 ### 5. Sistema de Signals/Events Robusto
 
 #### Django Signals
+
 ```python
 @receiver(post_save, sender=Post)
 def notify_subscribers(sender, instance, created, **kwargs):
@@ -401,6 +422,7 @@ order_completed.send(sender=Order, order=order, user=user)
 ```
 
 **Features:**
+
 - Signals pre/post para modelos
 - Signals de request/response
 - Signals de autenticación
@@ -408,25 +430,32 @@ order_completed.send(sender=Order, order=order, user=user)
 - Handlers con prioridad
 
 #### Gremius Actual
+
 ```typescript
 // EventBus simple
 export const hooks = {
-  beforeCreate: async (data) => { /* ... */ },
-  afterCreate: async (data) => { /* ... */ },
+  beforeCreate: async (data) => {
+    /* ... */
+  },
+  afterCreate: async (data) => {
+    /* ... */
+  },
 };
 ```
 
 #### Lo que falta
-| Feature | Django | Gremius | Prioridad |
-|---------|--------|---------|-----------|
-| **preSave/postSave** | ✅ Model signals | ⚠️ Hooks básicos | 🟡 Media |
-| **preDelete/postDelete** | ✅ Model signals | ⚠️ Hooks básicos | 🟡 Media |
-| **requestStarted/requestFinished** | ✅ Request signals | ❌ No | 🟡 Media |
-| **userLoggedIn/userLoggedOut** | ✅ Auth signals | ❌ No | 🟡 Media |
-| **Custom signals** | ✅ Signal() | ❌ No | 🟡 Media |
-| **Disconnect para testing** | ✅ signal.disconnect | ❌ No | 🟢 Baja |
+
+| Feature                            | Django               | Gremius          | Prioridad |
+| ---------------------------------- | -------------------- | ---------------- | --------- |
+| **preSave/postSave**               | ✅ Model signals     | ⚠️ Hooks básicos | 🟡 Media  |
+| **preDelete/postDelete**           | ✅ Model signals     | ⚠️ Hooks básicos | 🟡 Media  |
+| **requestStarted/requestFinished** | ✅ Request signals   | ❌ No            | 🟡 Media  |
+| **userLoggedIn/userLoggedOut**     | ✅ Auth signals      | ❌ No            | 🟡 Media  |
+| **Custom signals**                 | ✅ Signal()          | ❌ No            | 🟡 Media  |
+| **Disconnect para testing**        | ✅ signal.disconnect | ❌ No            | 🟢 Baja   |
 
 #### Solución Propuesta
+
 ```typescript
 export const signals = {
   // Model signals
@@ -434,19 +463,19 @@ export const signals = {
   postSave: new Signal<(instance: any, created: boolean) => void>(),
   preDelete: new Signal<(instance: any) => void>(),
   postDelete: new Signal<(instance: any) => void>(),
-  
+
   // Request signals
   requestStarted: new Signal<(request: Request) => void>(),
   requestFinished: new Signal<(request: Request, response: Response) => void>(),
-  
+
   // Auth signals
   userLoggedIn: new Signal<(user: User, request: Request) => void>(),
   userLoggedOut: new Signal<(user: User, request: Request) => void>(),
 };
 
 // Uso
-signals.postSave.connect('posts', async (post, created) => {
-  if (created && post.status === 'published') {
+signals.postSave.connect("posts", async (post, created) => {
+  if (created && post.status === "published") {
     await notifySubscribers(post);
   }
 });
@@ -461,6 +490,7 @@ orderCompleted.emit({ order, user });
 ### 6. Middleware Chain Flexible (5 Fases)
 
 #### Django Middleware
+
 ```python
 class RequestTimingMiddleware:
     def __init__(self, get_response):
@@ -469,24 +499,25 @@ class RequestTimingMiddleware:
     def __call__(self, request):
         # process_request
         start_time = time.time()
-        
+
         response = self.get_response(request)
-        
+
         # process_response
         duration = time.time() - start_time
         response['X-Request-Duration'] = str(duration)
         return response
-    
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         # Antes de la vista
         pass
-    
+
     def process_exception(self, request, exception):
         # Si hay excepción
         logger.error(f"Exception: {exception}")
 ```
 
 **5 Fases:**
+
 1. `process_request` - Antes de URL routing
 2. `process_view` - Antes de la vista
 3. `process_template_response` - Después de vista (template)
@@ -494,6 +525,7 @@ class RequestTimingMiddleware:
 5. `process_exception` - Si hay excepción
 
 #### Gremius Actual
+
 ```typescript
 // Hono middleware básico
 app.use(authMiddleware);
@@ -506,6 +538,7 @@ app.use(loggingMiddleware);
 ```
 
 #### Solución Propuesta
+
 ```typescript
 interface Middleware {
   processRequest?(request: Request): Promise<Request | Response>;
@@ -517,12 +550,12 @@ interface Middleware {
 // Configuración
 export default {
   middleware: [
-    { name: 'security', priority: 100 },
-    { name: 'session', priority: 90 },
-    { name: 'cors', priority: 80 },
-    { name: 'auth', priority: 70 },
-    { name: 'logging', priority: 10 },
-  ]
+    { name: "security", priority: 100 },
+    { name: "session", priority: 90 },
+    { name: "cors", priority: 80 },
+    { name: "auth", priority: 70 },
+    { name: "logging", priority: 10 },
+  ],
 };
 ```
 
@@ -531,6 +564,7 @@ export default {
 ### 7. Forms y Validación Declarativa
 
 #### Django Forms
+
 ```python
 class PostForm(forms.ModelForm):
     class Meta:
@@ -540,13 +574,13 @@ class PostForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'rows': 10}),
             'tags': forms.CheckboxSelectMultiple()
         }
-    
+
     def clean_title(self):
         title = self.cleaned_data['title']
         if 'spam' in title.lower():
             raise forms.ValidationError('No spam')
         return title
-    
+
     def clean(self):
         cleaned_data = super().clean()
         title = cleaned_data.get('title')
@@ -561,42 +595,45 @@ if form.is_valid():
 ```
 
 #### Gremius Actual
+
 ```typescript
 // Zod manual
 const postSchema = z.object({
   title: z.string().min(1),
   content: z.string(),
-  categoryId: z.number()
+  categoryId: z.number(),
 });
 ```
 
 #### Lo que falta
-| Feature | Django | Gremius | Prioridad |
-|---------|--------|---------|-----------|
-| **Auto-generado desde models** | ✅ | ❌ No | 🟡 Media |
-| **Validaciones field-level** | ✅ clean_field | ⚠️ Zod | 🟡 Media |
-| **Validaciones form-level** | ✅ clean() | ⚠️ Manual | 🟡 Media |
-| **Widgets personalizables** | ✅ | ⚠️ Admin only | 🟡 Media |
-| **CSRF protection** | ✅ | ⚠️ Manual | 🟡 Media |
-| **File uploads** | ✅ | ⚠️ Multer | 🟡 Media |
+
+| Feature                        | Django         | Gremius       | Prioridad |
+| ------------------------------ | -------------- | ------------- | --------- |
+| **Auto-generado desde models** | ✅             | ❌ No         | 🟡 Media  |
+| **Validaciones field-level**   | ✅ clean_field | ⚠️ Zod        | 🟡 Media  |
+| **Validaciones form-level**    | ✅ clean()     | ⚠️ Manual     | 🟡 Media  |
+| **Widgets personalizables**    | ✅             | ⚠️ Admin only | 🟡 Media  |
+| **CSRF protection**            | ✅             | ⚠️ Manual     | 🟡 Media  |
+| **File uploads**               | ✅             | ⚠️ Multer     | 🟡 Media  |
 
 ---
 
 ### 8. Testing Framework Completamente Integrado
 
 #### Django Testing
+
 ```python
 class PostModelTest(TestCase):
     def setUp(self):
         self.post = Post.objects.create(...)
-    
+
     def test_creation(self):
         self.assertEqual(self.post.title, 'Test')
 
 class PostViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-    
+
     def test_list(self):
         response = self.client.get('/api/posts/')
         self.assertEqual(response.status_code, 200)
@@ -607,39 +644,43 @@ class FixtureTest(TestCase):
 ```
 
 **Features:**
+
 - Test client con cookies/sessions
 - Fixtures automáticas
 - Test DB aislada automática
 - Assertions específicos
 
 #### Gremius Actual (Básico)
+
 ```bash
 bun test  # Vitest básico
 ```
 
 #### Lo que falta
-| Feature | Django | Gremius | Prioridad |
-|---------|--------|---------|-----------|
-| **Test client HTTP** | ✅ | ⚠️ Sandbox parcial | 🟡 Media |
-| **Fixtures loader** | ✅ | ⚠️ Básico | 🟡 Media |
-| **Test DB automática** | ✅ | ✅ pg-mem | ✅ Sí |
-| **Assertions específicos** | ✅ assertContains | ❌ No | 🟢 Baja |
-| **Factory system** | ✅ Factory Boy | ❌ No | 🟡 Media |
-| **Mocking** | ✅ mock | ⚠️ Manual | 🟢 Baja |
+
+| Feature                    | Django            | Gremius            | Prioridad |
+| -------------------------- | ----------------- | ------------------ | --------- |
+| **Test client HTTP**       | ✅                | ⚠️ Sandbox parcial | 🟡 Media  |
+| **Fixtures loader**        | ✅                | ⚠️ Básico          | 🟡 Media  |
+| **Test DB automática**     | ✅                | ✅ pg-mem          | ✅ Sí     |
+| **Assertions específicos** | ✅ assertContains | ❌ No              | 🟢 Baja   |
+| **Factory system**         | ✅ Factory Boy    | ❌ No              | 🟡 Media  |
+| **Mocking**                | ✅ mock           | ⚠️ Manual          | 🟢 Baja   |
 
 #### Solución Propuesta
+
 ```typescript
-import { GremiusTestCase, TestClient, factory } from '@gremius/testing';
+import { GremiusTestCase, TestClient, factory } from "@gremius/testing";
 
 class PostAPITest extends GremiusTestCase {
   async setUp() {
     await super.setUp();
     this.client = new TestClient();
-    this.post = await factory.create('Post', { status: 'published' });
+    this.post = await factory.create("Post", { status: "published" });
   }
-  
+
   async testList() {
-    const response = await this.client.get('/api/posts');
+    const response = await this.client.get("/api/posts");
     this.assertEqual(response.status, 200);
     this.assertContains(response.data, this.post.title);
   }
@@ -651,6 +692,7 @@ class PostAPITest extends GremiusTestCase {
 ### 9. Configuración Flexible y Environments
 
 #### Django Settings
+
 ```python
 # settings/base.py, local.py, production.py, test.py
 from .base import *
@@ -660,46 +702,49 @@ DATABASES['default']['NAME'] = 'myapp_local'
 ```
 
 **Features:**
+
 - Python puro = lógica condicional
 - Herencia de settings
 - Estructura por environments
 - Lazy evaluation
 
 #### Gremius Actual
+
 ```typescript
 // gremius.config.ts básico
 export default {
   database: { host: process.env.DB_HOST },
-  grimoires: ['grimoire-auth', 'grimoire-content']
+  grimoires: ["grimoire-auth", "grimoire-content"],
 };
 ```
 
 #### Solución Propuesta
+
 ```typescript
 // gremius/config/base.ts, local.ts, production.ts, test.ts
 
 // base.ts
 export const baseConfig = {
   database: {
-    adapter: 'postgres',
-    host: env('DB_HOST', 'localhost'),
-    port: env.int('DB_PORT', 5432),
+    adapter: "postgres",
+    host: env("DB_HOST", "localhost"),
+    port: env.int("DB_PORT", 5432),
   },
-  grimoires: { autoDiscover: true }
+  grimoires: { autoDiscover: true },
 };
 
 // local.ts
 export default {
   ...baseConfig,
   debug: true,
-  database: { adapter: 'sqlite', path: './dev.db' }
+  database: { adapter: "sqlite", path: "./dev.db" },
 };
 
-// production.ts  
+// production.ts
 export default {
   ...baseConfig,
   debug: false,
-  database: { ...baseConfig.database, ssl: true, pool: { min: 5, max: 20 } }
+  database: { ...baseConfig.database, ssl: true, pool: { min: 5, max: 20 } },
 };
 ```
 
@@ -708,6 +753,7 @@ export default {
 ### 10. Fixtures System Completo
 
 #### Django Fixtures
+
 ```bash
 python manage.py dumpdata blog > fixtures/posts.json
 python manage.py loaddata fixtures/posts.json
@@ -728,11 +774,13 @@ python manage.py loaddata fixtures/posts.json
 ```
 
 #### Gremius Actual
+
 ```typescript
 // Básico, no hay sistema formal de fixtures
 ```
 
 #### Solución Propuesta
+
 ```bash
 gremius dumpdata grimoire-blog > fixtures/posts.json
 gremius loaddata fixtures/posts.json
@@ -741,8 +789,8 @@ gremius loaddata fixtures/posts.json
 ```typescript
 // tests/fixtures/posts.ts
 export default [
-  { id: '1', title: 'Post 1', status: 'published' },
-  { id: '2', title: 'Post 2', status: 'draft' }
+  { id: "1", title: "Post 1", status: "published" },
+  { id: "2", title: "Post 2", status: "draft" },
 ];
 ```
 
@@ -752,108 +800,111 @@ export default [
 
 ### Core Architecture ✅
 
-| Feature | Estado | Detalles |
-|---------|--------|----------|
+| Feature                              | Estado  | Detalles                                        |
+| ------------------------------------ | ------- | ----------------------------------------------- |
 | **Arquitectura modular (Grimoires)** | ✅ 100% | Sistema de plugins más flexible que Django Apps |
-| **ORM/DB (Drizzle + PostgreSQL)** | ✅ 100% | RLS nativo, JSONB, type-safe |
-| **Auth (Better-Auth)** | ✅ 100% | Roles, scopes, Agent Auth (NHI) |
-| **Hot reload dev** | ✅ 100% | Bun + Hono, 10x más rápido que Django |
-| **MCP Server** | ✅ 100% | Integración nativa con LLMs (Claude, Cursor) |
-| **Basic CLI** | ✅ 100% | `gremius new`, plugins, dev, build |
-| **SDK Universal** | ✅ 100% | Edge-ready, TypeScript |
-| **TOON Format** | ✅ 100% | 60% menos tokens para LLMs |
-| **Actions Engine** | ✅ 100% | Webhooks + Workers + Agents unificados |
-| **Real-time** | ✅ 100% | WebSockets + Valkey Pub/Sub |
+| **ORM/DB (Drizzle + PostgreSQL)**    | ✅ 100% | RLS nativo, JSONB, type-safe                    |
+| **Auth (Better-Auth)**               | ✅ 100% | Roles, scopes, Agent Auth (NHI)                 |
+| **Hot reload dev**                   | ✅ 100% | Bun + Hono, 10x más rápido que Django           |
+| **MCP Server**                       | ✅ 100% | Integración nativa con LLMs (Claude, Cursor)    |
+| **Basic CLI**                        | ✅ 100% | `gremius new`, plugins, dev, build              |
+| **SDK Universal**                    | ✅ 100% | Edge-ready, TypeScript                          |
+| **TOON Format**                      | ✅ 100% | 60% menos tokens para LLMs                      |
+| **Actions Engine**                   | ✅ 100% | Webhooks + Workers + Agents unificados          |
+| **Real-time**                        | ✅ 100% | WebSockets + Valkey Pub/Sub                     |
 
 ### Admin Panel ✅
 
-| Feature | Estado | Detalles |
-|---------|--------|----------|
-| **SvelteKit Admin** | ✅ 100% | Panel admin moderno con Svelte 5 |
-| **Dynamic Forms** | ✅ 100% | Formularios auto-generados desde schemas |
-| **Dataset Management** | ✅ 100% | CRUD completo de datasets |
-| **Media Library** | ✅ 100% | Gestión de archivos con S3/MinIO |
-| **User Management** | ✅ 100% | Gestión de usuarios y roles |
+| Feature                | Estado  | Detalles                                 |
+| ---------------------- | ------- | ---------------------------------------- |
+| **SvelteKit Admin**    | ✅ 100% | Panel admin moderno con Svelte 5         |
+| **Dynamic Forms**      | ✅ 100% | Formularios auto-generados desde schemas |
+| **Dataset Management** | ✅ 100% | CRUD completo de datasets                |
+| **Media Library**      | ✅ 100% | Gestión de archivos con S3/MinIO         |
+| **User Management**    | ✅ 100% | Gestión de usuarios y roles              |
 
 ### Testing Framework ✅
 
-| Feature | Estado | Detalles |
-|---------|--------|----------|
-| **Test Sandbox** | ✅ 100% | `createDrizzleSandbox` funcional |
-| **pg-mem integration** | ✅ 100% | PostgreSQL en memoria para tests |
-| **HTTP Client** | ✅ 100% | Test de routers Hono sin servidor |
-| **Event Tracking** | ✅ 100% | Verificación de eventos emitidos |
-| **Bun test runner** | ✅ 100% | Tests pasando: 38/38 en blog |
-| **Fixtures system** | ✅ 100% | Datos de prueba configurables |
-| **Assertions** | ✅ 100% | Database y event assertions |
+| Feature                | Estado  | Detalles                          |
+| ---------------------- | ------- | --------------------------------- |
+| **Test Sandbox**       | ✅ 100% | `createDrizzleSandbox` funcional  |
+| **pg-mem integration** | ✅ 100% | PostgreSQL en memoria para tests  |
+| **HTTP Client**        | ✅ 100% | Test de routers Hono sin servidor |
+| **Event Tracking**     | ✅ 100% | Verificación de eventos emitidos  |
+| **Bun test runner**    | ✅ 100% | Tests pasando: 38/38 en blog      |
+| **Fixtures system**    | ✅ 100% | Datos de prueba configurables     |
+| **Assertions**         | ✅ 100% | Database y event assertions       |
 
 ### OpenAPI & Documentation ✅
 
-| Feature | Estado | Detalles |
-|---------|--------|----------|
-| **OpenAPI Dinámico** | ✅ 100% | `/api/docs/openapi.json` auto-generado |
-| **Swagger UI** | ✅ 100% | Documentación interactiva |
-| **Scalar UI** | ✅ 100% | UI moderna alternativa |
-| **MCP Tools** | ✅ 100% | `gremius_intelligent_query`, `generate_grimoire` |
-| **MCP Resources** | ✅ 100% | `project-context`, `dataset-schema`, `api-operations` |
+| Feature              | Estado  | Detalles                                              |
+| -------------------- | ------- | ----------------------------------------------------- |
+| **OpenAPI Dinámico** | ✅ 100% | `/api/docs/openapi.json` auto-generado                |
+| **Swagger UI**       | ✅ 100% | Documentación interactiva                             |
+| **Scalar UI**        | ✅ 100% | UI moderna alternativa                                |
+| **MCP Tools**        | ✅ 100% | `gremius_intelligent_query`, `generate_grimoire`      |
+| **MCP Resources**    | ✅ 100% | `project-context`, `dataset-schema`, `api-operations` |
 
 ### CLI for Agents ✅
 
-| Feature | Estado | Detalles |
-|---------|--------|----------|
+| Feature                         | Estado  | Detalles                             |
+| ------------------------------- | ------- | ------------------------------------ |
 | `gremius agent create-grimoire` | ✅ 100% | Genera boilerplate desde descripción |
-| `gremius agent validate` | ✅ 100% | Valida TypeScript, lint, seguridad |
-| `gremius agent debug-mcp` | ✅ 100% | Debug conexión MCP |
-| `gremius agent init` | ✅ 100% | Configura .cursorrules / CLAUDE.md |
-| `gremius generate-sdk` | ✅ 100% | Genera client SDK desde OpenAPI |
+| `gremius agent validate`        | ✅ 100% | Valida TypeScript, lint, seguridad   |
+| `gremius agent debug-mcp`       | ✅ 100% | Debug conexión MCP                   |
+| `gremius agent init`            | ✅ 100% | Configura .cursorrules / CLAUDE.md   |
+| `gremius generate-sdk`          | ✅ 100% | Genera client SDK desde OpenAPI      |
 
 ### Grimoire System ✅
 
-| Feature | Estado | Detalles |
-|---------|--------|----------|
-| **Auto-detección** | ✅ 100% | Scanea `packages/grimoires/` |
-| **grimoire.json** | ✅ 100% | Configuración declarativa |
-| **Hooks system** | ✅ 100% | beforeCreate, afterCreate, etc. |
-| **Dependencies** | ✅ 100% | Grimoires dependen de otros |
-| **Calculated Fields** | ✅ 100% | Campos calculados nativos |
-| **Schema validation** | ✅ 100% | Zod integration |
+| Feature               | Estado  | Detalles                        |
+| --------------------- | ------- | ------------------------------- |
+| **Auto-detección**    | ✅ 100% | Scanea `packages/grimoires/`    |
+| **grimoire.json**     | ✅ 100% | Configuración declarativa       |
+| **Hooks system**      | ✅ 100% | beforeCreate, afterCreate, etc. |
+| **Dependencies**      | ✅ 100% | Grimoires dependen de otros     |
+| **Calculated Fields** | ✅ 100% | Campos calculados nativos       |
+| **Schema validation** | ✅ 100% | Zod integration                 |
 
 ---
 
 ## 📊 Resumen Comparativo
 
-| Feature | Django | Gremius Actual | ¿Falta? |
-|---------|--------|----------------|---------|
-| **CLI completo** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🔴 CLI potente |
-| **Admin auto-generado** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟡 Mejoras admin |
-| **ORM QuerySets** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🔴 QuerySet abstraction |
-| **Migrations automáticas** | ⭐⭐⭐⭐⭐ | ⭐⭐ | 🔴 Auto-detection |
-| **Testing** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟡 Factory system |
-| **Signals** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🟡 Sistema robusto |
-| **Middleware** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🟡 5 fases |
-| **Forms** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🟡 Auto-generados |
-| **Config environments** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🟡 Herencia |
-| **Fixtures** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🟡 Sistema completo |
-| **Modularidad** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Grimoires |
-| **Performance** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Bun |
-| **Type Safety** | ⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ TypeScript |
-| **AI Integration** | ⭐ | ⭐⭐⭐⭐⭐ | ✅ MCP |
+| Feature                    | Django     | Gremius Actual | ¿Falta?                 |
+| -------------------------- | ---------- | -------------- | ----------------------- |
+| **CLI completo**           | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🔴 CLI potente          |
+| **Admin auto-generado**    | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐       | 🟡 Mejoras admin        |
+| **ORM QuerySets**          | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🔴 QuerySet abstraction |
+| **Migrations automáticas** | ⭐⭐⭐⭐⭐ | ⭐⭐           | 🔴 Auto-detection       |
+| **Testing**                | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐       | 🟡 Factory system       |
+| **Signals**                | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🟡 Sistema robusto      |
+| **Middleware**             | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🟡 5 fases              |
+| **Forms**                  | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🟡 Auto-generados       |
+| **Config environments**    | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🟡 Herencia             |
+| **Fixtures**               | ⭐⭐⭐⭐⭐ | ⭐⭐⭐         | 🟡 Sistema completo     |
+| **Modularidad**            | ⭐⭐⭐⭐   | ⭐⭐⭐⭐⭐     | ✅ Grimoires            |
+| **Performance**            | ⭐⭐⭐     | ⭐⭐⭐⭐⭐     | ✅ Bun                  |
+| **Type Safety**            | ⭐⭐       | ⭐⭐⭐⭐⭐     | ✅ TypeScript           |
+| **AI Integration**         | ⭐         | ⭐⭐⭐⭐⭐     | ✅ MCP                  |
 
 ---
 
 ## 🎯 Roadmap Priorizado
 
 ### Fase 1: Core Batteries (Meses 1-3)
+
 1. ⏳ **CLI completo** - `makemigrations`, `shell`, `inspect`, `dumpdata`
 2. ⏳ **QuerySet abstraction** - `selectRelated`, `prefetchRelated`, `annotate`
 3. ⏳ **Auto-admin discovery** - Sin configuración manual
 
 ### Fase 2: Django Magic (Meses 4-6)
+
 4. ⏳ **Migration system v2** - Auto-detect, rollback, squash
 5. ⏳ **Signals robusto** - Model signals, request signals
 6. ⏳ **Factory system** - `factory.create('User')`
 
 ### Fase 3: Polish (Meses 7-8)
+
 7. ⏳ **Forms system** - Auto-generados desde schema
 8. ⏳ **Middleware 5 fases** - processView, processException
 9. ⏳ **Config environments** - base.ts, local.ts, prod.ts
@@ -872,6 +923,6 @@ export default [
 
 ---
 
-*Documento actualizado:* 2026-04-12  
-*Tests pasando:* 38/38 (100%)  
-*Estado:* Core funcional, faltan features Django-nivel en CLI, ORM y Migrations
+_Documento actualizado:_ 2026-04-12  
+_Tests pasando:_ 38/38 (100%)  
+_Estado:_ Core funcional, faltan features Django-nivel en CLI, ORM y Migrations

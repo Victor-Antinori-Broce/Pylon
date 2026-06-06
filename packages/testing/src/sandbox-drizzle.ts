@@ -9,8 +9,14 @@
 
 import type { GrimoireDefinition } from "@gremius/shared";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { newDb, DataType } from "pg-mem";
 import { Pool } from "pg";
+import { newDb, DataType } from "pg-mem";
+
+import { createTestAssertions } from "./assertions.js";
+import { createTestContext as createBaseContext } from "./context.js";
+import { createTestEvents } from "./events.js";
+import { loadFixtures } from "./fixtures.js";
+import { createTestHttpClient } from "./http.js";
 import type {
   SandboxConfig,
   TestSandbox,
@@ -18,11 +24,6 @@ import type {
   TestGrimoireContext,
   TestDatabase,
 } from "./types.js";
-import { createTestHttpClient } from "./http.js";
-import { createTestEvents } from "./events.js";
-import { createTestAssertions } from "./assertions.js";
-import { loadFixtures } from "./fixtures.js";
-import { createTestContext as createBaseContext } from "./context.js";
 
 export interface DrizzleSandboxConfig extends SandboxConfig {
   /** Database strategy - defaults to pg-mem for speed */
@@ -98,11 +99,11 @@ export async function createDrizzleSandbox(
   const dbStrategy = config.database || "memory";
 
   // 1. Create REAL Drizzle instance
-  const { drizzle: drizzleInstance, cleanup, transaction } = await createDrizzleInstance(
-    dbStrategy,
-    config.schema,
-    config.databaseUrl
-  );
+  const {
+    drizzle: drizzleInstance,
+    cleanup,
+    transaction,
+  } = await createDrizzleInstance(dbStrategy, config.schema, config.databaseUrl);
 
   // 2. Create base context with real Drizzle
   const baseContext = await createBaseContext(sandboxId, "memory");
@@ -180,10 +181,7 @@ export async function createDrizzleSandbox(
     },
 
     insert: async (table: string, data: Record<string, any>) => {
-      const [result] = await drizzleInstance
-        .insert(config.schema[table])
-        .values(data)
-        .returning();
+      const [result] = await drizzleInstance.insert(config.schema[table]).values(data).returning();
       return result;
     },
   };

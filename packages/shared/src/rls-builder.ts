@@ -3,27 +3,26 @@
  * ============================================================================
  * RLS QUERY BUILDER - Traductor de Reglas JSON a Condiciones Drizzle ORM
  * ============================================================================
- * 
+ *
  * FASE DE RESCATE: Optimización de RAM y RLS de Aplicación
- * 
+ *
  * Este módulo elimina el antipatrón de filtrar datos en memoria (.filter())
  * y traduce las reglas JSON de permisos a condiciones SQL nativas usando
  * los operadores de Drizzle ORM.
- * 
+ *
  * Antes (Mata-RAM):
  *   const all = await db.select().from(table); // 100,000 filas
  *   const filtered = all.filter(createRLSFilter(rules, user)); // En memoria
- * 
+ *
  * Después (Drizzle Application RLS):
  *   const whereCondition = buildDrizzleWhere(rules, user);
  *   const filtered = await db.select().from(table).where(whereCondition); // 5 filas
- * 
+ *
  * La lógica de negocio permanece igual (RLS a nivel de aplicación), pero
  * el trabajo pesado de filtrado se mueve a PostgreSQL.
  */
 
-import { eq, ne, gt, lt, like, and, SQL, sql } from "drizzle-orm";
-import { PgTable } from "drizzle-orm/pg-core";
+import { eq, and, SQL, sql } from "drizzle-orm";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tipos
@@ -61,37 +60,34 @@ const USER_ID_PLACEHOLDER = "__USER_ID__";
 
 /**
  * Construye una condición WHERE de Drizzle ORM a partir de reglas RLS JSON.
- * 
+ *
  * Esta función traduce reglas como:
  *   `{ field: "author_id", operator: "eq", value: "__USER_ID__" }`
- * 
+ *
  * A condiciones SQL como:
  *   `data->>'author_id' = 'user-123'`
- * 
+ *
  * @param rules - Array de reglas RLS desde policyJson.rlsRules
  * @param user - Usuario autenticado (para reemplazar __USER_ID__)
  * @returns Condición SQL de Drizzle o undefined si no hay filtros
- * 
+ *
  * @example
  * ```typescript
  * const rules = [
  *   { field: "author_id", operator: "eq", value: "__USER_ID__" },
  *   { field: "status", operator: "eq", value: "published" }
  * ];
- * 
+ *
  * const whereCondition = buildDrizzleWhere(rules, { id: "user-123" });
  * // Resultado: AND(data->>'author_id' = 'user-123', data->>'status' = 'published')
- * 
+ *
  * const results = await db
  *   .select()
  *   .from(dataEntries)
  *   .where(whereCondition);
  * ```
  */
-export function buildDrizzleWhere(
-  rules: RLSRule[] | undefined,
-  user: RLSUser
-): SQL | undefined {
+export function buildDrizzleWhere(rules: RLSRule[] | undefined, user: RLSUser): SQL | undefined {
   if (!rules || rules.length === 0) {
     return undefined;
   }
@@ -119,16 +115,16 @@ export function buildDrizzleWhere(
 
 /**
  * Construye una condición WHERE que incluye filtrado por datasetId + RLS.
- * 
+ *
  * Útil para endpoints que necesitan filtrar por dataset y aplicar RLS
  * en una sola query.
- * 
+ *
  * @param datasetId - ID del dataset a filtrar
  * @param rules - Reglas RLS opcionales
  * @param user - Usuario autenticado
  * @param tableDataColumn - Nombre de la columna JSONB (default: "data")
  * @returns Objeto con condiciones separadas o combinadas
- * 
+ *
  * @example
  * ```typescript
  * const { where, hasRLS } = buildDatasetWhere(
@@ -137,7 +133,7 @@ export function buildDrizzleWhere(
  *   currentUser,
  *   dataEntries
  * );
- * 
+ *
  * const results = await db
  *   .select()
  *   .from(dataEntries)
@@ -151,27 +147,27 @@ export function buildDatasetWhere(
   dataColumn: string = "data"
 ): { where: SQL | undefined; hasRLS: boolean } {
   const rlsCondition = buildDrizzleWhere(rules, user);
-  
+
   // Filtro por datasetId (siempre requerido)
   const datasetFilter = sql`${sql.raw("data_set_id")} = ${datasetId}`;
-  
+
   if (rlsCondition) {
     return {
       where: and(datasetFilter, rlsCondition) as SQL,
-      hasRLS: true
+      hasRLS: true,
     };
   }
-  
+
   return {
     where: datasetFilter,
-    hasRLS: false
+    hasRLS: false,
   };
 }
 
 /**
  * Verifica si el usuario tiene acceso de lectura basado en policyJson.
  * Versión síncrona que no requiere consulta a base de datos.
- * 
+ *
  * @param policy - Configuración de política
  * @param user - Usuario autenticado
  * @returns true si tiene acceso
@@ -196,7 +192,7 @@ export function checkReadAccess(policy: PolicyJson | null, user: RLSUser): boole
 
 /**
  * Verifica si el usuario tiene acceso de escritura basado en policyJson.
- * 
+ *
  * @param policy - Configuración de política
  * @param user - Usuario autenticado
  * @returns true si tiene acceso
@@ -223,16 +219,14 @@ export function checkWriteAccess(policy: PolicyJson | null, user: RLSUser): bool
 
 /**
  * Construye una condición SQL para una sola regla RLS.
- * 
+ *
  * Accede al campo dentro del JSONB usando PostgreSQL operators:
  * - `data->>'fieldName'` para valores de texto
  * - Casting numérico para operadores gt/lt
  */
 function buildRuleCondition(rule: RLSRule, user: RLSUser): SQL | null {
   // Reemplazar placeholder __USER_ID__ con el ID real del usuario
-  const compareValue = rule.value === USER_ID_PLACEHOLDER 
-    ? user?.id 
-    : rule.value;
+  const compareValue = rule.value === USER_ID_PLACEHOLDER ? user?.id : rule.value;
 
   // Si necesitamos __USER_ID__ pero no hay usuario, la regla no se cumple
   if (rule.value === USER_ID_PLACEHOLDER && !user?.id) {
@@ -275,7 +269,7 @@ function buildRuleCondition(rule: RLSRule, user: RLSUser): SQL | null {
 
 /**
  * @deprecated Use buildDrizzleWhere() en su lugar.
- * 
+ *
  * Crea una función de filtro en memoria (antipatrón).
  * Mantenido solo para compatibilidad con código legacy.
  */
@@ -298,7 +292,11 @@ export function createRLSFilter(
         case "neq":
           return value !== compareValue;
         case "contains":
-          return typeof value === "string" && typeof compareValue === "string" && value.includes(compareValue);
+          return (
+            typeof value === "string" &&
+            typeof compareValue === "string" &&
+            value.includes(compareValue)
+          );
         case "gt":
           return Number(value) > Number(compareValue);
         case "lt":

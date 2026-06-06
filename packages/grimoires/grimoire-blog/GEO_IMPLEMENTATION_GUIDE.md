@@ -26,42 +26,42 @@ interface BlogPost {
   id: string;
   title: string;
   slug: string;
-  content: JSON;        // Lexical editor blocks
+  content: JSON; // Lexical editor blocks
   excerpt: string;
-  
+
   // ═══════════════════════════════════════════════════════════════
   // GEO (Generative Engine Optimization) Fields
   // ═══════════════════════════════════════════════════════════════
-  
+
   /**
    * Bottom Line Up Front (BLUF)
    * Resumen de máximo 50 palabras optimizado para extracción por IA
    */
   blufText: string;
-  
+
   /**
    * FAQ Data - Array estructurado
    * Format: [{ "q": "Pregunta", "a": "Respuesta HTML", "order": 1 }]
    */
   faqData: FAQItem[];
-  
+
   /**
    * URL al dataset fuente (opcional)
    * Para artículos basados en datos/encuestas
    */
   datasetUrl: string;
-  
+
   // ═══════════════════════════════════════════════════════════════
   // SEO Fields (explícitos para validación)
   // ═══════════════════════════════════════════════════════════════
-  
-  metaTitle: string;           // Max 60 chars
-  metaDescription: string;     // Max 160 chars
-  ogImageUrl: string;          // URL imagen OG
-  ogImageSize: number;         // Tamaño en bytes (para validación)
-  
+
+  metaTitle: string; // Max 60 chars
+  metaDescription: string; // Max 160 chars
+  ogImageUrl: string; // URL imagen OG
+  ogImageSize: number; // Tamaño en bytes (para validación)
+
   // Campos estándar...
-  status: 'draft' | 'published' | 'scheduled';
+  status: "draft" | "published" | "scheduled";
   publishedAt: Date;
   authorId: string;
 }
@@ -71,7 +71,7 @@ interface BlogPost {
 
 ```sql
 -- Agregar campos GEO a blog_posts
-ALTER TABLE blog_posts 
+ALTER TABLE blog_posts
   ADD COLUMN bluf_text TEXT,
   ADD COLUMN faq_data JSONB DEFAULT '[]'::jsonb,
   ADD COLUMN dataset_url TEXT,
@@ -81,7 +81,7 @@ ALTER TABLE blog_posts
   ADD COLUMN og_image_size INTEGER;
 
 -- Índice para búsquedas por BLUF (full text search)
-CREATE INDEX idx_blog_posts_bluf_search ON blog_posts 
+CREATE INDEX idx_blog_posts_bluf_search ON blog_posts
   USING gin(to_tsvector('spanish', COALESCE(bluf_text, '')));
 ```
 
@@ -121,7 +121,7 @@ const faqSchema = generateFAQPageSchema(faqs);
 ### Validación de BLUF (Estricta)
 
 ```typescript
-import { validateBLUF } from './geo-utils';
+import { validateBLUF } from "./geo-utils";
 
 // En el controlador POST/PATCH
 const blufValidation = validateBLUF(body.blufText);
@@ -129,9 +129,9 @@ const blufValidation = validateBLUF(body.blufText);
 if (!blufValidation.isValid) {
   return res.status(400).json({
     error: "BLUF validation failed",
-    errors: blufValidation.errors,      // Errores bloqueantes
-    warnings: blufValidation.warnings,  // Advertencias
-    metrics: blufValidation.metrics     // { wordCount, charCount, readingTime }
+    errors: blufValidation.errors, // Errores bloqueantes
+    warnings: blufValidation.warnings, // Advertencias
+    metrics: blufValidation.metrics, // { wordCount, charCount, readingTime }
   });
 }
 
@@ -146,7 +146,7 @@ if (!blufValidation.isValid) {
 ### Sanitización de HTML
 
 ```typescript
-import { sanitizeHTML, sanitizeFAQText, ALLOWED_HTML_TAGS } from './geo-utils';
+import { sanitizeHTML, sanitizeFAQText, ALLOWED_HTML_TAGS } from "./geo-utils";
 
 // Para FAQs: permitir solo formato básico
 const cleanFAQ = sanitizeFAQText("<p>Respuesta</p><script>alert('xss')</script>");
@@ -154,7 +154,7 @@ const cleanFAQ = sanitizeFAQText("<p>Respuesta</p><script>alert('xss')</script>"
 
 // Para contenido general: permitir tablas y estructura
 const cleanContent = sanitizeHTML(htmlContent, {
-  allowedTags: ALLOWED_HTML_TAGS  // ['p', 'br', 'table', 'tr', 'td', ...]
+  allowedTags: ALLOWED_HTML_TAGS, // ['p', 'br', 'table', 'tr', 'td', ...]
 });
 
 // Etiquetas permitidas:
@@ -186,7 +186,7 @@ Devuelve JSON estructurado óptimo para frontend:
       "name": "Juan Pérez",
       "image": "https://ejemplo.com/avatar.jpg"
     },
-    
+
     "seo": {
       "title": "Guía SEO 2024 | Mi Blog",
       "description": "Aprende las mejores técnicas de SEO para 2024",
@@ -196,7 +196,7 @@ Devuelve JSON estructurado óptimo para frontend:
       "ogImageHeight": 630,
       "keywords": "seo, 2024, guía, marketing"
     },
-    
+
     "geo_ai": {
       "bluf": "El SEO en 2024 requiere contenido de calidad, experiencia de usuario excelente y optimización para búsquedas por voz. La IA está cambiando cómo se rankean los sitios.",
       "schema_faq": {
@@ -217,9 +217,11 @@ Devuelve JSON estructurado óptimo para frontend:
       "reading_time": 8,
       "word_count": 1850
     },
-    
+
     "content": {
-      "body": { /* Lexical JSON o HTML */ },
+      "body": {
+        /* Lexical JSON o HTML */
+      },
       "excerpt": "Resumen del artículo...",
       "toc": [
         { "level": 2, "text": "Introducción", "id": "introduccion" },
@@ -254,19 +256,19 @@ const { data } = await response.json();
     <title>{data.seo.title}</title>
     <meta name="description" content={data.seo.description} />
     <link rel="canonical" href={data.seo.canonicalUrl} />
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content={data.seo.title} />
     <meta property="og:description" content={data.seo.description} />
     <meta property="og:image" content={data.seo.ogImage} />
-    
+
     <!-- FAQ Schema -->
     {data.geo_ai.schema_faq && (
       <script type="application/ld+json">
         {JSON.stringify(data.geo_ai.schema_faq)}
       </script>
     )}
-    
+
     <!-- Article Schema con BLUF -->
     <script type="application/ld+json">
       {JSON.stringify({
@@ -280,13 +282,13 @@ const { data } = await response.json();
       })}
     </script>
   </head>
-  
+
   <body>
     <!-- BLUF - Visible para usuarios y extraíble por IA -->
     <div class="bluf-box">
       <strong>Resumen:</strong> {data.geo_ai.bluf}
     </div>
-    
+
     <!-- Tabla de Contenidos -->
     <nav class="toc">
       <h2>Contenido</h2>
@@ -298,10 +300,10 @@ const { data } = await response.json();
         ))}
       </ul>
     </nav>
-    
+
     <!-- Contenido Principal -->
     <article set:html={data.content.body} />
-    
+
     <!-- FAQs -->
     {data.geo_ai.schema_faq && (
       <section class="faqs">
@@ -394,12 +396,17 @@ const { data } = await response.json();
 ```svelte
 <!-- BLUFEditor.svelte -->
 <script>
-  let value = $state('');
+  let value = $state("");
   let maxWords = 50;
-  
-  const wordCount = $derived(value.trim().split(/\s+/).filter(w => w).length);
+
+  const wordCount = $derived(
+    value
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w).length
+  );
   const isValid = $derived(wordCount <= maxWords && wordCount >= 10);
-  
+
   const validation = $derived(validateBLUF(value));
 </script>
 
@@ -408,25 +415,25 @@ const { data } = await response.json();
     BLUF (Bottom Line Up Front)
     <span class="hint">Resumen de {maxWords} palabras para IA</span>
   </label>
-  
+
   <textarea
     bind:value
     rows="3"
     placeholder="Escribe un resumen conciso que responda la pregunta principal del artículo..."
     class:invalid={!validation.isValid}
   />
-  
+
   <div class="bluf-stats" class:warning={wordCount > 40} class:error={wordCount > 50}>
     <span>{wordCount}/{maxWords} palabras</span>
     <span>•</span>
     <span>~{Math.ceil(wordCount / 3)} seg lectura</span>
-    
+
     {#if validation.warnings.length > 0}
       <span>•</span>
       <span class="warning-text">⚠️ {validation.warnings[0]}</span>
     {/if}
   </div>
-  
+
   {#if validation.errors.length > 0}
     <div class="bluf-errors">
       {#each validation.errors as error}
@@ -442,16 +449,16 @@ const { data } = await response.json();
 ```svelte
 <!-- FAQRepeater.svelte -->
 <script>
-  let faqs = $state([{ q: '', a: '', order: 0 }]);
-  
+  let faqs = $state([{ q: "", a: "", order: 0 }]);
+
   function addFAQ() {
-    faqs.push({ q: '', a: '', order: faqs.length });
+    faqs.push({ q: "", a: "", order: faqs.length });
   }
-  
+
   function removeFAQ(index) {
     faqs.splice(index, 1);
   }
-  
+
   function moveFAQ(index, direction) {
     const newIndex = index + direction;
     if (newIndex >= 0 && newIndex < faqs.length) {
@@ -463,7 +470,7 @@ const { data } = await response.json();
 <div class="faq-repeater">
   <label>Preguntas Frecuentes</label>
   <p class="hint">Añade FAQs para rich snippets en Google</p>
-  
+
   {#each faqs as faq, i}
     <div class="faq-item">
       <div class="faq-header">
@@ -474,37 +481,27 @@ const { data } = await response.json();
           <button onclick={() => removeFAQ(i)} class="danger">✕</button>
         </div>
       </div>
-      
-      <input
-        bind:value={faq.q}
-        placeholder="Pregunta"
-        class="faq-question"
-      />
-      
+
+      <input bind:value={faq.q} placeholder="Pregunta" class="faq-question" />
+
       <textarea
         bind:value={faq.a}
         placeholder="Respuesta (HTML limitado permitido)"
         rows="3"
         class="faq-answer"
       />
-      
+
       <div class="faq-toolbar">
-        <button type="button" onclick={() => insertTag(i, 'strong')}>
+        <button type="button" onclick={() => insertTag(i, "strong")}>
           <strong>B</strong>
         </button>
-        <button type="button" onclick={() => insertTag(i, 'a')}>
-          🔗 Link
-        </button>
-        <button type="button" onclick={() => insertTag(i, 'code')}>
-          &lt;/&gt; Code
-        </button>
+        <button type="button" onclick={() => insertTag(i, "a")}> 🔗 Link </button>
+        <button type="button" onclick={() => insertTag(i, "code")}> &lt;/&gt; Code </button>
       </div>
     </div>
   {/each}
-  
-  <button onclick={addFAQ} class="add-faq">
-    + Añadir Pregunta
-  </button>
+
+  <button onclick={addFAQ} class="add-faq"> + Añadir Pregunta </button>
 </div>
 ```
 
@@ -514,8 +511,8 @@ const { data } = await response.json();
 <!-- LexicalEditor.svelte -->
 <script>
   // Usar Lexical de Meta o Editor.js
-  import { createEditor } from 'lexical';
-  
+  import { createEditor } from "lexical";
+
   const editor = createEditor({
     nodes: [
       HeadingNode,
@@ -528,33 +525,33 @@ const { data } = await response.json();
     ],
     onError: (error) => console.error(error),
   });
-  
+
   // Extraer TOC automáticamente
   function extractTOC() {
     const headings = editor.getEditorState().read(() => {
       return $getRoot()
         .getChildren()
-        .filter(node => node.getType() === 'heading')
-        .map(node => ({
-          level: node.getTag().replace('h', ''),
+        .filter((node) => node.getType() === "heading")
+        .map((node) => ({
+          level: node.getTag().replace("h", ""),
           text: node.getTextContent(),
         }));
     });
-    
-    dispatch('tocChange', headings);
+
+    dispatch("tocChange", headings);
   }
 </script>
 
 <div class="lexical-editor" bind:this={editorRef}>
   <!-- Toolbar -->
   <div class="editor-toolbar">
-    <button onclick={() => formatHeading('h2')}>H2</button>
-    <button onclick={() => formatHeading('h3')}>H3</button>
+    <button onclick={() => formatHeading("h2")}>H2</button>
+    <button onclick={() => formatHeading("h3")}>H3</button>
     <button onclick={() => insertTable()}>📊 Tabla</button>
-    <button onclick={() => insertList('bullet')}>• Lista</button>
-    <button onclick={() => insertList('number')}>1. Lista</button>
+    <button onclick={() => insertList("bullet")}>• Lista</button>
+    <button onclick={() => insertList("number")}>1. Lista</button>
   </div>
-  
+
   <!-- Editor Content -->
   <div contenteditable class="editor-content" />
 </div>
@@ -622,7 +619,7 @@ Content-Type: application/json
 
 ```tsx
 // components/BlogPost.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 interface BlogPostData {
   seo: { title: string; description: string; ogImage: string };
@@ -632,43 +629,41 @@ interface BlogPostData {
 
 export default function BlogPost({ slug }: { slug: string }) {
   const [data, setData] = useState<BlogPostData | null>(null);
-  
+
   useEffect(() => {
     fetch(`/api/blog/geo/${slug}`)
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(({ data }) => setData(data));
   }, [slug]);
-  
+
   if (!data) return <div>Loading...</div>;
-  
+
   return (
     <article>
       <Head>
         <title>{data.seo.title}</title>
         <meta name="description" content={data.seo.description} />
-        <script 
-          type="application/ld+json" 
-          dangerouslySetInnerHTML={{ 
-            __html: JSON.stringify(data.geo_ai.schema_faq) 
-          }} 
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(data.geo_ai.schema_faq),
+          }}
         />
       </Head>
-      
+
       <div className="bluf-box">
         <strong>TL;DR:</strong> {data.geo_ai.bluf}
-        <span className="reading-time">
-          ⏱️ {data.geo_ai.reading_time} min de lectura
-        </span>
+        <span className="reading-time">⏱️ {data.geo_ai.reading_time} min de lectura</span>
       </div>
-      
+
       <nav className="toc">
-        {data.content.toc.map(item => (
+        {data.content.toc.map((item) => (
           <a key={item.id} href={`#${item.id}`} className={`level-${item.level}`}>
             {item.text}
           </a>
         ))}
       </nav>
-      
+
       <div dangerouslySetInnerHTML={{ __html: data.content.body }} />
     </article>
   );

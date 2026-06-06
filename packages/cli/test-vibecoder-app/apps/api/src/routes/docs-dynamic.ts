@@ -12,16 +12,17 @@
  * - /api/docs/sdk - SDK download links
  */
 
-import { Hono } from "hono";
 import { swaggerUI } from "@hono/swagger-ui";
-import type { AppVariables } from "../types/hono";
+import { Hono } from "hono";
+
+import { logger } from "../lib/logger";
+import { getLoadedGrimoires } from "../lib/module-loader";
 import { 
   generateOpenAPISpec, 
   generateGrimoireSpec, 
   listOperations 
 } from "../lib/openapi-aggregator";
-import { getLoadedGrimoires } from "../lib/module-loader";
-import { logger } from "../lib/logger";
+import type { AppVariables } from "../types/hono";
 
 export const dynamicDocsRouter = new Hono<{ Variables: AppVariables }>();
 

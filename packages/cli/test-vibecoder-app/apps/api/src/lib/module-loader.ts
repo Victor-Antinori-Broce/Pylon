@@ -34,25 +34,30 @@
  * 6. Legacy fallbacks
  */
 
-import type { Hono } from "hono";
 import type { GrimoireContext, GrimoireDefinition } from "@gremius/shared";
+import type { Hono } from "hono";
+
 import { getConfig, staticConfig } from "../../gremius.config";
 let gremiusConfig = staticConfig;
 let cachedLoadedGrimoires: GrimoireDefinition[] = [];
 import { db } from "../db";
 import { siteSettings, modules as modulesTable } from "../db/schema";
+
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+
+import { requireAuth, requireRole, optionalAuth } from "../middleware/auth";
 import { GRIMOIRE_REGISTRY } from "../services/module-registry";
+
 import { eq } from "drizzle-orm";
 
+import { auth } from "./auth";
 import { invalidateCache } from "./cache";
 import { events } from "./events";
-import { realtimeManager } from "./realtime";
-import { requireAuth, requireRole, optionalAuth } from "../middleware/auth";
-import { auth } from "./auth";
 import { logger } from "./logger";
+import { realtimeManager } from "./realtime";
+
 import { registerGrimoire } from "@gremius/engine";
 // Content Publishing Registry - defined inline to avoid import issues
 class ContentPublishingRegistry {

@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 /**
  * Script de diagnóstico para verificar por qué los grimoires de realm
@@ -6,8 +5,8 @@
  */
 
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { readdir } from "node:fs/promises";
+import { join } from "node:path";
 
 const PROJECT_ROOT = process.cwd();
 const PACKAGES_ROOT = join(PROJECT_ROOT, "packages");
@@ -31,7 +30,9 @@ async function scanRealms(): Promise<RealmManifest[]> {
 
   try {
     const entries = await readdir(realmsDir, { withFileTypes: true });
-    const realmDirs = entries.filter(e => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules");
+    const realmDirs = entries.filter(
+      (e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
+    );
 
     for (const dir of realmDirs) {
       const realmJsonPath = join(realmsDir, dir.name, "realm.json");
@@ -42,7 +43,7 @@ async function scanRealms(): Promise<RealmManifest[]> {
       const realmFile = Bun.file(realmJsonPath);
       if (await realmFile.exists()) {
         try {
-          manifest = await realmFile.json() as RealmManifest;
+          manifest = (await realmFile.json()) as RealmManifest;
         } catch {
           console.warn(`  ⚠️ Failed to parse ${realmJsonPath}`);
         }
@@ -52,7 +53,7 @@ async function scanRealms(): Promise<RealmManifest[]> {
         const legacyFile = Bun.file(legacyPath);
         if (await legacyFile.exists()) {
           try {
-            manifest = await legacyFile.json() as RealmManifest;
+            manifest = (await legacyFile.json()) as RealmManifest;
           } catch {
             console.warn(`  ⚠️ Failed to parse ${legacyPath}`);
           }
@@ -81,7 +82,9 @@ async function scanGrimoires(): Promise<GrimoireManifest[]> {
 
   try {
     const entries = await readdir(grimoiresDir, { withFileTypes: true });
-    const grimoireDirs = entries.filter(e => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules");
+    const grimoireDirs = entries.filter(
+      (e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
+    );
 
     for (const dir of grimoireDirs) {
       const grimoireJsonPath = join(grimoiresDir, dir.name, "grimoire.json");
@@ -89,7 +92,7 @@ async function scanGrimoires(): Promise<GrimoireManifest[]> {
 
       if (await file.exists()) {
         try {
-          const manifest = await file.json() as GrimoireManifest;
+          const manifest = (await file.json()) as GrimoireManifest;
           if (manifest.id) {
             grimoires.push(manifest);
           }
@@ -122,7 +125,7 @@ async function main() {
   // Scan grimoires
   console.log("\n📚 Grimoires encontrados:");
   const grimoires = await scanGrimoires();
-  const grimoireMap = new Map(grimoires.map(g => [g.id, g]));
+  const grimoireMap = new Map(grimoires.map((g) => [g.id, g]));
   for (const grimoire of grimoires) {
     console.log(`  📖 ${grimoire.id} (${grimoire.name}) - v${grimoire.version}`);
   }
@@ -149,7 +152,7 @@ async function main() {
   // Check hardcoded registry
   console.log("\n📋 Registro hardcodeado (GRIMOIRE_REGISTRY):");
   const { GRIMOIRE_REGISTRY } = await import("../apps/api/src/services/module-registry.ts");
-  const realmGrimoiresFromRegistry = GRIMOIRE_REGISTRY.filter(g => g.category === "realm");
+  const realmGrimoiresFromRegistry = GRIMOIRE_REGISTRY.filter((g) => g.category === "realm");
   console.log(`   Total grimoires de realm en registro: ${realmGrimoiresFromRegistry.length}`);
   for (const g of realmGrimoiresFromRegistry) {
     console.log(`   - ${g.key} (realmId: ${g.realmId})`);
@@ -157,20 +160,28 @@ async function main() {
 
   // Compare
   console.log("\n📊 Comparación:");
-  const realmGrimoiresFromFile = new Set(realms.flatMap(r => r.grimoires));
-  const realmGrimoiresFromRegistrySet = new Set(realmGrimoiresFromRegistry.map(g => g.key));
+  const realmGrimoiresFromFile = new Set(realms.flatMap((r) => r.grimoires));
+  const realmGrimoiresFromRegistrySet = new Set(realmGrimoiresFromRegistry.map((g) => g.key));
 
   console.log(`   Grimoires en realm.json: ${[...realmGrimoiresFromFile].join(", ")}`);
   console.log(`   Grimoires en registry: ${[...realmGrimoiresFromRegistrySet].join(", ")}`);
 
-  const missingFromRegistry = [...realmGrimoiresFromFile].filter(id => !realmGrimoiresFromRegistrySet.has(id));
-  const missingFromRealms = [...realmGrimoiresFromRegistrySet].filter(id => !realmGrimoiresFromFile.has(id));
+  const missingFromRegistry = [...realmGrimoiresFromFile].filter(
+    (id) => !realmGrimoiresFromRegistrySet.has(id)
+  );
+  const missingFromRealms = [...realmGrimoiresFromRegistrySet].filter(
+    (id) => !realmGrimoiresFromFile.has(id)
+  );
 
   if (missingFromRegistry.length > 0) {
-    console.log(`\n   ⚠️  Grimoires en realm.json pero NO en registry: ${missingFromRegistry.join(", ")}`);
+    console.log(
+      `\n   ⚠️  Grimoires en realm.json pero NO en registry: ${missingFromRegistry.join(", ")}`
+    );
   }
   if (missingFromRealms.length > 0) {
-    console.log(`\n   ⚠️  Grimoires en registry pero NO en realm.json: ${missingFromRealms.join(", ")}`);
+    console.log(
+      `\n   ⚠️  Grimoires en registry pero NO en realm.json: ${missingFromRealms.join(", ")}`
+    );
   }
 
   console.log("\n" + "═".repeat(70));

@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
-  import Textarea from "$lib/components/ui/Textarea.svelte";
   import Label from "$lib/components/ui/Label.svelte";
+  import Textarea from "$lib/components/ui/Textarea.svelte";
   import { ArrowLeft } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     accountId: string;
     onBack: () => void;
   }
-  let { accountId, onBack }: Props = $props();
+  const { accountId, onBack }: Props = $props();
 
   let account = $state<any>(null);
   let movements = $state<any[]>([]);

@@ -16,20 +16,13 @@
     <!-- Carousel -->
     <div v-else-if="items.length > 0" class="carousel-wrapper" ref="trackRef">
       <div class="carousel-track">
-        <div
-          v-for="item in items"
-          :key="item.id"
-          class="carousel-card"
-        >
+        <div v-for="item in items" :key="item.id" class="carousel-card">
           <div class="card-image">
-            <img
-              v-if="item.imageUrl"
-              :src="item.imageUrl"
-              :alt="item.title"
-              loading="lazy"
-            />
-            <div v-else class="card-image-placeholder">{{ source === 'games' ? '🎮' : '📺' }}</div>
-            <span v-if="item.badge" class="card-badge" :class="item.badgeClass">{{ item.badge }}</span>
+            <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.title" loading="lazy" />
+            <div v-else class="card-image-placeholder">{{ source === "games" ? "🎮" : "📺" }}</div>
+            <span v-if="item.badge" class="card-badge" :class="item.badgeClass">{{
+              item.badge
+            }}</span>
           </div>
           <div class="card-body">
             <h3 class="card-title">{{ item.title }}</h3>
@@ -74,7 +67,9 @@ const items = ref<CarouselItem[]>([]);
 const trackRef = ref<HTMLElement | null>(null);
 let autoplayTimer: ReturnType<typeof setInterval> | null = null;
 
-const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000") as string;
+const API = (import.meta.env.PUBLIC_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3000") as string;
 
 async function fetchData() {
   loading.value = true;
@@ -166,27 +161,31 @@ onUnmounted(() => {
   scrollbar-width: none;
   padding: 0.5rem 0;
 }
-.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
 
 .carousel-card {
   flex: 0 0 260px;
   scroll-snap-align: start;
   border-radius: 1rem;
   overflow: hidden;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 .carousel-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .card-image {
   position: relative;
   aspect-ratio: 16/9;
   overflow: hidden;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 .card-image img {
   width: 100%;
@@ -200,7 +199,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  background: linear-gradient(135deg, rgba(0,229,255,0.05), rgba(224,64,251,0.05));
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.05), rgba(224, 64, 251, 0.05));
 }
 
 .card-badge {
@@ -214,19 +213,24 @@ onUnmounted(() => {
   backdrop-filter: blur(8px);
 }
 .badge-score {
-  background: rgba(0,229,255,0.2);
-  color: #00E5FF;
-  border: 1px solid rgba(0,229,255,0.25);
+  background: rgba(0, 229, 255, 0.2);
+  color: #00e5ff;
+  border: 1px solid rgba(0, 229, 255, 0.25);
 }
 .badge-live {
-  background: rgba(255,42,109,0.3);
-  color: #FF2A6D;
-  border: 1px solid rgba(255,42,109,0.3);
+  background: rgba(255, 42, 109, 0.3);
+  color: #ff2a6d;
+  border: 1px solid rgba(255, 42, 109, 0.3);
   animation: pulse-live 2s ease infinite;
 }
 @keyframes pulse-live {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .card-body {
@@ -243,7 +247,7 @@ onUnmounted(() => {
 }
 .card-subtitle {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   margin-top: 0.2rem;
 }
 
@@ -255,9 +259,9 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   font-size: 1.2rem;
   cursor: pointer;
@@ -267,36 +271,52 @@ onUnmounted(() => {
   transition: background 0.15s;
   z-index: 2;
 }
-.carousel-nav:hover { background: rgba(0,229,255,0.2); }
-.carousel-nav.prev { left: -12px; }
-.carousel-nav.next { right: -12px; }
+.carousel-nav:hover {
+  background: rgba(0, 229, 255, 0.2);
+}
+.carousel-nav.prev {
+  left: -12px;
+}
+.carousel-nav.next {
+  right: -12px;
+}
 
 /* Skeleton */
-.skeleton { pointer-events: none; }
+.skeleton {
+  pointer-events: none;
+}
 .skeleton-img {
   aspect-ratio: 16/9;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 0.5rem 0.5rem 0 0;
   animation: shimmer 1.5s ease infinite;
 }
 .skeleton-text {
   height: 12px;
   margin: 0.75rem 1rem 0;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   animation: shimmer 1.5s ease infinite;
 }
-.skeleton-text.short { width: 60%; margin-bottom: 0.75rem; }
+.skeleton-text.short {
+  width: 60%;
+  margin-bottom: 0.75rem;
+}
 
 @keyframes shimmer {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .carousel-empty {
   text-align: center;
   padding: 3rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 0.9rem;
 }
 </style>

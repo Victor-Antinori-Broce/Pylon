@@ -36,7 +36,7 @@ describe("RLS OwnerId Tests", () => {
   it("crud.ts should assign ownerId from context or payload", async () => {
     const file = Bun.file("src/routes/crud.ts");
     const text = await file.text();
-    expect(text).toContain("ownerId = e.ownerId ?? c.get(\"user\")");
+    expect(text).toContain('ownerId = e.ownerId ?? c.get("user")');
   });
 
   it("items.ts POST /:collection should include ownerId", async () => {

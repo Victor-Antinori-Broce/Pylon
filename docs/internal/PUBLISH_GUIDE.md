@@ -7,6 +7,7 @@
 1. **NPM Account** - Create at [npmjs.com](https://www.npmjs.com)
 2. **Join Organization** - Ask admin to add you to `@gremius` org
 3. **Login to NPM**:
+
    ```bash
    npm login
    # or for bun
@@ -23,9 +24,9 @@
 
 ## 📦 Package Status
 
-| Package | Status | Version | Command |
-|---------|--------|---------|---------|
-| `@gremius/sdk` | ✅ Ready | 0.8.0-beta | See below |
+| Package           | Status   | Version            | Command   |
+| ----------------- | -------- | ------------------ | --------- |
+| `@gremius/sdk`    | ✅ Ready | 0.8.0-beta         | See below |
 | `@gremius/shared` | ✅ Ready | 0.7.0-beta → 0.7.0 | See below |
 
 ---
@@ -123,6 +124,7 @@ git push origin main --tags
 ```
 
 GitHub Actions will automatically:
+
 - Run tests
 - Build packages
 - Publish to NPM
@@ -281,5 +283,6 @@ After publication:
 4. **Monitor Issues** - Watch for bug reports
 
 Packages will be available at:
+
 - https://www.npmjs.com/package/@gremius/sdk
 - https://www.npmjs.com/package/@gremius/shared

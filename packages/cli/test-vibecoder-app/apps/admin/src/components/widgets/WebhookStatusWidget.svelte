@@ -10,7 +10,7 @@
     showFailedOnly?: boolean;
   }
   
-  let { showFailedOnly = false }: Props = $props();
+  const { showFailedOnly = false }: Props = $props();
   
   // Datos de ejemplo
   const webhooks = [

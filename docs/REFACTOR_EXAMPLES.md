@@ -11,10 +11,10 @@ export { blogRoutes } from "../../../apps/api/src/routes/blog";
 
 ```typescript
 // apps/api/src/routes/blog.ts (198 líneas, depende de todo el contexto)
-import { db } from "../db";  // <-- acoplado a apps/api/src/db
-import { blogPosts } from "../db/schema";  // <-- acoplado
-import { cachedQuery } from "../lib/cache";  // <-- acoplado
-import { broadcastContentUpdate } from "../lib/realtime";  // <-- acoplado
+import { db } from "../db"; // <-- acoplado a apps/api/src/db
+import { blogPosts } from "../db/schema"; // <-- acoplado
+import { cachedQuery } from "../lib/cache"; // <-- acoplado
+import { broadcastContentUpdate } from "../lib/realtime"; // <-- acoplado
 // ...
 ```
 
@@ -31,7 +31,7 @@ import { DrizzleDmlBuilder } from "drizzle-orm";
  * Contexto inyectado a cada grimoire
  */
 export interface GrimoireContext {
-  db: any;  // Drizzle instance
+  db: any; // Drizzle instance
   cache: {
     get: (key: string) => Promise<any>;
     set: (key: string, value: any, ttl?: number) => Promise<void>;
@@ -77,12 +77,12 @@ export const createBlogRouter = createGrimoireRouter("blog", (router, ctx) => {
   // List posts - with caching
   router.get("/", async (c) => {
     const cacheKey = `blog:list:${c.req.query("page") || 1}`;
-    
+
     const cached = await cache.get(cacheKey);
     if (cached) return c.json(cached);
 
     const posts = await db.select().from(blogPosts).limit(10);
-    
+
     await cache.set(cacheKey, posts, 60); // 60s TTL
     return c.json(posts);
   });
@@ -92,24 +92,27 @@ export const createBlogRouter = createGrimoireRouter("blog", (router, ctx) => {
     const body = await c.req.json();
     const user = c.get("user");
 
-    const [post] = await db.insert(blogPosts).values({
-      title: body.title,
-      content: body.content,
-      authorId: user.id,
-      status: body.status || "draft",
-    }).returning();
+    const [post] = await db
+      .insert(blogPosts)
+      .values({
+        title: body.title,
+        content: body.content,
+        authorId: user.id,
+        status: body.status || "draft",
+      })
+      .returning();
 
     events.emit("blog:post:created", { postId: post.id });
-    
+
     await cache.invalidate("blog:list:*");
-    
+
     return c.json(post, 201);
   });
 
   // Update post
   router.patch("/:id", auth.requireAuth, async (c) => {
     const body = await c.req.json();
-    
+
     const [updated] = await db
       .update(blogPosts)
       .set({ ...body, updatedAt: new Date() })
@@ -118,7 +121,7 @@ export const createBlogRouter = createGrimoireRouter("blog", (router, ctx) => {
 
     realtime.broadcast(`blog:post:${updated.id}`, {
       type: "update",
-      data: updated
+      data: updated,
     });
 
     return c.json(updated);
@@ -138,13 +141,13 @@ export const grimoire = {
   id: "blog",
   name: "Blog Posts",
   version: "1.0.0",
-  
+
   // Factory que recibe contexto inyectado
   createRouter: createBlogRouter,
-  
+
   // Esquema de tablas
   schema: blogSchema,
-  
+
   // Hooks de ciclo de vida
   hooks: {
     onEnable: async (ctx) => {
@@ -154,17 +157,17 @@ export const grimoire = {
     },
     onDisable: async (ctx) => {
       console.log("⛔ Blog grimoire disabled");
-    }
+    },
   },
-  
+
   // UI configuration
   admin: {
     icon: "FileText",
     views: [
       { id: "grid", type: "grid", title: "All Posts", table: "blog_posts" },
-      { id: "editor", type: "custom", component: "PostEditor" }
-    ]
-  }
+      { id: "editor", type: "custom", component: "PostEditor" },
+    ],
+  },
 };
 
 export default grimoire;
@@ -177,7 +180,7 @@ import type { GrimoireContext } from "@gremius/shared/grimoire-api";
 
 export async function loadGrimoires(app: Hono) {
   const enabledGrimoires = await getEnabledGrimoires();
-  
+
   // Crear contexto base
   const context: GrimoireContext = {
     db,
@@ -196,7 +199,7 @@ export async function loadGrimoires(app: Hono) {
       // Importar el grimoire
       const mod = await import(`@gremius/grimoire-${grimoireName}`);
       const grimoire = mod.grimoire || mod.default;
-      
+
       if (!grimoire?.createRouter) {
         console.warn(`⚠️ Grimoire ${grimoireName} no exporta createRouter`);
         continue;
@@ -204,16 +207,16 @@ export async function loadGrimoires(app: Hono) {
 
       // Inyectar contexto y crear router
       const router = grimoire.createRouter(context);
-      
+
       // Montar en la API
       const mountPath = grimoire.mountPath || `/api/${grimoire.id}`;
       app.route(mountPath, router);
-      
+
       // Ejecutar hooks
       if (grimoire.hooks?.onEnable) {
         await grimoire.hooks.onEnable(context);
       }
-      
+
       console.log(`✅ ${grimoire.id} mounted at ${mountPath}`);
     } catch (err) {
       console.error(`❌ Failed to load ${grimoireName}:`, err);
@@ -230,7 +233,7 @@ export async function loadGrimoires(app: Hono) {
 
 ```typescript
 // packages/admin/src/lib/grimoire-loader.ts
-const viewModules = import.meta.glob('/src/views/**/*.svelte');
+const viewModules = import.meta.glob("/src/views/**/*.svelte");
 
 async function loadCustomView(grimoireId: string) {
   const pascal = pascalCase(grimoireId);
@@ -238,7 +241,7 @@ async function loadCustomView(grimoireId: string) {
     `/src/views/${grimoireId}/${pascal}View.svelte`,
     `/src/views/${grimoireId}/index.svelte`,
   ];
-  
+
   for (const path of paths) {
     if (viewModules[path]) {
       const mod = await viewModules[path]();
@@ -259,7 +262,7 @@ import type { Component } from "svelte";
 
 export interface SlotDefinition {
   id: string;
-  target: string;  // e.g., "dashboard:sidebar", "blog:header-actions"
+  target: string; // e.g., "dashboard:sidebar", "blog:header-actions"
   component: Component;
   props?: Record<string, any>;
   order?: number;
@@ -308,7 +311,7 @@ class GrimoireUIRegistry {
   async loadComponent(id: string): Promise<Component | null> {
     const loader = this.components.get(id);
     if (!loader) return null;
-    
+
     try {
       const mod = await loader();
       return (mod as any).default || mod;
@@ -338,12 +341,12 @@ import { uiRegistry } from "./grimoire-ui";
 function registerLocalViews() {
   // Vistas hardcoded del core
   uiRegistry.registerViews("webhooks", [
-    { id: "list", type: "custom", title: "Webhooks", component: WebhooksView }
+    { id: "list", type: "custom", title: "Webhooks", component: WebhooksView },
   ]);
-  
+
   uiRegistry.registerViews("games", [
     { id: "grid", type: "grid", title: "Games", table: "games" },
-    { id: "kanban", type: "kanban", title: "By Status", table: "games" }
+    { id: "kanban", type: "kanban", title: "By Status", table: "games" },
   ]);
 
   // Componentes lazy-loadables
@@ -351,11 +354,8 @@ function registerLocalViews() {
     "webhooks/WebhooksView",
     () => import("$views/webhooks/WebhooksView.svelte")
   );
-  
-  uiRegistry.registerComponent(
-    "games/GamesView", 
-    () => import("$views/games/GamesView.svelte")
-  );
+
+  uiRegistry.registerComponent("games/GamesView", () => import("$views/games/GamesView.svelte"));
 }
 
 // 2. Cargar vistas desde registro de grimoires
@@ -368,13 +368,13 @@ export async function loadGrimoireViews(grimoireId: string) {
 
   // Fallback: generar automáticamente desde API
   const config = await fetchAdminConfig(grimoireId);
-  return config.views.map(v => ({
+  return config.views.map((v) => ({
     id: v.id,
     type: v.type,
     title: v.title,
     table: v.table,
     // Componente se carga dinámicamente
-    loadComponent: () => uiRegistry.loadComponent(`${grimoireId}/${v.id}`)
+    loadComponent: () => uiRegistry.loadComponent(`${grimoireId}/${v.id}`),
   }));
 }
 ```
@@ -385,32 +385,32 @@ export async function loadGrimoireViews(grimoireId: string) {
   import { onMount } from "svelte";
   import { uiRegistry } from "$lib/grimoire-ui";
   import DataExplorer from "./DataExplorer.svelte";
-  
+
   let { grimoireId }: { grimoireId: string } = $props();
-  
+
   let views = $state<ViewDefinition[]>([]);
   let activeView = $state<string>("");
   let CustomComponent = $state<Component | null>(null);
   let slots = $state({
     headerActions: [] as SlotDefinition[],
     sidebar: [] as SlotDefinition[],
-    bulkActions: [] as SlotDefinition[]
+    bulkActions: [] as SlotDefinition[],
   });
 
   onMount(async () => {
     // Cargar vistas del grimoire
     views = await loadGrimoireViews(grimoireId);
     activeView = views[0]?.id || "default";
-    
+
     // Cargar slots
     slots = {
       headerActions: uiRegistry.getSlots(`${grimoireId}:header-actions`),
       sidebar: uiRegistry.getSlots(`${grimoireId}:sidebar`),
-      bulkActions: uiRegistry.getSlots(`${grimoireId}:bulk-actions`)
+      bulkActions: uiRegistry.getSlots(`${grimoireId}:bulk-actions`),
     };
-    
+
     // Cargar componente custom si existe
-    const activeViewDef = views.find(v => v.id === activeView);
+    const activeViewDef = views.find((v) => v.id === activeView);
     if (activeViewDef?.type === "custom" && activeViewDef.component) {
       CustomComponent = activeViewDef.component;
     }
@@ -418,8 +418,8 @@ export async function loadGrimoireViews(grimoireId: string) {
 
   async function switchView(viewId: string) {
     activeView = viewId;
-    const view = views.find(v => v.id === viewId);
-    
+    const view = views.find((v) => v.id === viewId);
+
     if (view?.type === "custom" && view.loadComponent) {
       CustomComponent = await view.loadComponent();
     } else {
@@ -432,20 +432,17 @@ export async function loadGrimoireViews(grimoireId: string) {
   <!-- Header con slots -->
   <header class="flex justify-between items-center mb-4">
     <h1>{grimoireId}</h1>
-    
+
     <div class="flex gap-2">
       <!-- Slots de acciones -->
       {#each slots.headerActions as slot}
         <svelte:component this={slot.component} {...slot.props} />
       {/each}
-      
+
       <!-- Selector de vistas -->
       <div class="view-selector">
         {#each views as view}
-          <button 
-            class:active={activeView === view.id}
-            onclick={() => switchView(view.id)}
-          >
+          <button class:active={activeView === view.id} onclick={() => switchView(view.id)}>
             {view.title}
           </button>
         {/each}
@@ -459,7 +456,7 @@ export async function loadGrimoireViews(grimoireId: string) {
   {:else}
     <DataExplorer {grimoireId} view={activeView} />
   {/if}
-  
+
   <!-- Sidebar con slots -->
   {#if slots.sidebar.length > 0}
     <aside class="sidebar">
@@ -484,15 +481,15 @@ export function registerBlogSlots() {
     id: "blog:recent-posts",
     target: "dashboard:sidebar",
     component: RecentPostsWidget,
-    order: 10
+    order: 10,
   });
-  
+
   // Acciones en el header del blog
   uiRegistry.registerSlot({
     id: "blog:header-actions",
-    target: "blog:header-actions", 
+    target: "blog:header-actions",
     component: PostActions,
-    order: 1
+    order: 1,
   });
 }
 ```
@@ -502,12 +499,14 @@ export function registerBlogSlots() {
 ## Beneficios de estas mejoras
 
 ### 1. Desacoplamiento
+
 ```
 Antes:  grimoire-blog → ../../../apps/api/src/routes/blog
 Después: grimoire-blog → @gremius/shared (contratos estables)
 ```
 
 ### 2. Testabilidad
+
 ```typescript
 // Antes: Imposible testear sin la DB real
 // Después: Podemos mockear el contexto
@@ -523,15 +522,17 @@ const router = createBlogRouter(mockContext);
 ```
 
 ### 3. Extensibilidad
+
 ```typescript
 // Plugin de comunidad puede extender sin modificar core
 uiRegistry.registerSlot({
   target: "blog:header-actions",
-  component: MyCustomButton
+  component: MyCustomButton,
 });
 ```
 
 ### 4. Lazy Loading Real
+
 ```typescript
 // Componente solo se carga cuando se navega a la vista
 const view = await uiRegistry.loadComponent("games/GamesView");

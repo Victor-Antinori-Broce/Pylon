@@ -1,6 +1,7 @@
-import { newDb, DataType } from "pg-mem";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
+
+import { newDb, DataType } from "pg-mem";
 
 const pgMem = newDb();
 pgMem.public.registerFunction({
@@ -26,10 +27,7 @@ function extractStatements(sql) {
   );
 
   // Remove trigger creation that references plpgsql functions
-  cleaned = cleaned.replace(
-    /CREATE\s+TRIGGER[\s\S]*?EXECUTE\s+FUNCTION[\s\S]*?;/gi,
-    ""
-  );
+  cleaned = cleaned.replace(/CREATE\s+TRIGGER[\s\S]*?EXECUTE\s+FUNCTION[\s\S]*?;/gi, "");
 
   return cleaned
     .split(";")
@@ -71,5 +69,8 @@ const tables = pgMem.public.query(
 );
 console.log(
   "Tables:",
-  tables.rows.map((r) => r.table_name).sort().join(", ")
+  tables.rows
+    .map((r) => r.table_name)
+    .sort()
+    .join(", ")
 );

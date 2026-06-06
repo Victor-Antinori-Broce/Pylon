@@ -11,16 +11,18 @@ This update unifies image handling in grimoire-blog to be consistent with grimoi
 ### `src/schema.local.ts`
 
 **Changed:**
+
 - ❌ `ogImageUrl: text("og_image_url")` - REMOVED (text URL)
 - ❌ `ogImageSize: integer("og_image_size")` - REMOVED (now uses media metadata)
 - ✅ `ogImageId: uuid("og_image_id")` - NEW (media reference)
 - ✅ `featuredImageFocalPoint: jsonb("featured_image_focal_point")` - NEW (smart cropping)
 
 **Added Types:**
+
 ```typescript
 export interface FocalPoint {
-  x: number;  // 0-1 normalized
-  y: number;  // 0-1 normalized
+  x: number; // 0-1 normalized
+  y: number; // 0-1 normalized
 }
 ```
 
@@ -30,7 +32,7 @@ export interface FocalPoint {
 
 ```sql
 -- Add new columns
-ALTER TABLE blog_posts 
+ALTER TABLE blog_posts
   ADD COLUMN IF NOT EXISTS og_image_id UUID,
   ADD COLUMN IF NOT EXISTS featured_image_focal_point JSONB;
 
@@ -45,10 +47,12 @@ CREATE INDEX IF NOT EXISTS blog_posts_og_image_id_idx ON blog_posts(og_image_id)
 ### `src/routes.ts`
 
 **POST /api/blog (Create Post):**
+
 - Now accepts `ogImageId` instead of `ogImageUrl` and `ogImageSize`
 - Now accepts `featuredImageFocalPoint` for smart cropping
 
 **PATCH /api/blog/:id (Update Post):**
+
 - Same changes as POST
 
 ---
@@ -61,7 +65,7 @@ CREATE INDEX IF NOT EXISTS blog_posts_og_image_id_idx ON blog_posts(og_image_id)
 
 ```typescript
 // Get featured image using preset endpoint
-getFeaturedImageUrl(mediaId, baseUrl) 
+getFeaturedImageUrl(mediaId, baseUrl)
 // → /api/media/preset/{id}/large
 
 // Get OG image (1200x630, jpeg, quality 90) with focal point support
@@ -74,6 +78,7 @@ getTransformUrl(mediaId, width, height?, options?, baseUrl?)
 ```
 
 **SEOOverrides Type Updated:**
+
 ```typescript
 og?: {
   title?: string;
@@ -86,6 +91,7 @@ og?: {
 ```
 
 **generateSEOMetadata() Changes:**
+
 - Now uses `ogImageId` from post or SEO overrides
 - Generates OG image URL via transform endpoint
 - Supports focal point for smart cropping
@@ -98,6 +104,7 @@ og?: {
 ### `src/geo-utils.ts`
 
 **buildAPIPayload() Changes:**
+
 - Now generates OG image URLs using `getOGImageUrl()`
 - Returns `ogImage` as transformed URL (1200x630)
 - Returns `featuredImageId` and `featuredImageFocalPoint` for client-side transforms
@@ -107,21 +114,27 @@ og?: {
 ## Transform Endpoints Used
 
 ### Featured Image
+
 ```
 GET /api/media/preset/{id}/large
 ```
+
 **Preset Configuration:**
+
 - Width: 1200px
-- Height: 800px  
+- Height: 800px
 - Fit: inside
 - Format: webp
 - Quality: 90
 
 ### OG Image (WhatsApp/Facebook/LinkedIn)
+
 ```
 GET /api/media/transform/{id}?w=1200&h=630&fit=cover&f=jpeg&q=90
 ```
+
 **Configuration:**
+
 - Width: 1200px
 - Height: 630px (1.91:1 ratio for WhatsApp)
 - Fit: cover
@@ -129,10 +142,13 @@ GET /api/media/transform/{id}?w=1200&h=630&fit=cover&f=jpeg&q=90
 - Quality: 90
 
 ### With Focal Point
+
 ```
 GET /api/media/transform/{id}?w=1200&h=630&fit=cover&f=jpeg&q=90&fpx=50&fpy=30
 ```
+
 **Parameters:**
+
 - `fpx`: Focal point X (0-100, where 50 = center)
 - `fpy`: Focal point Y (0-100, where 50 = center)
 
@@ -224,13 +240,13 @@ The grimoire-blog package already depends on grimoire-media (as defined in `grim
 
 ### For Existing Data
 
-The migration file (`0001_unified_media.sql`) adds new columns but does not drop old columns immediately (for safety). 
+The migration file (`0001_unified_media.sql`) adds new columns but does not drop old columns immediately (for safety).
 
 **To complete migration manually:**
 
 ```sql
 -- After verifying everything works, drop old columns:
-ALTER TABLE blog_posts 
+ALTER TABLE blog_posts
   DROP COLUMN IF EXISTS og_image_url,
   DROP COLUMN IF EXISTS og_image_size;
 ```
@@ -240,15 +256,17 @@ ALTER TABLE blog_posts
 If you were using `ogImageUrl` in your code:
 
 **Before:**
+
 ```typescript
 const ogImage = post.ogImageUrl;
 ```
 
 **After:**
+
 ```typescript
 import { getOGImageUrl } from "@gremius/grimoire-blog";
 
-const ogImage = post.ogImageId 
+const ogImage = post.ogImageId
   ? getOGImageUrl(post.ogImageId, post.featuredImageFocalPoint, baseUrl)
   : null;
 ```

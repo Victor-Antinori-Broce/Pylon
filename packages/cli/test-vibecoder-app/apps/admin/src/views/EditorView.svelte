@@ -3,10 +3,11 @@
    * EditorView.svelte — Split-screen content editor
    */
   import { Save, PanelRightOpen, PanelRightClose } from "lucide-svelte";
+
   import MdxEditor from "../lib/components/editor/MdxEditor.svelte";
   import SEOAnalyzer from "../lib/components/editor/SEOAnalyzer.svelte";
-  import type { PageBlock } from "../types/blocks";
   import type { SEOData } from "../lib/components/editor/SEOAnalyzer.svelte";
+  import type { PageBlock } from "../types/blocks";
 
   // MDX content
   let content = $state(`# Welcome to the MDX Editor 🚀
@@ -42,7 +43,7 @@ console.log(greeting);
   });
 
   // Dynamic content blocks
-  let blocks = $state<PageBlock[]>([]);
+  const blocks = $state<PageBlock[]>([]);
 
   // Panel visibility
   let showSEOPanel = $state(false);

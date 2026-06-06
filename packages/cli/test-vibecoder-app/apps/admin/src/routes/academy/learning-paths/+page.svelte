@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import { 
     Plus, 
     ChevronRight, 
@@ -10,10 +10,10 @@
     BookOpen,
     GraduationCap
   } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
-  interface LearningPath {
+  
+interface LearningPath {
     id: string;
     nombre: string;
     descripcion: string | null;
@@ -27,7 +27,7 @@
   let learningPaths = $state<LearningPath[]>([]);
   let loading = $state(true);
   let searchQuery = $state("");
-  let filteredPaths = $derived(
+  const filteredPaths = $derived(
     learningPaths.filter(lp => 
       lp.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (lp.descripcion?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||

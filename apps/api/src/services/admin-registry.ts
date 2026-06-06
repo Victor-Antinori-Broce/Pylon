@@ -9,9 +9,10 @@
  * 5. Exposes unified registry at /api/admin/registry
  */
 
-import { readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+
 import { scanPackages, GremiusManifest } from "./scanner";
 import { introspectTable, type IntrospectedColumn } from "./schema-introspector";
 
@@ -44,17 +45,20 @@ interface RealmManifest {
     };
   };
   /** Per-grimoire admin overrides */
-  grimoireConfig?: Record<string, {
-    displayName?: string;
-    hiddenTables?: string[];
-    extraViews?: Array<{
-      id: string;
-      type: "grid" | "kanban" | "calendar" | "custom";
-      title: string;
-      table?: string;
-    }>;
-    defaultView?: string;
-  }>;
+  grimoireConfig?: Record<
+    string,
+    {
+      displayName?: string;
+      hiddenTables?: string[];
+      extraViews?: Array<{
+        id: string;
+        type: "grid" | "kanban" | "calendar" | "custom";
+        title: string;
+        table?: string;
+      }>;
+      defaultView?: string;
+    }
+  >;
   /** Seed configuration */
   seed?: {
     sql?: string;
@@ -155,8 +159,8 @@ async function scanRealms(): Promise<RealmInfo[]> {
   try {
     const entries = await readdir(realmsDir, { withFileTypes: true });
     const realmDirs = entries.filter(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (e: { isDirectory: () => boolean; name: string }) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
+      (e: { isDirectory: () => boolean; name: string }) =>
+        e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
     );
 
     for (const dir of realmDirs) {
@@ -226,9 +230,9 @@ function extractViewsFromManifest(grimoire: GremiusManifest): AdminViewConfig[] 
     let type = raw.type;
     const validTypes = new Set(["grid", "kanban", "calendar", "custom"]);
     const typeNormalization: Record<string, string> = {
-      "list": "grid",
-      "table": "grid",
-      "dashboard": "custom",
+      list: "grid",
+      table: "grid",
+      dashboard: "custom",
     };
 
     if (!validTypes.has(type)) {
@@ -280,7 +284,7 @@ async function buildRealmGrimoireConfig(
   const tables = await detectTables(grimoire, grimoirePath);
 
   // 1. Try to read admin.views from grimoire.json (Hybrid Rendering)
-  let views = extractViewsFromManifest(grimoire);
+  const views = extractViewsFromManifest(grimoire);
 
   // 2. Fallback to legacy behavior if no admin.views declared
   let hasCustomViewLegacy = false;
@@ -326,8 +330,8 @@ async function buildRealmGrimoireConfig(
  * Load the manifest of the currently active realm (realm.json).
  */
 async function loadActiveRealmManifest(): Promise<RealmManifest | null> {
-  const activeRealmId = process.env.GREMIUS_ACTIVE_REALM ||
-    process.env.GREMIUS_ACTIVE_THEME || null;
+  const activeRealmId =
+    process.env.GREMIUS_ACTIVE_REALM || process.env.GREMIUS_ACTIVE_THEME || null;
   if (!activeRealmId) return null;
 
   const realmJsonPath = join(getPackagesRoot(), "realms", activeRealmId, "realm.json");
@@ -374,8 +378,8 @@ function applyRealmOverrides(
   // Hide tables
   if (override.hiddenTables && override.hiddenTables.length > 0) {
     const hiddenSet = new Set(override.hiddenTables);
-    patched.tables = patched.tables.filter(t => !hiddenSet.has(t.name));
-    patched.views = patched.views.filter(v => !v.table || !hiddenSet.has(v.table));
+    patched.tables = patched.tables.filter((t) => !hiddenSet.has(t.name));
+    patched.views = patched.views.filter((v) => !v.table || !hiddenSet.has(v.table));
   }
 
   // Add extra views
@@ -425,14 +429,16 @@ export async function buildAdminRegistry(): Promise<GrimoireAdminConfig[]> {
   for (const realm of realms) {
     for (const grimoireId of realm.grimoires) {
       // Find the grimoire manifest
-      const grimoire = grimoires.find(g => g.id === grimoireId);
+      const grimoire = grimoires.find((g) => g.id === grimoireId);
       if (grimoire) {
         const config = await buildRealmGrimoireConfig(grimoire, realm);
         if (config) {
           configs.push(config);
         }
       } else {
-        console.warn(`[AdminRegistry] Realm ${realm.id} references unknown grimoire: ${grimoireId}`);
+        console.warn(
+          `[AdminRegistry] Realm ${realm.id} references unknown grimoire: ${grimoireId}`
+        );
       }
     }
   }
@@ -465,7 +471,9 @@ export async function buildAdminRegistry(): Promise<GrimoireAdminConfig[]> {
 /**
  * Build admin config for a single grimoire
  */
-async function buildGrimoireAdminConfig(grimoire: GremiusManifest): Promise<GrimoireAdminConfig | null> {
+async function buildGrimoireAdminConfig(
+  grimoire: GremiusManifest
+): Promise<GrimoireAdminConfig | null> {
   // Skip engine infrastructure (Level 1 - always active, not user-facing)
   if (isEngineInfrastructure(grimoire.id)) {
     return null;
@@ -477,7 +485,7 @@ async function buildGrimoireAdminConfig(grimoire: GremiusManifest): Promise<Grim
   const tables = await detectTables(grimoire, grimoirePath);
 
   // 3. Build views config — read admin.views from grimoire.json (Hybrid Rendering)
-  let views = extractViewsFromManifest(grimoire);
+  const views = extractViewsFromManifest(grimoire);
 
   // Fallback to legacy behavior if no admin.views declared
   let hasCustomViewLegacy = false;
@@ -592,21 +600,21 @@ async function buildCoreModuleAdminConfig(
  */
 async function detectCustomView(grimoireId: string): Promise<boolean> {
   const viewPath = getViewPath(grimoireId);
-  
+
   // Primary: the mapped view path (handles all special cases)
   if (await Bun.file(join(process.cwd(), "../../packages/admin/src/views", viewPath)).exists()) {
     return true;
   }
-  
+
   // Fallback: index.svelte in the same folder
   const indexPath = viewPath.includes("/")
     ? viewPath.replace(/\/[^/]+\.svelte$/, "/index.svelte")
     : `${viewPath.replace(/\.svelte$/, "")}/index.svelte`;
-  
+
   if (await Bun.file(join(process.cwd(), "../admin/src/views", indexPath)).exists()) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -630,7 +638,7 @@ interface GrimoireTableConfig {
  */
 async function detectTables(
   grimoire: GremiusManifest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _grimoirePath: string
 ): Promise<AdminTableConfig[]> {
   // Priority 1: Tables defined in grimoire.json
@@ -658,7 +666,7 @@ async function detectTables(
         const tableConfig = t as GrimoireTableConfig;
         const name = tableConfig.name || tableConfig.table || "";
         configs.push({
-          name: name,
+          name,
           label: tableConfig.label || humanize(name),
           icon: tableConfig.icon || getTableIcon(name),
           description: tableConfig.description,
@@ -821,7 +829,7 @@ function getViewPath(grimoireId: string): string {
 /**
  * Engine infrastructure grimoires that should be hidden from admin
  * These are Level 1 - always active, not user-facing
- * 
+ *
  * NOTE: Media Library is now a Core Grimoire (toggleable), not engine infrastructure.
  * The underlying MinIO storage service remains always-on as engine infrastructure,
  * but the API routes and UI are toggleable via grimoire system.
@@ -837,7 +845,7 @@ function isEngineInfrastructure(id: string): boolean {
 
 /**
  * Map category to admin category
- * 
+ *
  * Category mapping:
  * - "grimoire-core" | "core" → "core" (Level 2 - Core grimoires: blog, blocks, webhooks, connectors)
  * - "optional" → "content" or "data" (Level 3 - Optional features)
@@ -879,7 +887,7 @@ function getDefaultIcon(id: string): string {
     dms: "FileStack",
     blog: "FileText",
     media: "Image",
-    datasets: "Database"
+    datasets: "Database",
   };
   return icons[id] || "Database";
 }
@@ -931,7 +939,9 @@ export function clearAdminRegistryCache() {
 /**
  * Get admin config for a specific grimoire
  */
-export async function getGrimoireAdminConfig(grimoireId: string): Promise<GrimoireAdminConfig | null> {
+export async function getGrimoireAdminConfig(
+  grimoireId: string
+): Promise<GrimoireAdminConfig | null> {
   const registry = await buildAdminRegistry();
-  return registry.find(g => g.id === grimoireId) || null;
+  return registry.find((g) => g.id === grimoireId) || null;
 }

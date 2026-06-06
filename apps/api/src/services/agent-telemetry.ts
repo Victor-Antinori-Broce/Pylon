@@ -7,10 +7,11 @@
  * con sintaxis correcta para agentTraceSteps.
  */
 
+import { setTelemetryProvider, type TelemetryStepData } from "@gremius/engine"; // Ruta relativa al workspace
 import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { agentTraceSteps } from "../db/schema";
-import { setTelemetryProvider, type TelemetryStepData } from "@gremius/engine"; // Ruta relativa al workspace
 
 /**
  * Drizzle-based telemetry provider
@@ -52,9 +53,7 @@ export const drizzleTelemetryProvider = {
       updateData.errorMessage = data.errorMessage;
     }
 
-    await db.update(agentTraceSteps)
-      .set(updateData)
-      .where(eq(agentTraceSteps.id, stepId));
+    await db.update(agentTraceSteps).set(updateData).where(eq(agentTraceSteps.id, stepId));
   },
 };
 
@@ -78,18 +77,21 @@ export async function createTrace(params: {
   input?: Record<string, unknown>;
 }): Promise<string> {
   const { agentId, sessionId, name, input } = params;
-  
+
   // Import dinámico para evitar circular dependencies
   const { agentTraces } = await import("../db/schema");
-  
-  const [trace] = await db.insert(agentTraces).values({
-    agentId,
-    sessionId: sessionId || null,
-    name: name || null,
-    input: input || {},
-    status: "running",
-    startedAt: new Date(),
-  }).returning({ id: agentTraces.id });
+
+  const [trace] = await db
+    .insert(agentTraces)
+    .values({
+      agentId,
+      sessionId: sessionId || null,
+      name: name || null,
+      input: input || {},
+      status: "running",
+      startedAt: new Date(),
+    })
+    .returning({ id: agentTraces.id });
 
   return trace.id;
 }
@@ -108,10 +110,11 @@ export async function completeTrace(
   }
 ): Promise<void> {
   const { agentTraces } = await import("../db/schema");
-  
+
   const durationMs = undefined; // Se calcularía desde startedAt
-  
-  await db.update(agentTraces)
+
+  await db
+    .update(agentTraces)
     .set({
       output: result.output || {},
       errorMessage: result.errorMessage || null,

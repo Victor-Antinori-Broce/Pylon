@@ -26,6 +26,7 @@
 
 import { eq, and } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
+
 import { db } from "../../../apps/api/src/db";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -179,7 +180,7 @@ export class BatchProcessor {
       await db.transaction(async (tx) => {
         for (let i = 0; i < operations.length; i++) {
           const op = operations[i];
-          
+
           try {
             const result = await this.executeOperation(tx, op, i);
             results.push(result);
@@ -213,7 +214,7 @@ export class BatchProcessor {
       });
 
       const durationMs = performance.now() - startTime;
-      const successfulOps = results.filter(r => !r.error).length;
+      const successfulOps = results.filter((r) => !r.error).length;
 
       return {
         success: true,
@@ -228,7 +229,7 @@ export class BatchProcessor {
       };
     } catch (error) {
       const durationMs = performance.now() - startTime;
-      
+
       // Marcar operaciones pendientes como rolled_back
       for (let i = results.length; i < operations.length; i++) {
         results.push({
@@ -295,23 +296,28 @@ export class BatchProcessor {
     switch (op) {
       case "create":
         return this.executeCreate(tx, table, resolvedData!, operation.alias, index);
-      
+
       case "update":
-        return this.executeUpdate(tx, table, resolvedId, resolvedData, where, operation.alias, index);
-      
+        return this.executeUpdate(
+          tx,
+          table,
+          resolvedId,
+          resolvedData,
+          where,
+          operation.alias,
+          index
+        );
+
       case "delete":
         return this.executeDelete(tx, table, resolvedId, where, operation.alias, index);
-      
+
       case "upsert":
         return this.executeUpsert(tx, table, resolvedId, resolvedData!, operation.alias, index);
-      
+
       default:
-        throw new BatchProcessorError(
-          `Operación no soportada: ${op}`,
-          "INVALID_OPERATION",
-          index,
-          { supportedOperations: ["create", "update", "delete", "upsert"] }
-        );
+        throw new BatchProcessorError(`Operación no soportada: ${op}`, "INVALID_OPERATION", index, {
+          supportedOperations: ["create", "update", "delete", "upsert"],
+        });
     }
   }
 
@@ -344,11 +350,7 @@ export class BatchProcessor {
     index: number
   ): Promise<BatchOperationResult> {
     if (!data) {
-      throw new BatchProcessorError(
-        "Update requiere data",
-        "INVALID_OPERATION",
-        index
-      );
+      throw new BatchProcessorError("Update requiere data", "INVALID_OPERATION", index);
     }
 
     let query = tx.update(table).set(data);
@@ -366,11 +368,7 @@ export class BatchProcessor {
         query = query.where(and(...conditions));
       }
     } else {
-      throw new BatchProcessorError(
-        "Update requiere id o where",
-        "INVALID_OPERATION",
-        index
-      );
+      throw new BatchProcessorError("Update requiere id o where", "INVALID_OPERATION", index);
     }
 
     const result = await query.returning();
@@ -407,11 +405,7 @@ export class BatchProcessor {
         query = query.where(and(...conditions));
       }
     } else {
-      throw new BatchProcessorError(
-        "Delete requiere id o where",
-        "INVALID_OPERATION",
-        index
-      );
+      throw new BatchProcessorError("Delete requiere id o where", "INVALID_OPERATION", index);
     }
 
     const result = await query.returning();
@@ -434,11 +428,19 @@ export class BatchProcessor {
   ): Promise<BatchOperationResult> {
     // Intentar update primero si hay id
     if (id) {
-      const existing = await tx.select().from(table).where(eq((table as any).id, id)).limit(1);
-      
+      const existing = await tx
+        .select()
+        .from(table)
+        .where(eq((table as any).id, id))
+        .limit(1);
+
       if (existing.length > 0) {
         // Update
-        const result = await tx.update(table).set(data).where(eq((table as any).id, id)).returning();
+        const result = await tx
+          .update(table)
+          .set(data)
+          .where(eq((table as any).id, id))
+          .returning();
         return {
           index,
           status: "upserted",
@@ -531,10 +533,7 @@ export class BatchProcessor {
    */
   private validateOperations(operations: BatchOperation[]): void {
     if (!Array.isArray(operations) || operations.length === 0) {
-      throw new BatchProcessorError(
-        "Se requiere un array de operaciones",
-        "INVALID_OPERATION"
-      );
+      throw new BatchProcessorError("Se requiere un array de operaciones", "INVALID_OPERATION");
     }
 
     if (operations.length > 100) {
@@ -616,7 +615,7 @@ export async function executeSingle(
   if (!result.success) {
     throw new BatchProcessorError(
       result.error?.message || "Operación fallida",
-      result.error?.code as any || "TRANSACTION_FAILED"
+      (result.error?.code as any) || "TRANSACTION_FAILED"
     );
   }
 

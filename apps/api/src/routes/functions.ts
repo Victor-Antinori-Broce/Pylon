@@ -14,12 +14,13 @@
  *   GET    /api/functions/cron/status — Get cron job status
  */
 
-import { Hono } from "hono";
 import { eq, desc, and } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { gremiusFunctions, functionExecutions, dataSets } from "../db/schema";
-import { executeManually } from "../lib/function-dispatcher";
 import { refreshCronJob, removeCronJob, getCronJobStatus } from "../lib/cron-scheduler";
+import { executeManually } from "../lib/function-dispatcher";
 import { protectRoute } from "../middleware/auth-guard";
 
 export const functionsRoutes = new Hono();
@@ -42,9 +43,19 @@ functionsRoutes.get("/", async (c) => {
   if (trigger) conditions.push(eq(gremiusFunctions.trigger, trigger as any));
   if (status) conditions.push(eq(gremiusFunctions.status, status as any));
 
-  const docs = conditions.length > 0
-    ? await db.select().from(gremiusFunctions).where(and(...conditions)).orderBy(desc(gremiusFunctions.updatedAt)).limit(limit)
-    : await db.select().from(gremiusFunctions).orderBy(desc(gremiusFunctions.updatedAt)).limit(limit);
+  const docs =
+    conditions.length > 0
+      ? await db
+          .select()
+          .from(gremiusFunctions)
+          .where(and(...conditions))
+          .orderBy(desc(gremiusFunctions.updatedAt))
+          .limit(limit)
+      : await db
+          .select()
+          .from(gremiusFunctions)
+          .orderBy(desc(gremiusFunctions.updatedAt))
+          .limit(limit);
 
   return c.json({ docs, totalDocs: docs.length });
 });
@@ -55,7 +66,9 @@ functionsRoutes.get("/cron/status", async (c) => {
 });
 
 functionsRoutes.get("/:id", async (c) => {
-  const [fn] = await db.select().from(gremiusFunctions)
+  const [fn] = await db
+    .select()
+    .from(gremiusFunctions)
     .where(eq(gremiusFunctions.id, c.req.param("id")))
     .limit(1);
 
@@ -64,7 +77,8 @@ functionsRoutes.get("/:id", async (c) => {
   // Also fetch dataset name if watching one
   let watchDataset = null;
   if (fn.watchDatasetId) {
-    const [ds] = await db.select({ id: dataSets.id, name: dataSets.name, slug: dataSets.slug })
+    const [ds] = await db
+      .select({ id: dataSets.id, name: dataSets.name, slug: dataSets.slug })
       .from(dataSets)
       .where(eq(dataSets.id, fn.watchDatasetId))
       .limit(1);
@@ -82,27 +96,35 @@ functionsRoutes.post("/", async (c) => {
     return c.json({ error: "name, code, and trigger are required" }, 400);
   }
 
-  const slug = body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const slug =
+    body.slug ||
+    body.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
   // Validate cron expression if trigger is cron
   if (body.trigger === "cron" && !body.cronExpression) {
     return c.json({ error: "cronExpression required for cron trigger" }, 400);
   }
 
-  const [fn] = await db.insert(gremiusFunctions).values({
-    name: body.name,
-    slug,
-    description: body.description || null,
-    code: body.code,
-    trigger: body.trigger,
-    cronExpression: body.cronExpression || null,
-    watchDatasetId: body.watchDatasetId || null,
-    timeoutMs: body.timeoutMs || 5000,
-    memoryLimitMb: body.memoryLimitMb || 64,
-    status: body.status || "active",
-    envVars: body.envVars || {},
-    createdById: body.createdById || null,
-  }).returning();
+  const [fn] = await db
+    .insert(gremiusFunctions)
+    .values({
+      name: body.name,
+      slug,
+      description: body.description || null,
+      code: body.code,
+      trigger: body.trigger,
+      cronExpression: body.cronExpression || null,
+      watchDatasetId: body.watchDatasetId || null,
+      timeoutMs: body.timeoutMs || 5000,
+      memoryLimitMb: body.memoryLimitMb || 64,
+      status: body.status || "active",
+      envVars: body.envVars || {},
+      createdById: body.createdById || null,
+    })
+    .returning();
 
   // If cron, schedule it (legacy)
   refreshCronJob(fn as any);
@@ -116,8 +138,17 @@ functionsRoutes.patch("/:id", async (c) => {
   const updates: Record<string, any> = { updatedAt: new Date() };
 
   const allowedFields = [
-    "name", "slug", "description", "code", "trigger", "cronExpression",
-    "watchDatasetId", "timeoutMs", "memoryLimitMb", "status", "envVars",
+    "name",
+    "slug",
+    "description",
+    "code",
+    "trigger",
+    "cronExpression",
+    "watchDatasetId",
+    "timeoutMs",
+    "memoryLimitMb",
+    "status",
+    "envVars",
   ];
 
   for (const field of allowedFields) {
@@ -131,7 +162,8 @@ functionsRoutes.patch("/:id", async (c) => {
     return c.json({ error: "cronExpression required for cron trigger" }, 400);
   }
 
-  const [updated] = await db.update(gremiusFunctions)
+  const [updated] = await db
+    .update(gremiusFunctions)
     .set(updates)
     .where(eq(gremiusFunctions.id, c.req.param("id")))
     .returning();
@@ -151,7 +183,8 @@ functionsRoutes.delete("/:id", async (c) => {
   // Remove cron job first
   removeCronJob(id);
 
-  const [deleted] = await db.delete(gremiusFunctions)
+  const [deleted] = await db
+    .delete(gremiusFunctions)
     .where(eq(gremiusFunctions.id, id))
     .returning({ id: gremiusFunctions.id, name: gremiusFunctions.name });
 
@@ -191,7 +224,9 @@ functionsRoutes.get("/:id/executions", async (c) => {
   const conditions = [eq(functionExecutions.functionId, c.req.param("id"))];
   if (status) conditions.push(eq(functionExecutions.status, status as any));
 
-  const docs = await db.select().from(functionExecutions)
+  const docs = await db
+    .select()
+    .from(functionExecutions)
     .where(and(...conditions))
     .orderBy(desc(functionExecutions.createdAt))
     .limit(limit);

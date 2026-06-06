@@ -9,7 +9,12 @@
     "build": "pnpm exec tsc",
     "dev": "pnpm exec tsc --watch"
   },
-  "keywords": ["gremius", "grimoire", "core", "datasets"],
+  "keywords": [
+    "gremius",
+    "grimoire",
+    "core",
+    "datasets"
+  ],
   "author": "Gremius Team",
   "license": "MIT",
   "devDependencies": {

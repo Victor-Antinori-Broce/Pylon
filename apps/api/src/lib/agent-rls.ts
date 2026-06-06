@@ -1,16 +1,18 @@
 /**
  * Agent RLS (Row Level Security) Policies
- * 
+ *
  * Extiende el sistema de RLS de Gremius para soportar agentes NHI
- * 
+ *
  * Estas políticas permiten que los agentes de IA accedan a datos
  * con restricciones basadas en sus scopes, similar a los usuarios humanos.
  */
 
 import { sql } from "drizzle-orm";
+
 import { db } from "../db";
 import type { AgentAuthContext } from "../services/agent-auth";
 import { hasScope } from "../services/agent-auth";
+
 import { logger } from "./logger";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -82,13 +84,14 @@ export function canAgentAccess(
   action: "SELECT" | "INSERT" | "UPDATE" | "DELETE"
 ): boolean {
   // Buscar política aplicable
-  const policy = DEFAULT_AGENT_RLS_POLICIES.find(
-    (p) => p.table === table && p.action === action
-  );
+  const policy = DEFAULT_AGENT_RLS_POLICIES.find((p) => p.table === table && p.action === action);
 
   if (!policy) {
     // Sin política = acceso denegado por defecto (Zero Trust)
-    logger.debug({ table, action, agentId: agentContext.agentId }, "No RLS policy found for agent access");
+    logger.debug(
+      { table, action, agentId: agentContext.agentId },
+      "No RLS policy found for agent access"
+    );
     return false;
   }
 
@@ -106,9 +109,7 @@ export function requireAgentTableAccess(
   action: "SELECT" | "INSERT" | "UPDATE" | "DELETE"
 ): void {
   if (!canAgentAccess(agentContext, table, action)) {
-    const policy = DEFAULT_AGENT_RLS_POLICIES.find(
-      (p) => p.table === table && p.action === action
-    );
+    const policy = DEFAULT_AGENT_RLS_POLICIES.find((p) => p.table === table && p.action === action);
     const requiredScope = policy?.scope || `${action.toLowerCase()}:${table}`;
 
     logger.warn(
@@ -157,12 +158,14 @@ export class AgentRLSError extends Error {
  */
 export const AGENT_RLS_SQL = {
   // Habilitar RLS en tablas
-  enableRLS: (table: string) => sql.raw(`
+  enableRLS: (table: string) =>
+    sql.raw(`
     ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;
   `),
 
   // Política para agentes (lectura)
-  createSelectPolicy: (table: string) => sql.raw(`
+  createSelectPolicy: (table: string) =>
+    sql.raw(`
     CREATE POLICY agent_select_${table} ON ${table}
       FOR SELECT
       USING (
@@ -172,7 +175,8 @@ export const AGENT_RLS_SQL = {
   `),
 
   // Política para agentes (escritura)
-  createInsertPolicy: (table: string) => sql.raw(`
+  createInsertPolicy: (table: string) =>
+    sql.raw(`
     CREATE POLICY agent_insert_${table} ON ${table}
       FOR INSERT
       WITH CHECK (
@@ -182,7 +186,8 @@ export const AGENT_RLS_SQL = {
   `),
 
   // Política para agentes (actualización)
-  createUpdatePolicy: (table: string) => sql.raw(`
+  createUpdatePolicy: (table: string) =>
+    sql.raw(`
     CREATE POLICY agent_update_${table} ON ${table}
       FOR UPDATE
       USING (
@@ -192,7 +197,8 @@ export const AGENT_RLS_SQL = {
   `),
 
   // Política para agentes (eliminación)
-  createDeletePolicy: (table: string) => sql.raw(`
+  createDeletePolicy: (table: string) =>
+    sql.raw(`
     CREATE POLICY agent_delete_${table} ON ${table}
       FOR DELETE
       USING (
@@ -206,9 +212,7 @@ export const AGENT_RLS_SQL = {
  * Configura el contexto de agente para RLS en PostgreSQL
  * Esto debe llamarse antes de cada query cuando se ejecuta como agente
  */
-export async function setAgentRLSContext(
-  agentContext: AgentAuthContext
-): Promise<void> {
+export async function setAgentRLSContext(agentContext: AgentAuthContext): Promise<void> {
   try {
     await db.execute(sql`
       SELECT set_config('app.current_agent_id', ${agentContext.agentId}, true);

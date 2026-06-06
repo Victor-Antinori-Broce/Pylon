@@ -1,7 +1,6 @@
-
 /**
  * Storage Adapter
- * 
+ *
  * Abstracción para múltiples proveedores de storage:
  * - MinIO (self-hosted S3)
  * - AWS S3
@@ -10,7 +9,11 @@
  */
 
 // AWS SDK imported lazily to avoid breaking grimoire loading if packages aren't available
-let S3Client: any, HeadBucketCommand: any, PutObjectCommand: any, GetObjectCommand: any, DeleteObjectCommand: any;
+let S3Client: any,
+  HeadBucketCommand: any,
+  PutObjectCommand: any,
+  GetObjectCommand: any,
+  DeleteObjectCommand: any;
 let getSignedUrl: any;
 
 async function loadAwsSdk() {
@@ -31,6 +34,7 @@ async function loadAwsSdk() {
 import { existsSync, mkdirSync } from "fs";
 import { writeFile, readFile, unlink } from "fs/promises";
 import { join } from "path";
+
 import type { StorageConfig } from "./config.schema";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -58,7 +62,9 @@ export async function testStorageConnection(
   }
 }
 
-async function testMinioConnection(config: Extract<StorageConfig, { provider: "minio" }>): Promise<{ success: boolean; message: string }> {
+async function testMinioConnection(
+  config: Extract<StorageConfig, { provider: "minio" }>
+): Promise<{ success: boolean; message: string }> {
   try {
     await loadAwsSdk();
     const client = new S3Client({
@@ -87,7 +93,9 @@ async function testMinioConnection(config: Extract<StorageConfig, { provider: "m
   }
 }
 
-async function testS3Connection(config: Extract<StorageConfig, { provider: "s3" }>): Promise<{ success: boolean; message: string }> {
+async function testS3Connection(
+  config: Extract<StorageConfig, { provider: "s3" }>
+): Promise<{ success: boolean; message: string }> {
   try {
     await loadAwsSdk();
     const client = new S3Client({
@@ -111,28 +119,32 @@ async function testS3Connection(config: Extract<StorageConfig, { provider: "s3" 
   }
 }
 
-async function testLocalConnection(config: Extract<StorageConfig, { provider: "local" }>): Promise<{ success: boolean; message: string }> {
+async function testLocalConnection(
+  config: Extract<StorageConfig, { provider: "local" }>
+): Promise<{ success: boolean; message: string }> {
   try {
     const path = config.path;
-    
+
     // Check if directory exists or can be created
     if (!existsSync(path)) {
       mkdirSync(path, { recursive: true });
     }
-    
+
     // Test write/read/delete
     const testFile = join(path, ".gremius-test");
     await writeFile(testFile, "test", "utf-8");
     await readFile(testFile, "utf-8");
     await unlink(testFile);
-    
+
     return { success: true, message: `Local storage ready at ${path}` };
   } catch (err: any) {
     return { success: false, message: `Cannot access ${config.path}: ${err.message}` };
   }
 }
 
-async function testR2Connection(config: Extract<StorageConfig, { provider: "r2" }>): Promise<{ success: boolean; message: string }> {
+async function testR2Connection(
+  config: Extract<StorageConfig, { provider: "r2" }>
+): Promise<{ success: boolean; message: string }> {
   try {
     await loadAwsSdk();
     const client = new S3Client({
@@ -213,19 +225,23 @@ class MinioAdapter implements StorageAdapter {
   }
 
   async upload(key: string, data: Buffer | string, contentType?: string): Promise<void> {
-    await this.client.send(new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      Body: data,
-      ContentType: contentType,
-    }));
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: data,
+        ContentType: contentType,
+      })
+    );
   }
 
   async download(key: string): Promise<Buffer> {
-    const response = await this.client.send(new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }));
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    );
     const chunks: Uint8Array[] = [];
     for await (const chunk of response.Body as any) {
       chunks.push(chunk);
@@ -234,10 +250,12 @@ class MinioAdapter implements StorageAdapter {
   }
 
   async delete(key: string): Promise<void> {
-    await this.client.send(new DeleteObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }));
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    );
   }
 
   async getSignedUploadUrl(key: string, expiresIn: number = 3600): Promise<string> {
@@ -284,19 +302,23 @@ class S3Adapter implements StorageAdapter {
   }
 
   async upload(key: string, data: Buffer | string, contentType?: string): Promise<void> {
-    await this.client.send(new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      Body: data,
-      ContentType: contentType,
-    }));
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: data,
+        ContentType: contentType,
+      })
+    );
   }
 
   async download(key: string): Promise<Buffer> {
-    const response = await this.client.send(new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }));
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    );
     const chunks: Uint8Array[] = [];
     for await (const chunk of response.Body as any) {
       chunks.push(chunk);
@@ -305,10 +327,12 @@ class S3Adapter implements StorageAdapter {
   }
 
   async delete(key: string): Promise<void> {
-    await this.client.send(new DeleteObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }));
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    );
   }
 
   async getSignedUploadUrl(key: string, expiresIn: number = 3600): Promise<string> {
@@ -346,7 +370,7 @@ class LocalAdapter implements StorageAdapter {
   constructor(config: Extract<StorageConfig, { provider: "local" }>) {
     this.basePath = config.path;
     this.publicUrl = config.publicUrl;
-    
+
     // Ensure directory exists
     if (!existsSync(this.basePath)) {
       mkdirSync(this.basePath, { recursive: true });
@@ -356,11 +380,11 @@ class LocalAdapter implements StorageAdapter {
   async upload(key: string, data: Buffer | string): Promise<void> {
     const filePath = join(this.basePath, key);
     const dir = filePath.substring(0, filePath.lastIndexOf("/"));
-    
+
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
-    
+
     await writeFile(filePath, data);
   }
 
@@ -411,19 +435,23 @@ class R2Adapter implements StorageAdapter {
   }
 
   async upload(key: string, data: Buffer | string, contentType?: string): Promise<void> {
-    await this.client.send(new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      Body: data,
-      ContentType: contentType,
-    }));
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: data,
+        ContentType: contentType,
+      })
+    );
   }
 
   async download(key: string): Promise<Buffer> {
-    const response = await this.client.send(new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }));
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    );
     const chunks: Uint8Array[] = [];
     for await (const chunk of response.Body as any) {
       chunks.push(chunk);
@@ -432,10 +460,12 @@ class R2Adapter implements StorageAdapter {
   }
 
   async delete(key: string): Promise<void> {
-    await this.client.send(new DeleteObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    }));
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    );
   }
 
   async getSignedUploadUrl(key: string, expiresIn: number = 3600): Promise<string> {

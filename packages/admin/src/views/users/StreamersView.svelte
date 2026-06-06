@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { toast } from "svelte-sonner";
-  import { api } from "$lib/api";
   import {
     Tv,
     Users,
@@ -16,6 +14,9 @@
     X,
     Loader2,
   } from "lucide-svelte";
+  import { toast } from "svelte-sonner";
+
+  import { api } from "$lib/api";
 
   interface Streamer {
     id: string;
@@ -62,23 +63,23 @@
     bio: "",
   });
 
-  let filteredStreamers = $derived(
+  const filteredStreamers = $derived(
     search.trim()
       ? streamers.filter(
           (s) =>
             s.displayName.toLowerCase().includes(search.toLowerCase()) ||
-            s.channelId.toLowerCase().includes(search.toLowerCase()),
+            s.channelId.toLowerCase().includes(search.toLowerCase())
         )
-      : streamers,
+      : streamers
   );
 
-  let selectedCount = $derived(selectedIds.size);
+  const selectedCount = $derived(selectedIds.size);
 
-  let allVisibleSelected = $derived(
-    filteredStreamers.length > 0 && filteredStreamers.every((s) => selectedIds.has(s.id)),
+  const allVisibleSelected = $derived(
+    filteredStreamers.length > 0 && filteredStreamers.every((s) => selectedIds.has(s.id))
   );
 
-  let stats = $derived({
+  const stats = $derived({
     total: totalDocs,
     live: streamers.filter((s) => s.isLive).length,
     viewers: streamers.reduce((sum, s) => sum + (s.viewerCount || 0), 0),
@@ -175,7 +176,14 @@
 
   function openAdd() {
     editingStreamer = null;
-    form = { displayName: "", slug: "", platform: "twitch", channelId: "", channelUrl: "", bio: "" };
+    form = {
+      displayName: "",
+      slug: "",
+      platform: "twitch",
+      channelId: "",
+      channelUrl: "",
+      bio: "",
+    };
     showModal = true;
   }
 
@@ -296,7 +304,9 @@
       </div>
     </div>
     <div class="card p-4 flex items-center gap-4">
-      <div class="w-10 h-10 rounded-lg bg-gremius-pink/10 flex items-center justify-center animate-pulse">
+      <div
+        class="w-10 h-10 rounded-lg bg-gremius-pink/10 flex items-center justify-center animate-pulse"
+      >
         <Radio class="w-5 h-5 text-gremius-pink" />
       </div>
       <div>
@@ -346,7 +356,9 @@
           <option value="kick">Kick</option>
           <option value="other">Other</option>
         </select>
-        <label class="flex items-center gap-2 px-3 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-sm text-gremius-text cursor-pointer select-none">
+        <label
+          class="flex items-center gap-2 px-3 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-sm text-gremius-text cursor-pointer select-none"
+        >
           <input type="checkbox" bind:checked={liveOnly} class="accent-gremius-pink" />
           Live only
         </label>
@@ -364,9 +376,14 @@
 
     <!-- Bulk bar -->
     {#if selectedCount > 0}
-      <div class="flex items-center justify-between px-4 py-2 bg-gremius-surface border-b border-gremius-border animate-fade-in">
+      <div
+        class="flex items-center justify-between px-4 py-2 bg-gremius-surface border-b border-gremius-border animate-fade-in"
+      >
         <span class="text-sm text-gremius-text font-medium">{selectedCount} selected</span>
-        <button class="btn-ghost text-gremius-pink inline-flex items-center gap-1.5 text-sm" onclick={deleteSelected}>
+        <button
+          class="btn-ghost text-gremius-pink inline-flex items-center gap-1.5 text-sm"
+          onclick={deleteSelected}
+        >
           <Trash2 class="w-4 h-4" />
           Delete Selected
         </button>
@@ -382,12 +399,16 @@
       <div class="flex flex-col items-center justify-center py-20 text-center">
         <Tv class="w-12 h-12 text-gremius-subtle mb-3" />
         <p class="text-gremius-text-dim font-medium">No streamers found</p>
-        <p class="text-xs text-gremius-subtle mt-1">Try adjusting your filters or add a new streamer.</p>
+        <p class="text-xs text-gremius-subtle mt-1">
+          Try adjusting your filters or add a new streamer.
+        </p>
       </div>
     {:else}
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
-          <thead class="text-xs text-gremius-subtle uppercase bg-gremius-surface border-b border-gremius-border">
+          <thead
+            class="text-xs text-gremius-subtle uppercase bg-gremius-surface border-b border-gremius-border"
+          >
             <tr>
               <th class="px-4 py-3 w-10">
                 <input
@@ -410,7 +431,9 @@
           </thead>
           <tbody>
             {#each filteredStreamers as s (s.id)}
-              <tr class="border-b border-gremius-border hover:bg-gremius-surface/40 transition-colors">
+              <tr
+                class="border-b border-gremius-border hover:bg-gremius-surface/40 transition-colors"
+              >
                 <td class="px-4 py-3">
                   <input
                     type="checkbox"
@@ -428,7 +451,9 @@
                       loading="lazy"
                     />
                   {:else}
-                    <div class="w-8 h-8 rounded-full bg-gremius-surface flex items-center justify-center text-[10px] text-gremius-subtle font-bold">
+                    <div
+                      class="w-8 h-8 rounded-full bg-gremius-surface flex items-center justify-center text-[10px] text-gremius-subtle font-bold"
+                    >
                       {s.displayName.charAt(0).toUpperCase()}
                     </div>
                   {/if}
@@ -447,29 +472,42 @@
                     <span class="font-medium text-gremius-text">{s.displayName}</span>
                   {/if}
                   {#if s.currentStreamTitle}
-                    <p class="text-[11px] text-gremius-subtle truncate max-w-[200px]">{s.currentStreamTitle}</p>
+                    <p class="text-[11px] text-gremius-subtle truncate max-w-[200px]">
+                      {s.currentStreamTitle}
+                    </p>
                   {/if}
                 </td>
                 <td class="px-4 py-3">
-                  <span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border {platformClasses(s.platform)}">
+                  <span
+                    class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border {platformClasses(
+                      s.platform
+                    )}"
+                  >
                     {s.platform}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-gremius-subtle font-mono text-xs">{s.channelId}</td>
                 <td class="px-4 py-3">
                   {#if s.isLive}
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium bg-gremius-pink/10 text-gremius-pink rounded-full border border-gremius-pink/20">
+                    <span
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium bg-gremius-pink/10 text-gremius-pink rounded-full border border-gremius-pink/20"
+                    >
                       <span class="w-1.5 h-1.5 rounded-full bg-gremius-pink animate-pulse"></span>
                       LIVE
                     </span>
                   {:else}
-                    <span class="px-2 py-0.5 text-[10px] font-medium bg-gremius-surface text-gremius-subtle rounded-full border border-gremius-border">
+                    <span
+                      class="px-2 py-0.5 text-[10px] font-medium bg-gremius-surface text-gremius-subtle rounded-full border border-gremius-border"
+                    >
                       Offline
                     </span>
                   {/if}
                 </td>
-                <td class="px-4 py-3 text-right text-gremius-text">{formatNumber(s.viewerCount)}</td>
-                <td class="px-4 py-3 text-right text-gremius-text">{formatNumber(s.followerCount)}</td>
+                <td class="px-4 py-3 text-right text-gremius-text">{formatNumber(s.viewerCount)}</td
+                >
+                <td class="px-4 py-3 text-right text-gremius-text"
+                  >{formatNumber(s.followerCount)}</td
+                >
                 <td class="px-4 py-3 text-gremius-subtle text-xs">{timeAgo(s.lastSyncedAt)}</td>
                 <td class="px-4 py-3 text-right">
                   <div class="flex items-center justify-end gap-1">
@@ -587,7 +625,11 @@
       </div>
       <div class="flex justify-end gap-2 p-4 border-t border-gremius-border">
         <button class="btn-secondary" onclick={closeModal}>Cancel</button>
-        <button class="btn-primary inline-flex items-center gap-2" onclick={saveStreamer} disabled={saving}>
+        <button
+          class="btn-primary inline-flex items-center gap-2"
+          onclick={saveStreamer}
+          disabled={saving}
+        >
           {#if saving}
             <Loader2 class="w-4 h-4 animate-spin" />
           {/if}

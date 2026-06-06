@@ -3,8 +3,9 @@
  * Manages curated game collections for the frontpage.
  */
 
-import { Hono } from "hono";
 import { eq, asc } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { gameCollections, gameCollectionEntries, games, media } from "../db/schema";
 import { cachedQuery, invalidateCache } from "../lib/cache";
@@ -98,7 +99,7 @@ collectionsRoutes.get("/:id", async (c) => {
     return c.json({
         ...col,
         games: gameRows.filter(Boolean),
-        entries: entries,
+        entries,
     });
 });
 

@@ -4,8 +4,9 @@
    * Fetches related records from API, supports 1:1, 1:N, M:N
    */
   import { Search, ChevronDown, Check, X } from "lucide-svelte";
-  import type { RelationType, RelationTarget } from "../../../types/datasets";
   import { onMount, onDestroy } from "svelte";
+
+  import type { RelationType, RelationTarget } from "../../../types/datasets";
 
   // ─── Types ──────────────────────────────────────────
   interface RelatedItem {
@@ -29,8 +30,8 @@
     error?: string;
     onChange?: (value: string | string[] | null) => void;
   }
-  
-  let {
+
+  const {
     value,
     target,
     targetDatasetId,
@@ -41,7 +42,7 @@
     helpText = "",
     required = false,
     error = "",
-    onChange
+    onChange,
   }: Props = $props();
 
   // ─── State ──────────────────────────────────────────
@@ -54,17 +55,17 @@
   let multiInputRef: HTMLInputElement;
 
   // ─── Computed ───────────────────────────────────────
-  let selectedIds = $derived.by<string[]>(() => {
+  const selectedIds = $derived.by<string[]>(() => {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
   });
 
-  let selectedItem = $derived.by<RelatedItem | null>(() => {
+  const selectedItem = $derived.by<RelatedItem | null>(() => {
     if (!value || Array.isArray(value)) return null;
     return items.find((i) => i.id === value) || null;
   });
 
-  let filteredItems = $derived.by(() => {
+  const filteredItems = $derived.by(() => {
     if (!searchQuery) return items;
     const q = searchQuery.toLowerCase();
     return items.filter(
@@ -76,11 +77,11 @@
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
   const endpointMap: Record<string, string> = {
-    "games": "/api/games",
+    games: "/api/games",
     "blog-posts": "/api/blog",
-    "platforms": "/api/platforms",
-    "tags": "/api/tags",
-    "streamers": "/api/streamers",
+    platforms: "/api/platforms",
+    tags: "/api/tags",
+    streamers: "/api/streamers",
   };
 
   async function fetchItems() {
@@ -151,7 +152,7 @@
 
   function removeId(id: string) {
     const current = selectedIds.filter((i) => i !== id);
-    onChange?.(current.length > 0 ? current : (relationType === "one-to-one" ? null : []));
+    onChange?.(current.length > 0 ? current : relationType === "one-to-one" ? null : []);
   }
 
   function getDisplayLabel(item: RelatedItem): string {
@@ -174,7 +175,7 @@
     fetchItems();
     document.addEventListener("mousedown", onClickOutside);
   });
-  
+
   onDestroy(() => {
     document.removeEventListener("mousedown", onClickOutside);
   });
@@ -201,17 +202,27 @@
       <button
         type="button"
         onclick={toggleOpen}
-        class="input flex items-center justify-between gap-2 text-left {!selectedItem ? 'text-gremius-subtle' : ''}"
+        class="input flex items-center justify-between gap-2 text-left {!selectedItem
+          ? 'text-gremius-subtle'
+          : ''}"
       >
         <span class="truncate">{selectedItem ? getDisplayLabel(selectedItem!) : placeholder}</span>
-        <ChevronDown class="w-4 h-4 text-gremius-subtle transition-transform shrink-0 {open ? 'rotate-180' : ''}" />
+        <ChevronDown
+          class="w-4 h-4 text-gremius-subtle transition-transform shrink-0 {open
+            ? 'rotate-180'
+            : ''}"
+        />
       </button>
 
       {#if open}
-        <div class="absolute z-50 top-full mt-1 w-full card shadow-xl shadow-black/30 max-h-64 overflow-hidden">
+        <div
+          class="absolute z-50 top-full mt-1 w-full card shadow-xl shadow-black/30 max-h-64 overflow-hidden"
+        >
           <div class="p-2 border-b border-gremius-border">
             <div class="relative">
-              <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gremius-subtle" />
+              <Search
+                class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gremius-subtle"
+              />
               <input
                 bind:this={searchInputRef}
                 bind:value={searchQuery}
@@ -224,7 +235,9 @@
           <div class="overflow-y-auto max-h-48">
             {#if fetching}
               <div class="flex justify-center py-4">
-                <div class="w-4 h-4 border-2 border-gremius-cyan-30 border-t-gremius-cyan rounded-full animate-spin"></div>
+                <div
+                  class="w-4 h-4 border-2 border-gremius-cyan-30 border-t-gremius-cyan rounded-full animate-spin"
+                ></div>
               </div>
             {:else if filteredItems.length === 0}
               <div class="py-4 text-center text-xs text-gremius-subtle">No results found</div>
@@ -242,10 +255,17 @@
                 <button
                   type="button"
                   onclick={() => selectSingle(item)}
-                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-gremius-border/30 transition-colors {value === item.id ? 'bg-gremius-cyan/[0.06] text-gremius-cyan' : ''}"
+                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-gremius-border/30 transition-colors {value ===
+                  item.id
+                    ? 'bg-gremius-cyan/[0.06] text-gremius-cyan'
+                    : ''}"
                 >
                   {#if item.image}
-                    <img src={item.image} alt={item.label} class="w-6 h-6 rounded object-cover shrink-0" />
+                    <img
+                      src={item.image}
+                      alt={item.label}
+                      class="w-6 h-6 rounded object-cover shrink-0"
+                    />
                   {/if}
                   <div class="min-w-0 flex-1">
                     <p class="truncate">{getDisplayLabel(item)}</p>
@@ -274,9 +294,17 @@
         onclick={openMulti}
       >
         {#each selectedIds as id}
-          <span class="inline-flex items-center gap-1 rounded-md bg-gremius-cyan-10 border border-gremius-cyan-20 px-2 py-0.5 text-xs text-gremius-cyan">
+          <span
+            class="inline-flex items-center gap-1 rounded-md bg-gremius-cyan-10 border border-gremius-cyan-20 px-2 py-0.5 text-xs text-gremius-cyan"
+          >
             {getDisplayById(id)}
-            <span onclick={(e) => { e.stopPropagation(); removeId(id); }} class="hover:text-gremius-pink transition-colors cursor-pointer">
+            <span
+              onclick={(e) => {
+                e.stopPropagation();
+                removeId(id);
+              }}
+              class="hover:text-gremius-pink transition-colors cursor-pointer"
+            >
               <X class="w-3 h-3" />
             </span>
           </span>
@@ -287,16 +315,20 @@
           type="text"
           placeholder={selectedIds.length === 0 ? placeholder : ""}
           class="flex-1 min-w-[60px] bg-transparent text-sm outline-none placeholder:text-gremius-subtle"
-          onfocus={() => open = true}
+          onfocus={() => (open = true)}
         />
       </button>
 
       {#if open}
         <div class="relative">
-          <div class="absolute z-50 top-1 w-full card shadow-xl shadow-black/30 max-h-56 overflow-y-auto">
+          <div
+            class="absolute z-50 top-1 w-full card shadow-xl shadow-black/30 max-h-56 overflow-y-auto"
+          >
             {#if fetching}
               <div class="flex justify-center py-4">
-                <div class="w-4 h-4 border-2 border-gremius-cyan-30 border-t-gremius-cyan rounded-full animate-spin"></div>
+                <div
+                  class="w-4 h-4 border-2 border-gremius-cyan-30 border-t-gremius-cyan rounded-full animate-spin"
+                ></div>
               </div>
             {:else if filteredItems.length === 0}
               <div class="py-4 text-center text-xs text-gremius-subtle">No results found</div>
@@ -305,15 +337,29 @@
                 <button
                   type="button"
                   onclick={() => toggleMulti(item)}
-                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-gremius-border/30 transition-colors {selectedIds.includes(item.id) ? 'bg-gremius-cyan/[0.06]' : ''}"
+                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-gremius-border/30 transition-colors {selectedIds.includes(
+                    item.id
+                  )
+                    ? 'bg-gremius-cyan/[0.06]'
+                    : ''}"
                 >
-                  <div class="w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 {selectedIds.includes(item.id) ? 'bg-gremius-cyan border-gremius-cyan' : 'border-gremius-border'}">
+                  <div
+                    class="w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 {selectedIds.includes(
+                      item.id
+                    )
+                      ? 'bg-gremius-cyan border-gremius-cyan'
+                      : 'border-gremius-border'}"
+                  >
                     {#if selectedIds.includes(item.id)}
                       <Check class="w-3 h-3 text-gremius-bg" />
                     {/if}
                   </div>
                   {#if item.image}
-                    <img src={item.image} alt={item.label} class="w-6 h-6 rounded object-cover shrink-0" />
+                    <img
+                      src={item.image}
+                      alt={item.label}
+                      class="w-6 h-6 rounded object-cover shrink-0"
+                    />
                   {/if}
                   <div class="min-w-0 flex-1">
                     <p class="truncate">{getDisplayLabel(item)}</p>
@@ -339,7 +385,13 @@
 </div>
 
 <style>
-  .border-gremius-cyan-30 { border-color: rgb(0 229 255 / 0.3); }
-  .bg-gremius-cyan-10 { background-color: rgb(0 229 255 / 0.1); }
-  .border-gremius-cyan-20 { border-color: rgb(0 229 255 / 0.2); }
+  .border-gremius-cyan-30 {
+    border-color: rgb(0 229 255 / 0.3);
+  }
+  .bg-gremius-cyan-10 {
+    background-color: rgb(0 229 255 / 0.1);
+  }
+  .border-gremius-cyan-20 {
+    border-color: rgb(0 229 255 / 0.2);
+  }
 </style>

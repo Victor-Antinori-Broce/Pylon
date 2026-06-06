@@ -5,6 +5,7 @@
 GremiusCMS is a gaming-focused headless CMS built with Vue 3 (admin), Hono/Bun (API), and PostgreSQL. The admin panel at `http://localhost:5173` provides a dark-themed interface for managing games, blog posts, media, datasets, modules, and system settings.
 
 Key features:
+
 - **Authentication**: Login/setup flow with session management
 - **Games Management**: CRUD for games with metadata, covers, tags, platforms
 - **Blog Posts**: Rich text editor with block builder, SEO, tags
@@ -25,6 +26,7 @@ Key features:
 #### 1.1 Successful Admin Login
 
 **Steps:**
+
 1. Navigate to `http://localhost:5173`
 2. Should redirect to `/login`
 3. Enter email: `admin@gremiuscms.dev`
@@ -32,6 +34,7 @@ Key features:
 5. Click "Sign In" button
 
 **Expected Results:**
+
 - Redirects to dashboard (`/`)
 - "Welcome back" heading is visible
 - Sidebar shows GremiusCMS branding
@@ -41,12 +44,14 @@ Key features:
 #### 1.2 Failed Login
 
 **Steps:**
+
 1. Navigate to `/login`
 2. Enter email: `admin@gremiuscms.dev`
 3. Enter password: `wrongpassword`
 4. Click "Sign In"
 
 **Expected Results:**
+
 - Stays on `/login`
 - Error message visible (e.g. "Invalid credentials")
 - Form fields retain email value
@@ -54,11 +59,13 @@ Key features:
 #### 1.3 Session Persistence
 
 **Steps:**
+
 1. Login successfully
 2. Navigate to `/games`
 3. Reload the page
 
 **Expected Results:**
+
 - Does not redirect to `/login`
 - Games page loads correctly
 - User remains authenticated
@@ -72,9 +79,11 @@ Key features:
 #### 2.1 Dashboard Stats Visible
 
 **Steps:**
+
 1. Login and arrive at dashboard
 
 **Expected Results:**
+
 - Stats grid shows 4 cards (Games, Posts, Media, Streamers or similar)
 - Each stat card has a numeric value and label
 - "Recent Games" section visible with game entries
@@ -89,9 +98,11 @@ Key features:
 #### 3.1 Games List Page
 
 **Steps:**
+
 1. Click "Games" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/games`
 - Table/grid shows seeded games (e.g. "Elden Ring", "Hades")
 - Each game row shows title, status, metacritic score
@@ -100,10 +111,12 @@ Key features:
 #### 3.2 View Game Details
 
 **Steps:**
+
 1. Navigate to `/games`
 2. Click on a game (e.g. "Elden Ring")
 
 **Expected Results:**
+
 - Game detail/edit page loads
 - Title field contains "Elden Ring"
 - Metadata fields visible (developer, publisher, metacritic)
@@ -119,9 +132,11 @@ Key features:
 #### 4.1 Blog Posts List
 
 **Steps:**
+
 1. Click "Blog Posts" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/posts`
 - Shows at least 1 post ("Welcome to GremiusCMS")
 - Post entries show title, status, date
@@ -129,12 +144,14 @@ Key features:
 #### 4.2 Create New Blog Post
 
 **Steps:**
+
 1. Click "Blog Posts" in sidebar
 2. Click "New Post" or similar button
 3. Enter title: "Playwright Test Post"
 4. Click "Save Draft"
 
 **Expected Results:**
+
 - Navigates to post editor (`/posts/new`)
 - Title input accepts text
 - Save Draft button visible
@@ -149,9 +166,11 @@ Key features:
 #### 5.1 Media Library Page
 
 **Steps:**
+
 1. Click "Media Library" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/media`
 - Upload area or button visible
 - Grid/list of uploaded media items (if any)
@@ -165,9 +184,11 @@ Key features:
 #### 6.1 Data Sets List
 
 **Steps:**
+
 1. Click "Data Sets" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/datasets`
 - "Create" or "New Data Set" button visible
 - Shows existing datasets if any
@@ -175,12 +196,14 @@ Key features:
 #### 6.2 Create New Data Set Schema
 
 **Steps:**
+
 1. Navigate to `/datasets`
 2. Click "New Data Set" button
 3. Enter name: "Test Characters"
 4. Add a field: name="character_name", type="text"
 
 **Expected Results:**
+
 - Schema builder form visible
 - Can add fields with name and type
 - Save button visible
@@ -194,9 +217,11 @@ Key features:
 #### 7.1 Modules Page Structure
 
 **Steps:**
+
 1. Click "Modules" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/modules`
 - Three sections visible:
   - "NATIVE — Always Active" with Data Sets (amber badge, no toggle)
@@ -207,10 +232,12 @@ Key features:
 #### 7.2 Native Module Cannot Be Disabled
 
 **Steps:**
+
 1. Navigate to `/modules`
 2. Look at the "Data Sets" card in Native section
 
 **Expected Results:**
+
 - No toggle switch (or toggle is locked/amber)
 - Shows "NATIVE" badge
 - Shows "Siempre activo — no se puede desactivar"
@@ -218,11 +245,13 @@ Key features:
 #### 7.3 Toggle Optional Module Off
 
 **Steps:**
+
 1. Navigate to `/modules`
 2. Find "Streamers" card in Optional section
 3. If enabled, click toggle to disable
 
 **Expected Results:**
+
 - Toggle switches off
 - Card visual changes (dimmed, border removed)
 - "Desactivado" footer appears
@@ -231,11 +260,13 @@ Key features:
 #### 7.4 Toggle Optional Module On
 
 **Steps:**
+
 1. Navigate to `/modules`
 2. Find a disabled optional module
 3. Click toggle to enable
 
 **Expected Results:**
+
 - Toggle switches on (green)
 - "Activo" footer appears
 - Active count increases by 1
@@ -243,11 +274,13 @@ Key features:
 #### 7.5 Sidebar Reflects Module State
 
 **Steps:**
+
 1. Navigate to `/modules`
 2. Disable "Games" module (if no dependencies block it)
 3. Check sidebar
 
 **Expected Results:**
+
 - "Games" link disappears from sidebar
 - "Collections" link also disappears
 - Re-enabling shows them again
@@ -255,11 +288,13 @@ Key features:
 #### 7.6 Core Module Dependency Block (if data exists)
 
 **Steps:**
+
 1. Ensure there are blog posts referencing games
 2. Navigate to `/modules`
 3. Try to disable "Games"
 
 **Expected Results:**
+
 - Checking spinner appears briefly
 - Blocker dialog appears
 - Shows "Blog posts referencing games" with row count
@@ -275,10 +310,12 @@ Key features:
 #### 8.1 Formula Editor Page
 
 **Steps:**
+
 1. Enable "Fórmulas KPI" module if disabled
 2. Click "Fórmulas KPI" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/formulas`
 - Shows formula list or empty state
 - "Nueva Fórmula" button visible
@@ -286,6 +323,7 @@ Key features:
 #### 8.2 Create New Formula
 
 **Steps:**
+
 1. Navigate to `/formulas`
 2. Click "Nueva Fórmula"
 3. Select a KPI from dropdown
@@ -295,6 +333,7 @@ Key features:
 7. Click "Guardar"
 
 **Expected Results:**
+
 - Editor loads at `/formulas/new`
 - KPI dropdown has options
 - Expression textarea accepts input
@@ -305,11 +344,13 @@ Key features:
 #### 8.3 Formula Validation
 
 **Steps:**
+
 1. Navigate to `/formulas/new`
 2. Leave expression empty
 3. Click "Guardar"
 
 **Expected Results:**
+
 - Red error message appears below expression: "La expresión base es obligatoria"
 - Form does NOT submit
 
@@ -322,9 +363,11 @@ Key features:
 #### 9.1 Settings Page
 
 **Steps:**
+
 1. Click "Settings" in sidebar
 
 **Expected Results:**
+
 - Navigates to `/settings`
 - Site name field shows "GremiusCMS"
 - Various configuration sections visible
@@ -338,9 +381,11 @@ Key features:
 #### 10.1 All Core Nav Items Present
 
 **Steps:**
+
 1. Login and check sidebar
 
 **Expected Results (when all modules enabled):**
+
 - Dashboard link present
 - Games link present
 - Collections link present
@@ -355,9 +400,11 @@ Key features:
 #### 10.2 Sidebar Collapse
 
 **Steps:**
+
 1. Click collapse button at bottom of sidebar
 
 **Expected Results:**
+
 - Sidebar shrinks to icon-only width (~64px)
 - Labels disappear, only icons visible
 - Click again to expand
@@ -371,18 +418,22 @@ Key features:
 #### 11.1 API Health Check
 
 **Steps:**
+
 1. Send GET request to `http://localhost:3001/api/health`
 
 **Expected Results:**
+
 - Status 200
 - Response includes `{ status: "ok", service: "gremius-api" }`
 
 #### 11.2 API Games Endpoint
 
 **Steps:**
+
 1. Send GET to `http://localhost:3001/api/games`
 
 **Expected Results:**
+
 - Status 200
 - `docs` array with 3+ games
 - Each game has `title`, `slug`, `status`
@@ -390,9 +441,11 @@ Key features:
 #### 11.3 API Modules Endpoint
 
 **Steps:**
+
 1. Send GET to `http://localhost:3001/api/modules`
 
 **Expected Results:**
+
 - Status 200
 - `docs` array includes modules with categories: "native", "core", "optional"
 - Data Sets has `category: "native"`

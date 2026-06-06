@@ -11,11 +11,11 @@
  * Phase 3: Delegates all execution to ActionEngine.
  */
 
-import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { gremiusFunctions } from "../db/schema";
-import { events } from "./events";
+
 import { dispatchEvent, executeActionById } from "./actions";
+import { events } from "./events";
 import type { SandboxResult } from "./worker-sandbox";
 
 // ═══════════════════════════════════════════════════════════════════════════

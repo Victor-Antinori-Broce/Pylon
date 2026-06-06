@@ -244,7 +244,10 @@ export async function createCounterparty(data: Partial<Counterparty>): Promise<C
   return res.json();
 }
 
-export async function updateCounterparty(id: string, data: Partial<Counterparty>): Promise<Counterparty> {
+export async function updateCounterparty(
+  id: string,
+  data: Partial<Counterparty>
+): Promise<Counterparty> {
   const res = await fetch(`${API_BASE}/counterparties/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -321,7 +324,9 @@ export async function getJournalTemplate(id: string): Promise<JournalTemplate> {
   return res.json();
 }
 
-export async function createJournalTemplate(data: Partial<JournalTemplate>): Promise<JournalTemplate> {
+export async function createJournalTemplate(
+  data: Partial<JournalTemplate>
+): Promise<JournalTemplate> {
   const res = await fetch(`${API_BASE}/templates`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -332,7 +337,10 @@ export async function createJournalTemplate(data: Partial<JournalTemplate>): Pro
   return res.json();
 }
 
-export async function updateJournalTemplate(id: string, data: Partial<JournalTemplate>): Promise<JournalTemplate> {
+export async function updateJournalTemplate(
+  id: string,
+  data: Partial<JournalTemplate>
+): Promise<JournalTemplate> {
   const res = await fetch(`${API_BASE}/templates/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -351,7 +359,10 @@ export async function deleteJournalTemplate(id: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
-export async function applyJournalTemplate(id: string, data?: Record<string, unknown>): Promise<Journal> {
+export async function applyJournalTemplate(
+  id: string,
+  data?: Record<string, unknown>
+): Promise<Journal> {
   const res = await fetch(`${API_BASE}/templates/${id}/apply`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

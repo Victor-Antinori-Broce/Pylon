@@ -5,12 +5,14 @@ This guide helps you verify that the dynamic realm system works correctly in a r
 ## 🚀 Quick Test
 
 ### 1. Run Local Verification (No Docker Required)
+
 ```bash
 # Run filesystem verification script
 bun run apps/api/src/tests/verify-dynamic-realms.ts
 ```
 
 This verifies:
+
 - ✅ Realm scanning from `packages/realms/`
 - ✅ Grimoire discovery from `packages/grimoires/`
 - ✅ Custom UI view detection
@@ -18,6 +20,7 @@ This verifies:
 - ✅ Admin registry building (simulated)
 
 ### 2. Start the API (For Full Testing)
+
 ```bash
 docker compose up -d gremius_api
 # or
@@ -35,6 +38,7 @@ curl http://localhost:3001/api/modules | jq '.docs[] | select(.category == "real
 ```
 
 **Expected Output:**
+
 ```json
 {
   "name": "Games",
@@ -62,6 +66,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ```
 
 **Expected Output:**
+
 ```json
 {
   "id": "grimoire-games",
@@ -71,6 +76,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ```
 
 **Verify:**
+
 - Realm grimoires have `category: "esports"`
 - Standalone grimoires have `category: "core"`, `"content"`, or `"data"`
 - Engine infrastructure (media-library) is NOT in the list
@@ -86,6 +92,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ```
 
 **Expected Output:**
+
 ```json
 {
   "id": "grimoire-academy-lms",
@@ -101,6 +108,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ```
 
 **Verify:**
+
 - Academy → `academy/AcademyView.svelte`
 - Formulas → `formulas/FormulasView.svelte`
 - Blog → `content/PostsView.svelte`
@@ -117,6 +125,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ```
 
 **Expected Output:**
+
 ```json
 {
   "id": "grimoire-booking",
@@ -127,6 +136,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ```
 
 **Verify:**
+
 - No custom view → `hasCustomView: false`
 - `defaultView` starts with `grid-`
 - All views are type `grid`
@@ -142,6 +152,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 3. Verify realm grimoires show under their realm name (e.g., "Esports")
 
 **Expected Groups:**
+
 - **Core Grimoires**: promote, blocks, formulas, webhooks, connectors, workers
 - **Optional Features**: academy, blog, dms, booking, etc.
 - **Esports**: games, streamers, platforms, etc.
@@ -151,6 +162,7 @@ curl -H "Cookie: your-auth-cookie" http://localhost:3001/api/admin/registry | jq
 ### Test 6: Test Adding a New Realm (Full Dynamic Test)
 
 **Step 1:** Create a new realm
+
 ```bash
 mkdir -p packages/realms/realm-testrealm
 cat > packages/realms/realm-testrealm/realm.json << 'EOF'
@@ -168,11 +180,13 @@ EOF
 ```
 
 **Step 2:** Restart API
+
 ```bash
 docker compose restart gremius_api
 ```
 
 **Step 3:** Verify new realm is detected
+
 ```bash
 curl http://localhost:3001/api/modules | jq '.docs[] | select(.realmId == "realm-testrealm")'
 ```
@@ -180,6 +194,7 @@ curl http://localhost:3001/api/modules | jq '.docs[] | select(.realmId == "realm
 **Expected:** The games grimoire should now show `realmId: "realm-testrealm"` when the test realm is active.
 
 **Step 4:** Clean up
+
 ```bash
 rm -rf packages/realms/realm-testrealm
 ```
@@ -199,6 +214,7 @@ curl http://localhost:3001/api/modules | jq '.docs[] | select(.category == "opti
 ```
 
 **Expected:**
+
 - Core: Promote, Blocks, Formulas, Webhooks, Connectors, Workers
 - Optional: Academy, Blog, DMS, Booking, etc.
 
@@ -208,39 +224,47 @@ curl http://localhost:3001/api/modules | jq '.docs[] | select(.category == "opti
 
 After running all tests, you should see:
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Realm Scanning | ✅ | Realms auto-discovered from filesystem |
-| Grimoire Discovery | ✅ | All grimoires found and categorized |
-| Dynamic Categorization | ✅ | Realm grimoires → "esports" |
-| Custom UI Detection | ✅ | Views detected for academy, blog, games, etc. |
-| Grid View Fallback | ✅ | Non-custom grimoires get grid views |
-| Sidebar Integration | ✅ | Groups by realm name dynamically |
-| Core Mechanics | ✅ | Core and optional grimoires unchanged |
+| Component              | Status | Notes                                         |
+| ---------------------- | ------ | --------------------------------------------- |
+| Realm Scanning         | ✅     | Realms auto-discovered from filesystem        |
+| Grimoire Discovery     | ✅     | All grimoires found and categorized           |
+| Dynamic Categorization | ✅     | Realm grimoires → "esports"                   |
+| Custom UI Detection    | ✅     | Views detected for academy, blog, games, etc. |
+| Grid View Fallback     | ✅     | Non-custom grimoires get grid views           |
+| Sidebar Integration    | ✅     | Groups by realm name dynamically              |
+| Core Mechanics         | ✅     | Core and optional grimoires unchanged         |
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### Issue: Realms not appearing
-**Check:** 
+
+**Check:**
+
 - Directory exists: `packages/realms/realm-*/`
 - File exists: `realm.json` or `gremius.json`
 - Valid JSON with `id`, `name`, `grimoires` fields
 
 ### Issue: Grimoires not in admin
+
 **Check:**
+
 - Grimoire exists in `packages/grimoires/`
 - Has valid `grimoire.json`
 - Not in `ENGINE_INFRASTRUCTURE` list
 
 ### Issue: Custom views not detected
+
 **Check:**
+
 - View file exists: `packages/admin/src/views/{grimoire}/{Name}View.svelte`
 - File name matches pattern (PascalCase)
 
 ### Issue: 401 errors
+
 **Check:**
+
 - User is authenticated
 - Cookie is being sent with requests
 - Run tests with `credentials: "include"`
@@ -250,6 +274,7 @@ After running all tests, you should see:
 ## ✅ Success Criteria
 
 All tests pass if:
+
 1. ✅ Realms are scanned dynamically from filesystem
 2. ✅ Grimoires are categorized correctly (core/optional/esports)
 3. ✅ Custom views are detected and paths are correct

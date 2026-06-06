@@ -5,7 +5,6 @@
  * Centralized type definitions for Hono context variables
  */
 
-import type { Hono } from "hono";
 import type { auth } from "../lib/auth";
 import type { AgentAuthContext } from "../services/agent-auth";
 

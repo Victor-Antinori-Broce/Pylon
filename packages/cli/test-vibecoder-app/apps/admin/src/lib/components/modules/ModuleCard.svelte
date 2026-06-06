@@ -24,18 +24,18 @@
     onToggle?: () => void;
   }
   
-  let { module, toggling = false, checking = false, isDepEnabled = () => false, onToggle }: Props = $props();
+  const { module, toggling = false, checking = false, isDepEnabled = () => false, onToggle }: Props = $props();
   
-  let isThemeModule = $derived(module.category === "theme");
+  const isThemeModule = $derived(module.category === "theme");
   
-  let stripeClass = $derived.by(() => {
+  const stripeClass = $derived.by(() => {
     if (isThemeModule && module.enabled) return "bg-gradient-to-r from-gremius-pink/60 via-gremius-purple/30 to-transparent";
     if (module.enabled) return "bg-gradient-to-r from-green-500/60 via-green-400/30 to-transparent";
     return "bg-gradient-to-r from-gremius-subtle/20 to-transparent";
   });
   
-  let iconBg = $derived(module.enabled ? (module.color || "#00E5FF") + "12" : "rgba(63,63,70,0.3)");
-  let iconBorder = $derived(module.enabled ? (module.color || "#00E5FF") + "25" : "rgba(63,63,70,0.5)");
+  const iconBg = $derived(module.enabled ? (module.color || "#00E5FF") + "12" : "rgba(63,63,70,0.3)");
+  const iconBorder = $derived(module.enabled ? (module.color || "#00E5FF") + "25" : "rgba(63,63,70,0.5)");
 </script>
 
 <div class="card p-5 relative overflow-hidden transition-all duration-300 {module.enabled ? 'ring-1 ring-gremius-green/30' : 'opacity-75'} {isThemeModule ? 'ring-1 ring-gremius-pink/20' : ''}">

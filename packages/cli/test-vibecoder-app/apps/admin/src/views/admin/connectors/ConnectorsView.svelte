@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     Plug, Plus, RefreshCw, Trash2, Zap, Database as DbIcon,
     Globe, TestTube, CheckCircle, XCircle, Loader2, X, Eye,
     Server, Table2
   } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 

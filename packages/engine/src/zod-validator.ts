@@ -28,6 +28,7 @@
  */
 
 import { z, ZodSchema, ZodError, ZodObject, ZodRawShape } from "zod";
+
 import type { ValidationRule, ValidationSchema } from "./validator";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -54,27 +55,30 @@ export const characterSchema = baseEntitySchema.extend({
   // Stats básicos con rangos realistas
   level: z.number().int().min(1).max(100).default(1),
   rarity: z.number().int().min(3).max(5),
-  
+
   // Elementos válidos del juego
   element: z.enum(["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"], {
-    errorMap: () => ({ message: "Elemento inválido. Opciones: pyro, hydro, electro, cryo, anemo, geo, dendro" })
+    errorMap: () => ({
+      message: "Elemento inválido. Opciones: pyro, hydro, electro, cryo, anemo, geo, dendro",
+    }),
   }),
-  
+
   // Tipos de arma permitidos
   weapon_type: z.enum(["sword", "claymore", "polearm", "bow", "catalyst"]),
-  
+
   // Stats numéricas con rangos anti-alucinación
   hp: z.number().min(0).max(999999),
   atk: z.number().min(0).max(999999),
   def: z.number().min(0).max(999999),
   mana_cost: z.number().min(0).max(1000).optional(),
   cooldown: z.number().min(0).max(3600).optional(), // segundos, máx 1 hora
-  
+
   // Slug para URLs
-  slug: z.string()
+  slug: z
+    .string()
     .regex(/^[a-z0-9-]+$/, "Slug solo puede contener minúsculas, números y guiones")
     .max(200),
-  
+
   // Metadata flexible pero controlada
   metadata: z.record(z.unknown()).optional(),
 });
@@ -84,22 +88,22 @@ export const characterSchema = baseEntitySchema.extend({
  */
 export const skillSchema = baseEntitySchema.extend({
   character_id: z.string().uuid(),
-  
+
   // Daño/healing con rangos razonables
   damage: z.number().min(0).max(999999).optional(),
   healing: z.number().min(0).max(999999).optional(),
-  
+
   // Costos que no pueden ser negativos
   mana_cost: z.number().min(0).max(1000),
   energy_cost: z.number().min(0).max(1000).optional(),
-  
+
   // Cooldowns razonables
   cooldown_seconds: z.number().min(0).max(3600),
   duration_seconds: z.number().min(0).max(3600).optional(),
-  
+
   // Tipo de habilidad
   skill_type: z.enum(["normal", "charged", "plunge", "skill", "burst", "passive"]),
-  
+
   // Elemento (opcional, hereda del personaje si no se especifica)
   element: z.enum(["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"]).optional(),
 });
@@ -110,11 +114,21 @@ export const skillSchema = baseEntitySchema.extend({
 export const weaponSchema = baseEntitySchema.extend({
   type: z.enum(["sword", "claymore", "polearm", "bow", "catalyst"]),
   rarity: z.number().int().min(1).max(5),
-  
+
   // Stats base
   base_atk: z.number().min(0).max(1000),
-  sub_stat: z.enum(["crit_rate", "crit_dmg", "atk_percent", "def_percent", "hp_percent", 
-                    "elemental_mastery", "energy_recharge", "physical_dmg"]).optional(),
+  sub_stat: z
+    .enum([
+      "crit_rate",
+      "crit_dmg",
+      "atk_percent",
+      "def_percent",
+      "hp_percent",
+      "elemental_mastery",
+      "energy_recharge",
+      "physical_dmg",
+    ])
+    .optional(),
   sub_stat_value: z.number().min(0).max(100).optional(), // porcentaje
 });
 
@@ -125,12 +139,12 @@ export const buildSchema = z.object({
   character_id: z.string().uuid(),
   weapon_id: z.string().uuid(),
   artifact_ids: z.array(z.string().uuid()).max(5),
-  
+
   // Valores calculados (denormalizados)
   total_atk: z.number().min(0),
   total_hp: z.number().min(0),
   total_def: z.number().min(0),
-  
+
   // Snapshot de datos para inmutabilidad
   _snapshot: z.object({
     character: z.record(z.unknown()),
@@ -191,10 +205,9 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
 
   // Required
   if (rule.required) {
-    schema = (schema as any).refine(
-      (val: any) => val !== undefined && val !== null && val !== "",
-      { message: rule.message || "Campo requerido" }
-    );
+    schema = (schema as any).refine((val: any) => val !== undefined && val !== null && val !== "", {
+      message: rule.message || "Campo requerido",
+    });
   } else {
     schema = schema.optional();
   }
@@ -203,11 +216,11 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
   if (rule.min !== undefined) {
     if (rule.type === "number") {
       schema = (schema as z.ZodNumber).min(rule.min, {
-        message: rule.message || `Debe ser mayor o igual a ${rule.min}`
+        message: rule.message || `Debe ser mayor o igual a ${rule.min}`,
       });
     } else if (rule.type === "string") {
       schema = (schema as z.ZodString).min(rule.min, {
-        message: rule.message || `Mínimo ${rule.min} caracteres`
+        message: rule.message || `Mínimo ${rule.min} caracteres`,
       });
     }
   }
@@ -216,11 +229,11 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
   if (rule.max !== undefined) {
     if (rule.type === "number") {
       schema = (schema as z.ZodNumber).max(rule.max, {
-        message: rule.message || `Debe ser menor o igual a ${rule.max}`
+        message: rule.message || `Debe ser menor o igual a ${rule.max}`,
       });
     } else if (rule.type === "string") {
       schema = (schema as z.ZodString).max(rule.max, {
-        message: rule.message || `Máximo ${rule.max} caracteres`
+        message: rule.message || `Máximo ${rule.max} caracteres`,
       });
     }
   }
@@ -228,14 +241,14 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
   // Enum
   if (rule.enum) {
     schema = z.enum(rule.enum as [string, ...string[]], {
-      errorMap: () => ({ message: rule.message || `Valores permitidos: ${rule.enum?.join(", ")}` })
+      errorMap: () => ({ message: rule.message || `Valores permitidos: ${rule.enum?.join(", ")}` }),
     });
   }
 
   // Pattern (regex)
   if (rule.pattern) {
     schema = (schema as z.ZodString).regex(new RegExp(rule.pattern), {
-      message: rule.message || "Formato inválido"
+      message: rule.message || "Formato inválido",
     });
   }
 
@@ -247,11 +260,11 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
  */
 export function validationSchemaToZod(schema: ValidationSchema): ZodObject<ZodRawShape> {
   const shape: ZodRawShape = {};
-  
+
   for (const [field, rule] of Object.entries(schema)) {
     shape[field] = ruleToZod(rule);
   }
-  
+
   return z.object(shape).strict();
 }
 
@@ -278,22 +291,22 @@ export function validateWithZod(schema: ZodSchema, data: unknown): ZodValidation
     return {
       success: true,
       data: parsed,
-      errors: []
+      errors: [],
     };
   } catch (error) {
     if (error instanceof ZodError) {
       return {
         success: false,
-        errors: error.errors.map(err => ({
-          field: err.path.join('.'),
+        errors: error.errors.map((err) => ({
+          field: err.path.join("."),
           message: err.message,
-          received: err.code
-        }))
+          received: err.code,
+        })),
       };
     }
     return {
       success: false,
-      errors: [{ field: "unknown", message: String(error) }]
+      errors: [{ field: "unknown", message: String(error) }],
     };
   }
 }
@@ -321,11 +334,11 @@ export function createZodBatchValidator(schema: ZodSchema) {
     const result = validateWithZod(schema, data);
     return {
       valid: result.success,
-      errors: result.errors.map(e => ({
+      errors: result.errors.map((e) => ({
         field: e.field,
         message: e.message,
-        path: e.field
-      }))
+        path: e.field,
+      })),
     };
   };
 }
@@ -370,8 +383,8 @@ export function registerSchema(dataset: string, schema: ZodSchema): void {
  */
 export function generateAIRecoveryHint(errors: Array<{ field: string; message: string }>): string {
   if (errors.length === 0) return "Validación exitosa.";
-  
-  const hints = errors.map(err => {
+
+  const hints = errors.map((err) => {
     switch (err.field) {
       case "mana_cost":
       case "damage":
@@ -389,7 +402,7 @@ export function generateAIRecoveryHint(errors: Array<{ field: string; message: s
         return `Error en '${err.field}': ${err.message}`;
     }
   });
-  
+
   return hints.join("\n");
 }
 
@@ -397,8 +410,4 @@ export function generateAIRecoveryHint(errors: Array<{ field: string; message: s
 // EXPORTACIONES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export {
-  z,
-  ZodSchema,
-  ZodError,
-};
+export { z, ZodSchema, ZodError };

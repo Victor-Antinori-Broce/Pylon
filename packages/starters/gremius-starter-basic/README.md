@@ -56,12 +56,14 @@ pnpm db:seed      # Seed with test data
 ## Default Credentials
 
 After running `pnpm db:seed`:
+
 - Email: `admin@gremius.dev`
 - Password: `admin123`
 
 ## Next Steps
 
 1. **Create your first content type:**
+
    ```bash
    gremius grimoire create posts
    ```

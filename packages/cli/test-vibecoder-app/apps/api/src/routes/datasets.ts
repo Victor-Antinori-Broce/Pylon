@@ -10,35 +10,38 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { zValidator } from "@hono/zod-validator";
+import { eq } from "drizzle-orm"; // and removed - unused
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { eq } from "drizzle-orm"; // and removed - unused
-import { zValidator } from "@hono/zod-validator";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "../db";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { dataSets, dataEntries } from "../db/schema";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type * as schema from "../db/schema";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+
+
 // @ts-ignore - Path alias @/ not resolved by tsc
-import {
-  resolveEntryStatus,
-} from "../middleware/permissions";
-// @ts-ignore - Path alias @/ not resolved by tsc
+import { events } from "../lib/events";
+import { broadcastMutation } from "../lib/realtime";
 import { 
   buildDatasetWhere,
   checkReadAccess,
   type PolicyJson 
 } from "../lib/rls-builder";
+import { requireAuth } from "../middleware/auth";
+import {
+  resolveEntryStatus,
+} from "../middleware/permissions";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { events } from "../lib/events";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { broadcastMutation } from "../lib/realtime";
+// @ts-ignore - Path alias @/ not resolved by tsc
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type { AppVariables } from "../types/hono";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { requireAuth } from "../middleware/auth";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER: Obtener DB o Transacción RLS

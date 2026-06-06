@@ -63,6 +63,7 @@ mkdir packages/grimoires/grimoire-books
 ### 3. Listo
 
 El admin ahora muestra:
+
 - Sidebar: "Books" con icono Book
 - DataExplorer automático para tablas `books` y `authors`
 - Búsqueda por título/autor/ISBN
@@ -101,14 +102,14 @@ export const GRIMOIRE_VIEW_REGISTRY = {
 
 ### Campos Básicos
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `id` | string | ID único (ej: `grimoire-books`) |
-| `name` | string | Nombre visible |
-| `description` | string | Descripción corta |
-| `version` | string | Semver |
-| `type` | string | `"grimoire"` \| `"core"` |
-| `icon` | string | Icono Lucide (ej: `Book`, `Database`) |
+| Campo         | Tipo   | Descripción                           |
+| ------------- | ------ | ------------------------------------- |
+| `id`          | string | ID único (ej: `grimoire-books`)       |
+| `name`        | string | Nombre visible                        |
+| `description` | string | Descripción corta                     |
+| `version`     | string | Semver                                |
+| `type`        | string | `"grimoire"` \| `"core"`              |
+| `icon`        | string | Icono Lucide (ej: `Book`, `Database`) |
 
 ### Tablas
 
@@ -129,14 +130,14 @@ export const GRIMOIRE_VIEW_REGISTRY = {
 }
 ```
 
-| Campo | Descripción |
-|-------|-------------|
-| `name` | Nombre de la tabla en DB |
-| `label` | Label visible en UI |
-| `icon` | Icono Lucide |
-| `searchableFields` | Columnas para búsqueda |
-| `filterableFields` | Columnas para filtros |
-| `readonly` | Solo lectura |
+| Campo              | Descripción              |
+| ------------------ | ------------------------ |
+| `name`             | Nombre de la tabla en DB |
+| `label`            | Label visible en UI      |
+| `icon`             | Icono Lucide             |
+| `searchableFields` | Columnas para búsqueda   |
+| `filterableFields` | Columnas para filtros    |
+| `readonly`         | Solo lectura             |
 
 ### Config de Admin (Opcional)
 
@@ -171,6 +172,7 @@ export const GRIMOIRE_VIEW_REGISTRY = {
 Cuando no hay vista custom, el DataExplorer genera:
 
 ### Detección de Tipos
+
 - `boolean` → Badges Sí/No coloreados
 - `date` → Fechas formateadas
 - `email` → Links mailto:
@@ -180,6 +182,7 @@ Cuando no hay vista custom, el DataExplorer genera:
 - `json` → Preview con contador
 
 ### Features Incluidas
+
 - ✅ Búsqueda server-side
 - ✅ Filtros multicolumna
 - ✅ Ordenamiento
@@ -202,7 +205,7 @@ GET /api/admin/registry/grimoire-books
         ↓
 API escanea grimoire.json
         ↓
-├─ ¿Tiene vista custom? 
+├─ ¿Tiene vista custom?
 │  ├─ Sí → Carga .svelte
 │  └─ No → Usa DataExplorer
 └─ ¿Tiene tablas definidas?
@@ -285,7 +288,8 @@ Tabs automáticos para cada tabla.
 { "tables": ["analytics"] }
 ```
 
-+ Crear archivo:
+- Crear archivo:
+
 ```svelte
 <!-- packages/admin/src/views/analytics/AnalyticsView.svelte -->
 <script>
@@ -309,6 +313,7 @@ curl -X POST http://localhost:3000/api/admin/registry/refresh
 ### Tabla no encontrada
 
 Asegúrate que:
+
 1. La tabla existe en DB
 2. Está en `tables` de grimoire.json
 3. El grimoire está habilitado (`enabled: true`)
@@ -316,11 +321,13 @@ Asegúrate que:
 ### Vista custom no carga
 
 Verifica que el archivo existe en:
+
 ```
 packages/admin/src/views/{grimoire}/{PascalCase}View.svelte
 ```
 
 Ejemplos:
+
 - `grimoire-books` → `views/books/BooksView.svelte`
 - `grimoire-games` → `views/games/GamesView.svelte`
 
@@ -329,6 +336,7 @@ Ejemplos:
 ## 📚 Ejemplos Completos
 
 Ver directorios de ejemplo:
+
 - `packages/grimoires/grimoire-games/` - Múltiples tablas
 - `packages/grimoires/grimoire-blog/` - Relaciones
 - `packages/core/webhooks/` - Con vista custom

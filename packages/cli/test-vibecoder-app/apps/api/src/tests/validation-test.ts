@@ -7,12 +7,13 @@
 
 import { describe, it, expect } from "bun:test";
 import { Hono } from "hono";
+
+import { observabilityRoutes } from "../lib/observability";
+import { rateLimit, checkRateLimit, RATE_LIMIT_CONFIGS } from "../lib/rate-limiter";
+import { searchRoutes } from "../lib/search";
 import type { AppVariables } from "../types/hono";
 
 // Importar los módulos a probar
-import { rateLimit, checkRateLimit, RATE_LIMIT_CONFIGS } from "../lib/rate-limiter";
-import { searchRoutes } from "../lib/search";
-import { observabilityRoutes } from "../lib/observability";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP

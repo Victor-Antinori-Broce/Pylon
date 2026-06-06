@@ -15,8 +15,9 @@
  * - Backup/Restore completo
  */
 
-import { z } from "zod";
 import type { GrimoireContext } from "@gremius/shared";
+import { z } from "zod";
+
 import type { DataEntry, FieldDefinition } from "./datasets.schema";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -139,11 +140,13 @@ export const exportConfigSchema = z.object({
   includeCalculatedFields: z.boolean().default(false),
   includeMetadata: z.boolean().default(true),
   format: z.enum(["json", "csv", "jsonl"]).default("json"),
-  filter: z.object({
-    status: z.string().optional(),
-    dateFrom: z.string().optional(),
-    dateTo: z.string().optional(),
-  }).optional(),
+  filter: z
+    .object({
+      status: z.string().optional(),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+    })
+    .optional(),
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -198,7 +201,9 @@ export async function exportDatasets(
       entriesQuery = entriesQuery.where(eq(dataEntries.status, config.filter.status));
     }
     if (config.filter?.dateFrom) {
-      entriesQuery = entriesQuery.where(gte(dataEntries.createdAt, new Date(config.filter.dateFrom)));
+      entriesQuery = entriesQuery.where(
+        gte(dataEntries.createdAt, new Date(config.filter.dateFrom))
+      );
     }
     if (config.filter?.dateTo) {
       entriesQuery = entriesQuery.where(lte(dataEntries.createdAt, new Date(config.filter.dateTo)));
@@ -246,7 +251,9 @@ export async function exportDatasets(
   exportPackage.metadata.totalDatasets = exportPackage.datasets.length;
   exportPackage.metadata.totalEntries = totalEntries;
 
-  ctx.logger.info(`📤 Exported ${totalEntries} entries from ${exportPackage.datasets.length} datasets in ${Date.now() - startTime}ms`);
+  ctx.logger.info(
+    `📤 Exported ${totalEntries} entries from ${exportPackage.datasets.length} datasets in ${Date.now() - startTime}ms`
+  );
 
   return exportPackage;
 }
@@ -498,7 +505,7 @@ export async function importPackage(
 
   for (const dataset of packageData.datasets) {
     // Verificar si el dataset existe, si no crearlo
-    let [existingDataset] = await db.instance
+    const [existingDataset] = await db.instance
       .select({ id: dataSets.id })
       .from(dataSets)
       .where(eq(dataSets.slug, dataset.slug))
@@ -612,5 +619,3 @@ function validateRecord(record: any, fieldMap: Map<string, FieldDefinition>): st
 
   return errors;
 }
-
-

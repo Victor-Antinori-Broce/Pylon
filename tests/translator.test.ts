@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Tests para Gremius QL Engine (translator.ts)
- * 
+ *
  * Verifica:
  * - Mapeo de operadores Prisma a Drizzle
  * - Operadores lógicos AND/OR/NOT
@@ -10,15 +10,15 @@
  * - Errores semánticos
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect } from "vitest";
+
+import { agentIdentities, agentTraces, dataSets } from "../apps/api/src/db/schema";
 import {
-  parseGremiusQuery,
   validateGremiusQuery,
   getAvailableRelations,
   debugQuery,
   GremiusQLError,
 } from "../packages/engine/src/translator";
-import { agentIdentities, agentTraces, dataSets } from "../apps/api/src/db/schema";
 
 describe("Gremius QL Engine - translator.ts", () => {
   describe("Operadores de Comparación", () => {
@@ -89,10 +89,7 @@ describe("Gremius QL Engine - translator.ts", () => {
     it("debe traducir AND", () => {
       const debug = debugQuery(agentIdentities, {
         where: {
-          AND: [
-            { isActive: true },
-            { type: { eq: "service" } },
-          ],
+          AND: [{ isActive: true }, { type: { eq: "service" } }],
         },
       });
       expect(debug.sql).toBeTruthy();
@@ -101,10 +98,7 @@ describe("Gremius QL Engine - translator.ts", () => {
     it("debe traducir OR", () => {
       const debug = debugQuery(agentIdentities, {
         where: {
-          OR: [
-            { type: { eq: "service" } },
-            { type: { eq: "worker" } },
-          ],
+          OR: [{ type: { eq: "service" } }, { type: { eq: "worker" } }],
         },
       });
       expect(debug.sql).toBeTruthy();
@@ -125,10 +119,7 @@ describe("Gremius QL Engine - translator.ts", () => {
           AND: [
             { isActive: true },
             {
-              OR: [
-                { type: { eq: "service" } },
-                { type: { eq: "worker" } },
-              ],
+              OR: [{ type: { eq: "service" } }, { type: { eq: "worker" } }],
             },
           ],
         },

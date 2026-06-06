@@ -22,8 +22,9 @@
  *     Games, Streamers, Platforms, Tags, Collections (when Realm Esports active)
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
 
 export type GrimoireCategory = "core" | "grimoire-core" | "optional" | "realm";
 

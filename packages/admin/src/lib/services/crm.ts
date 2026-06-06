@@ -140,7 +140,9 @@ export async function getCrmPipelines(): Promise<CrmPipeline[]> {
   return res.json();
 }
 
-export async function getCrmPipeline(id: string): Promise<CrmPipeline & { stages: CrmPipelineStage[] }> {
+export async function getCrmPipeline(
+  id: string
+): Promise<CrmPipeline & { stages: CrmPipelineStage[] }> {
   const res = await fetch(`${API_BASE}/pipelines/${id}`, { credentials: "include" });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -157,7 +159,10 @@ export async function createCrmPipeline(data: Partial<CrmPipeline>): Promise<Crm
   return res.json();
 }
 
-export async function updateCrmPipeline(id: string, data: Partial<CrmPipeline>): Promise<CrmPipeline> {
+export async function updateCrmPipeline(
+  id: string,
+  data: Partial<CrmPipeline>
+): Promise<CrmPipeline> {
   const res = await fetch(`${API_BASE}/pipelines/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -294,7 +299,10 @@ export async function createCrmActivity(data: Partial<CrmActivity>): Promise<Crm
   return res.json();
 }
 
-export async function updateCrmActivity(id: string, data: Partial<CrmActivity>): Promise<CrmActivity> {
+export async function updateCrmActivity(
+  id: string,
+  data: Partial<CrmActivity>
+): Promise<CrmActivity> {
   const res = await fetch(`${API_BASE}/activities/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

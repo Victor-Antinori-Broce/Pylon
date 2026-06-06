@@ -2,14 +2,22 @@
 
 /**
  * Esports Module — Dependency Injection Wrapper
- * 
+ *
  * All routes refactored to use GrimoireContext for DI
  */
 
-import { Hono } from "hono";
-import { eq, desc, ilike, sql, asc, and } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
-import { tournaments, tournamentParticipants, players, teams, matches, playersToTeams } from "./esports.schema";
+import { eq, desc, ilike, sql, asc } from "drizzle-orm";
+import { Hono } from "hono";
+
+import {
+  tournaments,
+  tournamentParticipants,
+  players,
+  teams,
+  matches,
+  playersToTeams,
+} from "./esports.schema";
 
 /**
  * Create Players router with DI
@@ -24,7 +32,11 @@ function createPlayersRouter(ctx: GrimoireContext): Hono {
     let query = db.instance.select().from(players).orderBy(desc(players.createdAt));
 
     if (search) {
-      query = db.instance.select().from(players).where(ilike(players.alias, `%${search}%`)).orderBy(desc(players.createdAt)) as any;
+      query = db.instance
+        .select()
+        .from(players)
+        .where(ilike(players.alias, `%${search}%`))
+        .orderBy(desc(players.createdAt)) as any;
     }
 
     const results = await query;
@@ -75,7 +87,11 @@ function createPlayersRouter(ctx: GrimoireContext): Hono {
     if (body.socialLinks && typeof body.socialLinks === "object") {
       updates.socialLinks = JSON.stringify(body.socialLinks);
     }
-    const [updated] = await db.instance.update(players).set(updates).where(eq(players.id, id)).returning();
+    const [updated] = await db.instance
+      .update(players)
+      .set(updates)
+      .where(eq(players.id, id))
+      .returning();
     if (!updated) return c.json({ error: "Player not found" }, 404);
     return c.json(updated);
   });
@@ -83,7 +99,10 @@ function createPlayersRouter(ctx: GrimoireContext): Hono {
   // Delete Player
   app.delete("/:id", auth.requireAuth, async (c) => {
     const { id } = c.req.param();
-    const [deleted] = await db.instance.delete(players).where(eq(players.id, id)).returning({ id: players.id });
+    const [deleted] = await db.instance
+      .delete(players)
+      .where(eq(players.id, id))
+      .returning({ id: players.id });
     if (!deleted) return c.json({ error: "Player not found" }, 404);
     return c.json({ deleted: true, id: deleted.id });
   });
@@ -103,7 +122,11 @@ function createTeamsRouter(ctx: GrimoireContext): Hono {
     const search = c.req.query("search");
     let query = db.instance.select().from(teams).orderBy(desc(teams.createdAt));
     if (search) {
-      query = db.instance.select().from(teams).where(ilike(teams.name, `%${search}%`)).orderBy(desc(teams.createdAt)) as any;
+      query = db.instance
+        .select()
+        .from(teams)
+        .where(ilike(teams.name, `%${search}%`))
+        .orderBy(desc(teams.createdAt)) as any;
     }
     const results = await query;
     return c.json(results);
@@ -123,7 +146,11 @@ function createTeamsRouter(ctx: GrimoireContext): Hono {
 
     let captain = null;
     if (team.captainId) {
-      const [captainData] = await db.instance.select().from(players).where(eq(players.id, team.captainId)).limit(1);
+      const [captainData] = await db.instance
+        .select()
+        .from(players)
+        .where(eq(players.id, team.captainId))
+        .limit(1);
       captain = captainData || null;
     }
 
@@ -139,7 +166,9 @@ function createTeamsRouter(ctx: GrimoireContext): Hono {
       .returning();
 
     if (body.memberIds && Array.isArray(body.memberIds) && body.memberIds.length > 0) {
-      await db.instance.insert(playersToTeams).values(body.memberIds.map((playerId: string) => ({ teamId: team.id, playerId })));
+      await db.instance
+        .insert(playersToTeams)
+        .values(body.memberIds.map((playerId: string) => ({ teamId: team.id, playerId })));
     }
     return c.json(team, 201);
   });
@@ -152,13 +181,19 @@ function createTeamsRouter(ctx: GrimoireContext): Hono {
     if (logoUrl !== undefined || logoId !== undefined) {
       updates.logoId = logoId ?? logoUrl;
     }
-    const [updated] = await db.instance.update(teams).set({ ...updates, updatedAt: new Date() }).where(eq(teams.id, id)).returning();
+    const [updated] = await db.instance
+      .update(teams)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(teams.id, id))
+      .returning();
     if (!updated) return c.json({ error: "Team not found" }, 404);
 
     if (memberIds !== undefined) {
       await db.instance.delete(playersToTeams).where(eq(playersToTeams.teamId, id));
       if (memberIds.length > 0) {
-        await db.instance.insert(playersToTeams).values(memberIds.map((playerId: string) => ({ teamId: id, playerId })));
+        await db.instance
+          .insert(playersToTeams)
+          .values(memberIds.map((playerId: string) => ({ teamId: id, playerId })));
       }
     }
     return c.json(updated);
@@ -167,7 +202,10 @@ function createTeamsRouter(ctx: GrimoireContext): Hono {
   // Delete Team
   app.delete("/:id", auth.requireAuth, async (c) => {
     const { id } = c.req.param();
-    const [deleted] = await db.instance.delete(teams).where(eq(teams.id, id)).returning({ id: teams.id });
+    const [deleted] = await db.instance
+      .delete(teams)
+      .where(eq(teams.id, id))
+      .returning({ id: teams.id });
     if (!deleted) return c.json({ error: "Team not found" }, 404);
     return c.json({ deleted: true, id: deleted.id });
   });
@@ -227,10 +265,17 @@ function createTournamentsRouter(ctx: GrimoireContext): Hono {
   app.post("/:id/register", auth.requireAuth, async (c) => {
     const { id } = c.req.param();
     const body = await c.req.json();
-    const [tournament] = await db.instance.select().from(tournaments).where(eq(tournaments.id, id)).limit(1);
+    const [tournament] = await db.instance
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.id, id))
+      .limit(1);
     if (!tournament) return c.json({ error: "Tournament not found" }, 404);
     if (tournament.status !== "Open") {
-      return c.json({ error: `Tournament is currently ${tournament.status}, inscriptions are closed.` }, 400);
+      return c.json(
+        { error: `Tournament is currently ${tournament.status}, inscriptions are closed.` },
+        400
+      );
     }
 
     const [{ count }] = await db.instance
@@ -261,14 +306,21 @@ function createTournamentsRouter(ctx: GrimoireContext): Hono {
         .returning();
       return c.json(participant, 201);
     } catch (error: any) {
-      return c.json({ error: "Failed to register. You may already be registered.", details: error.message }, 400);
+      return c.json(
+        { error: "Failed to register. You may already be registered.", details: error.message },
+        400
+      );
     }
   });
 
   // Get Tournament by ID
   app.get("/:id", async (c) => {
     const { id } = c.req.param();
-    const [tournament] = await db.instance.select().from(tournaments).where(eq(tournaments.id, id)).limit(1);
+    const [tournament] = await db.instance
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.id, id))
+      .limit(1);
     if (!tournament) return c.json({ error: "Tournament not found" }, 404);
 
     const participantsData = await db.instance
@@ -280,7 +332,11 @@ function createTournamentsRouter(ctx: GrimoireContext): Hono {
 
     return c.json({
       ...tournament,
-      participants: participantsData.map(p => ({ ...p.participant, player: p.player || null, team: p.team || null })),
+      participants: participantsData.map((p) => ({
+        ...p.participant,
+        player: p.player || null,
+        team: p.team || null,
+      })),
     });
   });
 
@@ -300,7 +356,10 @@ function createTournamentsRouter(ctx: GrimoireContext): Hono {
   // Delete Tournament
   app.delete("/:id", auth.requireAuth, async (c) => {
     const { id } = c.req.param();
-    const [deleted] = await db.instance.delete(tournaments).where(eq(tournaments.id, id)).returning({ id: tournaments.id });
+    const [deleted] = await db.instance
+      .delete(tournaments)
+      .where(eq(tournaments.id, id))
+      .returning({ id: tournaments.id });
     if (!deleted) return c.json({ error: "Tournament not found" }, 404);
     return c.json({ deleted: true, id: deleted.id });
   });
@@ -318,7 +377,10 @@ function createMatchesRouter(ctx: GrimoireContext): Hono {
   // GET All Matches
   app.get("/", async (c) => {
     const tournamentId = c.req.query("tournamentId");
-    let query = db.instance.select().from(matches).orderBy(asc(matches.round), asc(matches.matchOrder));
+    let query = db.instance
+      .select()
+      .from(matches)
+      .orderBy(asc(matches.round), asc(matches.matchOrder));
     if (tournamentId) query = query.where(eq(matches.tournamentId, tournamentId)) as any;
     const results = await query;
     return c.json(results);
@@ -365,23 +427,34 @@ function createMatchesRouter(ctx: GrimoireContext): Hono {
   // Generate Brackets
   app.post("/tournament/:tournamentId/generate", auth.requireAuth, async (c) => {
     const { tournamentId } = c.req.param();
-    const [tournament] = await db.instance.select().from(tournaments).where(eq(tournaments.id, tournamentId)).limit(1);
+    const [tournament] = await db.instance
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.id, tournamentId))
+      .limit(1);
     if (!tournament) return c.json({ error: "Tournament not found" }, 404);
 
     if (tournament.status !== "InProgress") {
-      await db.instance.update(tournaments).set({ status: "InProgress", updatedAt: new Date() }).where(eq(tournaments.id, tournamentId));
+      await db.instance
+        .update(tournaments)
+        .set({ status: "InProgress", updatedAt: new Date() })
+        .where(eq(tournaments.id, tournamentId));
     }
 
     await db.instance.delete(matches).where(eq(matches.tournamentId, tournamentId));
 
-    const participants = await db.instance.select().from(tournamentParticipants).where(eq(tournamentParticipants.tournamentId, tournamentId));
-    if (participants.length < 2) return c.json({ error: "Not enough participants to generate brackets" }, 400);
+    const participants = await db.instance
+      .select()
+      .from(tournamentParticipants)
+      .where(eq(tournamentParticipants.tournamentId, tournamentId));
+    if (participants.length < 2)
+      return c.json({ error: "Not enough participants to generate brackets" }, 400);
 
     const shuffled = participants.sort(() => 0.5 - Math.random());
     const maxP = tournament.maxParticipants;
     const rounds = Math.log2(maxP);
 
-    let dbMatches = [];
+    const dbMatches = [];
     const matchMap = new Map();
 
     for (let r = rounds; r >= 1; r--) {
@@ -408,11 +481,19 @@ function createMatchesRouter(ctx: GrimoireContext): Hono {
       }
     }
 
-    const round1Matches = dbMatches.filter(m => m.round === 1).sort((a, b) => a.matchOrder - b.matchOrder);
+    const round1Matches = dbMatches
+      .filter((m) => m.round === 1)
+      .sort((a, b) => a.matchOrder - b.matchOrder);
     let pIndex = 0;
-    for (let m of round1Matches) {
-      if (pIndex < shuffled.length) { m.participant1Id = shuffled[pIndex].id; pIndex++; }
-      if (pIndex < shuffled.length) { m.participant2Id = shuffled[pIndex].id; pIndex++; }
+    for (const m of round1Matches) {
+      if (pIndex < shuffled.length) {
+        m.participant1Id = shuffled[pIndex].id;
+        pIndex++;
+      }
+      if (pIndex < shuffled.length) {
+        m.participant2Id = shuffled[pIndex].id;
+        pIndex++;
+      }
       if (m.participant1Id && m.participant2Id) m.status = "Ready";
       else if (m.participant1Id || m.participant2Id) m.status = "Ready";
     }
@@ -441,19 +522,27 @@ function createMatchesRouter(ctx: GrimoireContext): Hono {
       .returning();
 
     if (match.nextMatchId && body.winnerId) {
-      const [nextMatch] = await db.instance.select().from(matches).where(eq(matches.id, match.nextMatchId)).limit(1);
+      const [nextMatch] = await db.instance
+        .select()
+        .from(matches)
+        .where(eq(matches.id, match.nextMatchId))
+        .limit(1);
       if (nextMatch) {
-        const isSlot1 = (match.matchOrder % 2) !== 0;
+        const isSlot1 = match.matchOrder % 2 !== 0;
         const updateData: any = {};
         if (isSlot1) updateData.participant1Id = body.winnerId;
         else updateData.participant2Id = body.winnerId;
 
-        const willBeReady = (isSlot1 && nextMatch.participant2Id) || (!isSlot1 && nextMatch.participant1Id);
+        const willBeReady =
+          (isSlot1 && nextMatch.participant2Id) || (!isSlot1 && nextMatch.participant1Id);
         if (willBeReady) updateData.status = "Ready";
         await db.instance.update(matches).set(updateData).where(eq(matches.id, nextMatch.id));
       }
     } else {
-      await db.instance.update(tournaments).set({ status: "Completed", updatedAt: new Date() }).where(eq(tournaments.id, match.tournamentId));
+      await db.instance
+        .update(tournaments)
+        .set({ status: "Completed", updatedAt: new Date() })
+        .where(eq(tournaments.id, match.tournamentId));
     }
     return c.json(updated);
   });
@@ -461,7 +550,10 @@ function createMatchesRouter(ctx: GrimoireContext): Hono {
   // Delete Match
   app.delete("/:id", auth.requireAuth, async (c) => {
     const { id } = c.req.param();
-    const [deleted] = await db.instance.delete(matches).where(eq(matches.id, id)).returning({ id: matches.id });
+    const [deleted] = await db.instance
+      .delete(matches)
+      .where(eq(matches.id, id))
+      .returning({ id: matches.id });
     if (!deleted) return c.json({ error: "Match not found" }, 404);
     return c.json({ deleted: true, id: deleted.id });
   });

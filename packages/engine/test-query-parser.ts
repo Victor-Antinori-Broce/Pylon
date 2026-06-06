@@ -12,7 +12,6 @@
  */
 
 import {
-  parseQuery,
   validateQuery,
   getAvailableRelations,
   fieldWhiteList,
@@ -98,7 +97,9 @@ function expect(actual: any) {
     },
     toContain(expected: any) {
       if (!actual.includes(expected)) {
-        throw new Error(`Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`);
+        throw new Error(
+          `Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`
+        );
       }
     },
     toHaveLength(expected: number) {
@@ -108,7 +109,9 @@ function expect(actual: any) {
     },
     toBeInstanceOf(expected: any) {
       if (!(actual instanceof expected)) {
-        throw new Error(`Expected instance of ${expected.name} but got ${actual?.constructor?.name}`);
+        throw new Error(
+          `Expected instance of ${expected.name} but got ${actual?.constructor?.name}`
+        );
       }
     },
     toBeGreaterThanOrEqual(expected: number) {
@@ -303,7 +306,7 @@ test("registerDynamicRelation adds new relation", () => {
   // Usamos agentIdentities como base para evitar problemas con games
   const before = getAvailableRelations(schema.agentIdentities);
   const hasCustomBefore = before.includes("customTestRelation");
-  
+
   // Registramos relación dinámica
   registerDynamicRelation(schema.agentIdentities, "customTestRelation", {
     type: "many",

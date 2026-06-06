@@ -1,14 +1,15 @@
 <script lang="ts">
   /**
    * DynamicBlock.svelte
-   * 
+   *
    * Componente de ejemplo que demuestra el renderizado dinámico.
    * Renderiza bloques de contenido basados en su tipo.
    */
   import type { Component as SvelteComponent } from "svelte";
-  import { componentRegistry } from "../lib/registry.svelte";
+
   import DynamicComponent from "../lib/DynamicComponent.svelte";
-  
+  import { componentRegistry } from "../lib/registry.svelte";
+
   interface Props {
     /** Tipo de bloque a renderizar */
     type: string;
@@ -19,21 +20,16 @@
     /** Callback cuando cambia el contenido (en modo editor) */
     onChange?: (data: any) => void;
   }
-  
-  let { 
-    type, 
-    props = {}, 
-    mode = "render",
-    onChange
-  }: Props = $props();
-  
+
+  const { type, props = {}, mode = "render", onChange }: Props = $props();
+
   // Obtener definición del bloque
-  let block = $derived(componentRegistry.getBlock(type));
-  
+  const block = $derived(componentRegistry.getBlock(type));
+
   // Seleccionar componente según modo
-  let BlockComponent = $derived.by<SvelteComponent | null>(() => {
+  const BlockComponent = $derived.by<SvelteComponent | null>(() => {
     if (!block) return null;
-    
+
     switch (mode) {
       case "editor":
         return block.editorComponent;
@@ -43,7 +39,7 @@
         return block.renderComponent;
     }
   });
-  
+
   // Manejar cambios en modo editor
   function handleChange(data: any) {
     if (onChange) {
@@ -63,11 +59,11 @@
   </div>
 {:else}
   <div class="dynamic-block" data-block-type={type} data-block-mode={mode}>
-    <DynamicComponent 
-      component={BlockComponent} 
+    <DynamicComponent
+      component={BlockComponent}
       props={{
         ...props,
-        ...(mode === "editor" ? { onChange: handleChange } : {})
+        ...(mode === "editor" ? { onChange: handleChange } : {}),
       }}
     />
   </div>

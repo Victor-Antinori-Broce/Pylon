@@ -1,17 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
+  import Badge from "$lib/components/ui/Badge.svelte";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
-  import Badge from "$lib/components/ui/Badge.svelte";
   import { Plus, Trash2, Settings, ChevronDown, ChevronUp } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
+
   import type { CrmPipeline } from "./types";
 
   let pipelines = $state<CrmPipeline[]>([]);
-  let pipelineStages = $state<Record<string, any[]>>({});
+  const pipelineStages = $state<Record<string, any[]>>({});
   let loading = $state(true);
-  let expanded = $state<Record<string, boolean>>({});
+  const expanded = $state<Record<string, boolean>>({});
   let showCreate = $state(false);
   let newName = $state("");
   let newCurrency = $state("USD");

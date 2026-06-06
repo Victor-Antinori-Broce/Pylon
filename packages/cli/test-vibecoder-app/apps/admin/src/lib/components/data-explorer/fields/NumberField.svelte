@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
 
-  let { value, config, mode, onChange }: FieldComponentProps = $props();
+  const { value, config, mode, onChange }: FieldComponentProps = $props();
   
-  let displayValue = $derived(
+  const displayValue = $derived(
     value !== null && value !== undefined ? Number(value).toLocaleString() : "—"
   );
 </script>

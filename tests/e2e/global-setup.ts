@@ -1,21 +1,22 @@
 // @ts-nocheck
 // Global Setup: Initialize test environment before E2E tests
 
-import { FullConfig } from "@playwright/test";
 import { spawn } from "child_process";
 import { setTimeout } from "timers/promises";
+
+import { FullConfig } from "@playwright/test";
 
 let apiProcess: ReturnType<typeof spawn> | null = null;
 
 async function globalSetup(config: FullConfig) {
   console.log("🚀 E2E Global Setup");
-  
+
   const apiUrl = process.env.API_URL || "http://localhost:3001";
   const dbUrl = process.env.DATABASE_URL;
-  
+
   // Check if API is already running
   const isApiRunning = await checkHealth(apiUrl);
-  
+
   if (!isApiRunning) {
     console.log("📡 Starting API server...");
     apiProcess = spawn("bun", ["run", "start:api"], {
@@ -35,7 +36,7 @@ async function globalSetup(config: FullConfig) {
       }
       retries--;
     }
-    
+
     if (retries === 0) {
       throw new Error("❌ API server failed to start");
     }
@@ -52,7 +53,7 @@ async function globalSetup(config: FullConfig) {
       console.log("⚠️ Seed may have already been run");
     }
   }
-  
+
   // Store process for teardown
   (global as any).__API_PROCESS__ = apiProcess;
 }

@@ -25,11 +25,11 @@ import { postsTable, usersTable } from "./schema";
 // Crear sandbox con D Rizzzle REAL
 const sandbox = await createDrizzleSandbox({
   grimoires: ["grimoire-blog"],
-  database: "pg-mem",  // PostgreSQL en memoria (rápido)
+  database: "pg-mem", // PostgreSQL en memoria (rápido)
   schema: { postsTable, usersTable },
   fixtures: {
-    admin: { id: "admin-1", email: "admin@test.com", role: "admin" }
-  }
+    admin: { id: "admin-1", email: "admin@test.com", role: "admin" },
+  },
 });
 
 beforeAll(() => sandbox.setup());
@@ -40,13 +40,11 @@ describe("Blog Grimoire", () => {
   describe("POST /api/blog/posts", () => {
     it("creates post via Hono, stores via Drizzle", async () => {
       // 1. Llamar endpoint Hono
-      const response = await sandbox.http
-        .asUser(sandbox.fixtures.admin)
-        .post("/api/blog/posts", {
-          title: "Hello Bun!",
-          content: "Testing with real Drizzle",
-          status: "published"
-        });
+      const response = await sandbox.http.asUser(sandbox.fixtures.admin).post("/api/blog/posts", {
+        title: "Hello Bun!",
+        content: "Testing with real Drizzle",
+        status: "published",
+      });
 
       // 2. Verificar respuesta HTTP
       expect(response.status).toBe(201);
@@ -65,25 +63,21 @@ describe("Blog Grimoire", () => {
 
       // 4. Verificar evento emitido
       sandbox.assert.events.emitted("blog:post:created", {
-        postId: response.body.id
+        postId: response.body.id,
       });
     });
 
     it("validates with Zod before Drizzle", async () => {
-      const response = await sandbox.http
-        .asUser(sandbox.fixtures.admin)
-        .post("/api/blog/posts", {
-          // Falta title (requerido por Zod)
-          content: "No title"
-        });
+      const response = await sandbox.http.asUser(sandbox.fixtures.admin).post("/api/blog/posts", {
+        // Falta title (requerido por Zod)
+        content: "No title",
+      });
 
       expect(response.status).toBe(400);
-      
+
       // No debe haber nada en la base de datos
-      const posts = await sandbox.drizzle
-        .select()
-        .from(postsTable);
-      
+      const posts = await sandbox.drizzle.select().from(postsTable);
+
       expect(posts).toHaveLength(0);
     });
   });
@@ -94,12 +88,11 @@ describe("Blog Grimoire", () => {
       await sandbox.drizzle.insert(postsTable).values([
         { title: "Post 1", slug: "post-1", status: "published" },
         { title: "Post 2", slug: "post-2", status: "draft" },
-        { title: "Post 3", slug: "post-3", status: "published" }
+        { title: "Post 3", slug: "post-3", status: "published" },
       ]);
 
       // Query via Hono endpoint
-      const response = await sandbox.http
-        .get("/api/blog/posts?status=published");
+      const response = await sandbox.http.get("/api/blog/posts?status=published");
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(2);
@@ -116,20 +109,18 @@ describe("Blog Grimoire", () => {
         .returning();
 
       // Crear post con relación
-      await sandbox.drizzle
-        .insert(postsTable)
-        .values({
-          title: "With Author",
-          slug: "with-author",
-          authorId: author.id
-        });
+      await sandbox.drizzle.insert(postsTable).values({
+        title: "With Author",
+        slug: "with-author",
+        authorId: author.id,
+      });
 
       // Query con join
       const result = await sandbox.drizzle.query.postsTable.findFirst({
         where: eq(postsTable.slug, "with-author"),
         with: {
-          author: true  // Auto-join con Drizzle
-        }
+          author: true, // Auto-join con Drizzle
+        },
       });
 
       expect(result?.author.name).toBe("Author");
@@ -142,7 +133,7 @@ describe("Blog Grimoire", () => {
         // Insertar en transacción
         await tx.insert(postsTable).values({
           title: "In Transaction",
-          slug: "in-transaction"
+          slug: "in-transaction",
         });
 
         // Verificar que existe en transacción
@@ -177,6 +168,7 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/gremius_test \
 ## 4. APIs Disponibles
 
 ### `sandbox.drizzle` - Drizzle ORM Real
+
 ```typescript
 // Select
 const posts = await sandbox.drizzle
@@ -185,10 +177,7 @@ const posts = await sandbox.drizzle
   .where(eq(postsTable.status, "published"));
 
 // Insert
-const [newPost] = await sandbox.drizzle
-  .insert(postsTable)
-  .values({ title: "New" })
-  .returning();
+const [newPost] = await sandbox.drizzle.insert(postsTable).values({ title: "New" }).returning();
 
 // Update
 await sandbox.drizzle
@@ -197,18 +186,17 @@ await sandbox.drizzle
   .where(eq(postsTable.id, postId));
 
 // Delete
-await sandbox.drizzle
-  .delete(postsTable)
-  .where(eq(postsTable.id, postId));
+await sandbox.drizzle.delete(postsTable).where(eq(postsTable.id, postId));
 
 // Relations
 const postWithAuthor = await sandbox.drizzle.query.postsTable.findFirst({
   where: eq(postsTable.id, postId),
-  with: { author: true, comments: true }
+  with: { author: true, comments: true },
 });
 ```
 
 ### `sandbox.http` - HTTP Client para Hono
+
 ```typescript
 // Autenticación
 await sandbox.http.asUser("admin-1").get("/api/posts");
@@ -224,6 +212,7 @@ await sandbox.http.delete("/api/posts/1");
 ```
 
 ### `sandbox.assert` - Assertions
+
 ```typescript
 // Database
 await sandbox.assert.database.has("posts", { id: "123" });
@@ -237,6 +226,7 @@ sandbox.assert.events.notEmitted("blog:error");
 ```
 
 ### `sandbox.transaction()` - Transacciones Aisladas
+
 ```typescript
 await sandbox.transaction(async (tx) => {
   // Todo aquí se hace rollback al final
@@ -248,20 +238,22 @@ await sandbox.transaction(async (tx) => {
 ## 5. Estrategias de Base de Datos
 
 ### Opción A: pg-mem (Recomendado para CI/Unit tests)
+
 ```typescript
 const sandbox = await createDrizzleSandbox({
   database: "pg-mem",
-  schema: { postsTable }
+  schema: { postsTable },
 });
 // Rápido (<50ms por test), sin Docker
 ```
 
 ### Opción B: PostgreSQL Real con Transactions
+
 ```typescript
 const sandbox = await createDrizzleSandbox({
   database: "postgres",
   databaseUrl: process.env.TEST_DATABASE_URL,
-  schema: { postsTable }
+  schema: { postsTable },
 });
 // Más lento pero comportamiento 100% real
 ```

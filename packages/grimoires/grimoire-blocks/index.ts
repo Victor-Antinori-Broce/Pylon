@@ -7,25 +7,19 @@
  * @version 1.0.0
  */
 
-import type {
-  GrimoireDefinition,
-  GrimoireContext,
-} from "@gremius/shared";
+import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 
 // GrimoireHooks removed from @gremius/shared — inline the type
 type GrimoireHooks = Record<string, (...args: any[]) => void | Promise<void>>;
 import { createBlocksRouter } from "./blocks.routes";
+
 // Tables array for grimoire definition
 const tables = ["block_pages", "block_contents", "block_templates"];
 import { sql } from "drizzle-orm";
 
 // Export schema types
-export {
-  pages,
-  blocks,
-  blockTemplates,
-} from "./blocks.schema";
+export { pages, blocks, blockTemplates } from "./blocks.schema";
 
 export type {
   Page,
@@ -154,7 +148,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
   // Admin configuration
   admin: {
     category: "core",
-    views: adminConfig.views.map(v => ({
+    views: adminConfig.views.map((v) => ({
       id: v.slug,
       type: "custom" as const,
       title: v.label,

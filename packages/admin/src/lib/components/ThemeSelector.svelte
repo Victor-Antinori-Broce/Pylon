@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Coffee, Check, Download, Trash2 } from "lucide-svelte";
+
   import { currentTheme, setTheme, themes } from "$lib/theme.svelte";
 
   function installTheme(id: string) {
@@ -24,14 +25,19 @@
       <div class="card p-4 relative group" class:border-gremius-cyan={$currentTheme === theme.id}>
         {#if $currentTheme === theme.id}
           <div class="absolute top-2 right-2">
-            <span class="px-2 py-1 text-[10px] font-medium bg-gremius-cyan/10 text-gremius-cyan rounded-full">
+            <span
+              class="px-2 py-1 text-[10px] font-medium bg-gremius-cyan/10 text-gremius-cyan rounded-full"
+            >
               Active
             </span>
           </div>
         {/if}
-        
+
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: {theme.preview}">
+          <div
+            class="w-10 h-10 rounded-lg flex items-center justify-center"
+            style="background: {theme.preview}"
+          >
             <Coffee class="w-5 h-5 text-gremius-text" />
           </div>
           <div>
@@ -50,9 +56,9 @@
               Activate
             </button>
           {/if}
-          
+
           {#if theme.id !== "default"}
-            <button 
+            <button
               class="p-2 rounded-lg text-gremius-text-dim hover:bg-gremius-pink/10 hover:text-gremius-pink transition-colors"
               onclick={() => uninstallTheme(theme.id)}
             >
@@ -62,9 +68,11 @@
         </div>
       </div>
     {/each}
-    
+
     <!-- Install new theme card -->
-    <button class="card p-4 border-dashed border-2 border-gremius-border hover:border-gremius-cyan/50 transition-colors flex flex-col items-center justify-center min-h-[160px] gap-3">
+    <button
+      class="card p-4 border-dashed border-2 border-gremius-border hover:border-gremius-cyan/50 transition-colors flex flex-col items-center justify-center min-h-[160px] gap-3"
+    >
       <div class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center">
         <Download class="w-5 h-5 text-gremius-cyan" />
       </div>

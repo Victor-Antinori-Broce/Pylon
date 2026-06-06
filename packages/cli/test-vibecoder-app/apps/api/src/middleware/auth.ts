@@ -5,9 +5,9 @@
  */
 
 import { createMiddleware } from 'hono/factory';
+
 import { auth } from '../lib/auth';
 // @ts-ignore - Type import used for JSDoc/context typing
-import type { AppVariables } from '../types/hono';
 
 /**
  * Middleware to require authentication

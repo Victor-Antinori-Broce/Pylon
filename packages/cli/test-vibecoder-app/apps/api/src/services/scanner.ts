@@ -21,12 +21,14 @@
  *   Registry: installed_grimoires table
  */
 
-import { readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { installedGrimoires } from "../db/schema";
-import { eq } from "drizzle-orm";
 
 /** Grimoire/Realm manifest structure */
 export interface GremiusManifest {

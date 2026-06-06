@@ -21,12 +21,14 @@
  *   Registry: installed_grimoires table
  */
 
-import { readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { installedGrimoires } from "../db/schema";
-import { eq } from "drizzle-orm";
 
 /** Grimoire/Realm manifest structure */
 export interface GremiusManifest {
@@ -61,22 +63,25 @@ export interface GremiusManifest {
   // For realm manifests
   tables?: (string | TableConfig)[];
   /** Per-grimoire admin overrides when this realm is active */
-  grimoireConfig?: Record<string, {
-    displayName?: string;
-    hiddenTables?: string[];
-    extraViews?: Array<{
-      id: string;
-      type: "grid" | "kanban" | "calendar" | "custom";
-      title: string;
-      table?: string;
-    }>;
-    defaultView?: string;
-  }>;
+  grimoireConfig?: Record<
+    string,
+    {
+      displayName?: string;
+      hiddenTables?: string[];
+      extraViews?: Array<{
+        id: string;
+        type: "grid" | "kanban" | "calendar" | "custom";
+        title: string;
+        table?: string;
+      }>;
+      defaultView?: string;
+    }
+  >;
   /** Seed configuration */
   seed?: {
-    sql?: string;          // relative path to seed.sql (default: seed.sql)
-    datasets?: string;     // relative path to seed-datasets.json
-    runOnce?: boolean;     // default: true
+    sql?: string; // relative path to seed.sql (default: seed.sql)
+    datasets?: string; // relative path to seed-datasets.json
+    runOnce?: boolean; // default: true
   };
 }
 
@@ -172,16 +177,16 @@ export async function scanInstalledGrimoires(): Promise<GremiusManifest[]> {
     if (existsSync(gremiusScope)) {
       try {
         const entries = await readdir(gremiusScope, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           if (!entry.isDirectory()) continue;
-          
+
           // Check if it's a grimoire
           if (entry.name.startsWith("grimoire-")) {
             const grimoirePath = join(gremiusScope, entry.name);
             const manifest = await readGrimoireManifest(grimoirePath);
-            
-            if (manifest && !manifests.some(m => m.id === manifest.id)) {
+
+            if (manifest && !manifests.some((m) => m.id === manifest.id)) {
               manifests.push({
                 ...manifest,
                 source: "npm",
@@ -200,15 +205,15 @@ export async function scanInstalledGrimoires(): Promise<GremiusManifest[]> {
     // Check for grimoire-* packages in root
     try {
       const entries = await readdir(nmPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
-        
+
         if (entry.name.startsWith("grimoire-")) {
           const grimoirePath = join(nmPath, entry.name);
           const manifest = await readGrimoireManifest(grimoirePath);
-          
-          if (manifest && !manifests.some(m => m.id === manifest.id)) {
+
+          if (manifest && !manifests.some((m) => m.id === manifest.id)) {
             manifests.push({
               ...manifest,
               source: "npm",
@@ -361,11 +366,11 @@ export async function getAllGrimoires(): Promise<GremiusManifest[]> {
 
   // Merge, with installed taking precedence
   const all = new Map<string, GremiusManifest>();
-  
+
   for (const g of localGrimoires) {
     all.set(g.id, g);
   }
-  
+
   for (const g of installedGrimoires) {
     // Installed grimoires override local ones
     all.set(g.id, { ...all.get(g.id), ...g });

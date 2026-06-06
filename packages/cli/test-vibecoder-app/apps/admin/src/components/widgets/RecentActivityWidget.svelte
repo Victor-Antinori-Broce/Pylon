@@ -10,7 +10,7 @@
     limit?: number;
   }
   
-  let { limit = 5 }: Props = $props();
+  const { limit = 5 }: Props = $props();
   
   // Datos de ejemplo
   const activities = [

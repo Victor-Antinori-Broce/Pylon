@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { Bot, Activity, Key, Settings } from 'lucide-svelte';
   import { cn } from '$lib/utils';
+  import { Bot, Activity, Key } from 'lucide-svelte';
+
+  import { page } from '$app/stores';
   
   const navItems = [
     { href: '/agents', label: 'Agentes', icon: Bot },

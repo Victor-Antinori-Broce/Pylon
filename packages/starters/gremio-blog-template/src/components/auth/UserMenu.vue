@@ -11,15 +11,20 @@
     <div v-if="checking" class="user-menu-skeleton" />
 
     <!-- Logged Out -->
-    <button
-      v-else-if="!user"
-      @click="showLoginModal = true"
-      class="sign-in-btn"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-        <polyline points="10 17 15 12 10 7"/>
-        <line x1="15" y1="12" x2="3" y2="12"/>
+    <button v-else-if="!user" @click="showLoginModal = true" class="sign-in-btn">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        <polyline points="10 17 15 12 10 7" />
+        <line x1="15" y1="12" x2="3" y2="12" />
       </svg>
       <span>Sign In</span>
     </button>
@@ -27,14 +32,9 @@
     <!-- Logged In -->
     <div v-else class="user-avatar-wrapper" ref="avatarRef">
       <button @click="dropdownOpen = !dropdownOpen" class="avatar-btn">
-        <img
-          v-if="user.image"
-          :src="user.image"
-          :alt="user.name"
-          class="avatar-img"
-        />
+        <img v-if="user.image" :src="user.image" :alt="user.name" class="avatar-img" />
         <div v-else class="avatar-placeholder">
-          {{ user.name?.[0]?.toUpperCase() || '?' }}
+          {{ user.name?.[0]?.toUpperCase() || "?" }}
         </div>
       </button>
 
@@ -47,10 +47,17 @@
           </div>
           <div class="dropdown-divider" />
           <button @click="handleSignOut" class="dropdown-item dropdown-item-danger">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
             Sign Out
           </button>
@@ -97,7 +104,9 @@
 
             <button @click="handleDiscordLogin" class="discord-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.8733.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286z"/>
+                <path
+                  d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.8733.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286z"
+                />
               </svg>
               Continue with Discord
             </button>
@@ -225,7 +234,7 @@ async function handleSignOut() {
 .sign-in-btn:hover {
   background: rgba(0, 229, 255, 0.08);
   border-color: rgba(0, 229, 255, 0.15);
-  color: #00E5FF;
+  color: #00e5ff;
 }
 
 /* ── Avatar ── */
@@ -323,7 +332,7 @@ async function handleSignOut() {
 
 .dropdown-item-danger:hover {
   background: rgba(255, 42, 109, 0.08);
-  color: #FF6B8A;
+  color: #ff6b8a;
 }
 
 /* ── Skeleton ── */
@@ -335,8 +344,13 @@ async function handleSignOut() {
   animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* ── Login Modal ── */
@@ -389,7 +403,7 @@ async function handleSignOut() {
   border-radius: 8px;
   background: rgba(255, 42, 109, 0.08);
   border: 1px solid rgba(255, 42, 109, 0.15);
-  color: #FF6B8A;
+  color: #ff6b8a;
   font-size: 0.75rem;
 }
 
@@ -410,14 +424,18 @@ async function handleSignOut() {
   transition: border-color 0.2s;
   font-family: inherit;
 }
-.modal-input::placeholder { color: rgba(255, 255, 255, 0.15); }
-.modal-input:focus { border-color: rgba(0, 229, 255, 0.3); }
+.modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.15);
+}
+.modal-input:focus {
+  border-color: rgba(0, 229, 255, 0.3);
+}
 
 .modal-submit-btn {
   padding: 10px;
   border-radius: 8px;
   border: none;
-  background: linear-gradient(135deg, #00E5FF, #00B8D4);
+  background: linear-gradient(135deg, #00e5ff, #00b8d4);
   color: #0a0a12;
   font-size: 0.8rem;
   font-weight: 700;
@@ -428,8 +446,13 @@ async function handleSignOut() {
   justify-content: center;
   font-family: inherit;
 }
-.modal-submit-btn:hover:not(:disabled) { transform: translateY(-1px); }
-.modal-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.modal-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.modal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .modal-spinner {
   width: 16px;
@@ -439,7 +462,11 @@ async function handleSignOut() {
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .modal-divider {
   display: flex;
@@ -468,7 +495,7 @@ async function handleSignOut() {
   border-radius: 8px;
   border: 1px solid rgba(88, 101, 242, 0.2);
   background: rgba(88, 101, 242, 0.1);
-  color: #7289DA;
+  color: #7289da;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;

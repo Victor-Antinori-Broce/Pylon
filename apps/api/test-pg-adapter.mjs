@@ -1,5 +1,6 @@
-import { newDb, DataType } from "pg-mem";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { newDb, DataType } from "pg-mem";
+
 import * as coreSchema from "./src/db/schema-core.js";
 
 const pgMem = newDb();
@@ -25,7 +26,10 @@ const db = drizzle(adapter, { schema: coreSchema });
 
 // Test a parameterized query like drizzle would
 try {
-  await db.select().from(coreSchema.authUsers).where(coreSchema.authUsers.email.eq("test@example.com"));
+  await db
+    .select()
+    .from(coreSchema.authUsers)
+    .where(coreSchema.authUsers.email.eq("test@example.com"));
   console.log("Parameterized query: SUCCESS");
 } catch (e) {
   console.log("Parameterized query: FAIL", e.message.substring(0, 200));
@@ -33,7 +37,9 @@ try {
 
 // Test insert
 try {
-  await db.insert(coreSchema.authUsers).values({ id: "u1", name: "Test", email: "test@example.com" });
+  await db
+    .insert(coreSchema.authUsers)
+    .values({ id: "u1", name: "Test", email: "test@example.com" });
   console.log("Insert: SUCCESS");
 } catch (e) {
   console.log("Insert: FAIL", e.message.substring(0, 200));

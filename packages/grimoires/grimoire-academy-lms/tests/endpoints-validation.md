@@ -4,29 +4,30 @@ Documento de validación de todos los endpoints del Academy LMS.
 
 ## 📊 Resumen
 
-| Categoría | Endpoints | Estado |
-|-----------|-----------|--------|
-| Cursos | 6 | ✅ |
-| Módulos | 5 | ✅ |
-| Temas | 7 | ✅ |
-| Quizzes | 9 | ✅ |
-| Grupos | 9 | ✅ |
-| Asignaciones | 6 | ✅ |
-| Learning Paths | 10 | ✅ |
-| Encuestas | 4 | ✅ |
-| Certificados | 3 | ✅ |
-| Dashboard | 3 | ✅ |
-| Perfiles | 3 | ✅ |
-| Exportación | 3 | ✅ |
-| Sincronización | 3 | ✅ |
-| Media | 3 | ✅ |
-| **TOTAL** | **75** | **✅** |
+| Categoría      | Endpoints | Estado |
+| -------------- | --------- | ------ |
+| Cursos         | 6         | ✅     |
+| Módulos        | 5         | ✅     |
+| Temas          | 7         | ✅     |
+| Quizzes        | 9         | ✅     |
+| Grupos         | 9         | ✅     |
+| Asignaciones   | 6         | ✅     |
+| Learning Paths | 10        | ✅     |
+| Encuestas      | 4         | ✅     |
+| Certificados   | 3         | ✅     |
+| Dashboard      | 3         | ✅     |
+| Perfiles       | 3         | ✅     |
+| Exportación    | 3         | ✅     |
+| Sincronización | 3         | ✅     |
+| Media          | 3         | ✅     |
+| **TOTAL**      | **75**    | **✅** |
 
 ---
 
 ## 🎓 Cursos (`/cursos`)
 
 ### GET `/cursos`
+
 **Auth:** Any
 **Query:** `?estado=todos|no-iniciados|en-progreso|completados`
 
@@ -36,6 +37,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "cursos": [
@@ -53,6 +55,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 ### GET `/cursos/:id`
+
 **Auth:** Any
 
 ```bash
@@ -61,6 +64,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "curso": { ... },
@@ -72,6 +76,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 ### POST `/cursos`
+
 **Auth:** Admin/Supervisor
 
 ```bash
@@ -82,11 +87,13 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 201:**
+
 ```json
 { "success": true, "curso": { "id": "curso_123", ... } }
 ```
 
 ### PUT `/cursos/:id`
+
 **Auth:** Admin/Supervisor
 
 ```bash
@@ -97,11 +104,13 @@ curl -X PUT -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 { "success": true, "curso": { ... } }
 ```
 
 ### DELETE `/cursos/:id`
+
 **Auth:** Admin
 
 ```bash
@@ -110,11 +119,13 @@ curl -X DELETE -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 { "success": true, "message": "Curso desactivado" }
 ```
 
 ### GET `/cursos/:id/estadisticas`
+
 **Auth:** Admin/Supervisor
 
 ```bash
@@ -123,6 +134,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "estadisticas": {
@@ -138,18 +150,23 @@ curl -H "Authorization: Bearer TOKEN" \
 ## 📦 Módulos (`/modulos`)
 
 ### GET `/modulos/:id`
+
 **Auth:** Any
 
 ### POST `/modulos`
+
 **Auth:** Admin/Supervisor
 
 ### PUT `/modulos/:id`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/modulos/:id`
+
 **Auth:** Admin
 
 ### POST `/modulos/reordenar`
+
 **Auth:** Admin/Supervisor
 
 ```bash
@@ -164,12 +181,15 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 📝 Temas (`/temas`)
 
 ### GET `/temas/:id`
+
 **Auth:** Any
 
 ### POST `/temas`
+
 **Auth:** Admin/Supervisor
 
 **Ejemplo con YouTube:**
+
 ```bash
 curl -X POST -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
@@ -184,12 +204,15 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### PUT `/temas/:id`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/temas/:id`
+
 **Auth:** Admin
 
 ### POST `/temas/:id/completar`
+
 **Auth:** Any
 
 ```bash
@@ -198,6 +221,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "success": true,
@@ -207,12 +231,15 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### POST `/temas/reordenar`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/temas/:id/archivos`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/archivos/:id`
+
 **Auth:** Admin/Supervisor
 
 ---
@@ -220,18 +247,23 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 🎯 Quizzes (`/quizzes`)
 
 ### GET `/quizzes/:id`
+
 **Auth:** Any
 
 ### POST `/quizzes`
+
 **Auth:** Admin/Supervisor
 
 ### PUT `/quizzes/:id`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/quizzes/:id`
+
 **Auth:** Admin
 
 ### POST `/quizzes/:id/responder`
+
 **Auth:** Any
 
 ```bash
@@ -248,6 +280,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "success": true,
@@ -261,21 +294,27 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### POST `/quizzes/:id/preguntas`
+
 **Auth:** Admin/Supervisor
 
 ### PUT `/preguntas/:id`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/preguntas/:id`
+
 **Auth:** Admin
 
 ### POST `/preguntas/:id/opciones`
+
 **Auth:** Admin/Supervisor
 
 ### PUT `/opciones/:id`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/opciones/:id`
+
 **Auth:** Admin
 
 ---
@@ -283,30 +322,39 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 👥 Grupos (`/grupos`)
 
 ### GET `/grupos`
+
 **Auth:** Any
 
 ### GET `/grupos/:id`
+
 **Auth:** Any
 
 ### POST `/grupos`
+
 **Auth:** Admin
 
 ### PUT `/grupos/:id`
+
 **Auth:** Admin
 
 ### DELETE `/grupos/:id`
+
 **Auth:** Admin
 
 ### POST `/grupos/:id/miembros`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/grupos/:id/miembros/:userId`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/grupos/:id/supervisores`
+
 **Auth:** Admin
 
 ### DELETE `/grupos/:id/supervisores/:supervisorId`
+
 **Auth:** Admin
 
 ---
@@ -314,12 +362,15 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 📋 Asignaciones (`/asignaciones`)
 
 ### GET `/asignaciones`
+
 **Auth:** Admin/Supervisor
 
 ### GET `/asignaciones/:id`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/asignaciones`
+
 **Auth:** Admin/Supervisor
 
 ```bash
@@ -333,12 +384,15 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### PUT `/asignaciones/:id`
+
 **Auth:** Admin/Supervisor
 
 ### DELETE `/asignaciones/:id`
+
 **Auth:** Admin
 
 ### POST `/asignaciones/multiple`
+
 **Auth:** Admin/Supervisor (BULK)
 
 ```bash
@@ -353,6 +407,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 201:**
+
 ```json
 {
   "success": true,
@@ -369,36 +424,47 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 🛤️ Learning Paths (`/learning-paths`)
 
 ### GET `/learning-paths`
+
 **Auth:** Any
 
 ### GET `/learning-paths/:id`
+
 **Auth:** Any
 
 ### GET `/learning-paths/mis-paths`
+
 **Auth:** Any
 
 ### POST `/learning-paths`
+
 **Auth:** Admin
 
 ### PUT `/learning-paths/:id`
+
 **Auth:** Admin
 
 ### DELETE `/learning-paths/:id`
+
 **Auth:** Admin
 
 ### GET `/learning-paths/:id/estadisticas`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/learning-paths/:id/asignar`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/learning-paths/:id/cursos`
+
 **Auth:** Admin
 
 ### PUT `/learning-paths/:id/cursos/:cursoId`
+
 **Auth:** Admin
 
 ### DELETE `/learning-paths/:id/cursos/:cursoId`
+
 **Auth:** Admin
 
 ---
@@ -406,15 +472,19 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 📊 Encuestas (`/encuestas`)
 
 ### GET `/encuestas`
+
 **Auth:** Admin/Supervisor
 
 ### GET `/encuestas/:id`
+
 **Auth:** Admin/Supervisor
 
 ### GET `/encuestas/estadisticas`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/encuestas`
+
 **Auth:** Any
 
 ```bash
@@ -440,9 +510,11 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 📜 Certificados (`/certificados`)
 
 ### GET `/certificados/:cursoId`
+
 **Auth:** Any (JSON)
 
 ### GET `/certificados/:cursoId/pdf` ⭐
+
 **Auth:** Any (PDF Download)
 
 ```bash
@@ -454,6 +526,7 @@ curl -H "Authorization: Bearer TOKEN" \
 **Response:** PDF file (binary)
 
 ### GET `/certificados/verificar/:codigo`
+
 **Auth:** Any (Public)
 
 ```bash
@@ -461,6 +534,7 @@ curl http://localhost:3000/api/academy/certificados/verificar/CERT-ABC123-XYZ789
 ```
 
 **Response 200:**
+
 ```json
 {
   "valido": true,
@@ -477,9 +551,11 @@ curl http://localhost:3000/api/academy/certificados/verificar/CERT-ABC123-XYZ789
 ## 📈 Dashboard (`/dashboard`)
 
 ### GET `/dashboard`
+
 **Auth:** Admin/Supervisor
 
 **Response 200:**
+
 ```json
 {
   "metricas": {
@@ -488,22 +564,24 @@ curl http://localhost:3000/api/academy/certificados/verificar/CERT-ABC123-XYZ789
     "totalTemas": 200,
     "tasaCompletado": 65
   },
-  "alertas": [
-    { "tipo": "success", "mensaje": "Sistema funcionando" }
-  ]
+  "alertas": [{ "tipo": "success", "mensaje": "Sistema funcionando" }]
 }
 ```
 
 ### GET `/dashboard/mi-progreso`
+
 **Auth:** Any
 
 ### GET `/reportes/cursos`
+
 **Auth:** Admin/Supervisor
 
 ### GET `/reportes/usuarios/:id`
+
 **Auth:** Admin/Supervisor
 
 ### GET `/reportes/progreso`
+
 **Auth:** Admin/Supervisor
 
 ---
@@ -511,12 +589,15 @@ curl http://localhost:3000/api/academy/certificados/verificar/CERT-ABC123-XYZ789
 ## 👤 Perfiles (`/perfiles`)
 
 ### GET `/perfiles`
+
 **Auth:** Admin/Supervisor
 
 ### POST `/perfiles`
+
 **Auth:** Admin
 
 ### PUT `/perfiles/:id/rol`
+
 **Auth:** Admin
 
 ---
@@ -524,6 +605,7 @@ curl http://localhost:3000/api/academy/certificados/verificar/CERT-ABC123-XYZ789
 ## 📤 Exportación (`/exportar`)
 
 ### GET `/exportar/asignaciones` ⭐
+
 **Auth:** Admin/Supervisor (Excel)
 
 ```bash
@@ -533,6 +615,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 ### GET `/exportar/progreso` ⭐
+
 **Auth:** Admin/Supervisor (Excel)
 
 ```bash
@@ -542,6 +625,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ```
 
 ### GET `/exportar/encuestas` ⭐
+
 **Auth:** Admin/Supervisor (Excel)
 
 ```bash
@@ -555,6 +639,7 @@ curl -H "Authorization: Bearer TOKEN" \
 ## 🔄 Sincronización (`/sync`)
 
 ### POST `/sync/usuarios`
+
 **Auth:** Admin
 
 ```bash
@@ -575,6 +660,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### POST `/sync/usuarios/csv`
+
 **Auth:** Admin
 
 ```bash
@@ -585,6 +671,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### GET `/sync/mapeo-roles`
+
 **Auth:** Admin
 
 ---
@@ -592,6 +679,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ## 🎬 Media (`/media`)
 
 ### POST `/media/validar`
+
 **Auth:** Any
 
 ```bash
@@ -607,6 +695,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### POST `/media/youtube-info` ⭐
+
 **Auth:** Any
 
 ```bash
@@ -617,6 +706,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "valido": true,
@@ -627,6 +717,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 ### POST `/media/normalizar-video` ⭐
+
 **Auth:** Any
 
 ```bash
@@ -637,6 +728,7 @@ curl -X POST -H "Authorization: Bearer TOKEN" \
 ```
 
 **Response 200:**
+
 ```json
 {
   "tipo": "youtube",
@@ -697,27 +789,27 @@ newman run academy-lms.postman_collection.json \
 
 ## 📈 Estadísticas de Respuesta
 
-| Endpoint | Tiempo Promedio | Status |
-|----------|----------------|--------|
-| GET /cursos | ~150ms | ✅ |
-| GET /cursos/:id | ~200ms | ✅ |
-| POST /quizzes/:id/responder | ~100ms | ✅ |
-| GET /certificados/:id/pdf | ~500ms | ✅ |
-| GET /exportar/* | ~800ms | ✅ |
-| POST /sync/usuarios | ~2000ms | ✅ |
+| Endpoint                    | Tiempo Promedio | Status |
+| --------------------------- | --------------- | ------ |
+| GET /cursos                 | ~150ms          | ✅     |
+| GET /cursos/:id             | ~200ms          | ✅     |
+| POST /quizzes/:id/responder | ~100ms          | ✅     |
+| GET /certificados/:id/pdf   | ~500ms          | ✅     |
+| GET /exportar/\*            | ~800ms          | ✅     |
+| POST /sync/usuarios         | ~2000ms         | ✅     |
 
 ---
 
 ## 🐛 Códigos de Error Comunes
 
-| Código | Significado | Solución |
-|--------|-------------|----------|
-| 400 | Bad Request | Revisar payload JSON |
-| 401 | Unauthorized | Token inválido o expirado |
-| 403 | Forbidden | Sin permisos suficientes |
-| 404 | Not Found | Recurso no existe |
-| 409 | Conflict | Conflicto de datos (ej: duplicado) |
-| 500 | Server Error | Revisar logs del servidor |
+| Código | Significado  | Solución                           |
+| ------ | ------------ | ---------------------------------- |
+| 400    | Bad Request  | Revisar payload JSON               |
+| 401    | Unauthorized | Token inválido o expirado          |
+| 403    | Forbidden    | Sin permisos suficientes           |
+| 404    | Not Found    | Recurso no existe                  |
+| 409    | Conflict     | Conflicto de datos (ej: duplicado) |
+| 500    | Server Error | Revisar logs del servidor          |
 
 ---
 

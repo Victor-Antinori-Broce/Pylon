@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
+  import Badge from "$lib/components/ui/Badge.svelte";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
-  import Textarea from "$lib/components/ui/Textarea.svelte";
   import Label from "$lib/components/ui/Label.svelte";
-  import Badge from "$lib/components/ui/Badge.svelte";
+  import Textarea from "$lib/components/ui/Textarea.svelte";
   import { ArrowLeft, Save, FileText, DollarSign } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     disbursementId?: string | null;
     onBack: () => void;
     onSave: () => void;
   }
-  let { disbursementId = null, onBack, onSave }: Props = $props();
+  const { disbursementId = null, onBack, onSave }: Props = $props();
 
   let matters = $state<any[]>([]);
   let accounts = $state<any[]>([]);

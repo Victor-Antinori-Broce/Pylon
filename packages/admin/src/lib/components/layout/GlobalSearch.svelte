@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import { goto } from "$app/navigation";
   import { Search, Clock, Database, LayoutDashboard, FileText, ArrowRight } from "lucide-svelte";
+  import { onMount, tick } from "svelte";
+
   import { datasetStore } from "$lib/states/datasets.svelte";
+
+  import { goto } from "$app/navigation";
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Types
@@ -34,7 +36,7 @@
     filesystemNavItems: NavItem[];
   }
 
-  let { navItems, bottomNavItems, filesystemNavItems }: Props = $props();
+  const { navItems, bottomNavItems, filesystemNavItems }: Props = $props();
 
   // ═══════════════════════════════════════════════════════════════════════════
   // State
@@ -96,8 +98,10 @@
   function saveRecentPage(path: string, title: string) {
     try {
       const raw = localStorage.getItem(RECENT_STORAGE_KEY);
-      let pages: Array<{ path: string; title: string; timestamp: number }> = raw ? JSON.parse(raw) : [];
-      pages = pages.filter(p => p.path !== path);
+      let pages: Array<{ path: string; title: string; timestamp: number }> = raw
+        ? JSON.parse(raw)
+        : [];
+      pages = pages.filter((p) => p.path !== path);
       pages.unshift({ path, title, timestamp: Date.now() });
       localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(pages.slice(0, MAX_RECENT)));
     } catch {
@@ -153,15 +157,19 @@
   // Derived Results
   // ═══════════════════════════════════════════════════════════════════════════
 
-  let allNavigationItems = $derived([
-    ...navItems.map(n => ({ ...n, category: "navigation" as const })),
-    ...bottomNavItems.map(n => ({ ...n, category: "navigation" as const })),
-    ...filesystemNavItems.map(n => ({ ...n, category: "navigation" as const, icon: n.icon || LayoutDashboard })),
+  const allNavigationItems = $derived([
+    ...navItems.map((n) => ({ ...n, category: "navigation" as const })),
+    ...bottomNavItems.map((n) => ({ ...n, category: "navigation" as const })),
+    ...filesystemNavItems.map((n) => ({
+      ...n,
+      category: "navigation" as const,
+      icon: n.icon || LayoutDashboard,
+    })),
   ]);
 
-  let filteredNavigation = $derived(
+  const filteredNavigation = $derived(
     allNavigationItems
-      .map(item => ({
+      .map((item) => ({
         id: `nav-${item.path}`,
         title: item.label,
         subtitle: undefined as string | undefined,
@@ -170,14 +178,14 @@
         category: "navigation" as const,
         score: fuzzyScore(query, item.label),
       }))
-      .filter(r => r.score > 0)
+      .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 8)
   );
 
-  let filteredDatasets = $derived(
+  const filteredDatasets = $derived(
     datasetStore.datasets
-      .map(ds => ({
+      .map((ds) => ({
         id: `ds-${ds.id}`,
         title: ds.name,
         subtitle: ds.slug,
@@ -186,7 +194,7 @@
         category: "datasets" as const,
         score: fuzzyScore(query, ds.name) + fuzzyScore(query, ds.slug) * 0.5,
       }))
-      .filter(r => r.score > 0)
+      .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 8)
   );
@@ -228,7 +236,7 @@
     const results: SearchResult[] = [];
 
     await Promise.all(
-      datasetsToSearch.map(async ds => {
+      datasetsToSearch.map(async (ds) => {
         try {
           const res = await fetch(
             `${API_URL}/api/data-sets/${ds.id}/entries?search=${encodeURIComponent(searchQuery)}&limit=5`,
@@ -275,7 +283,7 @@
     return null;
   }
 
-  let groupedResults = $derived.by(() => {
+  const groupedResults = $derived.by(() => {
     const q = query.trim();
     if (!q) {
       // Show recent pages when no query
@@ -294,9 +302,12 @@
     };
   });
 
-  let flatResults = $derived(
-    [...groupedResults.navigation, ...groupedResults.datasets, ...groupedResults.entries, ...groupedResults.recent]
-  );
+  const flatResults = $derived([
+    ...groupedResults.navigation,
+    ...groupedResults.datasets,
+    ...groupedResults.entries,
+    ...groupedResults.recent,
+  ]);
 
   // Reset selection when results change
   $effect(() => {
@@ -324,7 +335,8 @@
       scrollSelectedIntoView();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      selectedIndex = (selectedIndex - 1 + Math.max(flatResults.length, 1)) % Math.max(flatResults.length, 1);
+      selectedIndex =
+        (selectedIndex - 1 + Math.max(flatResults.length, 1)) % Math.max(flatResults.length, 1);
       scrollSelectedIntoView();
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -359,11 +371,16 @@
 
   function getCategoryLabel(category: string) {
     switch (category) {
-      case "navigation": return "Navigation";
-      case "datasets": return "Datasets";
-      case "entries": return "Entries";
-      case "recent": return "Recent";
-      default: return category;
+      case "navigation":
+        return "Navigation";
+      case "datasets":
+        return "Datasets";
+      case "entries":
+        return "Entries";
+      case "recent":
+        return "Recent";
+      default:
+        return category;
     }
   }
 </script>
@@ -372,7 +389,9 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="relative w-full max-w-md" onkeydown={handleKeyDown}>
   <div class="relative">
-    <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim pointer-events-none" />
+    <Search
+      class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim pointer-events-none"
+    />
     <input
       bind:this={searchInput}
       type="text"
@@ -384,7 +403,9 @@
     />
     {#if isSearchingEntries}
       <div class="absolute right-3 top-1/2 -translate-y-1/2">
-        <div class="w-3.5 h-3.5 rounded-full border-2 border-gremius-cyan/30 border-t-gremius-cyan animate-spin"></div>
+        <div
+          class="w-3.5 h-3.5 rounded-full border-2 border-gremius-cyan/30 border-t-gremius-cyan animate-spin"
+        ></div>
       </div>
     {/if}
   </div>
@@ -413,7 +434,9 @@
 
         {#each categories as cat}
           {#if cat.items.length > 0}
-            <div class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gremius-subtle bg-gremius-bg/50 border-b border-gremius-border/50">
+            <div
+              class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gremius-subtle bg-gremius-bg/50 border-b border-gremius-border/50"
+            >
               {getCategoryLabel(cat.key)}
             </div>
             <div class="divide-y divide-gremius-border/30">
@@ -422,11 +445,16 @@
                 <button
                   type="button"
                   data-index={idx}
-                  class="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors {selectedIndex === idx ? 'bg-gremius-cyan/10' : 'hover:bg-gremius-bg/50'}"
-                  onmouseenter={() => selectedIndex = idx}
+                  class="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors {selectedIndex ===
+                  idx
+                    ? 'bg-gremius-cyan/10'
+                    : 'hover:bg-gremius-bg/50'}"
+                  onmouseenter={() => (selectedIndex = idx)}
                   onclick={() => handleSelect(item)}
                 >
-                  <div class="w-7 h-7 rounded-md bg-gremius-bg border border-gremius-border flex items-center justify-center shrink-0">
+                  <div
+                    class="w-7 h-7 rounded-md bg-gremius-bg border border-gremius-border flex items-center justify-center shrink-0"
+                  >
                     <item.icon class="w-3.5 h-3.5 text-gremius-text-dim" />
                   </div>
                   <div class="flex-1 min-w-0">
@@ -437,14 +465,20 @@
                       <p class="text-xs text-gremius-subtle truncate">{item.subtitle}</p>
                     {/if}
                   </div>
-                  <ArrowRight class="w-3.5 h-3.5 text-gremius-subtle opacity-0 {selectedIndex === idx ? 'opacity-100' : ''} transition-opacity shrink-0" />
+                  <ArrowRight
+                    class="w-3.5 h-3.5 text-gremius-subtle opacity-0 {selectedIndex === idx
+                      ? 'opacity-100'
+                      : ''} transition-opacity shrink-0"
+                  />
                 </button>
               {/each}
             </div>
           {/if}
         {/each}
 
-        <div class="px-3 py-1.5 text-[10px] text-gremius-subtle bg-gremius-bg/30 border-t border-gremius-border/50 flex items-center justify-between">
+        <div
+          class="px-3 py-1.5 text-[10px] text-gremius-subtle bg-gremius-bg/30 border-t border-gremius-border/50 flex items-center justify-between"
+        >
           <span>{flatResults.length} result{flatResults.length === 1 ? "" : "s"}</span>
           <span class="hidden sm:inline">↑↓ to navigate · Enter to select · Esc to close</span>
         </div>
@@ -457,5 +491,5 @@
 {#if isOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="fixed inset-0 z-40" onclick={() => isOpen = false}></div>
+  <div class="fixed inset-0 z-40" onclick={() => (isOpen = false)}></div>
 {/if}

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
 
 const props = defineProps({
   tournamentId: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const matches = ref([]);
@@ -15,7 +15,7 @@ const error = ref(null);
 onMounted(async () => {
   try {
     const res = await fetch(`/api/tournaments/${props.tournamentId}/matches`);
-    if (!res.ok) throw new Error('Failed to load bracket data');
+    if (!res.ok) throw new Error("Failed to load bracket data");
     const data = await res.json();
     matches.value = data;
   } catch (err) {
@@ -28,27 +28,27 @@ onMounted(async () => {
 // Group matches by round for easier rendering
 const rounds = computed(() => {
   if (!matches.value.length) return [];
-  
+
   const grouped = {};
-  matches.value.forEach(match => {
+  matches.value.forEach((match) => {
     if (!grouped[match.round]) {
       grouped[match.round] = [];
     }
     grouped[match.round].push(match);
   });
-  
+
   // Convert object to array sorted by round
   return Object.keys(grouped)
     .sort((a, b) => Number(a) - Number(b))
-    .map(key => ({
+    .map((key) => ({
       roundNumber: Number(key),
-      matches: grouped[key].sort((a, b) => a.matchOrder - b.matchOrder)
+      matches: grouped[key].sort((a, b) => a.matchOrder - b.matchOrder),
     }));
 });
 
 const formatName = (participantInfo, placeholder) => {
-    if (!participantInfo) return placeholder;
-    return participantInfo.alias || participantInfo.name || "TBD";
+  if (!participantInfo) return placeholder;
+  return participantInfo.alias || participantInfo.name || "TBD";
 };
 </script>
 
@@ -56,26 +56,30 @@ const formatName = (participantInfo, placeholder) => {
   <div class="bracket-container">
     <div v-if="loading" class="loading-glitch">INITIALIZING BRACKET_DATA...</div>
     <div v-else-if="error" class="error-msg">SYS_ERR: {{ error }}</div>
-    
+
     <div v-else class="bracket-tree">
       <div v-for="round in rounds" :key="round.roundNumber" class="bracket-round">
         <h3 class="round-title">ROUND {{ round.roundNumber }}</h3>
-        
+
         <div class="matches-col">
           <div v-for="match in round.matches" :key="match.id" class="match-card">
-            
-            <div class="match-participant" :class="{ 'winner': match.winnerId === match.participant1Id }">
-              <span class="p-name">{{ formatName(match.participant1, 'TBD') }}</span>
+            <div
+              class="match-participant"
+              :class="{ winner: match.winnerId === match.participant1Id }"
+            >
+              <span class="p-name">{{ formatName(match.participant1, "TBD") }}</span>
               <span class="p-score">{{ match.participant1Score }}</span>
             </div>
-            
+
             <div class="match-divider">VS</div>
-            
-            <div class="match-participant" :class="{ 'winner': match.winnerId === match.participant2Id }">
-              <span class="p-name">{{ formatName(match.participant2, 'TBD') }}</span>
+
+            <div
+              class="match-participant"
+              :class="{ winner: match.winnerId === match.participant2Id }"
+            >
+              <span class="p-name">{{ formatName(match.participant2, "TBD") }}</span>
               <span class="p-score">{{ match.participant2Score }}</span>
             </div>
-            
           </div>
         </div>
       </div>
@@ -91,7 +95,8 @@ const formatName = (participantInfo, placeholder) => {
   font-family: var(--font-mono);
 }
 
-.loading-glitch, .error-msg {
+.loading-glitch,
+.error-msg {
   color: var(--gremius-cyan);
   text-align: center;
   font-size: 1.5rem;
@@ -206,8 +211,14 @@ const formatName = (participantInfo, placeholder) => {
 }
 
 @keyframes pulse {
-  0% { opacity: 0.7; }
-  50% { opacity: 1; }
-  100% { opacity: 0.7; }
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.7;
+  }
 }
 </style>

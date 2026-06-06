@@ -1,7 +1,8 @@
-import { redirect } from '@sveltejs/kit';
+import { redirect } from "@sveltejs/kit";
+
 // @ts-ignore — SvelteKit generated types
-import type { PageLoad } from './$types';
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = () => {
-  throw redirect(308, '/g/grimoire-booking');
+  throw redirect(308, "/g/grimoire-booking");
 };

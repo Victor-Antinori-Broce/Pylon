@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { Castle, Check, Plus, BookOpen } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 

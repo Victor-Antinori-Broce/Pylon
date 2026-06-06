@@ -6,7 +6,7 @@
     onRestore?: () => void;
   }
 
-  let { onRestore }: Props = $props();
+  const { onRestore }: Props = $props();
 
   function formatTime(timestamp: number): string {
     return new Date(timestamp).toLocaleString();

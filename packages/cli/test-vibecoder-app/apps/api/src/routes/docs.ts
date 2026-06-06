@@ -7,8 +7,9 @@
  * Provides interactive API documentation at /api/docs
  */
 
-import { Hono } from "hono";
 import { swaggerUI } from "@hono/swagger-ui";
+import { Hono } from "hono";
+
 import type { AppVariables } from "../types/hono";
 
 export const docsRoutes = new Hono<{ Variables: AppVariables }>();

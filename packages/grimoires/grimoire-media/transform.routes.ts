@@ -1,14 +1,16 @@
-import { Hono } from "hono";
+import fs from "fs/promises";
+import path from "path";
+
 import type { GrimoireContext } from "@gremius/shared";
 import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { media } from "./media.schema";
 import { ImageTransformer, transformPresets } from "./src/transformer.js";
-import path from "path";
-import fs from "fs/promises";
 
 /**
  * Create transform routes for on-the-fly image transformation
- * 
+ *
  * Routes:
  * - GET /transform/:id?w=800&h=600&fit=cover&f=webp
  * - GET /preset/:id/:preset (thumbnail, small, medium, large, hero)
@@ -19,7 +21,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
 
   /**
    * GET /transform/:id - Transform image on-the-fly
-   * 
+   *
    * Query params:
    * - w, width: Target width
    * - h, height: Target height
@@ -35,11 +37,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
 
     try {
       // Get media from database
-      const [doc] = await ctx.db.instance
-        .select()
-        .from(media)
-        .where(eq(media.id, id))
-        .limit(1);
+      const [doc] = await ctx.db.instance.select().from(media).where(eq(media.id, id)).limit(1);
 
       if (!doc) {
         return c.json({ error: "Media not found" }, 404);
@@ -71,7 +69,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
       // Download original file
       const originalUrl = await ctx.storage.getSignedDownloadUrl(doc.key, 3600);
       const originalResponse = await fetch(originalUrl);
-      
+
       if (!originalResponse.ok) {
         return c.json({ error: "Failed to fetch original file" }, 500);
       }
@@ -95,12 +93,10 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
         c.header("Content-Type", `image/${result.format}`);
         c.header("Cache-Control", "public, max-age=31536000"); // 1 year
         return c.body(result.buffer as any);
-
       } finally {
         // Cleanup temp file
         await fs.unlink(tempPath).catch(() => {});
       }
-
     } catch (err: any) {
       ctx.logger.error("Transform failed:", err);
       return c.json({ error: err.message }, 500);
@@ -109,7 +105,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
 
   /**
    * GET /preset/:id/:preset - Apply named preset
-   * 
+   *
    * Presets: thumbnail, small, medium, large, hero
    */
   app.get("/preset/:id/:preset", async (c) => {
@@ -118,10 +114,13 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
 
     const preset = transformPresets[presetName];
     if (!preset) {
-      return c.json({ 
-        error: "Unknown preset", 
-        available: Object.keys(transformPresets) 
-      }, 400);
+      return c.json(
+        {
+          error: "Unknown preset",
+          available: Object.keys(transformPresets),
+        },
+        400
+      );
     }
 
     // Forward to transform endpoint
@@ -137,7 +136,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
 
   /**
    * POST /focal-point/:id - Set focal point for smart cropping
-   * 
+   *
    * Body: { x: number, y: number } (0-1)
    */
   app.post("/focal-point/:id", ctx.auth.requireAuth, async (c) => {
@@ -153,11 +152,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
     }
 
     try {
-      const [doc] = await ctx.db.instance
-        .select()
-        .from(media)
-        .where(eq(media.id, id))
-        .limit(1);
+      const [doc] = await ctx.db.instance.select().from(media).where(eq(media.id, id)).limit(1);
 
       if (!doc) {
         return c.json({ error: "Media not found" }, 404);
@@ -174,11 +169,10 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
         .set({ metadata, updatedAt: new Date() })
         .where(eq(media.id, id));
 
-      return c.json({ 
-        success: true, 
-        focalPoint: metadata.focalPoint 
+      return c.json({
+        success: true,
+        focalPoint: metadata.focalPoint,
       });
-
     } catch (err: any) {
       ctx.logger.error("Failed to set focal point:", err);
       return c.json({ error: err.message }, 500);
@@ -191,11 +185,7 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
   app.get("/focal-point/:id", async (c) => {
     const id = c.req.param("id");
 
-    const [doc] = await ctx.db.instance
-      .select()
-      .from(media)
-      .where(eq(media.id, id))
-      .limit(1);
+    const [doc] = await ctx.db.instance.select().from(media).where(eq(media.id, id)).limit(1);
 
     if (!doc) {
       return c.json({ error: "Media not found" }, 404);
@@ -221,11 +211,10 @@ export function createTransformRouter(ctx: GrimoireContext): Hono {
         await ctx.storage.delete(transform.key);
       }
 
-      return c.json({ 
-        success: true, 
-        cleared: transforms.length 
+      return c.json({
+        success: true,
+        cleared: transforms.length,
       });
-
     } catch (err: any) {
       ctx.logger.error("Failed to clear cache:", err);
       return c.json({ error: err.message }, 500);

@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * DATASET CREATOR - TEST SUITE COMPLETA
  * ═══════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Pruebas exhaustivas para el sistema de creación de datasets:
  * - Validación de esquemas Zod
  * - DatasetStore (estado reactivo)
@@ -18,8 +18,18 @@ import { z } from "zod";
 
 // Copia de los esquemas desde @gremius/shared para testing
 const FieldTypeSchema = z.enum([
-  "text", "number", "boolean", "date", "image", "url", "email",
-  "select", "json", "richtext", "relation", "kpi",
+  "text",
+  "number",
+  "boolean",
+  "date",
+  "image",
+  "url",
+  "email",
+  "select",
+  "json",
+  "richtext",
+  "relation",
+  "kpi",
 ]);
 
 const FieldDefinitionSchema = z.object({
@@ -38,12 +48,14 @@ const FieldDefinitionSchema = z.object({
   minLength: z.number().int().min(0).optional(),
   maxLength: z.number().int().min(0).optional(),
   options: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
-  relation: z.object({
-    target: z.enum(["games", "blog-posts", "platforms", "tags", "streamers", "dataset"]),
-    targetDatasetId: z.string().optional(),
-    type: z.enum(["one-to-one", "one-to-many", "many-to-many"]),
-    displayField: z.string().optional(),
-  }).optional(),
+  relation: z
+    .object({
+      target: z.enum(["games", "blog-posts", "platforms", "tags", "streamers", "dataset"]),
+      targetDatasetId: z.string().optional(),
+      type: z.enum(["one-to-one", "one-to-many", "many-to-many"]),
+      displayField: z.string().optional(),
+    })
+    .optional(),
   width: z.number().optional(),
   hidden: z.boolean().default(false),
 });
@@ -55,33 +67,47 @@ const DatasetDefinitionSchema = z.object({
   description: z.string().optional(),
   icon: z.string().optional(),
   fields: z.array(FieldDefinitionSchema).min(0),
-  policyJson: z.object({
-    readAccess: z.enum(["admin", "public", "authenticated"]),
-    writeAccess: z.enum(["admin", "authenticated"]),
-    enableRLS: z.boolean().default(false),
-    rlsRules: z.array(z.object({
-      field: z.string(),
-      operator: z.enum(["eq", "neq", "contains", "gt", "lt"]),
-      value: z.string(),
-    })).optional(),
-  }).nullable().optional(),
-  workflowJson: z.object({
-    requireApproval: z.boolean(),
-    approverUserIds: z.array(z.string()).optional(),
-  }).nullable().optional(),
+  policyJson: z
+    .object({
+      readAccess: z.enum(["admin", "public", "authenticated"]),
+      writeAccess: z.enum(["admin", "authenticated"]),
+      enableRLS: z.boolean().default(false),
+      rlsRules: z
+        .array(
+          z.object({
+            field: z.string(),
+            operator: z.enum(["eq", "neq", "contains", "gt", "lt"]),
+            value: z.string(),
+          })
+        )
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+  workflowJson: z
+    .object({
+      requireApproval: z.boolean(),
+      approverUserIds: z.array(z.string()).optional(),
+    })
+    .nullable()
+    .optional(),
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });
 
 const CreateDatasetPayloadSchema = DatasetDefinitionSchema.omit({
-  id: true, createdAt: true, updatedAt: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 }).extend({
   gameId: z.string().optional(),
-  displayConfig: z.object({
-    titleField: z.string().optional(),
-    sortField: z.string().optional(),
-    sortDirection: z.enum(["asc", "desc"]).optional(),
-  }).optional(),
+  displayConfig: z
+    .object({
+      titleField: z.string().optional(),
+      sortField: z.string().optional(),
+      sortDirection: z.enum(["asc", "desc"]).optional(),
+    })
+    .optional(),
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -107,21 +133,21 @@ function test(name: string, fn: () => void | Promise<void>) {
           results.push({ name, passed: true, duration: performance.now() - start });
         })
         .catch((err) => {
-          results.push({ 
-            name, 
-            passed: false, 
+          results.push({
+            name,
+            passed: false,
             error: err instanceof Error ? err.message : String(err),
-            duration: performance.now() - start 
+            duration: performance.now() - start,
           });
         });
     }
     results.push({ name, passed: true, duration: performance.now() - start });
   } catch (err) {
-    results.push({ 
-      name, 
-      passed: false, 
+    results.push({
+      name,
+      passed: false,
       error: err instanceof Error ? err.message : String(err),
-      duration: performance.now() - start 
+      duration: performance.now() - start,
     });
   }
 }
@@ -160,7 +186,9 @@ function expect(actual: any) {
     },
     toContain(expected: any) {
       if (!actual.includes(expected)) {
-        throw new Error(`Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`);
+        throw new Error(
+          `Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`
+        );
       }
     },
     toHaveLength(expected: number) {
@@ -181,7 +209,9 @@ function expect(actual: any) {
         throw new Error(`Expected function to throw but it didn't`);
       }
       if (expectedMessage && !errorMessage.includes(expectedMessage)) {
-        throw new Error(`Expected error message to contain "${expectedMessage}" but got "${errorMessage}"`);
+        throw new Error(
+          `Expected error message to contain "${expectedMessage}" but got "${errorMessage}"`
+        );
       }
     },
     toBeUndefined() {
@@ -314,7 +344,20 @@ test("CreateDatasetPayloadSchema strips id from creation payload", () => {
 
 // Test 3.7: Validación de tipos de campo
 test("FieldTypeSchema accepts all valid field types", () => {
-  const validTypes = ["text", "number", "boolean", "date", "image", "url", "email", "select", "json", "richtext", "relation", "kpi"];
+  const validTypes = [
+    "text",
+    "number",
+    "boolean",
+    "date",
+    "image",
+    "url",
+    "email",
+    "select",
+    "json",
+    "richtext",
+    "relation",
+    "kpi",
+  ];
   for (const type of validTypes) {
     const result = FieldTypeSchema.safeParse(type);
     expect(result.success).toBe(true);
@@ -389,17 +432,17 @@ class MockDatasetStore {
   }
 
   async updateDataset(id: string, payload: any): Promise<any> {
-    const index = this.datasets.findIndex(ds => ds.id === id);
+    const index = this.datasets.findIndex((ds) => ds.id === id);
     if (index === -1) return null;
     const updated = { ...this.datasets[index], ...payload };
-    this.datasets = this.datasets.map(ds => ds.id === id ? updated : ds);
+    this.datasets = this.datasets.map((ds) => (ds.id === id ? updated : ds));
     return updated;
   }
 
   async deleteDataset(id: string): Promise<boolean> {
-    const index = this.datasets.findIndex(ds => ds.id === id);
+    const index = this.datasets.findIndex((ds) => ds.id === id);
     if (index === -1) return false;
-    this.datasets = this.datasets.filter(ds => ds.id !== id);
+    this.datasets = this.datasets.filter((ds) => ds.id !== id);
     return true;
   }
 
@@ -436,7 +479,7 @@ test("DatasetStore.derived properties work correctly", async () => {
   await mockStore.createDataset({ name: "Zebra", slug: "zebra", fields: [] });
   await mockStore.createDataset({ name: "Apple", slug: "apple", fields: [] });
   await mockStore.createDataset({ name: "Mango", slug: "mango", fields: [] });
-  
+
   expect(mockStore.totalCount).toBe(3);
   expect(mockStore.hasDatasets).toBe(true);
   expect(mockStore.sortedDatasets[0].name).toBe("Apple"); // Alphabetically sorted
@@ -454,9 +497,13 @@ test("DatasetStore.updateDataset modifies existing dataset", async () => {
 // Test 4.4: Eliminar dataset
 test("DatasetStore.deleteDataset removes dataset", async () => {
   mockStore.reset();
-  const created = await mockStore.createDataset({ name: "To Delete", slug: "to-delete", fields: [] });
+  const created = await mockStore.createDataset({
+    name: "To Delete",
+    slug: "to-delete",
+    fields: [],
+  });
   expect(mockStore.datasets).toHaveLength(1);
-  
+
   const deleted = await mockStore.deleteDataset(created.id);
   expect(deleted).toBe(true);
   expect(mockStore.datasets).toHaveLength(0);
@@ -475,7 +522,7 @@ test("DatasetStore.reset clears all state", async () => {
   await mockStore.createDataset({ name: "Test", slug: "test", fields: [] });
   mockStore.selectDataset({ id: "ds_123" });
   mockStore.reset();
-  
+
   expect(mockStore.datasets).toHaveLength(0);
   expect(mockStore.selectedDataset).toBeNull();
   expect(mockStore.isLoading).toBe(false);
@@ -489,7 +536,18 @@ console.log("\n🧮 Testing Calculated Fields...\n");
 
 // Test 5.1: Tipos de campos calculados soportados
 test("CalculatedField types are properly defined", () => {
-  const validTypes = ["formula", "count", "sum", "average", "min", "max", "concat", "date_diff", "conditional", "lookup"];
+  const validTypes = [
+    "formula",
+    "count",
+    "sum",
+    "average",
+    "min",
+    "max",
+    "concat",
+    "date_diff",
+    "conditional",
+    "lookup",
+  ];
   expect(validTypes).toHaveLength(10);
 });
 
@@ -500,7 +558,7 @@ test("Formula evaluation works for basic arithmetic", () => {
       // Reemplazar nombres de variables con valores del contexto
       let sanitized = expression;
       for (const [key, value] of Object.entries(context)) {
-        sanitized = sanitized.replace(new RegExp(`\\b${key}\\b`, 'g'), String(value));
+        sanitized = sanitized.replace(new RegExp(`\\b${key}\\b`, "g"), String(value));
       }
       // Solo permitir caracteres seguros
       sanitized = sanitized.replace(/[^0-9+\-*/().\s]/g, "");
@@ -509,7 +567,7 @@ test("Formula evaluation works for basic arithmetic", () => {
       return 0;
     }
   };
-  
+
   const result = evaluateExpression("price * quantity", { price: 10, quantity: 5 });
   expect(result).toBe(50);
 });
@@ -521,7 +579,7 @@ test("Formula evaluation handles decimal numbers", () => {
       // Reemplazar nombres de variables con valores del contexto
       let sanitized = expression;
       for (const [key, value] of Object.entries(context)) {
-        sanitized = sanitized.replace(new RegExp(`\\b${key}\\b`, 'g'), String(value));
+        sanitized = sanitized.replace(new RegExp(`\\b${key}\\b`, "g"), String(value));
       }
       // Solo permitir caracteres seguros
       sanitized = sanitized.replace(/[^0-9+\-*/().\s]/g, "");
@@ -530,7 +588,7 @@ test("Formula evaluation handles decimal numbers", () => {
       return 0;
     }
   };
-  
+
   const result = evaluateExpression("(subtotal + tax) * 1.1", { subtotal: 100, tax: 10 });
   expect(Math.round(result)).toBe(121);
 });
@@ -547,7 +605,7 @@ test("Calculated field tracks dependencies correctly", () => {
       expression: "price * quantity",
     },
   };
-  
+
   expect(calculatedField.dependsOn).toContain("price");
   expect(calculatedField.dependsOn).toContain("quantity");
   expect(calculatedField.config.expression).toBe("price * quantity");
@@ -567,7 +625,7 @@ test("Dataset slug auto-generates from label", () => {
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "");
   };
-  
+
   expect(generateSlug("Sales Orders")).toBe("sales_orders");
   expect(generateSlug("User Profiles")).toBe("user_profiles");
   expect(generateSlug("Test---Data")).toBe("test_data");
@@ -588,10 +646,10 @@ test("Native field types are properly defined", () => {
     { id: "media", label: "Media" },
     { id: "kpi", label: "KPI" },
   ];
-  
+
   expect(nativeFieldTypes).toHaveLength(11);
-  expect(nativeFieldTypes.map(t => t.id)).toContain("kpi");
-  expect(nativeFieldTypes.map(t => t.id)).toContain("relation");
+  expect(nativeFieldTypes.map((t) => t.id)).toContain("kpi");
+  expect(nativeFieldTypes.map((t) => t.id)).toContain("relation");
 });
 
 // Test 6.3: Paso a paso del wizard
@@ -602,7 +660,7 @@ test("Dataset Creator wizard has correct steps", () => {
     { id: 3, label: "Calculated Fields" },
     { id: 4, label: "Review" },
   ];
-  
+
   expect(steps).toHaveLength(4);
   expect(steps[0].label).toBe("Basic Info");
   expect(steps[3].label).toBe("Review");
@@ -614,18 +672,16 @@ test("Available fields for formulas combines native and calculated", () => {
     { id: "f1", name: "price", label: "Price", type: "number" },
     { id: "f2", name: "quantity", label: "Quantity", type: "number" },
   ];
-  
-  const calculatedFields = [
-    { id: "cf1", name: "subtotal", label: "Subtotal", type: "number" },
-  ];
-  
+
+  const calculatedFields = [{ id: "cf1", name: "subtotal", label: "Subtotal", type: "number" }];
+
   const availableFormulaFields = [
-    ...fields.map(f => ({ name: f.name, label: f.label, type: f.type })),
-    ...calculatedFields.map(f => ({ name: f.name, label: f.label, type: "number" })),
-  ].filter(f => f.name);
-  
+    ...fields.map((f) => ({ name: f.name, label: f.label, type: f.type })),
+    ...calculatedFields.map((f) => ({ name: f.name, label: f.label, type: "number" })),
+  ].filter((f) => f.name);
+
   expect(availableFormulaFields).toHaveLength(3);
-  expect(availableFormulaFields.map(f => f.name)).toContain("subtotal");
+  expect(availableFormulaFields.map((f) => f.name)).toContain("subtotal");
 });
 
 // Test 6.5: Eliminación de campo con dependencias
@@ -634,18 +690,16 @@ test("Removing field also removes dependent calculated fields", () => {
     { id: "f1", name: "price", label: "Price" },
     { id: "f2", name: "quantity", label: "Quantity" },
   ];
-  
+
   let calculatedFields = [
     { id: "cf1", name: "total", label: "Total", dependsOn: ["price", "quantity"] },
     { id: "cf2", name: "double_price", label: "Double", dependsOn: ["price"] },
   ];
-  
+
   // Simular eliminación del campo "price"
   const fieldToRemove = fields[0]; // price
-  calculatedFields = calculatedFields.filter(cf => 
-    !cf.dependsOn?.includes(fieldToRemove.name)
-  );
-  
+  calculatedFields = calculatedFields.filter((cf) => !cf.dependsOn?.includes(fieldToRemove.name));
+
   expect(calculatedFields).toHaveLength(0); // Both depend on price
 });
 
@@ -657,8 +711,8 @@ console.log("\n" + "=".repeat(70));
 console.log("📊 TEST RESULTS SUMMARY");
 console.log("=".repeat(70) + "\n");
 
-const passed = results.filter(r => r.passed).length;
-const failed = results.filter(r => !r.passed).length;
+const passed = results.filter((r) => r.passed).length;
+const failed = results.filter((r) => !r.passed).length;
 const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
 
 console.log(`✅ Passed: ${passed}`);
@@ -668,10 +722,12 @@ console.log(`⏱️ Duration: ${totalDuration.toFixed(2)}ms\n`);
 
 if (failed > 0) {
   console.log("FAILED TESTS:\n");
-  results.filter(r => !r.passed).forEach(r => {
-    console.log(`❌ ${r.name}`);
-    console.log(`   Error: ${r.error}\n`);
-  });
+  results
+    .filter((r) => !r.passed)
+    .forEach((r) => {
+      console.log(`❌ ${r.name}`);
+      console.log(`   Error: ${r.error}\n`);
+    });
 }
 
 console.log("\n" + "=".repeat(70));

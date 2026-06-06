@@ -4,5 +4,5 @@ import { createAuthClient } from "better-auth/client";
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 export const authClient = createAuthClient({
-    baseURL: API_URL || undefined, // undefined = same origin (relative)
+  baseURL: API_URL || undefined, // undefined = same origin (relative)
 });

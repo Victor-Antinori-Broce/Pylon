@@ -18,27 +18,31 @@
  *   - Legacy APIs maintained for backward compatibility
  */
 
+import { initActions, initializeGrimoires, defineAction } from "@gremius/engine";
+import type { ServerWebSocket } from "bun";
+import { eq, count, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { timing } from "hono/timing";
 import { rateLimiter } from "hono-rate-limiter";
-import { eq, count, sql } from "drizzle-orm";
-import type { ServerWebSocket } from "bun";
 
 // ── Configuration ──
+import { staticConfig as gremiusConfig } from "../gremius.config";
+
+import { db } from "./db";
+import { authUsers as user, siteSettings, apiKeys } from "./db/schema-core";
+import { initActionsEngine } from "./lib/actions";
+import { auth } from "./lib/auth";
 import { config, features, rateLimitConfig, corsConfig } from "./lib/config";
+import { initCronScheduler } from "./lib/cron-scheduler";
+import { initFunctionDispatcher } from "./lib/function-dispatcher";
 import { logger, createRequestLogger } from "./lib/logger";
 
 // ── Feature Flags ──
-import { staticConfig as gremiusConfig } from "../gremius.config";
 
-
-
-import { auth } from "./lib/auth";
-import { db } from "./db";
-import { authUsers as user, siteSettings } from "./db/schema-core";
+import { loadModules, createGrimoireContext } from "./lib/module-loader";
 import { setupWorkers, emailQueue } from "./lib/queue";
 import { realtimeManager, type WSClientData } from "./lib/realtime";
 
@@ -47,24 +51,24 @@ import { realtimeManager, type WSClientData } from "./lib/realtime";
 // Legacy core imports removed — now provided by grimoires
 
 // ── Engine Routes (Nivel 1) — Always-on infrastructure ──
+import { toonMiddleware } from "./lib/toon";
+import { valkeyConnection } from "./lib/valkey";
 import { withTransactionalRLS } from "./middleware/transactional-rls";
 import { enrichUserContext } from "./middleware/user-context";
+import { actionsRoutes } from "./routes/actions";
+import { adminRegistryRoutes } from "./routes/admin-registry";
+import agentMemoryRoutes from "./routes/agent-memory";
+import agentPlaygroundRoutes from "./routes/agent-playground";
+import agentRoutes from "./routes/agents";
+import agentsV1Routes from "./routes/agents-v1";
+import { apiKeysRoutes } from "./routes/api-keys";
+import { codegenRoutes } from "./routes/codegen";
+import { settingsRoutes, syncRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
+import { functionsRoutes } from "./routes/functions";
+import { graphqlRoutes } from "./routes/graphql";
 import { modulesRoutes } from "./routes/modules";
 import { systemRoutes } from "./routes/system";
-import { settingsRoutes, syncRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
-import { graphqlRoutes } from "./routes/graphql";
-import { functionsRoutes } from "./routes/functions";
-import { actionsRoutes } from "./routes/actions";
-import { initActionsEngine } from "./lib/actions";
-import { initFunctionDispatcher } from "./lib/function-dispatcher";
-import { initCronScheduler } from "./lib/cron-scheduler";
-import { apiKeysRoutes } from "./routes/api-keys";
 import { mcpRoutes } from "./routes/mcp";
-import { adminRegistryRoutes } from "./routes/admin-registry";
-import agentRoutes from "./routes/agents";
-import agentPlaygroundRoutes from "./routes/agent-playground";
-import agentMemoryRoutes from "./routes/agent-memory";
-import agentsV1Routes from "./routes/agents-v1";
 import dataSourcesRoutes from "./routes/data-sources";
 import { explorerRoutes } from "./routes/data-explorer";
 import { schemaIntrospectionRoutes } from "./routes/schema-introspection";
@@ -72,15 +76,10 @@ import { inlineRelationsRoutes } from "./routes/inline-relations";
 import { datasetsQueryRoutes } from "./routes/datasets-query";
 import { dynamicDocsRouter } from "./routes/docs-dynamic";
 import { itemsRoutes } from "./routes/items";
-import { codegenRoutes } from "./routes/codegen";
 
 // ── Module Loader ──
-import { loadModules, createGrimoireContext } from "./lib/module-loader";
-import { toonMiddleware } from "./lib/toon";
 
 // ── Actions Layer Integration (Nivel 1 DX) ──
-import { initActions } from "@gremius/engine";
-import { valkeyConnection } from "./lib/valkey";
 
 // ── Typed Hono app ──
 const app = new Hono<{
@@ -171,26 +170,29 @@ if (rateLimitConfig.enabled) {
 // ═══════════════════════════════════════════════
 app.use("*", async (c, next) => {
   const start = Date.now();
-  const requestLogger = createRequestLogger(
-    c.get("requestId"),
-    c.get("user")?.id
-  );
+  const requestLogger = createRequestLogger(c.get("requestId"), c.get("user")?.id);
 
-  requestLogger.info({
-    method: c.req.method,
-    path: c.req.path,
-    userAgent: c.req.header("user-agent"),
-  }, "Request started");
+  requestLogger.info(
+    {
+      method: c.req.method,
+      path: c.req.path,
+      userAgent: c.req.header("user-agent"),
+    },
+    "Request started"
+  );
 
   await next();
 
   const duration = Date.now() - start;
-  requestLogger.info({
-    method: c.req.method,
-    path: c.req.path,
-    status: c.res.status,
-    duration,
-  }, "Request completed");
+  requestLogger.info(
+    {
+      method: c.req.method,
+      path: c.req.path,
+      status: c.res.status,
+      duration,
+    },
+    "Request completed"
+  );
 });
 
 // ═══════════════════════════════════════════════
@@ -237,10 +239,14 @@ app.post("/api/system/setup", async (c) => {
       asResponse: false,
     });
 
-    if (!authRes || !('user' in authRes)) throw new Error("Failed to create user");
+    if (!authRes || !("user" in authRes)) throw new Error("Failed to create user");
 
     // Promote to admin — try by ID first, then by email as fallback
-    const updateResult = await db.update(user).set({ role: "admin" }).where(eq(user.id, authRes.user.id)).returning();
+    const updateResult = await db
+      .update(user)
+      .set({ role: "admin" })
+      .where(eq(user.id, authRes.user.id))
+      .returning();
     if (updateResult.length === 0) {
       // ID didn't match — Better-Auth may use a different ID format
       console.warn(`[setup] Role update by ID failed for ${authRes.user.id}, trying by email...`);
@@ -255,7 +261,7 @@ app.post("/api/system/setup", async (c) => {
 
     try {
       await emailQueue.add("send-welcome", { to: email, name } as any);
-    } catch { }
+    } catch {}
 
     return c.json({ success: true, user: authRes.user });
   } catch (e: any) {
@@ -270,7 +276,7 @@ app.route("/api/system", systemRoutes);
 // ══════════════════════════════════════════════
 
 import { createHash } from "crypto";
-import { apiKeys } from "./db/schema-core";
+
 import { authenticateAgent } from "./services/agent-auth";
 import type { AgentAuthContext } from "./services/agent-auth";
 
@@ -304,7 +310,7 @@ app.use("*", async (c, next) => {
         name: result.context.agentName,
         email: `agent@${result.context.agentId}.gremius.local`,
         image: null,
-        role: "agent",  // Not admin - granular permissions via scopes
+        role: "agent", // Not admin - granular permissions via scopes
         scopes: result.context.scopes,
       } as any);
       c.set("session", null);
@@ -315,10 +321,13 @@ app.use("*", async (c, next) => {
 
       return next();
     } else {
-      return c.json({
-        error: result.error || "Agent authentication failed",
-        code: result.code
-      }, 401);
+      return c.json(
+        {
+          error: result.error || "Agent authentication failed",
+          code: result.code,
+        },
+        401
+      );
     }
   }
 
@@ -337,10 +346,17 @@ app.use("*", async (c, next) => {
       }
 
       // Update lastUsedAt asynchronously (fire and forget)
-      db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, apiKey.id)).execute().catch(() => { });
+      db.update(apiKeys)
+        .set({ lastUsedAt: new Date() })
+        .where(eq(apiKeys.id, apiKey.id))
+        .execute()
+        .catch(() => {});
 
       // Deprecation warnings
-      logger.warn({ keyId: apiKey.id, path: c.req.path }, "[DEPRECATION] Legacy API key (gremius_sk_*) used. Migrate to Agent NHI (grm_agent_*).");
+      logger.warn(
+        { keyId: apiKey.id, path: c.req.path },
+        "[DEPRECATION] Legacy API key (gremius_sk_*) used. Migrate to Agent NHI (grm_agent_*)."
+      );
       c.header("Deprecation", "gremius_sk_*; grm_agent_*");
       c.header("Sunset", "2026-08-01");
 
@@ -384,7 +400,7 @@ app.get("/api/health", async (c) => {
     await db.execute(sql`SELECT 1`);
     checks.database = {
       status: "ok",
-      details: { responseTime: `${Date.now() - start}ms` }
+      details: { responseTime: `${Date.now() - start}ms` },
     };
   } catch (err: any) {
     checks.database = { status: "error", error: err.message };
@@ -397,7 +413,7 @@ app.get("/api/health", async (c) => {
     const active = await emailQueue.getActiveCount();
     checks.queue = {
       status: "ok",
-      details: { waiting, active }
+      details: { waiting, active },
     };
   } catch (err: any) {
     checks.queue = { status: "error", error: err.message };
@@ -453,11 +469,14 @@ app.get("/api/health/pgvector", async (c) => {
         : "pgvector is NOT installed. AI features will not work.",
     });
   } catch (err: any) {
-    return c.json({
-      pgvector: false,
-      error: err.message,
-      message: "Could not check pgvector status. Database connection failed.",
-    }, 500);
+    return c.json(
+      {
+        pgvector: false,
+        error: err.message,
+        message: "Could not check pgvector status. Database connection failed.",
+      },
+      500
+    );
   }
 });
 
@@ -467,10 +486,13 @@ app.get("/api/health/pgvector", async (c) => {
 
 if (features.headless) {
   app.all("/api/admin/*", (c) => {
-    return c.json({
-      error: "Headless mode",
-      message: "Admin API is disabled. This Gremius instance is running in headless BaaS mode."
-    }, 503);
+    return c.json(
+      {
+        error: "Headless mode",
+        message: "Admin API is disabled. This Gremius instance is running in headless BaaS mode.",
+      },
+      503
+    );
   });
   console.log("  👻 Headless Mode → Admin routes disabled");
 }
@@ -503,7 +525,8 @@ console.log("  📦 Core: Batch Processor (ACID) → ALWAYS ACTIVE");
 console.log("  🎨 Core: Code Generation → /api/generate-code");
 
 // Media Library (toggleable) - now as grimoire
-const isGrimoireEnabled = (id: string) => gremiusConfig.core.find((g: any) => g.id === id)?.enabled ?? false;
+const isGrimoireEnabled = (id: string) =>
+  gremiusConfig.core.find((g: any) => g.id === id)?.enabled ?? false;
 
 if (isGrimoireEnabled("grimoire-media")) {
   console.log("  🖼️  Core: Media Library → ENABLED (routes mounted by grimoire)");
@@ -541,7 +564,7 @@ if (features.mcpEnabled) {
 }
 app.route("/api/admin/registry", adminRegistryRoutes);
 app.route("/api/admin/agents", agentRoutes);
-app.route("/api/v1", agentsV1Routes);  // Frontend API v1 compatibility (includes /agents, /traces, /identities)
+app.route("/api/v1", agentsV1Routes); // Frontend API v1 compatibility (includes /agents, /traces, /identities)
 app.route("/api/admin/agents/playground", agentPlaygroundRoutes);
 app.route("/api/agent/memory", agentMemoryRoutes);
 app.route("/api/admin/data-sources", dataSourcesRoutes);
@@ -553,8 +576,6 @@ console.log("  🔍 Schema Introspection → DB reflection enabled");
 console.log("  🔗 Inline Relations → Django-style inlines enabled");
 // Note: platforms, tags, streamers, blog, formulas and other grimoires
 // are loaded dynamically by loadModules() below. Do not add hardcoded routes here.
-
-import { initializeGrimoires, defineAction } from "@gremius/engine";
 
 // ══════════════════════════════════════════════
 // 📦 DYNAMIC MODULE ROUTES (Grimoires + Core modules)
@@ -597,11 +618,11 @@ const autoMcpProxy = {
           agentId: ctx.agent?.agentId,
           agentName: ctx.agent?.agentName,
           scopes: ctx.agent?.scopes || [],
-          preferToon: ctx.agent?.preferToon || false
+          preferToon: ctx.agent?.preferToon || false,
         });
-      }
+      },
     });
-  }
+  },
 };
 
 initializeGrimoires(createGrimoireContext(), app as any, autoMcpProxy);
@@ -611,17 +632,23 @@ initializeGrimoires(createGrimoireContext(), app as any, autoMcpProxy);
 // ══════════════════════════════════════════════
 
 app.notFound((c) => {
-  logger.warn({
-    method: c.req.method,
-    path: c.req.path,
-    status: 404,
-  }, "Route not found");
+  logger.warn(
+    {
+      method: c.req.method,
+      path: c.req.path,
+      status: 404,
+    },
+    "Route not found"
+  );
 
-  return c.json({
-    error: "Not found",
-    path: c.req.path,
-    requestId: c.get("requestId"),
-  }, 404);
+  return c.json(
+    {
+      error: "Not found",
+      path: c.req.path,
+      requestId: c.get("requestId"),
+    },
+    404
+  );
 });
 
 app.onError((err, c) => {
@@ -629,14 +656,17 @@ app.onError((err, c) => {
   const statusCode = (err as any).status || 500;
 
   // Log error with context
-  logger.error({
-    method: c.req.method,
-    path: c.req.path,
-    error: err.message,
-    stack: isDevelopment ? err.stack : undefined,
-    statusCode,
-    requestId: c.get("requestId"),
-  }, `Error handling request: ${err.message}`);
+  logger.error(
+    {
+      method: c.req.method,
+      path: c.req.path,
+      error: err.message,
+      stack: isDevelopment ? err.stack : undefined,
+      statusCode,
+      requestId: c.get("requestId"),
+    },
+    `Error handling request: ${err.message}`
+  );
 
   // Security: don't expose internal errors in production
   const response: Record<string, unknown> = {
@@ -723,7 +753,7 @@ initActionsEngine();
 initActions({
   hono: app as any,
   bullmq: valkeyConnection,
-  mcp: true
+  mcp: true,
 });
 
 // Initialize Agent Telemetry (Paso 2: Observability)
@@ -787,12 +817,14 @@ export default {
       realtimeManager.addClient(clientId, ws, userId);
 
       // Send welcome message
-      ws.send(JSON.stringify({
-        type: "connected",
-        clientId,
-        userId,
-        timestamp: Date.now(),
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "connected",
+          clientId,
+          userId,
+          timestamp: Date.now(),
+        })
+      );
     },
 
     message(ws: ServerWebSocket<WSClientData>, message: string | Buffer) {

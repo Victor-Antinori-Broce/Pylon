@@ -11,20 +11,23 @@
 ### 1. Auth Universal (Agent + Human) - ✅ COMPLETO
 
 **Cambios realizados:**
+
 - ✅ `index.ts`: Agente authentication flow integrado
 - ✅ `agent-auth.ts`: Prefijos `grm_agent_` funcionando
 - ✅ `auth-guard.ts`: Soporte para agentes y humanos
 - ✅ RLS: Agente context propagado a PostgreSQL
 
 **Flujo de autenticación actual:**
+
 ```
 Request → Auth Header Check
     ├── Bearer grm_agent_xxxxx → authenticateAgent() → RLS Context
-    ├── Bearer gremius_sk_xxxxx → Legacy API Key → Admin Context  
+    ├── Bearer gremius_sk_xxxxx → Legacy API Key → Admin Context
     └── Cookie Session → Better-Auth → User Context
 ```
 
 **Uso:**
+
 ```bash
 # Agent authentication
 curl -H "Authorization: Bearer grm_agent_xxxxx" \
@@ -40,6 +43,7 @@ X-RateLimit-Limit: 60
 ### 2. Actions Layer (Unified) - ✅ COMPLETO
 
 **Estructura:**
+
 ```
 lib/actions/
 ├── index.ts          # Public API
@@ -70,6 +74,7 @@ lib/actions/
 | `http` | HTTP endpoint trigger | ✅ |
 
 **API Endpoints:**
+
 ```
 GET    /api/actions                 # Listar actions
 POST   /api/actions                 # Crear action
@@ -82,6 +87,7 @@ GET    /api/actions/stats/overview  # Estadísticas
 ```
 
 **Ejemplo de uso:**
+
 ```typescript
 // Crear action
 POST /api/actions
@@ -112,6 +118,7 @@ POST /api/actions/:id/execute
 **Endpoint:** `GET/POST /api/mcp`
 
 **Features:**
+
 - ✅ SSE streaming para agents
 - ✅ Tools: `gremius_query_dataset`, `gremius_insert_record`
 - ✅ Resources: `gremius://datasets/{id}`
@@ -119,6 +126,7 @@ POST /api/actions/:id/execute
 - ✅ Agent authentication con scopes
 
 **Integración con Actions:**
+
 ```typescript
 // Las actions se registran automáticamente como tools MCP
 // Cuando creas una action con type: "agent", se expone como tool
@@ -131,6 +139,7 @@ POST /api/actions/:id/execute
 **Servicio:** `agent-audit.ts` (426 líneas)
 
 **Features:**
+
 - ✅ `agent_audit_logs` tabla
 - ✅ Acciones trackeadas:
   - `auth_success` / `auth_failure`
@@ -156,6 +165,7 @@ POST /api/actions/:id/execute
   - `agent.rate_limited`
 
 **Uso:**
+
 ```typescript
 // Loggear acción
 import { logToolCall } from "./services/agent-audit";
@@ -166,7 +176,7 @@ logToolCall(agentId, keyId, "query_dataset", params, duration, success);
 const { logs, total } = await queryAuditLogs({
   agentId: "agent_abc",
   action: "data_read",
-  startDate: new Date(Date.now() - 24 * 60 * 60 * 1000)
+  startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
 });
 ```
 
@@ -231,12 +241,14 @@ const { logs, total } = await queryAuditLogs({
 ### Para developers
 
 **Antes (Legacy API Keys):**
+
 ```bash
 curl -H "Authorization: Bearer gremius_sk_xxxxx" \
      /api/datasets
 ```
 
 **Después (Agent Auth):**
+
 ```bash
 # 1. Crear agente (una vez)
 POST /api/admin/agents
@@ -268,4 +280,4 @@ curl -H "Authorization: Bearer grm_agent_xxxxx" \
 
 ---
 
-*Integración completada el 19 de marzo de 2026*
+_Integración completada el 19 de marzo de 2026_

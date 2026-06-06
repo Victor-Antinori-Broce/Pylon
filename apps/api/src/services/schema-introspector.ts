@@ -10,8 +10,9 @@
  * Enables any table to work without manual configuration.
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
 
 export interface IntrospectedColumn {
   name: string;
@@ -86,10 +87,13 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 /**
  * Introspect any table in the database
  */
-export async function introspectTable(tableName: string, schema = "public"): Promise<IntrospectedTable | null> {
+export async function introspectTable(
+  tableName: string,
+  schema = "public"
+): Promise<IntrospectedTable | null> {
   const cacheKey = `${schema}.${tableName}`;
   const cached = introspectionCache.get(cacheKey);
-  
+
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.data;
   }
@@ -109,8 +113,8 @@ export async function introspectTable(tableName: string, schema = "public"): Pro
     const rowCount = await getEstimatedRowCount(tableName, schema);
 
     // Enhance columns with FK info
-    const enhancedColumns = columns.map(col => {
-      const fk = foreignKeys.find(fk => fk.column === col.name);
+    const enhancedColumns = columns.map((col) => {
+      const fk = foreignKeys.find((fk) => fk.column === col.name);
       return {
         ...col,
         isForeignKey: !!fk,
@@ -131,7 +135,7 @@ export async function introspectTable(tableName: string, schema = "public"): Pro
 
     // Cache result
     introspectionCache.set(cacheKey, { data: result, timestamp: Date.now() });
-    
+
     return result;
   } catch (err) {
     console.error(`[SchemaIntrospector] Failed to introspect ${tableName}:`, err);
@@ -167,21 +171,24 @@ export async function getAllTables(schema = "public"): Promise<string[]> {
 export async function searchTables(pattern: string, schema = "public"): Promise<string[]> {
   const tables = await getAllTables(schema);
   const regex = new RegExp(pattern, "i");
-  return tables.filter(t => regex.test(t));
+  return tables.filter((t) => regex.test(t));
 }
 
 /**
  * Get tables related to a table (via FKs)
  */
-export async function getRelatedTables(tableName: string, schema = "public"): Promise<{ 
-  incoming: string[]; 
+export async function getRelatedTables(
+  tableName: string,
+  schema = "public"
+): Promise<{
+  incoming: string[];
   outgoing: string[];
 }> {
   const introspected = await introspectTable(tableName, schema);
   if (!introspected) return { incoming: [], outgoing: [] };
 
   // Outgoing: tables this table references
-  const outgoing = introspected.foreignKeys.map(fk => fk.foreignTable);
+  const outgoing = introspected.foreignKeys.map((fk) => fk.foreignTable);
 
   // Incoming: tables that reference this table
   try {
@@ -417,11 +424,18 @@ async function getEstimatedRowCount(tableName: string, schema: string): Promise<
 
 function inferAdminType(col: IntrospectedColumn): string {
   const type = col.type.toLowerCase();
-  
+
   if (col.isForeignKey) return "relation";
   if (type.includes("uuid") && col.name === "id") return "id";
   if (type.includes("bool")) return "boolean";
-  if (type.includes("int") || type.includes("decimal") || type.includes("numeric") || type.includes("float") || type.includes("double")) return "number";
+  if (
+    type.includes("int") ||
+    type.includes("decimal") ||
+    type.includes("numeric") ||
+    type.includes("float") ||
+    type.includes("double")
+  )
+    return "number";
   if (type.includes("timestamp") || type.includes("datetime")) return "datetime";
   if (type.includes("date")) return "date";
   if (type.includes("json")) return "json";
@@ -430,19 +444,21 @@ function inferAdminType(col: IntrospectedColumn): string {
   if (col.name.includes("url") || col.name.includes("link")) return "url";
   if (col.name.includes("color")) return "color";
   if (col.name.includes("password")) return "password";
-  
+
   return "text";
 }
 
 function isSearchableType(col: IntrospectedColumn): boolean {
   const searchableTypes = ["text", "varchar", "char"];
   const type = col.type.toLowerCase();
-  
+
   // Also check common searchable field names
   const searchableNames = ["name", "title", "label", "email", "description", "slug"];
-  
-  return searchableTypes.some(t => type.includes(t)) || 
-         searchableNames.some(n => col.name.toLowerCase().includes(n));
+
+  return (
+    searchableTypes.some((t) => type.includes(t)) ||
+    searchableNames.some((n) => col.name.toLowerCase().includes(n))
+  );
 }
 
 function isFilterableType(col: IntrospectedColumn): boolean {
@@ -450,7 +466,7 @@ function isFilterableType(col: IntrospectedColumn): boolean {
   if (col.name === "id") return false;
   if (col.name.endsWith("_id") && col.name !== "id") return true; // FKs are filterable
   if (col.type.toLowerCase().includes("json")) return false;
-  
+
   return true;
 }
 
@@ -491,7 +507,7 @@ function humanizeColumnName(name: string): string {
   return name
     .replace(/_/g, " ")
     .replace(/([A-Z])/g, " $1")
-    .replace(/^./, s => s.toUpperCase())
+    .replace(/^./, (s) => s.toUpperCase())
     .trim();
 }
 
@@ -499,7 +515,7 @@ function humanizeTableName(name: string): string {
   return name
     .replace(/_/g, " ")
     .replace(/^grimoire[-_]/, "")
-    .replace(/^./, s => s.toUpperCase())
+    .replace(/^./, (s) => s.toUpperCase())
     .trim();
 }
 

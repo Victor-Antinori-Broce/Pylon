@@ -5,13 +5,9 @@
  * Permite que cualquier otro grimoire promueva contenido al Blog.
  */
 
+import type { ContentTarget, PromotionData, PublishResult, GrimoireContext } from "@gremius/shared";
 import { eq, sql, and } from "drizzle-orm";
-import type {
-  ContentTarget,
-  PromotionData,
-  PublishResult,
-  GrimoireContext,
-} from "@gremius/shared";
+
 import {
   generateSlug,
   renderTemplate,
@@ -49,9 +45,7 @@ export const blogContentTarget: ContentTarget = {
     // 1. Generar título
     const title = options.title
       ? renderTemplate(options.title, source.data)
-      : source.data.title ||
-        source.data.name ||
-        `Content from ${source.type}`;
+      : source.data.title || source.data.name || `Content from ${source.type}`;
 
     // 2. Generar slug único
     const baseSlug = options.slug || generateSlug(title);
@@ -62,15 +56,9 @@ export const blogContentTarget: ContentTarget = {
     const readingTime = estimateReadingTime(excerpt);
 
     // 4. Determinar estado y fechas
-    const status = options.autoPublish
-      ? "published"
-      : options.scheduledAt
-        ? "scheduled"
-        : "draft";
+    const status = options.autoPublish ? "published" : options.scheduledAt ? "scheduled" : "draft";
 
-    const publishedAt = options.autoPublish
-      ? new Date()
-      : options.scheduledAt || null;
+    const publishedAt = options.autoPublish ? new Date() : options.scheduledAt || null;
 
     // 5. Construir snapshot de la fuente
     const snapshot = {
@@ -187,11 +175,7 @@ export const blogContentTarget: ContentTarget = {
     }
 
     if (data.options?.slug) {
-      updates.slug = await generateUniqueSlug(
-        db.instance,
-        data.options.slug,
-        contentId
-      );
+      updates.slug = await generateUniqueSlug(db.instance, data.options.slug, contentId);
     }
 
     if (data.source?.data) {
@@ -251,11 +235,7 @@ export const blogContentTarget: ContentTarget = {
 /**
  * Generar slug único evitando duplicados
  */
-async function generateUniqueSlug(
-  db: any,
-  baseSlug: string,
-  excludeId?: string
-): Promise<string> {
+async function generateUniqueSlug(db: any, baseSlug: string, excludeId?: string): Promise<string> {
   let slug = baseSlug;
   let counter = 1;
 

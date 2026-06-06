@@ -6,7 +6,7 @@
  * and merged into the global schema at runtime.
  */
 
-import { pgTable, uuid, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core";
 
 export const exampleItems = pgTable("example_items", {
   id: uuid("id").primaryKey().defaultRandom(),

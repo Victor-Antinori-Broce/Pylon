@@ -12,7 +12,9 @@
  *   ✅ Smart Views (saved filter presets)
  */
 
+import { count, eq, sql, asc, desc, ilike, gt, lt, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
+
 import { db } from "../db";
 import {
   authUsers as user,
@@ -28,7 +30,6 @@ import {
   modules,
   gameCollections,
 } from "../db/schema";
-import { count, eq, sql, asc, desc, ilike, gt, lt, gte, lte } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth";
 import { introspectTable, getAllTables } from "../services/schema-introspector";
 

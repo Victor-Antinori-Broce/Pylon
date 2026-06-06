@@ -1,9 +1,9 @@
 /**
  * CRM Grimoire - Integration Tests
- * 
+ *
  * End-to-end tests using Playwright to verify the CRM API
  * works correctly with a real database.
- * 
+ *
  * Run with: npx playwright test packages/grimoires/grimoire-crm/tests/crm.integration.spec.ts
  */
 
@@ -64,7 +64,7 @@ test.describe("CRM Grimoire - Companies API", () => {
     const createData = generateTestCompany();
     const createRes = await request.post(`${API}/companies`, { data: createData });
     expect(createRes.status()).toBe(201);
-    
+
     const created = await createRes.json();
     expect(created.success).toBe(true);
     expect(created.data.name).toBe(createData.name);
@@ -74,7 +74,7 @@ test.describe("CRM Grimoire - Companies API", () => {
     // Read
     const readRes = await request.get(`${API}/companies/${companyId}`);
     expect(readRes.status()).toBe(200);
-    
+
     const read = await readRes.json();
     expect(read.success).toBe(true);
     expect(read.data.name).toBe(createData.name);
@@ -85,14 +85,14 @@ test.describe("CRM Grimoire - Companies API", () => {
       data: { name: "Updated Company Name" },
     });
     expect(updateRes.status()).toBe(200);
-    
+
     const updated = await updateRes.json();
     expect(updated.success).toBe(true);
 
     // Delete
     const deleteRes = await request.delete(`${API}/companies/${companyId}`);
     expect(deleteRes.status()).toBe(200);
-    
+
     const deleted = await deleteRes.json();
     expect(deleted.success).toBe(true);
 
@@ -104,7 +104,7 @@ test.describe("CRM Grimoire - Companies API", () => {
   test("should list companies with pagination", async ({ request }) => {
     const listRes = await request.get(`${API}/companies?limit=10&offset=0`);
     expect(listRes.status()).toBe(200);
-    
+
     const list = await listRes.json();
     expect(list.success).toBe(true);
     expect(Array.isArray(list.data)).toBe(true);
@@ -114,7 +114,7 @@ test.describe("CRM Grimoire - Companies API", () => {
   test("should filter companies by industry", async ({ request }) => {
     const res = await request.get(`${API}/companies?industry=Technology`);
     expect(res.status()).toBe(200);
-    
+
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(Array.isArray(data.data)).toBe(true);
@@ -127,7 +127,7 @@ test.describe("CRM Grimoire - Contacts API", () => {
     const createData = generateTestContact();
     const createRes = await request.post(`${API}/contacts`, { data: createData });
     expect(createRes.status()).toBe(201);
-    
+
     const created = await createRes.json();
     expect(created.success).toBe(true);
     expect(created.data.firstName).toBe(createData.firstName);
@@ -137,7 +137,7 @@ test.describe("CRM Grimoire - Contacts API", () => {
     // Read
     const readRes = await request.get(`${API}/contacts/${contactId}`);
     expect(readRes.status()).toBe(200);
-    
+
     const read = await readRes.json();
     expect(read.success).toBe(true);
     expect(read.data.firstName).toBe(createData.firstName);
@@ -147,7 +147,7 @@ test.describe("CRM Grimoire - Contacts API", () => {
       data: { firstName: "Jane", status: "prospect" },
     });
     expect(updateRes.status()).toBe(200);
-    
+
     const updated = await updateRes.json();
     expect(updated.success).toBe(true);
 
@@ -159,7 +159,7 @@ test.describe("CRM Grimoire - Contacts API", () => {
   test("should list contacts with filters", async ({ request }) => {
     const res = await request.get(`${API}/contacts?status=lead&limit=10`);
     expect(res.status()).toBe(200);
-    
+
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(Array.isArray(data.data)).toBe(true);
@@ -168,7 +168,7 @@ test.describe("CRM Grimoire - Contacts API", () => {
   test("should search contacts by name", async ({ request }) => {
     const res = await request.get(`${API}/contacts?search=john&limit=10`);
     expect(res.status()).toBe(200);
-    
+
     const data = await res.json();
     expect(data.success).toBe(true);
   });
@@ -179,7 +179,7 @@ test.describe("CRM Grimoire - Pipelines API", () => {
     const createData = generateTestPipeline();
     const createRes = await request.post(`${API}/pipelines`, { data: createData });
     expect(createRes.status()).toBe(201);
-    
+
     const created = await createRes.json();
     expect(created.success).toBe(true);
     expect(created.data.name).toBe(createData.name);
@@ -188,7 +188,7 @@ test.describe("CRM Grimoire - Pipelines API", () => {
     // Verify pipeline has stages
     const readRes = await request.get(`${API}/pipelines/${pipelineId}`);
     expect(readRes.status()).toBe(200);
-    
+
     const read = await readRes.json();
     expect(read.success).toBe(true);
     expect(Array.isArray(read.data.stages)).toBe(true);
@@ -211,7 +211,7 @@ test.describe("CRM Grimoire - Pipelines API", () => {
       data: { name: "New Stage", color: "#ff0000", order: 0, probability: 50 },
     });
     expect(stageRes.status()).toBe(201);
-    
+
     const stage = await stageRes.json();
     expect(stage.success).toBe(true);
     const stageId = stage.data.id;
@@ -239,7 +239,7 @@ test.describe("CRM Grimoire - Deals API", () => {
     });
     const pipeline = await pipelineRes.json();
     pipelineId = pipeline.data.id;
-    
+
     // Get first stage
     const stagesRes = await request.get(`${API}/pipelines/${pipelineId}`);
     const stages = await stagesRes.json();
@@ -257,7 +257,7 @@ test.describe("CRM Grimoire - Deals API", () => {
     const createData = generateTestDeal(pipelineId, stageId);
     const createRes = await request.post(`${API}/deals`, { data: createData });
     expect(createRes.status()).toBe(201);
-    
+
     const created = await createRes.json();
     expect(created.success).toBe(true);
     expect(created.data.title).toBe(createData.title);
@@ -267,7 +267,7 @@ test.describe("CRM Grimoire - Deals API", () => {
     // Read
     const readRes = await request.get(`${API}/deals/${dealId}`);
     expect(readRes.status()).toBe(200);
-    
+
     const read = await readRes.json();
     expect(read.success).toBe(true);
     expect(read.data.title).toBe(createData.title);
@@ -293,7 +293,7 @@ test.describe("CRM Grimoire - Deals API", () => {
     // Get second stage
     const stagesRes = await request.get(`${API}/pipelines/${pipelineId}`);
     const stages = (await stagesRes.json()).data.stages;
-    
+
     if (stages.length > 1) {
       const secondStageId = stages[1].id;
 
@@ -302,7 +302,7 @@ test.describe("CRM Grimoire - Deals API", () => {
         data: { targetStageId: secondStageId, newOrder: 0 },
       });
       expect(moveRes.status()).toBe(200);
-      
+
       const moved = await moveRes.json();
       expect(moved.success).toBe(true);
     }
@@ -314,7 +314,7 @@ test.describe("CRM Grimoire - Deals API", () => {
   test("should get kanban board data", async ({ request }) => {
     const kanbanRes = await request.get(`${API}/pipelines/${pipelineId}/kanban`);
     expect(kanbanRes.status()).toBe(200);
-    
+
     const kanban = await kanbanRes.json();
     expect(kanban.success).toBe(true);
     expect(kanban.data.pipeline).toBeDefined();
@@ -329,7 +329,7 @@ test.describe("CRM Grimoire - Activities API", () => {
     const createData = generateTestActivity();
     const createRes = await request.post(`${API}/activities`, { data: createData });
     expect(createRes.status()).toBe(201);
-    
+
     const created = await createRes.json();
     expect(created.success).toBe(true);
     expect(created.data.subject).toBe(createData.subject);
@@ -344,7 +344,7 @@ test.describe("CRM Grimoire - Activities API", () => {
       data: { outcome: "successful", notes: "Call went well" },
     });
     expect(completeRes.status()).toBe(200);
-    
+
     const completed = await completeRes.json();
     expect(completed.success).toBe(true);
     expect(completed.data.completedAt).toBeDefined();
@@ -357,7 +357,7 @@ test.describe("CRM Grimoire - Activities API", () => {
   test("should list activities with filters", async ({ request }) => {
     const res = await request.get(`${API}/activities?type=call&completed=false&limit=10`);
     expect(res.status()).toBe(200);
-    
+
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(Array.isArray(data.data)).toBe(true);
@@ -368,11 +368,11 @@ test.describe("CRM Grimoire - Dashboard Stats", () => {
   test("should return CRM statistics", async ({ request }) => {
     const res = await request.get(`${API}/stats`);
     expect(res.status()).toBe(200);
-    
+
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.data).toBeDefined();
-    
+
     // Verify stats structure
     expect(typeof data.data.contacts).toBe("number");
     expect(typeof data.data.companies).toBe("number");

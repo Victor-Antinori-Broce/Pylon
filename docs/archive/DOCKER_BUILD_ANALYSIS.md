@@ -8,12 +8,12 @@
 
 ## Executive Summary
 
-| Category | Status | Details |
-|----------|--------|---------|
-| **Docker Build** | ✅ LIKELY TO WORK | Multi-stage Dockerfile is well-structured with proper error handling |
-| **API Routes** | ⚠️ NEEDS TESTING | 40+ routes analyzed, most should work but some edge cases identified |
-| **Infrastructure** | ✅ READY | Docker Compose files properly configured |
-| **Critical Issues** | 🚫 NONE FOUND | No blocking issues identified |
+| Category            | Status            | Details                                                              |
+| ------------------- | ----------------- | -------------------------------------------------------------------- |
+| **Docker Build**    | ✅ LIKELY TO WORK | Multi-stage Dockerfile is well-structured with proper error handling |
+| **API Routes**      | ⚠️ NEEDS TESTING  | 40+ routes analyzed, most should work but some edge cases identified |
+| **Infrastructure**  | ✅ READY          | Docker Compose files properly configured                             |
+| **Critical Issues** | 🚫 NONE FOUND     | No blocking issues identified                                        |
 
 ---
 
@@ -33,22 +33,22 @@ Stage 5: admin       → Nginx serving static files
 
 ### 1.2 Build Success Factors ✅
 
-| Factor | Status | Notes |
-|--------|--------|-------|
-| Base Image | ✅ Good | `oven/bun:1-alpine` is stable |
-| Package Manager | ✅ Good | pnpm 9.15.4 locked |
+| Factor            | Status  | Notes                                    |
+| ----------------- | ------- | ---------------------------------------- |
+| Base Image        | ✅ Good | `oven/bun:1-alpine` is stable            |
+| Package Manager   | ✅ Good | pnpm 9.15.4 locked                       |
 | Workspace Support | ✅ Good | All package.json files copied explicitly |
 | Sharp Compilation | ✅ Good | Rebuilt for Alpine/musl in builder stage |
-| Health Checks | ✅ Good | `/api/health` endpoint configured |
-| Startup Script | ✅ Good | `start-with-check.sh` handles migrations |
+| Health Checks     | ✅ Good | `/api/health` endpoint configured        |
+| Startup Script    | ✅ Good | `start-with-check.sh` handles migrations |
 
 ### 1.3 Potential Build Issues ⚠️
 
-| Issue | Risk Level | Mitigation |
-|-------|------------|------------|
-| `pnpm-lock.yaml` drift | Medium | Use `--frozen-lockfile` or commit lockfile |
-| Missing `BETTER_AUTH_SECRET` | Low | Already set in `.env` file |
-| Grimoire loading at runtime | Medium | Fallbacks exist in `module-loader.ts` |
+| Issue                        | Risk Level | Mitigation                                 |
+| ---------------------------- | ---------- | ------------------------------------------ |
+| `pnpm-lock.yaml` drift       | Medium     | Use `--frozen-lockfile` or commit lockfile |
+| Missing `BETTER_AUTH_SECRET` | Low        | Already set in `.env` file                 |
+| Grimoire loading at runtime  | Medium     | Fallbacks exist in `module-loader.ts`      |
 
 ### 1.4 Dockerfile Validation
 
@@ -66,62 +66,62 @@ docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test .
 
 ### 2.1 Route Categories
 
-| Category | Count | Auth Required | Status |
-|----------|-------|---------------|--------|
-| **Public Routes** | 6 | No | ✅ Should work |
-| **Auth Routes** | 8 | No (auth endpoints) | ✅ Should work |
-| **Protected Routes** | 30+ | Yes | ⚠️ Returns 401 without auth |
-| **Dynamic Grimoire Routes** | Variable | Mixed | ⚠️ Depends on grimoire loading |
+| Category                    | Count    | Auth Required       | Status                         |
+| --------------------------- | -------- | ------------------- | ------------------------------ |
+| **Public Routes**           | 6        | No                  | ✅ Should work                 |
+| **Auth Routes**             | 8        | No (auth endpoints) | ✅ Should work                 |
+| **Protected Routes**        | 30+      | Yes                 | ⚠️ Returns 401 without auth    |
+| **Dynamic Grimoire Routes** | Variable | Mixed               | ⚠️ Depends on grimoire loading |
 
 ### 2.2 Public Routes (Should Return 200)
 
-| Route | Method | Expected | Notes |
-|-------|--------|----------|-------|
-| `/api/health` | GET | 200 | Health check endpoint |
-| `/api/health/pgvector` | GET | 200/503 | Checks pgvector extension |
-| `/api/system/init-check` | GET | 200 | Checks if system initialized |
-| `/api/system/setup` | POST | 200/400 | Initial setup (public before auth) |
-| `/api/auth/*` | GET/POST | 200/400 | Better-Auth endpoints |
-| `/api/swagger` | GET | 200 | OpenAPI docs (if enabled) |
+| Route                    | Method   | Expected | Notes                              |
+| ------------------------ | -------- | -------- | ---------------------------------- |
+| `/api/health`            | GET      | 200      | Health check endpoint              |
+| `/api/health/pgvector`   | GET      | 200/503  | Checks pgvector extension          |
+| `/api/system/init-check` | GET      | 200      | Checks if system initialized       |
+| `/api/system/setup`      | POST     | 200/400  | Initial setup (public before auth) |
+| `/api/auth/*`            | GET/POST | 200/400  | Better-Auth endpoints              |
+| `/api/swagger`           | GET      | 200      | OpenAPI docs (if enabled)          |
 
 ### 2.3 Protected Routes (Should Return 401 without auth)
 
-| Route | Method | Expected without Auth | Notes |
-|-------|--------|----------------------|-------|
-| `/api/data-sets` | GET/POST | 401 | Data sets CRUD |
-| `/api/datasets` | GET/POST | 401 | Alternative path |
-| `/api/datasets/:id/entries` | GET/POST | 401 | Dataset entries |
-| `/api/settings` | GET/PATCH | 401 | Site settings |
-| `/api/modules` | GET | 401 | Module management |
-| `/api/actions` | GET/POST | 401 | Actions management |
-| `/api/keys` | GET/POST | 401 | API keys |
-| `/api/admin/*` | ALL | 401/403 | Admin routes require admin role |
-| `/api/agent/memory` | GET/POST | 401 | Agent memory |
-| `/api/schema` | GET | 401 | Schema introspection |
-| `/api/relations` | GET/POST | 401 | Inline relations |
-| `/api/sync/*` | POST | 401 | IGDB/Twitch sync |
-| `/api/graphql` | POST | 401 | GraphQL endpoint |
-| `/api/functions` | GET/POST | 401 | Legacy functions |
-| `/api/mcp` | GET/POST | 401 | MCP endpoint |
+| Route                       | Method    | Expected without Auth | Notes                           |
+| --------------------------- | --------- | --------------------- | ------------------------------- |
+| `/api/data-sets`            | GET/POST  | 401                   | Data sets CRUD                  |
+| `/api/datasets`             | GET/POST  | 401                   | Alternative path                |
+| `/api/datasets/:id/entries` | GET/POST  | 401                   | Dataset entries                 |
+| `/api/settings`             | GET/PATCH | 401                   | Site settings                   |
+| `/api/modules`              | GET       | 401                   | Module management               |
+| `/api/actions`              | GET/POST  | 401                   | Actions management              |
+| `/api/keys`                 | GET/POST  | 401                   | API keys                        |
+| `/api/admin/*`              | ALL       | 401/403               | Admin routes require admin role |
+| `/api/agent/memory`         | GET/POST  | 401                   | Agent memory                    |
+| `/api/schema`               | GET       | 401                   | Schema introspection            |
+| `/api/relations`            | GET/POST  | 401                   | Inline relations                |
+| `/api/sync/*`               | POST      | 401                   | IGDB/Twitch sync                |
+| `/api/graphql`              | POST      | 401                   | GraphQL endpoint                |
+| `/api/functions`            | GET/POST  | 401                   | Legacy functions                |
+| `/api/mcp`                  | GET/POST  | 401                   | MCP endpoint                    |
 
 ### 2.4 Potential 500 Error Sources
 
-| Source | Location | Risk | Mitigation |
-|--------|----------|------|------------|
-| Database connection | `src/db/index.ts` | High if DB down | Connection pooling + retries |
-| Grimoire loading | `src/lib/module-loader.ts` | Medium | try/catch in loader |
-| Better-Auth session | `src/lib/auth.ts` | Low | Graceful degradation |
-| Queue (BullMQ) | `src/lib/queue.ts` | Low | Non-fatal if unavailable |
-| Realtime Valkey | `src/lib/realtime.ts` | Low | Non-fatal if unavailable |
+| Source              | Location                   | Risk            | Mitigation                   |
+| ------------------- | -------------------------- | --------------- | ---------------------------- |
+| Database connection | `src/db/index.ts`          | High if DB down | Connection pooling + retries |
+| Grimoire loading    | `src/lib/module-loader.ts` | Medium          | try/catch in loader          |
+| Better-Auth session | `src/lib/auth.ts`          | Low             | Graceful degradation         |
+| Queue (BullMQ)      | `src/lib/queue.ts`         | Low             | Non-fatal if unavailable     |
+| Realtime Valkey     | `src/lib/realtime.ts`      | Low             | Non-fatal if unavailable     |
 
 ### 2.5 Potential 404 Error Sources
 
-| Source | Location | Risk | Mitigation |
-|--------|----------|------|------------|
-| Non-existent routes | `src/index.ts` notFound handler | Expected | Returns proper JSON 404 |
-| Grimoire routes not loaded | Dynamic loading | Medium | Graceful fallback |
-| Dataset slug not found | `src/routes/crud.ts` | Expected | Returns 404 |
-| Entry ID not found | `src/routes/datasets.ts` | Expected | Returns 404 |
+| Source                     | Location                        | Risk     | Mitigation              |
+| -------------------------- | ------------------------------- | -------- | ----------------------- |
+| Non-existent routes        | `src/index.ts` notFound handler | Expected | Returns proper JSON 404 |
+| Grimoire routes not loaded | Dynamic loading                 | Medium   | Graceful fallback       |
+| Dataset slug not found     | `src/routes/crud.ts`            | Expected | Returns 404             |
+| Entry ID not found         | `src/routes/datasets.ts`        | Expected | Returns 404             |
 
 ---
 
@@ -129,19 +129,19 @@ docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test .
 
 ### 🔴 High Risk (Could 500)
 
-| Route | Issue | Fix Required |
-|-------|-------|--------------|
+| Route                       | Issue                            | Fix Required                 |
+| --------------------------- | -------------------------------- | ---------------------------- |
 | `/api/datasets/:id/entries` | Missing RLS transaction handling | Already has `getDB()` helper |
-| `/api/sync/igdb/*` | External API dependency | Wrapped in try/catch |
-| `/api/mcp` | SSE connection handling | Should be stable |
+| `/api/sync/igdb/*`          | External API dependency          | Wrapped in try/catch         |
+| `/api/mcp`                  | SSE connection handling          | Should be stable             |
 
 ### 🟡 Medium Risk (Edge Cases)
 
-| Route | Issue | Mitigation |
-|-------|-------|------------|
-| `/api/system/setup` | Race condition on init | Check user count first |
-| `/api/admin/registry` | Grimoire not loaded | Returns empty array |
-| `/api/schema/*` | DB reflection on startup | Cached after first call |
+| Route                 | Issue                    | Mitigation              |
+| --------------------- | ------------------------ | ----------------------- |
+| `/api/system/setup`   | Race condition on init   | Check user count first  |
+| `/api/admin/registry` | Grimoire not loaded      | Returns empty array     |
+| `/api/schema/*`       | DB reflection on startup | Cached after first call |
 
 ### 🟢 Low Risk (Should Work)
 
@@ -207,12 +207,12 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/nonexistent" -Method GET
 
 Monitor these endpoints after deployment:
 
-| Endpoint | Expected | Alert If |
-|----------|----------|----------|
-| `/api/health` | 200 | Status != "ok" |
-| `/api/health/pgvector` | 200 | pgvector = false |
-| `/api/data-sets` | 401 | 500 error |
-| `/api/system/init-check` | 200 | Any error |
+| Endpoint                 | Expected | Alert If         |
+| ------------------------ | -------- | ---------------- |
+| `/api/health`            | 200      | Status != "ok"   |
+| `/api/health/pgvector`   | 200      | pgvector = false |
+| `/api/data-sets`         | 401      | 500 error        |
+| `/api/system/init-check` | 200      | Any error        |
 
 ### 5.3 Known Limitations
 
@@ -225,20 +225,24 @@ Monitor these endpoints after deployment:
 ## Part 6: Conclusion
 
 ### Docker Build: ✅ READY
+
 The Docker build is well-structured and should work correctly. The multi-stage build optimizes the final image size, and the startup script handles database initialization gracefully.
 
 ### API Routes: ⚠️ TEST RECOMMENDED
+
 The API routes are properly structured with:
+
 - Proper error handling (no unexpected 500s expected)
 - Clear auth boundaries (401 for unauthenticated)
 - Proper 404 handling for missing resources
 - Graceful degradation for optional services
 
 **Next Steps:**
+
 1. Run the provided test script: `.\scripts\docker-api-test.ps1`
 2. Review any failures in the generated report
 3. Address any issues before production deployment
 
 ---
 
-*Report generated by automated analysis of the GremiusCMS codebase*
+_Report generated by automated analysis of the GremiusCMS codebase_

@@ -1,13 +1,13 @@
 /**
  * Test Script: Grimoire Loading Verification
- * 
+ *
  * Verifica que los grimoires se carguen correctamente.
- * 
+ *
  * Usage: bun run scripts/test-grimoire-loading.ts
  */
 
-import { pathToFileURL } from "node:url";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Get project root (assuming script is in ./scripts/)
 const projectRoot = join(process.cwd());
@@ -16,9 +16,7 @@ const projectRoot = join(process.cwd());
 async function testModernGrimoires() {
   console.log("\n🧪 Testing Modern Grimoires (Dependency Injection)\n");
 
-  const modernGrimoires = [
-    { name: "blog", path: "packages/grimoires/grimoire-blog/index.ts" },
-  ];
+  const modernGrimoires = [{ name: "blog", path: "packages/grimoires/grimoire-blog/index.ts" }];
 
   for (const { name, path: grimoirePath } of modernGrimoires) {
     try {
@@ -29,15 +27,15 @@ async function testModernGrimoires() {
       if (mod.grimoire || mod.default) {
         const grimoire = mod.grimoire || mod.default;
         console.log(`✅ ${name}`);
-        console.log(`   ID: ${grimoire.id || 'unknown'}`);
+        console.log(`   ID: ${grimoire.id || "unknown"}`);
         console.log(`   Name: ${grimoire.name}`);
         console.log(`   Version: ${grimoire.version}`);
-        console.log(`   Has createRouter: ${typeof grimoire.createRouter === 'function'}`);
-        console.log(`   Tables: ${grimoire.tables?.join(', ') || 'none'}`);
-        console.log(`   Mount: ${grimoire.mountPath || '/api/{id}'}`);
+        console.log(`   Has createRouter: ${typeof grimoire.createRouter === "function"}`);
+        console.log(`   Tables: ${grimoire.tables?.join(", ") || "none"}`);
+        console.log(`   Mount: ${grimoire.mountPath || "/api/{id}"}`);
 
         // Verificar que createRouter es una función
-        if (typeof grimoire.createRouter !== 'function') {
+        if (typeof grimoire.createRouter !== "function") {
           console.error(`   ❌ ERROR: createRouter is not a function!`);
           return false;
         }
@@ -58,9 +56,7 @@ async function testModernGrimoires() {
 async function testLegacyGrimoires() {
   console.log("\n🧪 Testing Legacy Grimoires (Backward Compatibility)\n");
 
-  const legacyGrimoires = [
-    { name: "games", path: "packages/grimoires/grimoire-games/index.ts" },
-  ];
+  const legacyGrimoires = [{ name: "games", path: "packages/grimoires/grimoire-games/index.ts" }];
 
   for (const { name, path: grimoirePath } of legacyGrimoires) {
     try {
@@ -68,13 +64,16 @@ async function testLegacyGrimoires() {
       const mod = await import(fullPath);
 
       // Verificar que exporta un router o init
-      const hasRouter = Object.values(mod).some((v: any) =>
-        typeof v === 'object' && v !== null &&
-        typeof v.fetch === 'function' && typeof v.route === 'function'
+      const hasRouter = Object.values(mod).some(
+        (v: any) =>
+          typeof v === "object" &&
+          v !== null &&
+          typeof v.fetch === "function" &&
+          typeof v.route === "function"
       );
 
-      const hasInit = Object.entries(mod).some(([k, v]: [string, any]) =>
-        k.startsWith('init') && typeof v === 'function'
+      const hasInit = Object.entries(mod).some(
+        ([k, v]: [string, any]) => k.startsWith("init") && typeof v === "function"
       );
 
       if (hasRouter || hasInit) {
@@ -102,7 +101,7 @@ async function testSchemaExports() {
     {
       name: "blog",
       path: "packages/grimoires/grimoire-blog/src/schema.ts",
-      expectedTables: ["blogPosts", "blogPostsToTags", "blogPostsToGames"]
+      expectedTables: ["blogPosts", "blogPostsToTags", "blogPostsToGames"],
     },
   ];
 
@@ -140,7 +139,7 @@ async function runTests() {
   results.push(await testLegacyGrimoires());
   results.push(await testSchemaExports());
 
-  if (results.every(r => r)) {
+  if (results.every((r) => r)) {
     console.log("\n╔════════════════════════════════════════════════════════════╗");
     console.log("║     ✅ ALL TESTS PASSED                                    ║");
     console.log("╚════════════════════════════════════════════════════════════╝\n");

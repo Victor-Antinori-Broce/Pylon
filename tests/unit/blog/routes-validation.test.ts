@@ -1,6 +1,6 @@
 /**
  * Tests for Blog Routes - Input Validation
- * 
+ *
  * Comprehensive validation tests for:
  * - Required fields
  * - Field lengths and formats
@@ -24,12 +24,15 @@ const validators = {
       return { valid: false, error: "Slug must be 500 characters or less" };
     }
     if (!/^[a-z0-9-]+$/.test(slug)) {
-      return { valid: false, error: "Slug can only contain lowercase letters, numbers, and hyphens" };
+      return {
+        valid: false,
+        error: "Slug can only contain lowercase letters, numbers, and hyphens",
+      };
     }
-    if (slug.startsWith('-') || slug.endsWith('-')) {
+    if (slug.startsWith("-") || slug.endsWith("-")) {
       return { valid: false, error: "Slug cannot start or end with a hyphen" };
     }
-    if (slug.includes('--')) {
+    if (slug.includes("--")) {
       return { valid: false, error: "Slug cannot contain consecutive hyphens" };
     }
     return { valid: true };
@@ -47,7 +50,7 @@ const validators = {
 
   validateExcerpt(excerpt: string): { valid: boolean; warning?: string } {
     if (!excerpt) return { valid: true };
-    
+
     if (excerpt.length < 120) {
       return { valid: true, warning: "Excerpt should be at least 120 characters for optimal SEO" };
     }
@@ -90,7 +93,7 @@ const validators = {
       warnings.push("OG title should be 60 characters or less");
     }
 
-    // OG description validation  
+    // OG description validation
     if (seo.ogDescription && seo.ogDescription.length > 200) {
       warnings.push("OG description should be 200 characters or less");
     }
@@ -99,7 +102,7 @@ const validators = {
     if (seo.canonicalUrl) {
       try {
         new URL(seo.canonicalUrl);
-        if (!seo.canonicalUrl.startsWith('http')) {
+        if (!seo.canonicalUrl.startsWith("http")) {
           errors.push("Canonical URL must use http or https protocol");
         }
       } catch {
@@ -111,17 +114,17 @@ const validators = {
   },
 
   validateStatus(status: string, publishedAt?: string | null): { valid: boolean; error?: string } {
-    const validStatuses = ['draft', 'published', 'scheduled', 'archived'];
-    
+    const validStatuses = ["draft", "published", "scheduled", "archived"];
+
     if (!validStatuses.includes(status)) {
-      return { valid: false, error: `Status must be one of: ${validStatuses.join(', ')}` };
+      return { valid: false, error: `Status must be one of: ${validStatuses.join(", ")}` };
     }
 
-    if (status === 'scheduled' && !publishedAt) {
+    if (status === "scheduled" && !publishedAt) {
       return { valid: false, error: "Scheduled posts must have a publishedAt date" };
     }
 
-    if (status === 'scheduled' && publishedAt) {
+    if (status === "scheduled" && publishedAt) {
       const date = new Date(publishedAt);
       if (isNaN(date.getTime())) {
         return { valid: false, error: "Invalid publishedAt date format" };
@@ -138,12 +141,12 @@ const validators = {
     if (!Array.isArray(tags)) {
       return { valid: false, error: "Tags must be an array" };
     }
-    
+
     if (tags.length > 20) {
       return { valid: false, error: "Cannot have more than 20 tags" };
     }
 
-    const invalidTags = tags.filter(tag => typeof tag !== 'string' || tag.length === 0);
+    const invalidTags = tags.filter((tag) => typeof tag !== "string" || tag.length === 0);
     if (invalidTags.length > 0) {
       return { valid: false, error: "All tags must be non-empty strings" };
     }
@@ -158,25 +161,20 @@ const validators = {
 
   validateRobotsMeta(robots: { index?: boolean; follow?: boolean }): { valid: boolean } {
     // Both should be booleans if provided
-    if (robots.index !== undefined && typeof robots.index !== 'boolean') {
+    if (robots.index !== undefined && typeof robots.index !== "boolean") {
       return { valid: false };
     }
-    if (robots.follow !== undefined && typeof robots.follow !== 'boolean') {
+    if (robots.follow !== undefined && typeof robots.follow !== "boolean") {
       return { valid: false };
     }
     return { valid: true };
-  }
+  },
 };
 
 describe("Blog Routes - Input Validation", () => {
   describe("Slug Validation", () => {
     it("should accept valid slugs", () => {
-      const validSlugs = [
-        "hello-world",
-        "post-123",
-        "a-b-c",
-        "my-blog-post"
-      ];
+      const validSlugs = ["hello-world", "post-123", "a-b-c", "my-blog-post"];
 
       for (const slug of validSlugs) {
         const result = validators.validateSlug(slug);
@@ -210,7 +208,7 @@ describe("Blog Routes - Input Validation", () => {
 
     it("should reject slug with special characters", () => {
       const invalidSlugs = ["hello_world", "hello.world", "hello@world", "hello world"];
-      
+
       for (const slug of invalidSlugs) {
         const result = validators.validateSlug(slug);
         expect(result.valid).toBe(false);
@@ -220,7 +218,7 @@ describe("Blog Routes - Input Validation", () => {
     it("should reject slug starting or ending with hyphen", () => {
       const result1 = validators.validateSlug("-hello-world");
       const result2 = validators.validateSlug("hello-world-");
-      
+
       expect(result1.valid).toBe(false);
       expect(result2.valid).toBe(false);
     });
@@ -283,10 +281,11 @@ describe("Blog Routes - Input Validation", () => {
     it("should validate all SEO fields as valid", () => {
       const seo = {
         metaTitle: "Perfect Meta Title for SEO",
-        metaDescription: "This is an excellent meta description that provides value and is within the optimal length range.",
+        metaDescription:
+          "This is an excellent meta description that provides value and is within the optimal length range.",
         canonicalUrl: "https://example.com/blog/post",
         ogTitle: "Social Media Title",
-        ogDescription: "Description for social sharing"
+        ogDescription: "Description for social sharing",
       };
 
       const result = validators.validateSeoOverrides(seo);
@@ -357,7 +356,7 @@ describe("Blog Routes - Input Validation", () => {
       const seo = {
         metaTitle: "x".repeat(61),
         metaDescription: "x".repeat(161),
-        canonicalUrl: "invalid"
+        canonicalUrl: "invalid",
       };
 
       const result = validators.validateSeoOverrides(seo);
@@ -369,19 +368,19 @@ describe("Blog Routes - Input Validation", () => {
   describe("Status Validation", () => {
     it("should accept all valid statuses", () => {
       // Draft and archived don't require publishedAt
-      const resultDraft = validators.validateStatus('draft');
-      const resultArchived = validators.validateStatus('archived');
+      const resultDraft = validators.validateStatus("draft");
+      const resultArchived = validators.validateStatus("archived");
       expect(resultDraft.valid).toBe(true);
       expect(resultArchived.valid).toBe(true);
-      
+
       // Published can have null publishedAt (will be set automatically)
-      const resultPublished = validators.validateStatus('published', null);
+      const resultPublished = validators.validateStatus("published", null);
       expect(resultPublished.valid).toBe(true);
-      
+
       // Scheduled requires publishedAt
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
-      const resultScheduled = validators.validateStatus('scheduled', futureDate.toISOString());
+      const resultScheduled = validators.validateStatus("scheduled", futureDate.toISOString());
       expect(resultScheduled.valid).toBe(true);
     });
 
@@ -400,7 +399,7 @@ describe("Blog Routes - Input Validation", () => {
     it("should reject past dates for scheduled posts", () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 1);
-      
+
       const result = validators.validateStatus("scheduled", pastDate.toISOString());
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Scheduled date must be in the future");
@@ -409,7 +408,7 @@ describe("Blog Routes - Input Validation", () => {
     it("should accept future dates for scheduled posts", () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
-      
+
       const result = validators.validateStatus("scheduled", futureDate.toISOString());
       expect(result.valid).toBe(true);
     });
@@ -463,7 +462,9 @@ describe("Blog Routes - Input Validation", () => {
     });
 
     it("should accept exactly 20 tags", () => {
-      const tags = Array(20).fill(0).map((_, i) => `tag-${i}`);
+      const tags = Array(20)
+        .fill(0)
+        .map((_, i) => `tag-${i}`);
       const result = validators.validateTags(tags);
       expect(result.valid).toBe(true);
     });
@@ -478,7 +479,7 @@ describe("Blog Routes - Input Validation", () => {
     it("should accept partial robots configuration", () => {
       const result1 = validators.validateRobotsMeta({ index: true });
       const result2 = validators.validateRobotsMeta({ follow: false });
-      
+
       expect(result1.valid).toBe(true);
       expect(result2.valid).toBe(true);
     });
@@ -512,8 +513,8 @@ describe("Blog Routes - Input Validation", () => {
         seoOverrides: {
           metaTitle: "Perfect Meta Title",
           metaDescription: "x".repeat(140),
-          canonicalUrl: "https://example.com/blog/post"
-        }
+          canonicalUrl: "https://example.com/blog/post",
+        },
       };
 
       const validations = [
@@ -522,10 +523,10 @@ describe("Blog Routes - Input Validation", () => {
         validators.validateExcerpt(post.excerpt),
         validators.validateStatus(post.status),
         validators.validateTags(post.tags),
-        validators.validateSeoOverrides(post.seoOverrides)
+        validators.validateSeoOverrides(post.seoOverrides),
       ];
 
-      const allValid = validations.every(v => v.valid);
+      const allValid = validations.every((v) => v.valid);
       expect(allValid).toBe(true);
     });
 
@@ -538,8 +539,8 @@ describe("Blog Routes - Input Validation", () => {
         tags: ["tag", "tag"], // duplicates
         seoOverrides: {
           metaTitle: "x".repeat(61), // too long
-          canonicalUrl: "invalid-url"
-        }
+          canonicalUrl: "invalid-url",
+        },
       };
 
       const titleValidation = validators.validateTitle(post.title);

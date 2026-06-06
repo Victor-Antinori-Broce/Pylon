@@ -8,11 +8,12 @@
  * - Syncing data
  */
 
-import { Hono } from "hono";
 import { db } from "@/db";
 import { dataSources } from "@/db/schema";
-import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { eq, desc } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { requireAuth } from "../middleware/auth";
 import type { AppVariables } from "../types/hono";
 

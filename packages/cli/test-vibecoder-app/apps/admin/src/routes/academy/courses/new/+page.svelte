@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import { 
     ArrowLeft, 
     Save,
     BookOpen,
     Loader2
   } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { goto } from "$app/navigation";
+  
+import { goto } from "$app/navigation";
 
   interface CursoForm {
     titulo: string;
@@ -20,7 +20,7 @@
     activo: boolean;
   }
 
-  let form = $state<CursoForm>({
+  const form = $state<CursoForm>({
     titulo: "",
     descripcion: "",
     tipoCurso: "INDUCCION",

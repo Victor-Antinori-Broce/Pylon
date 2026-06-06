@@ -44,12 +44,12 @@ Sistema de publicación de contenido abstracto para GremiusCMS. Permite promover
 // En cualquier grimoire, promover contenido al Blog
 router.post("/promote", async (c) => {
   const game = await getGameById(c.req.param("id"));
-  
+
   // Verificar si hay targets disponibles
   if (!ctx.contentPublishing.hasTarget("blog")) {
     return c.json({ error: "Blog not installed" }, 400);
   }
-  
+
   // Promover
   const result = await ctx.contentPublishing.promote("blog", {
     source: {
@@ -67,7 +67,7 @@ router.post("/promote", async (c) => {
       },
     },
   });
-  
+
   return c.json({
     success: true,
     url: result.url,
@@ -91,11 +91,11 @@ export const docsContentTarget: ContentTarget = {
     supportsTaxonomy: true,
     supportsMedia: true,
   },
-  
+
   async publish(data, ctx) {
     // Crear documentación
     const doc = await createDoc(data);
-    
+
     return {
       contentId: doc.id,
       targetId: "docs",
@@ -105,7 +105,7 @@ export const docsContentTarget: ContentTarget = {
       createdAt: new Date(),
     };
   },
-  
+
   getPublishedUrl(result) {
     return `/docs/${result.slug}`;
   },
@@ -116,7 +116,7 @@ export const grimoire = defineGrimoire({
   id: "documentation",
   primary: true,
   optional: true,
-  
+
   hooks: {
     onEnable: async (ctx) => {
       ctx.contentPublishing.register(docsContentTarget);
@@ -133,9 +133,11 @@ export const grimoire = defineGrimoire({
 ## 📡 API Endpoints
 
 ### `GET /api/content/targets`
+
 Listar todos los Content Targets disponibles.
 
 **Response:**
+
 ```json
 {
   "targets": [
@@ -157,9 +159,11 @@ Listar todos los Content Targets disponibles.
 ```
 
 ### `POST /api/content/promote`
+
 Promover una entrada a contenido publicable.
 
 **Body:**
+
 ```json
 {
   "targetId": "blog",
@@ -183,6 +187,7 @@ Promover una entrada a contenido publicable.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -201,8 +206,8 @@ Promover una entrada a contenido publicable.
 
 ## 🎯 Content Targets Integrados
 
-| Target | Grimoire | Capacidades |
-|--------|----------|-------------|
+| Target | Grimoire      | Capacidades                                 |
+| ------ | ------------- | ------------------------------------------- |
 | `blog` | grimoire-blog | SEO, Scheduling, Editorial, Taxonomy, Media |
 
 ---
@@ -212,6 +217,7 @@ Promover una entrada a contenido publicable.
 Ver `packages/grimoires/grimoire-blog/src/content-target.ts` como referencia.
 
 Pasos:
+
 1. Implementar la interfaz `ContentTarget`
 2. Registrar en `onEnable()` del grimoire
 3. Desregistrar en `onDisable()`

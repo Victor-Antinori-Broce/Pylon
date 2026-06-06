@@ -1,25 +1,26 @@
 <script lang="ts">
   /**
    * PageFromDataset.svelte — Production Ready
-   * 
+   *
    * Componente para crear una página de Page Builder basada en datos de un dataset.
    * Genera bloques visuales (Hero, Text, Cards, CTA) a partir de datos del dataset.
-   * 
+   *
    * @production Ready for production use
    * @version 1.0.0
    */
-  import { onMount, onDestroy } from "svelte";
-  import { 
-    Database, 
-    Search, 
-    ArrowRight, 
+  import {
+    Database,
+    Search,
+    ArrowRight,
     Layout,
     Check,
     X,
     Loader2,
     AlertCircle,
-    RefreshCw
+    RefreshCw,
   } from "lucide-svelte";
+  import { onMount, onDestroy } from "svelte";
+
   import { api } from "$lib/api";
   import Modal from "$lib/components/ui/Modal.svelte";
 
@@ -65,7 +66,7 @@
     slug: string;
     blocks: BlockContent[];
     source: {
-      type: 'dataset';
+      type: "dataset";
       datasetId: string;
       entryId: string;
     };
@@ -78,14 +79,14 @@
     onSelect: (data: PageData) => void;
   }
 
-  let { isOpen, onClose, onSelect }: Props = $props();
+  const { isOpen, onClose, onSelect }: Props = $props();
 
   // ─── State ──────────────────────────────────────────
-  type Step = 'datasets' | 'entries' | 'preview';
-  let step = $state<Step>('datasets');
+  type Step = "datasets" | "entries" | "preview";
+  let step = $state<Step>("datasets");
   let loading = $state(false);
   let error = $state<string | null>(null);
-  let searchQuery = $state('');
+  let searchQuery = $state("");
   let abortController = $state<AbortController | null>(null);
 
   // Data
@@ -97,7 +98,7 @@
 
   // Pagination
   let currentPage = $state(1);
-  let entriesPerPage = $state(20);
+  const entriesPerPage = $state(20);
 
   // ─── Lifecycle ──────────────────────────────────────
   onMount(async () => {
@@ -125,18 +126,18 @@
 
     loading = true;
     error = null;
-    
+
     try {
-      const response = await api.getDatasets({ 
+      const response = await api.getDatasets({
         limit: 100,
-        search: searchQuery || undefined 
+        search: searchQuery || undefined,
       });
-      
+
       datasets = response.docs || [];
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Failed to load datasets:', err);
-        error = err.message || 'Failed to load datasets. Please try again.';
+      if (err.name !== "AbortError") {
+        console.error("Failed to load datasets:", err);
+        error = err.message || "Failed to load datasets. Please try again.";
       }
     } finally {
       loading = false;
@@ -152,20 +153,20 @@
     loading = true;
     error = null;
     currentPage = page;
-    
+
     try {
       const response = await api.getDatasetEntries(datasetId, {
         limit: entriesPerPage,
-        page: page,
-        search: searchQuery || undefined
+        page,
+        search: searchQuery || undefined,
       });
-      
+
       entries = response.docs || [];
       totalEntries = response.totalDocs || 0;
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Failed to load entries:', err);
-        error = err.message || 'Failed to load entries. Please try again.';
+      if (err.name !== "AbortError") {
+        console.error("Failed to load entries:", err);
+        error = err.message || "Failed to load entries. Please try again.";
       }
     } finally {
       loading = false;
@@ -175,20 +176,20 @@
   // ─── Event Handlers ─────────────────────────────────
   function selectDataset(dataset: Dataset) {
     selectedDataset = dataset;
-    step = 'entries';
-    searchQuery = '';
+    step = "entries";
+    searchQuery = "";
     currentPage = 1;
     loadEntries(dataset.id);
   }
 
   function selectEntry(entry: DatasetEntry) {
     selectedEntry = entry;
-    step = 'preview';
+    step = "preview";
   }
 
   function handleConfirm() {
     if (!selectedEntry || !selectedDataset) {
-      error = 'Please select a dataset entry';
+      error = "Please select a dataset entry";
       return;
     }
 
@@ -197,17 +198,17 @@
       onSelect(pageData);
       handleClose();
     } catch (err: any) {
-      console.error('Failed to transform entry:', err);
-      error = err.message || 'Failed to process entry data';
+      console.error("Failed to transform entry:", err);
+      error = err.message || "Failed to process entry data";
     }
   }
 
   function handleClose() {
     abortController?.abort();
-    step = 'datasets';
+    step = "datasets";
     selectedDataset = null;
     selectedEntry = null;
-    searchQuery = '';
+    searchQuery = "";
     currentPage = 1;
     error = null;
     onClose();
@@ -215,26 +216,26 @@
 
   function goBack() {
     error = null;
-    if (step === 'entries') {
-      step = 'datasets';
+    if (step === "entries") {
+      step = "datasets";
       selectedDataset = null;
-      searchQuery = '';
-    } else if (step === 'preview') {
-      step = 'entries';
+      searchQuery = "";
+    } else if (step === "preview") {
+      step = "entries";
       selectedEntry = null;
     }
   }
 
   function handleSearch() {
-    if (step === 'datasets') {
+    if (step === "datasets") {
       loadDatasets();
-    } else if (step === 'entries' && selectedDataset) {
+    } else if (step === "entries" && selectedDataset) {
       loadEntries(selectedDataset.id, 1);
     }
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSearch();
     }
   }
@@ -248,9 +249,9 @@
   // ─── Transform Logic ────────────────────────────────
   function transformEntryToPage(entry: DatasetEntry, dataset: Dataset): PageData {
     const data = entry.data;
-    
-    if (!data || typeof data !== 'object') {
-      throw new Error('Invalid entry data');
+
+    if (!data || typeof data !== "object") {
+      throw new Error("Invalid entry data");
     }
 
     const title = extractTitle(data, dataset);
@@ -262,24 +263,24 @@
       slug,
       blocks,
       source: {
-        type: 'dataset',
+        type: "dataset",
         datasetId: dataset.id,
-        entryId: entry.id
-      }
+        entryId: entry.id,
+      },
     };
   }
 
   function extractTitle(data: Record<string, any>, dataset: Dataset): string {
-    const titleFields = ['title', 'name', 'headline', 'subject', 'heading'];
-    
+    const titleFields = ["title", "name", "headline", "subject", "heading"];
+
     for (const field of titleFields) {
-      if (data[field] && typeof data[field] === 'string') {
+      if (data[field] && typeof data[field] === "string") {
         return data[field].trim();
       }
     }
 
     for (const [key, value] of Object.entries(data)) {
-      if (key.toLowerCase().includes('title') && typeof value === 'string') {
+      if (key.toLowerCase().includes("title") && typeof value === "string") {
         return value.trim();
       }
     }
@@ -290,8 +291,8 @@
   function generateSlug(text: string): string {
     return text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   }
 
   function generateBlocks(data: Record<string, any>, dataset: Dataset): BlockContent[] {
@@ -299,45 +300,47 @@
     let sortOrder = 0;
 
     const title = extractTitle(data, dataset);
-    const description = data.description || data.summary || '';
+    const description = data.description || data.summary || "";
     const imageId = data.coverImage || data.image || data.featuredImage || data.thumbnail;
 
     // 1. Hero Block
     blocks.push({
-      type: 'hero',
-      name: 'Hero Section',
+      type: "hero",
+      name: "Hero Section",
       sortOrder: sortOrder++,
       columnSpan: 12,
       content: {
         headline: title,
-        description: description,
+        description,
         mediaId: imageId,
-        mediaType: imageId ? 'image' : undefined,
-        alignment: 'center',
-        minHeight: 'lg',
-        ...(data.ctaUrl ? {
-          primaryButton: {
-            label: data.ctaText || 'Learn More',
-            url: data.ctaUrl,
-            variant: 'primary'
-          }
-        } : {})
-      }
+        mediaType: imageId ? "image" : undefined,
+        alignment: "center",
+        minHeight: "lg",
+        ...(data.ctaUrl
+          ? {
+              primaryButton: {
+                label: data.ctaText || "Learn More",
+                url: data.ctaUrl,
+                variant: "primary",
+              },
+            }
+          : {}),
+      },
     });
 
     // 2. Main Description Text Block
     if (description) {
       blocks.push({
-        type: 'text',
-        name: 'Description',
+        type: "text",
+        name: "Description",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
           text: `<p>${description}</p>`,
-          format: 'html',
-          alignment: 'left',
-          textSize: 'md'
-        }
+          format: "html",
+          alignment: "left",
+          textSize: "md",
+        },
       });
     }
 
@@ -345,8 +348,8 @@
     const features = extractFeatures(data);
     if (features.length > 0) {
       blocks.push({
-        type: 'cards',
-        name: 'Features',
+        type: "cards",
+        name: "Features",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
@@ -354,33 +357,33 @@
             id: `feature-${index}`,
             title: feature.title,
             description: feature.description,
-            mediaId: feature.image
+            mediaId: feature.image,
           })),
           columns: Math.min(features.length, 3),
-          variant: 'default'
-        }
+          variant: "default",
+        },
       });
     }
 
     // 4. Additional Details
     const details = extractDetails(data);
     if (details.length > 0) {
-      let detailsHtml = '<h2>Details</h2><ul>';
+      let detailsHtml = "<h2>Details</h2><ul>";
       for (const detail of details) {
         detailsHtml += `<li><strong>${detail.label}:</strong> ${detail.value}</li>`;
       }
-      detailsHtml += '</ul>';
+      detailsHtml += "</ul>";
 
       blocks.push({
-        type: 'text',
-        name: 'Details',
+        type: "text",
+        name: "Details",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
           text: detailsHtml,
-          format: 'html',
-          alignment: 'left'
-        }
+          format: "html",
+          alignment: "left",
+        },
       });
     }
 
@@ -388,37 +391,37 @@
     const images = extractImages(data);
     if (images.length > 1) {
       blocks.push({
-        type: 'grid',
-        name: 'Image Gallery',
+        type: "grid",
+        name: "Image Gallery",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
           columns: 3,
-          gap: 'md',
+          gap: "md",
           items: images.slice(0, 6).map((img, index) => ({
             id: `gallery-${index}`,
             columnSpan: 4,
             content: {
-              type: 'image',
+              type: "image",
               mediaId: img,
-              altText: `${title} - Image ${index + 1}`
-            }
-          }))
-        }
+              altText: `${title} - Image ${index + 1}`,
+            },
+          })),
+        },
       });
     } else if (images.length === 1 && !imageId) {
       // Single image that wasn't used in hero
       blocks.push({
-        type: 'image',
-        name: 'Featured Image',
+        type: "image",
+        name: "Featured Image",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
           mediaId: images[0],
           altText: title,
-          alignment: 'center',
-          caption: data.imageCaption || ''
-        }
+          alignment: "center",
+          caption: data.imageCaption || "",
+        },
       });
     }
 
@@ -429,8 +432,8 @@
       const quoteTitle = data.quoteAuthorTitle || data.reviewerTitle;
 
       blocks.push({
-        type: 'quote',
-        name: 'Testimonial',
+        type: "quote",
+        name: "Testimonial",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
@@ -438,20 +441,20 @@
           author: quoteAuthor,
           authorTitle: quoteTitle,
           authorImageId: data.quoteAuthorImage || data.reviewerImage,
-          style: 'large'
-        }
+          style: "large",
+        },
       });
     }
 
     // 7. Call to Action
     const ctaTitle = data.ctaTitle || `Interested in ${title}?`;
-    const ctaDescription = data.ctaDescription || 'Get more information or take action now.';
-    const ctaButton = data.ctaText || 'Get Started';
-    const ctaUrl = data.ctaUrl || data.website || data.url || '#';
+    const ctaDescription = data.ctaDescription || "Get more information or take action now.";
+    const ctaButton = data.ctaText || "Get Started";
+    const ctaUrl = data.ctaUrl || data.website || data.url || "#";
 
     blocks.push({
-      type: 'cta',
-      name: 'Call to Action',
+      type: "cta",
+      name: "Call to Action",
       sortOrder: sortOrder++,
       columnSpan: 12,
       content: {
@@ -459,47 +462,52 @@
         description: ctaDescription,
         buttonLabel: ctaButton,
         buttonUrl: ctaUrl,
-        buttonVariant: 'primary',
-        alignment: 'center'
-      }
+        buttonVariant: "primary",
+        alignment: "center",
+      },
     });
 
     // 8. Video (if available)
     if (data.videoUrl || data.youtubeUrl || data.vimeoUrl) {
       const videoUrl = data.videoUrl || data.youtubeUrl || data.vimeoUrl;
-      const provider = videoUrl.includes('youtube') ? 'youtube' : 
-                       videoUrl.includes('vimeo') ? 'vimeo' : 'self';
+      const provider = videoUrl.includes("youtube")
+        ? "youtube"
+        : videoUrl.includes("vimeo")
+          ? "vimeo"
+          : "self";
 
       blocks.push({
-        type: 'video',
-        name: 'Video',
+        type: "video",
+        name: "Video",
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
           embedUrl: videoUrl,
-          provider: provider,
+          provider,
           autoplay: false,
-          controls: true
-        }
+          controls: true,
+        },
       });
     }
 
     return blocks;
   }
 
-  function extractFeatures(data: Record<string, any>): Array<{title: string, description: string, image?: string}> {
-    const features: Array<{title: string, description: string, image?: string}> = [];
+  function extractFeatures(
+    data: Record<string, any>
+  ): Array<{ title: string; description: string; image?: string }> {
+    const features: Array<{ title: string; description: string; image?: string }> = [];
 
     // Try features array
     if (data.features && Array.isArray(data.features)) {
       for (const feature of data.features) {
-        if (typeof feature === 'string') {
-          features.push({ title: feature, description: '' });
-        } else if (typeof feature === 'object' && feature) {
+        if (typeof feature === "string") {
+          features.push({ title: feature, description: "" });
+        } else if (typeof feature === "object" && feature) {
           features.push({
-            title: feature.title || feature.name || 'Feature',
-            description: feature.description || '',
-            image: feature.image || feature.icon
+            title: feature.title || feature.name || "Feature",
+            description: feature.description || "",
+            image: feature.image || feature.icon,
           });
         }
       }
@@ -508,11 +516,11 @@
     // Try specifications
     if (data.specifications && Array.isArray(data.specifications)) {
       for (const spec of data.specifications.slice(0, 6)) {
-        if (typeof spec === 'object' && spec) {
+        if (typeof spec === "object" && spec) {
           features.push({
-            title: spec.name || spec.label || 'Specification',
-            description: spec.value || spec.description || '',
-            image: spec.image
+            title: spec.name || spec.label || "Specification",
+            description: spec.value || spec.description || "",
+            image: spec.image,
           });
         }
       }
@@ -521,8 +529,8 @@
     // Try highlights
     if (data.highlights && Array.isArray(data.highlights)) {
       for (const highlight of data.highlights) {
-        if (typeof highlight === 'string') {
-          features.push({ title: highlight, description: '' });
+        if (typeof highlight === "string") {
+          features.push({ title: highlight, description: "" });
         }
       }
     }
@@ -530,35 +538,52 @@
     return features.slice(0, 6); // Max 6 features
   }
 
-  function extractDetails(data: Record<string, any>): Array<{label: string, value: string}> {
-    const details: Array<{label: string, value: string}> = [];
+  function extractDetails(data: Record<string, any>): Array<{ label: string; value: string }> {
+    const details: Array<{ label: string; value: string }> = [];
     const skipFields = [
-      'title', 'name', 'description', 'summary', 'image', 'coverImage', 'featuredImage',
-      'thumbnail', 'tags', 'features', 'highlights', 'specifications', 'videoUrl',
-      'youtubeUrl', 'vimeoUrl', 'ctaUrl', 'ctaText', 'quote', 'testimonial', 'review'
+      "title",
+      "name",
+      "description",
+      "summary",
+      "image",
+      "coverImage",
+      "featuredImage",
+      "thumbnail",
+      "tags",
+      "features",
+      "highlights",
+      "specifications",
+      "videoUrl",
+      "youtubeUrl",
+      "vimeoUrl",
+      "ctaUrl",
+      "ctaText",
+      "quote",
+      "testimonial",
+      "review",
     ];
 
     const detailFields = [
-      { key: 'price', label: 'Price' },
-      { key: 'category', label: 'Category' },
-      { key: 'genre', label: 'Genre' },
-      { key: 'platform', label: 'Platform' },
-      { key: 'releaseDate', label: 'Release Date' },
-      { key: 'developer', label: 'Developer' },
-      { key: 'publisher', label: 'Publisher' },
-      { key: 'rating', label: 'Rating' },
-      { key: 'duration', label: 'Duration' },
-      { key: 'location', label: 'Location' },
-      { key: 'date', label: 'Date' },
-      { key: 'time', label: 'Time' },
-      { key: 'status', label: 'Status' }
+      { key: "price", label: "Price" },
+      { key: "category", label: "Category" },
+      { key: "genre", label: "Genre" },
+      { key: "platform", label: "Platform" },
+      { key: "releaseDate", label: "Release Date" },
+      { key: "developer", label: "Developer" },
+      { key: "publisher", label: "Publisher" },
+      { key: "rating", label: "Rating" },
+      { key: "duration", label: "Duration" },
+      { key: "location", label: "Location" },
+      { key: "date", label: "Date" },
+      { key: "time", label: "Time" },
+      { key: "status", label: "Status" },
     ];
 
     for (const { key, label } of detailFields) {
       if (data[key] !== undefined && data[key] !== null) {
         let value: string;
         if (Array.isArray(data[key])) {
-          value = data[key].join(', ');
+          value = data[key].join(", ");
         } else {
           value = String(data[key]);
         }
@@ -568,11 +593,14 @@
 
     // Add any other fields not in skip list
     for (const [key, value] of Object.entries(data)) {
-      if (!skipFields.includes(key) && 
-          !detailFields.find(d => d.key === key) &&
-          value !== undefined && value !== null &&
-          typeof value !== 'object') {
-        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+      if (
+        !skipFields.includes(key) &&
+        !detailFields.find((d) => d.key === key) &&
+        value !== undefined &&
+        value !== null &&
+        typeof value !== "object"
+      ) {
+        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1");
         details.push({ label, value: String(value) });
       }
     }
@@ -582,14 +610,14 @@
 
   function extractImages(data: Record<string, any>): string[] {
     const images: string[] = [];
-    const imageFields = ['images', 'gallery', 'screenshots', 'photos', 'pictures'];
+    const imageFields = ["images", "gallery", "screenshots", "photos", "pictures"];
 
     for (const field of imageFields) {
       if (data[field] && Array.isArray(data[field])) {
         for (const img of data[field]) {
-          if (typeof img === 'string') {
+          if (typeof img === "string") {
             images.push(img);
-          } else if (typeof img === 'object' && img && img.url) {
+          } else if (typeof img === "object" && img && img.url) {
             images.push(img.url);
           }
         }
@@ -600,27 +628,28 @@
   }
 
   // ─── Derived State ──────────────────────────────────
-  let filteredDatasets = $derived(
-    searchQuery 
-      ? datasets.filter(d => 
-          d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          d.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDatasets = $derived(
+    searchQuery
+      ? datasets.filter(
+          (d) =>
+            d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            d.description?.toLowerCase().includes(searchQuery.toLowerCase())
         )
       : datasets
   );
 
-  let totalPages = $derived(Math.ceil(totalEntries / entriesPerPage));
-  let hasNextPage = $derived(currentPage < totalPages);
-  let hasPrevPage = $derived(currentPage > 1);
+  const totalPages = $derived(Math.ceil(totalEntries / entriesPerPage));
+  const hasNextPage = $derived(currentPage < totalPages);
+  const hasPrevPage = $derived(currentPage > 1);
 
   // ─── Formatters ─────────────────────────────────────
   function formatDate(dateString: string): string {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -629,48 +658,44 @@
 
   function getBlockIcon(type: string): string {
     const icons: Record<string, string> = {
-      hero: '🎯',
-      text: '📝',
-      cards: '🃏',
-      image: '🖼️',
-      video: '🎬',
-      grid: '⊞',
-      quote: '💬',
-      cta: '🚀',
-      embed: '🔗',
-      divider: '—',
-      spacer: '↕️'
+      hero: "🎯",
+      text: "📝",
+      cards: "🃏",
+      image: "🖼️",
+      video: "🎬",
+      grid: "⊞",
+      quote: "💬",
+      cta: "🚀",
+      embed: "🔗",
+      divider: "—",
+      spacer: "↕️",
     };
-    return icons[type] || '📦';
+    return icons[type] || "📦";
   }
 </script>
 
 {#if isOpen}
-  <Modal 
-    title={step === 'datasets' ? 'Create Page from Dataset' : 
-           step === 'entries' ? `Select from ${selectedDataset?.name}` : 
-           'Preview Blocks'}
+  <Modal
+    title={step === "datasets"
+      ? "Create Page from Dataset"
+      : step === "entries"
+        ? `Select from ${selectedDataset?.name}`
+        : "Preview Blocks"}
     onClose={handleClose}
   >
     <div class="w-[700px] max-h-[80vh] flex flex-col">
       <!-- Navigation -->
       <div class="flex items-center gap-2 px-4 py-3 border-b border-gremius-border">
-        {#if step !== 'datasets'}
-          <button 
-            onclick={goBack}
-            class="btn-ghost btn-sm"
-            disabled={loading}
-          >
-            ← Back
-          </button>
+        {#if step !== "datasets"}
+          <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> ← Back </button>
         {/if}
-        
+
         <div class="flex items-center gap-2 text-sm text-gremius-subtle">
-          <span class={step === 'datasets' ? 'text-gremius-cyan font-medium' : ''}>Datasets</span>
+          <span class={step === "datasets" ? "text-gremius-cyan font-medium" : ""}>Datasets</span>
           <ArrowRight class="w-4 h-4" />
-          <span class={step === 'entries' ? 'text-gremius-cyan font-medium' : ''}>Entries</span>
+          <span class={step === "entries" ? "text-gremius-cyan font-medium" : ""}>Entries</span>
           <ArrowRight class="w-4 h-4" />
-          <span class={step === 'preview' ? 'text-gremius-cyan font-medium' : ''}>Preview</span>
+          <span class={step === "preview" ? "text-gremius-cyan font-medium" : ""}>Preview</span>
         </div>
       </div>
 
@@ -682,13 +707,16 @@
             type="text"
             bind:value={searchQuery}
             onkeydown={handleKeyDown}
-            placeholder={step === 'datasets' ? 'Search datasets...' : 'Search entries...'}
+            placeholder={step === "datasets" ? "Search datasets..." : "Search entries..."}
             class="input w-full pl-10"
             disabled={loading}
           />
           {#if searchQuery}
-            <button 
-              onclick={() => { searchQuery = ''; handleSearch(); }}
+            <button
+              onclick={() => {
+                searchQuery = "";
+                handleSearch();
+              }}
               class="absolute right-3 top-1/2 -translate-y-1/2 text-gremius-subtle hover:text-gremius-text"
             >
               <X class="w-4 h-4" />
@@ -697,13 +725,13 @@
         </div>
         <div class="flex justify-between mt-2">
           <span class="text-xs text-gremius-subtle">
-            {#if step === 'datasets'}
-              {filteredDatasets.length} dataset{filteredDatasets.length !== 1 ? 's' : ''}
-            {:else if step === 'entries'}
+            {#if step === "datasets"}
+              {filteredDatasets.length} dataset{filteredDatasets.length !== 1 ? "s" : ""}
+            {:else if step === "entries"}
               {entries.length} of {totalEntries} entries
             {/if}
           </span>
-          {#if step === 'entries' && totalPages > 1}
+          {#if step === "entries" && totalPages > 1}
             <span class="text-xs text-gremius-subtle">
               Page {currentPage} of {totalPages}
             </span>
@@ -713,12 +741,17 @@
 
       <!-- Error Alert -->
       {#if error}
-        <div class="mx-4 mt-4 p-3 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-gremius-pink text-sm flex items-start gap-2">
+        <div
+          class="mx-4 mt-4 p-3 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-gremius-pink text-sm flex items-start gap-2"
+        >
           <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
           <div class="flex-1">
             <p>{error}</p>
-            <button 
-              onclick={() => { error = null; handleSearch(); }}
+            <button
+              onclick={() => {
+                error = null;
+                handleSearch();
+              }}
               class="text-xs underline mt-1 hover:no-underline flex items-center gap-1"
             >
               <RefreshCw class="w-3 h-3" />
@@ -735,8 +768,7 @@
             <Loader2 class="w-8 h-8 text-gremius-cyan animate-spin mb-3" />
             <p class="text-gremius-subtle text-sm">Loading...</p>
           </div>
-        
-        {:else if step === 'datasets'}
+        {:else if step === "datasets"}
           <!-- Datasets List -->
           <div class="space-y-2">
             {#each filteredDatasets as dataset}
@@ -746,13 +778,17 @@
                 disabled={loading}
               >
                 <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center shrink-0 group-hover:bg-gremius-cyan/20 transition-colors">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center shrink-0 group-hover:bg-gremius-cyan/20 transition-colors"
+                  >
                     <Database class="w-5 h-5 text-gremius-cyan" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="font-medium text-gremius-text">{dataset.name}</h3>
                     {#if dataset.description}
-                      <p class="text-sm text-gremius-subtle mt-1 line-clamp-2">{dataset.description}</p>
+                      <p class="text-sm text-gremius-subtle mt-1 line-clamp-2">
+                        {dataset.description}
+                      </p>
                     {/if}
                     <div class="flex items-center gap-3 mt-2">
                       <span class="text-xs text-gremius-subtle/60">
@@ -763,34 +799,37 @@
                       </span>
                     </div>
                   </div>
-                  <ArrowRight class="w-5 h-5 text-gremius-subtle shrink-0 group-hover:text-gremius-cyan transition-colors" />
+                  <ArrowRight
+                    class="w-5 h-5 text-gremius-subtle shrink-0 group-hover:text-gremius-cyan transition-colors"
+                  />
                 </div>
               </button>
             {/each}
-            
+
             {#if filteredDatasets.length === 0}
               <div class="text-center py-12">
                 <Database class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
                 <p class="text-gremius-subtle">
-                  {searchQuery ? 'No datasets match your search' : 'No datasets available'}
+                  {searchQuery ? "No datasets match your search" : "No datasets available"}
                 </p>
               </div>
             {/if}
           </div>
-        
-        {:else if step === 'entries'}
+        {:else if step === "entries"}
           <!-- Entries List -->
           <div class="space-y-2">
             {#each entries as entry}
-              {@const entryTitle = entry.data?.title || entry.data?.name || 'Untitled'}
-              {@const entryDesc = entry.data?.description || entry.data?.summary || ''}
+              {@const entryTitle = entry.data?.title || entry.data?.name || "Untitled"}
+              {@const entryDesc = entry.data?.description || entry.data?.summary || ""}
               <button
                 onclick={() => selectEntry(entry)}
                 class="w-full p-4 rounded-xl border border-gremius-border hover:border-gremius-cyan/50 hover:bg-gremius-cyan/5 transition-all text-left group"
                 disabled={loading}
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-gremius-purple/10 flex items-center justify-center shrink-0 group-hover:bg-gremius-purple/20 transition-colors">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-gremius-purple/10 flex items-center justify-center shrink-0 group-hover:bg-gremius-purple/20 transition-colors"
+                  >
                     <Layout class="w-5 h-5 text-gremius-purple" />
                   </div>
                   <div class="flex-1 min-w-0">
@@ -800,7 +839,9 @@
                     {/if}
                     <div class="flex items-center gap-3 mt-2">
                       {#if entry.status}
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-gremius-border/50 text-gremius-subtle capitalize">
+                        <span
+                          class="text-xs px-2 py-0.5 rounded-full bg-gremius-border/50 text-gremius-subtle capitalize"
+                        >
                           {entry.status}
                         </span>
                       {/if}
@@ -809,16 +850,18 @@
                       </span>
                     </div>
                   </div>
-                  <ArrowRight class="w-5 h-5 text-gremius-subtle shrink-0 group-hover:text-gremius-cyan transition-colors" />
+                  <ArrowRight
+                    class="w-5 h-5 text-gremius-subtle shrink-0 group-hover:text-gremius-cyan transition-colors"
+                  />
                 </div>
               </button>
             {/each}
-            
+
             {#if entries.length === 0}
               <div class="text-center py-12">
                 <Layout class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
                 <p class="text-gremius-subtle">
-                  {searchQuery ? 'No entries match your search' : 'No entries available'}
+                  {searchQuery ? "No entries match your search" : "No entries available"}
                 </p>
               </div>
             {/if}
@@ -826,8 +869,10 @@
 
           <!-- Pagination -->
           {#if totalPages > 1}
-            <div class="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gremius-border">
-              <button 
+            <div
+              class="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gremius-border"
+            >
+              <button
                 onclick={() => goToPage(currentPage - 1)}
                 disabled={!hasPrevPage || loading}
                 class="btn-ghost btn-sm disabled:opacity-50"
@@ -837,7 +882,7 @@
               <span class="text-sm text-gremius-subtle px-3">
                 Page {currentPage} of {totalPages}
               </span>
-              <button 
+              <button
                 onclick={() => goToPage(currentPage + 1)}
                 disabled={!hasNextPage || loading}
                 class="btn-ghost btn-sm disabled:opacity-50"
@@ -846,20 +891,19 @@
               </button>
             </div>
           {/if}
-        
-        {:else if step === 'preview' && selectedEntry}
+        {:else if step === "preview" && selectedEntry}
           {@const preview = transformEntryToPage(selectedEntry, selectedDataset!)}
           <div class="space-y-4">
             <div>
               <label class="label text-xs uppercase text-gremius-subtle">Page Title</label>
               <p class="text-lg font-medium text-gremius-text">{preview.title}</p>
             </div>
-            
+
             <div>
               <label class="label text-xs uppercase text-gremius-subtle">Slug</label>
               <p class="text-sm text-gremius-cyan font-mono">/{preview.slug}</p>
             </div>
-            
+
             <div>
               <label class="label text-xs uppercase text-gremius-subtle flex items-center gap-1">
                 <Layout class="w-3 h-3" />
@@ -867,18 +911,24 @@
               </label>
               <div class="mt-2 space-y-2">
                 {#each preview.blocks as block, index}
-                  <div class="flex items-center gap-2 p-2 rounded-lg bg-gremius-bg border border-gremius-border hover:border-gremius-cyan/30 transition-colors">
+                  <div
+                    class="flex items-center gap-2 p-2 rounded-lg bg-gremius-bg border border-gremius-border hover:border-gremius-cyan/30 transition-colors"
+                  >
                     <span class="text-xs text-gremius-subtle w-6">{index + 1}.</span>
                     <span class="text-base">{getBlockIcon(block.type)}</span>
                     <span class="text-sm text-gremius-text capitalize">{block.type}</span>
                     <span class="text-xs text-gremius-subtle ml-auto truncate max-w-[200px]">
-                      {block.name || block.content.headline || block.content.title || block.content.text?.substring(0, 30) || '...'}
+                      {block.name ||
+                        block.content.headline ||
+                        block.content.title ||
+                        block.content.text?.substring(0, 30) ||
+                        "..."}
                     </span>
                   </div>
                 {/each}
               </div>
             </div>
-            
+
             <div class="p-3 rounded-lg bg-gremius-cyan/5 border border-gremius-cyan/20">
               <p class="text-xs text-gremius-cyan flex items-center gap-1">
                 <Check class="w-3 h-3" />
@@ -891,19 +941,9 @@
 
       <!-- Footer -->
       <div class="flex justify-end gap-2 p-4 border-t border-gremius-border">
-        <button 
-          onclick={handleClose} 
-          class="btn-ghost"
-          disabled={loading}
-        >
-          Cancel
-        </button>
-        {#if step === 'preview'}
-          <button 
-            onclick={handleConfirm} 
-            class="btn-primary gap-1.5"
-            disabled={loading}
-          >
+        <button onclick={handleClose} class="btn-ghost" disabled={loading}> Cancel </button>
+        {#if step === "preview"}
+          <button onclick={handleConfirm} class="btn-primary gap-1.5" disabled={loading}>
             {#if loading}
               <Loader2 class="w-4 h-4 animate-spin" />
               Processing...

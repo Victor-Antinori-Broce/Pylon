@@ -22,8 +22,7 @@
  * el trabajo pesado de filtrado se mueve a PostgreSQL.
  */
 
-import { eq, ne, gt, lt, like, and, SQL, sql } from "drizzle-orm";
-import { PgTable } from "drizzle-orm/pg-core";
+import { eq, and, SQL, sql } from "drizzle-orm";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tipos

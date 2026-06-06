@@ -18,7 +18,7 @@
     onclick?: (e: MouseEvent) => void;
   }
   
-  let {
+  const {
     variant = 'primary',
     size = 'md',
     type = 'button',
@@ -47,7 +47,7 @@
     icon: 'p-2'
   };
   
-  let classes = $derived(cn(
+  const classes = $derived(cn(
     baseClasses,
     variantClasses[variant],
     sizeClasses[size],

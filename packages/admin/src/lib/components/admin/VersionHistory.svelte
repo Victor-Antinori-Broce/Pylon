@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { autosaveStore } from "$lib/states/autosave.svelte";
   import { History, Trash2, RotateCcw } from "lucide-svelte";
+
+  import { autosaveStore } from "$lib/states/autosave.svelte";
 
   interface Props {
     onRestore?: () => void;
   }
 
-  let { onRestore }: Props = $props();
+  const { onRestore }: Props = $props();
 
   function formatTime(timestamp: number): string {
     return new Date(timestamp).toLocaleString();
@@ -18,7 +19,7 @@
   }
 
   function handleDeleteAll() {
-    if (confirm('Delete all autosaved versions for this entry?')) {
+    if (confirm("Delete all autosaved versions for this entry?")) {
       autosaveStore.deleteAllVersions();
     }
   }
@@ -42,13 +43,13 @@
   </div>
 
   {#if autosaveStore.versions.length === 0}
-    <p class="text-sm text-gremius-text-dim text-center py-4">
-      No autosaved versions yet.
-    </p>
+    <p class="text-sm text-gremius-text-dim text-center py-4">No autosaved versions yet.</p>
   {:else}
     <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
       {#each autosaveStore.versions as version, i}
-        <div class="flex items-center justify-between gap-2 p-2 rounded-lg bg-gremius-bg border border-gremius-border hover:border-gremius-cyan/30 transition-colors">
+        <div
+          class="flex items-center justify-between gap-2 p-2 rounded-lg bg-gremius-bg border border-gremius-border hover:border-gremius-cyan/30 transition-colors"
+        >
           <div class="min-w-0 flex-1">
             <p class="text-xs font-medium text-gremius-text">
               Version {autosaveStore.versions.length - i}

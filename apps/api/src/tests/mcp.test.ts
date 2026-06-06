@@ -5,11 +5,10 @@
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
+
 import { app } from "../index";
-import {
-  isDatabaseAvailable,
-  generateTestId,
-} from "./setup";
+
+import { isDatabaseAvailable, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
@@ -105,7 +104,7 @@ describe("MCP Server", () => {
 
       expect([200, 404]).toContain(res.status);
       if (res.status === 200) {
-        const body = await res.json() as any;
+        const body = (await res.json()) as any;
         expect(body.jsonrpc).toBe("2.0");
         expect(body.id).toBe(1);
       }
@@ -159,7 +158,7 @@ describe("MCP Server", () => {
 
       expect([200, 404]).toContain(res.status);
       if (res.status === 200) {
-        const body = await res.json() as any;
+        const body = (await res.json()) as any;
         expect(body.jsonrpc).toBe("2.0");
       }
     });

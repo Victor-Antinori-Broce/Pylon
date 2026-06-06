@@ -1,7 +1,8 @@
 // @ts-nocheck
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DatasetStore } from './datasets.svelte';
 import type { DatasetDefinition, CreateDatasetPayload } from '@gremius/shared';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { DatasetStore } from './datasets.svelte';
 
 describe('DatasetStore', () => {
 	let store: DatasetStore;

@@ -1,6 +1,6 @@
 /**
  * Gremius CRM - Database Schema (Drizzle ORM)
- * 
+ *
  * Complete CRM system with:
  * - Companies (accounts)
  * - Contacts (people)
@@ -9,9 +9,18 @@
  * - Activities (calls, emails, meetings, tasks)
  */
 
-import { pgTable, text, timestamp, integer, boolean, jsonb, pgEnum, uuid } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  boolean,
+  jsonb,
+  pgEnum,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 // ============================================================================
 // ENUMS
@@ -19,18 +28,13 @@ import { relations } from "drizzle-orm";
 
 export const contactStatusEnum = pgEnum("crm_contact_status", [
   "lead",
-  "prospect", 
+  "prospect",
   "customer",
   "churned",
-  "archived"
+  "archived",
 ]);
 
-export const dealStatusEnum = pgEnum("crm_deal_status", [
-  "open",
-  "won",
-  "lost",
-  "paused"
-]);
+export const dealStatusEnum = pgEnum("crm_deal_status", ["open", "won", "lost", "paused"]);
 
 export const activityTypeEnum = pgEnum("crm_activity_type", [
   "call",
@@ -39,15 +43,10 @@ export const activityTypeEnum = pgEnum("crm_activity_type", [
   "task",
   "note",
   "sms",
-  "demo"
+  "demo",
 ]);
 
-export const priorityEnum = pgEnum("crm_priority", [
-  "low",
-  "medium",
-  "high",
-  "urgent"
-]);
+export const priorityEnum = pgEnum("crm_priority", ["low", "medium", "high", "urgent"]);
 
 // ============================================================================
 // COMPANIES
@@ -95,32 +94,32 @@ export const crmContacts = pgTable("crm_contacts", {
   jobTitle: text("job_title"),
   department: text("department"),
   avatarId: uuid("avatar_id"), // Reference to grimoire-media
-  
+
   // CRM fields
   status: contactStatusEnum("status").default("lead"),
   source: text("source"),
   score: integer("score").default(0),
-  
+
   // Relations
   companyId: text("company_id").references(() => crmCompanies.id, { onDelete: "set null" }),
   assignedTo: text("assigned_to"),
-  
+
   // Social
   linkedin: text("linkedin"),
   twitter: text("twitter"),
-  
+
   // Address
   address: text("address"),
   city: text("city"),
   country: text("country"),
-  
+
   // Content
   notes: text("notes"),
   tags: jsonb("tags").default([]),
   customFields: jsonb("custom_fields").default({}),
   lastContactedAt: timestamp("last_contacted_at"),
   metadata: jsonb("metadata").default({}),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: text("created_by"),
@@ -193,11 +192,11 @@ export const crmDeals = pgTable("crm_deals", {
   id: text("id").primaryKey().$defaultFn(createId),
   title: text("title").notNull(),
   description: text("description"),
-  
+
   // Value
   value: integer("value").notNull().default(0),
   currency: text("currency").default("USD"),
-  
+
   // Status & Stage
   status: dealStatusEnum("status").default("open"),
   pipelineId: text("pipeline_id")
@@ -207,26 +206,26 @@ export const crmDeals = pgTable("crm_deals", {
     .notNull()
     .references(() => crmPipelineStages.id, { onDelete: "cascade" }),
   probability: integer("probability").default(0),
-  
+
   // Relations
   contactId: text("contact_id").references(() => crmContacts.id, { onDelete: "set null" }),
   companyId: text("company_id").references(() => crmCompanies.id, { onDelete: "set null" }),
   assignedTo: text("assigned_to"),
-  
+
   // Dates
   expectedCloseDate: timestamp("expected_close_date"),
   actualCloseDate: timestamp("actual_close_date"),
   lastActivityAt: timestamp("last_activity_at"),
-  
+
   // Source
   source: text("source"),
   campaign: text("campaign"),
-  
+
   // Metadata
   tags: jsonb("tags").default([]),
   customFields: jsonb("custom_fields").default({}),
   metadata: jsonb("metadata").default({}),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: text("created_by"),
@@ -262,25 +261,25 @@ export const crmActivities = pgTable("crm_activities", {
   type: activityTypeEnum("type").notNull(),
   subject: text("subject").notNull(),
   description: text("description"),
-  
+
   // Relations (at least one should be set)
   contactId: text("contact_id").references(() => crmContacts.id, { onDelete: "cascade" }),
   companyId: text("company_id").references(() => crmCompanies.id, { onDelete: "cascade" }),
   dealId: text("deal_id").references(() => crmDeals.id, { onDelete: "cascade" }),
-  
+
   // Assignment
   assignedTo: text("assigned_to"),
   createdBy: text("created_by"),
-  
+
   // Scheduling
   dueDate: timestamp("due_date"),
   completedAt: timestamp("completed_at"),
   durationMinutes: integer("duration_minutes"),
-  
+
   // Outcome
   outcome: text("outcome"),
   notes: text("notes"),
-  
+
   metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -324,10 +323,10 @@ export type NewCrmDeal = typeof crmDeals.$inferInsert;
 export type CrmActivity = typeof crmActivities.$inferSelect;
 export type NewCrmActivity = typeof crmActivities.$inferInsert;
 
-export type ContactStatus = typeof contactStatusEnum.enumValues[number];
-export type DealStatus = typeof dealStatusEnum.enumValues[number];
-export type ActivityType = typeof activityTypeEnum.enumValues[number];
-export type Priority = typeof priorityEnum.enumValues[number];
+export type ContactStatus = (typeof contactStatusEnum.enumValues)[number];
+export type DealStatus = (typeof dealStatusEnum.enumValues)[number];
+export type ActivityType = (typeof activityTypeEnum.enumValues)[number];
+export type Priority = (typeof priorityEnum.enumValues)[number];
 
 // ============================================================================
 // API PAYLOAD TYPES
@@ -367,7 +366,20 @@ export interface DealWithRelations extends CrmDeal {
  */
 export interface EntityFieldSchema {
   key: string;
-  type: 'text' | 'number' | 'currency' | 'date' | 'datetime' | 'select' | 'multiselect' | 'boolean' | 'email' | 'url' | 'file' | 'contact' | 'company';
+  type:
+    | "text"
+    | "number"
+    | "currency"
+    | "date"
+    | "datetime"
+    | "select"
+    | "multiselect"
+    | "boolean"
+    | "email"
+    | "url"
+    | "file"
+    | "contact"
+    | "company";
   label: string;
   required?: boolean;
   unique?: boolean;
@@ -389,7 +401,7 @@ export interface StageEntryRequirements {
   requiredDocuments?: string[]; // Document types required (Fase 2)
   customValidations?: {
     field: string;
-    operator: '==' | '!=' | '>' | '<' | '>=' | '<=' | 'exists';
+    operator: "==" | "!=" | ">" | "<" | ">=" | "<=" | "exists";
     value?: unknown;
   }[];
 }
@@ -398,7 +410,14 @@ export interface StageEntryRequirements {
  * Stage Action - Executed on enter/exit
  */
 export interface StageAction {
-  type: 'create_calendar_event' | 'send_email' | 'create_task' | 'create_activity' | 'webhook' | 'log_time' | 'update_field';
+  type:
+    | "create_calendar_event"
+    | "send_email"
+    | "create_task"
+    | "create_activity"
+    | "webhook"
+    | "log_time"
+    | "update_field";
   template?: string;
   title?: string;
   url?: string;
@@ -418,28 +437,28 @@ export interface StageAction {
 export const crmEntityConfigs = pgTable("crm_entity_configs", {
   id: text("id").primaryKey().$defaultFn(createId),
   grimoireId: text("grimoire_id").notNull(),
-  
+
   // Identity
   entityName: text("entity_name").notNull(), // 'case', 'deal', 'property', 'matter'
   singularLabel: text("singular_label").notNull(), // 'Case', 'Deal'
   pluralLabel: text("plural_label").notNull(), // 'Cases', 'Deals'
-  
+
   // Features
   requiresContact: boolean("requires_contact").default(true),
   requiresCompany: boolean("requires_company").default(true),
   allowsValue: boolean("allows_value").default(true),
   allowsTimeTracking: boolean("allows_time_tracking").default(true),
-  
+
   // Schema
   fieldSchema: jsonb("field_schema").$type<EntityFieldSchema[]>().default([]),
-  
+
   // Default pipeline for this entity
   defaultPipelineId: text("default_pipeline_id").references(() => crmPipelines.id),
-  
+
   // Active
   isActive: boolean("is_active").default(true),
   isDefault: boolean("is_default").default(false), // Default entity for this grimoire
-  
+
   metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -464,10 +483,10 @@ export interface PipelineStageExtension {
   // Time tracking
   trackTimeInStage: boolean;
   estimatedDays: number | null; // SLA expectation
-  
+
   // Validations
   entryRequirements: StageEntryRequirements;
-  
+
   // Automations
   onEnterActions: StageAction[];
   onExitActions: StageAction[];
@@ -482,28 +501,28 @@ export const crmStageTransitions = pgTable("crm_stage_transitions", {
   dealId: text("deal_id")
     .notNull()
     .references(() => crmDeals.id, { onDelete: "cascade" }),
-  
+
   // Stage movement
   fromStageId: text("from_stage_id").references(() => crmPipelineStages.id),
   toStageId: text("to_stage_id")
     .notNull()
     .references(() => crmPipelineStages.id),
-  
+
   // Timing
   enteredAt: timestamp("entered_at").notNull().defaultNow(),
   exitedAt: timestamp("exited_at"),
   durationMinutes: integer("duration_minutes"), // Calculated automatically
-  
+
   // SLA tracking
   estimatedDays: integer("estimated_days"), // SLA at time of entry
   wasOnTime: boolean("was_on_time"), // Did it exit within estimatedDays?
   slaBreach: boolean("sla_breach").default(false),
-  
+
   // Metadata
   movedBy: text("moved_by"), // User who initiated the move
   moveReason: text("move_reason"),
   validationResult: jsonb("validation_result").default({}), // Store what was validated
-  
+
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -541,30 +560,30 @@ export const crmDocuments = pgTable("crm_documents", {
   dealId: text("deal_id")
     .notNull()
     .references(() => crmDeals.id, { onDelete: "cascade" }),
-  
+
   // Document info
   name: text("name").notNull(),
   fileUrl: text("file_url").notNull(),
   fileType: text("file_type"),
   fileSize: integer("file_size"),
-  
+
   // Categorization
   documentType: text("document_type"), // 'contract', 'retainer', 'evidence', etc.
   category: text("category"),
-  
+
   // Stage requirements (Fase 1: basic, Fase 2: full validation)
   requiredForStageId: text("required_for_stage_id").references(() => crmPipelineStages.id),
   isRequired: boolean("is_required").default(false),
   wasRequired: boolean("was_required").default(false), // Was this doc originally required?
-  
+
   // Version control
   version: integer("version").default(1),
   previousVersionId: text("previous_version_id"),
-  
+
   // Access control
   isPrivileged: boolean("is_privileged").default(false),
   confidential: boolean("confidential").default(false),
-  
+
   uploadedBy: text("uploaded_by"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
   metadata: jsonb("metadata").default({}),
@@ -603,7 +622,7 @@ export interface CrmPipelineStageExtended extends CrmPipelineStage {
   onExitActions: StageAction[];
 }
 
-// Extended Deal with builder fields  
+// Extended Deal with builder fields
 export interface CrmDealExtended extends CrmDeal {
   entityConfigId: string | null;
   currentTransitionId: string | null;

@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { Plus, RefreshCw } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { Plus, ExternalLink, RefreshCw } from "lucide-svelte";
+
   import type { InlineRelationConfig, SchemaColumn } from "$lib/types/admin";
 
   interface Props {
@@ -11,7 +12,7 @@
     relations?: InlineRelationConfig[];
   }
 
-  let { grimoireId, parentTable, parentId, relations: propRelations }: Props = $props();
+  const { grimoireId, parentTable, parentId, relations: propRelations }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
@@ -19,8 +20,8 @@
   $effect(() => {
     inlineRelations = propRelations || [];
   });
-  let relationData = $state<Record<string, any[]>>({});
-  let relationSchemas = $state<Record<string, SchemaColumn[]>>({});
+  const relationData = $state<Record<string, any[]>>({});
+  const relationSchemas = $state<Record<string, SchemaColumn[]>>({});
   let loading = $state<Record<string, boolean>>({});
   let showCreateModal = $state<Record<string, boolean>>({});
 
@@ -33,7 +34,9 @@
 
   async function autoDetectRelations() {
     try {
-      const res = await fetch(`${API_URL}/api/explorer/discover/${grimoireId}`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/explorer/discover/${grimoireId}`, {
+        credentials: "include",
+      });
       if (!res.ok) return;
       const result = await res.json();
       const tables = result.tables || [];
@@ -42,7 +45,9 @@
       for (const tbl of tables) {
         if (tbl.name === parentTable) continue;
         try {
-          const schemaRes = await fetch(`${API_URL}/api/explorer/schema/json/${tbl.name}`, { credentials: "include" });
+          const schemaRes = await fetch(`${API_URL}/api/explorer/schema/json/${tbl.name}`, {
+            credentials: "include",
+          });
           if (!schemaRes.ok) continue;
           const schema = await schemaRes.json();
           const props = schema.properties || {};
@@ -56,7 +61,9 @@
               });
             }
           }
-        } catch { /* skip */ }
+        } catch {
+          /* skip */
+        }
       }
       inlineRelations = detected;
     } catch {
@@ -80,7 +87,9 @@
       params.set("filter_value", parentId);
       params.set("limit", "50");
 
-      const res = await fetch(`${API_URL}/api/explorer/${rel.table}?${params}`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/explorer/${rel.table}?${params}`, {
+        credentials: "include",
+      });
       if (res.ok) {
         const result = await res.json();
         relationData[rel.table] = result.data || result.docs || result;
@@ -96,14 +105,18 @@
   async function loadRelationSchema(rel: InlineRelationConfig) {
     if (relationSchemas[rel.table]) return;
     try {
-      const res = await fetch(`${API_URL}/api/explorer/schema/json/${rel.table}`, { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/explorer/schema/json/${rel.table}`, {
+        credentials: "include",
+      });
       if (res.ok) {
         const schema = await res.json();
-        const cols: SchemaColumn[] = Object.entries(schema.properties || {}).map(([name, prop]: [string, any]) => ({
-          name,
-          type: prop.type || "text",
-          nullable: !schema.required?.includes(name),
-        }));
+        const cols: SchemaColumn[] = Object.entries(schema.properties || {}).map(
+          ([name, prop]: [string, any]) => ({
+            name,
+            type: prop.type || "text",
+            nullable: !schema.required?.includes(name),
+          })
+        );
         relationSchemas[rel.table] = cols;
       }
     } catch {
@@ -116,14 +129,20 @@
     const schema = relationSchemas[rel.table];
     if (schema) {
       return schema
-        .filter(c => !c.name.endsWith("_id") && !c.name.endsWith("Id") && c.name !== "id" && !c.name.endsWith("At"))
+        .filter(
+          (c) =>
+            !c.name.endsWith("_id") &&
+            !c.name.endsWith("Id") &&
+            c.name !== "id" &&
+            !c.name.endsWith("At")
+        )
         .slice(0, 4)
-        .map(c => c.name);
+        .map((c) => c.name);
     }
     const data = relationData[rel.table];
     if (data && data.length > 0) {
       return Object.keys(data[0])
-        .filter(k => k !== "id" && !k.endsWith("_id") && !k.endsWith("Id") && !k.endsWith("At"))
+        .filter((k) => k !== "id" && !k.endsWith("_id") && !k.endsWith("Id") && !k.endsWith("At"))
         .slice(0, 4);
     }
     return [];
@@ -140,7 +159,7 @@
     return str
       .replace(/[-_]/g, " ")
       .replace(/([A-Z])/g, " $1")
-      .replace(/^./, s => s.toUpperCase())
+      .replace(/^./, (s) => s.toUpperCase())
       .trim();
   }
 
@@ -166,10 +185,14 @@
       {@const data = relationData[rel.table] || []}
       {@const cols = getRelationColumns(rel)}
       <div class="mb-4 border border-gremius-border rounded-lg bg-gremius-card overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-2.5 bg-gremius-bg border-b border-gremius-border">
+        <div
+          class="flex items-center justify-between px-4 py-2.5 bg-gremius-bg border-b border-gremius-border"
+        >
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium text-gremius-text">{rel.title}</span>
-            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gremius-surface text-gremius-subtle border border-gremius-border">
+            <span
+              class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gremius-surface text-gremius-subtle border border-gremius-border"
+            >
               {data.length}
             </span>
           </div>
@@ -207,7 +230,9 @@
               <thead>
                 <tr class="border-b border-gremius-border bg-gremius-bg/50">
                   {#each cols as col}
-                    <th class="px-3 py-2 text-left text-gremius-subtle font-medium uppercase tracking-wider">
+                    <th
+                      class="px-3 py-2 text-left text-gremius-subtle font-medium uppercase tracking-wider"
+                    >
                       {humanize(col)}
                     </th>
                   {/each}
@@ -215,7 +240,9 @@
               </thead>
               <tbody>
                 {#each data as record}
-                  <tr class="border-b border-gremius-border/50 hover:bg-gremius-cyan/[0.02] transition-colors">
+                  <tr
+                    class="border-b border-gremius-border/50 hover:bg-gremius-cyan/[0.02] transition-colors"
+                  >
                     {#each cols as col}
                       <td class="px-3 py-2 text-gremius-text-dim">
                         {formatCell(record[col])}

@@ -7,6 +7,7 @@
 ## ✅ TOON Encoder (Token-Optimized Object Notation)
 
 ### Overview
+
 TOON is a compact, line-based format designed for AI/LLM consumers that minimizes token usage compared to JSON.
 
 ### Implementation Status: ✅ FUNCTIONAL
@@ -14,6 +15,7 @@ TOON is a compact, line-based format designed for AI/LLM consumers that minimize
 **Location:** `apps/api/src/lib/toon.ts`
 
 ### Format Example
+
 ```toon
 ~type:course
 id:abc-123
@@ -25,27 +27,30 @@ topics[0].title:Variables
 
 ### Key Features
 
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Flatten Objects | ✅ | Dot notation: `user.email:test@example.com` |
-| Flatten Arrays | ✅ | Bracket notation: `items[0].name:foo` |
-| Array Separation | ✅ | Records separated by `---` |
-| Type Hints | ✅ | Adds `~type` hint when possible |
-| JSON Unwrapping | ✅ | Auto-unwraps `{ data: [...] }` envelope |
+| Feature          | Status | Description                                 |
+| ---------------- | ------ | ------------------------------------------- |
+| Flatten Objects  | ✅     | Dot notation: `user.email:test@example.com` |
+| Flatten Arrays   | ✅     | Bracket notation: `items[0].name:foo`       |
+| Array Separation | ✅     | Records separated by `---`                  |
+| Type Hints       | ✅     | Adds `~type` hint when possible             |
+| JSON Unwrapping  | ✅     | Auto-unwraps `{ data: [...] }` envelope     |
 
 ### API Usage
 
 **Via Accept Header:**
+
 ```bash
 curl -H "Accept: application/vnd.toon" http://localhost:3000/api/datasets
 ```
 
 **Via Query Param:**
+
 ```bash
 curl http://localhost:3000/api/datasets?format=toon
 ```
 
 **Response Headers:**
+
 ```
 Content-Type: application/vnd.toon
 X-Gremius-Format: toon
@@ -110,6 +115,7 @@ curl -X POST http://localhost:3000/api/mcp \
 ## ✅ pgvector Integration
 
 ### Overview
+
 pgvector is a PostgreSQL extension for vector similarity search, used for AI embeddings and semantic search.
 
 ### Implementation Status: ✅ CONFIGURED (Requires Setup)
@@ -120,39 +126,42 @@ pgvector is a PostgreSQL extension for vector similarity search, used for AI emb
 
 ### 1. ai-memories Schema (`packages/grimoires/ai-memories/schema.ts`)
 
-| Table | Field | Type | Dimensions | Index |
-|-------|-------|------|------------|-------|
-| `ai_memories` | `embedding` | `vector(1536)` | 1536 | `ivfflat` with `vector_cosine_ops` |
-| `ai_memory_chunks` | `embedding` | `vector(1536)` | 1536 | `ivfflat` with `vector_cosine_ops` |
+| Table              | Field       | Type           | Dimensions | Index                              |
+| ------------------ | ----------- | -------------- | ---------- | ---------------------------------- |
+| `ai_memories`      | `embedding` | `vector(1536)` | 1536       | `ivfflat` with `vector_cosine_ops` |
+| `ai_memory_chunks` | `embedding` | `vector(1536)` | 1536       | `ivfflat` with `vector_cosine_ops` |
 
 ### Schema Details
 
 **ai_memories table:**
+
 ```typescript
-embedding: vector("embedding", { dimensions: 1536 })
+embedding: vector("embedding", { dimensions: 1536 });
 // OpenAI text-embedding-3-small standard
 
 // Index for similarity search
 embeddingIndex: index("ai_memories_embedding_idx").using(
   "ivfflat",
   table.embedding.op("vector_cosine_ops")
-)
+);
 ```
 
 **ai_memory_chunks table:**
+
 ```typescript
-embedding: vector("embedding", { dimensions: 1536 })
+embedding: vector("embedding", { dimensions: 1536 });
 
 // Index for chunk similarity
 chunkEmbeddingIdx: index("ai_chunks_embedding_idx").using(
-  "ivfflat", 
+  "ivfflat",
   table.embedding.op("vector_cosine_ops")
-)
+);
 ```
 
 ### Database Migration
 
 **Docker Auto-Setup:**
+
 ```sql
 -- docker/init-extensions.sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -161,6 +170,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 This runs automatically when the PostgreSQL container starts for the first time.
 
 **Manual Setup:**
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
@@ -170,6 +180,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 **URL:** `GET /api/health/pgvector`
 
 **Response when installed:**
+
 ```json
 {
   "pgvector": true,
@@ -179,6 +190,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 **Response when NOT installed:**
+
 ```json
 {
   "pgvector": false,
@@ -188,6 +200,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 **Error response:**
+
 ```json
 {
   "pgvector": false,
@@ -201,6 +214,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 **Image:** `pgvector/pgvector:pg16`
 
 **docker-compose.yml:**
+
 ```yaml
 gremius_db:
   image: pgvector/pgvector:pg16
@@ -212,12 +226,12 @@ gremius_db:
 
 pgvector supports these operators:
 
-| Operator | Description | Use Case |
-|----------|-------------|----------|
-| `<->` | Euclidean distance (L2) | General similarity |
-| `<=>` | Cosine distance | Text embeddings (recommended) |
-| `<#>` | Negative inner product | Maximize similarity |
-| `<+>` | Distance with L1 norm | Manhattan distance |
+| Operator | Description             | Use Case                      |
+| -------- | ----------------------- | ----------------------------- |
+| `<->`    | Euclidean distance (L2) | General similarity            |
+| `<=>`    | Cosine distance         | Text embeddings (recommended) |
+| `<#>`    | Negative inner product  | Maximize similarity           |
+| `<+>`    | Distance with L1 norm   | Manhattan distance            |
 
 ### Usage Example
 
@@ -287,33 +301,35 @@ SELECT * FROM pg_extension WHERE extname = 'vector';
 
 ### TOON Encoder
 
-| Issue | Severity | Recommendation |
-|-------|----------|----------------|
-| No unit tests | Medium | Create `toon.test.ts` with encode/decode tests |
-| No benchmarks | Low | Add token count comparison vs JSON |
-| No decode function | Low | Consider adding TOON parser if needed |
+| Issue              | Severity | Recommendation                                 |
+| ------------------ | -------- | ---------------------------------------------- |
+| No unit tests      | Medium   | Create `toon.test.ts` with encode/decode tests |
+| No benchmarks      | Low      | Add token count comparison vs JSON             |
+| No decode function | Low      | Consider adding TOON parser if needed          |
 
 ### pgvector
 
-| Issue | Severity | Recommendation |
-|-------|----------|----------------|
-| ai-memories is stub | High | Complete the API routes for ai-memories |
-| No embedding generation | High | Integrate OpenAI or local embedding model |
-| No similarity search API | High | Add `/api/ai-memories/search` endpoint |
+| Issue                    | Severity | Recommendation                            |
+| ------------------------ | -------- | ----------------------------------------- |
+| ai-memories is stub      | High     | Complete the API routes for ai-memories   |
+| No embedding generation  | High     | Integrate OpenAI or local embedding model |
+| No similarity search API | High     | Add `/api/ai-memories/search` endpoint    |
 
 ### ai-memories Completion Tasks
 
 To make ai-memories fully functional:
 
 1. **Add API Routes:**
+
    ```typescript
    // POST /api/ai-memories - Create memory
-   // GET /api/ai-memories - List memories  
+   // GET /api/ai-memories - List memories
    // POST /api/ai-memories/search - Semantic search
    // DELETE /api/ai-memories/:id - Delete memory
    ```
 
 2. **Add Embedding Generation:**
+
    ```typescript
    // Integrate OpenAI embeddings API
    // Or use local model like sentence-transformers
@@ -329,24 +345,26 @@ To make ai-memories fully functional:
 
 ## Summary
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| TOON Encoder | ✅ Functional | Middleware active, MCP tool available |
-| pgvector Extension | ✅ Configured | Auto-installs with Docker |
-| ai-memories Schema | ⚠️ Schema Only | No API routes implemented |
-| pgvector Health Check | ✅ Working | `/api/health/pgvector` endpoint active |
+| Component             | Status         | Notes                                  |
+| --------------------- | -------------- | -------------------------------------- |
+| TOON Encoder          | ✅ Functional  | Middleware active, MCP tool available  |
+| pgvector Extension    | ✅ Configured  | Auto-installs with Docker              |
+| ai-memories Schema    | ⚠️ Schema Only | No API routes implemented              |
+| pgvector Health Check | ✅ Working     | `/api/health/pgvector` endpoint active |
 
 ---
 
 ## Quick Reference
 
 ### TOON
+
 - **Mime Type:** `application/vnd.toon`
 - **Query Param:** `?format=toon`
 - **Middleware:** Active on `/api/*`
 - **MCP Tool:** `gremius_encode_toon`
 
 ### pgvector
+
 - **Extension:** `vector` (PostgreSQL)
 - **Tables:** `ai_memories`, `ai_memory_chunks`
 - **Dimensions:** 1536 (OpenAI standard)

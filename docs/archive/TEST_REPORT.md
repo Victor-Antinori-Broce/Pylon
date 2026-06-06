@@ -8,6 +8,7 @@
 ## ✅ ENGINE TESTS
 
 ### 1. Actions System (`test-actions.ts`)
+
 ```
 ✅ Actions registered successfully!
 
@@ -21,9 +22,11 @@
 ✅ Found agent.tool:validate_poe action
 ✅ All tests passed!
 ```
+
 **Status:** ✅ PASSED
 
 ### 2. Query Parser (`test-query-parser.ts`)
+
 ```
 📊 TEST RESULTS SUMMARY - Query Engine
 ======================================================================
@@ -34,9 +37,11 @@
 ======================================================================
 🎉 ALL TESTS PASSED!
 ```
+
 **Status:** ✅ PASSED
 
 ### 3. Batch Validator (`test-batch-validator.ts`)
+
 ```
 📊 TEST RESULTS - Batch API + Validator Engine
 ======================================================================
@@ -47,6 +52,7 @@
 ======================================================================
 🎉 ALL TESTS PASSED!
 ```
+
 **Status:** ✅ PASSED
 
 ---
@@ -54,6 +60,7 @@
 ## ✅ GRIMOIRE TESTS
 
 ### grimoire-blog
+
 ```
 📊 TEST RESULTS - Blog Grimoire
 ======================================================================
@@ -62,9 +69,11 @@
 📈 Total: 39
 ======================================================================
 ```
+
 **Status:** ✅ PASSED (97.4% - failure is optional dependency)
 
 Key tests passing:
+
 - ✅ Router HTTP endpoints
 - ✅ Authentication middleware
 - ✅ Event emission
@@ -78,14 +87,14 @@ Key tests passing:
 
 ## ✅ CORE SYSTEMS VERIFIED
 
-| System | Status | Tests |
-|--------|--------|-------|
-| **Actions Engine** | ✅ | 4 actions registered, MCP tools working |
-| **Query Parser** | ✅ | 19/19 tests passed |
-| **Batch Validator** | ✅ | 28/28 tests passed |
-| **Blog Grimoire** | ✅ | 38/39 tests passed |
-| **Auto-discovery** | ✅ | Grimoires auto-discovered correctly |
-| **Schema Merging** | ✅ | Multi-grimoire schema merging works |
+| System              | Status | Tests                                   |
+| ------------------- | ------ | --------------------------------------- |
+| **Actions Engine**  | ✅     | 4 actions registered, MCP tools working |
+| **Query Parser**    | ✅     | 19/19 tests passed                      |
+| **Batch Validator** | ✅     | 28/28 tests passed                      |
+| **Blog Grimoire**   | ✅     | 38/39 tests passed                      |
+| **Auto-discovery**  | ✅     | Grimoires auto-discovered correctly     |
+| **Schema Merging**  | ✅     | Multi-grimoire schema merging works     |
 
 ---
 

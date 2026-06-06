@@ -8,8 +8,10 @@
  * - Nested inlines (limited depth)
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
+
 import { introspectTable } from "./schema-introspector";
 
 /** Inline configuration for a relationship */
@@ -52,10 +54,10 @@ export interface InlineConfig {
 }
 
 /** Data returned for an inline relationship */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export interface InlineData {
   config: InlineConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   records: Record<string, unknown>[];
   totalCount: number;
   canAddMore: boolean;

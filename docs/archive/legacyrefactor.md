@@ -26,19 +26,20 @@ Este documento cataloga todos los errores de código legacy que utilizan esquema
 
 **Archivo:** `packages/core/functions.ts`
 
-| Error | Descripción | Solución Propuesta |
-|-------|-------------|-------------------|
-| `Property 'type' does not exist` | El esquema antiguo `functions` tenía campo `type`, el nuevo `actions` usa `actionType` | Actualizar todas las referencias de `fn.type` a `fn.actionType` |
-| `Property 'schema' does not exist` | El campo `schema` fue renombrado/migrado | Verificar nuevo esquema de validación en tabla `actions` |
-| `Parameter 'input' implicitly has an 'any' type` | Falta tipado en función `executeFunction` | Agregar tipado estricto basado en `ActionDefinition` |
+| Error                                            | Descripción                                                                            | Solución Propuesta                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `Property 'type' does not exist`                 | El esquema antiguo `functions` tenía campo `type`, el nuevo `actions` usa `actionType` | Actualizar todas las referencias de `fn.type` a `fn.actionType` |
+| `Property 'schema' does not exist`               | El campo `schema` fue renombrado/migrado                                               | Verificar nuevo esquema de validación en tabla `actions`        |
+| `Parameter 'input' implicitly has an 'any' type` | Falta tipado en función `executeFunction`                                              | Agregar tipado estricto basado en `ActionDefinition`            |
 
 **Código problemático:**
+
 ```typescript
 // ANTES (Legacy - functions table)
 interface FunctionDefinition {
   id: string;
   name: string;
-  type: 'transform' | 'validate' | 'webhook';
+  type: "transform" | "validate" | "webhook";
   schema: JSONSchema;
   code: string;
 }
@@ -47,7 +48,7 @@ interface FunctionDefinition {
 interface ActionDefinition {
   id: string;
   name: string;
-  actionType: 'function' | 'webhook' | 'email';
+  actionType: "function" | "webhook" | "email";
   configuration: {
     code?: string;
     schema?: JSONSchema;
@@ -57,6 +58,7 @@ interface ActionDefinition {
 ```
 
 **Archivos afectados:**
+
 - `packages/core/functions.ts` (líneas 15-89)
 - `apps/api/src/routes/functions.ts` (si existe)
 
@@ -66,23 +68,24 @@ interface ActionDefinition {
 
 **Archivo:** `apps/api/src/routes/data-explorer.ts`
 
-| Error | Descripción | Solución Propuesta |
-|-------|-------------|-------------------|
-| `Property 'tables' does not exist on type 'GremiusManifest'` | El manifest cambió de estructura | Actualizar a nueva estructura `datasets` en lugar de `tables` |
-| `Property 'relations' does not exist` | Las relaciones ahora se definen diferente | Usar nuevo sistema de relaciones en manifest |
-| `Property 'indexes' does not exist` | Los índices migraron a metadatos separados | Acceder vía `manifest.metadata?.indexes` |
+| Error                                                        | Descripción                                | Solución Propuesta                                            |
+| ------------------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------- |
+| `Property 'tables' does not exist on type 'GremiusManifest'` | El manifest cambió de estructura           | Actualizar a nueva estructura `datasets` en lugar de `tables` |
+| `Property 'relations' does not exist`                        | Las relaciones ahora se definen diferente  | Usar nuevo sistema de relaciones en manifest                  |
+| `Property 'indexes' does not exist`                          | Los índices migraron a metadatos separados | Acceder vía `manifest.metadata?.indexes`                      |
 
 **Código problemático:**
+
 ```typescript
 // ANTES (Legacy)
 const manifest = await getManifest(grimoireId);
-const tables = manifest.tables;  // ❌ Ya no existe
-const relations = manifest.relations;  // ❌ Ya no existe
+const tables = manifest.tables; // ❌ Ya no existe
+const relations = manifest.relations; // ❌ Ya no existe
 
 // DESPUÉS (Actual)
 const manifest = await getManifest(grimoireId);
-const datasets = manifest.datasets || [];  // ✅ Nuevo campo
-const tables = manifest.metadata?.tablesSnapshot;  // ✅ Si se necesita snapshot
+const datasets = manifest.datasets || []; // ✅ Nuevo campo
+const tables = manifest.metadata?.tablesSnapshot; // ✅ Si se necesita snapshot
 ```
 
 ---
@@ -91,11 +94,11 @@ const tables = manifest.metadata?.tablesSnapshot;  // ✅ Si se necesita snapsho
 
 **Archivo:** `tests/auth.test.ts`
 
-| Error | Descripción | Solución Propuesta |
-|-------|-------------|-------------------|
-| `Cannot find name 'grantPermission'` | Función movida o renombrada | Actualizar import a nuevo módulo RBAC |
-| `Property 'apiKeys' does not exist` | El sistema de API keys legacy fue reemplazado | Migrar tests a nuevo sistema `AgentIdentities` |
-| `Type 'HonoRequest' is missing properties` | Tests usan mocks antiguos | Actualizar mocks para coincidir con Hono v4 |
+| Error                                      | Descripción                                   | Solución Propuesta                             |
+| ------------------------------------------ | --------------------------------------------- | ---------------------------------------------- |
+| `Cannot find name 'grantPermission'`       | Función movida o renombrada                   | Actualizar import a nuevo módulo RBAC          |
+| `Property 'apiKeys' does not exist`        | El sistema de API keys legacy fue reemplazado | Migrar tests a nuevo sistema `AgentIdentities` |
+| `Type 'HonoRequest' is missing properties` | Tests usan mocks antiguos                     | Actualizar mocks para coincidir con Hono v4    |
 
 **Contexto:** Los tests fueron escritos para el sistema RBAC legacy antes de la migración a AgentIdentities con campos de Persona.
 
@@ -106,16 +109,18 @@ const tables = manifest.metadata?.tablesSnapshot;  // ✅ Si se necesita snapsho
 ### 4. Sistema MCP - Interfaces de Herramientas
 
 **Archivos afectados:**
+
 - `apps/api/src/lib/mcp.ts`
 - `apps/api/src/services/agent-mcp.ts` (si existe)
 
-| Error | Descripción | Solución Propuesta |
-|-------|-------------|-------------------|
-| `Type 'MCPTool' is not assignable` | Cambio en interfaz de herramientas MCP | Actualizar a `MCPToolDefinition` del SDK nuevo |
-| `Property 'execute' does not exist` | Las herramientas ahora usan `handler` | Renombrar `execute` → `handler` |
-| `Parameter 'args' implicitly has 'any'` | Falta tipado en handlers | Agregar `z.infer<typeof toolSchema>` |
+| Error                                   | Descripción                            | Solución Propuesta                             |
+| --------------------------------------- | -------------------------------------- | ---------------------------------------------- |
+| `Type 'MCPTool' is not assignable`      | Cambio en interfaz de herramientas MCP | Actualizar a `MCPToolDefinition` del SDK nuevo |
+| `Property 'execute' does not exist`     | Las herramientas ahora usan `handler`  | Renombrar `execute` → `handler`                |
+| `Parameter 'args' implicitly has 'any'` | Falta tipado en handlers               | Agregar `z.infer<typeof toolSchema>`           |
 
 **Código problemático:**
+
 ```typescript
 // ANTES (Legacy MCP)
 interface MCPTool {
@@ -141,25 +146,34 @@ interface MCPToolDefinition {
 **Estado:** Los siguientes módulos están comentados en `schema-all.ts` pero tienen código que los referencia:
 
 #### 5.1 Booking/Sistema de Reservas
+
 **Referencias encontradas en:**
+
 - Comentado en: `apps/api/src/db/schema-all.ts` (líneas ~50-80)
 - Rutas potencialmente activas: `apps/api/src/routes/booking*.ts`
 
-**Solución:** 
+**Solución:**
+
 - Opción A: Eliminar completamente si no se usará
 - Opción B: Migrar a arquitectura de Grimoire standalone
 
 #### 5.2 Directory (Directorio de Negocios)
+
 **Referencias encontradas en:**
+
 - Comentado en: `apps/api/src/db/schema-all.ts`
 - Posiblemente en: `apps/api/src/routes/directory.ts`
 
 #### 5.3 DMS (Document Management System)
+
 **Referencias encontradas en:**
+
 - Comentado en: `apps/api/src/db/schema-all.ts`
 
 #### 5.4 Media Library (ahora es Grimoire separado)
+
 **Código afectado:**
+
 ```typescript
 // EN: apps/api/src/index.ts (comentado)
 // import { mediaLibraryRoutes } from './routes/media-library';
@@ -176,23 +190,24 @@ interface MCPToolDefinition {
 
 **Archivo:** `apps/api/src/services/webhooks.ts` (si existe referencia legacy)
 
-| Error | Descripción | Solución Propuesta |
-|-------|-------------|-------------------|
-| `Cannot find module '../db/schema'` | Referencia a esquema antiguo | Actualizar a `schema-all.ts` con exports condicionales |
-| `Property 'webhook_events' does not exist` | Tabla renombrada a `webhookEvents` | Actualizar referencias a nuevo camelCase |
+| Error                                      | Descripción                        | Solución Propuesta                                     |
+| ------------------------------------------ | ---------------------------------- | ------------------------------------------------------ |
+| `Cannot find module '../db/schema'`        | Referencia a esquema antiguo       | Actualizar a `schema-all.ts` con exports condicionales |
+| `Property 'webhook_events' does not exist` | Tabla renombrada a `webhookEvents` | Actualizar referencias a nuevo camelCase               |
 
 ---
 
 ### 7. Conectores con Esquema Antiguo
 
 **Archivos potencialmente afectados:**
+
 - `apps/api/src/services/connectors/*.ts`
 - `apps/api/src/routes/connectors.ts`
 
-| Error | Descripción | Solución Propuesta |
-|-------|-------------|-------------------|
-| `Property 'config' does not exist` | Campo renombrado a `configuration` | Actualizar todas las referencias |
-| `Property 'type' is not assignable` | Tipo restrictivo cambiado | Usar nuevo enum `ConnectorType` |
+| Error                               | Descripción                        | Solución Propuesta               |
+| ----------------------------------- | ---------------------------------- | -------------------------------- |
+| `Property 'config' does not exist`  | Campo renombrado a `configuration` | Actualizar todas las referencias |
+| `Property 'type' is not assignable` | Tipo restrictivo cambiado          | Usar nuevo enum `ConnectorType`  |
 
 ---
 
@@ -202,22 +217,23 @@ interface MCPToolDefinition {
 
 **Múltiples archivos afectados**
 
-| Patrón | Ubicaciones | Solución |
-|--------|-------------|----------|
-| `Parameter 't' implicitly has an 'any' type` | `content-publishing.ts`, `grimoires.ts` | Agregar tipado explícito `t: any` o mejor `t: Context` |
-| `Parameter 'c' implicitly has an 'any' type` | Varios handlers de Hono | Agregar `c: Context<AppBindings>` |
-| `Parameter 'data' implicitly has an 'any' type` | Callbacks y handlers | Definir interfaces apropiadas |
+| Patrón                                          | Ubicaciones                             | Solución                                               |
+| ----------------------------------------------- | --------------------------------------- | ------------------------------------------------------ |
+| `Parameter 't' implicitly has an 'any' type`    | `content-publishing.ts`, `grimoires.ts` | Agregar tipado explícito `t: any` o mejor `t: Context` |
+| `Parameter 'c' implicitly has an 'any' type`    | Varios handlers de Hono                 | Agregar `c: Context<AppBindings>`                      |
+| `Parameter 'data' implicitly has an 'any' type` | Callbacks y handlers                    | Definir interfaces apropiadas                          |
 
 **Ejemplo de corrección:**
+
 ```typescript
 // ANTES
-app.post('/route', async (c) => {
-  const t = c.get('something');  // ❌ any
+app.post("/route", async (c) => {
+  const t = c.get("something"); // ❌ any
 });
 
 // DESPUÉS
-app.post('/route', async (c: Context<AppBindings>) => {
-  const t: GrimoireContext = c.get('grimoireContext');  // ✅ tipado
+app.post("/route", async (c: Context<AppBindings>) => {
+  const t: GrimoireContext = c.get("grimoireContext"); // ✅ tipado
 });
 ```
 
@@ -226,6 +242,7 @@ app.post('/route', async (c: Context<AppBindings>) => {
 ### 9. Imports No Utilizados
 
 **Archivos con imports muertos:**
+
 - `apps/api/src/index.ts` - `migrate` importado pero no siempre usado
 - `apps/api/src/services/agent-auth.ts` - imports legacy de bcrypt (si aún existen)
 
@@ -252,23 +269,27 @@ app.post('/route', async (c: Context<AppBindings>) => {
 ## 🛠️ Plan de Refactorización Recomendado
 
 ### Fase 1: Correcciones Rápidas (1-2 días)
+
 1. ✅ ~~Corregir tipos implícitos en parámetros~~ (ya hecho)
 2. ✅ ~~Eliminar imports no utilizados~~ (ya hecho)
 3. Actualizar `data-explorer.ts` a nueva estructura de manifest
 4. Comentar/eliminar código de módulos desactivados
 
 ### Fase 2: Migración Functions → Actions (2-3 días)
+
 1. Analizar todas las funciones registradas en producción
 2. Migrar definiciones de `functions` a `actions`
 3. Actualizar `packages/core/functions.ts` a nuevo esquema
 4. Testing de funciones críticas
 
 ### Fase 3: Tests y MCP (3-5 días)
+
 1. Reescribir `tests/auth.test.ts` para nuevo sistema
 2. Actualizar integraciones MCP a SDK 1.6+
 3. Agregar tests para AgentIdentities
 
 ### Fase 4: Limpieza de Módulos (Opcional)
+
 1. Decidir destino de Booking/Directory/DMS
 2. Migrar a Grimoires independientes o eliminar
 3. Actualizar documentación
@@ -300,6 +321,7 @@ app.post('/route', async (c: Context<AppBindings>) => {
 ## 💡 Notas para Desarrolladores
 
 > **Importante:** Antes de comenzar cualquier refactorización:
+>
 > 1. Crear rama feature específica
 > 2. Verificar que los cambios no afecten datos en producción
 > 3. Coordinar con equipo sobre migraciones de base de datos necesarias

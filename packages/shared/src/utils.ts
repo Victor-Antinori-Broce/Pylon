@@ -103,9 +103,7 @@ export function articleJsonLd(post: {
     headline: post.title,
     description: post.excerpt,
     datePublished: post.publishedAt,
-    author: post.author
-      ? { "@type": "Person", name: post.author.displayName }
-      : undefined,
+    author: post.author ? { "@type": "Person", name: post.author.displayName } : undefined,
     image: post.featuredImage?.url,
     url: `${post.siteUrl}/blog/${post.slug}`,
     publisher: {

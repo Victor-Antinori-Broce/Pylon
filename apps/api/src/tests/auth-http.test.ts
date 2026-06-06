@@ -6,15 +6,13 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { app } from "../index";
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { authUsers } from "../db/schema";
-import { eq } from "drizzle-orm";
-import {
-  isDatabaseAvailable,
-  clearTestData,
-  generateTestId,
-} from "./setup";
+import { app } from "../index";
+
+import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
@@ -67,7 +65,7 @@ describe("Auth HTTP", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe(testEmail);
       expect(body.user.name).toBe(testName);
@@ -155,7 +153,7 @@ describe("Auth HTTP", () => {
       const res = await app.request(req("/api/auth/get-session", {}, cookie));
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.user).toBeDefined();
       expect(body.user.id).toBe(userId);
       expect(body.user.email).toBe(testEmail);
@@ -167,7 +165,7 @@ describe("Auth HTTP", () => {
       const res = await app.request(req("/api/auth/get-session"));
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.user).toBeNull();
     });
 
@@ -179,7 +177,7 @@ describe("Auth HTTP", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.user).toBeNull();
     });
   });
@@ -202,10 +200,7 @@ describe("Auth HTTP", () => {
     it("should promote user to admin and verify role change", async () => {
       if (!dbAvailable) return;
 
-      await db
-        .update(authUsers)
-        .set({ role: "admin" })
-        .where(eq(authUsers.id, userId));
+      await db.update(authUsers).set({ role: "admin" }).where(eq(authUsers.id, userId));
 
       const res = await app.request(req("/api/admin/registry", {}, cookie));
       expect(res.status).toBe(200);
@@ -216,17 +211,13 @@ describe("Auth HTTP", () => {
     it("should sign out and invalidate cookie", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req("/api/auth/sign-out", { method: "POST" }, cookie)
-      );
+      const res = await app.request(req("/api/auth/sign-out", { method: "POST" }, cookie));
 
       expect(res.status).toBe(200);
 
       // Session should be gone after sign-out
-      const sessionRes = await app.request(
-        req("/api/auth/get-session", {}, cookie)
-      );
-      const body = await sessionRes.json() as any;
+      const sessionRes = await app.request(req("/api/auth/get-session", {}, cookie));
+      const body = (await sessionRes.json()) as any;
       expect(body.user).toBeNull();
     });
   });

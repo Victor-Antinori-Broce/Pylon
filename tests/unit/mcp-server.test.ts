@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Unit Tests: MCP Server Core Logic
 
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect } from "vitest";
 
 // Types for MCP Protocol
 type MCPRequest = {
@@ -22,13 +22,12 @@ type MCPResponse = {
 };
 
 describe("MCP Server Protocol", () => {
-  
   describe("Request Validation", () => {
     test("should validate JSON-RPC 2.0 format", () => {
       const validRequest: MCPRequest = {
         jsonrpc: "2.0",
         method: "tools/list",
-        id: 1
+        id: 1,
       };
 
       expect(validRequest.jsonrpc).toBe("2.0");
@@ -40,7 +39,7 @@ describe("MCP Server Protocol", () => {
       const invalidRequest = {
         jsonrpc: "1.0", // Wrong version
         method: "tools/list",
-        id: 1
+        id: 1,
       };
 
       expect(invalidRequest.jsonrpc).not.toBe("2.0");
@@ -49,7 +48,7 @@ describe("MCP Server Protocol", () => {
     test("should handle batch requests", () => {
       const batch: MCPRequest[] = [
         { jsonrpc: "2.0", method: "tools/list", id: 1 },
-        { jsonrpc: "2.0", method: "resources/list", id: 2 }
+        { jsonrpc: "2.0", method: "resources/list", id: 2 },
       ];
 
       expect(Array.isArray(batch)).toBe(true);
@@ -68,10 +67,10 @@ describe("MCP Server Protocol", () => {
             datasetId: { type: "string" },
             query: { type: "string" },
             semantic: { type: "boolean" },
-            limit: { type: "number" }
+            limit: { type: "number" },
           },
-          required: ["datasetId", "query"]
-        }
+          required: ["datasetId", "query"],
+        },
       };
 
       expect(tool.name).toBe("gremius_search_entries");
@@ -87,10 +86,10 @@ describe("MCP Server Protocol", () => {
           type: "object",
           properties: {
             datasetId: { type: "string" },
-            data: { type: "object" }
+            data: { type: "object" },
           },
-          required: ["datasetId", "data"]
-        }
+          required: ["datasetId", "data"],
+        },
       };
 
       expect(tool.name).toBe("gremius_create_entry");
@@ -107,11 +106,11 @@ describe("MCP Server Protocol", () => {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ entries: [] })
-            }
-          ]
+              text: JSON.stringify({ entries: [] }),
+            },
+          ],
         },
-        id: 1
+        id: 1,
       };
 
       expect(response.jsonrpc).toBe("2.0");
@@ -124,9 +123,9 @@ describe("MCP Server Protocol", () => {
         jsonrpc: "2.0",
         error: {
           code: -32600,
-          message: "Invalid Request"
+          message: "Invalid Request",
         },
-        id: null as any
+        id: null as any,
       };
 
       expect(response.error?.code).toBe(-32600);
@@ -143,7 +142,7 @@ describe("MCP Server Protocol", () => {
         "gremius_update_entry",
         "gremius_list_datasets",
         "gremius_get_dataset_schema",
-        "gremius_health_check"
+        "gremius_health_check",
       ];
 
       const requestTool = "gremius_search_entries";
@@ -153,24 +152,24 @@ describe("MCP Server Protocol", () => {
     test("should validate required parameters", () => {
       const callParams = {
         datasetId: "ds_123",
-        query: "test"
+        query: "test",
       };
 
       const required = ["datasetId", "query"];
-      const hasAllRequired = required.every(r => r in callParams);
-      
+      const hasAllRequired = required.every((r) => r in callParams);
+
       expect(hasAllRequired).toBe(true);
     });
 
     test("should fail on missing required parameter", () => {
       const callParams = {
-        datasetId: "ds_123"
+        datasetId: "ds_123",
         // missing query
       };
 
       const required = ["datasetId", "query"];
-      const hasAllRequired = required.every(r => r in callParams);
-      
+      const hasAllRequired = required.every((r) => r in callParams);
+
       expect(hasAllRequired).toBe(false);
     });
   });

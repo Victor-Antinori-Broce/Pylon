@@ -1,6 +1,6 @@
 /**
  * Agent Action Handler
- * 
+ *
  * Executes AI agent workflows.
  * Placeholder for future AI agent integration.
  */
@@ -15,11 +15,11 @@ interface AgentActionConfig {
 
 export async function executeAgentAction(
   action: Action,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _context: ActionContext
 ): Promise<ActionResult> {
   const startTime = Date.now();
-  
+
   const config = action.config as AgentActionConfig;
 
   if (!config.agentId) {
@@ -32,7 +32,7 @@ export async function executeAgentAction(
 
   // TODO: Integrate with AI agent system
   // This is a placeholder for future implementation
-  
+
   return {
     success: true,
     result: {

@@ -9,10 +9,12 @@ Esta guía documenta la migración del sistema de registro manual al sistema Zer
 ### 1. Schema Introspection Mejorado ✅
 
 **Archivos creados:**
+
 - `apps/api/src/services/schema-introspector.ts` - Auto-detección de columnas DB
 - `apps/api/src/routes/schema-introspection.ts` - Endpoints API
 
 **Endpoints disponibles:**
+
 ```
 GET  /api/schema/tables              ← Listar todas las tablas
 GET  /api/schema/tables/:name        ← Introspección detallada
@@ -23,6 +25,7 @@ POST /api/schema/refresh             ← Limpiar cache
 ```
 
 **Beneficios:**
+
 - ✅ Cualquier tabla funciona sin configuración
 - ✅ Auto-detección de PKs, FKs, índices
 - ✅ Tipos inferidos automáticamente
@@ -33,10 +36,12 @@ POST /api/schema/refresh             ← Limpiar cache
 ### 2. Inline Relations (Django-style) ✅
 
 **Archivos creados:**
+
 - `apps/api/src/services/inline-relations.ts` - Lógica de inlines
 - `apps/api/src/routes/inline-relations.ts` - Endpoints API
 
 **Endpoints disponibles:**
+
 ```
 GET  /api/relations/:tableName                    ← Relaciones de una tabla
 GET  /api/relations/:tableName/inlines/config     ← Configs de inlines
@@ -45,11 +50,13 @@ POST /api/relations/:tableName/inlines/:parentId  ← Guardar inlines
 ```
 
 **Detección automática:**
+
 - Outgoing FKs (belongs_to)
 - Incoming FKs (has_many)
 - Many-to-Many vía junction tables
 
 **Beneficios:**
+
 - ✅ Editar registros relacionados inline
 - ✅ Django-style tabular/stacked layouts
 - ✅ Auto-detección de relaciones
@@ -61,16 +68,17 @@ POST /api/relations/:tableName/inlines/:parentId  ← Guardar inlines
 
 **Grimoires migrados a `grimoire.json`:**
 
-| Grimoire | Estado | Tablas |
-|----------|--------|--------|
-| grimoire-academy-lms | ✅ | courses, lessons, enrollments |
-| grimoire-booking | ✅ | bookings, services, availability |
-| grimoire-directory | ✅ | listings, categories, reviews |
-| grimoire-dms | ✅ | documents, folders, tags |
-| grimoire-games | ✅ | games, collections |
-| grimoire-blog | ✅ | posts |
+| Grimoire             | Estado | Tablas                           |
+| -------------------- | ------ | -------------------------------- |
+| grimoire-academy-lms | ✅     | courses, lessons, enrollments    |
+| grimoire-booking     | ✅     | bookings, services, availability |
+| grimoire-directory   | ✅     | listings, categories, reviews    |
+| grimoire-dms         | ✅     | documents, folders, tags         |
+| grimoire-games       | ✅     | games, collections               |
+| grimoire-blog        | ✅     | posts                            |
 
 **Pendientes de migración:**
+
 - [ ] webhooks → `packages/core/webhooks/`
 - [ ] workers → Nuevo grimoire
 - [ ] media → `packages/core/media-library/`
@@ -82,6 +90,7 @@ POST /api/relations/:tableName/inlines/:parentId  ← Guardar inlines
 **Para eliminar después de migración completa:**
 
 **`apps/api/src/routes/data-explorer.ts`:**
+
 ```typescript
 // ELIMINAR: grimoireTables hardcodeado (líneas 47-60)
 const grimoireTables: Record<string, string[]> = {
@@ -97,6 +106,7 @@ const tableRegistry: Record<string, TableMeta> = {
 ```
 
 **Reemplazar por:**
+
 - `getGrimoireAdminConfig()` del admin-registry
 - `introspectTable()` del schema-introspector
 
@@ -107,7 +117,7 @@ const tableRegistry: Record<string, TableMeta> = {
 ```
 Antes (Manual):
   Admin → DataExplorer → tableRegistry[tableName] → Drizzle Table
-  
+
 Después (Zero Config):
   Admin → DataExplorer → /api/admin/registry/:id → Schema Introspection
                                               ↓
@@ -204,14 +214,14 @@ const REGISTRY_CACHE_TTL = 60_000;
 const CACHE_TTL = 5 * 60 * 1000;
 
 // Invalidación manual:
-POST /api/admin/registry/refresh
-POST /api/schema/refresh
+POST / api / admin / registry / refresh;
+POST / api / schema / refresh;
 ```
 
 ### Seguridad
 
 - Todos los endpoints requieren autenticación (`requireAuth`)
-- Las tablas del sistema (pg_*, _prisma_) están excluidas
+- Las tablas del sistema (pg*\*, \_prisma*) están excluidas
 - El acceso a datos sigue las políticas RLS de PostgreSQL
 
 ### Fallbacks

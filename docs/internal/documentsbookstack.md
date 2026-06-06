@@ -1,7 +1,7 @@
 # Roadmap Backend: Mejoras al Grimoire DMS inspiradas en BookStack
 
 > **Scope:** Este documento cubre **exclusivamente funciones backend** (API, schema, base de datos, lógica de negocio) para `grimoire-dms`.  
-> El grimoire es **headless**: cualquier experiencia visual (lectura, editor, tema oscuro, previews) es responsabilidad del frontend (`packages/admin` u otro consumidor de la API).  
+> El grimoire es **headless**: cualquier experiencia visual (lectura, editor, tema oscuro, previews) es responsabilidad del frontend (`packages/admin` u otro consumidor de la API).
 >
 > **Estado:** Pendiente de priorización  
 > **Grimoire objetivo:** `packages/grimoires/grimoire-dms`  
@@ -79,6 +79,7 @@
 **Tareas backend:**
 
 - [ ] **Nueva tabla: `dms_document_comments`**
+
   ```sql
   id uuid primary key default gen_random_uuid(),
   document_id uuid not null references dms_documents(id) on delete cascade,
@@ -90,12 +91,15 @@
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
   ```
+
   - Índices: `(document_id, created_at)`, `(user_id)`, `(parent_id)`.
+
 - [ ] **Menciones (`@usuario`)**
   - Parsear `content` al crear/actualizar: extraer `@username` o `@userId`.
   - Validar que los usuarios mencionados existen.
   - Emitir evento de notificación (integrar con sistema de notificaciones de Gremius core o guardar en tabla de notificaciones propia).
 - [ ] **Endpoints**
+
   ```
   GET    /api/dms/documents/:id/comments?resolved=true|false
   POST   /api/dms/documents/:id/comments
@@ -103,6 +107,7 @@
   DELETE /api/dms/comments/:id
   POST   /api/dms/comments/:id/resolve
   ```
+
   - `GET` debe soportar paginación y filtro por `resolved`.
   - Incluir datos del autor (nombre, avatar) en el response (join con tabla de users del core).
 
@@ -180,6 +185,7 @@
 **Tareas backend:**
 
 - [ ] **Nueva tabla: `dms_document_slug_history`**
+
   ```sql
   id uuid primary key default gen_random_uuid(),
   document_id uuid not null references dms_documents(id) on delete cascade,
@@ -187,7 +193,9 @@
   changed_at timestamp with time zone default now(),
   unique(old_slug)
   ```
+
   - Índice único en `old_slug` para lookups rápidos.
+
 - [ ] **Redirección en endpoint de render**
   - `GET /api/dms/render/:slug`
   - Si no encuentra `slug` en `dms_documents`, buscar en `dms_document_slug_history`.
@@ -240,12 +248,15 @@
 **Tareas backend:**
 
 - [ ] **Índice GIN de PostgreSQL**
+
   ```sql
-  CREATE INDEX dms_versions_content_fts_idx 
-  ON dms_document_versions 
+  CREATE INDEX dms_versions_content_fts_idx
+  ON dms_document_versions
   USING GIN (to_tsvector('spanish', content));
   ```
+
   - Considerar un índice por idioma si el DMS soporta multi-idioma.
+
 - [ ] **Endpoint mejorado: `GET /api/dms/search?q=...&filters=...`**
   - Usar `ts_rank` + `ts_headline` para devolver snippets con highlights.
   - Agregar filtros: `categoryId`, `type`, `status`, `authorId`, `dateFrom`, `dateTo`.
@@ -272,13 +283,13 @@
 
 ### 9. Quick Wins Backend ✅ IMPLEMENTADOS
 
-| # | Mejora | Estado | Detalles |
-|---|--------|--------|----------|
-| 9.1 | **Contador de vistas** | ✅ | Dedup por usuario 5 minutos vía `dms_access_log`. Solo incrementa si no hay log `view` previo del mismo usuario en la ventana. |
-| 9.2 | **Flag "Requiere Revisión"** | ✅ | Campo computado `requiresReview` en responses de `GET /documents` y `GET /documents/:id`. `true` si `reviewDueDate < now()` o `expirationDate < now()`. |
-| 9.3 | **Clonado desde plantilla** | ✅ | Endpoint `POST /api/dms/documents/from-template/:templateId`. Clona documento + última versión en `draft`. |
-| 9.4 | **Notificaciones de workflow** | ✅ | Tabla `dms_workflow_notifications` + endpoints `GET /notifications`, `POST /notifications/:id/read`, `POST /notifications/read-all`. Se crean automáticamente en `submit`, `review` (approved/changes_requested) y `publish`. |
-| 9.5 | **Validación de wiki-links** | ✅ | Al crear/actualizar versión, se parsea `[[CODE]]`/`[[slug]]` y se devuelve `warnings.wikiLinks: [{ target, exists }]` en el response. |
+| #   | Mejora                         | Estado | Detalles                                                                                                                                                                                                                      |
+| --- | ------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 9.1 | **Contador de vistas**         | ✅     | Dedup por usuario 5 minutos vía `dms_access_log`. Solo incrementa si no hay log `view` previo del mismo usuario en la ventana.                                                                                                |
+| 9.2 | **Flag "Requiere Revisión"**   | ✅     | Campo computado `requiresReview` en responses de `GET /documents` y `GET /documents/:id`. `true` si `reviewDueDate < now()` o `expirationDate < now()`.                                                                       |
+| 9.3 | **Clonado desde plantilla**    | ✅     | Endpoint `POST /api/dms/documents/from-template/:templateId`. Clona documento + última versión en `draft`.                                                                                                                    |
+| 9.4 | **Notificaciones de workflow** | ✅     | Tabla `dms_workflow_notifications` + endpoints `GET /notifications`, `POST /notifications/:id/read`, `POST /notifications/read-all`. Se crean automáticamente en `submit`, `review` (approved/changes_requested) y `publish`. |
+| 9.5 | **Validación de wiki-links**   | ✅     | Al crear/actualizar versión, se parsea `[[CODE]]`/`[[slug]]` y se devuelve `warnings.wikiLinks: [{ target, exists }]` en el response.                                                                                         |
 
 ---
 
@@ -286,38 +297,42 @@
 
 > Estas funcionalidades **no son responsabilidad del grimoire DMS** (backend headless), pero deben implementarse en el consumidor de la API (ej. `packages/admin` o un portal de documentación dedicado) para que las mejoras del backend tengan sentido de usuario.
 
-| # | Función Frontend | Qué necesita del backend |
-|---|------------------|--------------------------|
-| F.1 | **Vista de lectura / Document Reader** | Consume `GET /api/dms/render/:slug`, muestra `content`, `toc`, `navigation`, `breadcrumb`. |
-| F.2 | **Modo claro/oscuro** | Puramente CSS del frontend. El backend puede devolver `theme: null` (no aplica). |
-| F.3 | **Previsualización de Markdown en Admin** | Preview del `content` antes de guardar. Puede hacerse 100% en cliente con librería JS. |
-| F.4 | **Editor WYSIWYG / Rich Text** | El frontend envía HTML/Markdown al backend vía `POST/PATCH`. El grimoire solo recibe y almacena strings. |
-| F.5 | **Editor de diagramas (Draw.io / Excalidraw)** | Iframe/componente que persiste `source_xml/json` vía endpoints de diagramas y deja un placeholder `[[diagram:uuid]]` en el `content`. |
-| F.6 | **Exportación a PDF (botón)** | Llama a `GET /api/dms/versions/:id/export/pdf` y descarga el archivo/stream. |
-| F.7 | **UI de comentarios** | Consume endpoints de comentarios. Renderiza hilos, botón de resolver, input con @mentions (autocomplete de usuarios). |
-| F.8 | **Wiki-links: autocompletado** | Al escribir `[[` en el editor, llamar a `GET /api/dms/documents?search=` para sugerir documentos. |
-| F.9 | **Badge "Requiere Revisión"** | Lee el campo `requiresReview` del endpoint de documento. |
-| F.10 | **Importación drag-and-drop ZIP** | Input file que sube ZIP a `POST /api/dms/import/zip`. Muestra reporte de resultado. |
+| #    | Función Frontend                               | Qué necesita del backend                                                                                                              |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| F.1  | **Vista de lectura / Document Reader**         | Consume `GET /api/dms/render/:slug`, muestra `content`, `toc`, `navigation`, `breadcrumb`.                                            |
+| F.2  | **Modo claro/oscuro**                          | Puramente CSS del frontend. El backend puede devolver `theme: null` (no aplica).                                                      |
+| F.3  | **Previsualización de Markdown en Admin**      | Preview del `content` antes de guardar. Puede hacerse 100% en cliente con librería JS.                                                |
+| F.4  | **Editor WYSIWYG / Rich Text**                 | El frontend envía HTML/Markdown al backend vía `POST/PATCH`. El grimoire solo recibe y almacena strings.                              |
+| F.5  | **Editor de diagramas (Draw.io / Excalidraw)** | Iframe/componente que persiste `source_xml/json` vía endpoints de diagramas y deja un placeholder `[[diagram:uuid]]` en el `content`. |
+| F.6  | **Exportación a PDF (botón)**                  | Llama a `GET /api/dms/versions/:id/export/pdf` y descarga el archivo/stream.                                                          |
+| F.7  | **UI de comentarios**                          | Consume endpoints de comentarios. Renderiza hilos, botón de resolver, input con @mentions (autocomplete de usuarios).                 |
+| F.8  | **Wiki-links: autocompletado**                 | Al escribir `[[` en el editor, llamar a `GET /api/dms/documents?search=` para sugerir documentos.                                     |
+| F.9  | **Badge "Requiere Revisión"**                  | Lee el campo `requiresReview` del endpoint de documento.                                                                              |
+| F.10 | **Importación drag-and-drop ZIP**              | Input file que sube ZIP a `POST /api/dms/import/zip`. Muestra reporte de resultado.                                                   |
 
 ---
 
 ## Priorización Sugerida (Solo Backend)
 
 ### Fase 0: Quick Wins ✅ COMPLETADA
+
 - Contador de vistas deduplicado, `requiresReview`, clonado desde template, notificaciones de workflow, validación de wiki-links.
 
 ### Fase 1: Fundamentos de API Pública ✅ COMPLETADA
+
 1. ✅ **Endpoint `/api/dms/render/:slug`** — HTML con TOC generado, IDs inyectados en headers, navegación prev/next, breadcrumb, ACL (public/restricted/private).
 2. ✅ **Endpoint `/api/dms/render/code/:code`** — Redirección 307 al render por slug.
 3. ✅ **Búsqueda full-text** — Índice GIN `dms_versions_content_fts_idx` + endpoint `/search` con `ts_rank`/`ts_headline` y fallback a LIKE.
 4. ✅ **URL history** — Tabla `dms_document_slug_history` + redirección 308 en render + guardado automático en `PATCH /documents/:id`.
 
 ### Fase 2: Colaboración y Enriquecimiento ✅ COMPLETADA
+
 5. ✅ **Comentarios** — Tabla `dms_document_comments` + endpoints CRUD (`GET/POST /documents/:id/comments`, `PATCH/DELETE /comments/:id`, `POST /comments/:id/resolve`) con hilos (replies).
 6. ✅ **Wiki-links** — Validación en guardado de versiones + resolución en render (`/render/:slug` devuelve `wikiLinks: [{target, exists}]`) + endpoint `/documents/:id/backlinks`.
 7. ✅ **Exportación** — `/versions/:id/export/html` (standalone), `/versions/:id/export/md`, `/categories/:id/export/zip` (estructura JSON lista para empaquetar en frontend).
 
 ### Fase 3: Contenido Avanzado ✅ COMPLETADA
+
 8. ✅ **Diagramas** — Tabla `dms_document_diagrams` + endpoints CRUD + reemplazo de placeholders `[[diagram:uuid]]` en el render endpoint.
 9. ✅ **Import** — Endpoint `POST /api/dms/import` que acepta el formato de export JSON y crea documentos/versiones en `draft`.
 
@@ -332,4 +347,4 @@
 
 ---
 
-*Documento generado para planificación de backend. Última actualización: 2026-05-09*
+_Documento generado para planificación de backend. Última actualización: 2026-05-09_

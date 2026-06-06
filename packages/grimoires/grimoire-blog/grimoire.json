@@ -22,20 +22,10 @@
     "routes": "./src/index.ts",
     "schema": "./src/schema.ts"
   },
-  "tables": [
-    "blog_posts",
-    "blog_posts_to_tags",
-    "blog_posts_to_games"
-  ],
+  "tables": ["blog_posts", "blog_posts_to_tags", "blog_posts_to_games"],
   "database": {
-    "tables": [
-      "blog_posts",
-      "blog_posts_to_tags",
-      "blog_posts_to_games"
-    ],
-    "enums": [
-      "blog_status"
-    ]
+    "tables": ["blog_posts", "blog_posts_to_tags", "blog_posts_to_games"],
+    "enums": ["blog_status"]
   },
   "admin": {
     "category": "core",
@@ -82,12 +72,7 @@
     "public-content-api",
     "editorial-workflow"
   ],
-  "postStatuses": [
-    "draft",
-    "scheduled",
-    "published",
-    "archived"
-  ],
+  "postStatuses": ["draft", "scheduled", "published", "archived"],
   "dependencies": {
     "grimoires": ["grimoire-media"],
     "core": ["auth"]

@@ -14,12 +14,13 @@ El `docker-compose.yml` usa la imagen oficial de pgvector:
 
 ```yaml
 gremius_db:
-  image: pgvector/pgvector:pg16  # ← PostgreSQL 16 + pgvector pre-instalado
+  image: pgvector/pgvector:pg16 # ← PostgreSQL 16 + pgvector pre-instalado
   volumes:
     - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
 ```
 
 El script `docker/init-extensions.sql` se ejecuta automáticamente:
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
@@ -33,7 +34,7 @@ El grimoire **"ai-memories"** usa el tipo `vector` de Drizzle ORM:
 import { vector } from "drizzle-orm/pg-core";
 
 export const aiMemories = pgTable("ai_memories", {
-  embedding: vector("embedding", { dimensions: 1536 }),  // ← Requiere pgvector
+  embedding: vector("embedding", { dimensions: 1536 }), // ← Requiere pgvector
 });
 ```
 
@@ -55,6 +56,7 @@ pgvector Extension:   ❌ MISSING
 ```
 
 **¿Por qué falla?**
+
 1. El contenedor de API ejecuta `bun run db:migrate` al inicio
 2. Las migraciones incluyen tablas con columnas tipo `vector(1536)`
 3. PostgreSQL sin pgvector no reconoce el tipo `vector`
@@ -109,6 +111,7 @@ GremiusCMS **no puede** instalar pgvector automáticamente porque:
 ### Opción 1: Usar PostgreSQL con pgvector (Recomendado)
 
 **Docker local:**
+
 ```bash
 docker run -d \
   --name gremius-pgvector \
@@ -121,18 +124,19 @@ docker run -d \
 
 **Proveedores Cloud:**
 
-| Proveedor | Instrucciones |
-|-----------|--------------|
-| **Supabase** | pgvector viene pre-instalado ✅ |
-| **AWS RDS** | Crear extensión manualmente: `CREATE EXTENSION vector;` |
-| **Neon** | Soporta pgvector, habilitar en dashboard |
-| **Railway** | Usar template de pgvector |
+| Proveedor    | Instrucciones                                           |
+| ------------ | ------------------------------------------------------- |
+| **Supabase** | pgvector viene pre-instalado ✅                         |
+| **AWS RDS**  | Crear extensión manualmente: `CREATE EXTENSION vector;` |
+| **Neon**     | Soporta pgvector, habilitar en dashboard                |
+| **Railway**  | Usar template de pgvector                               |
 
 ### Opción 2: Deshabilitar funcionalidades de IA
 
 Si NO puedes instalar pgvector, excluye el grimoire `ai-memories`:
 
 **1. No incluir en `gremius.config.ts`:**
+
 ```typescript
 // gremius.config.ts
 export default {
@@ -142,18 +146,20 @@ export default {
     "blocks",
     "blog",
     // ...
-  ]
+  ],
 };
 ```
 
 **2. Usar schema sin AI:**
 Modifica `apps/api/src/db/schema-all.ts` para no exportar el schema de ai-memories:
+
 ```typescript
 // Comentar o eliminar esta línea:
 // export * from "../../../../packages/grimoires/ai-memories/schema";
 ```
 
 **3. Regenerar migraciones:**
+
 ```bash
 cd apps/api
 rm -rf drizzle/
@@ -167,6 +173,7 @@ bun run db:generate  # Generar nuevas migraciones sin tablas de AI
 Para mantener el core funcional sin IA, puedes:
 
 1. Crear un schema separado para AI:
+
 ```sql
 CREATE SCHEMA ai;
 CREATE EXTENSION IF NOT EXISTS vector SCHEMA ai;
@@ -192,6 +199,7 @@ SELECT * FROM pg_extension WHERE extname = 'vector';
 ```
 
 Desde la aplicación:
+
 ```typescript
 // Health check endpoint
 app.get("/api/health/pgvector", async (c) => {
@@ -228,13 +236,13 @@ PERO las **migraciones** (`drizzle/0000_easy_pandemic.sql`) ya están generadas 
 
 ## Resumen
 
-| Escenario | Resultado |
-|-----------|-----------|
-| Docker Compose oficial | ✅ Funciona (pgvector incluido) |
-| PostgreSQL externo CON pgvector | ✅ Funciona (crear extensión manual) |
-| PostgreSQL externo SIN pgvector | ❌ Migraciones fallan |
-| Configurar sin AI | ✅ Posible (excluir ai-memories) |
-| Instalación automática | ❌ No posible (requiere superusuario) |
+| Escenario                       | Resultado                             |
+| ------------------------------- | ------------------------------------- |
+| Docker Compose oficial          | ✅ Funciona (pgvector incluido)       |
+| PostgreSQL externo CON pgvector | ✅ Funciona (crear extensión manual)  |
+| PostgreSQL externo SIN pgvector | ❌ Migraciones fallan                 |
+| Configurar sin AI               | ✅ Posible (excluir ai-memories)      |
+| Instalación automática          | ❌ No posible (requiere superusuario) |
 
 ---
 

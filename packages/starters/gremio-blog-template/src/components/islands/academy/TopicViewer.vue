@@ -15,7 +15,14 @@
       <iframe
         :src="videoEmbedUrl"
         class="video-frame"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="
+          accelerometer;
+          autoplay;
+          clipboard-write;
+          encrypted-media;
+          gyroscope;
+          picture-in-picture;
+        "
         allowfullscreen
         loading="lazy"
       />
@@ -23,25 +30,26 @@
 
     <!-- Direct video (MinIO/S3) -->
     <div v-else-if="isDirectVideo" class="video-wrapper">
-      <video
-        :src="topic.videoUrl"
-        class="video-frame"
-        controls
-        preload="metadata"
-      />
+      <video :src="topic.videoUrl" class="video-frame" controls preload="metadata" />
     </div>
 
     <!-- Rich text content -->
-    <div
-      v-if="htmlContent"
-      class="topic-content prose"
-      v-html="htmlContent"
-    />
+    <div v-if="htmlContent" class="topic-content prose" v-html="htmlContent" />
 
     <!-- Empty state -->
     <div v-if="!htmlContent && !videoEmbedUrl && !isDirectVideo" class="empty-state">
-      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg
+        class="empty-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <path
+          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
       <p>Este tema aún no tiene contenido.</p>
     </div>
@@ -55,14 +63,29 @@
         @click="markComplete"
       >
         <span v-if="markingComplete" class="spinner-tiny" />
-        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="check-icon">
-          <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          v-else
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="check-icon"
+        >
+          <path
+            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
-        {{ markingComplete ? 'Guardando...' : 'Marcar como completado' }}
+        {{ markingComplete ? "Guardando..." : "Marcar como completado" }}
       </button>
       <div v-else class="completed-badge">
         <svg viewBox="0 0 24 24" fill="currentColor" class="check-icon">
-          <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd"/>
+          <path
+            fill-rule="evenodd"
+            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+            clip-rule="evenodd"
+          />
         </svg>
         Completado
       </div>
@@ -70,11 +93,7 @@
 
     <!-- Navigation buttons -->
     <div class="topic-nav">
-      <button
-        v-if="topicIndex > 0"
-        class="nav-btn"
-        @click="$emit('navigate', topicIndex - 1)"
-      >
+      <button v-if="topicIndex > 0" class="nav-btn" @click="$emit('navigate', topicIndex - 1)">
         ← Anterior
       </button>
       <div class="nav-spacer" />
@@ -184,14 +203,14 @@ const htmlContent = computed(() => {
   border-radius: 0.5rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .topic-title {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: #f1f5f9;
@@ -217,7 +236,7 @@ const htmlContent = computed(() => {
 
 /* ── Content ── */
 .topic-content {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.95rem;
   line-height: 1.75;
   color: rgba(255, 255, 255, 0.7);
@@ -226,7 +245,7 @@ const htmlContent = computed(() => {
 .topic-content :deep(h1),
 .topic-content :deep(h2),
 .topic-content :deep(h3) {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   color: #f1f5f9;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
@@ -303,7 +322,7 @@ const htmlContent = computed(() => {
 .nav-btn {
   padding: 0.5rem 1.25rem;
   border-radius: 0.5rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -345,7 +364,7 @@ const htmlContent = computed(() => {
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.25);
   color: #34d399;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -370,7 +389,7 @@ const htmlContent = computed(() => {
   border-radius: 0.5rem;
   background: rgba(16, 185, 129, 0.08);
   color: #34d399;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -391,6 +410,8 @@ const htmlContent = computed(() => {
 }
 
 @keyframes spin-tiny {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

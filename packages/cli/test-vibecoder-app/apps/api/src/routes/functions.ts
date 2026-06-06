@@ -15,12 +15,13 @@
  *   GET    /api/functions/cron/status — Get cron job status
  */
 
+import { eq, desc, and } from "drizzle-orm";
 import { Hono } from "hono";
-import { eq, desc, and, count } from "drizzle-orm";
+
 import { db } from "../db";
 import { gremiusFunctions, functionExecutions, dataSets } from "../db/schema";
-import { executeManually } from "../lib/function-dispatcher";
 import { refreshCronJob, removeCronJob, getCronJobStatus } from "../lib/cron-scheduler";
+import { executeManually } from "../lib/function-dispatcher";
 import { protectRoute } from "../middleware/auth-guard";
 
 export const functionsRoutes = new Hono();
@@ -38,7 +39,7 @@ functionsRoutes.get("/", async (c) => {
   const trigger = c.req.query("trigger");
   const status = c.req.query("status");
 
-  let query = db.select().from(gremiusFunctions).orderBy(desc(gremiusFunctions.updatedAt)).limit(limit);
+  const query = db.select().from(gremiusFunctions).orderBy(desc(gremiusFunctions.updatedAt)).limit(limit);
 
   // Drizzle doesn't allow dynamic chaining well, so build conditions
   const conditions = [];

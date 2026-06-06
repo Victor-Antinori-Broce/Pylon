@@ -13,9 +13,8 @@
  *   5. Event dispatch
  */
 
-import { db } from "../index";
-import { actions, actionExecutions } from "../schema";
 import { eq, desc } from "drizzle-orm";
+
 import {
   listActions,
   getAction,
@@ -24,8 +23,9 @@ import {
   deleteAction,
   executeActionById,
   dispatchEvent,
-  initActionsEngine,
 } from "../../lib/actions";
+import { db } from "../index";
+import { actions, actionExecutions } from "../schema";
 
 const TEST_ACTION_SLUG = "test-verification-action";
 

@@ -1,3 +1,7 @@
+<script lang="ts" context="module">
+  import { fade } from "svelte/transition";
+</script>
+
 <!--
   SocialPreviewExample.svelte
   
@@ -8,9 +12,9 @@
   - Botón de toggle para mostrar/ocultar el preview
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import SocialPreview from './SocialPreview.svelte';
-  import { Eye, EyeOff, Loader2 } from 'lucide-svelte';
+  import { Eye, EyeOff, Loader2 } from "lucide-svelte";
+
+  import SocialPreview from "./SocialPreview.svelte";
 
   // Props del post
   interface Props {
@@ -23,21 +27,21 @@
     siteUrl?: string;
   }
 
-  let {
-    postId = '',
-    postSlug = '',
-    postTitle = 'Sin título',
-    postExcerpt = '',
-    featuredImageUrl = '',
-    siteName = 'Mi Blog',
-    siteUrl = 'https://ejemplo.com'
+  const {
+    postId = "",
+    postSlug = "",
+    postTitle = "Sin título",
+    postExcerpt = "",
+    featuredImageUrl = "",
+    siteName = "Mi Blog",
+    siteUrl = "https://ejemplo.com",
   }: Props = $props();
 
   // Estado
   let showPreview = $state(false);
   let isLoading = $state(false);
   let seoData = $state<any>(null);
-  let error = $state('');
+  let error = $state("");
 
   // Cargar datos SEO
   async function loadSEOPreview() {
@@ -48,27 +52,27 @@
     }
 
     isLoading = true;
-    error = '';
+    error = "";
 
     try {
       const response = await fetch(
-        `/api/blog/seo/${postSlug}?` + 
-        new URLSearchParams({
-          siteName,
-          baseUrl: siteUrl,
-          preview: 'true'
-        })
+        `/api/blog/seo/${postSlug}?` +
+          new URLSearchParams({
+            siteName,
+            baseUrl: siteUrl,
+            preview: "true",
+          })
       );
 
       if (!response.ok) {
-        throw new Error('Failed to load SEO data');
+        throw new Error("Failed to load SEO data");
       }
 
       const data = await response.json();
       seoData = data.seo;
     } catch (err: any) {
       error = err.message;
-      console.error('Error loading SEO preview:', err);
+      console.error("Error loading SEO preview:", err);
     } finally {
       isLoading = false;
     }
@@ -78,25 +82,27 @@
   function generateLocalSEOData() {
     return {
       title: `${postTitle} | ${siteName}`,
-      metaDescription: postExcerpt?.substring(0, 160) || '',
+      metaDescription: postExcerpt?.substring(0, 160) || "",
       canonicalUrl: `${siteUrl}/blog/preview`,
       openGraph: {
         title: postTitle,
-        description: postExcerpt?.substring(0, 200) || '',
+        description: postExcerpt?.substring(0, 200) || "",
         url: `${siteUrl}/blog/preview`,
-        image: featuredImageUrl ? {
-          url: featuredImageUrl,
-          width: 1200,
-          height: 630
-        } : undefined,
-        siteName
+        image: featuredImageUrl
+          ? {
+              url: featuredImageUrl,
+              width: 1200,
+              height: 630,
+            }
+          : undefined,
+        siteName,
       },
       twitterCard: {
-        card: 'summary_large_image',
+        card: "summary_large_image",
         title: postTitle,
-        description: postExcerpt?.substring(0, 200) || '',
-        image: featuredImageUrl
-      }
+        description: postExcerpt?.substring(0, 200) || "",
+        image: featuredImageUrl,
+      },
     };
   }
 
@@ -122,11 +128,7 @@
 
 <div class="social-preview-wrapper">
   <!-- Botón de toggle -->
-  <button 
-    class="preview-toggle-btn"
-    onclick={togglePreview}
-    disabled={isLoading}
-  >
+  <button class="preview-toggle-btn" onclick={togglePreview} disabled={isLoading}>
     {#if isLoading}
       <Loader2 size={18} class="animate-spin" />
       <span>Cargando preview...</span>
@@ -148,20 +150,11 @@
           <button onclick={loadSEOPreview}>Reintentar</button>
         </div>
       {:else}
-        <SocialPreview 
-          {seoData}
-          {postTitle}
-          postUrl={`${siteUrl}/blog/${postSlug}`}
-          {postSlug}
-        />
+        <SocialPreview {seoData} {postTitle} postUrl={`${siteUrl}/blog/${postSlug}`} {postSlug} />
       {/if}
     </div>
   {/if}
 </div>
-
-<script lang="ts" context="module">
-  import { fade } from 'svelte/transition';
-</script>
 
 <style>
   .social-preview-wrapper {
@@ -200,8 +193,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .preview-container {

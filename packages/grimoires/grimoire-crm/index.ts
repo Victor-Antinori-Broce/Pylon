@@ -33,12 +33,14 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
-import { defineGrimoire } from "@gremius/shared";
-import { createCRMRouter } from "./crm.routes";
-import { sql } from "drizzle-orm";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+
+import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
+import { defineGrimoire } from "@gremius/shared";
+import { sql } from "drizzle-orm";
+
+import { createCRMRouter } from "./crm.routes";
 
 // Re-export schema and types
 export * from "./crm.schema";
@@ -123,10 +125,16 @@ const hooks = {
 
       if (!allExist) {
         ctx.logger.info("[CRM] Tables missing. Running migrations...");
-        const migrationsDir = join(process.cwd(), "packages", "grimoires", "grimoire-crm", "migrations");
+        const migrationsDir = join(
+          process.cwd(),
+          "packages",
+          "grimoires",
+          "grimoire-crm",
+          "migrations"
+        );
         try {
           const files = await readdir(migrationsDir);
-          const sqlFiles = files.filter(f => f.endsWith(".sql")).sort();
+          const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
           for (const file of sqlFiles) {
             const filePath = join(migrationsDir, file);
             const content = await Bun.file(filePath).text();

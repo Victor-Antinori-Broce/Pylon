@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+
+import { describe, it, expect } from "vitest";
 
 describe("GraphQL mutations smoke test", () => {
   const filePath = resolve("apps/api/src/routes/graphql.ts");

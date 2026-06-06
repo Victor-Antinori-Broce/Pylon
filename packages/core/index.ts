@@ -2,7 +2,7 @@
  * @gremius/core — Engine Infrastructure Extensions
  *
  * Extensions and utilities for the Gremius Engine.
- * 
+ *
  * NOTE: Previous core modules have been migrated to Grimoires:
  *   - data-sets     → grimoire-datasets (packages/grimoires/grimoire-datasets)
  *   - media-library → grimoire-media (packages/grimoires/grimoire-media)

@@ -1,18 +1,22 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
+  import { signOut, getUser } from "$lib/auth.svelte";
+  import CommandPalette from "$lib/components/CommandPalette.svelte";
+  import { moduleStore } from "$lib/states/modules.svelte";
   import { 
-    Sword, LayoutDashboard, Gamepad2, Tv, FileText, Settings, Database,
+    Sword, Gamepad2, Tv, FileText, Settings, Database,
     PanelLeftClose, PanelLeftOpen, ImageIcon, Library, LogOut,
-    Blocks, BookOpen, Book, Castle, Home, Users,
+    Blocks, BookOpen, Book, Castle, Users,
     Monitor, Tag, UserCircle, Swords, Trophy,
     GraduationCap, FileStack, CalendarDays, Contact, PackageOpen,
-    Zap, Bot, Briefcase, BarChart3
+    Zap, Bot, Briefcase
   } from "lucide-svelte";
-  import { signOut, getUser } from "$lib/auth.svelte";
-  import { moduleStore } from "$lib/states/modules.svelte";
+  import { onMount } from "svelte";
+
   import GlobalSearch from "./GlobalSearch.svelte";
-  import CommandPalette from "$lib/components/CommandPalette.svelte";
+
+  import { page } from "$app/stores";
+
+
   
   let collapsed = $state(false);
   let apiOnline = $state(false);
@@ -20,7 +24,7 @@
   const user = $derived(getUser());
   
   // Get current path from SvelteKit
-  let currentPath = $derived($page.url.pathname);
+  const currentPath = $derived($page.url.pathname);
   
   // Map nav items to their module keys (null = always show)
   interface NavItem {
@@ -94,7 +98,7 @@
 
   // Dynamically generated nav items from the filesystem
   // Exclude any module already present in the hardcoded nav list
-  let filesystemNavItems = $derived(
+  const filesystemNavItems = $derived(
     moduleStore.modules
       .filter(m => m.source === "filesystem" && moduleStore.enabledKeys.has(m.key) && !hardcodedModuleKeys.has(m.key))
       .map(m => ({
@@ -107,7 +111,7 @@
 
   // Filter nav items based on enabled modules from shared store
   // Then sort by order to maintain consistent positioning
-  let visibleNavItems = $derived(
+  const visibleNavItems = $derived(
     [
       ...allNavItems.filter(item => !item.moduleKey || moduleStore.enabledKeys.has(item.moduleKey)),
       ...filesystemNavItems
@@ -123,7 +127,7 @@
     })
   );
   
-  let visibleBottomItems = $derived(
+  const visibleBottomItems = $derived(
     bottomNavItems.filter(item => !item.moduleKey || moduleStore.enabledKeys.has(item.moduleKey))
   );
   
@@ -155,7 +159,7 @@
   });
   
   // Slot content
-  let { children }: { children?: import("svelte").Snippet } = $props();
+  const { children }: { children?: import("svelte").Snippet } = $props();
 </script>
 
 <CommandPalette navItems={visibleNavItems} bottomNavItems={visibleBottomItems} />

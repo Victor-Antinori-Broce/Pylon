@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Check, X } from "lucide-svelte";
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
+  import { Check, X } from "lucide-svelte";
 
-  let { value, mode, onChange }: FieldComponentProps = $props();
+  const { value, mode, onChange }: FieldComponentProps = $props();
   
-  let isTrue = $derived(!!value);
+  const isTrue = $derived(!!value);
 </script>
 
 {#if mode === "view" || mode === "inline"}

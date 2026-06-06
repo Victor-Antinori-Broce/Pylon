@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Trash2 } from "lucide-svelte";
+
   import type { DatasetDefinition, DatasetEntry } from "../../../types/datasets";
 
   // Props
@@ -11,7 +12,7 @@
     onInlineUpdate?: (entryId: string, fieldKey: string, newValue: string) => void;
   }
 
-  let { definition, entries, onEdit, onDelete, onInlineUpdate }: Props = $props();
+  const { definition, entries, onEdit, onDelete, onInlineUpdate }: Props = $props();
 
   // 1. Determine Grouping Field (First "select" field)
   const groupField = $derived(definition.fields.find(f => f.type === 'select'));

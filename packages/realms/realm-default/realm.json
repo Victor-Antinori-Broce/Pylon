@@ -8,10 +8,7 @@
   "industry": "general",
   "keywords": ["default", "core", "foundation"],
   "grimoires": [],
-  "optional_grimoires": [
-    "grimoire-crm",
-    "grimoire-tags"
-  ],
+  "optional_grimoires": ["grimoire-crm", "grimoire-tags"],
   "config": {
     "theme": {
       "css_entry": "variables.css",

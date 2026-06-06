@@ -27,7 +27,6 @@
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
-
   # ═══════════════════════════════════════════════════════════════════════
   # PostgreSQL 16 con pgvector (REQUERIDO)
   # ═══════════════════════════════════════════════════════════════════════
@@ -45,7 +44,7 @@ services:
     ports:
       - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gremius} -d ${POSTGRES_DB:-gremius_prod}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gremius} -d ${POSTGRES_DB:-gremius_prod}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,7 +64,7 @@ services:
     volumes:
       - gremius_valkey_prod:/data
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -93,7 +92,7 @@ services:
     volumes:
       - gremius_minio_prod:/data
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -184,7 +183,7 @@ services:
       - "${API_PORT:-3000}:3000"
     networks:
       - gremius_net_prod
-    command: [ "sh", "/app/docker/start-with-check.sh" ]
+    command: ["sh", "/app/docker/start-with-check.sh"]
 
   # ═══════════════════════════════════════════════════════════════════════
   # Admin Panel - Frontend (SvelteKit) (REQUERIDO)

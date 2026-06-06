@@ -10,12 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0-beta] - 2026-06-04
 
 ### Added
+
 - SDK: Subpath export `@gremius/sdk/realtime` with full type definitions
 - SDK: `getClientId()` and `getUserId()` getters on `GremiusRealtime`
 - Auth: Migration script `migrate-api-keys-to-agents.ts` for legacy API key migration
 - Auth: Deprecation headers (`Deprecation: gremius_sk_*; grm_agent_*`) on all legacy API key endpoints
 
 ### Changed
+
 - **TypeScript strict mode enabled across the entire monorepo**
   - `apps/api`: `strict: true` (was `false`) — passes `tsc --noEmit` with 0 errors
   - `packages/shared`: strict mode verified clean
@@ -33,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker: `Dockerfile.prod` updated to copy full package directories instead of non-existent `dist/` for packages without build steps
 
 ### Fixed
+
 - SDK: TypeScript strict mode now passes (`tsc --noEmit`) for both `index.ts` and `realtime.ts`
 - SDK: Build artifacts cleaned from `src/` (`.js`, `.d.ts`, `.map` files)
 - Repo: Removed 21 tracked compiled artifacts (`.js`, `.d.ts`) from `src/` directories
@@ -41,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0-beta] - 2026-03-06
 
 ### Added
+
 - Structured logging system with Pino
 - Centralized configuration with Zod validation
 - Rate limiting middleware (hono-rate-limiter)
@@ -54,11 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-commit hooks with Husky
 
 ### Changed
+
 - Improved error handling with structured logging
 - Migrated to type-safe configuration
 - Enhanced health check endpoint with detailed status
 
 ### Fixed
+
 - Resolved 60 TypeScript errors (now 0)
 - Cleaned 445 legacy files
 - All tests passing (71/71)
@@ -66,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2026-02-15
 
 ### Added
+
 - Svelte 5 migration complete
 - Grimoire system with 21 grimoires
 - Realm Esports bundle
@@ -75,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2026-01-20
 
 ### Added
+
 - 3-tier architecture (Engine, Core, Grimoires)
 - Row Level Security (RLS) implementation
 - Dynamic schema system

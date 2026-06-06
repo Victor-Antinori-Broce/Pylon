@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import type { DatasetDefinition } from "@gremius/shared";
+  import { ArrowLeft } from "lucide-svelte";
+
   import SchemaBuilder from "$lib/components/datasets/SchemaBuilder.svelte";
   import { datasetStore } from "$lib/states/datasets.svelte";
-  import { ArrowLeft } from "lucide-svelte";
-  import type { DatasetDefinition } from "@gremius/shared";
+
+  import { goto } from "$app/navigation";
 
   let saving = $state(false);
   let error = $state<string | null>(null);
@@ -15,7 +17,7 @@
     icon: "📦",
     description: "",
     fields: [],
-    customEndpoints: []
+    customEndpoints: [],
   } as DatasetDefinition;
 
   async function handleSave(datasetSchema: DatasetDefinition) {
@@ -40,7 +42,10 @@
 
 <div class="space-y-6 animate-fade-in pb-20">
   <div class="flex items-center gap-4">
-    <button class="btn-icon p-2 hover:bg-gremius-surface rounded-lg transition-colors text-gremius-subtle" onclick={handleCancel}>
+    <button
+      class="btn-icon p-2 hover:bg-gremius-surface rounded-lg transition-colors text-gremius-subtle"
+      onclick={handleCancel}
+    >
       <ArrowLeft class="w-5 h-5" />
     </button>
     <div>
@@ -58,10 +63,6 @@
   {/if}
 
   <div class="card p-6 border-gremius-cyan/20">
-    <SchemaBuilder 
-      definition={initialDatasetData}
-      onSave={handleSave} 
-      onCancel={handleCancel} 
-    />
+    <SchemaBuilder definition={initialDatasetData} onSave={handleSave} onCancel={handleCancel} />
   </div>
 </div>

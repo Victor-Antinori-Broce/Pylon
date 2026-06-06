@@ -7,19 +7,19 @@
 
 ## Error Index
 
-| Error Pattern | Root Cause | Recovery Tool / Action |
-|---------------|------------|------------------------|
-| `Dataset not found` / `Dataset "x" not found` | Wrong UUID or slug; dataset never created | `gremius_list_datasets` |
-| `RLS blocked the query` / `policy denied` | Auth disabled or user lacks ownership | `gremius_enable_auth` + verify dataset policy |
-| `Grimoire not installed` / `module not found` | Grimoire package missing or not registered | `gremius_install_grimoire` |
-| `Migration failed` / `SQL syntax error` | Invalid DDL in grimoire migration or manual schema drift | Check migration SQL, fix syntax, retry install |
-| `Queue not available` / `BullMQ connection error` | Valkey (Redis) is down or unreachable | Verify `docker compose up -d valkey` |
-| `Invalid API key` / `Unauthorized` | Missing or expired `gremius_sk_*` / `grm_agent_*` token | Regenerate token via `bun run seed:mcp` |
-| `Entry not found` / `Record not found` | Wrong entryId or record already deleted | Re-query with `gremius_query_dataset` |
-| `Unknown tool: x` | Tool name typo or server version mismatch | Verify exact tool name in `docs/ai/tool-reference.json` |
-| `Agent does not have MCP scope` | NHI token lacks `mcp:connect` scope | Re-issue agent identity with correct scopes |
-| `Conflict` / `unique constraint` | Duplicate slug, email, or key | Change the conflicting field and retry |
-| `Timeout` / `Worker did not respond` | Background worker crashed or queue is full | Check worker logs, restart queue consumer |
+| Error Pattern                                     | Root Cause                                               | Recovery Tool / Action                                  |
+| ------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| `Dataset not found` / `Dataset "x" not found`     | Wrong UUID or slug; dataset never created                | `gremius_list_datasets`                                 |
+| `RLS blocked the query` / `policy denied`         | Auth disabled or user lacks ownership                    | `gremius_enable_auth` + verify dataset policy           |
+| `Grimoire not installed` / `module not found`     | Grimoire package missing or not registered               | `gremius_install_grimoire`                              |
+| `Migration failed` / `SQL syntax error`           | Invalid DDL in grimoire migration or manual schema drift | Check migration SQL, fix syntax, retry install          |
+| `Queue not available` / `BullMQ connection error` | Valkey (Redis) is down or unreachable                    | Verify `docker compose up -d valkey`                    |
+| `Invalid API key` / `Unauthorized`                | Missing or expired `gremius_sk_*` / `grm_agent_*` token  | Regenerate token via `bun run seed:mcp`                 |
+| `Entry not found` / `Record not found`            | Wrong entryId or record already deleted                  | Re-query with `gremius_query_dataset`                   |
+| `Unknown tool: x`                                 | Tool name typo or server version mismatch                | Verify exact tool name in `docs/ai/tool-reference.json` |
+| `Agent does not have MCP scope`                   | NHI token lacks `mcp:connect` scope                      | Re-issue agent identity with correct scopes             |
+| `Conflict` / `unique constraint`                  | Duplicate slug, email, or key                            | Change the conflicting field and retry                  |
+| `Timeout` / `Worker did not respond`              | Background worker crashed or queue is full               | Check worker logs, restart queue consumer               |
 
 ---
 

@@ -2,15 +2,15 @@
 // Unit Tests: Agent Authentication & RBAC
 
 import { describe, test, expect } from "vitest";
-import type { AgentAuthContext, AgentScope } from "../../apps/api/src/services/agent-auth";
+
+import type { AgentAuthContext } from "../../apps/api/src/services/agent-auth";
 
 describe("Agent Authentication", () => {
-  
   describe("Token Format", () => {
     test("should validate NHI token format", () => {
       const validToken = "grm_agent_test_abc123xyz";
       const tokenPattern = /^grm_agent_[a-z-]+_[A-Za-z0-9_-]{43}$/;
-      
+
       // Note: Using simplified pattern for test
       const simplePattern = /^grm_agent_/;
       expect(validToken).toMatch(simplePattern);
@@ -19,7 +19,7 @@ describe("Agent Authentication", () => {
     test("should reject legacy API key format", () => {
       const legacyKey = "gremius_sk_abc123";
       const nhiPattern = /^grm_agent_/;
-      
+
       expect(legacyKey).not.toMatch(nhiPattern);
     });
   });
@@ -31,7 +31,7 @@ describe("Agent Authentication", () => {
       type: "service",
       scopes: ["read:issues", "write:intake", "mcp:connect"],
       metadata: {},
-      authenticatedAt: new Date()
+      authenticatedAt: new Date(),
     };
 
     test("should check single scope", () => {
@@ -40,15 +40,15 @@ describe("Agent Authentication", () => {
 
     test("should check multiple scopes with AND logic", () => {
       const required = ["read:issues", "mcp:connect"];
-      const hasAll = required.every(s => mockContext.scopes.includes(s));
-      
+      const hasAll = required.every((s) => mockContext.scopes.includes(s));
+
       expect(hasAll).toBe(true);
     });
 
     test("should check multiple scopes with OR logic", () => {
       const required = ["admin:all", "mcp:connect"];
-      const hasAny = required.some(s => mockContext.scopes.includes(s));
-      
+      const hasAny = required.some((s) => mockContext.scopes.includes(s));
+
       expect(hasAny).toBe(true);
     });
 
@@ -59,12 +59,12 @@ describe("Agent Authentication", () => {
     test("should validate wildcard scopes", () => {
       const contextWithWildcard: AgentAuthContext = {
         ...mockContext,
-        scopes: ["read:*", "write:intake"]
+        scopes: ["read:*", "write:intake"],
       };
 
       // read:* should match read:database, read:files, etc.
       const matchesReadWildcard = (scope: string) => {
-        return contextWithWildcard.scopes.some(s => {
+        return contextWithWildcard.scopes.some((s) => {
           if (s === scope) return true;
           if (s.endsWith(":*") && scope.startsWith(s.slice(0, -1))) return true;
           return false;
@@ -86,7 +86,7 @@ describe("Agent Authentication", () => {
         type: "claude-desktop",
         scopes: ["mcp:connect"],
         metadata: {},
-        authenticatedAt: new Date()
+        authenticatedAt: new Date(),
       };
 
       expect(agent.type).toBe("claude-desktop");
@@ -99,7 +99,7 @@ describe("Agent Authentication", () => {
         type: "service",
         scopes: ["read:issues", "write:intake"],
         metadata: { service: "github-webhook" },
-        authenticatedAt: new Date()
+        authenticatedAt: new Date(),
       };
 
       expect(agent.type).toBe("service");

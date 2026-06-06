@@ -7,48 +7,52 @@
 
 ## 📊 Resumen Ejecutivo
 
-| Estado | Cantidad | Grimoires |
-|--------|----------|-----------|
-| ✅ Sin cambios necesarios | 3 | agents, data-visualizer, dms |
-| ⚠️ Actualización opcional | 4 | agile, crm, esports, booking |
-| 🔴 Requiere actualización | 7 | academy-lms, blocks, blog, datasets, directory, games, streamers |
+| Estado                    | Cantidad | Grimoires                                                        |
+| ------------------------- | -------- | ---------------------------------------------------------------- |
+| ✅ Sin cambios necesarios | 3        | agents, data-visualizer, dms                                     |
+| ⚠️ Actualización opcional | 4        | agile, crm, esports, booking                                     |
+| 🔴 Requiere actualización | 7        | academy-lms, blocks, blog, datasets, directory, games, streamers |
 
 ---
 
 ## 🔴 PRIORIDAD ALTA - Requieren actualización
 
 ### 1. grimoire-academy-lms
+
 **Problema:** Usa nombre de dependencia antiguo `core-media-library`
 
 **Cambios necesarios:**
+
 ```json
 // grimoire.json
 {
   "dependencies": {
-    "grimoires": ["grimoire-media"]  // Antes: "core-media-library"
+    "grimoires": ["grimoire-media"] // Antes: "core-media-library"
   }
 }
 ```
 
 **Schema - Migrar URLs a media_ids:**
+
 ```typescript
 // Antes: cursos.portada (text URL)
 // Después:
-portadaMediaId: uuid("portada_media_id").references(() => media.id)
+portadaMediaId: uuid("portada_media_id").references(() => media.id);
 ```
 
 **Uso de transforms:**
+
 ```typescript
 // Para portadas de cursos:
 `/api/media/preset/${curso.portadaMediaId}/large`
-
 // Para thumbnails de quizzes:
-`/api/media/preset/${quiz.portadaMediaId}/thumbnail`
+`/api/media/preset/${quiz.portadaMediaId}/thumbnail`;
 ```
 
 ---
 
 ### 2. grimoire-blocks
+
 **Problema:** Ya depende de grimoire-media pero no usa transformaciones
 
 **Cambios necesarios:**
@@ -60,7 +64,7 @@ portadaMediaId: uuid("portada_media_id").references(() => media.id)
 <img src={media.publicUrl} />
 
 // Después - Responsive:
-<img 
+<img
   src={`/api/media/preset/${mediaId}/medium`}
   srcset={`
     /api/media/preset/${mediaId}/small 400w,
@@ -71,15 +75,17 @@ portadaMediaId: uuid("portada_media_id").references(() => media.id)
 ```
 
 **Focal point para Hero blocks:**
+
 ```typescript
 // Agregar editor de focal point en admin
 // Usar en renderizado:
-`/api/media/transform/${mediaId}?w=1920&h=1080&fit=cover&fp=${focalPoint.x},${focalPoint.y}`
+`/api/media/transform/${mediaId}?w=1920&h=1080&fit=cover&fp=${focalPoint.x},${focalPoint.y}`;
 ```
 
 ---
 
 ### 3. grimoire-blog
+
 **Problema:** Mezcla de UUID y text URL para imágenes
 
 **Cambios necesarios:**
@@ -87,27 +93,27 @@ portadaMediaId: uuid("portada_media_id").references(() => media.id)
 ```typescript
 // schema.ts - Unificar
 // Antes:
-ogImageUrl: text("og_image_url")
+ogImageUrl: text("og_image_url");
 
 // Después:
-ogImageId: uuid("og_image_id").references(() => media.id)
+ogImageId: uuid("og_image_id").references(() => media.id);
 ```
 
 **Uso de transforms:**
+
 ```typescript
 // Featured image:
 `/api/media/preset/${post.featuredImageId}/large`
-
 // OG Image (1200x630):
 `/api/media/transform/${post.ogImageId}?w=1200&h=630&fit=cover&f=jpeg&q=90`
-
 // Focal point para recorte:
-`/api/media/transform/${post.featuredImageId}?w=800&h=400&fit=cover`
+`/api/media/transform/${post.featuredImageId}?w=800&h=400&fit=cover`;
 ```
 
 ---
 
 ### 4. grimoire-directory
+
 **Problema:** Usa media UUIDs pero sin declarar dependencia
 
 **Cambios necesarios:**
@@ -122,17 +128,18 @@ ogImageId: uuid("og_image_id").references(() => media.id)
 ```
 
 **Uso de transforms:**
+
 ```typescript
 // Employee photo:
-`/api/media/preset/${employee.photoId}/thumbnail`  // 150x150
-
+`/api/media/preset/${employee.photoId}/thumbnail` // 150x150
 // Organization logo:
-`/api/media/preset/${org.logoId}/small`  // 400x300 max
+`/api/media/preset/${org.logoId}/small`; // 400x300 max
 ```
 
 ---
 
 ### 5. grimoire-games
+
 **Problema:** No declara dependencia de grimoire-media
 
 **Cambios necesarios:**
@@ -147,21 +154,22 @@ ogImageId: uuid("og_image_id").references(() => media.id)
 ```
 
 **Uso de transforms:**
+
 ```typescript
 // Cover art:
-`/api/media/preset/${game.coverArtId}/hero`  // 1920x1080
+`/api/media/preset/${game.coverArtId}/hero`; // 1920x1080
 
 // Screenshots gallery:
-screenshots.map(s => `/api/media/preset/${s.mediaId}/thumbnail`)
-
+screenshots.map((s) => `/api/media/preset/${s.mediaId}/thumbnail`)
 // Icon:
-`/api/media/preset/${platform.iconId}/thumbnail`
+`/api/media/preset/${platform.iconId}/thumbnail`;
 ```
 
 **Focal point para cover art:**
+
 ```typescript
 // Permitir definir focal point en admin:
-`/api/media/transform/${coverId}?w=800&h=600&fit=cover&fp=${focalPoint.x},${focalPoint.y}`
+`/api/media/transform/${coverId}?w=800&h=600&fit=cover&fp=${focalPoint.x},${focalPoint.y}`;
 ```
 
 ---
@@ -169,29 +177,32 @@ screenshots.map(s => `/api/media/preset/${s.mediaId}/thumbnail`)
 ## 🟡 PRIORIDAD MEDIA - Actualizaciones menores
 
 ### 6. grimoire-booking
+
 **Problema:** Usa nombre de dependencia antiguo
 
 ```json
 // grimoire.json
 {
   "dependencies": {
-    "optional": ["grimoire-media"]  // Antes: "core-media-library"
+    "optional": ["grimoire-media"] // Antes: "core-media-library"
   }
 }
 ```
 
 **Uso de transforms:**
+
 ```typescript
 // Room cover:
-`/api/media/preset/${room.coverImageId}/medium`
+`/api/media/preset/${room.coverImageId}/medium`;
 
 // Gallery images:
-room.images.map(img => `/api/media/preset/${img.mediaId}/small`)
+room.images.map((img) => `/api/media/preset/${img.mediaId}/small`);
 ```
 
 ---
 
 ### 7. grimoire-datasets
+
 **Problema:** No declara dependencia explícita
 
 ```json
@@ -204,14 +215,16 @@ room.images.map(img => `/api/media/preset/${img.mediaId}/small`)
 ```
 
 **Uso de transforms:**
+
 ```typescript
 // Entry thumbnail:
-`/api/media/preset/${entry.thumbnailId}/thumbnail`
+`/api/media/preset/${entry.thumbnailId}/thumbnail`;
 ```
 
 ---
 
 ### 8. grimoire-streamers
+
 **Problema:** Importa de grimoire-media sin declarar dependencia
 
 ```json
@@ -224,12 +237,13 @@ room.images.map(img => `/api/media/preset/${img.mediaId}/small`)
 ```
 
 **Cambios en schema:**
+
 ```typescript
 // Antes:
-thumbnailUrl: text("thumbnail_url")
+thumbnailUrl: text("thumbnail_url");
 
 // Después:
-thumbnailId: uuid("thumbnail_id").references(() => media.id)
+thumbnailId: uuid("thumbnail_id").references(() => media.id);
 ```
 
 ---
@@ -237,52 +251,55 @@ thumbnailId: uuid("thumbnail_id").references(() => media.id)
 ## 🟢 PRIORIDAD BAJA - Opcionales
 
 ### 9. grimoire-agile
+
 **Opcional:** Agregar cover image con media
 
 ```typescript
 // schema.ts
-portadaMediaId: uuid("portada_media_id").references(() => media.id)
+portadaMediaId: uuid("portada_media_id").references(() => media.id);
 ```
 
 ---
 
 ### 10. grimoire-crm
+
 **Opcional:** Migrar avatars a media
 
 ```typescript
 // Antes:
-logo: text("logo_url")
-avatar: text("avatar_url")
+logo: text("logo_url");
+avatar: text("avatar_url");
 
 // Después:
-logoId: uuid("logo_id").references(() => media.id)
-avatarId: uuid("avatar_id").references(() => media.id)
+logoId: uuid("logo_id").references(() => media.id);
+avatarId: uuid("avatar_id").references(() => media.id);
 ```
 
 ---
 
 ### 11. grimoire-esports
+
 **Opcional:** Migrar URLs a media
 
 ```typescript
 // Antes:
-avatarUrl: text("avatar_url")
-logoUrl: text("logo_url")
+avatarUrl: text("avatar_url");
+logoUrl: text("logo_url");
 
 // Después:
-avatarId: uuid("avatar_id").references(() => media.id)
-logoId: uuid("logo_id").references(() => media.id)
+avatarId: uuid("avatar_id").references(() => media.id);
+logoId: uuid("logo_id").references(() => media.id);
 ```
 
 ---
 
 ## ✅ Sin cambios necesarios
 
-| Grimoire | Razón |
-|----------|-------|
-| **grimoire-agents** | No usa media |
-| **grimoire-data-visualizer** | No usa media |
-| **grimoire-dms** | Tiene su propio sistema de archivos |
+| Grimoire                     | Razón                               |
+| ---------------------------- | ----------------------------------- |
+| **grimoire-agents**          | No usa media                        |
+| **grimoire-data-visualizer** | No usa media                        |
+| **grimoire-dms**             | Tiene su propio sistema de archivos |
 
 ---
 
@@ -304,7 +321,7 @@ logoId: uuid("logo_id").references(() => media.id)
 
 ```typescript
 // 1. Schema - Agregar nuevo campo
-mediaId: uuid("media_id").references(() => media.id)
+mediaId: uuid("media_id").references(() => media.id);
 
 // 2. Migration - Migrar datos existentes
 // Crear entradas en tabla media desde URLs existentes

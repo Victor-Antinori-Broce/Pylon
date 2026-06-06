@@ -1,25 +1,27 @@
 <script lang="ts">
   /**
    * BlogDataExplorer - Vista del Blog usando DataExplorer genérico
-   * 
+   *
    * Esta vista demuestra cómo usar el DataExplorer extensible
    * con campos calculados y field types custom.
    */
+  import { Edit2, Eye, Trash2, FileText, Megaphone } from "lucide-svelte";
+
   import DataExplorer from "$lib/components/DataExplorer.svelte";
   import { calculatedHelpers } from "$lib/data-explorer/fieldRegistry";
-  import { Edit2, Eye, Trash2, FileText, Megaphone } from "lucide-svelte";
+
   import { goto } from "$app/navigation";
-  
+
   // Configuración de columnas con field types
   const columns = [
     {
       field: "title",
       label: "Title",
       width: "30%",
-      fieldConfig: { 
-        type: "text", 
-        options: { maxLength: 200 }
-      }
+      fieldConfig: {
+        type: "text",
+        options: { maxLength: 200 },
+      },
     },
     {
       field: "status",
@@ -32,10 +34,10 @@
             draft: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
             scheduled: "bg-blue-500/10 text-blue-500 border-blue-500/20",
             published: "bg-green-500/10 text-green-500 border-green-500/20",
-            archived: "bg-gray-500/10 text-gray-400 border-gray-500/20"
-          }
-        }
-      }
+            archived: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+          },
+        },
+      },
     },
     {
       field: "author",
@@ -44,9 +46,9 @@
       fieldConfig: {
         type: "calculated",
         options: {
-          calculate: (row: any) => row.author?.name || row.author?.email || "—"
-        }
-      }
+          calculate: (row: any) => row.author?.name || row.author?.email || "—",
+        },
+      },
     },
     {
       field: "readingTime",
@@ -61,9 +63,9 @@
             const minutes = Math.ceil(words / 200);
             return `${minutes} min`;
           },
-          format: "text"
-        }
-      }
+          format: "text",
+        },
+      },
     },
     {
       field: "publishedAt",
@@ -76,9 +78,9 @@
             if (!row.publishedAt) return "—";
             return calculatedHelpers.timeAgo(row.publishedAt);
           },
-          format: "text"
-        }
-      }
+          format: "text",
+        },
+      },
     },
     {
       field: "isLive",
@@ -92,12 +94,12 @@
             const pubDate = new Date(row.publishedAt);
             return pubDate <= new Date() ? "Live" : "Scheduled";
           },
-          format: "badge"
-        }
-      }
-    }
+          format: "badge",
+        },
+      },
+    },
   ];
-  
+
   // Acciones por fila
   const rowActions = [
     {
@@ -106,7 +108,7 @@
       icon: Edit2,
       handler: (row: any) => {
         goto(`/blog/posts/${row.id}/edit`);
-      }
+      },
     },
     {
       id: "view",
@@ -114,10 +116,10 @@
       icon: Eye,
       handler: (row: any) => {
         window.open(`/blog/${row.slug}`, "_blank");
-      }
-    }
+      },
+    },
   ];
-  
+
   // Acciones bulk
   const bulkActions = [
     {
@@ -127,7 +129,7 @@
       handler: async (ids: string[]) => {
         // Implementar bulk publish
         console.log("Publishing:", ids);
-      }
+      },
     },
     {
       id: "delete",
@@ -138,10 +140,10 @@
         if (confirm(`Delete ${ids.length} posts?`)) {
           console.log("Deleting:", ids);
         }
-      }
-    }
+      },
+    },
   ];
-  
+
   // Configuración completa
   const config = {
     table: "blog_posts",
@@ -150,9 +152,9 @@
     searchableFields: ["title", "excerpt"],
     filterableFields: ["status", "authorId"],
     rowActions,
-    bulkActions
+    bulkActions,
   };
-  
+
   function handleRowClick(row: any) {
     goto(`/blog/posts/${row.id}`);
   }
@@ -168,24 +170,24 @@
         </div>
         Blog Posts
       </h1>
-      <p class="text-gremius-subtle mt-1">
-        Manage your content with the DataExplorer
-      </p>
+      <p class="text-gremius-subtle mt-1">Manage your content with the DataExplorer</p>
     </div>
-    <a 
-      href="/content/edit?collection=blog-posts" 
+    <a
+      href="/content/edit?collection=blog-posts"
       class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
     >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        ><path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"
+        /></svg
+      >
       <span>Nuevo Post</span>
     </a>
   </div>
 
   <!-- DataExplorer -->
-  <DataExplorer
-    table="blog_posts"
-    {config}
-    apiEndpoint="/api/blog"
-    onRowClick={handleRowClick}
-  />
+  <DataExplorer table="blog_posts" {config} apiEndpoint="/api/blog" onRowClick={handleRowClick} />
 </div>

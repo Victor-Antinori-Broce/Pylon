@@ -2,15 +2,15 @@
 
 ## 📋 Resumen Ejecutivo
 
-| Aspecto | Directus | Gremius (v0.8.0-beta) |
-|---------|----------|----------------------|
-| **Madurez** | v10.x, años en producción | v0.8.0-beta, en desarrollo activo |
-| **Estabilidad** | Probado en enterprise | Beta, APIs pueden cambiar |
-| **Arquitectura** | Monolítico extensible | Modular (Grimoires) |
-| **Stack Backend** | Node.js + Express + Knex | Bun + Hono + Drizzle |
-| **Stack Frontend** | Vue 3 + Vite | SvelteKit + Vite |
-| **Performance** | Rápido, optimizado | Muy rápido (Bun) |
-| **Comunidad** | Grande, activa | Pequeña, creciente |
+| Aspecto            | Directus                  | Gremius (v0.8.0-beta)             |
+| ------------------ | ------------------------- | --------------------------------- |
+| **Madurez**        | v10.x, años en producción | v0.8.0-beta, en desarrollo activo |
+| **Estabilidad**    | Probado en enterprise     | Beta, APIs pueden cambiar         |
+| **Arquitectura**   | Monolítico extensible     | Modular (Grimoires)               |
+| **Stack Backend**  | Node.js + Express + Knex  | Bun + Hono + Drizzle              |
+| **Stack Frontend** | Vue 3 + Vite              | SvelteKit + Vite                  |
+| **Performance**    | Rápido, optimizado        | Muy rápido (Bun)                  |
+| **Comunidad**      | Grande, activa            | Pequeña, creciente                |
 
 ---
 
@@ -35,6 +35,7 @@
 ```
 
 **Características:**
+
 - Todo incluido, funciona "out of the box"
 - Database agnostic - cambia de DB sin tocar código
 - Migrations automáticas desde UI
@@ -67,6 +68,7 @@
 ```
 
 **Características:**
+
 - Instala solo lo que necesitas
 - Cada grimoire puede escalar independientemente
 - Stack moderno (Bun, Hono, Drizzle)
@@ -78,14 +80,14 @@
 
 ### 1. Stack Tecnológico
 
-| Componente | Directus | Gremius | Ventaja |
-|------------|----------|---------|---------|
-| **Runtime** | Node.js | Bun | Gremius (más rápido) |
-| **Framework** | Express | Hono | Gremius (más ligero) |
-| **ORM** | Knex + custom | Drizzle | Gremius (type-safe) |
-| **Frontend** | Vue 3 | Svelte 5 | Subjetivo |
-| **Build tool** | Vite | Vite | Empate |
-| **Lenguaje** | JavaScript/TS | TypeScript | Gremius (tipado nativo) |
+| Componente     | Directus      | Gremius    | Ventaja                 |
+| -------------- | ------------- | ---------- | ----------------------- |
+| **Runtime**    | Node.js       | Bun        | Gremius (más rápido)    |
+| **Framework**  | Express       | Hono       | Gremius (más ligero)    |
+| **ORM**        | Knex + custom | Drizzle    | Gremius (type-safe)     |
+| **Frontend**   | Vue 3         | Svelte 5   | Subjetivo               |
+| **Build tool** | Vite          | Vite       | Empate                  |
+| **Lenguaje**   | JavaScript/TS | TypeScript | Gremius (tipado nativo) |
 
 ### 2. Performance (Benchmarks Aproximados)
 
@@ -107,28 +109,28 @@ Requests/segundo (producción, aproximado):
 
 ### 3. Base de Datos
 
-| Feature | Directus | Gremius |
-|---------|----------|---------|
-| **PostgreSQL** | ✅ Full support | ✅ Nativo |
-| **MySQL** | ✅ Full support | ⚠️ Requiere adaptador |
-| **SQLite** | ✅ Full support | ⚠️ Requiere adaptador |
-| **Oracle** | ✅ Full support | ❌ No soportado |
-| **MSSQL** | ✅ Full support | ❌ No soportado |
-| **CockroachDB** | ✅ Compatible | ⚠️ No testeado |
-| **Migrations automáticas** | ✅ UI-driven | ⚠️ CLI manual |
+| Feature                    | Directus        | Gremius               |
+| -------------------------- | --------------- | --------------------- |
+| **PostgreSQL**             | ✅ Full support | ✅ Nativo             |
+| **MySQL**                  | ✅ Full support | ⚠️ Requiere adaptador |
+| **SQLite**                 | ✅ Full support | ⚠️ Requiere adaptador |
+| **Oracle**                 | ✅ Full support | ❌ No soportado       |
+| **MSSQL**                  | ✅ Full support | ❌ No soportado       |
+| **CockroachDB**            | ✅ Compatible   | ⚠️ No testeado        |
+| **Migrations automáticas** | ✅ UI-driven    | ⚠️ CLI manual         |
 
 ### 4. Sistema de Contenido
 
-| Feature | Directus | Gremius |
-|---------|----------|---------|
-| **Colecciones dinámicas** | ✅ UI sin código | ✅ Código (grimoires) |
-| **Campos calculados** | 🟡 Extensión | ✅ Nativo (calculated-fields) |
-| **Relaciones** | ✅ Visual drag-drop | ✅ Programático |
-| **Relaciones bidireccionales** | ✅ Automático | ⚠️ Manual |
-| **Revisions/Historial** | ✅ Nativo | ❌ No implementado |
-| **Draft/Published** | ✅ Nativo | ⚠️ Manual |
-| **Traducciones i18n** | ✅ Completo | 🔄 En desarrollo |
-| **Validaciones** | ✅ UI + código | ✅ Zod integrado |
+| Feature                        | Directus            | Gremius                       |
+| ------------------------------ | ------------------- | ----------------------------- |
+| **Colecciones dinámicas**      | ✅ UI sin código    | ✅ Código (grimoires)         |
+| **Campos calculados**          | 🟡 Extensión        | ✅ Nativo (calculated-fields) |
+| **Relaciones**                 | ✅ Visual drag-drop | ✅ Programático               |
+| **Relaciones bidireccionales** | ✅ Automático       | ⚠️ Manual                     |
+| **Revisions/Historial**        | ✅ Nativo           | ❌ No implementado            |
+| **Draft/Published**            | ✅ Nativo           | ⚠️ Manual                     |
+| **Traducciones i18n**          | ✅ Completo         | 🔄 En desarrollo              |
+| **Validaciones**               | ✅ UI + código      | ✅ Zod integrado              |
 
 ### 5. API y Queries
 
@@ -172,16 +174,16 @@ GET /api/datasets/posts/entries
 
 ### 6. Asset Management
 
-| Feature | Directus | Gremius |
-|---------|----------|---------|
-| **Upload múltiple** | ✅ Nativo | ✅ Nativo (Multer) |
-| **Transformaciones on-the-fly** | ✅ /assets/:id?width=800&format=webp | ❌ No implementado |
-| **Presets (thumbnail, medium, large)** | ✅ Configurable | ❌ No implementado |
-| **Focal point / Smart crop** | ✅ Nativo | ❌ No implementado |
-| **WebP/AVIF automático** | ✅ Nativo | ❌ No implementado |
-| **CDN integration** | ✅ S3, GCS, Azure, Cloudflare | ⚠️ Local only (S3 roadmap) |
-| **EXIF preservation** | ✅ Nativo | ❌ No implementado |
-| **Video streaming** | ✅ Extensión | ❌ No implementado |
+| Feature                                | Directus                             | Gremius                    |
+| -------------------------------------- | ------------------------------------ | -------------------------- |
+| **Upload múltiple**                    | ✅ Nativo                            | ✅ Nativo (Multer)         |
+| **Transformaciones on-the-fly**        | ✅ /assets/:id?width=800&format=webp | ❌ No implementado         |
+| **Presets (thumbnail, medium, large)** | ✅ Configurable                      | ❌ No implementado         |
+| **Focal point / Smart crop**           | ✅ Nativo                            | ❌ No implementado         |
+| **WebP/AVIF automático**               | ✅ Nativo                            | ❌ No implementado         |
+| **CDN integration**                    | ✅ S3, GCS, Azure, Cloudflare        | ⚠️ Local only (S3 roadmap) |
+| **EXIF preservation**                  | ✅ Nativo                            | ❌ No implementado         |
+| **Video streaming**                    | ✅ Extensión                         | ❌ No implementado         |
 
 ### 7. Permisos y Autenticación
 
@@ -220,24 +222,26 @@ GET /api/datasets/posts/entries
 
 ### 8. Real-time / WebSockets
 
-| Feature | Directus | Gremius |
-|---------|----------|---------|
-| **WebSocket nativo** | ✅ wss:// | ❌ No implementado |
-| **Server-Sent Events** | ✅ Nativo | ❌ No implementado |
-| **Subscriptions** | ✅ GraphQL + WS | ❌ No implementado |
-| **Broadcasting** | ✅ Nativo | ❌ No implementado |
-| **Live updates** | ✅ Client SDK | ❌ HTTP polling manual |
+| Feature                | Directus        | Gremius                |
+| ---------------------- | --------------- | ---------------------- |
+| **WebSocket nativo**   | ✅ wss://       | ❌ No implementado     |
+| **Server-Sent Events** | ✅ Nativo       | ❌ No implementado     |
+| **Subscriptions**      | ✅ GraphQL + WS | ❌ No implementado     |
+| **Broadcasting**       | ✅ Nativo       | ❌ No implementado     |
+| **Live updates**       | ✅ Client SDK   | ❌ HTTP polling manual |
 
 ```javascript
 // Directus WebSocket
-const ws = new WebSocket('wss://api.directus.io/websocket');
+const ws = new WebSocket("wss://api.directus.io/websocket");
 
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  collection: 'posts',
-  query: { fields: ['title', 'status'] },
-  event: ['create', 'update', 'delete']
-}));
+ws.send(
+  JSON.stringify({
+    type: "subscribe",
+    collection: "posts",
+    query: { fields: ["title", "status"] },
+    event: ["create", "update", "delete"],
+  })
+);
 
 // Recibes en tiempo real cuando alguien edita
 // { type: 'update', data: { id: 1, title: 'Nuevo' } }
@@ -245,24 +249,24 @@ ws.send(JSON.stringify({
 
 ### 9. Caché y Performance
 
-| Feature | Directus | Gremius |
-|---------|----------|---------|
-| **Query cache** | ✅ Redis, Memory, APCu | ❌ No implementado |
-| **Response cache** | ✅ HTTP Cache Headers | ❌ No implementado |
-| **Asset cache** | ✅ CDN integration | ❌ No implementado |
-| **Permission cache** | ✅ Nativo | ❌ No implementado |
-| **Cache invalidation** | ✅ Smart (por collection) | ❌ N/A |
+| Feature                | Directus                  | Gremius            |
+| ---------------------- | ------------------------- | ------------------ |
+| **Query cache**        | ✅ Redis, Memory, APCu    | ❌ No implementado |
+| **Response cache**     | ✅ HTTP Cache Headers     | ❌ No implementado |
+| **Asset cache**        | ✅ CDN integration        | ❌ No implementado |
+| **Permission cache**   | ✅ Nativo                 | ❌ No implementado |
+| **Cache invalidation** | ✅ Smart (por collection) | ❌ N/A             |
 
 ### 10. Import/Export
 
-| Feature | Directus | Gremius |
-|---------|----------|---------|
-| **CSV Import** | ✅ UI + API | ❌ No implementado |
-| **JSON Import** | ✅ UI + API | ❌ No implementado |
-| **XML Import** | ✅ Extensión | ❌ No implementado |
-| **Transformaciones** | ✅ Mapeo de campos | ❌ No implementado |
-| **Bulk operations** | ✅ Nativo | ⚠️ Manual |
-| **Scheduled exports** | ✅ Extensión | ❌ No implementado |
+| Feature               | Directus           | Gremius            |
+| --------------------- | ------------------ | ------------------ |
+| **CSV Import**        | ✅ UI + API        | ❌ No implementado |
+| **JSON Import**       | ✅ UI + API        | ❌ No implementado |
+| **XML Import**        | ✅ Extensión       | ❌ No implementado |
+| **Transformaciones**  | ✅ Mapeo de campos | ❌ No implementado |
+| **Bulk operations**   | ✅ Nativo          | ⚠️ Manual          |
+| **Scheduled exports** | ✅ Extensión       | ❌ No implementado |
 
 ---
 
@@ -271,9 +275,11 @@ ws.send(JSON.stringify({
 ### Críticos (Bloqueantes para CMS/Blog serio)
 
 #### 1. Database Agnostic
+
 **Problema:** Gremius solo soporta PostgreSQL nativamente.
 
 **Impacto:**
+
 - No puedes ofrecer opción de MySQL a clientes
 - Testing local requiere Postgres (más pesado que SQLite)
 - Migraciones cloud específicas pueden ser problemáticas
@@ -296,9 +302,11 @@ interface DatabaseAdapter {
 ```
 
 #### 2. Sistema de Revisions
+
 **Problema:** No hay historial de cambios ni rollback.
 
 **Impacto:**
+
 - Editor borra contenido por error? Irrecuperable
 - No hay audit trail de quién cambió qué
 - No se puede hacer A/B testing de contenido
@@ -314,14 +322,16 @@ interface DatabaseAdapter {
 // - revision_diffs
 
 // API:
-GET /api/content/posts/123/revisions
-GET /api/content/posts/123/revisions/5/restore
+GET / api / content / posts / 123 / revisions;
+GET / api / content / posts / 123 / revisions / 5 / restore;
 ```
 
 #### 3. Asset Pipeline
+
 **Problema:** Solo upload básico, sin transformaciones.
 
 **Impacto:**
+
 - Imágenes no optimizadas = mala performance web
 - No responsive images automáticas
 - No WebP/AVIF para mejor compresión
@@ -343,9 +353,11 @@ GET /api/assets/:id/preset/thumbnail
 ```
 
 #### 4. Full-Text Search
+
 **Problema:** Solo búsqueda exacta, sin indexación.
 
 **Impacto:**
+
 - Búsquedas lentas en tablas grandes
 - No typo-tolerance
 - No facets/filters de búsqueda
@@ -365,9 +377,11 @@ GET /api/search?q=query+con+typos&collection=posts
 ```
 
 #### 5. Query Engine Avanzado
+
 **Problema:** Faltan aggregaciones y queries complejas.
 
 **Impacto:**
+
 - No dashboards de analytics nativos
 - Reportes requieren múltiples queries manuales
 - No group by, sum, avg, count por campo
@@ -386,6 +400,7 @@ GET /api/datasets/posts/aggregate
 ### Medios (Mejoras significativas)
 
 #### 6. Real-time / WebSockets
+
 **Solución:** Nuevo `grimoire-realtime`
 
 ```typescript
@@ -394,6 +409,7 @@ GET /api/datasets/posts/aggregate
 ```
 
 #### 7. Field-Level Permissions
+
 **Solución:** Extensión de `grimoire-auth`
 
 ```typescript
@@ -409,22 +425,25 @@ GET /api/datasets/posts/aggregate
 ```
 
 #### 8. Import/Export Nativo
+
 **Solución:** Extensión de `grimoire-content`
 
 ```typescript
 POST /api/content/import/csv
   ?mapping[Title]=title
   &mapping[Body]=content
-  
+
 GET /api/content/export/posts?format=xlsx
 ```
 
 ### Baja Prioridad (Nice to have)
 
 #### 9. GraphQL API
+
 **Solución:** Nuevo `grimoire-graphql` o extensión
 
 #### 10. Scheduled Tasks / Cron
+
 **Solución:** Nuevo `grimoire-scheduler`
 
 ---
@@ -459,13 +478,13 @@ Gremius: Solo lo necesitas
 
 ### 3. Developer Experience (para developers)
 
-| Aspecto | Directus | Gremius |
-|---------|----------|---------|
-| Customizar core | Difícil (fork) | Fácil (tu código) |
-| Debugging | Stack propietario | Standard TS/Bun |
-| Type safety | Parcial | 100% end-to-end |
-| Hot reload | Rápido | Ultra-rápido (Bun) |
-| Bundle size | ~2MB admin | ~800KB admin |
+| Aspecto         | Directus          | Gremius            |
+| --------------- | ----------------- | ------------------ |
+| Customizar core | Difícil (fork)    | Fácil (tu código)  |
+| Debugging       | Stack propietario | Standard TS/Bun    |
+| Type safety     | Parcial           | 100% end-to-end    |
+| Hot reload      | Rápido            | Ultra-rápido (Bun) |
+| Bundle size     | ~2MB admin        | ~800KB admin       |
 
 ### 4. Calculated Fields Nativos
 
@@ -535,36 +554,42 @@ Gremius: Solo lo necesitas
 ## 🚀 Roadmap Sugerido para Gremius
 
 ### Fase 1: Core Foundation (Meses 1-2)
+
 - [ ] Database Adapter Pattern (PostgreSQL, SQLite, MySQL)
 - [ ] Migration System automático (diff-based)
 - [ ] Query Engine extensible con aggregaciones
 - [ ] Cache Interface con implementación Redis
 
 ### Fase 2: Content Maturity (Meses 2-3)
+
 - [ ] Sistema de Revisions/Auditoría (grimoire-content)
 - [ ] Draft/Published workflow nativo
 - [ ] Field-level permissions (grimoire-auth)
 - [ ] Import/Export (CSV, JSON, Excel)
 
 ### Fase 3: Media & Assets (Meses 3-4)
+
 - [ ] Nuevo `grimoire-assets`
 - [ ] Transformaciones on-the-fly (Sharp)
 - [ ] Focal point y smart crops
 - [ ] CDN integration (S3, R2, GCS)
 
 ### Fase 4: Search & Discovery (Meses 4-5)
+
 - [ ] Nuevo `grimoire-search`
 - [ ] Full-text search (pgvector/Meilisearch)
 - [ ] Faceted search
 - [ ] Autocomplete/suggestions
 
 ### Fase 5: Real-time (Meses 5-6)
+
 - [ ] Nuevo `grimoire-realtime`
 - [ ] WebSocket support
 - [ ] Server-Sent Events
 - [ ] Pub/Sub entre instancias
 
 ### Fase 6: Enterprise Features (Meses 6-8)
+
 - [ ] GraphQL API
 - [ ] Advanced webhooks
 - [ ] Scheduled tasks/cron
@@ -574,14 +599,14 @@ Gremius: Solo lo necesitas
 
 ## 📈 Proyección: ¿Cuándo Gremius alcanza a Directus?
 
-| Métrica | Directus Hoy | Gremius Hoy | Gremius + 12 meses |
-|---------|--------------|-------------|-------------------|
-| **Madurez** | 95% | 40% | 80% |
-| **Features core** | 100% | 60% | 90% |
-| **Ecosistema** | 100% | 20% | 50% |
-| **Documentación** | 100% | 30% | 70% |
-| **Performance** | 85% | 95% | 95% |
-| **DX (developers)** | 70% | 90% | 90% |
+| Métrica             | Directus Hoy | Gremius Hoy | Gremius + 12 meses |
+| ------------------- | ------------ | ----------- | ------------------ |
+| **Madurez**         | 95%          | 40%         | 80%                |
+| **Features core**   | 100%         | 60%         | 90%                |
+| **Ecosistema**      | 100%         | 20%         | 50%                |
+| **Documentación**   | 100%         | 30%         | 70%                |
+| **Performance**     | 85%          | 95%         | 95%                |
+| **DX (developers)** | 70%          | 90%         | 90%                |
 
 **Conclusión:** Gremius necesita ~8-12 meses de desarrollo activo para alcanzar paridad técnica con Directus en features core, pero manteniendo sus ventajas de arquitectura y stack moderno.
 
@@ -590,11 +615,13 @@ Gremius: Solo lo necesitas
 ## 💭 Veredicto Final
 
 ### Para la mayoría de proyectos hoy: **Directus gana**
+
 - Estable, probado, documentado
 - Feature-complete para CMS/Blog/Enterprise
 - No necesitas desarrollar nada
 
 ### Para proyectos específicos mañana: **Gremius tiene potencial**
+
 - Mejor base arquitectónica
 - Stack más moderno y rápido
 - Mayor flexibilidad a largo plazo
@@ -603,6 +630,6 @@ Gremius: Solo lo necesitas
 
 ---
 
-*Documento generado el: 2024-04-12*  
-*Versión de análisis: 1.0*  
-*Próxima revisión: v0.9.0-beta de Gremius*
+_Documento generado el: 2024-04-12_  
+_Versión de análisis: 1.0_  
+_Próxima revisión: v0.9.0-beta de Gremius_

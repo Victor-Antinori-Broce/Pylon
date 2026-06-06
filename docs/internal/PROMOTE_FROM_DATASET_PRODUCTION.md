@@ -23,14 +23,17 @@ packages/admin/src/
 ## 🔌 API Endpoints Utilizados
 
 ### GET `/api/data-sets`
+
 Lista todos los datasets disponibles.
 
 **Query Parameters:**
+
 - `limit` (number, optional): Máximo de resultados (default: 50, max: 200)
 - `page` (number, optional): Página para paginación
 - `search` (string, optional): Búsqueda por nombre o descripción
 
 **Response:**
+
 ```typescript
 {
   docs: Array<{
@@ -57,15 +60,18 @@ Lista todos los datasets disponibles.
 ```
 
 ### GET `/api/data-sets/:id/entries`
+
 Lista las entradas de un dataset específico.
 
 **Query Parameters:**
+
 - `limit` (number, optional): Máximo de resultados (default: 20)
 - `page` (number, optional): Página para paginación
 - `search` (string, optional): Búsqueda en los datos
 - `status` (string, optional): Filtrar por status
 
 **Response:**
+
 ```typescript
 {
   docs: Array<{
@@ -93,6 +99,7 @@ Blog Editor → [From Dataset] → Select Dataset → Select Entry → Preview �
 ```
 
 **Transformación de datos:**
+
 ```javascript
 Dataset Entry:
 {
@@ -128,6 +135,7 @@ Page Builder → [From Dataset] → Select Dataset → Select Entry → Preview 
 ```
 
 **Generación de bloques:**
+
 ```javascript
 Dataset Entry:
 {
@@ -152,7 +160,9 @@ Page Blocks:
 ## 🔧 Algoritmos de Transformación
 
 ### Extracción de Título
+
 Busca en orden:
+
 1. `title`
 2. `name`
 3. `headline`
@@ -161,7 +171,9 @@ Busca en orden:
 6. Fallback: "Post from {dataset.name}"
 
 ### Extracción de Descripción
+
 Busca en orden:
+
 1. `description`
 2. `summary`
 3. `overview`
@@ -169,7 +181,9 @@ Busca en orden:
 5. `content` (truncado)
 
 ### Extracción de Tags
+
 Busca campos:
+
 - `tags` (array o string)
 - `tag`
 - `categories`
@@ -180,7 +194,9 @@ Busca campos:
 - `labels`
 
 ### Extracción de Imagen
+
 Busca campos:
+
 - `coverImage`
 - `featuredImage`
 - `image`
@@ -190,16 +206,16 @@ Busca campos:
 
 ### Generación de Bloques (Page Builder)
 
-| Bloque | Condición | Contenido |
-|--------|-----------|-----------|
-| `hero` | Siempre | Título + Descripción + Imagen principal |
-| `text` | Si hay descripción | Descripción como HTML |
-| `cards` | Si hay features/specs/highlights | Cada item como card |
-| `grid` | Si hay múltiples imágenes | Galería de imágenes |
-| `image` | Si hay imagen individual | Imagen destacada |
-| `quote` | Si hay quote/testimonial/review | Testimonio con autor |
-| `video` | Si hay videoUrl/youtubeUrl | Video embebido |
-| `cta` | Siempre | Call to action final |
+| Bloque  | Condición                        | Contenido                               |
+| ------- | -------------------------------- | --------------------------------------- |
+| `hero`  | Siempre                          | Título + Descripción + Imagen principal |
+| `text`  | Si hay descripción               | Descripción como HTML                   |
+| `cards` | Si hay features/specs/highlights | Cada item como card                     |
+| `grid`  | Si hay múltiples imágenes        | Galería de imágenes                     |
+| `image` | Si hay imagen individual         | Imagen destacada                        |
+| `quote` | Si hay quote/testimonial/review  | Testimonio con autor                    |
+| `video` | Si hay videoUrl/youtubeUrl       | Video embebido                          |
+| `cta`   | Siempre                          | Call to action final                    |
 
 ## ⚠️ Manejo de Errores
 
@@ -224,6 +240,7 @@ Busca campos:
 ### AbortController
 
 Todos los requests usan `AbortController` para:
+
 - Cancelar requests pendientes al cambiar de página
 - Evitar race conditions
 - Limpiar al destruir el componente
@@ -247,15 +264,15 @@ Todos los requests usan `AbortController` para:
 
 ### Optimizaciones
 
-1. **Pagination**: 
+1. **Pagination**:
    - Datasets: 100 por página
    - Entries: 20 por página
 
-2. **Debounced Search**: 
+2. **Debounced Search**:
    - Enter para buscar (no on every keystroke)
    - Evita requests innecesarios
 
-3. **Lazy Loading**: 
+3. **Lazy Loading**:
    - Entradas se cargan solo al seleccionar dataset
    - Preview se genera on-demand
 
@@ -276,33 +293,33 @@ Todos los requests usan `AbortController` para:
 
 ```typescript
 // Transformación de datos
-describe('transformEntryToPost', () => {
-  it('should extract title from common fields');
-  it('should generate proper excerpt');
-  it('should extract tags from various formats');
-  it('should handle missing data gracefully');
-  it('should generate valid MDX content');
+describe("transformEntryToPost", () => {
+  it("should extract title from common fields");
+  it("should generate proper excerpt");
+  it("should extract tags from various formats");
+  it("should handle missing data gracefully");
+  it("should generate valid MDX content");
 });
 
 // Generación de bloques
-describe('generateBlocks', () => {
-  it('should create hero block with image');
-  it('should create cards from features array');
-  it('should handle missing optional fields');
-  it('should generate CTA with correct URL');
+describe("generateBlocks", () => {
+  it("should create hero block with image");
+  it("should create cards from features array");
+  it("should handle missing optional fields");
+  it("should generate CTA with correct URL");
 });
 ```
 
 ### E2E Tests
 
 ```typescript
-test('create post from dataset', async () => {
-  await page.goto('/posts/new');
-  await page.click('text=From Dataset');
-  await page.click('text=Games');
-  await page.click('text=Elden Ring');
-  await page.click('text=Create Post');
-  await expect(page.locator('input[name="title"]')).toHaveValue('Elden Ring');
+test("create post from dataset", async () => {
+  await page.goto("/posts/new");
+  await page.click("text=From Dataset");
+  await page.click("text=Games");
+  await page.click("text=Elden Ring");
+  await page.click("text=Create Post");
+  await expect(page.locator('input[name="title"]')).toHaveValue("Elden Ring");
 });
 ```
 

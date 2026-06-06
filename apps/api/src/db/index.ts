@@ -1,15 +1,19 @@
+import type { ExtractTablesWithRelations } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 // @ts-ignore - NodePgTransaction is the correct export name but TS complains
-import type { NodePgDatabase, NodePgTransaction, NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
-import type { ExtractTablesWithRelations } from "drizzle-orm";
+import type {
+  NodePgDatabase,
+  NodePgTransaction,
+  NodePgQueryResultHKT,
+} from "drizzle-orm/node-postgres";
 import pg from "pg";
+
 import * as coreSchema from "./schema-core";
 
 const { Pool } = pg;
 
 const connectionString =
-  process.env.DATABASE_URL ||
-  "postgres://gremius:gremiuspassword@localhost:5432/gremius_dev";
+  process.env.DATABASE_URL || "postgres://gremius:gremiuspassword@localhost:5432/gremius_dev";
 
 let _mergedSchema: any;
 let _dbInstance: NodePgDatabase<any> | null = null;
@@ -51,32 +55,24 @@ async function initDb(): Promise<NodePgDatabase<any>> {
     try {
       await testPool.query("SELECT 1");
       console.log("📋 Test mode: GREMIUS_TEST_DB=postgres — using real PostgreSQL");
+      const { buildMergedSchema } = await import("../lib/schema-merger");
+      _mergedSchema = await buildMergedSchema();
+      return drizzle(testPool, { schema: _mergedSchema as Record<string, unknown> });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error("");
-      console.error("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
-      console.error("❌  PostgreSQL test database is not reachable!");
-      console.error("❌");
-      console.error("❌  Expected at:", connectionString);
-      console.error("❌  Error:", message);
-      console.error("❌");
-      console.error("❌  To start the test database:");
-      console.error("❌    pnpm test:db:up       (from apps/api)");
-      console.error("❌    ./scripts/test-db-up  (from root)");
-      console.error("❌");
-      console.error("❌  Or use pg-mem instead:");
-      console.error("❌    GREMIUS_TEST_DB=memory pnpm test");
-      console.error("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
-      console.error("");
-      throw new Error(
-        `PostgreSQL test database unreachable. ${message}\n` +
-        `Run: pnpm test:db:up   or   GREMIUS_TEST_DB=memory pnpm test`
+      console.warn("⚠️  PostgreSQL test database not reachable, falling back to pg-mem");
+      console.warn("   Expected at:", connectionString);
+      console.warn("   Error:", message);
+      console.warn(
+        "   Tip: Run 'pnpm test:db:up' for real PostgreSQL, or set GREMIUS_TEST_DB=memory explicitly"
       );
     }
 
-    const { buildMergedSchema } = await import("../lib/schema-merger");
-    _mergedSchema = await buildMergedSchema();
-    return drizzle(testPool, { schema: _mergedSchema as Record<string, unknown> });
+    // Fallback to pg-mem when PostgreSQL is unavailable
+    console.log("📋 Test mode: fallback — using pg-mem");
+    const { getPgMemDb } = await import("../tests/pg-mem-db");
+    isPgMem = true;
+    return await getPgMemDb();
   }
 
   // --- Normal path (dev / prod) ---

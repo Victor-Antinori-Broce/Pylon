@@ -3,6 +3,7 @@
 ## Resumen de Cambios
 
 Este documento describe los cambios realizados para implementar:
+
 1. **Auto-instalación** de grimoires al instalar un realm
 2. **Auto-activación** de grimoires al activar un realm
 3. **Control individual** de grimoires de realm (pueden apagarse/encenderse individualmente)
@@ -13,14 +14,19 @@ Este documento describe los cambios realizados para implementar:
 ### 1. `apps/api/src/routes/system.ts`
 
 #### Nueva función: `getRealmGrimoires(realmId)`
+
 ```typescript
-async function getRealmGrimoires(realmId: string): Promise<{ required: string[]; optional: string[] }>
+async function getRealmGrimoires(
+  realmId: string
+): Promise<{ required: string[]; optional: string[] }>;
 ```
+
 Obtiene todos los grimoires (requeridos y opcionales) de un realm desde su `realm.json`.
 
 #### Modificación: `PATCH /active-theme`
+
 - **Antes**: Solo activaba el tema/realm, los grimoires debían activarse manualmente
-- **Después**: 
+- **Después**:
   - Auto-instala todos los grimoires del realm en la tabla `modules`
   - Auto-activa todos los grimoires del realm
   - Guarda `realmId` en cada módulo para identificar que pertenecen al realm
@@ -28,6 +34,7 @@ Obtiene todos los grimoires (requeridos y opcionales) de un realm desde su `real
   - Retorna lista de grimoires instalados y activados
 
 **Campos guardados en DB para grimoires de realm:**
+
 - `key`: ID del grimoire
 - `name`: Nombre del grimoire
 - `category`: "realm"
@@ -36,6 +43,7 @@ Obtiene todos los grimoires (requeridos y opcionales) de un realm desde su `real
 - `sidebarBadge`: "Active by Realm" (indicador visual)
 
 **Respuesta del endpoint:**
+
 ```json
 {
   "success": true,
@@ -52,24 +60,30 @@ Obtiene todos los grimoires (requeridos y opcionales) de un realm desde su `real
 #### Modificación: `GET /` (Listar módulos)
 
 **Nuevos campos en la respuesta:**
+
 - `enabledByRealm`: Boolean que indica si está activo porque su realm está activo
 - `realmId`: ID del realm al que pertenece (si aplica)
 - `sidebarBadge`: "Active by Realm" cuando aplica
 - `canToggle`: Ahora siempre `true` (todos los grimoires pueden togglearse)
 
 **Lógica de `enabled`:**
+
 ```typescript
 const enabledByRealm = stored?.realmId === activeTheme && activeTheme !== null;
-const enabled = configFlag !== undefined
-  ? configFlag
-  : enabledByRealm
-    ? true
-    : (stored ? stored.enabled : defaultEnabled(m.category));
+const enabled =
+  configFlag !== undefined
+    ? configFlag
+    : enabledByRealm
+      ? true
+      : stored
+        ? stored.enabled
+        : defaultEnabled(m.category);
 ```
 
 #### Modificación: `GET /:key` (Obtener un módulo)
 
 **Nuevos campos:**
+
 - `enabledByRealm`: Boolean
 - `isRealmGrimoire`: Boolean
 - `sidebarBadge`: String ("Active by Realm" cuando aplica)
@@ -78,12 +92,14 @@ const enabled = configFlag !== undefined
 #### Modificación: `GET /:key/check` (Verificar si puede desactivarse)
 
 **Cambios:**
+
 - Removida la restricción que impedía desactivar grimoires de realm
 - Agregado `isRealmGrimoire` en la respuesta
 - Agregado `realmId` en la respuesta
 - Agregado `warning` cuando es un grimoire de realm
 
 **Respuesta:**
+
 ```json
 {
   "canDisable": true,
@@ -98,6 +114,7 @@ const enabled = configFlag !== undefined
 #### Modificación: `PATCH /:key` (Toggle módulo)
 
 **Cambios:**
+
 - Removida la restricción que impedía togglear grimoires de realm
 - Agregado cálculo de `enabledByRealm` en la respuesta
 - Agregado `isRealmGrimoire` en la respuesta
@@ -107,11 +124,13 @@ const enabled = configFlag !== undefined
 ### Instalación/Activación de un Realm
 
 1. **Usuario activa un realm** via `PATCH /api/system/active-theme`
+
    ```json
    { "themeId": "gremius-cms-realm" }
    ```
 
 2. **Sistema lee** `realm.json` del realm y obtiene lista de grimoires
+
    ```json
    {
      "grimoires": ["grimoire-games", "grimoire-esports", "grimoire-streamers"],
@@ -145,6 +164,7 @@ const enabled = configFlag !== undefined
 ### Control Individual
 
 1. **Usuario puede desactivar** un grimoire de realm vía `PATCH /api/modules/:key`
+
    ```json
    { "enabled": false }
    ```
@@ -162,15 +182,15 @@ const enabled = configFlag !== undefined
 
 ### Tabla `modules`
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `key` | varchar(100) | ID del grimoire (ej: "grimoire-games") |
-| `name` | varchar(200) | Nombre del grimoire |
-| `category` | varchar(100) | "realm" para grimoires de realm |
-| `enabled` | boolean | Estado activo/inactivo |
-| `realmId` | varchar(100) | ID del realm al que pertenece (null si es standalone) |
-| `sidebarBadge` | varchar(50) | "Active by Realm" o null |
-| `settings` | jsonb | Configuración del módulo |
+| Campo          | Tipo         | Descripción                                           |
+| -------------- | ------------ | ----------------------------------------------------- |
+| `key`          | varchar(100) | ID del grimoire (ej: "grimoire-games")                |
+| `name`         | varchar(200) | Nombre del grimoire                                   |
+| `category`     | varchar(100) | "realm" para grimoires de realm                       |
+| `enabled`      | boolean      | Estado activo/inactivo                                |
+| `realmId`      | varchar(100) | ID del realm al que pertenece (null si es standalone) |
+| `sidebarBadge` | varchar(50)  | "Active by Realm" o null                              |
+| `settings`     | jsonb        | Configuración del módulo                              |
 
 ### Ejemplo de Registro
 
@@ -179,10 +199,10 @@ const enabled = configFlag !== undefined
 INSERT INTO modules (
   key, name, category, enabled, realmId, sidebarBadge, settings
 ) VALUES (
-  'grimoire-games', 
-  'Games', 
-  'realm', 
-  true, 
+  'grimoire-games',
+  'Games',
+  'realm',
+  true,
   'gremius-cms-realm',
   'Active by Realm',
   '{}'
@@ -194,6 +214,7 @@ INSERT INTO modules (
 ### `PATCH /api/system/active-theme`
 
 **Request:**
+
 ```json
 {
   "themeId": "gremius-cms-realm"
@@ -201,6 +222,7 @@ INSERT INTO modules (
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -215,6 +237,7 @@ INSERT INTO modules (
 ### `GET /api/modules`
 
 **Response (simplificado):**
+
 ```json
 {
   "activeTheme": "gremius-cms-realm",
@@ -240,6 +263,7 @@ INSERT INTO modules (
 ### `GET /api/modules/:key`
 
 **Response:**
+
 ```json
 {
   "key": "grimoire-games",
@@ -256,6 +280,7 @@ INSERT INTO modules (
 ### `PATCH /api/modules/:key`
 
 **Request:**
+
 ```json
 {
   "enabled": false
@@ -263,6 +288,7 @@ INSERT INTO modules (
 ```
 
 **Response:**
+
 ```json
 {
   "key": "grimoire-games",

@@ -25,7 +25,6 @@
   />
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { 
     MessageCircle, 
     Facebook, 
@@ -37,13 +36,10 @@
     Image as ImageIcon,
     RefreshCw,
     ExternalLink,
-    Download,
-    GitCompare,
-    X,
     Camera
   } from 'lucide-svelte';
-
-  // Types
+  
+// Types
   interface SEOData {
     title?: string;
     metaDescription?: string;
@@ -123,7 +119,7 @@
   let showDebug = $state(false);
   let copied = $state(false);
   let isExporting = $state(false);
-  let comparisonView = $state<'split' | 'overlay'>('split');
+  const comparisonView = $state<'split' | 'overlay'>('split');
   let activeVariant = $state<'A' | 'B'>('A');
   
   // Refs para exportación

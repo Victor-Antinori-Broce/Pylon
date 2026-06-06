@@ -17,10 +17,10 @@ export async function createTestContext(
   // In-memory storage for this sandbox
   const memoryStore = new Map<string, any>();
   const eventListeners = new Map<string, Array<(data: any) => void>>();
-  
+
   const context = {
     sandboxId,
-    
+
     // Mock database - in real implementation this would connect to test DB
     db: {
       instance: createMockDrizzle(memoryStore),
@@ -30,9 +30,9 @@ export async function createTestContext(
       },
       tableExists: async (tableName: string) => {
         return memoryStore.has(`table:${tableName}`);
-      }
+      },
     },
-    
+
     // Mock cache
     cache: {
       get: async <T>(key: string): Promise<T | null> => {
@@ -45,27 +45,27 @@ export async function createTestContext(
       invalidate: async (pattern: string): Promise<void> => {
         // Simple implementation - in real would use pattern matching
         for (const key of memoryStore.keys()) {
-          if (key.startsWith(`cache:${pattern.replace('*', '')}`)) {
+          if (key.startsWith(`cache:${pattern.replace("*", "")}`)) {
             memoryStore.delete(key);
           }
         }
-      }
+      },
     },
-    
+
     // Event system
     events: {
       emit: (event: string, data: unknown): void => {
         const listeners = eventListeners.get(event) || [];
-        listeners.forEach(fn => fn(data));
+        listeners.forEach((fn) => fn(data));
       },
       on: (event: string, handler: (data: unknown) => void): void => {
         if (!eventListeners.has(event)) {
           eventListeners.set(event, []);
         }
         eventListeners.get(event)!.push(handler);
-      }
+      },
     },
-    
+
     // Mock realtime
     realtime: {
       broadcast: (channel: string, message: unknown): void => {
@@ -73,9 +73,9 @@ export async function createTestContext(
       },
       sendToUser: (userId: string, message: unknown): void => {
         // No-op in tests
-      }
+      },
     },
-    
+
     // Mock auth
     auth: {
       requireAuth: async (c: any, next: any) => {
@@ -97,9 +97,9 @@ export async function createTestContext(
       },
       getSession: async (headers: Headers) => {
         return null;
-      }
+      },
     },
-    
+
     // Mock storage
     storage: {
       getSignedUploadUrl: async (key: string, contentType: string) => {
@@ -110,9 +110,9 @@ export async function createTestContext(
       },
       delete: async (key: string) => {
         // No-op
-      }
+      },
     },
-    
+
     // Mock content publishing
     contentPublishing: {
       getAvailableTargets: () => [],
@@ -125,12 +125,12 @@ export async function createTestContext(
         slug: "test",
         url: "/test",
         status: "published",
-        createdAt: new Date()
+        createdAt: new Date(),
       }),
       unpublish: async () => {},
-      getPublishedUrl: () => "/test"
+      getPublishedUrl: () => "/test",
     },
-    
+
     // Logger
     logger: {
       info: (message: string, meta?: Record<string, unknown>) => {
@@ -147,17 +147,17 @@ export async function createTestContext(
         if (process.env.DEBUG) {
           console.log(`[Test:${sandboxId}] DEBUG:`, message, meta || "");
         }
-      }
+      },
     },
-    
+
     // Config
     config: {
       siteName: "Test Site",
       siteUrl: "http://localhost:3001",
-      environment: "test"
-    }
+      environment: "test",
+    },
   } as TestGrimoireContext;
-  
+
   return context;
 }
 
@@ -171,40 +171,40 @@ function createMockDrizzle(memoryStore: Map<string, any>): any {
       from: (table: any) => ({
         where: (condition: any) => ({
           limit: (n: number) => ({
-            orderBy: () => Promise.resolve([])
+            orderBy: () => Promise.resolve([]),
           }),
-          orderBy: () => Promise.resolve([])
+          orderBy: () => Promise.resolve([]),
         }),
         limit: (n: number) => Promise.resolve([]),
-        orderBy: () => Promise.resolve([])
-      })
+        orderBy: () => Promise.resolve([]),
+      }),
     }),
     insert: (table: any) => ({
       values: (data: any) => ({
         returning: () => {
           const id = `mock-${Date.now()}`;
           const record = { id, ...data };
-          const tableName = typeof table === 'object' ? table.name : table;
-          
+          const tableName = typeof table === "object" ? table.name : table;
+
           if (!memoryStore.has(`table:${tableName}`)) {
             memoryStore.set(`table:${tableName}`, []);
           }
           memoryStore.get(`table:${tableName}`).push(record);
-          
+
           return Promise.resolve([record]);
-        }
-      })
+        },
+      }),
     }),
     update: (table: any) => ({
       set: (data: any) => ({
         where: (condition: any) => ({
-          returning: () => Promise.resolve([{ id: "mock", ...data }])
-        })
-      })
+          returning: () => Promise.resolve([{ id: "mock", ...data }]),
+        }),
+      }),
     }),
     delete: (table: any) => ({
-      where: (condition: any) => Promise.resolve({ count: 1 })
-    })
+      where: (condition: any) => Promise.resolve({ count: 1 }),
+    }),
   };
 }
 

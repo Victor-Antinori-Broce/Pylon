@@ -56,9 +56,10 @@
  * @see https://www.postgresql.org/docs/current/ddl-rowsecurity.html
  */
 
-import type { Context, Next } from "hono";
-import { db, type DatabaseTransaction } from "../db";
 import { sql } from "drizzle-orm";
+import type { Context, Next } from "hono";
+
+import { db, type DatabaseTransaction } from "../db";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES

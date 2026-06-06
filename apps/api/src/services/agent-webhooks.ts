@@ -1,12 +1,12 @@
 /**
  * Agent Webhook Service
- * 
+ *
  * Envía notificaciones webhook cuando ocurren eventos de agentes:
  * - Autenticación exitosa/fallida
  * - Rate limiting
  * - Accesos denegados
  * - Actividad sospechosa
- * 
+ *
  * Configuración via gremius.config.ts:
  *   agentWebhooks: {
  *     url: "https://hooks.slack.com/...",
@@ -16,6 +16,7 @@
  */
 
 import { logger } from "../lib/logger";
+
 import type { AuditAction } from "./agent-audit";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -79,8 +80,7 @@ export async function sendAgentWebhook(event: AgentWebhookEvent): Promise<void> 
   if (!config) return; // Webhooks no configurados
 
   // Verificar si este evento debe ser enviado
-  const shouldSend =
-    config.events.includes("all") || config.events.includes(event.type);
+  const shouldSend = config.events.includes("all") || config.events.includes(event.type);
   if (!shouldSend) return;
 
   // Construir payload

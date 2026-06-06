@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { Activity, Filter, ChevronRight, Bot, Clock, Coins } from 'lucide-svelte';
-  import Card from '$lib/components/ui/Card.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
   import Timeline from '$lib/components/agents/Timeline.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import Card from '$lib/components/ui/Card.svelte';
   import { listTraces, getTrace } from '$lib/services/agents';
   import type { AgentTrace, AgentTraceStep } from '$lib/types/agents';
+  import { Activity, Filter, Bot, Clock, Coins } from 'lucide-svelte';
+  import { onMount } from 'svelte';
   
   let traces: AgentTrace[] = $state([]);
   let selectedTrace: (AgentTrace & { steps: AgentTraceStep[] }) | null = $state(null);

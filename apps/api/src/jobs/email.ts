@@ -10,8 +10,9 @@
  * NEVER crashes if SMTP is missing. This is by design.
  */
 
-import { createWorker, type EmailJobData } from "../lib/queue";
 import type { Job } from "bullmq";
+
+import { createWorker, type EmailJobData } from "../lib/queue";
 
 // ── SMTP Config Detection ──
 function getSmtpConfig() {

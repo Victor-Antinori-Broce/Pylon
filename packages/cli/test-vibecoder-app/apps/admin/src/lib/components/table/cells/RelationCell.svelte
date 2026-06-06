@@ -24,7 +24,7 @@
     onClick?: (item: RelatedItem) => void;
   }
   
-  let {
+  const {
     items = [],
     maxItems = 2,
     type = "many",

@@ -5,8 +5,9 @@
  * Replaces /functions and /webhooks endpoints.
  */
 
-import { Hono } from "hono";
 import { eq, desc, and, count } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { actions, actionExecutions } from "../db/schema";
 import {

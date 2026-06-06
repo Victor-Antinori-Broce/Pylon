@@ -14,8 +14,8 @@
  * in a restricted context and communicates results via `postMessage`.
  */
 
-import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 
 // ═══════════════════════════════════════════════════════════════
 // Types

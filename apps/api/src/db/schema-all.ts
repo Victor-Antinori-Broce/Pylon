@@ -76,10 +76,7 @@ export {
   blogPostsToGames,
 } from "../../../../packages/grimoires/grimoire-blog/src/schema.local";
 
-export {
-  media,
-  mediaFolders,
-} from "../../../../packages/grimoires/grimoire-media/media.schema";
+export { media, mediaFolders } from "../../../../packages/grimoires/grimoire-media/media.schema";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GRIMOIRES OPCIONALES (Migraciones SQL independientes)

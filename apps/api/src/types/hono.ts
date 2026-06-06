@@ -1,6 +1,6 @@
 /**
  * Hono Type Definitions
- * 
+ *
  * Centralized type definitions for Hono context variables
  */
 

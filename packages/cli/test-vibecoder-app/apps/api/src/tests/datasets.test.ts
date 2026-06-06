@@ -7,9 +7,11 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { dataSets, dataEntries } from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+
 import { 
   isDatabaseAvailable, 
   clearTestData,

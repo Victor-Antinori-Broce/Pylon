@@ -11,9 +11,10 @@
  */
 
 import { describe, it, expect } from "bun:test";
+
 import { buildAdminRegistry, getGrimoireAdminConfig } from "../services/admin-registry";
-import { introspectTable, getAllTables, generateAdminConfigFromIntrospection } from "../services/schema-introspector";
 import { detectRelations, generateInlineConfigs } from "../services/inline-relations";
+import { introspectTable, getAllTables, generateAdminConfigFromIntrospection } from "../services/schema-introspector";
 
 describe("Zero Config Integration", () => {
   

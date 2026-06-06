@@ -3,14 +3,14 @@
  * Games API Routes
  */
 
-import { Hono } from "hono";
 import { eq, desc, asc, sql, ilike, and } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import {
   games,
   gamesToPlatforms,
   gamesToTags,
-  gamesToStreamers,
   media,
   platforms,
   tags,

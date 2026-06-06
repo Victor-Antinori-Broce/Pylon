@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 /**
  * Script de prueba para verificar la auto-activación de grimoires de realm
@@ -27,7 +26,7 @@ async function scanRealm(realmId: string): Promise<RealmManifest | null> {
   try {
     const file = Bun.file(realmJsonPath);
     if (await file.exists()) {
-      return await file.json() as RealmManifest;
+      return (await file.json()) as RealmManifest;
     }
     return null;
   } catch {
@@ -40,7 +39,7 @@ async function scanGrimoire(grimoireId: string): Promise<GrimoireManifest | null
   try {
     const file = Bun.file(grimoireJsonPath);
     if (await file.exists()) {
-      return await file.json() as GrimoireManifest;
+      return (await file.json()) as GrimoireManifest;
     }
     return null;
   } catch {
@@ -98,14 +97,14 @@ async function testRealmActivation(realmId: string) {
 
   // 4. Simular la respuesta de GET /api/modules
   console.log(`\n📡 Simulando respuesta de GET /api/modules (grimoires de realm):`);
-  const mockModules = allGrimoires.map(id => {
-    const grimoire = allGrimoires.find(g => g === id);
+  const mockModules = allGrimoires.map((id) => {
+    const grimoire = allGrimoires.find((g) => g === id);
     return {
       key: id,
       name: id.replace(/^grimoire-/, "").replace(/-/g, " "),
       category: "realm",
       enabled: true,
-      realmId: realmId,
+      realmId,
       enabledByRealm: true,
       canToggle: true,
       sidebarBadge: "Active by Realm",
@@ -128,8 +127,10 @@ async function testToggleIndividual() {
   ];
 
   for (const testCase of testCases) {
-    console.log(`\n🔄 ${testCase.action === "disable" ? "Desactivando" : "Activando"} ${testCase.grimoireId}:`);
-    
+    console.log(
+      `\n🔄 ${testCase.action === "disable" ? "Desactivando" : "Activando"} ${testCase.grimoireId}:`
+    );
+
     const mockResponse = {
       key: testCase.grimoireId,
       name: "Games",
@@ -138,7 +139,7 @@ async function testToggleIndividual() {
       enabledByRealm: testCase.enabled, // Sería false si el realm no está activo
       isRealmGrimoire: true,
     };
-    
+
     console.log(JSON.stringify(mockResponse, null, 2));
   }
 

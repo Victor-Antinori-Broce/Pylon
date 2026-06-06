@@ -7,13 +7,6 @@
   "author": "GremiusCMS Team",
   "realm_type": "gaming",
   "css_entry": "variables.css",
-  "grimoires": [
-    "games",
-    "esports",
-    "streamers"
-  ],
-  "optional_grimoires": [
-    "blog",
-    "crm"
-  ]
+  "grimoires": ["games", "esports", "streamers"],
+  "optional_grimoires": ["blog", "crm"]
 }

@@ -1,13 +1,16 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
+  import { api } from "$lib/api";
+  import YouTubeVideoInput from "$lib/components/academy/YouTubeVideoInput.svelte";
   import { 
-    ArrowLeft, Save, BookOpen, Loader2, Trash2, Plus, Check,
+    ArrowLeft, BookOpen, Loader2, Trash2, Plus, Check,
     Layers, ChevronDown, ChevronRight, Play, Video, FileText
   } from "lucide-svelte";
-  import { api } from "$lib/api";
+  import { onMount } from "svelte";
+
   import { goto } from "$app/navigation";
-  import YouTubeVideoInput from "$lib/components/academy/YouTubeVideoInput.svelte";
+  import { page } from "$app/stores";
+
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TYPES
@@ -47,7 +50,7 @@
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════
-  let cursoId = $derived($page.params.id);
+  const cursoId = $derived($page.params.id);
   let curso = $state<Curso | null>(null);
   let modulos = $state<Modulo[]>([]);
   let loading = $state(true);

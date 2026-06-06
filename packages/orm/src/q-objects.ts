@@ -1,9 +1,24 @@
-import { SQL, and, or, not, eq, ne, gt, gte, lt, lte, like, inArray, isNull, isNotNull } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
+import {
+  SQL,
+  and,
+  or,
+  not,
+  eq,
+  ne,
+  gt,
+  gte,
+  lt,
+  lte,
+  like,
+  inArray,
+  isNull,
+  isNotNull,
+} from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 
 /**
  * Q() objects - Queries complejas con AND/OR/NOT
- * 
+ *
  * Ejemplo:
  * Post.objects.filter(
  *   Q.or(
@@ -21,7 +36,7 @@ type FilterCondition = Record<string, any>;
 
 export class Q {
   private conditions: Array<Q | FilterCondition> = [];
-  private connector: 'AND' | 'OR' = 'AND';
+  private connector: "AND" | "OR" = "AND";
   private negated = false;
 
   constructor(conditions?: FilterCondition) {
@@ -33,14 +48,14 @@ export class Q {
   // Factory methods
   static and(...conditions: (Q | FilterCondition)[]): Q {
     const q = new Q();
-    q.connector = 'AND';
+    q.connector = "AND";
     q.conditions = conditions;
     return q;
   }
 
   static or(...conditions: (Q | FilterCondition)[]): Q {
     const q = new Q();
-    q.connector = 'OR';
+    q.connector = "OR";
     q.conditions = conditions;
     return q;
   }
@@ -78,7 +93,7 @@ export class Q {
     }
 
     let result: SQL;
-    if (this.connector === 'AND') {
+    if (this.connector === "AND") {
       result = and(...sqlConditions) as SQL;
     } else {
       result = or(...sqlConditions) as SQL;
@@ -99,7 +114,7 @@ export class Q {
 
     for (const [key, value] of Object.entries(condition)) {
       // Parsear field__operator (ej: age__gte)
-      const [fieldName, operator = 'eq'] = key.split('__');
+      const [fieldName, operator = "eq"] = key.split("__");
       const column = table[fieldName];
 
       if (!column) {
@@ -110,42 +125,42 @@ export class Q {
       let sql: SQL;
 
       switch (operator) {
-        case 'eq':
+        case "eq":
           sql = eq(column, value);
           break;
-        case 'ne':
-        case 'neq':
+        case "ne":
+        case "neq":
           sql = ne(column, value);
           break;
-        case 'gt':
+        case "gt":
           sql = gt(column, value);
           break;
-        case 'gte':
+        case "gte":
           sql = gte(column, value);
           break;
-        case 'lt':
+        case "lt":
           sql = lt(column, value);
           break;
-        case 'lte':
+        case "lte":
           sql = lte(column, value);
           break;
-        case 'like':
-        case 'contains':
+        case "like":
+        case "contains":
           sql = like(column, `%${value}%`);
           break;
-        case 'startswith':
+        case "startswith":
           sql = like(column, `${value}%`);
           break;
-        case 'endswith':
+        case "endswith":
           sql = like(column, `%${value}`);
           break;
-        case 'in':
+        case "in":
           sql = inArray(column, Array.isArray(value) ? value : [value]);
           break;
-        case 'isNull':
+        case "isNull":
           sql = isNull(column);
           break;
-        case 'isNotNull':
+        case "isNotNull":
           sql = isNotNull(column);
           break;
         default:

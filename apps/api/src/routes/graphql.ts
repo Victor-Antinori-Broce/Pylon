@@ -12,7 +12,7 @@
  * Playground: GET /api/graphql (returns GraphiQL HTML)
  */
 
-import { Hono } from "hono";
+import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
 import {
   GraphQLSchema,
   GraphQLObjectType,
@@ -28,11 +28,11 @@ import {
   type GraphQLOutputType,
 } from "graphql";
 import GraphQLJSON from "graphql-type-json";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
-import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
 import { logger } from "../lib/logger";
-
 import { buildMergedSchema } from "../lib/schema-merger";
 
 export const graphqlRoutes = new Hono();
@@ -53,7 +53,7 @@ async function getGlobalSchemaVersion(): Promise<number> {
   try {
     const client = await getValkeyClient();
     const val = await client.get(SCHEMA_CACHE_KEY);
-    return val && typeof val === 'string' ? parseInt(val, 10) : 0;
+    return val && typeof val === "string" ? parseInt(val, 10) : 0;
   } catch {
     return 0;
   }
@@ -184,9 +184,7 @@ const DeletionResultType = new GraphQLObjectType({
   },
 });
 
-async function buildNativeTableTypes(
-  schema: Record<string, unknown>
-): Promise<{
+async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
   typeMap: Map<string, TableGraphQLTypes>;
   queries: GraphQLFieldConfigMap<any, any>;
 }> {
@@ -248,11 +246,7 @@ async function buildNativeTableTypes(
         },
         async resolve(_: any, args: any) {
           try {
-            const [doc] = await db
-              .select()
-              .from(table)
-              .where(eq(table.id, args.id))
-              .limit(1);
+            const [doc] = await db.select().from(table).where(eq(table.id, args.id)).limit(1);
             return doc || null;
           } catch (err: any) {
             logger.error({ table: tableName, error: err.message }, "GraphQL single query failed");
@@ -282,7 +276,11 @@ async function buildNativeTableTypes(
 
           if (args.search) {
             // Search in first text column
-            const textCol = columns.find((c) => c.dataType === "string" && ["title", "name", "slug", "email"].some((n) => c.key.toLowerCase().includes(n)));
+            const textCol = columns.find(
+              (c) =>
+                c.dataType === "string" &&
+                ["title", "name", "slug", "email"].some((n) => c.key.toLowerCase().includes(n))
+            );
             if (textCol) {
               conditions.push(ilike(table[textCol.key], `%${args.search}%`));
             }
@@ -299,7 +297,10 @@ async function buildNativeTableTypes(
 
           const [docs, [total]] = await Promise.all([
             db.select().from(table).where(where).orderBy(orderBy).limit(limit).offset(offset),
-            db.select({ value: sql<number>`count(*)` }).from(table).where(where),
+            db
+              .select({ value: sql<number>`count(*)` })
+              .from(table)
+              .where(where),
           ]);
 
           return {
@@ -360,11 +361,7 @@ async function buildNativeTableMutations(
         try {
           const input = args.input ? { ...args.input } : {};
           delete input.id;
-          const [doc] = await db
-            .update(table)
-            .set(input)
-            .where(eq(table.id, args.id))
-            .returning();
+          const [doc] = await db.update(table).set(input).where(eq(table.id, args.id)).returning();
           await invalidateGraphQLCache();
           return doc || null;
         } catch (err: any) {
@@ -490,7 +487,16 @@ async function buildDatasetTypes(): Promise<{
           .where(and(eq(dataEntries.dataSetId, ds.id), eq(dataEntries.id, args.id)))
           .limit(1);
         return doc
-          ? { id: doc.id, title: doc.title, dataSetId: doc.dataSetId, status: doc.status, sortOrder: doc.sortOrder, createdAt: doc.createdAt, updatedAt: doc.updatedAt, ...doc.data }
+          ? {
+              id: doc.id,
+              title: doc.title,
+              dataSetId: doc.dataSetId,
+              status: doc.status,
+              sortOrder: doc.sortOrder,
+              createdAt: doc.createdAt,
+              updatedAt: doc.updatedAt,
+              ...doc.data,
+            }
           : null;
       },
     };
@@ -510,12 +516,27 @@ async function buildDatasetTypes(): Promise<{
         const offset = (args.page - 1) * args.limit;
 
         const [docs, [total]] = await Promise.all([
-          db.select().from(dataEntries).where(where).orderBy(asc(dataEntries.sortOrder)).limit(args.limit).offset(offset),
+          db
+            .select()
+            .from(dataEntries)
+            .where(where)
+            .orderBy(asc(dataEntries.sortOrder))
+            .limit(args.limit)
+            .offset(offset),
           db.select({ value: count() }).from(dataEntries).where(where),
         ]);
 
         return {
-          docs: docs.map((d) => ({ id: d.id, title: d.title, dataSetId: d.dataSetId, status: d.status, sortOrder: d.sortOrder, createdAt: d.createdAt, updatedAt: d.updatedAt, ...d.data })),
+          docs: docs.map((d) => ({
+            id: d.id,
+            title: d.title,
+            dataSetId: d.dataSetId,
+            status: d.status,
+            sortOrder: d.sortOrder,
+            createdAt: d.createdAt,
+            updatedAt: d.updatedAt,
+            ...d.data,
+          })),
           totalDocs: total?.value || 0,
           page: args.page,
           limit: args.limit,
@@ -561,10 +582,22 @@ async function buildDatasetMutations(
             .returning();
           await invalidateGraphQLCache();
           return doc
-            ? { id: doc.id, title: doc.title, dataSetId: doc.dataSetId, status: doc.status, sortOrder: doc.sortOrder, createdAt: doc.createdAt, updatedAt: doc.updatedAt, ...doc.data }
+            ? {
+                id: doc.id,
+                title: doc.title,
+                dataSetId: doc.dataSetId,
+                status: doc.status,
+                sortOrder: doc.sortOrder,
+                createdAt: doc.createdAt,
+                updatedAt: doc.updatedAt,
+                ...doc.data,
+              }
             : null;
         } catch (err: any) {
-          logger.error({ dataset: ds.slug, error: err.message }, "GraphQL dataset create mutation failed");
+          logger.error(
+            { dataset: ds.slug, error: err.message },
+            "GraphQL dataset create mutation failed"
+          );
           throw new Error(`Failed to create dataset entry in ${ds.slug}: ${err.message}`);
         }
       },
@@ -597,10 +630,22 @@ async function buildDatasetMutations(
             .returning();
           await invalidateGraphQLCache();
           return doc
-            ? { id: doc.id, title: doc.title, dataSetId: doc.dataSetId, status: doc.status, sortOrder: doc.sortOrder, createdAt: doc.createdAt, updatedAt: doc.updatedAt, ...doc.data }
+            ? {
+                id: doc.id,
+                title: doc.title,
+                dataSetId: doc.dataSetId,
+                status: doc.status,
+                sortOrder: doc.sortOrder,
+                createdAt: doc.createdAt,
+                updatedAt: doc.updatedAt,
+                ...doc.data,
+              }
             : null;
         } catch (err: any) {
-          logger.error({ dataset: ds.slug, error: err.message }, "GraphQL dataset update mutation failed");
+          logger.error(
+            { dataset: ds.slug, error: err.message },
+            "GraphQL dataset update mutation failed"
+          );
           throw new Error(`Failed to update dataset entry in ${ds.slug}: ${err.message}`);
         }
       },
@@ -617,7 +662,10 @@ async function buildDatasetMutations(
           await invalidateGraphQLCache();
           return { success: true, id: args.id };
         } catch (err: any) {
-          logger.error({ dataset: ds.slug, error: err.message }, "GraphQL dataset delete mutation failed");
+          logger.error(
+            { dataset: ds.slug, error: err.message },
+            "GraphQL dataset delete mutation failed"
+          );
           throw new Error(`Failed to delete dataset entry in ${ds.slug}: ${err.message}`);
         }
       },
@@ -669,8 +717,17 @@ function buildUniversalQuery(
           }
         }
         const [docs, [total]] = await Promise.all([
-          db.select().from(dataEntries).where(and(...conditions)).orderBy(desc(dataEntries.createdAt)).limit(limit).offset(offset),
-          db.select({ value: sql<number>`count(*)` }).from(dataEntries).where(and(...conditions)),
+          db
+            .select()
+            .from(dataEntries)
+            .where(and(...conditions))
+            .orderBy(desc(dataEntries.createdAt))
+            .limit(limit)
+            .offset(offset),
+          db
+            .select({ value: sql<number>`count(*)` })
+            .from(dataEntries)
+            .where(and(...conditions)),
         ]);
         return {
           docs: docs.map((d) => ({ id: d.id, ...d.data })),
@@ -681,7 +738,9 @@ function buildUniversalQuery(
       }
 
       // Try native table
-      const tableKey = Object.keys(schema).find((k) => k.toLowerCase() === collection.toLowerCase());
+      const tableKey = Object.keys(schema).find(
+        (k) => k.toLowerCase() === collection.toLowerCase()
+      );
       const table = tableKey ? (schema as any)[tableKey] : null;
 
       if (table && isDrizzleTable(table)) {
@@ -691,7 +750,12 @@ function buildUniversalQuery(
         }
 
         const [docs, [total]] = await Promise.all([
-          db.select().from(table).orderBy(desc(table.createdAt || table.id)).limit(limit).offset(offset),
+          db
+            .select()
+            .from(table)
+            .orderBy(desc(table.createdAt || table.id))
+            .limit(limit)
+            .offset(offset),
           db.select({ value: sql<number>`count(*)` }).from(table),
         ]);
         return {
@@ -712,7 +776,7 @@ function buildUniversalQuery(
 // ═══════════════════════════════════════════════════════════════
 
 async function buildSchema(): Promise<GraphQLSchema> {
-  if (cachedSchema && !await isCacheStale()) return cachedSchema;
+  if (cachedSchema && !(await isCacheStale())) return cachedSchema;
 
   console.log("[GraphQL] Building dynamic schema...");
   const start = Date.now();
@@ -734,10 +798,16 @@ async function buildSchema(): Promise<GraphQLSchema> {
     collections: {
       type: GraphQLJSON,
       async resolve() {
-        const datasets = await db.select({ slug: dataSets.slug, name: dataSets.name }).from(dataSets);
+        const datasets = await db
+          .select({ slug: dataSets.slug, name: dataSets.name })
+          .from(dataSets);
         const tables = Object.entries(freshMergedSchema)
           .filter(([k, v]) => isDrizzleTable(v) && !k.endsWith("Relations") && !k.endsWith("Enum"))
-          .map(([k, v]) => ({ type: "table", name: k, dbName: (v as any)[Symbol.for("drizzle:Name")] }));
+          .map(([k, v]) => ({
+            type: "table",
+            name: k,
+            dbName: (v as any)[Symbol.for("drizzle:Name")],
+          }));
 
         return {
           datasets: datasets.map((d) => ({ type: "dataset", slug: d.slug, name: d.name })),
@@ -756,7 +826,8 @@ async function buildSchema(): Promise<GraphQLSchema> {
   const QueryRoot = new GraphQLObjectType({
     name: "Query",
     fields: queryFields,
-    description: "Auto-generated GraphQL schema for GremiusCMS. All tables and datasets are discoverable.",
+    description:
+      "Auto-generated GraphQL schema for GremiusCMS. All tables and datasets are discoverable.",
   });
 
   const mutationFields: GraphQLFieldConfigMap<any, any> = {
@@ -775,7 +846,7 @@ async function buildSchema(): Promise<GraphQLSchema> {
 
   cachedSchema = new GraphQLSchema({ query: QueryRoot, mutation: MutationRoot });
   schemaBuildTime = Date.now() - start;
-  localSchemaVersion = await getGlobalSchemaVersion() || Date.now();
+  localSchemaVersion = (await getGlobalSchemaVersion()) || Date.now();
   try {
     const client = await getValkeyClient();
     const exists = await client.exists(SCHEMA_CACHE_KEY);
@@ -892,7 +963,12 @@ function toCamelCase(str: string): string {
 function toCamelCasePlural(str: string): string {
   const singular = toCamelCase(str);
   // If it already looks plural, don't add another s
-  if (singular.endsWith("s") || singular.endsWith("x") || singular.endsWith("ch") || singular.endsWith("ies")) {
+  if (
+    singular.endsWith("s") ||
+    singular.endsWith("x") ||
+    singular.endsWith("ch") ||
+    singular.endsWith("ies")
+  ) {
     return singular;
   }
   if (singular.endsWith("y") && !/[aeiou]/.test(singular[singular.length - 2])) {

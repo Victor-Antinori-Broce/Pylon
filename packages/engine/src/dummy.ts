@@ -11,8 +11,9 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { defineAction, defineTypedAction, parseTrigger, ActionContext, ActionResult } from "./actions";
 import type { GrimoireContext } from "@gremius/shared";
+
+import { defineAction, defineTypedAction, parseTrigger, ActionResult } from "./actions";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TEST 1: HTTP Trigger - Type Inference
@@ -73,7 +74,7 @@ const stripeWebhookAction = defineAction<StripeWebhookEvent, PaymentResult>({
       data: {
         processed: true,
         paymentId: payload.data.object.id,
-        amount: amount,
+        amount,
       },
     };
   },
@@ -320,7 +321,11 @@ const typedAction = defineTypedAction<{ id: string }, { found: boolean }>({
 async function testUnifiedContext() {
   // HTTP action
   const httpResult = await stripeWebhookAction.run({
-    payload: { id: "evt_123", type: "payment_intent.succeeded", data: { object: { id: "pi_123", amount: 1000, customer: "cus_123" } } },
+    payload: {
+      id: "evt_123",
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_123", amount: 1000, customer: "cus_123" } },
+    },
     db: {},
     grimoire: {} as GrimoireContext,
     logger: console,

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Table2, Search, Filter, Megaphone, X, FileText } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { Search, Filter, Megaphone, X } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Game {
     id: string;
@@ -23,7 +23,7 @@
   let loading = $state(true);
   let search = $state("");
   let blogEnabled = $state(false);
-  let currentDatasetId = $state("games"); // This should come from route params
+  const currentDatasetId = $state("games"); // This should come from route params
   
   // Promote modal state
   let showPromoteModal = $state(false);
@@ -39,7 +39,7 @@
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
-  let filteredGames = $derived(
+  const filteredGames = $derived(
     games.filter(g => 
       g.title?.toLowerCase().includes(search.toLowerCase()) ||
       g.genre?.toLowerCase().includes(search.toLowerCase())

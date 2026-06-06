@@ -5,7 +5,8 @@
  * Validates the zero-config grimoire registration system
  */
 
-import { describe, it, expect, beforeAll } from "bun:test";
+import { describe, it, expect } from "bun:test";
+
 import { buildAdminRegistry, getGrimoireAdminConfig } from "../services/admin-registry";
 import { scanPackages } from "../services/scanner";
 

@@ -1,6 +1,18 @@
 <script lang="ts">
+  import {
+    Building2,
+    Users,
+    ChevronDown,
+    ChevronRight,
+    Search,
+    User,
+    Mail,
+    Plus,
+    X,
+    Loader2,
+  } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { Building2, Users, ChevronDown, ChevronRight, Search, User, Briefcase, Mail, Phone, MapPin, Plus, X, Loader2 } from "lucide-svelte";
+
   import { api } from "$lib/api";
 
   interface Employee {
@@ -53,7 +65,7 @@
       const res = await api.getDirectoryOrgChart(selectedOrg);
       orgData = res.roots || [];
       // Expand first level by default
-      orgData.forEach(node => expandedNodes.add(node.id));
+      orgData.forEach((node) => expandedNodes.add(node.id));
       expandedNodes = expandedNodes;
     } catch (e) {
       console.error("Error loading org chart:", e);
@@ -77,16 +89,16 @@
 
   function filterNodes(nodes: Employee[]): Employee[] {
     if (!searchQuery) return nodes;
-    
-    return nodes.filter(node => {
-      const matches = 
+
+    return nodes.filter((node) => {
+      const matches =
         node.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         node.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         node.positionTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         node.departmentName?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       if (matches) return true;
-      
+
       // Check children
       if (node.children?.length) {
         const filteredChildren = filterNodes(node.children);
@@ -96,7 +108,7 @@
           return true;
         }
       }
-      
+
       return false;
     });
   }
@@ -134,7 +146,7 @@
       </h1>
       <p class="text-gremius-subtle mt-1">Visualización jerárquica de la organización</p>
     </div>
-    
+
     <div class="flex items-center gap-3">
       <select
         bind:value={selectedOrg}
@@ -172,7 +184,13 @@
         <Building2 class="w-16 h-16 text-gremius-subtle mx-auto mb-4" />
         <h3 class="text-lg font-medium text-white mb-2">No hay organizaciones</h3>
         <p class="text-gremius-subtle mb-4">Crea una organización para ver el organigrama</p>
-        <button class="btn btn-primary gap-2" onclick={() => { showCreateOrgModal = true; resetOrgForm(); }}>
+        <button
+          class="btn btn-primary gap-2"
+          onclick={() => {
+            showCreateOrgModal = true;
+            resetOrgForm();
+          }}
+        >
           <Plus class="w-4 h-4" />
           Crear Organización
         </button>
@@ -181,12 +199,21 @@
       <div class="text-center py-12">
         <Users class="w-16 h-16 text-gremius-subtle mx-auto mb-4" />
         <h3 class="text-lg font-medium text-white mb-2">No hay empleados</h3>
-        <p class="text-gremius-subtle">La organización seleccionada no tiene empleados registrados</p>
+        <p class="text-gremius-subtle">
+          La organización seleccionada no tiene empleados registrados
+        </p>
       </div>
     {:else}
       <div class="space-y-2">
         {#each filterNodes(orgData) as root}
-          {@render OrgNode({ node: root, level: 0, expandedNodes, toggleNode, getInitials, onSelect: (e: Employee) => selectedEmployee = e })}
+          {@render OrgNode({
+            node: root,
+            level: 0,
+            expandedNodes,
+            toggleNode,
+            getInitials,
+            onSelect: (e: Employee) => (selectedEmployee = e),
+          })}
         {/each}
       </div>
     {/if}
@@ -195,21 +222,26 @@
   <!-- Employee Detail Modal -->
   {#if selectedEmployee}
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
+      <div
         class="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onclick={() => selectedEmployee = null}
+        onclick={() => (selectedEmployee = null)}
       ></div>
-      
-      <div class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full">
+
+      <div
+        class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full"
+      >
         <div class="p-6">
           <!-- Header -->
           <div class="flex items-start gap-4 mb-6">
-            <div class="w-16 h-16 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-xl font-semibold">
+            <div
+              class="w-16 h-16 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-xl font-semibold"
+            >
               {getInitials(selectedEmployee.firstName, selectedEmployee.lastName)}
             </div>
             <div class="flex-1">
               <h3 class="text-xl font-semibold text-white">
-                {selectedEmployee.displayName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
+                {selectedEmployee.displayName ||
+                  `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
               </h3>
               <p class="text-gremius-cyan">{selectedEmployee.positionTitle || "Sin cargo"}</p>
               <p class="text-sm text-gremius-subtle">{selectedEmployee.departmentName || ""}</p>
@@ -218,7 +250,10 @@
 
           <!-- Contact Info -->
           <div class="space-y-3">
-            <a href="mailto:{selectedEmployee.email}" class="flex items-center gap-3 p-3 bg-gremius-bg rounded-lg hover:bg-white/5 transition-colors">
+            <a
+              href="mailto:{selectedEmployee.email}"
+              class="flex items-center gap-3 p-3 bg-gremius-bg rounded-lg hover:bg-white/5 transition-colors"
+            >
               <Mail class="w-5 h-5 text-gremius-cyan" />
               <span class="text-white">{selectedEmployee.email}</span>
             </a>
@@ -226,16 +261,13 @@
 
           <!-- Actions -->
           <div class="flex gap-3 mt-6">
-            <a 
-              href="/directory/employees/{selectedEmployee.id}" 
+            <a
+              href="/directory/employees/{selectedEmployee.id}"
               class="flex-1 btn btn-primary text-center"
             >
               Ver Perfil Completo
             </a>
-            <button 
-              class="btn btn-ghost"
-              onclick={() => selectedEmployee = null}
-            >
+            <button class="btn btn-ghost" onclick={() => (selectedEmployee = null)}>
               Cerrar
             </button>
           </div>
@@ -248,11 +280,19 @@
 <!-- Create Organization Modal -->
 {#if showCreateOrgModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick={() => showCreateOrgModal = false}></div>
-    <div class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full mx-4">
+    <div
+      class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      onclick={() => (showCreateOrgModal = false)}
+    ></div>
+    <div
+      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full mx-4"
+    >
       <div class="flex items-center justify-between p-6 border-b border-gremius-border">
         <h3 class="text-lg font-semibold text-white">Nueva Organización</h3>
-        <button onclick={() => showCreateOrgModal = false} class="p-2 rounded-xl text-gremius-subtle hover:text-white hover:bg-white/5">
+        <button
+          onclick={() => (showCreateOrgModal = false)}
+          class="p-2 rounded-xl text-gremius-subtle hover:text-white hover:bg-white/5"
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
@@ -268,8 +308,17 @@
           />
         </div>
         <div class="flex justify-end gap-3 pt-2">
-          <button type="button" onclick={() => showCreateOrgModal = false} class="px-4 py-2 rounded-lg text-gremius-subtle hover:text-white hover:bg-white/5 transition-all">Cancelar</button>
-          <button type="submit" disabled={savingOrg || !newOrgName.trim()} class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gremius-cyan text-gremius-bg hover:bg-gremius-cyan/90 transition-all disabled:opacity-50">
+          <button
+            type="button"
+            onclick={() => (showCreateOrgModal = false)}
+            class="px-4 py-2 rounded-lg text-gremius-subtle hover:text-white hover:bg-white/5 transition-all"
+            >Cancelar</button
+          >
+          <button
+            type="submit"
+            disabled={savingOrg || !newOrgName.trim()}
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gremius-cyan text-gremius-bg hover:bg-gremius-cyan/90 transition-all disabled:opacity-50"
+          >
             {#if savingOrg}
               <Loader2 class="w-4 h-4 animate-spin" />
               Creando...
@@ -285,9 +334,16 @@
 {/if}
 
 <!-- Recursive Org Node Component -->
-{#snippet OrgNode({ node, level, expandedNodes, toggleNode, getInitials, onSelect }: { 
-  node: Employee; 
-  level: number; 
+{#snippet OrgNode({
+  node,
+  level,
+  expandedNodes,
+  toggleNode,
+  getInitials,
+  onSelect,
+}: {
+  node: Employee;
+  level: number;
   expandedNodes: Set<string>;
   toggleNode: (id: string) => void;
   getInitials: (f: string, l: string) => string;
@@ -295,16 +351,19 @@
 })}
   <div class="select-none">
     <!-- Node Card -->
-    <div 
+    <div
       class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group"
       style="padding-left: {level * 24 + 12}px"
       onclick={() => onSelect(node)}
     >
       <!-- Expand/Collapse -->
       {#if node.children && node.children.length > 0}
-        <button 
+        <button
           class="p-1 rounded hover:bg-white/10 transition-colors"
-          onclick={(e) => { e.stopPropagation(); toggleNode(node.id); }}
+          onclick={(e) => {
+            e.stopPropagation();
+            toggleNode(node.id);
+          }}
         >
           {#if expandedNodes.has(node.id)}
             <ChevronDown class="w-4 h-4 text-gremius-subtle" />
@@ -317,7 +376,9 @@
       {/if}
 
       <!-- Avatar -->
-      <div class="w-10 h-10 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-sm font-medium">
+      <div
+        class="w-10 h-10 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-sm font-medium"
+      >
         {getInitials(node.firstName, node.lastName)}
       </div>
 
@@ -340,7 +401,7 @@
       {/if}
 
       <!-- View Button (visible on hover) -->
-      <a 
+      <a
         href="/directory/employees/{node.id}"
         class="opacity-0 group-hover:opacity-100 p-2 text-gremius-subtle hover:text-white transition-all"
         onclick={(e) => e.stopPropagation()}
@@ -353,10 +414,19 @@
     {#if node.children && node.children.length > 0 && expandedNodes.has(node.id)}
       <div class="relative">
         <!-- Vertical line -->
-        <div class="absolute left-[{level * 24 + 27}px] top-0 bottom-0 w-px bg-gremius-border"></div>
-        
+        <div
+          class="absolute left-[{level * 24 + 27}px] top-0 bottom-0 w-px bg-gremius-border"
+        ></div>
+
         {#each node.children as child}
-          {@render OrgNode({ node: child, level: level + 1, expandedNodes, toggleNode, getInitials, onSelect })}
+          {@render OrgNode({
+            node: child,
+            level: level + 1,
+            expandedNodes,
+            toggleNode,
+            getInitials,
+            onSelect,
+          })}
         {/each}
       </div>
     {/if}
@@ -367,15 +437,15 @@
   .card {
     @apply bg-gremius-card border border-gremius-border rounded-xl;
   }
-  
+
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all;
   }
-  
+
   .btn-primary {
     @apply bg-gremius-cyan text-gremius-bg hover:bg-gremius-cyan/90;
   }
-  
+
   .btn-ghost {
     @apply text-gremius-subtle hover:text-white hover:bg-white/5;
   }

@@ -29,22 +29,9 @@
  * ```
  */
 
-import {
-  eq,
-  ne,
-  gt,
-  gte,
-  lt,
-  lte,
-  inArray,
-  ilike,
-  and,
-  or,
-  not,
-  sql,
-  SQL,
-} from "drizzle-orm";
+import { eq, ne, gt, gte, lt, lte, inArray, ilike, and, or, not, sql, SQL } from "drizzle-orm";
 import type { PgTable, PgColumn } from "drizzle-orm/pg-core";
+
 import { db } from "../../../apps/api/src/db";
 import * as schema from "../../../apps/api/src/db/schema";
 
@@ -266,7 +253,7 @@ function getTableColumns(table: PgTable): string[] {
 function validateColumnExists(table: PgTable, columnName: string): boolean {
   // Campos especiales de operadores lógicos
   if (["AND", "OR", "NOT"].includes(columnName)) return true;
-  
+
   const column = getColumn(table, columnName);
   return column !== undefined;
 }
@@ -274,7 +261,16 @@ function validateColumnExists(table: PgTable, columnName: string): boolean {
 /** Valida que un operador sea soportado */
 function validateOperator(operator: string): operator is FilterOperator {
   const validOperators: FilterOperator[] = [
-    "eq", "neq", "gt", "gte", "lt", "lte", "in", "contains", "startsWith", "endsWith"
+    "eq",
+    "neq",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "in",
+    "contains",
+    "startsWith",
+    "endsWith",
   ];
   return validOperators.includes(operator as FilterOperator);
 }
@@ -285,7 +281,7 @@ function validateOperator(operator: string): operator is FilterOperator {
 
 /**
  * Construye una condición SQL para un operador específico.
- * 
+ *
  * Mapeo de operadores:
  * - eq -> eq()
  * - neq -> ne()
@@ -354,11 +350,21 @@ function buildOperatorCondition(
       const escapedEnd = value.replace(/[%_]/g, "\\$&");
       return ilike(column, `%${escapedEnd}`);
     default:
-      throw new GremiusQLError(
-        `Operador no soportado: ${operator}`,
-        "UNSUPPORTED_OPERATOR",
-        { operator, supportedOperators: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "contains", "startsWith", "endsWith"] }
-      );
+      throw new GremiusQLError(`Operador no soportado: ${operator}`, "UNSUPPORTED_OPERATOR", {
+        operator,
+        supportedOperators: [
+          "eq",
+          "neq",
+          "gt",
+          "gte",
+          "lt",
+          "lte",
+          "in",
+          "contains",
+          "startsWith",
+          "endsWith",
+        ],
+      });
   }
 }
 
@@ -368,17 +374,14 @@ function buildOperatorCondition(
 
 /**
  * Parsea recursivamente un objeto where y lo convierte a condiciones SQL de Drizzle.
- * 
+ *
  * Soporta:
  * - Filtros de campo: { level: { gte: 50 } }
  * - Igualdad directa: { element: "pyro" }
  * - Operadores lógicos AND/OR: { AND: [{...}, {...}] }
  * - Operador NOT: { NOT: { level: { lt: 10 } } }
  */
-function parseWhereClause(
-  table: PgTable,
-  where: WhereFilter | undefined
-): SQL | undefined {
+function parseWhereClause(table: PgTable, where: WhereFilter | undefined): SQL | undefined {
   if (!where || Object.keys(where).length === 0) {
     return undefined;
   }
@@ -445,10 +448,10 @@ function parseWhereClause(
       throw new GremiusQLError(
         `Columna "${key}" no existe en la tabla "${tableName}"`,
         "COLUMN_NOT_FOUND",
-        { 
-          column: key, 
-          table: tableName, 
-          availableColumns: availableColumns.slice(0, 20) // Limitar por brevedad
+        {
+          column: key,
+          table: tableName,
+          availableColumns: availableColumns.slice(0, 20), // Limitar por brevedad
         }
       );
     }
@@ -462,15 +465,22 @@ function parseWhereClause(
     if (value && typeof value === "object" && !Array.isArray(value)) {
       for (const [op, opValue] of Object.entries(value)) {
         if (!validateOperator(op)) {
-          throw new GremiusQLError(
-            `Operador "${op}" no soportado`,
-            "UNSUPPORTED_OPERATOR",
-            { 
-              operator: op, 
-              column: key,
-              supportedOperators: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "contains", "startsWith", "endsWith"]
-            }
-          );
+          throw new GremiusQLError(`Operador "${op}" no soportado`, "UNSUPPORTED_OPERATOR", {
+            operator: op,
+            column: key,
+            supportedOperators: [
+              "eq",
+              "neq",
+              "gt",
+              "gte",
+              "lt",
+              "lte",
+              "in",
+              "contains",
+              "startsWith",
+              "endsWith",
+            ],
+          });
         }
         const sqlCond = buildOperatorCondition(column, op, opValue);
         if (sqlCond) conditions.push(sqlCond);
@@ -492,7 +502,7 @@ function parseWhereClause(
 
 /**
  * Construye el objeto "with" para findMany con relaciones.
- * 
+ *
  * @example
  * Input: ["traces", "apiKeys"]
  * Output: { traces: true, apiKeys: true }
@@ -505,7 +515,7 @@ function buildWithObject(
 
   const tableName = getTableName(table);
   const tableRelations = relationsMap.get(tableName);
-  
+
   if (!tableRelations) return undefined;
 
   const withObj: Record<string, true | { with: Record<string, true> }> = {};
@@ -517,10 +527,10 @@ function buildWithObject(
       throw new GremiusQLError(
         `Relación "${relName}" no existe en la tabla "${tableName}"`,
         "RELATION_NOT_FOUND",
-        { 
-          relation: relName, 
-          table: tableName, 
-          availableRelations 
+        {
+          relation: relName,
+          table: tableName,
+          availableRelations,
         }
       );
     }
@@ -535,7 +545,7 @@ function buildWithObject(
 
 /**
  * Ejecuta la consulta usando db.query.findMany con relaciones.
- * 
+ *
  * Esta es la implementación Anti N+1 usando la API de query de Drizzle
  * que automáticamente hace los joins necesarios en una sola query.
  */
@@ -552,7 +562,7 @@ async function executeWithRelations<T>(
   // Construir la query base
   // Nota: Drizzle ORM tiene una API de query que permite "with" para relaciones
   // db.query[tableName].findMany({ where, with, limit, offset })
-  
+
   const queryConfig: any = {
     limit,
     offset,
@@ -569,7 +579,7 @@ async function executeWithRelations<T>(
   // Ejecutar la query usando la API de query de Drizzle
   // Necesitamos acceder a db.query[tableName]
   const queryApi = (db.query as any)[tableName];
-  
+
   if (!queryApi) {
     // Fallback a select tradicional si no hay query API
     return executeFallback<T>(table, whereClause, options);
@@ -693,10 +703,7 @@ async function loadRelationData(
     const fkColumn = getColumn(relation.table, relation.fkColumn);
     if (!fkColumn) return result;
 
-    const rows = await db
-      .select()
-      .from(relation.table)
-      .where(inArray(fkColumn, parentIds));
+    const rows = await db.select().from(relation.table).where(inArray(fkColumn, parentIds));
 
     // Agrupar por parentId
     for (const row of rows) {
@@ -717,13 +724,13 @@ async function loadRelationData(
 
 /**
  * Parsea y ejecuta una consulta Gremius QL.
- * 
+ *
  * Traduce un objeto JSON estilo Prisma a una consulta SQL ejecutable mediante Drizzle.
- * 
+ *
  * @param table - Tabla de Drizzle ORM (ej: schema.agentIdentities)
  * @param jsonPayload - Objeto JSON con la consulta (where, expand, limit, etc.)
  * @returns Resultado de la consulta con metadatos
- * 
+ *
  * @example
  * ```typescript
  * const result = await parseGremiusQuery(agentIdentities, {
@@ -752,9 +759,7 @@ export async function parseGremiusQuery<T = any>(
     const whereClause = parseWhereClause(table, jsonPayload.where);
 
     // 2. Construir objeto "with" para relaciones
-    const withObj = jsonPayload.expand 
-      ? buildWithObject(table, jsonPayload.expand)
-      : undefined;
+    const withObj = jsonPayload.expand ? buildWithObject(table, jsonPayload.expand) : undefined;
 
     // 3. Ejecutar consulta con o sin relaciones
     const data = await executeWithRelations<T>(table, whereClause, withObj, jsonPayload);
@@ -783,7 +788,7 @@ export async function parseGremiusQuery<T = any>(
     if (error instanceof GremiusQLError) {
       throw error;
     }
-    
+
     // Wrap unexpected errors
     throw new GremiusQLError(
       `Error ejecutando consulta: ${(error as Error).message}`,
@@ -795,9 +800,9 @@ export async function parseGremiusQuery<T = any>(
 
 /**
  * Valida una consulta Gremius QL sin ejecutarla.
- * 
+ *
  * @returns Objeto con validación y lista de errores si los hay
- * 
+ *
  * @example
  * ```typescript
  * const { valid, errors } = validateGremiusQuery(agentIdentities, {
@@ -830,7 +835,9 @@ export function validateGremiusQuery(
     for (const rel of jsonPayload.expand) {
       if (!tableRelations?.has(rel)) {
         const available = tableRelations ? Array.from(tableRelations.keys()) : [];
-        errors.push(`RELATION_NOT_FOUND: Relación "${rel}" no existe. Disponibles: ${available.join(", ")}`);
+        errors.push(
+          `RELATION_NOT_FOUND: Relación "${rel}" no existe. Disponibles: ${available.join(", ")}`
+        );
       }
     }
   }
@@ -851,7 +858,7 @@ export function validateGremiusQuery(
 
 /**
  * Obtiene las relaciones disponibles para una tabla.
- * 
+ *
  * @example
  * ```typescript
  * const relations = getAvailableRelations(agentIdentities);
@@ -866,7 +873,7 @@ export function getAvailableRelations(table: PgTable): string[] {
 
 /**
  * Registra dinámicamente una nueva relación para Auto-Join.
- * 
+ *
  * @example
  * ```typescript
  * registerDynamicRelation(characters, "weapon", {
@@ -906,10 +913,10 @@ export function debugQuery(
   jsonPayload: GremiusQueryOptions
 ): { sql: string; params: any[] } {
   const tableName = getTableName(table);
-  
+
   try {
     const whereClause = parseWhereClause(table, jsonPayload.where);
-    
+
     return {
       sql: `SELECT * FROM "${tableName}"${whereClause ? " WHERE ?" : ""}`,
       params: whereClause ? [whereClause] : [],
@@ -926,10 +933,4 @@ export function debugQuery(
 // EXPORTACIONES ADICIONALES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export {
-  relationsMap,
-  getTableName,
-  getColumn,
-  validateColumnExists,
-  validateOperator,
-};
+export { relationsMap, getTableName, getColumn, validateColumnExists, validateOperator };

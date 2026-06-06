@@ -67,76 +67,80 @@ GET /api/directory/org-chart?organizationId={id}
 
 ### Organizations
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/directory/organizations` | List organizations |
-| POST | `/api/directory/organizations` | Create organization |
-| GET | `/api/directory/organizations/:id` | Get details with departments |
+| Method | Endpoint                           | Description                  |
+| ------ | ---------------------------------- | ---------------------------- |
+| GET    | `/api/directory/organizations`     | List organizations           |
+| POST   | `/api/directory/organizations`     | Create organization          |
+| GET    | `/api/directory/organizations/:id` | Get details with departments |
 
 ### Departments
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/directory/departments` | List (with filters) |
-| POST | `/api/directory/departments` | Create department |
-| GET | `/api/directory/departments/:id` | Get with employees |
+| Method | Endpoint                         | Description         |
+| ------ | -------------------------------- | ------------------- |
+| GET    | `/api/directory/departments`     | List (with filters) |
+| POST   | `/api/directory/departments`     | Create department   |
+| GET    | `/api/directory/departments/:id` | Get with employees  |
 
 ### Positions
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/directory/positions` | List positions |
-| POST | `/api/directory/positions` | Create position |
+| Method | Endpoint                   | Description     |
+| ------ | -------------------------- | --------------- |
+| GET    | `/api/directory/positions` | List positions  |
+| POST   | `/api/directory/positions` | Create position |
 
 ### Employees
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/directory/employees` | List with filters |
-| POST | `/api/directory/employees` | Create employee |
-| GET | `/api/directory/employees/:id` | Get full profile |
-| PATCH | `/api/directory/employees/:id` | Update employee |
-| DELETE | `/api/directory/employees/:id` | Soft delete |
-| GET | `/api/directory/employees/:id/reporting-chain` | Get management chain |
-| GET | `/api/directory/employees/:id/documents` | List documents |
-| POST | `/api/directory/employees/:id/documents` | Add document |
+| Method | Endpoint                                       | Description          |
+| ------ | ---------------------------------------------- | -------------------- |
+| GET    | `/api/directory/employees`                     | List with filters    |
+| POST   | `/api/directory/employees`                     | Create employee      |
+| GET    | `/api/directory/employees/:id`                 | Get full profile     |
+| PATCH  | `/api/directory/employees/:id`                 | Update employee      |
+| DELETE | `/api/directory/employees/:id`                 | Soft delete          |
+| GET    | `/api/directory/employees/:id/reporting-chain` | Get management chain |
+| GET    | `/api/directory/employees/:id/documents`       | List documents       |
+| POST   | `/api/directory/employees/:id/documents`       | Add document         |
 
 ### Org Chart & Search
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/directory/org-chart` | Get full org chart |
-| GET | `/api/directory/search?q={query}` | Global search |
-| GET | `/api/directory/stats` | Organization statistics |
+| Method | Endpoint                          | Description             |
+| ------ | --------------------------------- | ----------------------- |
+| GET    | `/api/directory/org-chart`        | Get full org chart      |
+| GET    | `/api/directory/search?q={query}` | Global search           |
+| GET    | `/api/directory/stats`            | Organization statistics |
 
 ## Employee Statuses
 
-| Status | Description |
-|--------|-------------|
-| `active` | Currently employed |
-| `on_leave` | Temporarily away |
-| `remote` | Working remotely |
-| `terminated` | No longer employed |
+| Status       | Description         |
+| ------------ | ------------------- |
+| `active`     | Currently employed  |
+| `on_leave`   | Temporarily away    |
+| `remote`     | Working remotely    |
+| `terminated` | No longer employed  |
 | `contractor` | External contractor |
-| `intern` | Internship |
+| `intern`     | Internship          |
 
 ## Database Schema
 
 ### organizations
+
 - Company/entity information
 - Multi-tenant support
 
 ### departments
+
 - Nested hierarchy (parent/child)
 - Department heads
 - Cost centers
 
 ### positions
+
 - Job titles and levels
 - Reporting structure
 - Management flags
 
 ### employees
+
 - Personal and work info
 - Skills and languages
 - Social links
@@ -144,11 +148,13 @@ GET /api/directory/org-chart?organizationId={id}
 - Custom fields
 
 ### employee_documents
+
 - Contracts, IDs, certificates
 - Expiration tracking
 - Confidential flags
 
 ### org_chart_cache
+
 - Pre-computed hierarchy
 - Fast tree queries
 

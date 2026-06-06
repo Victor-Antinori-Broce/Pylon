@@ -9,13 +9,13 @@
  */
 
 import { Hono } from "hono";
+
 import { requireAuth } from "../middleware/auth";
 import { 
   detectRelations, 
   generateInlineConfigs, 
   fetchInlineData,
-  saveInlineRecords,
-  type InlineConfig 
+  saveInlineRecords 
 } from "../services/inline-relations";
 
 export const inlineRelationsRoutes = new Hono();

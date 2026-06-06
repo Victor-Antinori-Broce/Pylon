@@ -8,12 +8,12 @@
 
 ## Resumen de Fases
 
-| Fase | Descripción | Estado | Archivos Principales |
-|------|-------------|--------|---------------------|
+| Fase       | Descripción                    | Estado      | Archivos Principales                             |
+| ---------- | ------------------------------ | ----------- | ------------------------------------------------ |
 | **Fase 1** | Extensión de Esquema (Persona) | ✅ Completa | `0020_agent_identities_persona.sql`, `schema.ts` |
-| **Fase 2** | Generación de IDs Tipificados | ✅ Completa | `id-generator.ts` |
-| **Fase 3** | RBAC Granular | ✅ Completa | `agent-rbac.ts` |
-| **Fase 4** | Agent Memory | ✅ Completa | `0021_agent_memory.sql`, `agent-memory.ts` |
+| **Fase 2** | Generación de IDs Tipificados  | ✅ Completa | `id-generator.ts`                                |
+| **Fase 3** | RBAC Granular                  | ✅ Completa | `agent-rbac.ts`                                  |
+| **Fase 4** | Agent Memory                   | ✅ Completa | `0021_agent_memory.sql`, `agent-memory.ts`       |
 
 ---
 
@@ -30,14 +30,17 @@ allowedTools: jsonb("allowed_tools").default([]),          // Tools permitidas
 ```
 
 ### Migración SQL
+
 - **Archivo:** `apps/api/src/db/migrations/0020_agent_identities_persona.sql`
 - **Índices:** type, capabilities (GIN), allowed_tools (GIN), composite (type, is_active)
 
 ### Endpoints Admin
+
 - `POST /api/admin/agents` - Crea agente con campos Persona
 - `PUT /api/admin/agents/:id` - ✅ **CORREGIDO:** Ahora actualiza type, capabilities, systemPrompt, allowedTools
 
 ### Validación
+
 ✅ Los campos de Persona se almacenan correctamente en JSONB  
 ✅ Los índices GIN permiten búsquedas eficientes  
 ✅ Valores por defecto para backward compatibility
@@ -49,8 +52,9 @@ allowedTools: jsonb("allowed_tools").default([]),          // Tools permitidas
 ### Utilidad `id-generator.ts`
 
 **Funciones Exportadas:**
+
 ```typescript
-generateAgentId({ type: "claude-desktop" }) 
+generateAgentId({ type: "claude-desktop" })
 // → { id: "grm_agent_claude-desktop_a1b2c3d4...", type, hash, prefix }
 
 generateAgentApiKey({ type: "scraper" })
@@ -65,19 +69,21 @@ normalizeAgentType(type: string) → string
 ```
 
 ### Constantes
+
 ```typescript
 AGENT_TYPES = {
   CLAUDE_DESKTOP: "claude-desktop",
-  CLAUDE_WEB: "claude-web", 
+  CLAUDE_WEB: "claude-web",
   SCRAPER: "scraper",
   WORKER: "worker",
   WEBHOOK: "webhook",
   MCP_SERVER: "mcp-server",
-  CUSTOM: "custom"
-}
+  CUSTOM: "custom",
+};
 ```
 
 ### Integración
+
 ✅ `agent-auth.ts` importa y usa `generateTypedAgentApiKey`  
 ✅ Las API keys generadas incluyen el tipo: `grm_agent_{tipo}_{random}`  
 ✅ Backward compatibility con formato legacy
@@ -89,6 +95,7 @@ AGENT_TYPES = {
 ### Middleware `agent-rbac.ts`
 
 **Funciones Exportadas:**
+
 ```typescript
 // Middleware factories
 requireScopes({ scopes: ["read:db", "write:db"], requireAll: true })  // AND
@@ -106,10 +113,11 @@ getAccessibleResources(agent, "read") → string[]
 ```
 
 ### Soporte de Wildcards
+
 ```typescript
 // Un agente con scope "read:*" puede acceder a:
 // - "read:database"
-// - "read:files" 
+// - "read:files"
 // - "read:memory"
 // etc.
 
@@ -117,6 +125,7 @@ getAccessibleResources(agent, "read") → string[]
 ```
 
 ### Códigos de Error
+
 ```typescript
 RBACErrorCode {
   AGENT_NOT_AUTHENTICATED = "AGENT_NOT_AUTHENTICATED",
@@ -127,6 +136,7 @@ RBACErrorCode {
 ```
 
 ### Respuesta 403 Detallada
+
 ```json
 {
   "error": "Forbidden",
@@ -140,10 +150,12 @@ RBACErrorCode {
 ```
 
 ### Headers de Debugging
+
 - `X-RBAC-Required`: Scopes requeridos
 - `X-RBAC-Mode`: `all` | `any`
 
 ### Funciones de Verificación (en `agent-auth.ts`)
+
 ```typescript
 hasScope(agentContext, "read:database") → boolean
 hasAllScopes(agentContext, ["read:db", "write:db"]) → boolean  // AND
@@ -151,6 +163,7 @@ hasAnyScope(agentContext, ["read:db", "admin:*"]) → boolean    // OR
 ```
 
 ### Validación
+
 ✅ Wildcards funcionan correctamente (`read:*` matches `read:database`)  
 ✅ Respuestas 401 cuando no hay autenticación  
 ✅ Respuestas 403 con detalle cuando faltan scopes  
@@ -164,6 +177,7 @@ hasAnyScope(agentContext, ["read:db", "admin:*"]) → boolean    // OR
 ### Tabla `agent_memory`
 
 **Campos Principales:**
+
 ```sql
 agent_id TEXT REFERENCES agent_identities(id) ON DELETE CASCADE
 memory_type ENUM('short_term', 'long_term', 'episodic', 'semantic')
@@ -184,6 +198,7 @@ last_accessed_at TIMESTAMP
 ```
 
 ### Migración SQL
+
 - **Archivo:** `apps/api/src/db/migrations/0021_agent_memory.sql`
 - **Índices:** agent+type, category, key, valid, importance, last_accessed
 - **GIN indexes:** content, tags
@@ -192,19 +207,20 @@ last_accessed_at TIMESTAMP
 
 ### API Endpoints
 
-| Método | Endpoint | Scope Requerido | Descripción |
-|--------|----------|-----------------|-------------|
-| GET | `/api/agent/memory` | `memory:read` | Listar memorias (con filtros) |
-| POST | `/api/agent/memory` | `memory:write` | Crear memoria |
-| GET | `/api/agent/memory/:id` | `memory:read` | Obtener por ID |
-| GET | `/api/agent/memory/key/:key` | `memory:read` | Obtener por clave |
-| PUT | `/api/agent/memory/:id` | `memory:write` | Actualizar memoria |
-| DELETE | `/api/agent/memory/:id` | `memory:delete` | Eliminar memoria |
-| POST | `/api/agent/memory/search` | `memory:read` | Búsqueda avanzada |
-| POST | `/api/agent/memory/cleanup` | `memory:admin` | Garbage collection |
-| GET | `/api/agent/memory/stats` | `memory:read` | Estadísticas |
+| Método | Endpoint                     | Scope Requerido | Descripción                   |
+| ------ | ---------------------------- | --------------- | ----------------------------- |
+| GET    | `/api/agent/memory`          | `memory:read`   | Listar memorias (con filtros) |
+| POST   | `/api/agent/memory`          | `memory:write`  | Crear memoria                 |
+| GET    | `/api/agent/memory/:id`      | `memory:read`   | Obtener por ID                |
+| GET    | `/api/agent/memory/key/:key` | `memory:read`   | Obtener por clave             |
+| PUT    | `/api/agent/memory/:id`      | `memory:write`  | Actualizar memoria            |
+| DELETE | `/api/agent/memory/:id`      | `memory:delete` | Eliminar memoria              |
+| POST   | `/api/agent/memory/search`   | `memory:read`   | Búsqueda avanzada             |
+| POST   | `/api/agent/memory/cleanup`  | `memory:admin`  | Garbage collection            |
+| GET    | `/api/agent/memory/stats`    | `memory:read`   | Estadísticas                  |
 
 ### Seguridad de Ownership
+
 ```typescript
 // Cada agente solo puede acceder a sus propias memorias
 enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boolean {
@@ -213,6 +229,7 @@ enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boolean {
 ```
 
 ### Filtros de Búsqueda
+
 - `?type=short_term` - Filtrar por tipo
 - `?category=conversation` - Filtrar por categoría
 - `?min_importance=50` - Importancia mínima
@@ -220,11 +237,13 @@ enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boolean {
 - `?limit=20&offset=0` - Paginación
 
 ### LRU Tracking
+
 - `accessCount` se incrementa automáticamente en cada lectura
 - `lastAccessedAt` se actualiza en cada acceso
 - Usado para garbage collection de memorias antiguas
 
 ### Validación
+
 ✅ Tabla creada con todas las columnas  
 ✅ Relación foreign key con agent_identities  
 ✅ Índices GIN para búsquedas JSONB  
@@ -250,7 +269,7 @@ enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boolean {
      "allowedTools": ["read_dataset"],   ← Fase 1
      "scopes": ["memory:read", "memory:write"]  ← Fase 3
    }
-   
+
    Response:
    {
      "agent": { ... },
@@ -260,12 +279,12 @@ enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boolean {
 2. ACCEDER A MEMORIA (Fase 3 + 4)
    GET /api/agent/memory
    Headers: Authorization: Bearer grm_agent_claude-desktop_...
-   
+
    a) Middleware agentAuthWithRBAC verifica API key  ← Fase 2
    b) Se carga AgentAuthContext con scopes            ← Fase 3
    c) Middleware verifica scope "memory:read"         ← Fase 3
    d) Si autorizado, lista memorias del agente        ← Fase 4
-   
+
 3. CREAR MEMORIA
    POST /api/agent/memory
    {
@@ -294,9 +313,11 @@ Fase 4 (memory) usa agentAuthWithRBAC de rbac
 ## Correciones Realizadas Durante Validación
 
 ### 1. PUT /api/admin/agents/:id ✅ CORREGIDO
+
 **Problema:** No actualizaba los campos de Persona (type, capabilities, systemPrompt, allowedTools)
 
 **Solución:** Agregados los campos al handler de actualización
+
 ```typescript
 const { name, description, type, capabilities, systemPrompt, allowedTools, scopes, rateLimit, isActive } = body;
 // ...
@@ -307,6 +328,7 @@ allowedTools: validAllowedTools ?? agent.allowedTools,
 ```
 
 ### 2. Importación sin usar ✅ CORREGIDO
+
 **Problema:** `agent-memory.ts` importaba `agentIdentities` pero no lo usaba
 
 **Solución:** Eliminada la importación innecesaria
@@ -316,12 +338,14 @@ allowedTools: validAllowedTools ?? agent.allowedTools,
 ## Testing Recomendado
 
 ### Tests Unitarios (tests.json)
+
 - ✅ 15 casos para id-generator.spec.ts
-- ✅ 10 casos para agents-persona.spec.ts  
+- ✅ 10 casos para agents-persona.spec.ts
 - ✅ 15 casos para agent-rbac.spec.ts
 - ✅ 32 casos para agent-memory.spec.ts
 
 ### Tests de Integración
+
 ```bash
 # Crear agente con Persona
 curl -X POST /api/admin/agents \
@@ -351,13 +375,13 @@ curl /api/agent/memory/$MEMORY_ID \
 
 ## Estado Final
 
-| Componente | Estado |
-|-----------|--------|
-| Fase 1 - Persona | ✅ Funcional |
-| Fase 2 - ID Generator | ✅ Funcional |
-| Fase 3 - RBAC | ✅ Funcional |
-| Fase 4 - Memory | ✅ Funcional |
-| Integración | ✅ Funcional |
-| Tests Documentados | ✅ 72 casos en tests.json |
+| Componente            | Estado                    |
+| --------------------- | ------------------------- |
+| Fase 1 - Persona      | ✅ Funcional              |
+| Fase 2 - ID Generator | ✅ Funcional              |
+| Fase 3 - RBAC         | ✅ Funcional              |
+| Fase 4 - Memory       | ✅ Funcional              |
+| Integración           | ✅ Funcional              |
+| Tests Documentados    | ✅ 72 casos en tests.json |
 
 **Conclusión:** Las 4 fases están completamente implementadas, integradas y funcionando correctamente.

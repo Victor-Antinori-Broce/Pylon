@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Calendar } from "lucide-svelte";
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
+  import { Calendar } from "lucide-svelte";
 
-  let { value, config, mode, onChange }: FieldComponentProps = $props();
+  const { value, config, mode, onChange }: FieldComponentProps = $props();
   
-  let formattedDate = $derived.by(() => {
+  const formattedDate = $derived.by(() => {
     if (!value) return "—";
     const date = new Date(value);
     if (isNaN(date.getTime())) return "—";
@@ -19,7 +19,7 @@
     return format.replace(/YYYY|MM|DD/g, match => map[match]);
   });
   
-  let inputValue = $derived(
+  const inputValue = $derived(
     value ? new Date(value).toISOString().split("T")[0] : ""
   );
 </script>

@@ -2,10 +2,10 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * OPENAPI AGGREGATOR - Dynamic OpenAPI Spec Generation from Grimoires
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * This module aggregates OpenAPI specifications from all loaded grimoires
  * into a single unified API specification.
- * 
+ *
  * Features:
  * - Auto-generates OpenAPI 3.0.0 spec from grimoire definitions
  * - Converts Zod schemas to JSON Schema
@@ -14,13 +14,21 @@
  * - Supports tags, webhooks, and reusable components
  */
 
-import type { OpenAPIObject, PathItemObject, OperationObject, ParameterObject, SchemaObject } from "openapi3-ts/oas30";
-import { zodToJsonSchema } from "zod-to-json-schema";
-import type { ZodTypeAny } from "zod";
 import type { GrimoireDefinition, GrimoireOpenApiPath, OpenApiMethod } from "@gremius/shared";
-import { logger } from "./logger";
+import type {
+  OpenAPIObject,
+  PathItemObject,
+  OperationObject,
+  ParameterObject,
+  SchemaObject,
+} from "openapi3-ts/oas30";
+import type { ZodTypeAny } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 import { db } from "../db";
 import { dataSets } from "../db/schema";
+
+import { logger } from "./logger";
 
 /**
  * Options for generating OpenAPI specification
@@ -78,10 +86,10 @@ function zodToOpenApiSchema(zodSchema: ZodTypeAny, name?: string): SchemaObject 
       name: name || "Schema",
       $refStrategy: "none", // Inline all references
     });
-    
+
     // Remove the $schema property if present
     const { $schema, ...schemaWithoutMeta } = jsonSchema as any;
-    
+
     return schemaWithoutMeta as SchemaObject;
   } catch (error) {
     logger.error({ error, name }, "Failed to convert Zod schema to JSON Schema");
@@ -98,14 +106,15 @@ function convertPathToOpenApi(
 ): { method: OpenApiMethod; pathItem: OperationObject } {
   const method = pathDef.method.toLowerCase() as OpenApiMethod;
   const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
-  
+
   // Generate operationId if not provided
-  const operationId = pathDef.operationId || 
+  const operationId =
+    pathDef.operationId ||
     `${grimoirePrefix}_${method}_${pathDef.path.replace(/[^a-zA-Z0-9]/g, "_")}`;
-  
+
   // Build parameters
   const parameters: ParameterObject[] = [];
-  
+
   // Path parameters
   if (pathDef.params) {
     const paramSchema = zodToOpenApiSchema(pathDef.params, "Params");
@@ -120,7 +129,7 @@ function convertPathToOpenApi(
       });
     }
   }
-  
+
   // Query parameters
   if (pathDef.query) {
     const querySchema = zodToOpenApiSchema(pathDef.query, "Query");
@@ -136,7 +145,7 @@ function convertPathToOpenApi(
       });
     }
   }
-  
+
   // Build request body
   let requestBody: OperationObject["requestBody"] = undefined;
   if (pathDef.body) {
@@ -149,7 +158,7 @@ function convertPathToOpenApi(
       },
     };
   }
-  
+
   // Build responses
   const responses: OperationObject["responses"] = {};
   for (const [statusCode, responseDef] of Object.entries(pathDef.responses)) {
@@ -162,7 +171,7 @@ function convertPathToOpenApi(
       },
     };
   }
-  
+
   // Build operation
   const operation: OperationObject = {
     operationId,
@@ -174,14 +183,14 @@ function convertPathToOpenApi(
     responses,
     security: pathDef.requireAuth !== false ? [{ bearerAuth: [] }, { cookieAuth: [] }] : undefined,
   };
-  
+
   // Clean undefined values
-  Object.keys(operation).forEach(key => {
+  Object.keys(operation).forEach((key) => {
     if (operation[key as keyof OperationObject] === undefined) {
       delete operation[key as keyof OperationObject];
     }
   });
-  
+
   return { method, pathItem: operation };
 }
 
@@ -203,7 +212,7 @@ export async function generateOpenAPISpec(
   grimoires: GrimoireDefinition[],
   options: OpenApiAggregatorOptions = {}
 ): Promise<OpenAPIObject> {
-  const { 
+  const {
     title = DEFAULT_INFO.title,
     version = DEFAULT_INFO.version,
     description = DEFAULT_INFO.description,
@@ -214,19 +223,22 @@ export async function generateOpenAPISpec(
     includeGrimoires,
     excludeGrimoires = [],
   } = options;
-  
+
   // Filter grimoires
-  const filteredGrimoires = grimoires.filter(g => {
+  const filteredGrimoires = grimoires.filter((g) => {
     if (includeGrimoires && !includeGrimoires.includes(g.id)) return false;
     if (excludeGrimoires.includes(g.id)) return false;
     return g.openApi !== undefined;
   });
-  
-  logger.info({ 
-    totalGrimoires: grimoires.length, 
-    includedGrimoires: filteredGrimoires.length 
-  }, "Generating OpenAPI spec");
-  
+
+  logger.info(
+    {
+      totalGrimoires: grimoires.length,
+      includedGrimoires: filteredGrimoires.length,
+    },
+    "Generating OpenAPI spec"
+  );
+
   // Initialize spec
   const spec: OpenAPIObject = {
     openapi: "3.0.0",
@@ -264,7 +276,7 @@ export async function generateOpenAPISpec(
     },
     tags: [],
   };
-  
+
   const addedTags = new Set<string>();
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -285,13 +297,15 @@ export async function generateOpenAPISpec(
   }> = [];
 
   try {
-    datasets = await db.select({
-      id: dataSets.id,
-      name: dataSets.name,
-      slug: dataSets.slug,
-      description: dataSets.description,
-      schema: dataSets.schema,
-    }).from(dataSets);
+    datasets = await db
+      .select({
+        id: dataSets.id,
+        name: dataSets.name,
+        slug: dataSets.slug,
+        description: dataSets.description,
+        schema: dataSets.schema,
+      })
+      .from(dataSets);
   } catch (err) {
     logger.warn({ err }, "Could not fetch datasets for OpenAPI spec");
   }
@@ -313,7 +327,7 @@ export async function generateOpenAPISpec(
     properties.id = { type: "string", format: "uuid", readOnly: true };
 
     // Build properties from dataset schema
-    for (const field of (ds.schema || [])) {
+    for (const field of ds.schema || []) {
       const prop = datasetFieldTypeToJsonSchema(field.fieldType, field.options);
       if (prop) {
         properties[field.fieldName] = prop;
@@ -391,9 +405,7 @@ export async function generateOpenAPISpec(
         operationId: `dataset_${ds.slug}_get`,
         summary: `Get a ${ds.name}`,
         tags: [dsTag],
-        parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" } },
-        ],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
         responses: {
           "200": {
             description: `${ds.name} item`,
@@ -410,9 +422,7 @@ export async function generateOpenAPISpec(
         operationId: `dataset_${ds.slug}_update`,
         summary: `Update a ${ds.name}`,
         tags: [dsTag],
-        parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" } },
-        ],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
         requestBody: {
           required: true,
           content: {
@@ -430,9 +440,7 @@ export async function generateOpenAPISpec(
         operationId: `dataset_${ds.slug}_delete`,
         summary: `Delete a ${ds.name}`,
         tags: [dsTag],
-        parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" } },
-        ],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
         responses: {
           "200": { description: `${ds.name} deleted` },
           "404": { description: "Not found" },
@@ -459,11 +467,27 @@ export async function generateOpenAPISpec(
       description: "Works for both datasets (JSONB) and native grimoire tables.",
       tags: [itemsTag],
       parameters: [
-        { name: "collection", in: "path", required: true, schema: { type: "string" }, description: "Dataset slug or table name" },
+        {
+          name: "collection",
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+          description: "Dataset slug or table name",
+        },
         { name: "limit", in: "query", schema: { type: "integer", default: 50 } },
         { name: "offset", in: "query", schema: { type: "integer", default: 0 } },
-        { name: "sort", in: "query", schema: { type: "string" }, description: "e.g. -createdAt or name" },
-        { name: "where", in: "query", schema: { type: "string" }, description: "JSON filter object" },
+        {
+          name: "sort",
+          in: "query",
+          schema: { type: "string" },
+          description: "e.g. -createdAt or name",
+        },
+        {
+          name: "where",
+          in: "query",
+          schema: { type: "string" },
+          description: "JSON filter object",
+        },
       ],
       responses: {
         "200": { description: "Paginated list of items" },
@@ -474,9 +498,7 @@ export async function generateOpenAPISpec(
       operationId: "items_create",
       summary: "Create an item in a collection",
       tags: [itemsTag],
-      parameters: [
-        { name: "collection", in: "path", required: true, schema: { type: "string" } },
-      ],
+      parameters: [{ name: "collection", in: "path", required: true, schema: { type: "string" } }],
       requestBody: {
         required: true,
         content: { "application/json": { schema: { type: "object" } } },
@@ -539,9 +561,9 @@ export async function generateOpenAPISpec(
   // ═══════════════════════════════════════════════════════════════════════════
   for (const grimoire of filteredGrimoires) {
     if (!grimoire.openApi) continue;
-    
+
     const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
-    
+
     // Add tags
     if (grimoire.openApi.tags) {
       for (const tag of grimoire.openApi.tags) {
@@ -551,7 +573,7 @@ export async function generateOpenAPISpec(
         }
       }
     }
-    
+
     // Add default tag for grimoire
     if (!addedTags.has(grimoire.name)) {
       spec.tags!.push({
@@ -560,7 +582,7 @@ export async function generateOpenAPISpec(
       });
       addedTags.add(grimoire.name);
     }
-    
+
     // Register schemas (with grimoire prefix to avoid conflicts)
     if (grimoire.openApi.schemas) {
       for (const [schemaName, zodSchema] of Object.entries(grimoire.openApi.schemas)) {
@@ -568,25 +590,25 @@ export async function generateOpenAPISpec(
         spec.components!.schemas![prefixedName] = zodToOpenApiSchema(zodSchema, prefixedName);
       }
     }
-    
+
     // Register paths
     for (const pathDef of grimoire.openApi.paths) {
       const fullPath = getFullPath(grimoire, pathDef.path);
       const { method, pathItem } = convertPathToOpenApi(grimoire, pathDef);
-      
+
       if (!spec.paths![fullPath]) {
         spec.paths![fullPath] = {};
       }
-      
+
       (spec.paths![fullPath] as PathItemObject)[method] = pathItem;
     }
-    
+
     // Register webhooks
     if ((grimoire.openApi as any).webhooks) {
       if (!(spec as any).webhooks) {
         (spec as any).webhooks = {};
       }
-      
+
       for (const [webhookName, webhookDef] of Object.entries((grimoire.openApi as any).webhooks)) {
         const prefixedName = `${grimoirePrefix}_${webhookName}`;
         (spec as any).webhooks[prefixedName] = {
@@ -608,7 +630,7 @@ export async function generateOpenAPISpec(
       }
     }
   }
-  
+
   return spec;
 }
 
@@ -621,7 +643,7 @@ export async function generateGrimoireSpec(
   if (!grimoire.openApi) {
     return null;
   }
-  
+
   return generateOpenAPISpec([grimoire], {
     title: `${grimoire.name} API`,
     description: grimoire.description || `${grimoire.name} endpoints`,
@@ -637,15 +659,18 @@ export function getOperationId(
   path: string
 ): string | undefined {
   if (!grimoire.openApi) return undefined;
-  
+
   const pathDef = grimoire.openApi.paths.find(
-    p => p.method === method.toLowerCase() && p.path === path
+    (p) => p.method === method.toLowerCase() && p.path === path
   );
-  
+
   if (!pathDef) return undefined;
-  
+
   const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
-  return pathDef.operationId || `${grimoirePrefix}_${method.toLowerCase()}_${path.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  return (
+    pathDef.operationId ||
+    `${grimoirePrefix}_${method.toLowerCase()}_${path.replace(/[^a-zA-Z0-9]/g, "_")}`
+  );
 }
 
 /**
@@ -667,16 +692,18 @@ export function listOperations(grimoires: GrimoireDefinition[]): Array<{
     summary: string;
     tags: string[];
   }> = [];
-  
+
   for (const grimoire of grimoires) {
     if (!grimoire.openApi) continue;
-    
+
     const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
-    
+
     for (const path of grimoire.openApi.paths) {
       operations.push({
         grimoireId: grimoire.id,
-        operationId: path.operationId || `${grimoirePrefix}_${path.method}_${path.path.replace(/[^a-zA-Z0-9]/g, "_")}`,
+        operationId:
+          path.operationId ||
+          `${grimoirePrefix}_${path.method}_${path.path.replace(/[^a-zA-Z0-9]/g, "_")}`,
         method: path.method.toUpperCase(),
         path: getFullPath(grimoire, path.path),
         summary: path.summary,
@@ -684,7 +711,7 @@ export function listOperations(grimoires: GrimoireDefinition[]): Array<{
       });
     }
   }
-  
+
   return operations;
 }
 

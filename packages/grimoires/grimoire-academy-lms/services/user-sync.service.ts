@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Academy LMS - User Sync Service
- * 
+ *
  * Servicio para sincronización de usuarios desde sistemas externos.
  * Soporta importación masiva, validación y mapeo de roles.
  */
@@ -73,11 +73,13 @@ export const usuarioExternoSchema = z.object({
 
 export const syncConfigSchema = z.object({
   proveedor: z.enum(["csv", "api", "ldap", "saml"]),
-  mapeoRoles: z.object({
-    campoExterno: z.string(),
-    valores: z.record(z.string()),
-    default: z.string(),
-  }).optional(),
+  mapeoRoles: z
+    .object({
+      campoExterno: z.string(),
+      valores: z.record(z.string()),
+      default: z.string(),
+    })
+    .optional(),
   crearUsuariosNuevos: z.boolean().default(true),
   actualizarExistentes: z.boolean().default(true),
   desactivarNoEncontrados: z.boolean().default(false),
@@ -97,13 +99,13 @@ export const syncConfigSchema = z.object({
 export const mapeoRolesPacifico: RolMapping = {
   campoExterno: "rol",
   valores: {
-    "Administrador": "administrador",
-    "Supervisor": "supervisor",
-    "Oficial": "estudiante",
-    "Asistente": "estudiante",
-    "Analista": "estudiante",
+    Administrador: "administrador",
+    Supervisor: "supervisor",
+    Oficial: "estudiante",
+    Asistente: "estudiante",
+    Analista: "estudiante",
     "Back Office": "estudiante",
-    "Usuario": "estudiante",
+    Usuario: "estudiante",
   },
   default: "estudiante",
 };
@@ -112,32 +114,32 @@ export const mapeoRolesPacifico: RolMapping = {
  * Mapeo de departamentos estándar
  */
 export const mapeoDepartamentos: Record<string, string> = {
-  "CONTABILIDAD": "CONTABILIDAD",
-  "COBROS": "COBROS",
-  "COMPUTO": "COMPUTO",
+  CONTABILIDAD: "CONTABILIDAD",
+  COBROS: "COBROS",
+  COMPUTO: "COMPUTO",
   "EXPERIENCIA AL CLIENTE": "EXPERIENCIA_AL_CLIENTE",
-  "FINANZAS": "FINANZAS",
-  "GERENCIA": "GERENCIA",
-  "ITICO": "ITICO",
-  "LEGAL": "LEGAL",
-  "NEGOCIOS": "NEGOCIOS",
-  "PROCESOS": "PROCESOS",
+  FINANZAS: "FINANZAS",
+  GERENCIA: "GERENCIA",
+  ITICO: "ITICO",
+  LEGAL: "LEGAL",
+  NEGOCIOS: "NEGOCIOS",
+  PROCESOS: "PROCESOS",
   "RECURSOS HUMANOS": "RECURSOS_HUMANOS",
   "SERVICIOS GENERALES": "SERVICIOS_GENERALES",
-  "TRAMITE": "TRAMITE",
+  TRAMITE: "TRAMITE",
 };
 
 /**
  * Mapeo de cargos estándar
  */
 export const mapeoCargos: Record<string, string> = {
-  "Asistente": "Asistente",
-  "Analista": "Analista",
+  Asistente: "Asistente",
+  Analista: "Analista",
   "Oficial Profesional": "Oficial_Profesional",
-  "Coordinador": "Coordinador",
+  Coordinador: "Coordinador",
   "Encargada/Supervisor": "Encargada_Supervisor",
-  "Jefe": "Jefe",
-  "Gerente": "Gerente",
+  Jefe: "Jefe",
+  Gerente: "Gerente",
 };
 
 // ============================================
@@ -165,9 +167,7 @@ export function validarUsuarioExterno(
 /**
  * Valida una lista de usuarios externos
  */
-export function validarUsuariosExternos(
-  data: unknown[]
-): {
+export function validarUsuariosExternos(data: unknown[]): {
   validos: UsuarioExterno[];
   invalidos: Array<{ index: number; data: unknown; errores: string[] }>;
 } {
@@ -226,9 +226,7 @@ export function normalizarUsuarioExterno(
     email: usuario.email.toLowerCase().trim(),
     nombre: usuario.nombre.trim(),
     apellido: usuario.apellido?.trim(),
-    departamento: usuario.departamento
-      ? mapearDepartamento(usuario.departamento)
-      : undefined,
+    departamento: usuario.departamento ? mapearDepartamento(usuario.departamento) : undefined,
     cargo: usuario.cargo ? mapearCargo(usuario.cargo) : undefined,
   };
 }
@@ -354,7 +352,8 @@ export async function sincronizarUsuarios(
             : "estudiante";
 
           const { perfilUsuarioTable } = await import("../academy-lms.schema");
-          await options.db.update(perfilUsuarioTable)
+          await options.db
+            .update(perfilUsuarioTable)
             .set({
               rolCapacitaciones: rol as "administrador" | "supervisor" | "estudiante",
               notas: `Sincronizado: ${new Date().toISOString()}`,
@@ -424,10 +423,17 @@ Sincronización completada:
 - Fallidos: ${result.fallidos}
 - Usuarios creados: ${result.creados}
 - Usuarios actualizados: ${result.actualizados}
-${result.errores.length > 0 ? `
+${
+  result.errores.length > 0
+    ? `
 Errores:
-${result.errores.slice(0, 10).map((e) => `  - ${e.usuario}: ${e.error}`).join("\n")}
+${result.errores
+  .slice(0, 10)
+  .map((e) => `  - ${e.usuario}: ${e.error}`)
+  .join("\n")}
 ${result.errores.length > 10 ? `  ... y ${result.errores.length - 10} errores más` : ""}
-` : ""}
+`
+    : ""
+}
   `.trim();
 }

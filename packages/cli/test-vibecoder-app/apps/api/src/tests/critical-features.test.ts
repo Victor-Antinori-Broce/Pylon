@@ -5,13 +5,12 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { describe, it, expect } from "bun:test";
 import { Hono } from "hono";
-import type { AppVariables } from "../types/hono";
+
 import { registerCriticalFeatures } from "../lib/critical-features";
 import { checkRateLimit } from "../lib/rate-limiter";
-import { search, searchFullText, searchVector } from "../lib/search";
-import { getSystemStats, getHealthStatus } from "../lib/observability";
+import type { AppVariables } from "../types/hono";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP

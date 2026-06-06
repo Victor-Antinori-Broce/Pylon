@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/state";
-  import { CalendarDays, Clock, DoorOpen, Users, Mail, Phone, ArrowLeft, CheckCircle, XCircle, UserCheck, UserX, MessageSquare } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { CalendarDays, Clock, DoorOpen, Users, Mail, Phone, ArrowLeft, CheckCircle, XCircle, UserCheck, UserX, MessageSquare } from "lucide-svelte";
+  import { onMount } from "svelte";
+
+  import { page } from "$app/state";
 
   interface Booking {
     id: string;

@@ -1,11 +1,12 @@
 /**
  * Webhook Out Action Handler
- * 
+ *
  * Sends HTTP requests to external services.
  * Handles retries, signatures, and response tracking.
  */
 
 import { createHmac } from "crypto";
+
 import type { Action, ActionContext, ActionResult } from "../types";
 
 interface WebhookOutConfig {
@@ -23,7 +24,7 @@ export async function executeWebhookOutAction(
   context: ActionContext
 ): Promise<ActionResult> {
   const startTime = Date.now();
-  
+
   const config = action.config as WebhookOutConfig;
 
   if (!config.url) {
@@ -59,16 +60,14 @@ export async function executeWebhookOutAction(
 
   // Add signature if secret is configured
   if (config.secret) {
-    const signature = createHmac("sha256", config.secret)
-      .update(body)
-      .digest("hex");
+    const signature = createHmac("sha256", config.secret).update(body).digest("hex");
     headers["X-Gremius-Signature"] = `sha256=${signature}`;
   }
 
   // Execute request with retry logic
   const maxRetries = config.retryPolicy?.maxRetries ?? 3;
   const backoffMs = config.retryPolicy?.backoffMs ?? 1000;
-  
+
   let lastError: Error | null = null;
   let attempt = 0;
 
@@ -107,11 +106,11 @@ export async function executeWebhookOutAction(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       attempt++;
-      
+
       if (attempt <= maxRetries) {
         // Exponential backoff
         const delay = backoffMs * Math.pow(2, attempt - 1);
-        await new Promise(r => setTimeout(r, delay));
+        await new Promise((r) => setTimeout(r, delay));
       }
     }
   }

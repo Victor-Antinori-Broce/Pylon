@@ -24,17 +24,19 @@
  *   - Mutations: requireAuth + transactional RLS
  */
 
-import { Hono } from "hono";
+import { parseGremiusQuery, GremiusQLError } from "@gremius/engine";
 import { eq, sql, desc, asc, and, ilike, gt, gte, lt, lte, inArray } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db as rawDb, mergedSchema } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
+import { logger } from "../lib/logger";
+import { broadcastMutation } from "../lib/realtime";
 import { requireAuth } from "../middleware/auth";
 import { withTransactionalRLS } from "../middleware/transactional-rls";
 import type { AppVariables } from "../types/hono";
-import { logger } from "../lib/logger";
-import { broadcastMutation } from "../lib/realtime";
+
 import { invalidateGraphQLCache } from "./graphql";
-import { parseGremiusQuery, GremiusQLError } from "@gremius/engine";
 
 export const itemsRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -104,7 +106,13 @@ function getNativeTable(name: string): any {
     candidates.add(IRREGULAR_PLURALS[lower]);
   } else if (lower.endsWith("ies")) {
     candidates.add(lower.slice(0, -3) + "y");
-  } else if (lower.endsWith("es") && (lower.endsWith("ches") || lower.endsWith("shes") || lower.endsWith("xes") || lower.endsWith("zes"))) {
+  } else if (
+    lower.endsWith("es") &&
+    (lower.endsWith("ches") ||
+      lower.endsWith("shes") ||
+      lower.endsWith("xes") ||
+      lower.endsWith("zes"))
+  ) {
     candidates.add(lower.slice(0, -2));
   } else if (lower.endsWith("s") && !lower.endsWith("ss")) {
     candidates.add(lower.slice(0, -1));
@@ -138,7 +146,10 @@ function getNativeTable(name: string): any {
 }
 
 /** Determine if collection is a dataset or a native table */
-async function resolveCollection(db: any, collection: string): Promise<
+async function resolveCollection(
+  db: any,
+  collection: string
+): Promise<
   | { type: "dataset"; dataset: typeof dataSets.$inferSelect }
   | { type: "native"; table: any }
   | { type: "unknown" }
@@ -265,20 +276,31 @@ itemsRoutes.get("/:collection", async (c) => {
           for (const [key, val] of Object.entries(filters)) {
             conditions.push(sql`data->>${key} = ${val as string}`);
           }
-        } catch { /* ignore invalid JSON */ }
+        } catch {
+          /* ignore invalid JSON */
+        }
       }
 
       const [docs, [total]] = await Promise.all([
-        db.select().from(dataEntries)
+        db
+          .select()
+          .from(dataEntries)
           .where(and(...conditions))
           .orderBy(sort ? asc(sql`data->>${sort.replace(/^-/, "")}`) : desc(dataEntries.createdAt))
-          .limit(limit).offset(offset),
-        db.select({ value: sql<number>`count(*)` })
-          .from(dataEntries).where(and(...conditions)),
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ value: sql<number>`count(*)` })
+          .from(dataEntries)
+          .where(and(...conditions)),
       ]);
 
       return c.json({
-        docs: docs.map((d: typeof dataEntries.$inferSelect) => ({ id: d.id, ...d.data, _meta: { datasetId: d.dataSetId, createdAt: d.createdAt } })),
+        docs: docs.map((d: typeof dataEntries.$inferSelect) => ({
+          id: d.id,
+          ...d.data,
+          _meta: { datasetId: d.dataSetId, createdAt: d.createdAt },
+        })),
         totalDocs: total?.value || 0,
         limit,
         offset,
@@ -293,8 +315,17 @@ itemsRoutes.get("/:collection", async (c) => {
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
     const [docs, [total]] = await Promise.all([
-      db.select().from(table).where(where).orderBy(...orderBy).limit(limit).offset(offset),
-      db.select({ value: sql<number>`count(*)` }).from(table).where(where),
+      db
+        .select()
+        .from(table)
+        .where(where)
+        .orderBy(...orderBy)
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ value: sql<number>`count(*)` })
+        .from(table)
+        .where(where),
     ]);
 
     return c.json({
@@ -326,11 +357,17 @@ itemsRoutes.get("/:collection/:id", async (c) => {
 
   try {
     if (resolved.type === "dataset") {
-      const [doc] = await db.select().from(dataEntries)
+      const [doc] = await db
+        .select()
+        .from(dataEntries)
         .where(and(eq(dataEntries.dataSetId, resolved.dataset.id), eq(dataEntries.id, id)))
         .limit(1);
       if (!doc) return c.json({ error: "Not found" }, 404);
-      return c.json({ id: doc.id, ...doc.data, _meta: { datasetId: doc.dataSetId, createdAt: doc.createdAt } });
+      return c.json({
+        id: doc.id,
+        ...doc.data,
+        _meta: { datasetId: doc.dataSetId, createdAt: doc.createdAt },
+      });
     }
 
     const table = resolved.table;
@@ -362,12 +399,15 @@ itemsRoutes.post("/:collection", async (c) => {
       const ds = resolved.dataset;
       const title = body.title || body.name || "Untitled";
       const ownerId = body.ownerId ?? c.get("user")?.id ?? null;
-      const [doc] = await db.insert(dataEntries).values({
-        dataSetId: ds.id,
-        title,
-        data: { ...body, ownerId },
-        ownerId,
-      }).returning();
+      const [doc] = await db
+        .insert(dataEntries)
+        .values({
+          dataSetId: ds.id,
+          title,
+          data: { ...body, ownerId },
+          ownerId,
+        })
+        .returning();
 
       broadcastMutation(ds.id, "insert", { datasetSlug: collection, entryId: doc.id });
       await invalidateGraphQLCache();
@@ -403,13 +443,16 @@ itemsRoutes.patch("/:collection/:id", async (c) => {
   try {
     if (resolved.type === "dataset") {
       const ds = resolved.dataset;
-      const [existing] = await db.select().from(dataEntries)
+      const [existing] = await db
+        .select()
+        .from(dataEntries)
         .where(and(eq(dataEntries.dataSetId, ds.id), eq(dataEntries.id, id)))
         .limit(1);
       if (!existing) return c.json({ error: "Not found" }, 404);
 
       const mergedData = { ...(existing.data as any), ...body };
-      const [doc] = await db.update(dataEntries)
+      const [doc] = await db
+        .update(dataEntries)
         .set({ data: mergedData, title: body.title || body.name || existing.title })
         .where(eq(dataEntries.id, id))
         .returning();
@@ -450,7 +493,9 @@ itemsRoutes.delete("/:collection/:id", async (c) => {
   try {
     if (resolved.type === "dataset") {
       const ds = resolved.dataset;
-      const [existing] = await db.select().from(dataEntries)
+      const [existing] = await db
+        .select()
+        .from(dataEntries)
         .where(and(eq(dataEntries.dataSetId, ds.id), eq(dataEntries.id, id)))
         .limit(1);
       if (!existing) return c.json({ error: "Not found" }, 404);

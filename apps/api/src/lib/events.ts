@@ -1,10 +1,10 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 
 class SystemEvents extends EventEmitter {
-    constructor() {
-        super();
-        this.setMaxListeners(20);
-    }
+  constructor() {
+    super();
+    this.setMaxListeners(20);
+  }
 }
 
 export const events = new SystemEvents();

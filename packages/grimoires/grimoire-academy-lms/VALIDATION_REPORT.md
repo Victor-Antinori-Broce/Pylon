@@ -7,13 +7,13 @@
 
 ## 📋 Resumen Ejecutivo
 
-| Aspecto | Estado | Detalles |
-|---------|--------|----------|
-| Archivos modificados fuera de grimoire | ✅ Sin cambios | Solo se creó vista en packages/admin |
-| Docker Compose | ✅ Intacto | Sin modificaciones |
-| Otros grimoires | ✅ Sin afectación | Ningún archivo modificado |
-| Build system | ✅ Funcional | No se modificaron scripts de build |
-| Dependencias globales | ✅ Sin cambios | package.json root intacto |
+| Aspecto                                | Estado            | Detalles                             |
+| -------------------------------------- | ----------------- | ------------------------------------ |
+| Archivos modificados fuera de grimoire | ✅ Sin cambios    | Solo se creó vista en packages/admin |
+| Docker Compose                         | ✅ Intacto        | Sin modificaciones                   |
+| Otros grimoires                        | ✅ Sin afectación | Ningún archivo modificado            |
+| Build system                           | ✅ Funcional      | No se modificaron scripts de build   |
+| Dependencias globales                  | ✅ Sin cambios    | package.json root intacto            |
 
 ---
 
@@ -62,16 +62,19 @@ packages/admin/src/views/academy/AcademyView.svelte    (10 KB) - NUEVO
 ## 🐳 Validación Docker
 
 ### docker-compose.yml
+
 - ✅ Sin modificaciones
 - ✅ No hay servicios nuevos
 - ✅ No hay volúmenes nuevos
 - ✅ No hay variables de entorno nuevas
 
 ### docker-compose.dev.yml
+
 - ✅ Sin modificaciones
 - ✅ Infraestructura intacta
 
 ### Dockerfiles
+
 - ✅ Dockerfile.api - Sin cambios
 - ✅ Dockerfile.admin - Sin cambios
 - ✅ Dockerfile.mcp - Sin cambios
@@ -81,15 +84,17 @@ packages/admin/src/views/academy/AcademyView.svelte    (10 KB) - NUEVO
 ## 📦 Validación de Dependencias
 
 ### Root package.json
+
 ```json
 {
   "name": "gremius-cms",
-  "version": "0.7.0-beta",
+  "version": "0.7.0-beta"
   // ... sin cambios
 }
 ```
 
 **Scripts de build:**
+
 - ✅ `build` - Sin cambios
 - ✅ `build:api` - Sin cambios
 - ✅ `build:admin` - Sin cambios
@@ -114,47 +119,54 @@ packages/admin/src/views/academy/AcademyView.svelte    (10 KB) - NUEVO
 ## 🔧 Validación de Builds
 
 ### Build de API
+
 ```bash
 # Comando original (sin cambios)
 bun build src/index.ts --outdir dist --target bun
 ```
 
 **Análisis:**
+
 - ✅ No se modificó el entry point
 - ✅ No se agregaron imports circulares
 - ✅ No se modificó tsconfig.json
 
 ### Build de Admin
+
 ```bash
 # Comando original (sin cambios)
 pnpm --filter @gremius/admin build
 ```
 
 **Análisis:**
+
 - ✅ Se agregó vista Svelte (AcademyView.svelte)
 - ✅ No se modificó configuración de Vite
 - ✅ No se modificó svelte.config.js
 
 ### Build de Otros Grimoires
-| Grimoire | Estado | Notas |
-|----------|--------|-------|
-| grimoire-blog | ✅ Intacto | Sin cambios |
-| grimoire-crm | ✅ Intacto | Sin cambios |
-| grimoire-booking | ✅ Intacto | Sin cambios |
-| grimoire-games | ✅ Intacto | Sin cambios |
-| grimoire-streamers | ✅ Intacto | Sin cambios |
-| ... | ✅ Todos intactos | Sin cambios |
+
+| Grimoire           | Estado            | Notas       |
+| ------------------ | ----------------- | ----------- |
+| grimoire-blog      | ✅ Intacto        | Sin cambios |
+| grimoire-crm       | ✅ Intacto        | Sin cambios |
+| grimoire-booking   | ✅ Intacto        | Sin cambios |
+| grimoire-games     | ✅ Intacto        | Sin cambios |
+| grimoire-streamers | ✅ Intacto        | Sin cambios |
+| ...                | ✅ Todos intactos | Sin cambios |
 
 ---
 
 ## 🗄️ Validación de Base de Datos
 
 ### Schema
+
 - ✅ No se modificó schema.ts global
 - ✅ El schema del academy está en `academy-lms.schema.ts` (aislado)
 - ✅ Las tablas se crean dinámicamente al cargar el grimoire
 
 ### Migraciones
+
 - ✅ No se agregaron migraciones nuevas
 - ✅ El grimoire usa Drizzle ORM con schema local
 
@@ -163,6 +175,7 @@ pnpm --filter @gremius/admin build
 ## 🌐 Validación de Rutas API
 
 ### Mount Point
+
 ```typescript
 // Configurado en grimoire.json
 {
@@ -174,11 +187,13 @@ pnpm --filter @gremius/admin build
 ```
 
 **Análisis:**
+
 - ✅ No colisiona con rutas existentes
 - ✅ Prefijo único `/api/academy`
 - ✅ No sobrescribe endpoints de otros grimoires
 
 ### Registro de Módulos
+
 ```typescript
 // apps/api/src/services/module-registry.ts
 {
@@ -189,6 +204,7 @@ pnpm --filter @gremius/admin build
 ```
 
 **Análisis:**
+
 - ✅ Ya estaba registrado (no se modificó)
 - ✅ Categoría "optional" es correcta
 
@@ -197,27 +213,31 @@ pnpm --filter @gremius/admin build
 ## ⚙️ Validación de Configuración
 
 ### gremius.config.ts
+
 ```typescript
 const GRIMOIRES = [
   // ...
-  "academy",  // ← Ya estaba incluido
+  "academy", // ← Ya estaba incluido
   // ...
 ];
 ```
 
 **Análisis:**
+
 - ✅ Academy ya estaba en la lista (no se agregó nuevo)
 - ✅ No se modificó ninguna otra configuración
 
 ### module-loader.ts
+
 ```typescript
 const GRIMOIRE_DIR_MAP: Record<string, string> = {
-  "academy": "grimoire-academy-lms",  // ← Ya estaba mapeado
+  academy: "grimoire-academy-lms", // ← Ya estaba mapeado
   // ...
 };
 ```
 
 **Análisis:**
+
 - ✅ El mapeo ya existía
 - ✅ No se modificó el loader
 
@@ -226,15 +246,17 @@ const GRIMOIRE_DIR_MAP: Record<string, string> = {
 ## 🎨 Validación de Frontend
 
 ### Admin Views
-| Vista | Estado | Notas |
-|-------|--------|-------|
-| Dashboard.svelte | ✅ Intacto | Sin cambios |
-| DataSets.svelte | ✅ Intacto | Sin cambios |
-| Grimoires.svelte | ✅ Intacto | Sin cambios |
-| ... | ✅ Todas intactas | Sin cambios |
-| AcademyView.svelte | ✅ NUEVO | Vista del grimoire |
+
+| Vista              | Estado            | Notas              |
+| ------------------ | ----------------- | ------------------ |
+| Dashboard.svelte   | ✅ Intacto        | Sin cambios        |
+| DataSets.svelte    | ✅ Intacto        | Sin cambios        |
+| Grimoires.svelte   | ✅ Intacto        | Sin cambios        |
+| ...                | ✅ Todas intactas | Sin cambios        |
+| AcademyView.svelte | ✅ NUEVO          | Vista del grimoire |
 
 ### Sidebar
+
 - ✅ No se modificó SidebarLayout.svelte
 - ✅ La detección es automática via admin-registry
 - ✅ No hay hardcoded entries
@@ -244,6 +266,7 @@ const GRIMOIRE_DIR_MAP: Record<string, string> = {
 ## ✅ Checklist de Validación
 
 ### Sistema Core
+
 - [x] No se modificó el engine
 - [x] No se modificó el schema base
 - [x] No se modificó el sistema de auth
@@ -251,12 +274,14 @@ const GRIMOIRE_DIR_MAP: Record<string, string> = {
 - [x] No se modificó el module-loader
 
 ### Infraestructura
+
 - [x] Docker compose intacto
 - [x] Dockerfiles intactos
 - [x] Scripts de build intactos
 - [x] CI/CD no afectado
 
 ### Otros Grimoires
+
 - [x] grimoire-blog sin cambios
 - [x] grimoire-crm sin cambios
 - [x] grimoire-booking sin cambios
@@ -264,12 +289,14 @@ const GRIMOIRE_DIR_MAP: Record<string, string> = {
 - [x] Todos los realm-grimoires sin cambios
 
 ### Dependencias
+
 - [x] package.json root intacto
 - [x] pnpm-workspace.yaml intacto
 - [x] tsconfig.json root intacto
 - [x] No se agregaron dependencias globales
 
 ### Base de Datos
+
 - [x] schema.ts global intacto
 - [x] No se modificaron migraciones existentes
 - [x] No se modificaron tablas existentes
@@ -279,6 +306,7 @@ const GRIMOIRE_DIR_MAP: Record<string, string> = {
 ## 🧪 Pruebas Recomendadas
 
 ### 1. Build de API
+
 ```bash
 cd apps/api
 bun run build
@@ -286,6 +314,7 @@ bun run build
 ```
 
 ### 2. Build de Admin
+
 ```bash
 cd packages/admin
 pnpm run build
@@ -293,12 +322,14 @@ pnpm run build
 ```
 
 ### 3. Docker Compose
+
 ```bash
 docker compose -f docker-compose.dev.yml config
 # Debe validar sin errores
 ```
 
 ### 4. Type Check
+
 ```bash
 cd packages/grimoires/grimoire-academy-lms
 npx tsc --noEmit
@@ -309,14 +340,14 @@ npx tsc --noEmit
 
 ## 📊 Métricas de Impacto
 
-| Métrica | Valor |
-|---------|-------|
-| Archivos creados | 22 |
+| Métrica                                 | Valor           |
+| --------------------------------------- | --------------- |
+| Archivos creados                        | 22              |
 | Archivos modificados fuera del grimoire | 1 (vista admin) |
-| Archivos de otros grimoires afectados | 0 |
-| Configuraciones globales modificadas | 0 |
-| Dependencias globales agregadas | 0 |
-| Breaking changes | 0 |
+| Archivos de otros grimoires afectados   | 0               |
+| Configuraciones globales modificadas    | 0               |
+| Dependencias globales agregadas         | 0               |
+| Breaking changes                        | 0               |
 
 ---
 
@@ -345,17 +376,20 @@ Este archivo es **requerido por el diseño del sistema** para que el grimoire ap
 ## 🚀 Próximos Pasos (Opcionales)
 
 1. **Verificar builds:**
+
    ```bash
    pnpm run build:api
    pnpm run build:admin
    ```
 
 2. **Verificar types:**
+
    ```bash
    pnpm run typecheck
    ```
 
 3. **Ejecutar tests:**
+
    ```bash
    cd packages/grimoires/grimoire-academy-lms
    bun test

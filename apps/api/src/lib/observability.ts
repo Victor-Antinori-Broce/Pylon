@@ -7,18 +7,16 @@
  * Reemplaza todos los mockups con datos del sistema real.
  */
 
-import { db } from "../db";
 import { sql, count, desc, gte } from "drizzle-orm";
-import { 
-  dataSets, dataEntries, authUsers, 
-  media, agentIdentities 
-} from "../db/schema";
-import { getValkeyClient } from "./valkey";
-import { realtimeManager } from "./realtime";
 import { Hono } from "hono";
 
-import type { AppVariables } from "../types/hono";
+import { db } from "../db";
+import { dataSets, dataEntries, authUsers, media, agentIdentities } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
+
+import { realtimeManager } from "./realtime";
+import { getValkeyClient } from "./valkey";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -45,14 +43,14 @@ export interface SystemStats {
     total: number;
     active: number;
   };
-  
+
   // Performance
   performance: {
     avgResponseTime: number;
     requestsPerMinute: number;
     errorRate: number;
   };
-  
+
   // Infrastructure
   infra: {
     databaseStatus: "healthy" | "degraded" | "down";
@@ -60,14 +58,14 @@ export interface SystemStats {
     websocketConnections: number;
     activeChannels: number;
   };
-  
+
   // Storage
   storage: {
     used: number;
     total: number;
     files: number;
   };
-  
+
   // Uptime
   uptime: {
     since: string;
@@ -112,27 +110,36 @@ async function getDatabaseStats() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [datasetsResult, entriesResult, entriesTodayResult, 
-         usersResult, usersTodayResult, usersWeekResult,
-         postsResult, gamesResult, mediaResult, agentsResult] = await Promise.all([
+  const [
+    datasetsResult,
+    entriesResult,
+    entriesTodayResult,
+    usersResult,
+    usersTodayResult,
+    usersWeekResult,
+    postsResult,
+    gamesResult,
+    mediaResult,
+    agentsResult,
+  ] = await Promise.all([
     // Datasets
     db.select({ count: count() }).from(dataSets),
     db.select({ count: count() }).from(dataEntries),
-    db.select({ count: count() }).from(dataEntries)
-      .where(gte(dataEntries.createdAt, today)),
-    
+    db.select({ count: count() }).from(dataEntries).where(gte(dataEntries.createdAt, today)),
+
     // Users
     db.select({ count: count() }).from(authUsers),
-    db.select({ count: count() }).from(authUsers)
-      .where(gte(authUsers.createdAt, today)),
-    db.select({ count: count() }).from(authUsers)
+    db.select({ count: count() }).from(authUsers).where(gte(authUsers.createdAt, today)),
+    db
+      .select({ count: count() })
+      .from(authUsers)
       .where(gte(authUsers.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))),
-    
+
     // Content
     db.execute<{ count: number }>(sql`SELECT COUNT(*) as count FROM blog_posts`),
     db.execute<{ count: number }>(sql`SELECT COUNT(*) as count FROM games`),
     db.select({ count: count() }).from(media),
-    
+
     // Agents
     db.select({ count: count() }).from(agentIdentities),
   ]);
@@ -166,7 +173,7 @@ async function getDatabaseStats() {
 async function getInfraStats() {
   const valkey = await getValkeyClient();
   const wsStats = realtimeManager.getStats();
-  
+
   // Test de latencia de DB
   const dbStart = Date.now();
   let dbHealthy = false;
@@ -208,7 +215,7 @@ async function getInfraStats() {
  */
 async function getStorageStats() {
   try {
-    const result = await db.execute<{ 
+    const result = await db.execute<{
       total_size: number;
       file_count: number;
     }>(sql`
@@ -237,16 +244,14 @@ async function getStorageStats() {
 function getUptimeStats() {
   const uptime = process.uptime();
   const startTime = new Date(Date.now() - uptime * 1000);
-  
+
   const days = Math.floor(uptime / 86400);
   const hours = Math.floor((uptime % 86400) / 3600);
   const minutes = Math.floor((uptime % 3600) / 60);
-  
+
   return {
     since: startTime.toISOString(),
-    duration: days > 0 
-      ? `${days}d ${hours}h ${minutes}m`
-      : `${hours}h ${minutes}m`,
+    duration: days > 0 ? `${days}d ${hours}h ${minutes}m` : `${hours}h ${minutes}m`,
     percentage: 99.9, // Ideal, se calcularía con histórico real
   };
 }
@@ -258,7 +263,7 @@ function getPerformanceStats() {
   // Estas vendrían de un middleware de métricas real
   // Por ahora usamos valores razonables basados en carga
   const loadFactor = Math.random() * 0.3 + 0.7; // 0.7 - 1.0
-  
+
   return {
     avgResponseTime: Math.round(45 * loadFactor), // ~45ms base
     requestsPerMinute: Math.round(1200 * loadFactor),
@@ -353,7 +358,7 @@ export async function getSystemStats(): Promise<SystemStats> {
  */
 export async function getHealthStatus(): Promise<HealthStatus> {
   const infra = await getInfraStats();
-  
+
   const checks = {
     database: infra.databaseStatus === "healthy",
     cache: infra.cacheStatus === "healthy",
@@ -362,7 +367,7 @@ export async function getHealthStatus(): Promise<HealthStatus> {
   };
 
   const allHealthy = Object.values(checks).every(Boolean);
-  const anyDown = Object.values(checks).some(v => !v);
+  const anyDown = Object.values(checks).some((v) => !v);
 
   return {
     status: allHealthy ? "healthy" : anyDown ? "down" : "degraded",
@@ -383,7 +388,7 @@ export async function getMetrics(timeRange: "1h" | "24h" | "7d" | "30d" = "24h")
     "7d": 7 * 24 * 60 * 60 * 1000,
     "30d": 30 * 24 * 60 * 60 * 1000,
   };
-  
+
   const startDate = new Date(now.getTime() - ranges[timeRange]);
 
   // Entradas creadas en el rango
@@ -448,7 +453,7 @@ observabilityRoutes.get("/admin/stats", requireAuth, async (c) => {
  */
 observabilityRoutes.get("/admin/activity", requireAuth, async (c) => {
   const limit = Math.min(Number(c.req.query("limit")) || 10, 50);
-  
+
   try {
     const activity = await getRecentActivity(limit);
     return c.json({ activity });
@@ -462,7 +467,7 @@ observabilityRoutes.get("/admin/activity", requireAuth, async (c) => {
  */
 observabilityRoutes.get("/admin/metrics", requireAuth, async (c) => {
   const range = (c.req.query("range") as any) || "24h";
-  
+
   try {
     const metrics = await getMetrics(range);
     return c.json(metrics);
@@ -477,7 +482,7 @@ observabilityRoutes.get("/admin/metrics", requireAuth, async (c) => {
 observabilityRoutes.get("/admin/realtime", requireAuth, async (c) => {
   const wsStats = realtimeManager.getStats();
   const valkey = await getValkeyClient();
-  
+
   let pubsubStats = { channels: 0, patterns: 0 };
   try {
     if (valkey) {
@@ -525,11 +530,14 @@ observabilityRoutes.get("/", async (c) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return c.json({ 
-      message: "GremiusCMS API",
-      version: "0.5.0",
-      status: "degraded",
-      error: "Partial data available",
-    }, 200);
+    return c.json(
+      {
+        message: "GremiusCMS API",
+        version: "0.5.0",
+        status: "degraded",
+        error: "Partial data available",
+      },
+      200
+    );
   }
 });

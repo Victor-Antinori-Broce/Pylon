@@ -1,6 +1,6 @@
 /**
  * Grimoire Blog — Database Schema
- * 
+ *
  * Re-exports from schema.local.ts for backward compatibility.
  * All schema definitions are in schema.local.ts
  */

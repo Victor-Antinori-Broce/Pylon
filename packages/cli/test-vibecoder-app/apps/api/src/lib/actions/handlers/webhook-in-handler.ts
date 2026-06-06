@@ -6,6 +6,7 @@
  */
 
 import { createHmac, timingSafeEqual } from "crypto";
+
 import type { Action, ActionContext, ActionResult } from "../types";
 
 export interface WebhookInRequest {
@@ -23,7 +24,7 @@ interface WebhookInConfig {
 export async function executeWebhookInAction(
   action: Action,
   context: ActionContext,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _webhookRequest: WebhookInRequest
 ): Promise<ActionResult> {
   const startTime = Date.now();

@@ -1,9 +1,9 @@
 /**
  * Gremius Core Grimoire - DataSets
- * 
+ *
  * Dynamic data collections with automatic API generation.
  * This is a CORE grimoire - enabled by default but can be disabled.
- * 
+ *
  * Provides:
  * - Dynamic schema definition
  * - Auto-generated REST API
@@ -14,8 +14,9 @@
 
 import type { GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
-import { createDatasetsRouter } from "./datasets.routes";
+
 import { adminConfig } from "./datasets.admin";
+import { createDatasetsRouter } from "./datasets.routes";
 
 // Re-export schema for schema-merger
 export * from "./datasets.schema";
@@ -69,7 +70,9 @@ export const grimoire = defineGrimoire({
       }
 
       if (!hasCalculatedFields) {
-        ctx.logger.warn("⚠️ Calculated fields table not found. Run migration: 0001_calculated_fields.sql");
+        ctx.logger.warn(
+          "⚠️ Calculated fields table not found. Run migration: 0001_calculated_fields.sql"
+        );
       }
 
       ctx.logger.info("✅ DataSets tables verified");
@@ -81,14 +84,14 @@ export const grimoire = defineGrimoire({
 
     onDisable: async (ctx) => {
       ctx.logger.info("📊 DataSets disabled - API routes will not be available");
-    }
+    },
   },
 
   // Dependencies
   dependencies: {
     grimoires: [], // No dependencies on other grimoires
-    core: ["auth"] // Requires auth system
-  }
+    core: ["auth"], // Requires auth system
+  },
 });
 
 // Export router creator for compatibility
@@ -102,10 +105,7 @@ export type {
   FormulaBuilderNode,
 } from "./calculated-fields";
 
-export {
-  FORMULA_FUNCTIONS,
-  FORMULA_OPERATORS,
-} from "./calculated-fields";
+export { FORMULA_FUNCTIONS, FORMULA_OPERATORS } from "./calculated-fields";
 
 // Default export
 export default grimoire;

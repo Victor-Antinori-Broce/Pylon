@@ -2,11 +2,12 @@
  * BUILD Command - Build for production
  */
 
-import chalk from "chalk";
-import ora from "ora";
-import { execa } from "execa";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+
+import chalk from "chalk";
+import { execa } from "execa";
+import ora from "ora";
 
 interface BuildOptions {
   analyze?: boolean;
@@ -17,7 +18,7 @@ export async function buildCommand(options: BuildOptions) {
   console.log(chalk.blue("\n🔨 Building Gremius for production...\n"));
 
   const projectRoot = process.cwd();
-  
+
   // Check if we're in a Gremius project
   if (!existsSync(join(projectRoot, "apps", "api"))) {
     console.error(chalk.red("✖ Not in a Gremius project directory"));
@@ -70,7 +71,6 @@ export async function buildCommand(options: BuildOptions) {
     if (options.analyze) {
       console.log(chalk.yellow("Bundle analysis not yet implemented\n"));
     }
-
   } catch (error: any) {
     spinner.fail(chalk.red(`Build failed: ${error.message}`));
     process.exit(1);

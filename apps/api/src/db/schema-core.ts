@@ -11,6 +11,7 @@
  * with active grimoire schemas at runtime.
  */
 
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -26,7 +27,6 @@ import {
   index,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 
 // ─── Block Type (shared with admin + web) ─────────────────────
 export interface PageBlock {
@@ -40,17 +40,9 @@ export interface PageBlock {
 // Enums
 // ═══════════════════════════════════════════════
 
-export const contentStatusEnum = pgEnum("content_status", [
-  "draft",
-  "published",
-  "archived",
-]);
+export const contentStatusEnum = pgEnum("content_status", ["draft", "published", "archived"]);
 
-export const userRoleEnum = pgEnum("user_role", [
-  "admin",
-  "editor",
-  "user",
-]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "editor", "user"]);
 
 // ═══════════════════════════════════════════════
 // Auth Tables (Better-Auth compatible)
@@ -73,7 +65,9 @@ export const authSessions = pgTable("auth_sessions", {
   token: text("token").notNull().unique(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  userId: text("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -82,7 +76,9 @@ export const authAccounts = pgTable("auth_accounts", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  userId: text("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
@@ -114,12 +110,11 @@ export const apiKeys = pgTable("api_keys", {
   hint: varchar("hint", { length: 20 }).notNull(), // e.g. "gremius_sk_...xyz1"
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
-  createdById: text("created_by_id").references(() => authUsers.id, { onDelete: "cascade" }).notNull(),
+  createdById: text("created_by_id")
+    .references(() => authUsers.id, { onDelete: "cascade" })
+    .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
-
-
-
 
 // ═══════════════════════════════════════════════
 // Core Tables
@@ -154,17 +149,15 @@ export const dataSets = pgTable(
     slug: varchar("slug", { length: 200 }).notNull(),
     description: text("description"),
     icon: varchar("icon", { length: 10 }), // Emoji
-    schema: jsonb("schema")
-      .notNull()
-      .$type<
-        Array<{
-          fieldName: string;
-          fieldType: string;
-          required?: boolean;
-          options?: string;
-          defaultValue?: string;
-        }>
-      >(),
+    schema: jsonb("schema").notNull().$type<
+      Array<{
+        fieldName: string;
+        fieldType: string;
+        required?: boolean;
+        options?: string;
+        defaultValue?: string;
+      }>
+    >(),
     displayConfig: jsonb("display_config").$type<{
       titleField?: string;
       sortField?: string;
@@ -239,9 +232,7 @@ export const siteSettings = pgTable("site_settings", {
     primaryColor?: string;
     accentColor?: string;
   }>(),
-  mainNav: jsonb("main_nav").$type<
-    Array<{ label: string; url: string; openInNewTab?: boolean }>
-  >(),
+  mainNav: jsonb("main_nav").$type<Array<{ label: string; url: string; openInNewTab?: boolean }>>(),
   social: jsonb("social").$type<{
     twitter?: string;
     discord?: string;
@@ -338,11 +329,7 @@ export const functionTriggerEnum = pgEnum("function_trigger", [
   "webhook_incoming",
 ]);
 
-export const functionStatusEnum = pgEnum("function_status", [
-  "active",
-  "inactive",
-  "error",
-]);
+export const functionStatusEnum = pgEnum("function_status", ["active", "inactive", "error"]);
 
 export const executionStatusEnum = pgEnum("execution_status", [
   "pending",
@@ -364,10 +351,12 @@ export const gremiusFunctions = pgTable(
     code: text("code").notNull(),
     /** Trigger type */
     trigger: functionTriggerEnum("trigger").notNull(),
-    // Cron expression (only for trigger=cron), e.g. "0 */5 * * *" 
+    // Cron expression (only for trigger=cron), e.g. "0 */5 * * *"
     cronExpression: varchar("cron_expression", { length: 100 }),
     /** Dataset ID to watch (only for on_entry_* triggers) */
-    watchDatasetId: uuid("watch_dataset_id").references(() => dataSets.id, { onDelete: "set null" }),
+    watchDatasetId: uuid("watch_dataset_id").references(() => dataSets.id, {
+      onDelete: "set null",
+    }),
     /** Max execution time in ms (default 5000) */
     timeoutMs: integer("timeout_ms").default(5000).notNull(),
     /** Max memory in MB (default 64) */
@@ -430,37 +419,29 @@ export const functionExecutions = pgTable(
 // Relations
 export const gremiusFunctionsRelations = relations(gremiusFunctions, ({ one, many }) => ({
   createdBy: one(authUsers, { fields: [gremiusFunctions.createdById], references: [authUsers.id] }),
-  watchDataset: one(dataSets, { fields: [gremiusFunctions.watchDatasetId], references: [dataSets.id] }),
+  watchDataset: one(dataSets, {
+    fields: [gremiusFunctions.watchDatasetId],
+    references: [dataSets.id],
+  }),
   executions: many(functionExecutions),
 }));
 
 export const functionExecutionsRelations = relations(functionExecutions, ({ one }) => ({
-  function: one(gremiusFunctions, { fields: [functionExecutions.functionId], references: [gremiusFunctions.id] }),
+  function: one(gremiusFunctions, {
+    fields: [functionExecutions.functionId],
+    references: [gremiusFunctions.id],
+  }),
 }));
 
 // ═══════════════════════════════════════════════
 // Actions (Unified Action System)
 // ═══════════════════════════════════════════════
 
-export const actionTypeEnum = pgEnum("action_type", [
-  "code",
-  "webhook_out",
-  "webhook_in",
-  "agent",
-]);
+export const actionTypeEnum = pgEnum("action_type", ["code", "webhook_out", "webhook_in", "agent"]);
 
-export const actionTriggerEnum = pgEnum("action_trigger", [
-  "manual",
-  "cron",
-  "event",
-  "http",
-]);
+export const actionTriggerEnum = pgEnum("action_trigger", ["manual", "cron", "event", "http"]);
 
-export const actionStatusEnum = pgEnum("action_status", [
-  "active",
-  "paused",
-  "error",
-]);
+export const actionStatusEnum = pgEnum("action_status", ["active", "paused", "error"]);
 
 export const actions = pgTable(
   "actions",
@@ -471,13 +452,15 @@ export const actions = pgTable(
     description: text("description"),
     type: actionTypeEnum("type").notNull(),
     trigger: actionTriggerEnum("trigger").notNull(),
-    triggerConfig: jsonb("trigger_config").$type<{
-      cronExpression?: string;
-      eventName?: string;
-      datasetId?: string;
-      httpMethod?: string;
-      httpPath?: string;
-    }>().default({}),
+    triggerConfig: jsonb("trigger_config")
+      .$type<{
+        cronExpression?: string;
+        eventName?: string;
+        datasetId?: string;
+        httpMethod?: string;
+        httpPath?: string;
+      }>()
+      .default({}),
     config: jsonb("config").default({}),
     status: actionStatusEnum("status").default("active").notNull(),
     lastExecutedAt: timestamp("last_executed_at", { withTimezone: true }),
@@ -504,7 +487,9 @@ export const actionExecutions = pgTable(
   "action_executions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    actionId: uuid("action_id").references(() => actions.id, { onDelete: "cascade" }).notNull(),
+    actionId: uuid("action_id")
+      .references(() => actions.id, { onDelete: "cascade" })
+      .notNull(),
     status: executionStatusEnum("status").default("pending").notNull(),
     triggerType: actionTriggerEnum("trigger_type"),
     triggerEvent: varchar("trigger_event", { length: 100 }),
@@ -555,7 +540,9 @@ export const agentTraceStepTypeEnum = pgEnum("agent_trace_step_type", [
 export const agentIdentities = pgTable(
   "agent_identities",
   {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     description: text("description"),
     type: text("type").default("custom").notNull(),
@@ -577,8 +564,12 @@ export const agentIdentities = pgTable(
 export const agentApiKeys = pgTable(
   "agent_api_keys",
   {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }).notNull(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    agentId: text("agent_id")
+      .references(() => agentIdentities.id, { onDelete: "cascade" })
+      .notNull(),
     keyHash: text("key_hash").notNull(),
     keyPrefix: text("key_prefix").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -596,7 +587,9 @@ export const agentMemory = pgTable(
   "agent_memory",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }).notNull(),
+    agentId: text("agent_id")
+      .references(() => agentIdentities.id, { onDelete: "cascade" })
+      .notNull(),
     memoryType: text("memory_type").default("short_term").notNull(),
     category: text("category").default("general").notNull(),
     key: text("key"),
@@ -625,7 +618,9 @@ export const agentAuditLogs = pgTable(
   "agent_audit_logs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }).notNull(),
+    agentId: text("agent_id")
+      .references(() => agentIdentities.id, { onDelete: "cascade" })
+      .notNull(),
     keyId: text("key_id"),
     action: text("action").notNull(),
     resource: text("resource"),
@@ -653,7 +648,9 @@ export const agentTraces = pgTable(
   "agent_traces",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    agentId: text("agent_id").notNull().references(() => agentIdentities.id, { onDelete: "cascade" }),
+    agentId: text("agent_id")
+      .notNull()
+      .references(() => agentIdentities.id, { onDelete: "cascade" }),
     sessionId: text("session_id"),
     name: text(),
     input: jsonb(),
@@ -681,7 +678,9 @@ export const agentTraceSteps = pgTable(
   "agent_trace_steps",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    traceId: uuid("trace_id").notNull().references(() => agentTraces.id, { onDelete: "cascade" }),
+    traceId: uuid("trace_id")
+      .notNull()
+      .references(() => agentTraces.id, { onDelete: "cascade" }),
     stepOrder: integer("step_order").default(0).notNull(),
     stepType: agentTraceStepTypeEnum("step_type").notNull(),
     content: text(),
@@ -707,7 +706,9 @@ export const agentFeedback = pgTable(
   "agent_feedback",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    traceId: uuid("trace_id").notNull().references(() => agentTraces.id, { onDelete: "cascade" }),
+    traceId: uuid("trace_id")
+      .notNull()
+      .references(() => agentTraces.id, { onDelete: "cascade" }),
     userId: text("user_id").references(() => authUsers.id, { onDelete: "set null" }),
     rating: integer("rating"),
     comment: text("comment"),
@@ -797,7 +798,10 @@ export const agentMemoryRelations = relations(agentMemory, ({ one }) => ({
 }));
 
 export const agentAuditLogsRelations = relations(agentAuditLogs, ({ one }) => ({
-  agent: one(agentIdentities, { fields: [agentAuditLogs.agentId], references: [agentIdentities.id] }),
+  agent: one(agentIdentities, {
+    fields: [agentAuditLogs.agentId],
+    references: [agentIdentities.id],
+  }),
 }));
 
 export const agentTracesRelations = relations(agentTraces, ({ one, many }) => ({

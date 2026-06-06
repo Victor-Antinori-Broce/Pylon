@@ -1,15 +1,18 @@
 // @ts-nocheck
 // Unit Tests: Vector Search Core Logic
 
-import { describe, test, expect, beforeEach, vi } from "vitest";
-import type { VectorSearchExtension, VectorQueryOptions } from "../../packages/core/vector-search/index";
+import { describe, test, expect } from "vitest";
+
+import type {
+  VectorSearchExtension,
+  VectorQueryOptions,
+} from "../../packages/core/vector-search/index";
 
 // Mock the vector search module
 const mockVectorIndex = new Map();
 const mockChunks = new Map();
 
 describe("Vector Search Core Logic", () => {
-  
   describe("VectorSearchExtension Interface", () => {
     test("should validate extension configuration", () => {
       const config: VectorSearchExtension = {
@@ -18,7 +21,7 @@ describe("Vector Search Core Logic", () => {
         embeddingModel: "text-embedding-3-small",
         autoIndex: true,
         chunkSize: 500,
-        chunkOverlap: 50
+        chunkOverlap: 50,
       };
 
       expect(config.enabled).toBe(true);
@@ -29,7 +32,7 @@ describe("Vector Search Core Logic", () => {
     test("should accept minimal configuration", () => {
       const config: VectorSearchExtension = {
         enabled: true,
-        fields: ["title"]
+        fields: ["title"],
       };
 
       expect(config.chunkSize).toBeUndefined();
@@ -44,7 +47,7 @@ describe("Vector Search Core Logic", () => {
         semantic: true,
         threshold: 0.7,
         limit: 10,
-        filters: { category: "support" }
+        filters: { category: "support" },
       };
 
       expect(options.semantic).toBe(true);
@@ -56,7 +59,7 @@ describe("Vector Search Core Logic", () => {
         query: "payment methods",
         semantic: true,
         fullText: true,
-        boost: { semantic: 0.7, fullText: 0.3 }
+        boost: { semantic: 0.7, fullText: 0.3 },
       };
 
       expect(options.fullText).toBe(true);
@@ -76,19 +79,19 @@ describe("Vector Search Core Logic", () => {
     test("should chunk content when exceeding limit", () => {
       const chunkSize = 200;
       const overlap = 20;
-      
+
       // Simulate chunking logic
       const chunks = chunkContent(longContent, chunkSize, overlap);
-      
+
       expect(chunks.length).toBeGreaterThan(1);
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         expect(chunk.length).toBeLessThanOrEqual(chunkSize);
       });
     });
 
     test("should create overlapping chunks", () => {
       const chunks = chunkContent(longContent, 100, 20);
-      
+
       if (chunks.length > 1) {
         const overlap = findOverlap(chunks[0], chunks[1]);
         expect(overlap.length).toBeGreaterThan(0);
@@ -100,7 +103,7 @@ describe("Vector Search Core Logic", () => {
     test("should normalize vector", () => {
       const vec = [3, 4, 0];
       const normalized = normalizeVector(vec);
-      
+
       const magnitude = Math.sqrt(normalized.reduce((a, b) => a + b * b, 0));
       expect(magnitude).toBeCloseTo(1, 5);
     });
@@ -120,14 +123,14 @@ describe("Vector Search Core Logic", () => {
 function chunkContent(content: string, chunkSize: number, overlap: number): string[] {
   const chunks: string[] = [];
   let start = 0;
-  
+
   while (start < content.length) {
     const end = Math.min(start + chunkSize, content.length);
     chunks.push(content.slice(start, end));
     start = end - overlap;
     if (start >= end) start = end;
   }
-  
+
   return chunks;
 }
 
@@ -143,7 +146,7 @@ function findOverlap(a: string, b: string): string {
 
 function normalizeVector(vec: number[]): number[] {
   const magnitude = Math.sqrt(vec.reduce((a, b) => a + b * b, 0));
-  return vec.map(v => v / magnitude);
+  return vec.map((v) => v / magnitude);
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {

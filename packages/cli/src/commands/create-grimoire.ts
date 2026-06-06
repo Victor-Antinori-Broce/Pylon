@@ -1,6 +1,7 @@
-import chalk from 'chalk';
-import fs from 'fs/promises';
-import path from 'path';
+import fs from "fs/promises";
+import path from "path";
+
+import chalk from "chalk";
 // import { findProjectRoot } from '../utils/project.js';
 
 function toCamelCase(str: string): string {
@@ -17,13 +18,16 @@ function toPascalCase(str: string): string {
 
 function toKebabCase(str: string): string {
   return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .replace(/[\s_]+/g, "-")
     .toLowerCase();
 }
 
-export async function createGrimoireCommand(rawName: string, options: { withAdmin?: boolean; withTests?: boolean }) {
-  const kebabName = toKebabCase(rawName).replace(/^grimoire-/, '');
+export async function createGrimoireCommand(
+  rawName: string,
+  options: { withAdmin?: boolean; withTests?: boolean }
+) {
+  const kebabName = toKebabCase(rawName).replace(/^grimoire-/, "");
   const grimoireId = `grimoire-${kebabName}`;
   const camelName = toCamelCase(kebabName);
   const pascalName = toPascalCase(kebabName);
@@ -32,7 +36,7 @@ export async function createGrimoireCommand(rawName: string, options: { withAdmi
   console.log(chalk.blue(`🔮 Creating grimoire: ${grimoireId}\n`));
 
   try {
-    const grimoiresPath = path.resolve('packages/grimoires');
+    const grimoiresPath = path.resolve("packages/grimoires");
     const grimoirePath = path.join(grimoiresPath, grimoireId);
 
     try {
@@ -49,40 +53,43 @@ export async function createGrimoireCommand(rawName: string, options: { withAdmi
       id: grimoireId,
       name: pascalName,
       description: `${pascalName} grimoire for GremiusCMS`,
-      version: '1.0.0',
-      type: 'grimoire',
-      icon: 'Box',
+      version: "1.0.0",
+      type: "grimoire",
+      icon: "Box",
       tables: [
         {
           name: `${camelName}Items`,
           label: `${pascalName} Items`,
-          icon: 'Box',
+          icon: "Box",
           description: `Main table for ${pascalName}`,
-          searchableFields: ['title'],
-          filterableFields: ['status']
-        }
+          searchableFields: ["title"],
+          filterableFields: ["status"],
+        },
       ],
       dependencies: {
         grimoires: [],
-        core: ['auth']
+        core: ["auth"],
       },
       admin: options.withAdmin
         ? {
-            category: 'content',
-            defaultView: 'grid',
+            category: "content",
+            defaultView: "grid",
             views: [
               {
-                id: 'grid',
-                type: 'grid',
-                title: 'All Items',
-                table: `${camelName}Items`
-              }
-            ]
+                id: "grid",
+                type: "grid",
+                title: "All Items",
+                table: `${camelName}Items`,
+              },
+            ],
           }
-        : undefined
+        : undefined,
     };
 
-    await fs.writeFile(path.join(grimoirePath, 'grimoire.json'), JSON.stringify(grimoireJson, null, 2));
+    await fs.writeFile(
+      path.join(grimoirePath, "grimoire.json"),
+      JSON.stringify(grimoireJson, null, 2)
+    );
 
     const schemaContent = `import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
@@ -219,7 +226,7 @@ export const grimoire = defineGrimoire({
 
 export default grimoire;
 `;
-    await fs.writeFile(path.join(grimoirePath, 'index.ts'), indexContent);
+    await fs.writeFile(path.join(grimoirePath, "index.ts"), indexContent);
 
     const readmeContent = `# ${pascalName} Grimoire
 
@@ -256,25 +263,25 @@ Mounted at \`/api/${apiPrefix}\`:
 - \`PATCH /api/${apiPrefix}/items/:id\` - Update item
 - \`DELETE /api/${apiPrefix}/items/:id\` - Delete item
 `;
-    await fs.writeFile(path.join(grimoirePath, 'README.md'), readmeContent);
+    await fs.writeFile(path.join(grimoirePath, "README.md"), readmeContent);
 
-    console.log(chalk.green('✅ Grimoire created successfully!\n'));
-    console.log(chalk.gray('Created files:'));
+    console.log(chalk.green("✅ Grimoire created successfully!\n"));
+    console.log(chalk.gray("Created files:"));
     console.log(chalk.gray(`  📁 packages/grimoires/${grimoireId}/`));
     console.log(chalk.gray(`     📄 grimoire.json`));
     console.log(chalk.gray(`     📄 ${kebabName}.schema.ts`));
     console.log(chalk.gray(`     📄 ${kebabName}.routes.ts`));
     console.log(chalk.gray(`     📄 index.ts`));
     console.log(chalk.gray(`     📄 README.md`));
-    console.log(chalk.blue('\nNext steps:'));
+    console.log(chalk.blue("\nNext steps:"));
     console.log(chalk.gray(`  1. Edit ${kebabName}.schema.ts to define your tables`));
     console.log(chalk.gray(`  2. Edit ${kebabName}.routes.ts to add your business logic`));
     console.log(chalk.gray(`  3. Run: gremius makemigrations -n ${kebabName}_initial`));
     console.log(chalk.gray(`  4. Run: gremius migrate`));
-    console.log(chalk.gray('  5. Enable the grimoire in gremius.config.ts if needed'));
-    console.log(chalk.gray('  6. Restart the dev server\n'));
+    console.log(chalk.gray("  5. Enable the grimoire in gremius.config.ts if needed"));
+    console.log(chalk.gray("  6. Restart the dev server\n"));
   } catch (error: any) {
-    console.error(chalk.red('❌ Error creating grimoire:'), error?.message || error);
+    console.error(chalk.red("❌ Error creating grimoire:"), error?.message || error);
     process.exit(1);
   }
 }

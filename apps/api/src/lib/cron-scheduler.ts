@@ -16,8 +16,10 @@
 
 import { Cron } from "croner";
 import { eq, and } from "drizzle-orm";
+
 import { db } from "../db";
-import { actions } from "../db/schema";
+import { actions, gremiusFunctions } from "../db/schema";
+
 import { executeActionById } from "./actions";
 
 // ═══════════════════════════════════════════════════════════════
@@ -36,7 +38,7 @@ const cronJobs = new Map<string, Cron>();
  */
 function scheduleCronJob(action: typeof actions.$inferSelect): void {
   const cronExpression = action.triggerConfig?.cronExpression;
-  
+
   if (!cronExpression) {
     console.warn(`  ⏰ [CRON] Action "${action.name}" has no cron expression, skipping`);
     return;
@@ -45,7 +47,9 @@ function scheduleCronJob(action: typeof actions.$inferSelect): void {
   // Validate cron expression format (5 or 6 space-separated parts)
   const cronParts = cronExpression.trim().split(/\s+/);
   if (cronParts.length !== 5 && cronParts.length !== 6) {
-    console.error(`  ⏰ [CRON] Invalid cron expression for "${action.name}": "${cronExpression}" — expected 5 or 6 parts, got ${cronParts.length}. Skipping.`);
+    console.error(
+      `  ⏰ [CRON] Invalid cron expression for "${action.name}": "${cronExpression}" — expected 5 or 6 parts, got ${cronParts.length}. Skipping.`
+    );
     return;
   }
 
@@ -53,38 +57,45 @@ function scheduleCronJob(action: typeof actions.$inferSelect): void {
   unscheduleCronJob(action.id);
 
   try {
-    const job = new Cron(cronExpression, {
-      name: `gremius-action:${action.slug}`,
-      catch: (err) => {
-        console.error(`  ⏰ [CRON] Error in "${action.name}":`, err);
+    const job = new Cron(
+      cronExpression,
+      {
+        name: `gremius-action:${action.slug}`,
+        catch: (err) => {
+          console.error(`  ⏰ [CRON] Error in "${action.name}":`, err);
+        },
       },
-    }, async () => {
-      console.log(`  ⏰ [CRON] Firing "${action.name}" (${cronExpression})`);
+      async () => {
+        console.log(`  ⏰ [CRON] Firing "${action.name}" (${cronExpression})`);
 
-      // Re-fetch action to get latest status
-      const [latest] = await db.select().from(actions)
-        .where(eq(actions.id, action.id))
-        .limit(1);
+        // Re-fetch action to get latest status
+        const [latest] = await db.select().from(actions).where(eq(actions.id, action.id)).limit(1);
 
-      if (!latest || latest.status !== "active") {
-        console.log(`  ⏰ [CRON] Action "${action.name}" is no longer active, skipping execution`);
-        return;
+        if (!latest || latest.status !== "active") {
+          console.log(
+            `  ⏰ [CRON] Action "${action.name}" is no longer active, skipping execution`
+          );
+          return;
+        }
+
+        // Execute via ActionEngine
+        await executeActionById(action.id, {
+          trigger: "cron",
+          triggerEvent: "cron",
+        });
       }
-
-      // Execute via ActionEngine
-      await executeActionById(action.id, {
-        trigger: "cron",
-        triggerEvent: "cron",
-      });
-    });
+    );
 
     cronJobs.set(action.id, job);
 
     const nextRun = job.nextRun();
-    console.log(`  ⏰ [CRON] Scheduled "${action.name}" (${cronExpression}) → next: ${nextRun?.toISOString() || "N/A"}`);
-
+    console.log(
+      `  ⏰ [CRON] Scheduled "${action.name}" (${cronExpression}) → next: ${nextRun?.toISOString() || "N/A"}`
+    );
   } catch (err: any) {
-    console.error(`  ⏰ [CRON] Invalid cron expression for "${action.name}": ${cronExpression} — ${err.message}`);
+    console.error(
+      `  ⏰ [CRON] Invalid cron expression for "${action.name}": ${cronExpression} — ${err.message}`
+    );
   }
 }
 
@@ -108,11 +119,10 @@ function unscheduleCronJob(actionId: string): void {
  */
 export async function initCronScheduler(): Promise<void> {
   try {
-    const cronActions = await db.select().from(actions)
-      .where(and(
-        eq(actions.trigger, "cron"),
-        eq(actions.status, "active"),
-      ));
+    const cronActions = await db
+      .select()
+      .from(actions)
+      .where(and(eq(actions.trigger, "cron"), eq(actions.status, "active")));
 
     for (const action of cronActions) {
       scheduleCronJob(action);
@@ -129,7 +139,11 @@ export async function initCronScheduler(): Promise<void> {
  * Call this after an action is created/updated/deleted.
  */
 export function refreshCronJob(action: typeof actions.$inferSelect): void {
-  if (action.trigger === "cron" && action.status === "active" && action.triggerConfig?.cronExpression) {
+  if (
+    action.trigger === "cron" &&
+    action.status === "active" &&
+    action.triggerConfig?.cronExpression
+  ) {
     scheduleCronJob(action);
   } else {
     unscheduleCronJob(action.id);
@@ -176,8 +190,6 @@ export function getCronJobStatus(): Array<{
 // ═══════════════════════════════════════════════════════════════
 // Legacy Compatibility (to be removed in Phase 4)
 // ═══════════════════════════════════════════════════════════════
-
-import { gremiusFunctions } from "../db/schema";
 
 /**
  * @deprecated Use refreshCronJob with actions table instead

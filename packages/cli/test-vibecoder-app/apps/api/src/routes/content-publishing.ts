@@ -5,9 +5,10 @@
  * Estos endpoints son parte del Core (Nivel 2) y siempre están disponibles.
  */
 
-import { Hono } from "hono";
-// @ts-ignore - Path alias @gremius/shared not resolved by tsc
 import type { GrimoireContext } from "@gremius/shared";
+import { Hono } from "hono";
+
+// @ts-ignore - Path alias @gremius/shared not resolved by tsc
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type { AppVariables } from "../types/hono";
 

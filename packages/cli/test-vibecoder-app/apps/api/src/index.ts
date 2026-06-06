@@ -19,27 +19,28 @@
  *   - Legacy APIs maintained for backward compatibility
  */
 
+import type { ServerWebSocket } from "bun";
+import { eq, count, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { timing } from "hono/timing";
 import { rateLimiter } from "hono-rate-limiter";
-import { eq, count, sql } from "drizzle-orm";
-import type { ServerWebSocket } from "bun";
 
 // ── Configuration ──
-import { config, features, rateLimitConfig, corsConfig } from "./lib/config";
-import { logger, createRequestLogger, logSecurity } from "./lib/logger";
-
-// ── Feature Flags ──
 import { staticConfig as gremiusConfig } from "../gremius.config";
 
-
-
-import { auth } from "./lib/auth";
 import { db } from "./db";
-import { authUsers as user, siteSettings } from "./db/schema";
+import { authUsers as user, siteSettings , apiKeys } from "./db/schema";
+import { auth } from "./lib/auth";
+import { config, features, rateLimitConfig, corsConfig } from "./lib/config";
+import { logger, createRequestLogger } from "./lib/logger";
+
+// ── Feature Flags ──
+
+
+
 import { setupWorkers, emailQueue } from "./lib/queue";
 import { realtimeManager, type WSClientData } from "./lib/realtime";
 
@@ -55,40 +56,41 @@ const dataSetsFullRoutes = null as any;
 const datasetsOpenAPIRouter = null as any;
 
 // ── Engine Routes (Nivel 1) — Always-on infrastructure ──
+import { toonMiddleware } from "./lib/toon";
+import { valkeyConnection } from "./lib/valkey";
 import { withTransactionalRLS } from "./middleware/transactional-rls";
+import { actionsRoutes } from "./routes/actions";
+import { adminRegistryRoutes } from "./routes/admin-registry";
+import agentMemoryRoutes from "./routes/agent-memory";
+import agentPlaygroundRoutes from "./routes/agent-playground";
+import agentRoutes from "./routes/agents";
+import agentsV1Routes from "./routes/agents-v1";
+import { apiKeysRoutes } from "./routes/api-keys";
+import { settingsRoutes, syncRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
+import { explorerRoutes } from "./routes/data-explorer";
+import dataSourcesRoutes from "./routes/data-sources";
+import { datasetsQueryRoutes } from "./routes/datasets-query";
+import { docsRoutes } from "./routes/docs";
+import { dynamicDocsRouter } from "./routes/docs-dynamic";
+import { functionsRoutes } from "./routes/functions";
+import { graphqlRoutes } from "./routes/graphql";
+import { inlineRelationsRoutes } from "./routes/inline-relations";
+import { mcpRoutes } from "./routes/mcp";
 import { modulesRoutes } from "./routes/modules";
 import { systemRoutes } from "./routes/system";
-import { settingsRoutes, syncRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
-import { graphqlRoutes } from "./routes/graphql";
-import { functionsRoutes } from "./routes/functions";
-import { actionsRoutes } from "./routes/actions";
 import { initActionsEngine } from "./lib/actions";
 import { initFunctionDispatcher } from "./lib/function-dispatcher";
 import { initCronScheduler } from "./lib/cron-scheduler";
-import { apiKeysRoutes } from "./routes/api-keys";
-import { mcpRoutes } from "./routes/mcp";
-import { adminRegistryRoutes } from "./routes/admin-registry";
-import agentRoutes from "./routes/agents";
-import agentPlaygroundRoutes from "./routes/agent-playground";
-import agentMemoryRoutes from "./routes/agent-memory";
-import agentsV1Routes from "./routes/agents-v1";
-import dataSourcesRoutes from "./routes/data-sources";
-import { explorerRoutes } from "./routes/data-explorer";
 import { schemaIntrospectionRoutes } from "./routes/schema-introspection";
-import { inlineRelationsRoutes } from "./routes/inline-relations";
-import { datasetsQueryRoutes } from "./routes/datasets-query";
-import { dynamicDocsRouter } from "./routes/docs-dynamic";
 
 // ── Module Loader ──
 import { loadModules, createGrimoireContext } from "./lib/module-loader";
-import { toonMiddleware } from "./lib/toon";
 
 // ── Actions Layer Integration (Nivel 1 DX) ──
 import { initActions } from "@gremius/engine";
-import { valkeyConnection } from "./lib/valkey";
+
 
 // ── Content Publishing (Core) ──
-import { createContentPublishingRouter } from "./routes/content-publishing";
 
 // ── Typed Hono app ──
 const app = new Hono<{
@@ -276,7 +278,7 @@ app.route("/api/system", systemRoutes);
 // ══════════════════════════════════════════════
 
 import { createHash } from "crypto";
-import { apiKeys } from "./db/schema";
+
 import { authenticateAgent } from "./services/agent-auth";
 import type { AgentAuthContext } from "./services/agent-auth";
 
@@ -617,7 +619,6 @@ app.onError((err, c) => {
 // 📚 API DOCUMENTATION (Swagger + Scalar)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { docsRoutes } from "./routes/docs";
 
 // Mount docs routes (dynamic OpenAPI from grimoires)
 app.route("/api/docs", dynamicDocsRouter);

@@ -1,8 +1,8 @@
 /**
  * Agent Audit Service
- * 
+ *
  * Registro detallado de todas las acciones de agentes NHI
- * 
+ *
  * Características:
  * - Logging asíncrono (no bloquea respuestas)
  * - Retención configurable
@@ -10,10 +10,12 @@
  * - Alertas de seguridad
  */
 
+import { eq, and, desc, gte, lte, sql, count } from "drizzle-orm";
+
 import { db } from "../db";
 import { agentAuditLogs, agentIdentities } from "../db/schema";
-import { eq, and, desc, gte, lte, sql, count } from "drizzle-orm";
 import { logger } from "../lib/logger";
+
 import {
   notifyAuthSuccess,
   notifyAuthFailure,
@@ -25,7 +27,7 @@ import {
 // TIPOS
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type AuditAction = 
+export type AuditAction =
   | "auth_success"
   | "auth_failure"
   | "mcp_connect"
@@ -190,11 +192,7 @@ export function logPermissionDenied(
 /**
  * Helper para loguear rate limit
  */
-export function logRateLimited(
-  agentId: string,
-  limit: number,
-  ipAddress?: string
-): void {
+export function logRateLimited(agentId: string, limit: number, ipAddress?: string): void {
   logAgentAction({
     agentId,
     action: "rate_limited",
@@ -229,7 +227,7 @@ export async function queryAuditLogs(filters: AuditQueryFilters = {}) {
 
   // Build where conditions array
   const whereConditions = [];
-  
+
   if (agentId) {
     whereConditions.push(eq(agentAuditLogs.agentId, agentId));
   }
@@ -264,7 +262,7 @@ export async function queryAuditLogs(filters: AuditQueryFilters = {}) {
     .select({ count: count() })
     .from(agentAuditLogs)
     .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
-    
+
   const total = countResult[0]?.count || 0;
 
   // Obtener resultados paginados
@@ -274,7 +272,7 @@ export async function queryAuditLogs(filters: AuditQueryFilters = {}) {
     .offset(offset);
 
   return {
-    logs: results.map(r => ({
+    logs: results.map((r) => ({
       ...r.log,
       agentName: r.agentName,
     })),
@@ -298,39 +296,37 @@ export async function getAgentStats(agentId: string, days = 7) {
       count: count(),
     })
     .from(agentAuditLogs)
-    .where(
-      and(
-        eq(agentAuditLogs.agentId, agentId),
-        gte(agentAuditLogs.createdAt, startDate)
-      )
-    )
+    .where(and(eq(agentAuditLogs.agentId, agentId), gte(agentAuditLogs.createdAt, startDate)))
     .groupBy(agentAuditLogs.action, agentAuditLogs.success);
 
   const totalCalls = logs.reduce((sum, log) => sum + Number(log.count), 0);
   const successfulCalls = logs
-    .filter(log => log.success)
+    .filter((log) => log.success)
     .reduce((sum, log) => sum + Number(log.count), 0);
   const failedCalls = totalCalls - successfulCalls;
 
   // Agrupar por acción
-  const actionsByType = logs.reduce((acc, log) => {
-    const key = log.action;
-    if (!acc[key]) acc[key] = { count: 0, success: 0, failed: 0 };
-    acc[key].count += Number(log.count);
-    if (log.success) {
-      acc[key].success += Number(log.count);
-    } else {
-      acc[key].failed += Number(log.count);
-    }
-    return acc;
-  }, {} as Record<string, { count: number; success: number; failed: number }>);
+  const actionsByType = logs.reduce(
+    (acc, log) => {
+      const key = log.action;
+      if (!acc[key]) acc[key] = { count: 0, success: 0, failed: 0 };
+      acc[key].count += Number(log.count);
+      if (log.success) {
+        acc[key].success += Number(log.count);
+      } else {
+        acc[key].failed += Number(log.count);
+      }
+      return acc;
+    },
+    {} as Record<string, { count: number; success: number; failed: number }>
+  );
 
   return {
     period: `${days}d`,
     totalCalls,
     successfulCalls,
     failedCalls,
-    successRate: totalCalls > 0 ? (successfulCalls / totalCalls * 100).toFixed(2) + '%' : '0%',
+    successRate: totalCalls > 0 ? ((successfulCalls / totalCalls) * 100).toFixed(2) + "%" : "0%",
     actionsByType,
   };
 }
@@ -349,12 +345,7 @@ export async function detectSuspiciousActivity(hours = 24) {
       count: count(),
     })
     .from(agentAuditLogs)
-    .where(
-      and(
-        eq(agentAuditLogs.action, "auth_failure"),
-        gte(agentAuditLogs.createdAt, since)
-      )
-    )
+    .where(and(eq(agentAuditLogs.action, "auth_failure"), gte(agentAuditLogs.createdAt, since)))
     .groupBy(agentAuditLogs.agentId)
     .having(sql`count(*) >= 5`);
 
@@ -365,12 +356,7 @@ export async function detectSuspiciousActivity(hours = 24) {
       count: count(),
     })
     .from(agentAuditLogs)
-    .where(
-      and(
-        eq(agentAuditLogs.action, "rate_limited"),
-        gte(agentAuditLogs.createdAt, since)
-      )
-    )
+    .where(and(eq(agentAuditLogs.action, "rate_limited"), gte(agentAuditLogs.createdAt, since)))
     .groupBy(agentAuditLogs.agentId)
     .having(sql`count(*) >= 3`);
 
@@ -382,29 +368,26 @@ export async function detectSuspiciousActivity(hours = 24) {
     })
     .from(agentAuditLogs)
     .where(
-      and(
-        eq(agentAuditLogs.action, "permission_denied"),
-        gte(agentAuditLogs.createdAt, since)
-      )
+      and(eq(agentAuditLogs.action, "permission_denied"), gte(agentAuditLogs.createdAt, since))
     )
     .groupBy(agentAuditLogs.agentId)
     .having(sql`count(*) >= 5`);
 
   return {
-    authFailures: authFailures.map(r => ({
+    authFailures: authFailures.map((r) => ({
       agentId: r.agentId,
       count: Number(r.count),
-      severity: Number(r.count) > 10 ? 'high' : 'medium',
+      severity: Number(r.count) > 10 ? "high" : "medium",
     })),
-    rateLimits: rateLimits.map(r => ({
+    rateLimits: rateLimits.map((r) => ({
       agentId: r.agentId,
       count: Number(r.count),
-      severity: Number(r.count) > 5 ? 'high' : 'low',
+      severity: Number(r.count) > 5 ? "high" : "low",
     })),
-    permissionDenials: permissionDenials.map(r => ({
+    permissionDenials: permissionDenials.map((r) => ({
       agentId: r.agentId,
       count: Number(r.count),
-      severity: Number(r.count) > 10 ? 'high' : 'medium',
+      severity: Number(r.count) > 10 ? "high" : "medium",
     })),
   };
 }
@@ -420,12 +403,10 @@ export async function cleanupOldLogs(retentionDays = 90): Promise<number> {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-  const result = await db
-    .delete(agentAuditLogs)
-    .where(lte(agentAuditLogs.createdAt, cutoffDate));
+  const result = await db.delete(agentAuditLogs).where(lte(agentAuditLogs.createdAt, cutoffDate));
 
   const deleted = result.rowCount || 0;
   logger.info({ deleted, retentionDays }, "Cleaned up old agent audit logs");
-  
+
   return deleted;
 }

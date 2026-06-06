@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Tests for Blog API - SEO Fields Handling
- * 
+ *
  * Verifies that the backend correctly:
  * - Accepts and stores all SEO fields
  * - Validates SEO data
@@ -50,9 +50,9 @@ class MockBlogApi {
     // Validation
     if (!data.title) throw new Error("Title is required");
     if (!data.slug) throw new Error("Slug is required");
-    
+
     // Check duplicate slug
-    if (this.posts.some(p => p.slug === data.slug)) {
+    if (this.posts.some((p) => p.slug === data.slug)) {
       throw new Error("Slug already exists");
     }
 
@@ -82,11 +82,11 @@ class MockBlogApi {
   }
 
   async updatePost(id: string, data: Partial<BlogPostInput>): Promise<BlogPost> {
-    const post = this.posts.find(p => p.id === id);
+    const post = this.posts.find((p) => p.id === id);
     if (!post) throw new Error("Post not found");
 
     // Check duplicate slug
-    if (data.slug && this.posts.some(p => p.slug === data.slug && p.id !== id)) {
+    if (data.slug && this.posts.some((p) => p.slug === data.slug && p.id !== id)) {
       throw new Error("Slug already exists");
     }
 
@@ -100,11 +100,11 @@ class MockBlogApi {
   }
 
   async getPost(id: string): Promise<BlogPost | null> {
-    return this.posts.find(p => p.id === id) || null;
+    return this.posts.find((p) => p.id === id) || null;
   }
 
   async getPostBySlug(slug: string): Promise<BlogPost | null> {
-    return this.posts.find(p => p.slug === slug) || null;
+    return this.posts.find((p) => p.slug === slug) || null;
   }
 
   private isValidUrl(url: string): boolean {
@@ -148,9 +148,9 @@ describe("Blog API - SEO Fields", () => {
           robotsFollow: true,
           structuredData: {
             "@type": "BlogPosting",
-            headline: "Test Post"
-          }
-        }
+            headline: "Test Post",
+          },
+        },
       };
 
       const post = await api.createPost(input);
@@ -166,7 +166,7 @@ describe("Blog API - SEO Fields", () => {
       expect(post.seoOverrides!.robotsFollow).toBe(true);
       expect(post.seoOverrides!.structuredData).toEqual({
         "@type": "BlogPosting",
-        headline: "Test Post"
+        headline: "Test Post",
       });
     });
 
@@ -174,7 +174,7 @@ describe("Blog API - SEO Fields", () => {
       const input: BlogPostInput = {
         title: "Simple Post",
         slug: "simple-post",
-        status: "draft"
+        status: "draft",
       };
 
       const post = await api.createPost(input);
@@ -190,11 +190,13 @@ describe("Blog API - SEO Fields", () => {
         slug: "test",
         status: "draft",
         seoOverrides: {
-          metaTitle: "x".repeat(61)
-        }
+          metaTitle: "x".repeat(61),
+        },
       };
 
-      await expect(api.createPost(input)).rejects.toThrow("Meta title must be 60 characters or less");
+      await expect(api.createPost(input)).rejects.toThrow(
+        "Meta title must be 60 characters or less"
+      );
     });
 
     it("should reject meta description over 160 characters", async () => {
@@ -203,11 +205,13 @@ describe("Blog API - SEO Fields", () => {
         slug: "test",
         status: "draft",
         seoOverrides: {
-          metaDescription: "x".repeat(161)
-        }
+          metaDescription: "x".repeat(161),
+        },
       };
 
-      await expect(api.createPost(input)).rejects.toThrow("Meta description must be 160 characters or less");
+      await expect(api.createPost(input)).rejects.toThrow(
+        "Meta description must be 160 characters or less"
+      );
     });
 
     it("should reject invalid canonical URL", async () => {
@@ -216,8 +220,8 @@ describe("Blog API - SEO Fields", () => {
         slug: "test",
         status: "draft",
         seoOverrides: {
-          canonicalUrl: "not-a-valid-url"
-        }
+          canonicalUrl: "not-a-valid-url",
+        },
       };
 
       await expect(api.createPost(input)).rejects.toThrow("Invalid canonical URL");
@@ -229,8 +233,8 @@ describe("Blog API - SEO Fields", () => {
         slug: "test",
         status: "draft",
         seoOverrides: {
-          canonicalUrl: "https://example.com/blog/test"
-        }
+          canonicalUrl: "https://example.com/blog/test",
+        },
       };
 
       const post = await api.createPost(input);
@@ -243,14 +247,14 @@ describe("Blog API - SEO Fields", () => {
       const created = await api.createPost({
         title: "Original",
         slug: "original",
-        status: "draft"
+        status: "draft",
       });
 
       const updated = await api.updatePost(created.id, {
         seoOverrides: {
           metaTitle: "Updated Title",
-          metaDescription: "Updated description"
-        }
+          metaDescription: "Updated description",
+        },
       });
 
       expect(updated.seoOverrides!.metaTitle).toBe("Updated Title");
@@ -264,15 +268,15 @@ describe("Blog API - SEO Fields", () => {
         status: "draft",
         seoOverrides: {
           metaTitle: "Original Title",
-          ogTitle: "Original OG Title"
-        }
+          ogTitle: "Original OG Title",
+        },
       });
 
       const updated = await api.updatePost(created.id, {
         seoOverrides: {
-          metaTitle: "Updated Title"
+          metaTitle: "Updated Title",
           // ogTitle not provided, should keep original
-        }
+        },
       });
 
       // Note: In real implementation, this would merge properly
@@ -290,8 +294,8 @@ describe("Blog API - SEO Fields", () => {
         seoOverrides: {
           metaTitle: "Meta Title",
           metaDescription: "Meta Description",
-          canonicalUrl: "https://example.com/test"
-        }
+          canonicalUrl: "https://example.com/test",
+        },
       });
 
       const retrieved = await api.getPost(created.id);
@@ -308,8 +312,8 @@ describe("Blog API - SEO Fields", () => {
         slug: "test-by-slug",
         status: "draft",
         seoOverrides: {
-          metaTitle: "Slug Test Title"
-        }
+          metaTitle: "Slug Test Title",
+        },
       });
 
       const retrieved = await api.getPostBySlug("test-by-slug");
@@ -324,7 +328,7 @@ describe("Blog API - SEO Fields", () => {
         title: "Test",
         slug: "test-image",
         status: "draft",
-        featuredImageId: "image-uuid-123"
+        featuredImageId: "image-uuid-123",
       });
 
       expect(post.featuredImageId).toBe("image-uuid-123");
@@ -334,7 +338,7 @@ describe("Blog API - SEO Fields", () => {
       const post = await api.createPost({
         title: "Test",
         slug: "test-no-image",
-        status: "draft"
+        status: "draft",
       });
 
       expect(post.featuredImageId).toBeNull();
@@ -347,7 +351,7 @@ describe("Blog API - SEO Fields", () => {
         title: "Test",
         slug: "test-tags",
         status: "draft",
-        tags: ["tag-1", "tag-2", "tag-3"]
+        tags: ["tag-1", "tag-2", "tag-3"],
       });
 
       expect(post.tags).toHaveLength(3);
@@ -358,7 +362,7 @@ describe("Blog API - SEO Fields", () => {
       const post = await api.createPost({
         title: "Test",
         slug: "test-no-tags",
-        status: "draft"
+        status: "draft",
       });
 
       expect(post.tags).toEqual([]);
@@ -374,7 +378,7 @@ describe("Blog API - SEO Fields", () => {
         title: "Scheduled Post",
         slug: "scheduled-post",
         status: "scheduled",
-        publishedAt: futureDate.toISOString()
+        publishedAt: futureDate.toISOString(),
       });
 
       expect(post.status).toBe("scheduled");
@@ -386,7 +390,7 @@ describe("Blog API - SEO Fields", () => {
         title: "Draft Post",
         slug: "draft-post",
         status: "draft",
-        publishedAt: null
+        publishedAt: null,
       });
 
       expect(post.status).toBe("draft");
@@ -395,14 +399,17 @@ describe("Blog API - SEO Fields", () => {
 
     it("should handle all status values", async () => {
       const statuses: Array<"draft" | "published" | "scheduled" | "archived"> = [
-        "draft", "published", "scheduled", "archived"
+        "draft",
+        "published",
+        "scheduled",
+        "archived",
       ];
 
       for (const status of statuses) {
         const post = await api.createPost({
           title: `Test ${status}`,
           slug: `test-${status}`,
-          status
+          status,
         });
         expect(post.status).toBe(status);
       }
@@ -415,7 +422,7 @@ describe("Blog API - SEO Fields", () => {
         title: "Test",
         slug: "test-empty-seo",
         status: "draft",
-        seoOverrides: {}
+        seoOverrides: {},
       });
 
       expect(post.seoOverrides).toEqual({});
@@ -426,14 +433,14 @@ describe("Blog API - SEO Fields", () => {
         title: "Test 1",
         slug: "test-robots-1",
         status: "draft",
-        seoOverrides: { robotsIndex: false, robotsFollow: false }
+        seoOverrides: { robotsIndex: false, robotsFollow: false },
       });
 
       const post2 = await api.createPost({
         title: "Test 2",
         slug: "test-robots-2",
         status: "draft",
-        seoOverrides: { robotsIndex: true, robotsFollow: true }
+        seoOverrides: { robotsIndex: true, robotsFollow: true },
       });
 
       expect(post1.seoOverrides.robotsIndex).toBe(false);
@@ -449,17 +456,17 @@ describe("Blog API - SEO Fields", () => {
         headline: "Test Post",
         author: {
           "@type": "Person",
-          name: "John Doe"
+          name: "John Doe",
         },
         datePublished: "2026-04-04",
-        image: "https://example.com/image.jpg"
+        image: "https://example.com/image.jpg",
       };
 
       const post = await api.createPost({
         title: "Test",
         slug: "test-structured",
         status: "draft",
-        seoOverrides: { structuredData }
+        seoOverrides: { structuredData },
       });
 
       expect(post.seoOverrides.structuredData).toEqual(structuredData);
@@ -472,8 +479,8 @@ describe("Blog API - SEO Fields", () => {
         status: "draft",
         seoOverrides: {
           metaTitle: "🚀 Amazing Post Title",
-          metaDescription: "Descripción en español avec émojis 🎉"
-        }
+          metaDescription: "Descripción en español avec émojis 🎉",
+        },
       });
 
       expect(post.seoOverrides.metaTitle).toBe("🚀 Amazing Post Title");

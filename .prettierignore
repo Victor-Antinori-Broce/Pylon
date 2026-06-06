@@ -8,3 +8,5 @@ drizzle/*.sql
 drizzle/meta/*
 _legacy_*
 node_modules/.pnpm
+apps/api/tests.json
+packages/testing/diag.ts

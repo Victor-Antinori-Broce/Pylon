@@ -1,179 +1,216 @@
 // @ts-nocheck
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DatasetStore } from './datasets.svelte';
-import type { DatasetDefinition, CreateDatasetPayload } from '@gremius/shared';
+import type { DatasetDefinition, CreateDatasetPayload } from "@gremius/shared";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-describe('DatasetStore', () => {
-	let store: DatasetStore;
-	const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { DatasetStore } from "./datasets.svelte";
 
-	beforeEach(() => {
-		store = new DatasetStore();
-		vi.resetAllMocks();
-	});
+describe("DatasetStore", () => {
+  let store: DatasetStore;
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-	describe('fetchDatasets', () => {
-		it('should fetch datasets successfully', async () => {
-			const mockDatasets: DatasetDefinition[] = [
-				{
-					id: '1',
-					name: 'Test Dataset',
-					slug: 'test-dataset',
-					fields: [],
-					createdAt: new Date().toISOString()
-				}
-			];
+  beforeEach(() => {
+    store = new DatasetStore();
+    vi.resetAllMocks();
+  });
 
-			global.fetch = vi.fn().mockResolvedValueOnce({
-				ok: true,
-				json: async () => ({ docs: mockDatasets, totalDocs: 1 })
-			} as Response);
+  describe("fetchDatasets", () => {
+    it("should fetch datasets successfully", async () => {
+      const mockDatasets: DatasetDefinition[] = [
+        {
+          id: "1",
+          name: "Test Dataset",
+          slug: "test-dataset",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+      ];
 
-			await store.fetchDatasets();
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ docs: mockDatasets, totalDocs: 1 }),
+      } as Response);
 
-			expect(store.datasets).toHaveLength(1);
-			expect(store.datasets[0].name).toBe('Test Dataset');
-			expect(store.isLoading).toBe(false);
-			expect(store.error).toBeNull();
-		});
+      await store.fetchDatasets();
 
-		it('should handle fetch error', async () => {
-			global.fetch = vi.fn().mockResolvedValueOnce({
-				ok: false,
-				status: 500,
-				statusText: 'Internal Server Error'
-			} as Response);
+      expect(store.datasets).toHaveLength(1);
+      expect(store.datasets[0].name).toBe("Test Dataset");
+      expect(store.isLoading).toBe(false);
+      expect(store.error).toBeNull();
+    });
 
-			await store.fetchDatasets();
+    it("should handle fetch error", async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      } as Response);
 
-			expect(store.datasets).toHaveLength(0);
-			expect(store.error).toContain('500');
-			expect(store.isLoading).toBe(false);
-		});
+      await store.fetchDatasets();
 
-		it('should set loading state while fetching', async () => {
-			global.fetch = vi.fn().mockImplementation(() => 
-				new Promise(resolve => setTimeout(resolve, 100))
-			);
+      expect(store.datasets).toHaveLength(0);
+      expect(store.error).toContain("500");
+      expect(store.isLoading).toBe(false);
+    });
 
-			const fetchPromise = store.fetchDatasets();
-			expect(store.isLoading).toBe(true);
-			
-			await fetchPromise;
-		});
-	});
+    it("should set loading state while fetching", async () => {
+      global.fetch = vi
+        .fn()
+        .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
 
-	describe('createDataset', () => {
-		it('should create dataset successfully', async () => {
-			const payload: CreateDatasetPayload = {
-				name: 'New Dataset',
-				slug: 'new-dataset',
-				fields: []
-			};
+      const fetchPromise = store.fetchDatasets();
+      expect(store.isLoading).toBe(true);
 
-			const mockResponse: DatasetDefinition = {
-				id: '2',
-				name: 'New Dataset',
-				slug: 'new-dataset',
-				fields: [],
-				createdAt: new Date().toISOString()
-			};
+      await fetchPromise;
+    });
+  });
 
-			global.fetch = vi.fn().mockResolvedValueOnce({
-				ok: true,
-				json: async () => mockResponse
-			} as Response);
+  describe("createDataset", () => {
+    it("should create dataset successfully", async () => {
+      const payload: CreateDatasetPayload = {
+        name: "New Dataset",
+        slug: "new-dataset",
+        fields: [],
+      };
 
-			const result = await store.createDataset(payload);
+      const mockResponse: DatasetDefinition = {
+        id: "2",
+        name: "New Dataset",
+        slug: "new-dataset",
+        fields: [],
+        createdAt: new Date().toISOString(),
+      };
 
-			expect(result).toEqual(mockResponse);
-			expect(store.datasets).toHaveLength(1);
-			expect(store.datasets[0].name).toBe('New Dataset');
-		});
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
 
-		it('should handle create error', async () => {
-			const payload: CreateDatasetPayload = {
-				name: 'New Dataset',
-				slug: 'new-dataset',
-				fields: []
-			};
+      const result = await store.createDataset(payload);
 
-			global.fetch = vi.fn().mockResolvedValueOnce({
-				ok: false,
-				status: 400,
-				json: async () => ({ error: 'Invalid data' })
-			} as Response);
+      expect(result).toEqual(mockResponse);
+      expect(store.datasets).toHaveLength(1);
+      expect(store.datasets[0].name).toBe("New Dataset");
+    });
 
-			const result = await store.createDataset(payload);
+    it("should handle create error", async () => {
+      const payload: CreateDatasetPayload = {
+        name: "New Dataset",
+        slug: "new-dataset",
+        fields: [],
+      };
 
-			expect(result).toBeNull();
-			expect(store.error).toContain('Invalid data');
-		});
-	});
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: "Invalid data" }),
+      } as Response);
 
-	describe('deleteDataset', () => {
-		it('should delete dataset successfully', async () => {
-			// Pre-populate store
-			store.datasets = [
-				{ id: '1', name: 'Dataset 1', slug: 'dataset-1', fields: [], createdAt: new Date().toISOString() },
-				{ id: '2', name: 'Dataset 2', slug: 'dataset-2', fields: [], createdAt: new Date().toISOString() }
-			];
+      const result = await store.createDataset(payload);
 
-			global.fetch = vi.fn().mockResolvedValueOnce({
-				ok: true
-			} as Response);
+      expect(result).toBeNull();
+      expect(store.error).toContain("Invalid data");
+    });
+  });
 
-			const result = await store.deleteDataset('1');
+  describe("deleteDataset", () => {
+    it("should delete dataset successfully", async () => {
+      // Pre-populate store
+      store.datasets = [
+        {
+          id: "1",
+          name: "Dataset 1",
+          slug: "dataset-1",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: "2",
+          name: "Dataset 2",
+          slug: "dataset-2",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+      ];
 
-			expect(result).toBe(true);
-			expect(store.datasets).toHaveLength(1);
-			expect(store.datasets[0].id).toBe('2');
-		});
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+      } as Response);
 
-		it('should clear selectedDataset if deleted was selected', async () => {
-			store.datasets = [
-				{ id: '1', name: 'Dataset 1', slug: 'dataset-1', fields: [], createdAt: new Date().toISOString() }
-			];
-			store.selectedDataset = store.datasets[0];
+      const result = await store.deleteDataset("1");
 
-			global.fetch = vi.fn().mockResolvedValueOnce({
-				ok: true
-			} as Response);
+      expect(result).toBe(true);
+      expect(store.datasets).toHaveLength(1);
+      expect(store.datasets[0].id).toBe("2");
+    });
 
-			await store.deleteDataset('1');
+    it("should clear selectedDataset if deleted was selected", async () => {
+      store.datasets = [
+        {
+          id: "1",
+          name: "Dataset 1",
+          slug: "dataset-1",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      store.selectedDataset = store.datasets[0];
 
-			expect(store.selectedDataset).toBeNull();
-		});
-	});
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+      } as Response);
 
-	describe('derived state', () => {
-		it('should calculate totalCount correctly', () => {
-			store.datasets = [
-				{ id: '1', name: 'Dataset 1', slug: 'dataset-1', fields: [], createdAt: new Date().toISOString() },
-				{ id: '2', name: 'Dataset 2', slug: 'dataset-2', fields: [], createdAt: new Date().toISOString() }
-			];
+      await store.deleteDataset("1");
 
-			expect(store.totalCount).toBe(2);
-		});
+      expect(store.selectedDataset).toBeNull();
+    });
+  });
 
-		it('should sort datasets by name', () => {
-			store.datasets = [
-				{ id: '2', name: 'Zebra', slug: 'zebra', fields: [], createdAt: new Date().toISOString() },
-				{ id: '1', name: 'Alpha', slug: 'alpha', fields: [], createdAt: new Date().toISOString() }
-			];
+  describe("derived state", () => {
+    it("should calculate totalCount correctly", () => {
+      store.datasets = [
+        {
+          id: "1",
+          name: "Dataset 1",
+          slug: "dataset-1",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: "2",
+          name: "Dataset 2",
+          slug: "dataset-2",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+      ];
 
-			expect(store.sortedDatasets[0].name).toBe('Alpha');
-			expect(store.sortedDatasets[1].name).toBe('Zebra');
-		});
+      expect(store.totalCount).toBe(2);
+    });
 
-		it('should calculate hasDatasets correctly', () => {
-			expect(store.hasDatasets).toBe(false);
-			
-			store.datasets = [
-				{ id: '1', name: 'Dataset 1', slug: 'dataset-1', fields: [], createdAt: new Date().toISOString() }
-			];
+    it("should sort datasets by name", () => {
+      store.datasets = [
+        { id: "2", name: "Zebra", slug: "zebra", fields: [], createdAt: new Date().toISOString() },
+        { id: "1", name: "Alpha", slug: "alpha", fields: [], createdAt: new Date().toISOString() },
+      ];
 
-			expect(store.hasDatasets).toBe(true);
-		});
-	});
+      expect(store.sortedDatasets[0].name).toBe("Alpha");
+      expect(store.sortedDatasets[1].name).toBe("Zebra");
+    });
+
+    it("should calculate hasDatasets correctly", () => {
+      expect(store.hasDatasets).toBe(false);
+
+      store.datasets = [
+        {
+          id: "1",
+          name: "Dataset 1",
+          slug: "dataset-1",
+          fields: [],
+          createdAt: new Date().toISOString(),
+        },
+      ];
+
+      expect(store.hasDatasets).toBe(true);
+    });
+  });
 });

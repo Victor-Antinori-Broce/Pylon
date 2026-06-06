@@ -6,11 +6,9 @@
 
 import {
   defineAction,
-  defineTypedAction,
   listDefinedActions,
   getAction,
   parseTrigger,
-  initActions,
   listMCPTools,
   type ActionContext,
   type ActionResult,

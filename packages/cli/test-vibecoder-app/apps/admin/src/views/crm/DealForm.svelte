@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
   import Label from "$lib/components/ui/Label.svelte";
   import Textarea from "$lib/components/ui/Textarea.svelte";
   import { ArrowLeft } from "lucide-svelte";
+  import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { api } from "$lib/api";
+
   import type { CrmDeal, CrmPipeline, CrmPipelineStage, CrmCompany, CrmContact } from "./types";
 
   interface Props {
@@ -15,7 +16,7 @@
     onSave: () => void;
   }
 
-  let { dealId = null, onBack, onSave }: Props = $props();
+  const { dealId = null, onBack, onSave }: Props = $props();
 
   let loading = $state(false);
   let pipelines = $state<CrmPipeline[]>([]);

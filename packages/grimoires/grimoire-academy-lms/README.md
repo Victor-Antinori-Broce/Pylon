@@ -5,6 +5,7 @@ Learning Management System completo para Gremius BaaS/CMS.
 ## 📋 Características
 
 ### Core LMS
+
 - ✅ Gestión de cursos, módulos y temas
 - ✅ Sistema de quizzes y evaluaciones
 - ✅ Tracking de progreso granular
@@ -12,6 +13,7 @@ Learning Management System completo para Gremius BaaS/CMS.
 - ✅ Learning Paths secuenciales
 
 ### Nuevas Funcionalidades (v1.1.0)
+
 - ✅ **Certificados PDF** - Generación con diseño profesional
 - ✅ **Exportación Excel** - Asignaciones, progreso y encuestas
 - ✅ **Sincronización de usuarios** - Importación CSV/JSON
@@ -62,6 +64,7 @@ grimoire-academy-lms/
 ## 🌐 API Endpoints
 
 ### Certificados PDF
+
 ```http
 GET /api/academy/certificados/:cursoId/pdf
 # Descarga certificado en PDF
@@ -71,6 +74,7 @@ GET /api/academy/certificados/verificar/:codigo
 ```
 
 ### Exportación Excel
+
 ```http
 GET /api/academy/exportar/asignaciones?cursoId=X&grupoId=Y
 GET /api/academy/exportar/progreso?cursoId=X
@@ -78,6 +82,7 @@ GET /api/academy/exportar/encuestas?cursoId=X
 ```
 
 ### Sincronización de Usuarios
+
 ```http
 POST /api/academy/sync/usuarios
 Content-Type: application/json
@@ -97,6 +102,7 @@ EMP001,user@emp.com,Juan,ITICO
 ```
 
 ### Media
+
 ```http
 POST /api/academy/media/youtube-info
 { "url": "https://www.youtube.com/watch?v=..." }
@@ -108,6 +114,7 @@ POST /api/academy/media/normalizar-video
 ## 📊 Modelos de Datos
 
 ### Tablas Principales (15+)
+
 - `cursos`, `modulos`, `temas`
 - `quizzes`, `preguntas`, `opciones`
 - `progreso_cursos`, `progreso_temas`
@@ -116,6 +123,7 @@ POST /api/academy/media/normalizar-video
 - `certificados`, `encuestas_satisfaccion`
 
 ### Enums
+
 - `rol_capacitaciones`: administrador | supervisor | estudiante
 - `tipo_curso`: INDUCCION | GESTION | TECNICO | HERRAMIENTAS | DESARROLLO
 - `departamento`: 13 departamentos
@@ -124,31 +132,38 @@ POST /api/academy/media/normalizar-video
 ## 🎨 Servicios
 
 ### PDF Service
+
 ```typescript
 import { generarCertificadoPDF } from "@gremius/grimoire-academy-lms";
 
-const pdf = await generarCertificadoPDF({
-  nombreUsuario: "Juan Pérez",
-  nombreCurso: "Introducción a la Plataforma",
-  fechaCompletado: new Date(),
-  duracionHoras: 8,
-  codigo: "CERT-ABC123-XYZ789"
-}, {
-  primaryColor: "#009c3c",
-  textoPrincipal: "Se certifica que"
-});
+const pdf = await generarCertificadoPDF(
+  {
+    nombreUsuario: "Juan Pérez",
+    nombreCurso: "Introducción a la Plataforma",
+    fechaCompletado: new Date(),
+    duracionHoras: 8,
+    codigo: "CERT-ABC123-XYZ789",
+  },
+  {
+    primaryColor: "#009c3c",
+    textoPrincipal: "Se certifica que",
+  }
+);
 ```
 
 ### Excel Service
+
 ```typescript
 import { generarExcelAsignaciones } from "@gremius/grimoire-academy-lms";
 
-const excel = await generarExcelAsignaciones([
-  { fecha: new Date(), curso: "Curso 1", usuario: "Juan", progreso: 100, estado: "Completado" }
-], "Reporte de Asignaciones");
+const excel = await generarExcelAsignaciones(
+  [{ fecha: new Date(), curso: "Curso 1", usuario: "Juan", progreso: 100, estado: "Completado" }],
+  "Reporte de Asignaciones"
+);
 ```
 
 ### User Sync Service
+
 ```typescript
 import { parsearCSV, validarUsuariosExternos } from "@gremius/grimoire-academy-lms";
 
@@ -158,27 +173,27 @@ const { validos, invalidos } = validarUsuariosExternos(usuarios);
 
 ## 🔐 Permisos
 
-| Rol | Permisos |
-|-----|----------|
-| **administrador** | Acceso total |
-| **supervisor** | Gestionar grupos, ver reportes, asignar cursos |
-| **estudiante** | Ver cursos asignados, completar contenido |
+| Rol               | Permisos                                       |
+| ----------------- | ---------------------------------------------- |
+| **administrador** | Acceso total                                   |
+| **supervisor**    | Gestionar grupos, ver reportes, asignar cursos |
+| **estudiante**    | Ver cursos asignados, completar contenido      |
 
 ## 📈 Funcionalidades vs Módulo Django
 
-| Funcionalidad | Django | Grimoire |
-|--------------|--------|----------|
-| Cursos/Módulos/Temas | ✅ | ✅ |
-| Quizzes | ✅ | ✅ |
-| Progreso | ✅ | ✅ |
-| Grupos | ✅ | ✅ |
-| Asignaciones | ✅ | ✅ |
-| Encuestas | ✅ | ✅ |
-| Certificados | ✅ | ✅ + **PDF** |
-| Learning Paths | ❌ | ✅ **Nuevo** |
-| Exportar Excel | ❌ | ✅ **Nuevo** |
-| Sync Usuarios | ❌ | ✅ **Nuevo** |
-| Media Library | ❌ | ✅ **Nuevo** |
+| Funcionalidad        | Django | Grimoire     |
+| -------------------- | ------ | ------------ |
+| Cursos/Módulos/Temas | ✅     | ✅           |
+| Quizzes              | ✅     | ✅           |
+| Progreso             | ✅     | ✅           |
+| Grupos               | ✅     | ✅           |
+| Asignaciones         | ✅     | ✅           |
+| Encuestas            | ✅     | ✅           |
+| Certificados         | ✅     | ✅ + **PDF** |
+| Learning Paths       | ❌     | ✅ **Nuevo** |
+| Exportar Excel       | ❌     | ✅ **Nuevo** |
+| Sync Usuarios        | ❌     | ✅ **Nuevo** |
+| Media Library        | ❌     | ✅ **Nuevo** |
 
 ## 🧪 Testing
 
@@ -193,6 +208,7 @@ pnpm test:coverage
 ## 📝 Changelog
 
 ### v1.1.0
+
 - Agregado servicio de PDF para certificados
 - Agregado servicio de Excel para exportaciones
 - Agregado servicio de sincronización de usuarios
@@ -202,6 +218,7 @@ pnpm test:coverage
 - 75+ endpoints API REST
 
 ### v1.0.0
+
 - Lanzamiento inicial
 - Core LMS completo
 - Learning Paths
@@ -223,12 +240,12 @@ bun tests/manual-test.ts
 
 ### Tipos de Pruebas
 
-| Tipo | Archivo | Cobertura |
-|------|---------|-----------|
-| Unit Tests | `tests/academy-lms.test.ts` | Servicios completos |
-| Manual Tests | `tests/manual-test.ts` | Generación de archivos |
-| Endpoint Validation | `tests/endpoints-validation.md` | 75+ endpoints |
-| YouTube Examples | `tests/youtube-examples.md` | Videos de YouTube |
+| Tipo                | Archivo                         | Cobertura              |
+| ------------------- | ------------------------------- | ---------------------- |
+| Unit Tests          | `tests/academy-lms.test.ts`     | Servicios completos    |
+| Manual Tests        | `tests/manual-test.ts`          | Generación de archivos |
+| Endpoint Validation | `tests/endpoints-validation.md` | 75+ endpoints          |
+| YouTube Examples    | `tests/youtube-examples.md`     | Videos de YouTube      |
 
 ### Pruebas de YouTube
 
@@ -240,6 +257,7 @@ curl -X POST http://localhost:3000/api/academy/media/youtube-info \
 ```
 
 Formatos soportados:
+
 - ✅ `https://www.youtube.com/watch?v=VIDEO_ID`
 - ✅ `https://youtu.be/VIDEO_ID`
 - ✅ `https://www.youtube.com/embed/VIDEO_ID`

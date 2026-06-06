@@ -20,6 +20,7 @@ grimoire-<name>/
 ## Key Files
 
 ### package.json
+
 ```json
 {
   "name": "grimoire-<name>",
@@ -35,6 +36,7 @@ grimoire-<name>/
 ```
 
 ### grimoire.json
+
 ```json
 {
   "id": "grimoire-<name>",
@@ -54,7 +56,9 @@ grimoire-<name>/
 ```
 
 ### index.ts
+
 Must export a `GrimoireDefinition` via `defineGrimoire()`:
+
 - `id`: unique grimoire identifier
 - `createRouter`: factory function `(ctx: GrimoireContext) => Hono`
 - `mountPath`: API route prefix (e.g. `/api/my-table`)
@@ -62,11 +66,13 @@ Must export a `GrimoireDefinition` via `defineGrimoire()`:
 - `dependencies.grimoires`: other grimoires required
 
 ### schema.ts
+
 Export Drizzle `pgTable` definitions. The schema-merger will dynamically
 import this file at runtime. Use `migrations/` for production DDL to avoid
 PostgreSQL enum conflicts with other grimoires.
 
 ### migrations/
+
 Place `.sql` files here. They are executed in alphabetical order by
 `gremius install`. Use `IF NOT EXISTS` for safe idempotent execution.
 

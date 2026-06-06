@@ -2,7 +2,7 @@
 
 **Date**: 2026-03-15  
 **API Base URL**: `http://localhost:3001`  
-**MCP Endpoint**: `/api/mcp`  
+**MCP Endpoint**: `/api/mcp`
 
 ---
 
@@ -30,21 +30,23 @@ app.route("/api/mcp", mcpRoutes);
 
 ### 1.2 Available Endpoints
 
-| Method | Path | Purpose | Auth Required |
-|--------|------|---------|---------------|
-| GET | `/api/mcp` | SSE Connection - creates session | ✅ API Key |
-| POST | `/api/mcp?sessionId={id}` | JSON-RPC message handler | ✅ Session + API Key |
+| Method | Path                      | Purpose                          | Auth Required        |
+| ------ | ------------------------- | -------------------------------- | -------------------- |
+| GET    | `/api/mcp`                | SSE Connection - creates session | ✅ API Key           |
+| POST   | `/api/mcp?sessionId={id}` | JSON-RPC message handler         | ✅ Session + API Key |
 
 ---
 
 ## 2. Authentication Flow
 
 ### 2.1 API Key Format
+
 - **Format**: `gremius_sk_{64_char_hex}`
 - **Header**: `Authorization: Bearer gremius_sk_...`
 - **Validation**: Against database `api_keys` table
 
 ### 2.2 Session Flow
+
 1. Client connects to `GET /api/mcp` with Authorization header
 2. Server validates API key against database
 3. Server creates in-memory session (UUID)
@@ -53,13 +55,13 @@ app.route("/api/mcp", mcpRoutes);
 
 ### 2.3 Error Responses
 
-| Scenario | Response | HTTP Status |
-|----------|----------|-------------|
-| Missing header | `{"jsonrpc":"2.0","error":{"code":-32000,"message":"Unauthorized"}}` | 401 |
-| Invalid key format | Same as above | 401 |
-| Invalid/expired key | Same as above | 401 |
-| Invalid session | `{"error":{"code":-32000,"message":"Invalid or expired session"}}` | 400 |
-| Session expired (1h) | Same as above | 400 |
+| Scenario             | Response                                                             | HTTP Status |
+| -------------------- | -------------------------------------------------------------------- | ----------- |
+| Missing header       | `{"jsonrpc":"2.0","error":{"code":-32000,"message":"Unauthorized"}}` | 401         |
+| Invalid key format   | Same as above                                                        | 401         |
+| Invalid/expired key  | Same as above                                                        | 401         |
+| Invalid session      | `{"error":{"code":-32000,"message":"Invalid or expired session"}}`   | 400         |
+| Session expired (1h) | Same as above                                                        | 400         |
 
 ---
 
@@ -76,10 +78,12 @@ const mcpUrl = `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/m
 ### 3.2 API Port Alignment
 
 Todos los archivos frontend (22 archivos revisados) usan consistentemente:
+
 - `VITE_API_URL=http://localhost:3001`
 - Puerto hardcodeado: `3001`
 
 **Archivos revisados**:
+
 ```
 packages/admin/src/lib/trpc.ts
 packages/admin/src/routes/api-keys/+page.svelte
@@ -121,7 +125,8 @@ ENABLE_MCP: z.string().transform((s) => s === "true").default("true"),
 mcpEnabled: config.ENABLE_MCP,
 ```
 
-**Comportamiento**: 
+**Comportamiento**:
+
 - Por defecto está habilitado (`"true"`)
 - En código actual, el flag NO está siendo verificado para cargar las rutas (las rutas MCP siempre están disponibles)
 - El flag puede usarse en el futuro para deshabilitar completamente el MCP
@@ -134,21 +139,21 @@ mcpEnabled: config.ENABLE_MCP,
 
 ### 5.1 Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `gremius_query_dataset` | Query dataset with filters, pagination, sorting |
-| `gremius_insert_record` | Insert record into dataset |
-| `gremius_update_record` | Update record by ID |
-| `gremius_delete_record` | Delete record by ID |
-| `gremius_list_datasets` | List all accessible datasets |
-| `gremius_dispatch_worker` | Dispatch a Grimoire worker |
+| Tool                      | Description                                     |
+| ------------------------- | ----------------------------------------------- |
+| `gremius_query_dataset`   | Query dataset with filters, pagination, sorting |
+| `gremius_insert_record`   | Insert record into dataset                      |
+| `gremius_update_record`   | Update record by ID                             |
+| `gremius_delete_record`   | Delete record by ID                             |
+| `gremius_list_datasets`   | List all accessible datasets                    |
+| `gremius_dispatch_worker` | Dispatch a Grimoire worker                      |
 
 ### 5.2 Available Resources
 
-| Resource | Description |
-|----------|-------------|
-| `gremius://datasets` | List of all datasets |
-| `gremius://grimoires` | List of all grimoires |
+| Resource                 | Description               |
+| ------------------------ | ------------------------- |
+| `gremius://datasets`     | List of all datasets      |
+| `gremius://grimoires`    | List of all grimoires     |
 | `gremius://dataset/{id}` | Specific dataset metadata |
 
 ### 5.3 Special Features
@@ -161,6 +166,7 @@ mcpEnabled: config.ENABLE_MCP,
 ## 6. Session Management
 
 ### 6.1 Session Storage
+
 - **Type**: In-memory (Map)
 - **TTL**: 1 hora
 - **Cleanup**: Cada 5 minutos se eliminan sesiones expiradas
@@ -235,6 +241,7 @@ curl -X POST \
 ### 8.2 Expected Responses
 
 **Success (Initialize)**:
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -259,10 +266,10 @@ curl -X POST \
 
 ### 9.1 Current Limitations
 
-| Issue | Impact | Mitigation |
-|-------|--------|------------|
-| In-memory sessions | Sessions lost on restart | Use sticky sessions or implement Valkey store |
-| Single-instance only | No horizontal scaling | Implement distributed session store |
+| Issue                    | Impact                       | Mitigation                                     |
+| ------------------------ | ---------------------------- | ---------------------------------------------- |
+| In-memory sessions       | Sessions lost on restart     | Use sticky sessions or implement Valkey store  |
+| Single-instance only     | No horizontal scaling        | Implement distributed session store            |
 | URL mismatch in frontend | `/api/mcp/sse` vs `/api/mcp` | Documentation issue only - SSE works correctly |
 
 ### 9.2 No Critical Issues Found
@@ -270,23 +277,23 @@ curl -X POST \
 ✅ Todas las configuraciones están correctas  
 ✅ No hay 404 ni 500 esperados con uso correcto  
 ✅ Autenticación funcional  
-✅ Frontend integrado correctamente  
+✅ Frontend integrado correctamente
 
 ---
 
 ## 10. Summary Table
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Route mounting | ✅ OK | `/api/mcp` mounted in index.ts:424 |
-| SSE endpoint | ✅ OK | `GET /api/mcp` |
-| JSON-RPC endpoint | ✅ OK | `POST /api/mcp?sessionId=` |
-| Authentication | ✅ OK | Bearer gremius_sk_ required |
-| Frontend integration | ✅ OK | All 22 files use :3001 |
-| Feature flag | ✅ OK | ENABLE_MCP defaults to true |
-| Session management | ⚠️ OK | In-memory, 1h TTL |
-| TOON format | ✅ OK | Supported for token reduction |
-| RLS compliance | ✅ OK | Respects row-level security |
+| Component            | Status | Notes                              |
+| -------------------- | ------ | ---------------------------------- |
+| Route mounting       | ✅ OK  | `/api/mcp` mounted in index.ts:424 |
+| SSE endpoint         | ✅ OK  | `GET /api/mcp`                     |
+| JSON-RPC endpoint    | ✅ OK  | `POST /api/mcp?sessionId=`         |
+| Authentication       | ✅ OK  | Bearer gremius*sk* required        |
+| Frontend integration | ✅ OK  | All 22 files use :3001             |
+| Feature flag         | ✅ OK  | ENABLE_MCP defaults to true        |
+| Session management   | ⚠️ OK  | In-memory, 1h TTL                  |
+| TOON format          | ✅ OK  | Supported for token reduction      |
+| RLS compliance       | ✅ OK  | Respects row-level security        |
 
 ---
 

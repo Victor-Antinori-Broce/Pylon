@@ -247,10 +247,12 @@ function evaluateCondition(condition: Condition, data: Record<string, any>): boo
   } else if (condition.contains !== undefined) {
     result = Array.isArray(value) && value.includes(condition.contains);
   } else if (condition.empty !== undefined) {
-    const isEmpty = value === undefined || value === null ||
-                   (typeof value === "string" && value === "") ||
-                   (Array.isArray(value) && value.length === 0) ||
-                   (typeof value === "object" && Object.keys(value).length === 0);
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value === "") ||
+      (Array.isArray(value) && value.length === 0) ||
+      (typeof value === "object" && Object.keys(value).length === 0);
     result = condition.empty === isEmpty;
   }
 
@@ -391,11 +393,7 @@ export function validate(
 ): ValidationResult {
   const errors: ValidationError[] = [];
   const validatedData: Record<string, any> = {};
-  const {
-    stripUnknown = false,
-    abortEarly = false,
-    allowUnknown = false,
-  } = options;
+  const { stripUnknown = false, abortEarly = false, allowUnknown = false } = options;
 
   // Validar campos definidos en el schema
   for (const [fieldName, rule] of Object.entries(schema)) {
@@ -456,10 +454,7 @@ export function validateBatch(
 /**
  * Crea un validador reutilizable con un schema predefinido.
  */
-export function createValidator(
-  schema: ValidationSchema,
-  defaultOptions: ValidatorOptions = {}
-) {
+export function createValidator(schema: ValidationSchema, defaultOptions: ValidatorOptions = {}) {
   return {
     validate: (data: Record<string, any>, options?: ValidatorOptions) =>
       validate(data, schema, { ...defaultOptions, ...options }),

@@ -8,8 +8,10 @@
  * - Nested inlines (limited depth)
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
+
 import { introspectTable } from "./schema-introspector";
 
 /** Inline configuration for a relationship */
@@ -52,10 +54,10 @@ export interface InlineConfig {
 }
 
 /** Data returned for an inline relationship */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export interface InlineData {
   config: InlineConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   records: Record<string, unknown>[];
   totalCount: number;
   canAddMore: boolean;
@@ -99,7 +101,7 @@ export async function detectRelations(tableName: string): Promise<RelationInfo[]
         column: col.name,
         relatedTable: col.foreignTable,
         relatedColumn: col.foreignColumn || "id",
-        type: "belongs_to"
+        type: "belongs_to",
       });
     }
   }
@@ -211,23 +213,25 @@ export async function generateInlineConfigs(tableName: string): Promise<InlineCo
 
     // Pick fields to display (exclude FK to parent and metadata)
     const fields = childIntrospected.columns
-      .filter(c => 
-        c.name !== relation.inverseColumn && 
-        c.name !== "id" &&
-        !c.name.endsWith("_id") &&
-        !c.name.endsWith("At") &&
-        !c.name.startsWith("created") &&
-        !c.name.startsWith("updated")
+      .filter(
+        (c) =>
+          c.name !== relation.inverseColumn &&
+          c.name !== "id" &&
+          !c.name.endsWith("_id") &&
+          !c.name.endsWith("At") &&
+          !c.name.startsWith("created") &&
+          !c.name.startsWith("updated")
       )
       .slice(0, 5) // Max 5 fields
-      .map(c => c.name);
+      .map((c) => c.name);
 
     // Add some meaningful fields if we filtered too aggressively
     if (fields.length === 0) {
-      fields.push(...childIntrospected.columns
-        .filter(c => c.name !== "id" && c.name !== relation.inverseColumn)
-        .slice(0, 3)
-        .map(c => c.name)
+      fields.push(
+        ...childIntrospected.columns
+          .filter((c) => c.name !== "id" && c.name !== relation.inverseColumn)
+          .slice(0, 3)
+          .map((c) => c.name)
       );
     }
 
@@ -243,9 +247,9 @@ export async function generateInlineConfigs(tableName: string): Promise<InlineCo
       canDelete: true,
       maxCount: 10,
       layout: "tabular",
-      sortField: childIntrospected.columns.find(c => 
-        c.name === "created_at" || c.name === "sort_order"
-      )?.name
+      sortField: childIntrospected.columns.find(
+        (c) => c.name === "created_at" || c.name === "sort_order"
+      )?.name,
     });
   }
 
@@ -295,7 +299,7 @@ export async function fetchInlineData(
       config,
       records: [],
       totalCount: 0,
-      canAddMore: false
+      canAddMore: false,
     };
   }
 }

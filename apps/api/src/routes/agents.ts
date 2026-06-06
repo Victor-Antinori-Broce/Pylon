@@ -1,7 +1,7 @@
 /**
  * @file agents.ts
  * @description Admin routes for managing AI Agent Identities (NHI)
- * 
+ *
  * REST API endpoints for:
  * - Creating/updating/deleting agent identities
  * - Managing API keys
@@ -9,7 +9,9 @@
  * - Statistics and monitoring
  */
 
+import { eq, desc, sql, count, and, gte } from "drizzle-orm";
 import { Hono } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
 // @ts-ignore - Path alias @/ not resolved by tsc
@@ -17,16 +19,17 @@ import {
   agentIdentities,
   agentApiKeys,
   agentAuditLogs,
-// @ts-ignore - Path alias @/ not resolved by tsc
+  // @ts-ignore - Path alias @/ not resolved by tsc
 } from "@/db/schema";
+import { agentTraces, agentTraceSteps } from "@/db/schema";
+import { logger } from "@/lib/logger";
 import {
   // @ts-ignore - Path alias @/ not resolved by tsc
   generateAgentApiKey,
   // @ts-ignore - Path alias @/ not resolved by tsc
 } from "@/services/agent-auth";
-import { eq, desc, sql, count, and, gte } from "drizzle-orm";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { logger } from "@/lib/logger";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { requireAuth } from "../middleware/auth";
 // @ts-ignore - Path alias @/ not resolved by tsc
@@ -48,17 +51,17 @@ agentsRouter.use("*", requireAuth);
 agentsRouter.post("/", async (c) => {
   try {
     const body = await c.req.json();
-    const { 
-      name, 
-      description, 
+    const {
+      name,
+      description,
       type,
       capabilities,
       systemPrompt,
       allowedTools,
-      scopes, 
-      rateLimit, 
-      expiresInDays, 
-      isActive 
+      scopes,
+      rateLimit,
+      expiresInDays,
+      isActive,
     } = body;
 
     if (!name) {
@@ -67,12 +70,23 @@ agentsRouter.post("/", async (c) => {
 
     // Validate type
     const agentType = type || "custom";
-    const validTypes = ["claude-desktop", "claude-web", "scraper", "worker", "webhook", "mcp-server", "custom"];
+    const validTypes = [
+      "claude-desktop",
+      "claude-web",
+      "scraper",
+      "worker",
+      "webhook",
+      "mcp-server",
+      "custom",
+    ];
     if (!validTypes.includes(agentType)) {
-      return c.json({ 
-        success: false, 
-        error: `Invalid type. Must be one of: ${validTypes.join(", ")}` 
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
+        },
+        400
+      );
     }
 
     // Validate scopes format
@@ -81,13 +95,13 @@ agentsRouter.post("/", async (c) => {
     );
 
     // Validate capabilities (if provided)
-    const validCapabilities = (capabilities || []).filter((c: string) => 
-      typeof c === "string" && c.length > 0
+    const validCapabilities = (capabilities || []).filter(
+      (c: string) => typeof c === "string" && c.length > 0
     );
 
     // Validate allowedTools (if provided)
-    const validAllowedTools = (allowedTools || []).filter((t: string) => 
-      typeof t === "string" && t.length > 0
+    const validAllowedTools = (allowedTools || []).filter(
+      (t: string) => typeof t === "string" && t.length > 0
     );
 
     // Generate first API key WITH TYPE
@@ -120,38 +134,41 @@ agentsRouter.post("/", async (c) => {
       expiresAt,
     });
 
-    logger.info({ 
-      agentId: agent.id, 
-      name, 
-      type: agentType,
-      capabilitiesCount: validCapabilities.length 
-    }, "Agent created with Persona");
-
-    return c.json({
-      success: true,
-      data: {
-        agent: {
-          id: agent.id,
-          name: agent.name,
-          type: agent.type,
-          description: agent.description,
-          capabilities: agent.capabilities,
-          systemPrompt: agent.systemPrompt,
-          allowedTools: agent.allowedTools,
-          scopes: agent.scopes,
-          rateLimit: agent.rateLimit,
-          isActive: agent.isActive,
-          createdAt: agent.createdAt,
-        },
-        apiKey: plainKey, // Only shown once!
+    logger.info(
+      {
+        agentId: agent.id,
+        name,
+        type: agentType,
+        capabilitiesCount: validCapabilities.length,
       },
-    }, 201);
+      "Agent created with Persona"
+    );
+
+    return c.json(
+      {
+        success: true,
+        data: {
+          agent: {
+            id: agent.id,
+            name: agent.name,
+            type: agent.type,
+            description: agent.description,
+            capabilities: agent.capabilities,
+            systemPrompt: agent.systemPrompt,
+            allowedTools: agent.allowedTools,
+            scopes: agent.scopes,
+            rateLimit: agent.rateLimit,
+            isActive: agent.isActive,
+            createdAt: agent.createdAt,
+          },
+          apiKey: plainKey, // Only shown once!
+        },
+      },
+      201
+    );
   } catch (error) {
     logger.error({ error }, "Failed to create agent");
-    return c.json(
-      { success: false, error: "Failed to create agent" },
-      500
-    );
+    return c.json({ success: false, error: "Failed to create agent" }, 500);
   }
 });
 
@@ -174,7 +191,7 @@ agentsRouter.get("/", async (c) => {
       .offset(offset);
 
     // Get keys for all agents
-    const agentIds = agentsList.map((a: typeof agentsList[0]) => a.id);
+    const agentIds = agentsList.map((a: (typeof agentsList)[0]) => a.id);
     const keysList = agentIds.length
       ? await db
           .select()
@@ -183,21 +200,22 @@ agentsRouter.get("/", async (c) => {
       : [];
 
     // Group keys by agent
-    const keysByAgent = keysList.reduce((acc: Record<string, typeof keysList>, key: typeof keysList[0]) => {
-      if (!acc[key.agentId]) acc[key.agentId] = [];
-      acc[key.agentId].push(key);
-      return acc;
-    }, {} as Record<string, typeof keysList>);
+    const keysByAgent = keysList.reduce(
+      (acc: Record<string, typeof keysList>, key: (typeof keysList)[0]) => {
+        if (!acc[key.agentId]) acc[key.agentId] = [];
+        acc[key.agentId].push(key);
+        return acc;
+      },
+      {} as Record<string, typeof keysList>
+    );
 
-    const agentsWithKeys = agentsList.map((agent: typeof agentsList[0]) => ({
+    const agentsWithKeys = agentsList.map((agent: (typeof agentsList)[0]) => ({
       ...agent,
       keys: keysByAgent[agent.id] || [],
     }));
 
     // Get total count
-    const [{ count: total }] = await db
-      .select({ count: count() })
-      .from(agentIdentities);
+    const [{ count: total }] = await db.select({ count: count() }).from(agentIdentities);
 
     return c.json({
       success: true,
@@ -222,7 +240,7 @@ agentsRouter.get("/", async (c) => {
 agentsRouter.get("/logs", async (c) => {
   try {
     const limit = parseInt(c.req.query("limit") || "50");
-    
+
     const logs = await db
       .select({
         id: agentAuditLogs.id,
@@ -296,16 +314,16 @@ agentsRouter.put("/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const body = await c.req.json();
-    const { 
-      name, 
-      description, 
+    const {
+      name,
+      description,
       type,
       capabilities,
       systemPrompt,
       allowedTools,
-      scopes, 
-      rateLimit, 
-      isActive 
+      scopes,
+      rateLimit,
+      isActive,
     } = body;
 
     const [agent] = await db
@@ -319,22 +337,28 @@ agentsRouter.put("/:id", async (c) => {
     }
 
     // Validate scopes
-    const validScopes = scopes?.filter((s: string) =>
-      /^[a-z]+:[a-z*]+$/.test(s)
-    );
+    const validScopes = scopes?.filter((s: string) => /^[a-z]+:[a-z*]+$/.test(s));
 
     // Validate capabilities if provided
-    const validCapabilities = capabilities?.filter((c: string) => 
-      typeof c === "string" && c.length > 0
+    const validCapabilities = capabilities?.filter(
+      (c: string) => typeof c === "string" && c.length > 0
     );
 
     // Validate allowedTools if provided
-    const validAllowedTools = allowedTools?.filter((t: string) => 
-      typeof t === "string" && t.length > 0
+    const validAllowedTools = allowedTools?.filter(
+      (t: string) => typeof t === "string" && t.length > 0
     );
 
     // Validate type if provided
-    const validTypes = ["claude-desktop", "claude-web", "scraper", "worker", "webhook", "mcp-server", "custom"];
+    const validTypes = [
+      "claude-desktop",
+      "claude-web",
+      "scraper",
+      "worker",
+      "webhook",
+      "mcp-server",
+      "custom",
+    ];
     const validType = type && validTypes.includes(type) ? type : undefined;
 
     const [updated] = await db
@@ -435,15 +459,18 @@ agentsRouter.post("/:id/keys", async (c) => {
 
     logger.info({ agentId: id, keyId: key.id }, "API key created");
 
-    return c.json({
-      success: true,
-      data: {
-        apiKey: plainKey, // Only shown once!
-        keyId: key.id,
-        prefix: keyPrefix,
-        expiresAt,
+    return c.json(
+      {
+        success: true,
+        data: {
+          apiKey: plainKey, // Only shown once!
+          keyId: key.id,
+          prefix: keyPrefix,
+          expiresAt,
+        },
       },
-    }, 201);
+      201
+    );
   } catch (error) {
     logger.error({ error, agentId: c.req.param("id") }, "Failed to create API key");
     return c.json({ success: false, error: "Failed to create API key" }, 500);
@@ -458,11 +485,7 @@ agentsRouter.delete("/:id/keys/:keyId", async (c) => {
   try {
     const { id: agentId, keyId } = c.req.param();
 
-    const [key] = await db
-      .select()
-      .from(agentApiKeys)
-      .where(eq(agentApiKeys.id, keyId))
-      .limit(1);
+    const [key] = await db.select().from(agentApiKeys).where(eq(agentApiKeys.id, keyId)).limit(1);
 
     if (!key || key.agentId !== agentId) {
       return c.json({ success: false, error: "Key not found" }, 404);
@@ -474,11 +497,14 @@ agentsRouter.delete("/:id/keys/:keyId", async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    logger.error({
-      error,
-      agentId: c.req.param("id"),
-      keyId: c.req.param("keyId"),
-    }, "Failed to revoke API key");
+    logger.error(
+      {
+        error,
+        agentId: c.req.param("id"),
+        keyId: c.req.param("keyId"),
+      },
+      "Failed to revoke API key"
+    );
     return c.json({ success: false, error: "Failed to revoke API key" }, 500);
   }
 });
@@ -560,12 +586,7 @@ agentsRouter.get("/:id/stats", async (c) => {
     const [{ value: totalCalls }] = await db
       .select({ value: count() })
       .from(agentAuditLogs)
-      .where(
-        and(
-          eq(agentAuditLogs.agentId, id),
-          gte(agentAuditLogs.createdAt, since)
-        )
-      );
+      .where(and(eq(agentAuditLogs.agentId, id), gte(agentAuditLogs.createdAt, since)));
 
     // Successful calls
     const [{ value: successfulCalls }] = await db
@@ -587,26 +608,24 @@ agentsRouter.get("/:id/stats", async (c) => {
         count: count(),
       })
       .from(agentAuditLogs)
-      .where(
-        and(
-          eq(agentAuditLogs.agentId, id),
-          gte(agentAuditLogs.createdAt, since)
-        )
-      )
+      .where(and(eq(agentAuditLogs.agentId, id), gte(agentAuditLogs.createdAt, since)))
       .groupBy(agentAuditLogs.action, agentAuditLogs.success);
 
     // Group by action
-    const actionsByType = actionStats.reduce((acc: Record<string, { success: number; failed: number }>, stat: typeof actionStats[0]) => {
-      if (!acc[stat.action]) {
-        acc[stat.action] = { success: 0, failed: 0 };
-      }
-      if (stat.success) {
-        acc[stat.action].success = Number(stat.count);
-      } else {
-        acc[stat.action].failed = Number(stat.count);
-      }
-      return acc;
-    }, {} as Record<string, { success: number; failed: number }>);
+    const actionsByType = actionStats.reduce(
+      (acc: Record<string, { success: number; failed: number }>, stat: (typeof actionStats)[0]) => {
+        if (!acc[stat.action]) {
+          acc[stat.action] = { success: 0, failed: 0 };
+        }
+        if (stat.success) {
+          acc[stat.action].success = Number(stat.count);
+        } else {
+          acc[stat.action].failed = Number(stat.count);
+        }
+        return acc;
+      },
+      {} as Record<string, { success: number; failed: number }>
+    );
 
     return c.json({
       success: true,
@@ -615,10 +634,7 @@ agentsRouter.get("/:id/stats", async (c) => {
         totalCalls,
         successfulCalls,
         failedCalls: totalCalls - successfulCalls,
-        successRate:
-          totalCalls > 0
-            ? `${Math.round((successfulCalls / totalCalls) * 100)}%`
-            : "0%",
+        successRate: totalCalls > 0 ? `${Math.round((successfulCalls / totalCalls) * 100)}%` : "0%",
         actionsByType,
       },
     });
@@ -633,7 +649,6 @@ agentsRouter.get("/:id/stats", async (c) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { agentTraces, agentTraceSteps } from "@/db/schema";
 
 /**
  * GET /api/admin/agents/:id/traces
@@ -643,7 +658,7 @@ agentsRouter.get("/:id/traces", async (c) => {
   try {
     const id = c.req.param("id");
     const limit = parseInt(c.req.query("limit") || "50");
-    
+
     const [agent] = await db
       .select()
       .from(agentIdentities)
@@ -675,7 +690,7 @@ agentsRouter.get("/:id/traces", async (c) => {
 agentsRouter.get("/traces/:traceId/steps", async (c) => {
   try {
     const traceId = c.req.param("traceId");
-    
+
     const steps = await db
       .select()
       .from(agentTraceSteps)

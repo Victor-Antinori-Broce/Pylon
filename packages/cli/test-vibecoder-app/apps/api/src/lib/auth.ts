@@ -7,6 +7,7 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+
 // @ts-ignore - Path alias
 import { db } from "../db";
 // @ts-ignore - Path alias

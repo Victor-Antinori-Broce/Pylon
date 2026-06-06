@@ -1,12 +1,13 @@
 /**
  * Actions API Routes
- * 
+ *
  * Unified API for managing and executing actions.
  * Replaces /functions and /webhooks endpoints.
  */
 
-import { Hono } from "hono";
 import { eq, desc, and, count } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { actions, actionExecutions } from "../db/schema";
 import {
@@ -35,7 +36,7 @@ actionsRoutes.get("/", async (c) => {
   const status = c.req.query("status") as any;
 
   const docs = await listActions({ type, trigger, status, limit });
-  
+
   return c.json({ docs, totalDocs: docs.length });
 });
 
@@ -48,30 +49,39 @@ actionsRoutes.post("/", async (c) => {
 
   // Validate required fields
   if (!body.name || !body.type || !body.trigger) {
-    return c.json({ 
-      error: "name, type, and trigger are required",
-      details: {
-        name: body.name ? "provided" : "missing",
-        type: body.type ? "provided" : "missing", 
-        trigger: body.trigger ? "provided" : "missing",
-      }
-    }, 400);
+    return c.json(
+      {
+        error: "name, type, and trigger are required",
+        details: {
+          name: body.name ? "provided" : "missing",
+          type: body.type ? "provided" : "missing",
+          trigger: body.trigger ? "provided" : "missing",
+        },
+      },
+      400
+    );
   }
 
   // Validate type
   const validTypes = ["code", "webhook_out", "webhook_in", "agent"];
   if (!validTypes.includes(body.type)) {
-    return c.json({ 
-      error: `Invalid type. Must be one of: ${validTypes.join(", ")}` 
-    }, 400);
+    return c.json(
+      {
+        error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
+      },
+      400
+    );
   }
 
   // Validate trigger
   const validTriggers = ["manual", "cron", "event", "http"];
   if (!validTriggers.includes(body.trigger)) {
-    return c.json({ 
-      error: `Invalid trigger. Must be one of: ${validTriggers.join(", ")}` 
-    }, 400);
+    return c.json(
+      {
+        error: `Invalid trigger. Must be one of: ${validTriggers.join(", ")}`,
+      },
+      400
+    );
   }
 
   // Validate trigger config
@@ -103,7 +113,7 @@ actionsRoutes.post("/", async (c) => {
 
 actionsRoutes.get("/:id", async (c) => {
   const action = await getAction(c.req.param("id"));
-  
+
   if (!action) {
     return c.json({ error: "Action not found" }, 404);
   }
@@ -145,7 +155,7 @@ actionsRoutes.patch("/:id", async (c) => {
 
 actionsRoutes.delete("/:id", async (c) => {
   const deleted = await deleteAction(c.req.param("id"));
-  
+
   if (!deleted) {
     return c.json({ error: "Action not found" }, 404);
   }
@@ -171,11 +181,13 @@ actionsRoutes.post("/:id/execute", async (c) => {
   const result = await executeActionById(actionId, {
     trigger: body.trigger || "manual",
     triggerEvent: body.event,
-    event: body.event ? {
-      name: body.event,
-      data: body.payload || {},
-      timestamp: new Date().toISOString(),
-    } : undefined,
+    event: body.event
+      ? {
+          name: body.event,
+          data: body.payload || {},
+          timestamp: new Date().toISOString(),
+        }
+      : undefined,
     request: body.request,
     env: body.env,
   });
@@ -208,7 +220,9 @@ actionsRoutes.get("/:id/executions", async (c) => {
   const conditions = [eq(actionExecutions.actionId, actionId)];
   if (status) conditions.push(eq(actionExecutions.status, status as any));
 
-  const docs = await db.select().from(actionExecutions)
+  const docs = await db
+    .select()
+    .from(actionExecutions)
     .where(and(...conditions))
     .orderBy(desc(actionExecutions.createdAt))
     .limit(limit);
@@ -221,9 +235,7 @@ actionsRoutes.get("/:id/executions", async (c) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 actionsRoutes.get("/stats/overview", async (c) => {
-  const [totalResult] = await db
-    .select({ count: count() })
-    .from(actions);
+  const [totalResult] = await db.select({ count: count() }).from(actions);
 
   const [activeResult] = await db
     .select({ count: count() })
@@ -241,9 +253,12 @@ actionsRoutes.get("/stats/overview", async (c) => {
   return c.json({
     total: totalResult.count,
     active: activeResult.count,
-    byType: typeCounts.reduce((acc, { type, count }) => {
-      acc[type] = count;
-      return acc;
-    }, {} as Record<string, number>),
+    byType: typeCounts.reduce(
+      (acc, { type, count }) => {
+        acc[type] = count;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
   });
 });

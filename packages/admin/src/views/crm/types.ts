@@ -164,7 +164,20 @@ export interface KanbanData {
 
 export interface EntityFieldSchema {
   key: string;
-  type: 'text' | 'number' | 'currency' | 'date' | 'datetime' | 'select' | 'multiselect' | 'boolean' | 'email' | 'url' | 'file' | 'contact' | 'company';
+  type:
+    | "text"
+    | "number"
+    | "currency"
+    | "date"
+    | "datetime"
+    | "select"
+    | "multiselect"
+    | "boolean"
+    | "email"
+    | "url"
+    | "file"
+    | "contact"
+    | "company";
   label: string;
   required?: boolean;
   unique?: boolean;
@@ -183,13 +196,20 @@ export interface StageEntryRequirements {
   requiredDocuments?: string[];
   customValidations?: {
     field: string;
-    operator: '==' | '!=' | '>' | '<' | '>=' | '<=' | 'exists';
+    operator: "==" | "!=" | ">" | "<" | ">=" | "<=" | "exists";
     value?: unknown;
   }[];
 }
 
 export interface StageAction {
-  type: 'create_calendar_event' | 'send_email' | 'create_task' | 'create_activity' | 'webhook' | 'log_time' | 'update_field';
+  type:
+    | "create_calendar_event"
+    | "send_email"
+    | "create_task"
+    | "create_activity"
+    | "webhook"
+    | "log_time"
+    | "update_field";
   template?: string;
   title?: string;
   url?: string;

@@ -1,20 +1,19 @@
 <script lang="ts">
   import "../style.css";
   import "../assets/main.css";
-  import { onMount } from "svelte";
-  import { checkSession } from "$lib/auth.svelte";
-  import { loadTheme } from "$lib/theme.svelte";
+  import { checkSession , isLoggedIn, getChecked, isInitialized, checkInit } from "$lib/auth.svelte";
   import SidebarLayout from "$lib/components/layout/SidebarLayout.svelte";
+  import { loadTheme } from "$lib/theme.svelte";
   import LoginView from "$views/auth/LoginView.svelte";
   import SetupView from "$views/auth/SetupView.svelte";
-  import { isLoggedIn, getChecked, isInitialized, checkInit } from "$lib/auth.svelte";
+    import { onMount } from "svelte";
   
   // Svelte 5 children snippet for layout
-  let { children } = $props<{ children: () => any }>();
+  const { children } = $props<{ children: () => any }>();
   
-  let checked = $derived(getChecked());
-  let loggedIn = $derived(isLoggedIn());
-  let initialized = $derived(isInitialized());
+  const checked = $derived(getChecked());
+  const loggedIn = $derived(isLoggedIn());
+  const initialized = $derived(isInitialized());
   let loading = $state(true);
   
   onMount(async () => {

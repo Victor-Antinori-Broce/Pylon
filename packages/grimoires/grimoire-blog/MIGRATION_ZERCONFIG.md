@@ -70,22 +70,23 @@ export { createBlogRouter as blogRoutes } from "./routes";
 ## Eliminación de PostsView.svelte
 
 ### Archivo a Eliminar
+
 ```
 packages/admin/src/views/content/PostsView.svelte
 ```
 
 ### Por qué se puede eliminar
 
-| Feature | PostsView.svelte | DataExplorer |
-|---------|------------------|--------------|
-| Listar posts | ✅ | ✅ |
-| Búsqueda | ❌ (no tenía) | ✅ (server-side) |
-| Filtros por status | ❌ (no tenía) | ✅ (defaultFilter) |
-| Ordenamiento | ❌ (no tenía) | ✅ |
-| Paginación | ❌ (no tenía) | ✅ |
-| Edición inline | ❌ | ✅ |
-| Bulk actions | ❌ | ✅ |
-| Export CSV | ❌ | ✅ |
+| Feature            | PostsView.svelte | DataExplorer       |
+| ------------------ | ---------------- | ------------------ |
+| Listar posts       | ✅               | ✅                 |
+| Búsqueda           | ❌ (no tenía)    | ✅ (server-side)   |
+| Filtros por status | ❌ (no tenía)    | ✅ (defaultFilter) |
+| Ordenamiento       | ❌ (no tenía)    | ✅                 |
+| Paginación         | ❌ (no tenía)    | ✅                 |
+| Edición inline     | ❌               | ✅                 |
+| Bulk actions       | ❌               | ✅                 |
+| Export CSV         | ❌               | ✅                 |
 
 **El DataExplorer es SUPERIOR** en funcionalidad al PostsView custom.
 
@@ -98,12 +99,12 @@ packages/admin/src/views/content/PostsView.svelte
 
 ## Vistas del Blog en DataExplorer
 
-| Vista | URL | Descripción |
-|-------|-----|-------------|
-| All Posts | `/blog/posts` | Grid con todos los posts |
+| Vista     | URL               | Descripción                    |
+| --------- | ----------------- | ------------------------------ |
+| All Posts | `/blog/posts`     | Grid con todos los posts       |
 | Published | `/blog/published` | Posts publicados (filtro auto) |
-| Drafts | `/blog/drafts` | Borradores (filtro auto) |
-| Scheduled | `/blog/scheduled` | Programados (filtro auto) |
+| Drafts    | `/blog/drafts`    | Borradores (filtro auto)       |
+| Scheduled | `/blog/scheduled` | Programados (filtro auto)      |
 
 ## Acción Requerida
 

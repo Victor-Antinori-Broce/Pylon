@@ -8,9 +8,10 @@
 ## 📊 Grimoires Inventory (19 Total)
 
 ### ✅ Already Migrated to Core
-| # | Grimoire | New Location | Type |
-|---|----------|--------------|------|
-| 1 | AI Memories | `packages/core/vector-search/` | Extension |
+
+| #   | Grimoire    | New Location                   | Type      |
+| --- | ----------- | ------------------------------ | --------- |
+| 1   | AI Memories | `packages/core/vector-search/` | Extension |
 
 ---
 
@@ -18,14 +19,15 @@
 
 These should become **Dataset Extensions** available on any dataset:
 
-| # | Grimoire | Reason | New Core Module |
-|---|----------|--------|-----------------|
-| 2 | **Formulas** | Calculated fields needed everywhere | `packages/core/formulas/` |
-| 3 | **Tags** | Taxonomy system universal | `packages/core/taxonomy/` |
-| 4 | **Promote** | Publishing workflow universal | `packages/core/publishing/` |
-| 5 | **Collections** | Grouping items universal | `packages/core/collections/` |
+| #   | Grimoire        | Reason                              | New Core Module              |
+| --- | --------------- | ----------------------------------- | ---------------------------- |
+| 2   | **Formulas**    | Calculated fields needed everywhere | `packages/core/formulas/`    |
+| 3   | **Tags**        | Taxonomy system universal           | `packages/core/taxonomy/`    |
+| 4   | **Promote**     | Publishing workflow universal       | `packages/core/publishing/`  |
+| 5   | **Collections** | Grouping items universal            | `packages/core/collections/` |
 
 #### Migration Path
+
 ```typescript
 // Before: Install grimoire
 // After: Dataset extension
@@ -46,16 +48,17 @@ These should become **Dataset Extensions** available on any dataset:
 
 These are **legitimate vertical domains** with complex business logic:
 
-| # | Grimoire | Tables | Complexity | Decision |
-|---|----------|--------|------------|----------|
-| 6 | **Academy LMS** | 8+ tables (courses, lessons, quizzes, enrollments, etc.) | ⭐⭐⭐⭐⭐ | ✅ Keep as Module |
-| 7 | **CRM** | 6 tables (contacts, companies, deals, pipelines, activities) | ⭐⭐⭐⭐ | ✅ Keep as Module |
-| 8 | **Booking** | 3 tables (rooms, reservations, amenities) | ⭐⭐⭐ | ✅ Keep as Module |
-| 9 | **DMS** | 3+ tables (documents, versions, permissions) | ⭐⭐⭐ | ✅ Keep as Module |
-| 10 | **Directory** | 2 tables (listings, categories) | ⭐⭐ | ✅ Keep as Module |
-| 11 | **Blocks** | Page builder components | ⭐⭐⭐ | ⚠️ Partial Core |
+| #   | Grimoire        | Tables                                                       | Complexity | Decision          |
+| --- | --------------- | ------------------------------------------------------------ | ---------- | ----------------- |
+| 6   | **Academy LMS** | 8+ tables (courses, lessons, quizzes, enrollments, etc.)     | ⭐⭐⭐⭐⭐ | ✅ Keep as Module |
+| 7   | **CRM**         | 6 tables (contacts, companies, deals, pipelines, activities) | ⭐⭐⭐⭐   | ✅ Keep as Module |
+| 8   | **Booking**     | 3 tables (rooms, reservations, amenities)                    | ⭐⭐⭐     | ✅ Keep as Module |
+| 9   | **DMS**         | 3+ tables (documents, versions, permissions)                 | ⭐⭐⭐     | ✅ Keep as Module |
+| 10  | **Directory**   | 2 tables (listings, categories)                              | ⭐⭐       | ✅ Keep as Module |
+| 11  | **Blocks**      | Page builder components                                      | ⭐⭐⭐     | ⚠️ Partial Core   |
 
 #### Recommended Structure
+
 ```
 packages/modules/
 ├── academy/          # Full LMS (your best module)
@@ -72,20 +75,21 @@ packages/modules/
 
 These are **specific to gaming/esports** use case. As a general BaaS, they shouldn't be core:
 
-| # | Grimoire | Purpose | Recommendation |
-|---|----------|---------|----------------|
-| 12 | **Games** | Game catalog | Consolidate → `modules/gaming/` OR Remove |
-| 13 | **Platforms** | Gaming platforms (PC, PS, Xbox) | Consolidate → `modules/gaming/` OR Remove |
-| 14 | **Players** | Player profiles | Consolidate → `modules/esports/` OR Remove |
-| 15 | **Teams** | Esports teams | Consolidate → `modules/esports/` |
-| 16 | **Matches** | Game matches | Consolidate → `modules/esports/` |
-| 17 | **Tournaments** | Tournament brackets | Consolidate → `modules/esports/` |
-| 18 | **Streamers** | Content creators | Consolidate → `modules/esports/` OR Remove |
-| 19 | **Blog** | Content publishing | ❌ Remove — redundant with Promote + Dataset |
+| #   | Grimoire        | Purpose                         | Recommendation                               |
+| --- | --------------- | ------------------------------- | -------------------------------------------- |
+| 12  | **Games**       | Game catalog                    | Consolidate → `modules/gaming/` OR Remove    |
+| 13  | **Platforms**   | Gaming platforms (PC, PS, Xbox) | Consolidate → `modules/gaming/` OR Remove    |
+| 14  | **Players**     | Player profiles                 | Consolidate → `modules/esports/` OR Remove   |
+| 15  | **Teams**       | Esports teams                   | Consolidate → `modules/esports/`             |
+| 16  | **Matches**     | Game matches                    | Consolidate → `modules/esports/`             |
+| 17  | **Tournaments** | Tournament brackets             | Consolidate → `modules/esports/`             |
+| 18  | **Streamers**   | Content creators                | Consolidate → `modules/esports/` OR Remove   |
+| 19  | **Blog**        | Content publishing              | ❌ Remove — redundant with Promote + Dataset |
 
 #### Consolidation Strategy
 
 **Option A: Keep Gaming Focus** (if Gremius targets gaming BaaS)
+
 ```
 packages/modules/
 ├── gaming-suite/     # Games + Platforms + Collections
@@ -93,6 +97,7 @@ packages/modules/
 ```
 
 **Option B: General BaaS** (recommended)
+
 ```
 # Remove these, users create datasets manually:
 # - Games → Dataset "games"
@@ -130,8 +135,8 @@ packages/modules/
   fields: [
     { name: "price", type: "number" },
     { name: "quantity", type: "number" },
-    { 
-      name: "total", 
+    {
+      name: "total",
       type: "formula",
       formula: "price * quantity * (1 - discountRate)",
       dependencies: ["price", "quantity"]
@@ -153,8 +158,8 @@ packages/modules/
   name: "posts",
   fields: [
     { name: "title", type: "text" },
-    { 
-      name: "categories", 
+    {
+      name: "categories",
       type: "tags",
       taxonomy: "blog-categories", // Shared vocab
       allowNew: true // Can create new tags
@@ -197,6 +202,7 @@ packages/modules/
 **Problem**: Redundant with flexible datasets + publishing
 
 **Replacement**:
+
 ```typescript
 // User creates dataset
 POST /api/datasets
@@ -223,17 +229,17 @@ POST /api/datasets
 
 ## 📋 Migration Priority Matrix
 
-| Priority | Grimoire | Effort | Impact | Action |
-|----------|----------|--------|--------|--------|
-| P0 | AI Memories | ✅ Done | ⭐⭐⭐⭐⭐ | Migrated |
-| P1 | Formulas | Medium | ⭐⭐⭐⭐⭐ | Migrate to Core |
-| P1 | Tags | Low | ⭐⭐⭐⭐⭐ | Migrate to Core |
-| P1 | Promote | Medium | ⭐⭐⭐⭐ | Migrate to Core |
-| P2 | Collections | Low | ⭐⭐⭐ | Migrate to Core |
-| P2 | Blocks | Medium | ⭐⭐⭐ | Core UI Components |
-| P3 | Gaming Suite | High | ⭐⭐ | Consolidate/Remove |
-| P3 | Esports Suite | High | ⭐⭐ | Consolidate/Remove |
-| P4 | Blog | Low | ⭐ | Remove (redundant) |
+| Priority | Grimoire      | Effort  | Impact     | Action             |
+| -------- | ------------- | ------- | ---------- | ------------------ |
+| P0       | AI Memories   | ✅ Done | ⭐⭐⭐⭐⭐ | Migrated           |
+| P1       | Formulas      | Medium  | ⭐⭐⭐⭐⭐ | Migrate to Core    |
+| P1       | Tags          | Low     | ⭐⭐⭐⭐⭐ | Migrate to Core    |
+| P1       | Promote       | Medium  | ⭐⭐⭐⭐   | Migrate to Core    |
+| P2       | Collections   | Low     | ⭐⭐⭐     | Migrate to Core    |
+| P2       | Blocks        | Medium  | ⭐⭐⭐     | Core UI Components |
+| P3       | Gaming Suite  | High    | ⭐⭐       | Consolidate/Remove |
+| P3       | Esports Suite | High    | ⭐⭐       | Consolidate/Remove |
+| P4       | Blog          | Low     | ⭐         | Remove (redundant) |
 
 ---
 
@@ -279,18 +285,21 @@ gremius/
 ## ✅ Implementation Checklist
 
 ### Phase 1: Core Extensions (P1)
+
 - [ ] Migrate **Formulas** → `packages/core/formulas/`
 - [ ] Migrate **Tags** → `packages/core/taxonomy/`
 - [ ] Migrate **Promote** → `packages/core/publishing/`
 - [ ] Create unified Extensions API in admin
 
 ### Phase 2: Cleanup (P2-P3)
+
 - [ ] Consolidate Gaming grimoires
 - [ ] Consolidate Esports grimoires
 - [ ] Remove **Blog** grimoire
 - [ ] Update documentation
 
 ### Phase 3: Starters (P4)
+
 - [ ] Create `starters/blog/` template
 - [ ] Create `starters/e-commerce/` template
 - [ ] Migration guide for users
@@ -299,25 +308,27 @@ gremius/
 
 ## 🎯 Benefits Summary
 
-| Metric | Before (Grimoires) | After (Core + Modules) |
-|--------|-------------------|----------------------|
+| Metric            | Before (Grimoires)                  | After (Core + Modules)             |
+| ----------------- | ----------------------------------- | ---------------------------------- |
 | Concepts to learn | 3 (Datasets, Grimoires, Extensions) | 2 (Datasets + Extensions, Modules) |
-| API endpoints | Scattered per grimoire | Unified `/api/datasets/*` |
-| Setup complexity | Install + configure + link | Toggle extensions |
-| Flexibility | Limited to grimoire features | Any dataset can use any extension |
-| Maintainability | 19 separate packages | ~5 core + ~5 modules |
+| API endpoints     | Scattered per grimoire              | Unified `/api/datasets/*`          |
+| Setup complexity  | Install + configure + link          | Toggle extensions                  |
+| Flexibility       | Limited to grimoire features        | Any dataset can use any extension  |
+| Maintainability   | 19 separate packages                | ~5 core + ~5 modules               |
 
 ---
 
 ## Conclusion
 
-**Verdict**: 
+**Verdict**:
+
 - **5 Grimoires** → Core Extensions (Formulas, Tags, Promote, Collections, AI Memories ✅)
 - **5 Grimoires** → Keep as Modules (Academy, CRM, Booking, DMS, Directory)
 - **8 Grimoires** → Consolidate to 2 or Remove (Gaming/Esports)
 - **1 Grimoire** → Remove (Blog — redundant)
 
 This makes Gremius a true **BaaS platform** with clear separation:
+
 - **Core**: Universal capabilities
 - **Modules**: Optional vertical solutions
 - **Starters**: Pre-built configurations

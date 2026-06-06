@@ -2,26 +2,26 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * GREDIUS TESTING FRAMEWORK - Minimalist Grimoire Testing
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Usage:
  * ```typescript
  * import { createTestSandbox, defineFixture } from "@gremius/testing";
- * 
+ *
  * const sandbox = createTestSandbox({
  *   grimoires: ["grimoire-blog"],
  *   fixtures: "blog-seed"
  * });
- * 
+ *
  * beforeAll(() => sandbox.setup());
  * afterAll(() => sandbox.teardown());
  * afterEach(() => sandbox.reset());
- * 
+ *
  * describe("grimoire-blog", () => {
  *   it("creates posts", async () => {
  *     const response = await sandbox.http
  *       .asUser("admin")
  *       .post("/api/blog/posts", { title: "Test" });
- *     
+ *
  *     expect(response.status).toBe(201);
  *     await sandbox.assert.database.has("posts", { title: "Test" });
  *   });
@@ -33,15 +33,15 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * GREMius TESTING FRAMEWORK - Optimized for Bun + Drizzle + Hono
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * RECOMMENDED IMPORTS for your stack:
- * 
- * 1. Full sandbox with Drizzle: 
+ *
+ * 1. Full sandbox with Drizzle:
  *    import { createDrizzleSandbox } from "@gremius/testing/sandbox-drizzle"
- * 
+ *
  * 2. Bun test runner helpers:
  *    import { createTestSandbox } from "@gremius/testing/bun"
- * 
+ *
  * 3. Raw Drizzle test DB:
  *    import { createDrizzleTestDb } from "@gremius/testing/drizzle"
  */
@@ -50,10 +50,7 @@
 // RECOMMENDED: Drizzle-integrated sandbox (Bun + Drizzle + Hono)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export { 
-  createDrizzleSandbox,
-  type DrizzleSandboxConfig 
-} from "./sandbox-drizzle.js";
+export { createDrizzleSandbox, type DrizzleSandboxConfig } from "./sandbox-drizzle.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ALTERNATIVES
@@ -81,7 +78,7 @@ export type {
   TestDatabase,
   TestEvents,
   TestAssertions,
-  Fixture
+  Fixture,
 } from "./types.js";
 
 // Version
@@ -93,13 +90,13 @@ export const VERSION = "0.1.0";
 
 /**
  * Bun users: import from "@gremius/testing/bun"
- * 
+ *
  * Uses Bun's native test runner and fetch
  */
 
 /**
  * Drizzle ORM users: import from "@gremius/testing/drizzle"
- * 
+ *
  * Provides real Drizzle instances with:
  * - pg-mem (in-memory PostgreSQL)
  * - Transaction rollback for test isolation

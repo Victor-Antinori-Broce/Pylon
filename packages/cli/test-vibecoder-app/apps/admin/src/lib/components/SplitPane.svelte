@@ -7,7 +7,7 @@
     right?: import('svelte').Snippet;
   }
 
-  let {
+  const {
     show = true,
     minLeft = 30,
     defaultLeftPercent = 50,

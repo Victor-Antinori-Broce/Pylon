@@ -1,9 +1,9 @@
 {
-    "name": "gremio-cms",
-    "version": "1.0.0",
-    "private": true,
-    "dependencies": {
-        "hono": "*",
-        "drizzle-orm": "*"
-    }
+  "name": "gremio-cms",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "hono": "*",
+    "drizzle-orm": "*"
+  }
 }

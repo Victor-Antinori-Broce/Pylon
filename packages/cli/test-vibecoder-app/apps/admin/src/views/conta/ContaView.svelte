@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
   import {
     FileText,
     BookOpen,
@@ -8,15 +6,19 @@
     Receipt,
     FileStack
   } from "lucide-svelte";
-  import JournalList from "./JournalList.svelte";
-  import JournalForm from "./JournalForm.svelte";
-  import AccountList from "./AccountList.svelte";
+
   import AccountForm from "./AccountForm.svelte";
-  import ReportsView from "./ReportsView.svelte";
-  import DisbursementList from "./DisbursementList.svelte";
+  import AccountList from "./AccountList.svelte";
   import DisbursementForm from "./DisbursementForm.svelte";
-  import TemplateList from "./TemplateList.svelte";
+  import DisbursementList from "./DisbursementList.svelte";
+  import JournalForm from "./JournalForm.svelte";
+  import JournalList from "./JournalList.svelte";
+  import ReportsView from "./ReportsView.svelte";
   import TemplateForm from "./TemplateForm.svelte";
+  import TemplateList from "./TemplateList.svelte";
+
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
   const tabs = [
     { id: "journals", label: "Journals", icon: FileText },
@@ -26,7 +28,7 @@
     { id: "templates", label: "Templates", icon: FileStack },
   ];
 
-  let activeTab = $derived($page.url.searchParams.get("tab") || "journals");
+  const activeTab = $derived($page.url.searchParams.get("tab") || "journals");
   let subView = $state<"list" | "form" | "detail">("list");
   let selectedId = $state<string | null>(null);
 

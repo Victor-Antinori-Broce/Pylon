@@ -1,18 +1,19 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
+  import Badge from "$lib/components/ui/Badge.svelte";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
-  import Badge from "$lib/components/ui/Badge.svelte";
   import { Plus, Search, Eye, Trash2, CheckCircle2 } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
+
   import type { CrmActivity } from "./types";
 
   interface Props {
     onView: (id: string) => void;
     onCreate: () => void;
   }
-  let { onView, onCreate }: Props = $props();
+  const { onView, onCreate }: Props = $props();
 
   let activities = $state<CrmActivity[]>([]);
   let loading = $state(true);

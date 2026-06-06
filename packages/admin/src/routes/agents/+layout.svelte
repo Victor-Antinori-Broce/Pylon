@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { Bot, Activity, Key, Settings } from 'lucide-svelte';
-  import { cn } from '$lib/utils';
-  
+  import { Bot, Activity, Key } from "lucide-svelte";
+
+  import { cn } from "$lib/utils";
+
+  import { page } from "$app/stores";
+
   const navItems = [
-    { href: '/agents', label: 'Agentes', icon: Bot },
-    { href: '/agents/traces', label: 'Traces', icon: Activity },
-    { href: '/agents/identities', label: 'Identidades', icon: Key },
+    { href: "/agents", label: "Agentes", icon: Bot },
+    { href: "/agents/traces", label: "Traces", icon: Activity },
+    { href: "/agents/identities", label: "Identidades", icon: Key },
   ];
 </script>
 
@@ -14,18 +16,20 @@
   <!-- Sidebar -->
   <aside class="w-60 border-r border-zinc-800 bg-zinc-900/50">
     <div class="p-4">
-      <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Centro de Control AI</h2>
+      <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+        Centro de Control AI
+      </h2>
     </div>
-    
+
     <nav class="px-2 space-y-1">
       {#each navItems as item}
         <a
           href={item.href}
           class={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
             $page.url.pathname === item.href
-              ? 'bg-indigo-500/10 text-indigo-400'
-              : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
+              ? "bg-indigo-500/10 text-indigo-400"
+              : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
           )}
         >
           <svelte:component this={item.icon} size={18} />
@@ -34,7 +38,7 @@
       {/each}
     </nav>
   </aside>
-  
+
   <!-- Main content -->
   <main class="flex-1 overflow-auto">
     <slot />

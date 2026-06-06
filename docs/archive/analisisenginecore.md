@@ -42,7 +42,7 @@ const token = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQC
 // Validación completa
 const authResult = await authenticateAgent(token, {
   requireScopes: ["mcp:connect"],
-  audit: { action: "mcp:connect", resource: "mcp:session" }
+  audit: { action: "mcp:connect", resource: "mcp:session" },
 });
 
 if (authResult.success) {
@@ -52,6 +52,7 @@ if (authResult.success) {
 ```
 
 **Implementado:**
+
 - ✅ **Tablas NHI** - `agent_identities`, `agent_api_keys` con hash SHA-256
 - ✅ **Token Format** - `grm_agent_{tipo}_{hash43}` con validación
 - ✅ **Zero-Trust** - Cada request valida token
@@ -67,13 +68,11 @@ if (authResult.success) {
 export async function withTransactionalRLS() {
   return createMiddleware(async (c, next) => {
     const user = c.get("user");
-    const agent = c.get("agent");  // <-- Soporta agentes
+    const agent = c.get("agent"); // <-- Soporta agentes
     const identityId = agent?.identityId || user?.id;
-    
+
     await db.transaction(async (tx) => {
-      await tx.execute(
-        sql`SELECT set_config('app.current_user_id', ${identityId}, true)`
-      );
+      await tx.execute(sql`SELECT set_config('app.current_user_id', ${identityId}, true)`);
       c.set("tx", tx);
       await next();
     });
@@ -88,7 +87,7 @@ export async function withTransactionalRLS() {
 // Uso en rutas
 app.get("/api/agent/memory",
   agentAuthWithRBAC({ scopes: ["memory:read"] }),  // ✅ Requiere scope
-  async (c) => { 
+  async (c) => {
     const agent = c.get("agent");
     // Solo memorias del agente (ownership)
     return c.json(await getAgentMemories(agent.identityId));
@@ -140,10 +139,10 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
 ): ActionDefinition<TPayload, TResult> {
   // Parse trigger: http.post:/path, event:name, agent.tool:name
   const parsed = parseTrigger(definition.trigger);
-  
+
   // Wrap with telemetry interceptor 🆕
   const wrappedDefinition = wrapWithTelemetry(definition);
-  
+
   // Registrar según tipo de trigger
   switch (parsed.prefix) {
     case "http":
@@ -156,12 +155,13 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
       mcpAdapter.register(parsed, wrappedDefinition);
       break;
   }
-  
+
   return wrappedDefinition;
 }
 ```
 
 **Implementado:**
+
 - ✅ **`defineAction`** - Factory completa con tipos genéricos
 - ✅ **HTTP Triggers** - `http.get:/path`, `http.post:/path`, etc.
 - ✅ **Event Triggers** - `event:name` con BullMQ
@@ -179,10 +179,10 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
 const webhookAction = defineAction({
   trigger: "http.post:/webhook/stripe",
   run: async (ctx) => {
-    const { payload, db } = ctx;  // payload tipado como StripeEvent
+    const { payload, db } = ctx; // payload tipado como StripeEvent
     await db.insert(payments).values(payload.data);
     return { received: true };
-  }
+  },
 });
 
 // 2. Event Action
@@ -191,7 +191,7 @@ const emailAction = defineAction({
   run: async (ctx) => {
     const { userId, email } = ctx.payload;
     await sendWelcomeEmail(email);
-  }
+  },
 });
 
 // 3. Agent Action (MCP Tool)
@@ -200,11 +200,11 @@ const searchAction = defineAction({
   inputSchema: z.object({
     datasetId: z.string(),
     query: z.string(),
-    semantic: z.boolean().optional()
+    semantic: z.boolean().optional(),
   }),
   run: async (ctx) => {
     return await searchEntries(ctx.payload.datasetId, ctx.payload.query);
-  }
+  },
 });
 
 // 4. Cron Action 🆕
@@ -213,7 +213,7 @@ const cleanupAction = defineAction({
   run: async (ctx) => {
     // Ejecuta todos los días a medianoche
     await cleanupOldData();
-  }
+  },
 });
 ```
 
@@ -226,7 +226,7 @@ const cleanupAction = defineAction({
 class HonoAdapter implements ActionAdapter {
   private app: Hono | null = null;
   private pending: Array<{ trigger: ParsedTrigger; definition: ActionDefinition }> = [];
-  
+
   register(trigger: ParsedTrigger, definition: ActionDefinition) {
     if (this.app) {
       // Registrar directamente
@@ -236,7 +236,7 @@ class HonoAdapter implements ActionAdapter {
       this.pending.push({ trigger, definition });
     }
   }
-  
+
   setApp(app: Hono) {
     this.app = app;
     // Flush pending
@@ -251,7 +251,7 @@ class HonoAdapter implements ActionAdapter {
 class MCPAdapter {
   private tools: Map<string, ActionDefinition> = new Map();
   private server: Server | null = null;
-  
+
   register(trigger: ParsedTrigger, definition: ActionDefinition) {
     this.tools.set(trigger.path, definition);
     if (this.server) {
@@ -260,12 +260,12 @@ class MCPAdapter {
         description: definition.description,
         parameters: definition.inputSchema,
         handler: async (params, extra) => {
-          const ctx = buildActionContext({ 
+          const ctx = buildActionContext({
             payload: params,
-            traceId: extra?.traceId  // 🆕 Para telemetry
+            traceId: extra?.traceId, // 🆕 Para telemetry
           });
           return await definition.run(ctx);
-        }
+        },
       });
     }
   }
@@ -304,13 +304,15 @@ const TOOLS = [
     inputSchema: {
       datasetId: { type: "string" },
       query: { type: "string" },
-      semantic: { type: "boolean" }
-    }
+      semantic: { type: "boolean" },
+    },
   },
   {
     name: "gremius_create_entry",
     description: "Create a new entry in a dataset",
-    inputSchema: { /* ... */ }
+    inputSchema: {
+      /* ... */
+    },
   },
   // ... 7 tools totales
 ];
@@ -318,7 +320,7 @@ const TOOLS = [
 // Autenticación Zero-Trust
 async function authenticateMCPRequest(token: string) {
   const result = await authenticateAgent(token, {
-    requireScopes: ["mcp:connect"]
+    requireScopes: ["mcp:connect"],
   });
   if (!result.success) throw new Error("Invalid token");
   return result.context;
@@ -326,6 +328,7 @@ async function authenticateMCPRequest(token: string) {
 ```
 
 **Implementado:**
+
 - ✅ **MCP Server** - Standalone con SSE
 - ✅ **7 Tools** - list_datasets, search_entries, create/read/update_entry, get_schema, health_check
 - ✅ **Zero-Trust Auth** - Validación de token en cada request
@@ -342,14 +345,14 @@ async function authenticateMCPRequest(token: string) {
 export interface VectorSearchExtension {
   enabled: boolean;
   fields: string[];
-  autoIndex?: boolean;      // ✅ Index automático
+  autoIndex?: boolean; // ✅ Index automático
   chunkSize?: number;
   chunkOverlap?: number;
 }
 
 // Tablas
-vectorIndexTable     // Embeddings de entries
-vectorChunksTable    // Chunks para documentos largos
+vectorIndexTable; // Embeddings de entries
+vectorChunksTable; // Chunks para documentos largos
 ```
 
 ### ✅ Auto-Grimoires con MCP Proxy 🆕 NUEVO
@@ -370,11 +373,11 @@ const autoMcpProxy = {
           agentId: ctx.agent?.agentId,
           agentName: ctx.agent?.agentName,
           scopes: ctx.agent?.scopes || [],
-          preferToon: ctx.agent?.preferToon || false
+          preferToon: ctx.agent?.preferToon || false,
         });
-      }
+      },
     });
-  }
+  },
 };
 
 initializeGrimoires(createGrimoireContext(), app as any, autoMcpProxy);
@@ -419,7 +422,7 @@ export async function logAgentAction(
     success: options.success ?? true,
     durationMs: options.durationMs,
     ipAddress: c.req.header("x-forwarded-for"),
-    userAgent: c.req.header("user-agent")
+    userAgent: c.req.header("user-agent"),
   });
 }
 
@@ -428,6 +431,7 @@ export async function logAgentAction(
 ```
 
 **Implementado:**
+
 - ✅ **Audit Logging** - Todas las acciones de agentes trackeadas
 - ✅ **Agent Logs** - Endpoint SSE para tiempo real
 - ✅ **Live Badge** - Indicador en UI
@@ -453,14 +457,15 @@ export const drizzleTelemetryProvider = {
   },
 
   async updateStep(stepId: string, data: Partial<TelemetryStepData>): Promise<void> {
-    await db.update(agentTraceSteps)
+    await db
+      .update(agentTraceSteps)
       .set({
         toolOutput: data.toolOutput,
         durationMs: data.durationMs,
         errorMessage: data.errorMessage,
       })
       .where(eq(agentTraceSteps.id, stepId));
-  }
+  },
 };
 ```
 
@@ -470,11 +475,11 @@ export const drizzleTelemetryProvider = {
 // ✅ Estructura jerárquica tipo LangSmith
 // apps/api/src/db/schema.ts
 
-agentTraces         // Traza completa de ejecución
-agentTraceSteps     // Pasos individuales (con tool input/output)
-agentFeedback       // Feedback por traza
-agentAuditLogs      // Logs de auditoría
-agentMemory         // Memoria cognitiva
+agentTraces; // Traza completa de ejecución
+agentTraceSteps; // Pasos individuales (con tool input/output)
+agentFeedback; // Feedback por traza
+agentAuditLogs; // Logs de auditoría
+agentMemory; // Memoria cognitiva
 ```
 
 ### ✅ Agent Playground 🆕 NUEVO
@@ -485,20 +490,23 @@ agentMemory         // Memoria cognitiva
 
 playgroundRouter.post("/:id/chat", async (c) => {
   const { message, sessionId = crypto.randomUUID(), history = [] } = await c.req.json();
-  
+
   // Crear trace para esta conversación
-  const [trace] = await db.insert(agentTraces).values({
-    agentId,
-    sessionId,
-    name: `Playground: ${message.slice(0, 50)}...`,
-    input: { message, history },
-    status: "running",
-    startedAt: new Date(),
-  }).returning({ id: agentTraces.id });
+  const [trace] = await db
+    .insert(agentTraces)
+    .values({
+      agentId,
+      sessionId,
+      name: `Playground: ${message.slice(0, 50)}...`,
+      input: { message, history },
+      status: "running",
+      startedAt: new Date(),
+    })
+    .returning({ id: agentTraces.id });
 
   // Procesar con el agente
   const response = await processWithAgent(agent, message, history, traceId);
-  
+
   return c.json({ success: true, response, traceId, sessionId });
 });
 ```
@@ -522,13 +530,13 @@ playgroundRouter.post("/:id/chat", async (c) => {
 
 ## 📊 Resumen por Componente
 
-| Componente | Estado Anterior | Nuevo Estado | Cambio | ¿Listo? |
-|------------|-----------------|--------------|--------|---------|
-| **Auth Universal** | 95% | **98%** | +3% | ✅ SÍ - NHI + RBAC + MCP |
-| **Actions Layer** | 80% | **90%** | +10% | ✅ SÍ - Telemetry + Cron |
-| **Auto-API & MCP** | 75% | **85%** | +10% | ✅ SÍ - Auto-Grimoires proxy |
-| **Observabilidad** | 80% | **90%** | +10% | ✅ SÍ - Telemetry completo |
-| **PROMEDIO** | **82%** | **91%** | **+9%** | **✅ Engine Producción Ready** |
+| Componente         | Estado Anterior | Nuevo Estado | Cambio  | ¿Listo?                        |
+| ------------------ | --------------- | ------------ | ------- | ------------------------------ |
+| **Auth Universal** | 95%             | **98%**      | +3%     | ✅ SÍ - NHI + RBAC + MCP       |
+| **Actions Layer**  | 80%             | **90%**      | +10%    | ✅ SÍ - Telemetry + Cron       |
+| **Auto-API & MCP** | 75%             | **85%**      | +10%    | ✅ SÍ - Auto-Grimoires proxy   |
+| **Observabilidad** | 80%             | **90%**      | +10%    | ✅ SÍ - Telemetry completo     |
+| **PROMEDIO**       | **82%**         | **91%**      | **+9%** | **✅ Engine Producción Ready** |
 
 ---
 
@@ -574,13 +582,13 @@ El Engine Core es **funcional y listo para producción**. Los gaps restantes son
 
 ## 🚀 Próximos Pasos
 
-| Prioridad | Tarea | Esfuerzo |
-|-----------|-------|----------|
-| P1 | Visualización de embeddings (t-SNE/UMAP) | 2 semanas |
-| P2 | Métricas de costo por agente | 1 semana |
-| P3 | Documentación de MCP + Telemetry | 1 semana |
-| P4 | Auto-API desde Drizzle | 2 semanas |
+| Prioridad | Tarea                                    | Esfuerzo  |
+| --------- | ---------------------------------------- | --------- |
+| P1        | Visualización de embeddings (t-SNE/UMAP) | 2 semanas |
+| P2        | Métricas de costo por agente             | 1 semana  |
+| P3        | Documentación de MCP + Telemetry         | 1 semana  |
+| P4        | Auto-API desde Drizzle                   | 2 semanas |
 
 ---
 
-*Análisis técnico actualizado - GremiusCMS v0.8.0-beta*
+_Análisis técnico actualizado - GremiusCMS v0.8.0-beta_

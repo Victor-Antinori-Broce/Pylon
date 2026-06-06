@@ -36,6 +36,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -71,6 +72,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -94,6 +96,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "key": "grimoire-games",
@@ -115,6 +118,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "key": "grimoire-games",
@@ -208,39 +212,42 @@ Resultado: Solo los grimoires del nuevo realm están activos
 
 ### Tabla `site_settings`
 
-| Campo | Valor | Descripción |
-|-------|-------|-------------|
+| Campo         | Valor                 | Descripción              |
+| ------------- | --------------------- | ------------------------ |
 | `activeTheme` | `"gremius-cms-realm"` | Realm actualmente activo |
-| `activeTheme` | `null` | Ningún realm activo |
+| `activeTheme` | `null`                | Ningún realm activo      |
 
 ### Tabla `modules`
 
 #### Grimoire Activo por Realm
+
 ```sql
 SELECT * FROM modules WHERE key = 'grimoire-games';
 ```
 
-| key | name | category | enabled | realmId | sidebarBadge |
-|-----|------|----------|---------|---------|--------------|
-| grimoire-games | Games | realm | true | gremius-cms-realm | Active by Realm |
+| key            | name  | category | enabled | realmId           | sidebarBadge    |
+| -------------- | ----- | -------- | ------- | ----------------- | --------------- |
+| grimoire-games | Games | realm    | true    | gremius-cms-realm | Active by Realm |
 
 #### Grimoire Desactivado Manualmente
+
 ```sql
 SELECT * FROM modules WHERE key = 'grimoire-games';
 ```
 
-| key | name | category | enabled | realmId | sidebarBadge |
-|-----|------|----------|---------|---------|--------------|
-| grimoire-games | Games | realm | false | gremius-cms-realm | Active by Realm |
+| key            | name  | category | enabled | realmId           | sidebarBadge    |
+| -------------- | ----- | -------- | ------- | ----------------- | --------------- |
+| grimoire-games | Games | realm    | false   | gremius-cms-realm | Active by Realm |
 
 #### Grimoire Standalone (no de realm)
+
 ```sql
 SELECT * FROM modules WHERE key = 'grimoire-crm';
 ```
 
-| key | name | category | enabled | realmId | sidebarBadge |
-|-----|------|----------|---------|---------|--------------|
-| grimoire-crm | CRM | optional | true | null | null |
+| key          | name | category | enabled | realmId | sidebarBadge |
+| ------------ | ---- | -------- | ------- | ------- | ------------ |
+| grimoire-crm | CRM  | optional | true    | null    | null         |
 
 ## 🎨 Respuestas de API Detalladas
 

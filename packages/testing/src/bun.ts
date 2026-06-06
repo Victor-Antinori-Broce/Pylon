@@ -2,25 +2,25 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * BUN TEST RUNNER INTEGRATION
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Usage with Bun's native test runner (faster than Vitest for Bun projects)
- * 
+ *
  * ```typescript
  * import { describe, it, beforeAll, afterAll } from "bun:test";
  * import { createTestSandbox } from "@gremius/testing/bun";
- * 
+ *
  * const sandbox = createTestSandbox({
  *   grimoires: ["grimoire-blog"],
  *   database: "postgres" // Uses real PostgreSQL with transactions
  * });
- * 
+ *
  * beforeAll(() => sandbox.setup());
  * afterAll(() => sandbox.teardown());
  * ```
  */
 
-import type { SandboxConfig, TestSandbox } from "./types.js";
 import { createTestSandbox as baseCreateSandbox } from "./sandbox.js";
+import type { SandboxConfig, TestSandbox } from "./types.js";
 
 /**
  * Create sandbox optimized for Bun runtime
@@ -30,11 +30,11 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
   // 1. Uses Bun's native fetch (faster)
   // 2. Supports Bun.SQLite for in-memory testing
   // 3. Faster module resolution
-  
+
   return baseCreateSandbox({
     ...config,
     // Default to postgres for Drizzle compatibility
-    database: config.database || "postgres"
+    database: config.database || "postgres",
   });
 }
 
@@ -43,22 +43,22 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
  */
 export function createBunTest(config: SandboxConfig) {
   let sandbox: TestSandbox;
-  
+
   return {
     sandbox: () => sandbox,
-    
+
     setup: async () => {
       sandbox = await createTestSandbox(config);
       await sandbox.setup();
     },
-    
+
     teardown: async () => {
       await sandbox.teardown();
     },
-    
+
     reset: async () => {
       await sandbox.reset();
-    }
+    },
   };
 }
 

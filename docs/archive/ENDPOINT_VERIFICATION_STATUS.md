@@ -1,4 +1,5 @@
 # Endpoint Audit - Verification Status Report
+
 **Date:** 2026-03-15  
 **Re-verification:** YES
 
@@ -6,10 +7,10 @@
 
 ## Summary of Changes Detected
 
-| Issue | Original Status | Current Status | Fixed? |
-|-------|-----------------|----------------|--------|
-| API Port Mismatch | Port 3000 (frontend) vs 3001 (API) | All files use 3001 | ✅ YES |
-| Missing Routes | platforms, tags, streamers not mounted | Now in modules/ | ✅ YES |
+| Issue             | Original Status                        | Current Status     | Fixed? |
+| ----------------- | -------------------------------------- | ------------------ | ------ |
+| API Port Mismatch | Port 3000 (frontend) vs 3001 (API)     | All files use 3001 | ✅ YES |
+| Missing Routes    | platforms, tags, streamers not mounted | Now in modules/    | ✅ YES |
 
 ---
 
@@ -54,6 +55,7 @@ packages/admin/src/routes/mcp/+page.svelte:5
 The routes are now properly structured as **Grimoire Modules**:
 
 #### File Structure:
+
 ```
 apps/api/src/modules/
 ├── platforms/
@@ -65,6 +67,7 @@ apps/api/src/modules/
 ```
 
 #### Route Definitions (in routes/crud.ts):
+
 - `platformsRoutes` → GET `/`, POST `/`
 - `tagsRoutes` → GET `/`, POST `/`
 - `streamersRoutes` → GET `/`, POST `/`
@@ -72,19 +75,22 @@ apps/api/src/modules/
 #### How They Get Mounted:
 
 1. **Listed in gremius.config.ts** (lines 77-80):
+
    ```typescript
-   "games", "streamers", "platforms", "tags", "collections"
+   ("games", "streamers", "platforms", "tags", "collections");
    ```
 
 2. **Module Loader Strategy** (line 412 in module-loader.ts):
+
    ```typescript
    // Strategy 5: Legacy modules
-   join(process.cwd(), `src/modules/${name}/index.ts`)
+   join(process.cwd(), `src/modules/${name}/index.ts`);
    ```
 
 3. **Mount Path** (line 390 in module-loader.ts):
+
    ```typescript
-   let mountPath = isRealmGrimoire ? `/api/${cleanName}` : `/api/custom/${name}`
+   let mountPath = isRealmGrimoire ? `/api/${cleanName}` : `/api/custom/${name}`;
    // Results in: /api/platforms, /api/tags, /api/streamers
    ```
 
@@ -118,11 +124,11 @@ createStreamer(data: Partial<Streamer>) { return this.request<Streamer>("/stream
 ```typescript
 // packages/admin/src/lib/components/forms/RelationshipField.svelte (lines 81-83)
 const ENDPOINT_MAP: Record<string, string> = {
-  "platforms": "/api/platforms",
-  "tags": "/api/tags",
-  "streamers": "/api/streamers",
+  platforms: "/api/platforms",
+  tags: "/api/tags",
+  streamers: "/api/streamers",
   // ...
-}
+};
 ```
 
 **Status:** ✅ Relationship dropdowns will work correctly
@@ -147,6 +153,7 @@ packages/admin/src/routes/
 ## Potential Issues Found
 
 ### ⚠️ Issue 1: Direct API Usage in Favor of Explorer
+
 The methods in `api.ts` call `/platforms`, `/tags`, `/streamers` directly, but the `DataExplorer` component uses `/api/explorer/{table}`.
 
 **Impact:** Low - Both endpoints should work (direct routes + explorer)
@@ -156,12 +163,13 @@ The methods in `api.ts` call `/platforms`, `/tags`, `/streamers` directly, but t
 ---
 
 ### ⚠️ Issue 2: No Custom Views for Platforms/Tags/Streamers
+
 These grimoires don't have custom Svelte views registered in `GRIMOIRE_VIEW_REGISTRY`:
 
 ```typescript
 // packages/admin/src/lib/grimoire-loader.ts (lines 20-36)
 // Only these have custom views:
-webhooks, workers, formulas, games, media, academy, blog, streamers
+(webhooks, workers, formulas, games, media, academy, blog, streamers);
 ```
 
 Wait - `streamers` IS registered but `platforms` and `tags` are NOT.
@@ -177,16 +185,19 @@ Wait - `streamers` IS registered but `platforms` and `tags` are NOT.
 To verify everything works, test these scenarios:
 
 ### Authentication
+
 - [ ] First-time setup (`/api/system/setup`)
 - [ ] Login (`/api/auth/sign-in/email`)
 - [ ] Session check (`/api/auth/get-session`)
 
 ### Grimoire Loading
+
 - [ ] Check console logs for: `✅ platforms [realm, legacy] → /api/platforms`
 - [ ] Check console logs for: `✅ tags [realm, legacy] → /api/tags`
 - [ ] Check console logs for: `✅ streamers [realm, legacy] → /api/streamers`
 
 ### API Endpoints
+
 - [ ] `GET /api/platforms` returns platforms list
 - [ ] `POST /api/platforms` creates platform
 - [ ] `GET /api/tags` returns tags list
@@ -195,18 +206,21 @@ To verify everything works, test these scenarios:
 - [ ] `POST /api/streamers` creates streamer
 
 ### Frontend Navigation
+
 - [ ] Sidebar shows Platforms, Tags, Streamers (when realm active)
 - [ ] Clicking Platforms loads `/platforms`
 - [ ] Clicking Tags loads `/tags`
 - [ ] Clicking Streamers loads `/streamers`
 
 ### Data Explorer
+
 - [ ] Platforms page shows data grid
 - [ ] Tags page shows data grid
 - [ ] Streamers page shows data grid
 - [ ] Can create/edit/delete records
 
 ### Relationships
+
 - [ ] RelationshipField loads platforms dropdown
 - [ ] RelationshipField loads tags dropdown
 - [ ] RelationshipField loads streamers dropdown
@@ -215,16 +229,17 @@ To verify everything works, test these scenarios:
 
 ## Conclusion
 
-| Category | Verdict |
-|----------|---------|
-| API Port Fix | ✅ Correctly applied (3001 everywhere) |
-| Routes Mounted | ✅ Will be mounted via Grimoire Loader |
-| Frontend Integration | ✅ Full integration verified |
-| Overall Health | ✅ HEALTHY |
+| Category             | Verdict                                |
+| -------------------- | -------------------------------------- |
+| API Port Fix         | ✅ Correctly applied (3001 everywhere) |
+| Routes Mounted       | ✅ Will be mounted via Grimoire Loader |
+| Frontend Integration | ✅ Full integration verified           |
+| Overall Health       | ✅ HEALTHY                             |
 
 **All originally identified issues have been corrected.**
 
 The architecture is sound:
+
 1. Backend routes exist in `routes/crud.ts`
 2. Modules export them from `modules/{name}/`
 3. Grimoire Loader mounts them at `/api/{name}`
@@ -232,4 +247,4 @@ The architecture is sound:
 
 ---
 
-*Report generated by re-verification audit*
+_Report generated by re-verification audit_

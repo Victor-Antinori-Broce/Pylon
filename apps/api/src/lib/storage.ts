@@ -4,9 +4,16 @@
  * Supports upload, delete, signed URLs, and file access.
  */
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
+
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const s3 = new S3Client({
   region: process.env.S3_REGION || "us-east-1",
@@ -119,10 +126,7 @@ export async function getFile(s3Key: string): Promise<ReadableStream | null> {
  * @param s3Key     The S3 object key
  * @param expiresIn TTL in seconds (default 3600 = 1 hour, max 86400 = 24h)
  */
-export async function generateSignedDownloadUrl(
-  s3Key: string,
-  expiresIn = 3600
-): Promise<string> {
+export async function generateSignedDownloadUrl(s3Key: string, expiresIn = 3600): Promise<string> {
   const clampedExpiry = Math.min(Math.max(expiresIn, 60), 86400);
   const command = new GetObjectCommand({ Bucket: BUCKET, Key: s3Key });
   return getSignedUrl(s3, command, { expiresIn: clampedExpiry });

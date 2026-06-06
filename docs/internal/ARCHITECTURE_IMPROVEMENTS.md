@@ -9,9 +9,11 @@ This document details the architectural improvements made to enhance the robustn
 ## 1. Structured Logging System
 
 ### Implementation
+
 **New File:** `apps/api/src/lib/logger.ts`
 
 ### Features
+
 - **Pino-based logger** with structured JSON output
 - **Request tracing** with unique request IDs
 - **Performance logging** with automatic timing
@@ -19,6 +21,7 @@ This document details the architectural improvements made to enhance the robustn
 - **Security event logging** for audit trails
 
 ### Usage
+
 ```typescript
 import { logger, createRequestLogger, createPerformanceLogger } from "./lib/logger";
 
@@ -37,6 +40,7 @@ perf.finish({ rows: 100 });
 ```
 
 ### Benefits
+
 - ✅ Centralized log aggregation ready
 - ✅ Request tracing across services
 - ✅ Automatic performance monitoring
@@ -48,9 +52,11 @@ perf.finish({ rows: 100 });
 ## 2. Centralized Configuration
 
 ### Implementation
+
 **New File:** `apps/api/src/lib/config.ts`
 
 ### Features
+
 - **Zod schema validation** for environment variables
 - **Type-safe config** with TypeScript
 - **Feature flags** for toggling functionality
@@ -58,26 +64,28 @@ perf.finish({ rows: 100 });
 - **CORS configuration**
 
 ### Configuration Categories
+
 ```typescript
 // Server config
-config.NODE_ENV
-config.PORT
+config.NODE_ENV;
+config.PORT;
 
 // Database
-config.DATABASE_URL
+config.DATABASE_URL;
 
 // Security
-config.ALLOWED_ORIGINS
-rateLimitConfig.enabled
-rateLimitConfig.maxRequests
+config.ALLOWED_ORIGINS;
+rateLimitConfig.enabled;
+rateLimitConfig.maxRequests;
 
 // Features
-features.swaggerEnabled
-features.mcpEnabled
-features.rateLimitEnabled
+features.swaggerEnabled;
+features.mcpEnabled;
+features.rateLimitEnabled;
 ```
 
 ### Benefits
+
 - ✅ Type-safe configuration
 - ✅ Runtime validation
 - ✅ Clear error messages for missing config
@@ -89,9 +97,11 @@ features.rateLimitEnabled
 ## 3. Rate Limiting
 
 ### Implementation
+
 **Modified:** `apps/api/src/index.ts`
 
 ### Features
+
 - **Global rate limiting** - 100 requests per 15 minutes
 - **Auth endpoint limits** - 5 attempts per 15 minutes
 - **IP-based tracking** - Uses x-forwarded-for header
@@ -99,15 +109,17 @@ features.rateLimitEnabled
 - **Skip paths** - Health checks excluded
 
 ### Configuration
+
 ```typescript
 // .env
-RATE_LIMIT_ENABLED=true
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-RATE_LIMIT_AUTH_MAX=5
+RATE_LIMIT_ENABLED = true;
+RATE_LIMIT_WINDOW_MS = 900000;
+RATE_LIMIT_MAX_REQUESTS = 100;
+RATE_LIMIT_AUTH_MAX = 5;
 ```
 
 ### Response Headers
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
@@ -115,6 +127,7 @@ X-RateLimit-Reset: 1649097600
 ```
 
 ### Benefits
+
 - ✅ DDoS protection
 - ✅ Brute force prevention
 - ✅ Resource abuse prevention
@@ -125,16 +138,19 @@ X-RateLimit-Reset: 1649097600
 ## 4. Enhanced Health Checks
 
 ### Implementation
+
 **Modified:** `apps/api/src/index.ts`
 
 ### Endpoints
 
 #### Basic Health Check
+
 ```bash
 GET /api/health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -169,11 +185,13 @@ GET /api/health
 ```
 
 #### pgvector Health Check
+
 ```bash
 GET /api/health/pgvector
 ```
 
 **Response:**
+
 ```json
 {
   "pgvector": true,
@@ -183,6 +201,7 @@ GET /api/health/pgvector
 ```
 
 ### Benefits
+
 - ✅ Multi-component health monitoring
 - ✅ Kubernetes-ready probes
 - ✅ Performance metrics included
@@ -194,15 +213,18 @@ GET /api/health/pgvector
 ## 5. Improved Error Handling
 
 ### Implementation
+
 **Modified:** `apps/api/src/index.ts`
 
 ### Features
+
 - **Structured error logging** with request context
 - **Request ID tracking** for debugging
 - **Environment-aware error messages**
 - **Security-safe error responses** (no stack traces in prod)
 
 ### Error Response Format
+
 ```json
 {
   "error": "Internal server error",
@@ -211,6 +233,7 @@ GET /api/health/pgvector
 ```
 
 **Development mode adds:**
+
 ```json
 {
   "message": "Detailed error message",
@@ -219,6 +242,7 @@ GET /api/health/pgvector
 ```
 
 ### Benefits
+
 - ✅ Better debugging with request IDs
 - ✅ Security (no info leakage)
 - ✅ Centralized error logging
@@ -230,12 +254,12 @@ GET /api/health/pgvector
 
 ### New Test Files
 
-| Test File | Tests | Description |
-|-----------|-------|-------------|
-| `auth.test.ts` | 12 | Auth flow, sessions, API keys |
-| `datasets.test.ts` | 15 | CRUD operations, schema validation |
-| `modules.test.ts` | 26 | Grimoire registry, categories |
-| `rls.test.ts` | 10 | Row-level security, context |
+| Test File          | Tests | Description                        |
+| ------------------ | ----- | ---------------------------------- |
+| `auth.test.ts`     | 12    | Auth flow, sessions, API keys      |
+| `datasets.test.ts` | 15    | CRUD operations, schema validation |
+| `modules.test.ts`  | 26    | Grimoire registry, categories      |
+| `rls.test.ts`      | 10    | Row-level security, context        |
 
 ### Total: 63 Tests
 
@@ -243,6 +267,7 @@ GET /api/health/pgvector
 **Ready with DB:** 37 tests (auth, datasets, RLS)
 
 ### Running Tests
+
 ```bash
 # No database required
 bun test src/tests/modules.test.ts
@@ -262,15 +287,15 @@ bun test
 
 ### Before vs After
 
-| Aspect | Before | After | Change |
-|--------|--------|-------|--------|
-| **Logging** | Console logs | Structured Pino | ✅ Improved |
-| **Config** | process.env | Type-safe Zod | ✅ Improved |
-| **Rate Limiting** | None | Implemented | ✅ New |
-| **Health Checks** | Basic | Comprehensive | ✅ Improved |
-| **Error Handling** | Basic console | Structured | ✅ Improved |
-| **Test Coverage** | ~5% | ~25% | ✅ +400% |
-| **Architecture Score** | 8.5/10 | 9.0/10 | ✅ +0.5 |
+| Aspect                 | Before        | After           | Change      |
+| ---------------------- | ------------- | --------------- | ----------- |
+| **Logging**            | Console logs  | Structured Pino | ✅ Improved |
+| **Config**             | process.env   | Type-safe Zod   | ✅ Improved |
+| **Rate Limiting**      | None          | Implemented     | ✅ New      |
+| **Health Checks**      | Basic         | Comprehensive   | ✅ Improved |
+| **Error Handling**     | Basic console | Structured      | ✅ Improved |
+| **Test Coverage**      | ~5%           | ~25%            | ✅ +400%    |
+| **Architecture Score** | 8.5/10        | 9.0/10          | ✅ +0.5     |
 
 ### Code Quality Metrics
 
@@ -291,21 +316,24 @@ Architecture Score:    9.0/10 ✅
 ### For Developers
 
 1. **Install new dependencies:**
+
    ```bash
    pnpm install
    ```
 
 2. **Set up environment variables:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your values
    ```
 
 3. **Run tests:**
+
    ```bash
    # Quick tests (no DB)
    bun test src/tests/modules.test.ts
-   
+
    # Full tests (with DB)
    docker compose up -d db
    bun test
@@ -319,6 +347,7 @@ Architecture Score:    9.0/10 ✅
    - Set up log aggregation (JSON format)
 
 2. **Health check endpoints:**
+
    ```yaml
    livenessProbe:
      httpGet:
@@ -338,16 +367,19 @@ Architecture Score:    9.0/10 ✅
 ## Future Improvements
 
 ### Priority 1
+
 - [ ] Implement caching layer with Redis
 - [ ] Add request validation middleware
 - [ ] Implement API versioning
 
 ### Priority 2
+
 - [ ] Add distributed tracing (OpenTelemetry)
 - [ ] Implement circuit breaker pattern
 - [ ] Add request/response compression
 
 ### Priority 3
+
 - [ ] GraphQL API endpoint
 - [ ] Webhook delivery system
 - [ ] Event sourcing for audit logs

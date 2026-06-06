@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { X, Loader2, Save } from "lucide-svelte";
-  import type { SchemaColumn } from "$lib/types/admin";
   import { autosaveStore } from "$lib/states/autosave.svelte";
-  import AutoSaveIndicator from "./AutoSaveIndicator.svelte";
+  import type { SchemaColumn } from "$lib/types/admin";
+  import { X, Loader2, Save } from "lucide-svelte";
   import { onMount } from "svelte";
+
+  import AutoSaveIndicator from "./AutoSaveIndicator.svelte";
 
   interface Props {
     /** Table/collection name for API calls */
@@ -20,7 +21,7 @@
     onclose?: () => void;
   }
 
-  let { tableName, columns, editData = null, apiEndpoint, onsave, onclose }: Props = $props();
+  const { tableName, columns, editData = null, apiEndpoint, onsave, onclose }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   const isEdit = $derived(!!editData);
@@ -29,7 +30,7 @@
   let formData = $state<Record<string, any>>({});
   let saving = $state(false);
   let error = $state<string | null>(null);
-  let relationOptions = $state<Record<string, { value: string; label: string }[]>>({});
+  const relationOptions = $state<Record<string, { value: string; label: string }[]>>({});
   let loadingRelations = $state(false);
 
   // Autosave key for this form
@@ -71,7 +72,7 @@
   const READONLY_FIELDS = new Set(["id", "created_at", "updated_at", "createdAt", "updatedAt"]);
 
   // Editable columns = all except readonly
-  let editableColumns = $derived(
+  const editableColumns = $derived(
     columns.filter(c => !READONLY_FIELDS.has(c.name) && !c.isPrimary)
   );
 
@@ -169,7 +170,7 @@
     const payload: Record<string, any> = {};
     for (const col of editableColumns) {
       const key = col.name;
-      let value = formData[key];
+      const value = formData[key];
       const inputType = inferInputType(col);
       
       // Skip undefined values unless it's a required field

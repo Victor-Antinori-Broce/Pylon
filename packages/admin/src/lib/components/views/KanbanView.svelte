@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Trash2 } from "lucide-svelte";
+
   import type { DatasetDefinition, DatasetEntry } from "../../../types/datasets";
 
   // Props
@@ -11,50 +12,50 @@
     onInlineUpdate?: (entryId: string, fieldKey: string, newValue: string) => void;
   }
 
-  let { definition, entries, onEdit, onDelete, onInlineUpdate }: Props = $props();
+  const { definition, entries, onEdit, onDelete, onInlineUpdate }: Props = $props();
 
   // 1. Determine Grouping Field (First "select" field)
-  const groupField = $derived(definition.fields.find(f => f.type === 'select'));
+  const groupField = $derived(definition.fields.find((f) => f.type === "select"));
 
   // 2. Group Entries
   const groupedEntries = $derived.by(() => {
     if (!groupField) return [];
-    
+
     const optionsRaw = groupField.options as any;
     let options: string[] = [];
 
     if (Array.isArray(optionsRaw)) {
       options = optionsRaw.map(String);
     } else if (typeof optionsRaw === "string") {
-      options = optionsRaw.split(',').map((o: string) => o.trim());
+      options = optionsRaw.split(",").map((o: string) => o.trim());
     }
-    
+
     return options.map((opt: string) => ({
       key: opt,
       label: opt,
-      entries: entries.filter(e => e.data[groupField.key] === opt)
+      entries: entries.filter((e) => e.data[groupField.key] === opt),
     }));
   });
 
   // 3. Find ungrouped entries
   const ungroupedEntries = $derived.by(() => {
     if (!groupField) return entries;
-    
+
     const optionsRaw = groupField.options as any;
     let options: string[] = [];
     if (Array.isArray(optionsRaw)) {
       options = optionsRaw.map(String);
     } else if (typeof optionsRaw === "string") {
-      options = optionsRaw.split(',').map((o: string) => o.trim());
+      options = optionsRaw.split(",").map((o: string) => o.trim());
     }
 
-    return entries.filter(e => !options.includes(e.data[groupField.key]));
+    return entries.filter((e) => !options.includes(e.data[groupField.key]));
   });
 
   // 4. Preview fields (First 3 non-group fields)
   const previewFields = $derived.by(() => {
     return definition.fields
-      .filter(f => f.key !== groupField?.key && (f.type as string) !== 'rich-text')
+      .filter((f) => f.key !== groupField?.key && (f.type as string) !== "rich-text")
       .slice(0, 3);
   });
 
@@ -108,19 +109,23 @@
             onclick={() => onEdit?.(entry)}
             role="button"
             tabindex="0"
-            onkeydown={(e) => e.key === 'Enter' && onEdit?.(entry)}
+            onkeydown={(e) => e.key === "Enter" && onEdit?.(entry)}
           >
             <!-- Thumbnail if available -->
             {#if (entry as any).thumbnailId}
               <div class="mb-2 rounded overflow-hidden h-24 bg-black/20">
-                <div class="w-full h-full flex items-center justify-center text-xs text-gremius-text-dim">
+                <div
+                  class="w-full h-full flex items-center justify-center text-xs text-gremius-text-dim"
+                >
                   Image
                 </div>
               </div>
             {/if}
 
-            <h4 class="font-medium text-gremius-text text-sm mb-1 line-clamp-2">{entry.data.title || 'Untitled'}</h4>
-            
+            <h4 class="font-medium text-gremius-text text-sm mb-1 line-clamp-2">
+              {entry.data.title || "Untitled"}
+            </h4>
+
             <!-- Fields Preview -->
             <div class="space-y-1">
               {#each previewFields as field (field.key)}
@@ -133,7 +138,13 @@
 
             <!-- Actions on Hover -->
             <div class="mt-2 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-              <button class="p-1 hover:text-gremius-danger" onclick={(e) => { e.stopPropagation(); onDelete?.(entry); }}>
+              <button
+                class="p-1 hover:text-gremius-danger"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(entry);
+                }}
+              >
                 <Trash2 class="w-3 h-3" />
               </button>
             </div>
@@ -142,7 +153,9 @@
 
         <!-- Empty state for column -->
         {#if group.entries.length === 0}
-          <div class="h-24 border-2 border-dashed border-gremius-border/50 rounded-lg flex items-center justify-center text-xs text-gremius-text-dim/50">
+          <div
+            class="h-24 border-2 border-dashed border-gremius-border/50 rounded-lg flex items-center justify-center text-xs text-gremius-text-dim/50"
+          >
             Empty
           </div>
         {/if}
@@ -154,17 +167,23 @@
   {#if ungroupedEntries.length > 0}
     <div class="w-72 shrink-0 flex flex-col">
       <div class="flex items-center gap-2 mb-3 px-1">
-        <h3 class="font-semibold text-gremius-text-dim text-sm uppercase tracking-wide">Unassigned</h3>
-        <span class="bg-gremius-border text-[10px] px-1.5 rounded-full text-gremius-text-dim">{ungroupedEntries.length}</span>
+        <h3 class="font-semibold text-gremius-text-dim text-sm uppercase tracking-wide">
+          Unassigned
+        </h3>
+        <span class="bg-gremius-border text-[10px] px-1.5 rounded-full text-gremius-text-dim"
+          >{ungroupedEntries.length}</span
+        >
       </div>
-      <div class="flex-1 bg-gremius-card/10 rounded-xl p-2 overflow-y-auto space-y-2 border border-dashed border-gremius-border/30">
+      <div
+        class="flex-1 bg-gremius-card/10 rounded-xl p-2 overflow-y-auto space-y-2 border border-dashed border-gremius-border/30"
+      >
         {#each ungroupedEntries as entry (entry.id)}
           <div
             class="bg-gremius-card/50 border border-gremius-border/50 rounded-lg p-3 opacity-70 hover:opacity-100"
             draggable="true"
             ondragstart={(e) => onDragStart(e, entry)}
           >
-            <h4 class="font-medium text-sm">{entry.data.title || 'Untitled'}</h4>
+            <h4 class="font-medium text-sm">{entry.data.title || "Untitled"}</h4>
           </div>
         {/each}
       </div>

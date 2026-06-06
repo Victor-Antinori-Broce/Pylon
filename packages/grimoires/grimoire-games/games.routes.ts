@@ -1,19 +1,18 @@
-
 /**
  * Gremio CMS — Games Module Routes (DI Version)
- * 
+ *
  * REST API for game library management with IGDB sync support.
- * 
+ *
  * MIGRATED: Now uses Dependency Injection via GrimoireContext
  * ENHANCED: Now includes grimoire-media transform URLs for cover art and screenshots
- * 
+ *
  * ⚠️ CRITICAL: Route order matters in Hono!
  * Specific routes must be registered BEFORE parameterized routes.
  */
 
-import { Hono } from "hono";
-import { eq, desc, asc, sql, ilike, and } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { eq, desc, asc, sql, ilike, and } from "drizzle-orm";
+import { Hono } from "hono";
 
 import {
   games,
@@ -25,21 +24,18 @@ import {
   gameCollectionEntries,
 } from "./games.schema";
 
-
 /**
  * Factory function that creates Games routes with dependency injection
  */
 export function createGamesRouter(ctx: GrimoireContext): Hono {
   const gamesRoutes = new Hono();
   const { db, auth } = ctx;
-  
+
   // Helper to get db instance
   const dbInstance = db.instance;
-  
+
   // Helper for auth
   const requireAuth = auth.requireAuth;
-
-
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PUBLIC/SPECIFIC ROUTES (must come before parameterized routes)
@@ -63,19 +59,12 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
       featured === "true" ? eq(games.isFeaturedOnHome, true) : undefined
     );
 
-    const orderBy =
-      sort.startsWith("-")
-        ? desc(games[sort.slice(1) as keyof typeof games.$inferSelect] as any)
-        : asc(games[sort as keyof typeof games.$inferSelect] as any);
+    const orderBy = sort.startsWith("-")
+      ? desc(games[sort.slice(1) as keyof typeof games.$inferSelect] as any)
+      : asc(games[sort as keyof typeof games.$inferSelect] as any);
 
     const [docs, countResult] = await Promise.all([
-      dbInstance
-        .select()
-        .from(games)
-        .where(where)
-        .orderBy(orderBy)
-        .limit(limit)
-        .offset(offset),
+      dbInstance.select().from(games).where(where).orderBy(orderBy).limit(limit).offset(offset),
       dbInstance
         .select({ count: sql<number>`count(*)` })
         .from(games)
@@ -108,11 +97,7 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
     // Query param to include media transform URLs
     const includeMedia = c.req.query("includeMedia") !== "false";
 
-    const result = await dbInstance
-      .select()
-      .from(games)
-      .where(eq(games.slug, slug))
-      .limit(1);
+    const result = await dbInstance.select().from(games).where(eq(games.slug, slug)).limit(1);
 
     if (!result.length) return c.json({ error: "Game not found" }, 404);
 
@@ -156,19 +141,15 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
     // Query param to include media transform URLs
     const includeMedia = c.req.query("includeMedia") !== "false";
 
-    const result = await dbInstance
-      .select()
-      .from(games)
-      .where(eq(games.id, id))
-      .limit(1);
+    const result = await dbInstance.select().from(games).where(eq(games.id, id)).limit(1);
 
     if (!result.length) return c.json({ error: "Game not found" }, 404);
 
     const game = result[0];
-    
+
     // Build response
     const response: any = { ...game };
-    
+
     // Enrich with media URLs if requested
     if (includeMedia) {
       response.media = buildGameMediaUrls(game);
@@ -248,9 +229,9 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
     if (platformIds !== undefined) {
       await dbInstance.delete(gamesToPlatforms).where(eq(gamesToPlatforms.gameId, id));
       if (platformIds.length > 0) {
-        await dbInstance.insert(gamesToPlatforms).values(
-          platformIds.map((platformId: string) => ({ gameId: id, platformId }))
-        );
+        await dbInstance
+          .insert(gamesToPlatforms)
+          .values(platformIds.map((platformId: string) => ({ gameId: id, platformId })));
       }
     }
 
@@ -258,9 +239,9 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
     if (tagIds !== undefined) {
       await dbInstance.delete(gamesToTags).where(eq(gamesToTags.gameId, id));
       if (tagIds.length > 0) {
-        await dbInstance.insert(gamesToTags).values(
-          tagIds.map((tagId: string) => ({ gameId: id, tagId }))
-        );
+        await dbInstance
+          .insert(gamesToTags)
+          .values(tagIds.map((tagId: string) => ({ gameId: id, tagId })));
       }
     }
 
@@ -348,11 +329,7 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
       gameIds.length > 0
         ? await Promise.all(
             gameIds.map(async (gid: any) => {
-              const [g] = await dbInstance
-                .select()
-                .from(games)
-                .where(eq(games.id, gid))
-                .limit(1);
+              const [g] = await dbInstance.select().from(games).where(eq(games.id, gid)).limit(1);
               return g || null;
             })
           )
@@ -361,7 +338,7 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
     return c.json({
       ...col,
       games: gameRows.filter(Boolean),
-      entries: entries,
+      entries,
     });
   });
 
@@ -462,13 +439,16 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
   // ── Create Platform ──
   gamesRoutes.post("/platforms", requireAuth, async (c) => {
     const body = await c.req.json();
-    const [row] = await dbInstance.insert(platforms).values({
-      name: body.name,
-      slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      shortName: body.shortName,
-      manufacturer: body.manufacturer,
-      iconId: body.iconId,
-    }).returning();
+    const [row] = await dbInstance
+      .insert(platforms)
+      .values({
+        name: body.name,
+        slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        shortName: body.shortName,
+        manufacturer: body.manufacturer,
+        iconId: body.iconId,
+      })
+      .returning();
     return c.json(row, 201);
   });
 
@@ -481,12 +461,15 @@ export function createGamesRouter(ctx: GrimoireContext): Hono {
   // ── Create Tag ──
   gamesRoutes.post("/tags", requireAuth, async (c) => {
     const body = await c.req.json();
-    const [row] = await dbInstance.insert(tags).values({
-      name: body.name,
-      slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      color: body.color,
-      category: body.category,
-    }).returning();
+    const [row] = await dbInstance
+      .insert(tags)
+      .values({
+        name: body.name,
+        slug: body.slug || body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        color: body.color,
+        category: body.category,
+      })
+      .returning();
     return c.json(row, 201);
   });
 
@@ -530,7 +513,7 @@ function buildGameMediaUrls(game: any): {
 } {
   // Build cover art URLs with focal point support
   const coverFocalPoint = game.coverFocalPoint as { x: number; y: number } | undefined;
-  
+
   const cover = {
     hero: buildCoverArtUrl(game.coverArtId, "hero", coverFocalPoint),
     card: buildCoverArtUrl(game.coverArtId, "card", coverFocalPoint),
@@ -539,15 +522,16 @@ function buildGameMediaUrls(game: any): {
   };
 
   // Build screenshot URLs
-  const screenshots = game.screenshots?.map((screenshot: any) => ({
-    mediaId: screenshot.mediaId,
-    caption: screenshot.caption,
-    urls: {
-      gallery: buildScreenshotUrl(screenshot.mediaId, "gallery", screenshot.focalPoint),
-      thumbnail: buildScreenshotUrl(screenshot.mediaId, "thumbnail", screenshot.focalPoint),
-      original: buildScreenshotUrl(screenshot.mediaId, "original", screenshot.focalPoint),
-    },
-  })) || null;
+  const screenshots =
+    game.screenshots?.map((screenshot: any) => ({
+      mediaId: screenshot.mediaId,
+      caption: screenshot.caption,
+      urls: {
+        gallery: buildScreenshotUrl(screenshot.mediaId, "gallery", screenshot.focalPoint),
+        thumbnail: buildScreenshotUrl(screenshot.mediaId, "thumbnail", screenshot.focalPoint),
+        original: buildScreenshotUrl(screenshot.mediaId, "original", screenshot.focalPoint),
+      },
+    })) || null;
 
   return { cover, screenshots };
 }
@@ -571,9 +555,7 @@ function buildCoverArtUrl(
       params.append("fpy", focalPoint.y.toString());
     }
     const query = params.toString();
-    return query 
-      ? `/api/media/transform/${mediaId}?${query}`
-      : `/api/media/transform/${mediaId}`;
+    return query ? `/api/media/transform/${mediaId}?${query}` : `/api/media/transform/${mediaId}`;
   }
 
   // Use preset endpoint for transforms
@@ -600,9 +582,7 @@ function buildScreenshotUrl(
       params.append("fpy", focalPoint.y.toString());
     }
     const query = params.toString();
-    return query 
-      ? `/api/media/transform/${mediaId}?${query}`
-      : `/api/media/transform/${mediaId}`;
+    return query ? `/api/media/transform/${mediaId}?${query}` : `/api/media/transform/${mediaId}`;
   }
 
   // Use preset endpoint for transforms

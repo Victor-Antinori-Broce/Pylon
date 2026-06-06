@@ -3,10 +3,10 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * SEED SCRIPT: MCP Test - "Paso 0: Validación del Titanio"
  * ═══════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Propósito: Crear identidad "DevBot" con token MCP válido para pruebas
  * de conexión con Claude Desktop.
- * 
+ *
  * Uso: bun run apps/api/scripts/seed-mcp-test.ts
  */
 
@@ -34,18 +34,21 @@ function generateAgentApiKey(options: { type: string; randomLength?: number }): 
 } {
   const { type, randomLength = 32 } = options;
   const AGENT_ID_PREFIX = "grm_agent";
-  
+
   // Normalizar tipo
-  const normalizedType = type.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-  
+  const normalizedType = type
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+
   // Generar parte aleatoria
   const randomPart = randomBytes(randomLength).toString("base64url");
-  
+
   // Construir key
   const plainKey = `${AGENT_ID_PREFIX}_${normalizedType}_${randomPart}`;
   const keyHash = createHash("sha256").update(plainKey).digest("hex");
   const keyPrefix = `${AGENT_ID_PREFIX}_${normalizedType}_****${randomPart.slice(-8)}`;
-  
+
   return { plainKey, keyHash, keyPrefix };
 }
 
@@ -60,9 +63,9 @@ async function seedMcpTest() {
   try {
     // Intentar importar y conectar a la base de datos
     log("📡 Paso 1: Verificando conexión a PostgreSQL...", "yellow");
-    
+
     const { db } = await import("../src/db");
-    
+
     try {
       const result = await db.execute<{ now: string }>("SELECT NOW() as now");
       if (result.rows && result.rows.length > 0) {
@@ -70,7 +73,10 @@ async function seedMcpTest() {
         dbConnected = true;
       }
     } catch (connError: any) {
-      log(`   ⚠️  No se pudo conectar a PostgreSQL: ${connError.message || "ECONNREFUSED"}`, "yellow");
+      log(
+        `   ⚠️  No se pudo conectar a PostgreSQL: ${connError.message || "ECONNREFUSED"}`,
+        "yellow"
+      );
       log(`   💡 Asegúrate de que la base de datos esté corriendo:`, "yellow");
       log(`      docker compose up -d db\n`, "cyan");
     }
@@ -79,16 +85,16 @@ async function seedMcpTest() {
     // GENERAR TOKEN CON FORMATO grm_agent_...
     // ───────────────────────────────────────────────────────────────────────
     log("🔑 Paso 2: Generando token MCP seguro...", "yellow");
-    
-    const apiKeyResult = generateAgentApiKey({ 
+
+    const apiKeyResult = generateAgentApiKey({
       type: "claude-desktop",
-      randomLength: 32 
+      randomLength: 32,
     });
-    
+
     const plainToken = apiKeyResult.plainKey;
     const keyHash = apiKeyResult.keyHash;
     const keyPrefix = apiKeyResult.keyPrefix;
-    
+
     log(`   ✅ Token generado: ${keyPrefix}...`, "green");
     log(`   🔒 Hash SHA-256: ${keyHash.substring(0, 16)}...\n`, "green");
 
@@ -101,37 +107,42 @@ async function seedMcpTest() {
       const { eq } = await import("drizzle-orm");
 
       log("👤 Paso 3: Creando identidad 'DevBot' en base de datos...", "yellow");
-      
+
       // Verificar si ya existe
       const existingAgent = await db.query.agentIdentities.findFirst({
-        where: (table, { eq }) => eq(table.name, "DevBot")
+        where: (table, { eq }) => eq(table.name, "DevBot"),
       });
-      
+
       if (existingAgent) {
         log("   ⚠️  DevBot ya existe. Actualizando...", "yellow");
         agentId = existingAgent.id;
-        
-        await db.update(agentIdentities)
-          .set({ 
+
+        await db
+          .update(agentIdentities)
+          .set({
             scopes: ["read:issues", "write:intake"],
             isActive: true,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(agentIdentities.id, agentId));
       } else {
         // Crear nuevo agente
-        const [newAgent] = await db.insert(agentIdentities).values({
-          name: "DevBot",
-          description: "Agente de desarrollo para pruebas MCP con Claude Desktop",
-          type: "claude-desktop",
-          capabilities: ["mcp-connect", "tool-execution", "context-management"],
-          systemPrompt: "Eres DevBot, un agente de desarrollo conectado a Gremius CMS. Tienes acceso a herramientas MCP para interactuar con el sistema.",
-          allowedTools: ["read_dataset", "write_intake", "search_memories"],
-          scopes: ["read:issues", "write:intake"],
-          rateLimit: 120,
-          isActive: true
-        }).returning();
-        
+        const [newAgent] = await db
+          .insert(agentIdentities)
+          .values({
+            name: "DevBot",
+            description: "Agente de desarrollo para pruebas MCP con Claude Desktop",
+            type: "claude-desktop",
+            capabilities: ["mcp-connect", "tool-execution", "context-management"],
+            systemPrompt:
+              "Eres DevBot, un agente de desarrollo conectado a Gremius CMS. Tienes acceso a herramientas MCP para interactuar con el sistema.",
+            allowedTools: ["read_dataset", "write_intake", "search_memories"],
+            scopes: ["read:issues", "write:intake"],
+            rateLimit: 120,
+            isActive: true,
+          })
+          .returning();
+
         agentId = newAgent.id;
         log(`   ✅ DevBot creado con ID: ${agentId}`, "green");
       }
@@ -140,29 +151,32 @@ async function seedMcpTest() {
 
       // Insertar API Key
       log("🔐 Paso 4: Registrando API Key en base de datos...", "yellow");
-      
+
       const existingKey = await db.query.agentApiKeys.findFirst({
-        where: (table, { eq }) => eq(table.agentId, agentId)
+        where: (table, { eq }) => eq(table.agentId, agentId),
       });
-      
+
       if (existingKey) {
         log("   ⚠️  Ya existe una API key. Revocando y creando nueva...", "yellow");
         await db.delete(agentApiKeys).where(eq(agentApiKeys.id, existingKey.id));
       }
-      
-      const [newKey] = await db.insert(agentApiKeys).values({
-        agentId: agentId,
-        keyHash: keyHash,
-        keyPrefix: keyPrefix,
-        expiresAt: null
-      }).returning();
-      
+
+      const [newKey] = await db
+        .insert(agentApiKeys)
+        .values({
+          agentId,
+          keyHash,
+          keyPrefix,
+          expiresAt: null,
+        })
+        .returning();
+
       log(`   ✅ API Key registrada: ${newKey.id}`, "green");
       log(`   📅 Expira: Nunca (para pruebas de desarrollo)\n`, "green");
 
       // Verificación final
       log("✅ Paso 5: Verificando integridad de datos...", "yellow");
-      
+
       const verification = await db.execute<{
         agent_count: number;
         key_count: number;
@@ -171,7 +185,7 @@ async function seedMcpTest() {
           (SELECT COUNT(*) FROM agent_identities WHERE id = '${agentId}') as agent_count,
           (SELECT COUNT(*) FROM agent_api_keys WHERE agent_id = '${agentId}') as key_count
       `);
-      
+
       const v = verification.rows?.[0];
       if (v && v.agent_count > 0 && v.key_count > 0) {
         log("   ✅ Datos verificados en PostgreSQL\n", "green");
@@ -182,11 +196,11 @@ async function seedMcpTest() {
       // Modo sin conexión - mostrar SQL para ejecutar manualmente
       log("👤 Paso 3 (MODO OFFLINE): Preparando SQL para ejecución manual...", "yellow");
       log(`   ⚠️  No se pudo conectar a la base de datos\n`, "yellow");
-      
+
       log("════════════════════════════════════════════════════════════════", "bold");
       log("SCRIPT SQL PARA EJECUTAR MANUALMENTE:", "bold");
       log("════════════════════════════════════════════════════════════════\n", "bold");
-      
+
       const sqlScript = `
 -- Insertar DevBot en agent_identities
 INSERT INTO agent_identities (
@@ -223,7 +237,7 @@ INSERT INTO agent_api_keys (
 );
 `;
       log(sqlScript, "cyan");
-      
+
       log("════════════════════════════════════════════════════════════════\n", "bold");
     }
 
@@ -233,65 +247,65 @@ INSERT INTO agent_api_keys (
     log("╔═══════════════════════════════════════════════════════════════╗", "cyan");
     log("║   🎉 PASO 0 COMPLETADO - TOKEN MCP GENERADO                  ║", "cyan");
     log("╚═══════════════════════════════════════════════════════════════╝\n", "cyan");
-    
+
     log("════════════════════════════════════════════════════════════════", "bold");
     log("TOKEN MCP (GUARDAR EN LUGAR SEGURO):", "bold");
     log("════════════════════════════════════════════════════════════════", "bold");
     log(`\n${plainToken}\n`, "cyan");
-    
+
     log("════════════════════════════════════════════════════════════════", "bold");
     log("CONFIGURACIÓN PARA CLAUDE DESKTOP:", "bold");
     log("════════════════════════════════════════════════════════════════\n", "bold");
-    
+
     const claudeConfig = {
-      "mcpServers": {
-        "gremius": {
-          "command": "bun",
-          "args": ["run", "apps/api/src/mcp-server.ts"],
-          "cwd": "C:\\Users\\vantinori\\Documents\\github\\cms",
-          "env": {
-            "GREMUS_MCP_TOKEN": plainToken,
-            "GREMUS_API_URL": "http://localhost:3001",
-            "NODE_ENV": "development"
-          }
-        }
-      }
+      mcpServers: {
+        gremius: {
+          command: "bun",
+          args: ["run", "apps/api/src/mcp-server.ts"],
+          cwd: "C:\\Users\\vantinori\\Documents\\github\\cms",
+          env: {
+            GREMUS_MCP_TOKEN: plainToken,
+            GREMUS_API_URL: "http://localhost:3001",
+            NODE_ENV: "development",
+          },
+        },
+      },
     };
-    
+
     log("Copia este bloque en tu archivo claude_desktop_config.json:\n", "yellow");
     log(JSON.stringify(claudeConfig, null, 2), "cyan");
-    
+
     log("\n════════════════════════════════════════════════════════════════", "bold");
     log("UBICACIÓN DEL ARCHIVO DE CONFIGURACIÓN:", "bold");
     log("════════════════════════════════════════════════════════════════\n", "bold");
     log("Windows: %APPDATA%\\Claude\\claude_desktop_config.json", "cyan");
     log("macOS: ~/Library/Application Support/Claude/claude_desktop_config.json", "cyan");
     log("Linux: ~/.config/Claude/claude_desktop_config.json\n", "cyan");
-    
+
     log("════════════════════════════════════════════════════════════════", "bold");
     log("PRUEBA DE CONEXIÓN:", "bold");
     log("════════════════════════════════════════════════════════════════\n", "bold");
-    
+
     log("1. Asegúrate de que el servidor Gremius esté corriendo:", "reset");
     log("   cd apps/api && bun run dev\n", "cyan");
-    
+
     log("2. Abre Claude Desktop", "reset");
     log("3. Ve a Config > Developer > Edit Config", "reset");
     log("4. Pega la configuración JSON anterior", "reset");
     log("5. Reinicia Claude Desktop", "reset");
     log("6. Escribe: 'Lista las herramientas que tienes disponibles'\n", "reset");
-    
+
     log("════════════════════════════════════════════════════════════════", "bold");
     log("VALIDACIÓN ZERO-TRUST:", "bold");
     log("════════════════════════════════════════════════════════════════\n", "bold");
-    
+
     log("✅ El middleware validará:", "green");
     log("   • Formato del token: grm_agent_claude-desktop_...", "reset");
     log("   • Hash SHA-256 en base de datos", "reset");
     log("   • Scopes del agente: [read:issues, write:intake]", "reset");
     log("   • Rate limiting por agente", "reset");
     log("   • Registro en agent_audit_logs\n", "reset");
-    
+
     if (!dbConnected) {
       log("⚠️  ADVERTENCIA: Sin conexión a base de datos", "yellow");
       log("   El token se ha generado pero NO está registrado en la BD.", "yellow");
@@ -340,7 +354,7 @@ VALIDACIÓN:
       const fs = await import("fs");
       const path = await import("path");
       const progressPath = path.join(process.cwd(), "progress.txt");
-      
+
       fs.writeFileSync(progressPath, tokenInfo);
       log(`📝 Token guardado en: ${progressPath}`, "green");
     } catch (fsError) {
@@ -352,9 +366,8 @@ VALIDACIÓN:
       dbConnected,
       agentId,
       token: plainToken,
-      scopes: ["read:issues", "write:intake"]
+      scopes: ["read:issues", "write:intake"],
     };
-
   } catch (error: any) {
     log(`\n❌ ERROR: ${error.message}\n`, "red");
     console.error(error);
@@ -363,14 +376,16 @@ VALIDACIÓN:
 }
 
 // Ejecutar
-seedMcpTest().then((result) => {
-  if (result.dbConnected) {
-    log("✨ Script completado - Token registrado en base de datos", "green");
-  } else {
-    log("✨ Script completado - EJECUTAR SQL MANUALMENTE", "yellow");
-  }
-  process.exit(0);
-}).catch((error) => {
-  log(`✨ Error fatal: ${error.message}`, "red");
-  process.exit(1);
-});
+seedMcpTest()
+  .then((result) => {
+    if (result.dbConnected) {
+      log("✨ Script completado - Token registrado en base de datos", "green");
+    } else {
+      log("✨ Script completado - EJECUTAR SQL MANUALMENTE", "yellow");
+    }
+    process.exit(0);
+  })
+  .catch((error) => {
+    log(`✨ Error fatal: ${error.message}`, "red");
+    process.exit(1);
+  });

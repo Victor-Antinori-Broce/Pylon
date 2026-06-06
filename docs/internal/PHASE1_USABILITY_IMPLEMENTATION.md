@@ -8,10 +8,12 @@
 ## ✅ 1. Command Palette (CMD+K)
 
 ### Archivos
+
 - **Nuevo:** `packages/admin/src/lib/components/CommandPalette.svelte`
 - **Modificado:** `packages/admin/src/lib/components/layout/SidebarLayout.svelte`
 
 ### Funcionalidad
+
 - Trigger global: `Cmd+K` (Mac) / `Ctrl+K` (Windows/Linux)
 - Modal centrado con búsqueda instantánea
 - Categorías de resultados:
@@ -23,6 +25,7 @@
 - Botón visual `⌘K` en el header para descubrimiento
 
 ### Demo
+
 ```
 Usuario presiona Cmd+K → Escribe "post" → Enter → Navega a /posts
 ```
@@ -32,12 +35,14 @@ Usuario presiona Cmd+K → Escribe "post" → Enter → Navega a /posts
 ## ✅ 2. Autosave + Versiones Simples
 
 ### Archivos
+
 - **Nuevo:** `packages/admin/src/lib/states/autosave.svelte.ts`
 - **Nuevo:** `packages/admin/src/lib/components/admin/AutoSaveIndicator.svelte`
 - **Nuevo:** `packages/admin/src/lib/components/admin/VersionHistory.svelte`
 - **Modificado:** `packages/admin/src/lib/components/admin/AutoFormModal.svelte`
 
 ### Funcionalidad
+
 - Autosave automático cada **10 segundos** a `localStorage`
 - Estados visuales:
   - 🟡 **"Saving..."** - Guardando
@@ -51,8 +56,9 @@ Usuario presiona Cmd+K → Escribe "post" → Enter → Navega a /posts
 - Limpieza automática al guardar exitosamente
 
 ### Demo
+
 ```
-Usuario edita formulario → Espera 10s → "Saved" → Click en indicador 
+Usuario edita formulario → Espera 10s → "Saved" → Click en indicador
 → Selecciona versión anterior → "Restore" → Formulario recuperado
 ```
 
@@ -61,9 +67,11 @@ Usuario edita formulario → Espera 10s → "Saved" → Click en indicador
 ## ✅ 3. Bulk Actions en Dataset Admin
 
 ### Archivos
+
 - **Modificado:** `packages/admin/src/lib/components/admin/DataExplorer.svelte`
 
 ### Funcionalidad
+
 - Checkboxes en cada fila de la tabla
 - Checkbox de header con estado **indeterminate**
 - Barra flotante de acciones masivas que aparece al seleccionar:
@@ -76,6 +84,7 @@ Usuario edita formulario → Espera 10s → "Saved" → Click en indicador
 - Modal de confirmación para delete masivo
 
 ### Demo
+
 ```
 Usuario selecciona 5 posts → Clica "Publish" → 5 posts pasan a published
 ```
@@ -85,10 +94,12 @@ Usuario selecciona 5 posts → Clica "Publish" → 5 posts pasan a published
 ## ✅ 4. Global Search Fuzzy
 
 ### Archivos
+
 - **Nuevo:** `packages/admin/src/lib/components/layout/GlobalSearch.svelte`
 - **Modificado:** `packages/admin/src/lib/components/layout/SidebarLayout.svelte`
 
 ### Funcionalidad
+
 - Search box integrado en el **header sticky**
 - Fuzzy matching propio (sin dependencias externas):
   - Exact match (puntuación más alta)
@@ -105,6 +116,7 @@ Usuario selecciona 5 posts → Clica "Publish" → 5 posts pasan a published
 - Click fuera cierra el dropdown
 
 ### Demo
+
 ```
 Usuario escribe "blo" en search → Resultados: "Page Builder", "Blocks", "Blog Posts"
 ```
@@ -114,12 +126,14 @@ Usuario escribe "blo" en search → Resultados: "Page Builder", "Blocks", "Blog 
 ## ✅ 5. Preview en Tiempo Real
 
 ### Archivos
+
 - **Nuevo:** `packages/admin/src/lib/components/SplitPane.svelte`
 - **Nuevo:** `packages/admin/src/lib/components/LivePreview.svelte`
 - **Modificado:** `packages/admin/src/lib/components/blog/BlogPostEditor.svelte`
 - **Modificado:** `packages/admin/src/assets/main.css`
 
 ### Funcionalidad
+
 - **SplitPane** con divisor arrastrable entre editor y preview
 - Botón **"Preview / Hide Preview"** en el header del editor
 - **LivePreview** renderiza en iframe con `srcdoc`:
@@ -133,6 +147,7 @@ Usuario escribe "blo" en search → Resultados: "Page Builder", "Blocks", "Blog 
 - Actualiza automáticamente cuando cambia cualquier campo
 
 ### Demo
+
 ```
 Usuario edita título del post → Preview derecho actualiza en tiempo real
 Usuario cambia a viewport Mobile → Preview se reduce a 375px
@@ -143,10 +158,12 @@ Usuario cambia a viewport Mobile → Preview se reduce a 375px
 ## ✅ 6. Rich Text Editor con Slash Commands
 
 ### Archivos
+
 - **Nuevo:** `packages/admin/src/lib/components/editor/SlashCommandEditor.svelte`
 - **Modificado:** `packages/admin/src/lib/components/blog/BlogPostEditor.svelte`
 
 ### Funcionalidad
+
 - Editor basado en `textarea` (ligero, no dependencias pesadas)
 - **Toolbar** con formateo rápido:
   - Bold (`Ctrl+B`)
@@ -165,8 +182,9 @@ Usuario cambia a viewport Mobile → Preview se reduce a 375px
 - Inserta markdown directamente
 
 ### Demo
+
 ```
-Usuario escribe "/quo" en editor → Selecciona "Quote" → Enter 
+Usuario escribe "/quo" en editor → Selecciona "Quote" → Enter
 → Inserta "> " al inicio de la línea
 ```
 
@@ -174,28 +192,28 @@ Usuario escribe "/quo" en editor → Selecciona "Quote" → Enter
 
 ## 📊 Resumen de Archivos Creados/Modificados
 
-| Feature | Archivos Nuevos | Archivos Modificados |
-|---------|-----------------|---------------------|
-| Command Palette | 1 | 1 |
-| Autosave | 3 | 1 |
-| Bulk Actions | 0 | 1 |
-| Global Search | 1 | 1 |
-| Preview | 2 | 2 |
-| Slash Editor | 1 | 1 |
-| **Total** | **9** | **7** |
+| Feature         | Archivos Nuevos | Archivos Modificados |
+| --------------- | --------------- | -------------------- |
+| Command Palette | 1               | 1                    |
+| Autosave        | 3               | 1                    |
+| Bulk Actions    | 0               | 1                    |
+| Global Search   | 1               | 1                    |
+| Preview         | 2               | 2                    |
+| Slash Editor    | 1               | 1                    |
+| **Total**       | **9**           | **7**                |
 
 ---
 
 ## 🎯 Impacto en Usuario Final
 
-| Antes | Después |
-|-------|---------|
-| Navegación solo por sidebar clicks | Command Palette instantáneo |
+| Antes                                        | Después                                |
+| -------------------------------------------- | -------------------------------------- |
+| Navegación solo por sidebar clicks           | Command Palette instantáneo            |
 | Perder cambios si cierra tab accidentalmente | Autosave + 5 versiones de recuperación |
-| Editar posts uno por uno | Bulk actions para 50+ items |
-| Buscar contenido navegando páginas | Global search fuzzy en el header |
-| Guardar → abrir otra tab → ver preview | Preview en tiempo real con split pane |
-| Textarea plano sin formato | Editor con slash commands y toolbar |
+| Editar posts uno por uno                     | Bulk actions para 50+ items            |
+| Buscar contenido navegando páginas           | Global search fuzzy en el header       |
+| Guardar → abrir otra tab → ver preview       | Preview en tiempo real con split pane  |
+| Textarea plano sin formato                   | Editor con slash commands y toolbar    |
 
 ---
 
@@ -208,4 +226,4 @@ Usuario escribe "/quo" en editor → Selecciona "Quote" → Enter
 
 ---
 
-*Documento generado automáticamente tras implementación*
+_Documento generado automáticamente tras implementación_

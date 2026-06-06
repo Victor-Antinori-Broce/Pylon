@@ -1,8 +1,9 @@
+import type { ExtractTablesWithRelations } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 // @ts-ignore - NodePgTransaction is the correct export name but TS complains
 import type { NodePgTransaction, NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
-import type { ExtractTablesWithRelations } from "drizzle-orm";
 import pg from "pg";
+
 import { buildMergedSchema } from "../lib/schema-merger";
 
 const { Pool } = pg;

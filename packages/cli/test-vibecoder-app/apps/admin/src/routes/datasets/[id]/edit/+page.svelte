@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { onMount } from "svelte";
   import SchemaBuilder from "$lib/components/datasets/SchemaBuilder.svelte";
   import { datasetStore } from "$lib/states/datasets.svelte";
-  import { ArrowLeft, Loader2, AlertCircle } from "lucide-svelte";
   import type { DatasetDefinition } from "@gremius/shared";
+  import { ArrowLeft, Loader2, AlertCircle } from "lucide-svelte";
+  import { onMount } from "svelte";
+
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
   const datasetId = $derived($page.params.id);
   

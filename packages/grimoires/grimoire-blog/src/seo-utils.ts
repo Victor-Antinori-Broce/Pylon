@@ -1,11 +1,11 @@
 /**
  * SEO Utilities for Blog Posts
- * 
+ *
  * Image Transform URL Helpers:
  * - getFeaturedImageUrl: /api/media/preset/{id}/large
  * - getOGImageUrl: /api/media/transform/{id}?w=1200&h=630&fit=cover&f=jpeg&q=90
  * - Focal point support for smart cropping
- * 
+ *
  * Comprehensive SEO metadata generation including:
  * - Meta tags for search engines (title, description, robots)
  * - Open Graph tags for social sharing (Facebook, LinkedIn, etc.)
@@ -13,11 +13,11 @@
  * - JSON-LD Schema.org structured data
  * - Canonical URLs and hreflang
  * - Reading time and word count
- * 
+ *
  * ═══════════════════════════════════════════════════════════════════════════
  * USAGE:
  * ═══════════════════════════════════════════════════════════════════════════
- * 
+ *
  * const seoData = generateSEOMetadata({
  *   post: blogPost,
  *   author: { name: "John Doe", image: "..." },
@@ -29,7 +29,7 @@
  *     defaultOgImage: "https://example.com/default-og.jpg"
  *   }
  * });
- * 
+ *
  * // Access different SEO components:
  * seoData.title           // Optimized title (50-60 chars)
  * seoData.metaDescription // Optimized description (150-160 chars)
@@ -89,10 +89,10 @@ export const ROBOT_DIRECTIVES = {
 
 /**
  * WhatsApp Open Graph Image Requirements (STRICT)
- * 
+ *
  * WhatsApp is VERY picky about og:image. If these requirements are not met,
  * WhatsApp will NOT show the image preview in chats.
- * 
+ *
  * Source: https://developers.facebook.com/docs/sharing/webmasters/images/
  * WhatsApp specific: https://stackoverflow.com/questions/19778620/provide-an-image-for-whatsapp-link-sharing
  */
@@ -100,8 +100,8 @@ export const WHATSAPP_OG_LIMITS = {
   /** Maximum file size: 300KB (WhatsApp will reject larger images) */
   maxFileSizeKB: 300,
   maxFileSizeBytes: 300 * 1024,
-  
-  /** 
+
+  /**
    * Ideal dimensions for og:image
    * Aspect ratio: 1.91:1 (Facebook/LinkedIn standard)
    * WhatsApp crops to square in some cases, so center important content
@@ -111,14 +111,14 @@ export const WHATSAPP_OG_LIMITS = {
     height: 630,
     ratio: 1.91, // 1200/630
   },
-  
+
   /** Minimum dimensions (below this WhatsApp may not show preview) */
   minDimensions: {
     width: 400,
     height: 400,
   },
-  
-  /** 
+
+  /**
    * Accepted formats for WhatsApp og:image
    * JPG and PNG are safest
    * AVOID WebP - some older WhatsApp versions don't render it
@@ -127,8 +127,8 @@ export const WHATSAPP_OG_LIMITS = {
    */
   acceptedFormats: ["image/jpeg", "image/jpg", "image/png"],
   acceptedExtensions: [".jpg", ".jpeg", ".png"],
-  
-  /** 
+
+  /**
    * Format recommendations by platform:
    * - WhatsApp: JPG/PNG only, < 300KB
    * - Facebook: JPG/PNG/WebP, any size
@@ -183,13 +183,13 @@ export interface FocalPoint {
 /**
  * Generate featured image URL using media preset endpoint
  * Endpoint: /api/media/preset/{id}/large
- * 
+ *
  * @param mediaId - The media item UUID
  * @param baseUrl - Optional base URL (defaults to empty string for relative URLs)
  * @returns Transform URL for featured image (1200x800, webp, quality 90)
  */
 export function getFeaturedImageUrl(mediaId: string, baseUrl?: string): string {
-  const base = baseUrl?.replace(/\/$/, '') || '';
+  const base = baseUrl?.replace(/\/$/, "") || "";
   return `${base}/api/media/preset/${mediaId}/large`;
 }
 
@@ -197,33 +197,29 @@ export function getFeaturedImageUrl(mediaId: string, baseUrl?: string): string {
  * Generate OG image URL using media transform endpoint
  * Optimized for WhatsApp/Facebook (1200x630, jpeg, quality 90)
  * Endpoint: /api/media/transform/{id}?w=1200&h=630&fit=cover&f=jpeg&q=90
- * 
+ *
  * @param mediaId - The media item UUID
  * @param focalPoint - Optional focal point for smart cropping
  * @param baseUrl - Optional base URL (defaults to empty string for relative URLs)
  * @returns Transform URL for OG image
  */
-export function getOGImageUrl(
-  mediaId: string,
-  focalPoint?: FocalPoint,
-  baseUrl?: string
-): string {
-  const base = baseUrl?.replace(/\/$/, '') || '';
+export function getOGImageUrl(mediaId: string, focalPoint?: FocalPoint, baseUrl?: string): string {
+  const base = baseUrl?.replace(/\/$/, "") || "";
   let url = `${base}/api/media/transform/${mediaId}?w=1200&h=630&fit=cover&f=jpeg&q=90`;
-  
+
   // Add focal point if provided for smart cropping
   if (focalPoint) {
     const fx = Math.round(focalPoint.x * 100);
     const fy = Math.round(focalPoint.y * 100);
     url += `&fpx=${fx}&fpy=${fy}`;
   }
-  
+
   return url;
 }
 
 /**
  * Generate custom transform URL with specific dimensions
- * 
+ *
  * @param mediaId - The media item UUID
  * @param width - Target width
  * @param height - Target height (optional)
@@ -236,33 +232,33 @@ export function getTransformUrl(
   width: number,
   height?: number,
   options?: {
-    fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
-    format?: 'jpeg' | 'png' | 'webp' | 'avif';
+    fit?: "cover" | "contain" | "fill" | "inside" | "outside";
+    format?: "jpeg" | "png" | "webp" | "avif";
     quality?: number;
     focalPoint?: FocalPoint;
   },
   baseUrl?: string
 ): string {
-  const base = baseUrl?.replace(/\/$/, '') || '';
-  const fit = options?.fit || 'cover';
-  const format = options?.format || 'webp';
+  const base = baseUrl?.replace(/\/$/, "") || "";
+  const fit = options?.fit || "cover";
+  const format = options?.format || "webp";
   const quality = options?.quality || 85;
-  
+
   let url = `${base}/api/media/transform/${mediaId}?w=${width}`;
-  
+
   if (height) {
     url += `&h=${height}`;
   }
-  
+
   url += `&fit=${fit}&f=${format}&q=${quality}`;
-  
+
   // Add focal point if provided
   if (options?.focalPoint) {
     const fx = Math.round(options.focalPoint.x * 100);
     const fy = Math.round(options.focalPoint.y * 100);
     url += `&fpx=${fx}&fpy=${fy}`;
   }
-  
+
   return url;
 }
 
@@ -324,8 +320,8 @@ export interface FeaturedImage {
   fileSize?: number;
 }
 
-/** 
- * Open Graph image with WhatsApp-specific requirements 
+/**
+ * Open Graph image with WhatsApp-specific requirements
  * This is the image used for social sharing previews
  */
 export interface OGImage {
@@ -406,8 +402,8 @@ export interface MetaTag {
 export interface OpenGraphData {
   /** Open Graph title (appears on Facebook, LinkedIn, WhatsApp) */
   title: string;
-  /** 
-   * Open Graph description 
+  /**
+   * Open Graph description
    * For WhatsApp: Keep it persuasive and mobile-friendly (1-2 lines)
    */
   description: string;
@@ -415,7 +411,7 @@ export interface OpenGraphData {
   url: string;
   /** Content type - use 'article' for blog posts */
   type: string;
-  /** 
+  /**
    * Open Graph image - CRITICAL for WhatsApp
    * Must be: < 300KB, 1200x630px ideal, JPG/PNG format
    */
@@ -487,7 +483,7 @@ export interface SEOMetadata {
   warnings?: string[];
   /** SEO score (0-100) */
   score?: number;
-  /** 
+  /**
    * WhatsApp Open Graph image validation
    * Critical for ensuring image previews work on WhatsApp
    */
@@ -534,29 +530,29 @@ export function stripHtml(html: string): string {
  */
 export function extractTextFromLexical(content: any): string {
   if (!content) return "";
-  
+
   // If it's already a string, return it
   if (typeof content === "string") return content;
-  
+
   // If it's Lexical format, extract text recursively
   let text = "";
-  
+
   function extract(node: any): void {
     if (!node) return;
-    
+
     if (node.text) {
       text += node.text + " ";
     }
-    
+
     if (node.children && Array.isArray(node.children)) {
       node.children.forEach(extract);
     }
-    
+
     if (node.root?.children && Array.isArray(node.root.children)) {
       node.root.children.forEach(extract);
     }
   }
-  
+
   extract(content);
   return text.trim();
 }
@@ -564,22 +560,18 @@ export function extractTextFromLexical(content: any): string {
 /**
  * Truncate text to specific character count, ending at word boundary
  */
-export function truncateToLimit(
-  text: string,
-  limit: number,
-  addEllipsis: boolean = true
-): string {
+export function truncateToLimit(text: string, limit: number, addEllipsis: boolean = true): string {
   if (!text || text.length <= limit) return text;
-  
+
   const truncated = text.substring(0, limit);
   const lastSpace = truncated.lastIndexOf(" ");
-  
+
   // Try to end at word boundary if possible
   if (lastSpace > limit * 0.8) {
     const result = truncated.substring(0, lastSpace);
     return addEllipsis ? result + "..." : result;
   }
-  
+
   return addEllipsis ? truncated + "..." : truncated;
 }
 
@@ -594,13 +586,8 @@ export function countWords(text: string): number {
 /**
  * Estimate reading time in minutes
  */
-export function estimateReadingTime(
-  content: string | any,
-  wordsPerMinute: number = 200
-): number {
-  const text = typeof content === "string" 
-    ? content 
-    : extractTextFromLexical(content);
+export function estimateReadingTime(content: string | any, wordsPerMinute: number = 200): number {
+  const text = typeof content === "string" ? content : extractTextFromLexical(content);
   const wordCount = countWords(text);
   return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
 }
@@ -617,10 +604,7 @@ export function formatISODate(date: Date | string | null): string | undefined {
 /**
  * Generate post URL
  */
-export function generatePostUrl(
-  siteConfig: SiteSEOConfig,
-  slug: string
-): string {
+export function generatePostUrl(siteConfig: SiteSEOConfig, slug: string): string {
   const baseUrl = siteConfig.baseUrl.replace(/\/$/, "");
   return `${baseUrl}/blog/${slug}`;
 }
@@ -637,18 +621,18 @@ export function generateTitle(
   if (override) {
     return truncateToLimit(override, SEO_LIMITS.title.max, false);
   }
-  
+
   const fullTitle = `${postTitle}${separator}${siteName}`;
-  
+
   // If it fits, use it
   if (fullTitle.length <= SEO_LIMITS.title.max) {
     return fullTitle;
   }
-  
+
   // Calculate available space for post title
   const siteNameWithSeparator = `${separator}${siteName}`;
   const availableLength = SEO_LIMITS.title.max - siteNameWithSeparator.length;
-  
+
   // Truncate post title and add suffix
   const truncatedTitle = truncateToLimit(postTitle, availableLength, false);
   return `${truncatedTitle}${siteNameWithSeparator}`;
@@ -665,13 +649,13 @@ export function generateMetaDescription(
   if (override) {
     return truncateToLimit(override, SEO_LIMITS.description.max, false);
   }
-  
+
   // Use excerpt if available
   if (excerpt) {
     const plainExcerpt = stripHtml(excerpt);
     return truncateToLimit(plainExcerpt, SEO_LIMITS.description.max, false);
   }
-  
+
   // Extract from content
   const textContent = extractTextFromLexical(content);
   const plainText = stripHtml(textContent);
@@ -773,16 +757,16 @@ export function validateWhatsAppDimensions(
 ): { isValid: boolean; warnings: string[]; recommendations: string[] } {
   const warnings: string[] = [];
   const recommendations: string[] = [];
-  
+
   if (!width || !height) {
     warnings.push("Image dimensions unknown");
     recommendations.push("Specify image width and height for optimal WhatsApp preview");
     return { isValid: false, warnings, recommendations };
   }
-  
+
   const aspectRatio = width / height;
   const { idealDimensions, minDimensions } = WHATSAPP_OG_LIMITS;
-  
+
   // Check minimum dimensions
   if (width < minDimensions.width || height < minDimensions.height) {
     warnings.push(
@@ -790,7 +774,7 @@ export function validateWhatsAppDimensions(
     );
     recommendations.push("Use an image of at least 400x400 pixels");
   }
-  
+
   // Check ideal dimensions
   if (width < idealDimensions.width || height < idealDimensions.height) {
     warnings.push(
@@ -798,7 +782,7 @@ export function validateWhatsAppDimensions(
     );
     recommendations.push("For best results on all platforms, use 1200x630px images");
   }
-  
+
   // Check aspect ratio (should be close to 1.91:1 for Facebook/LinkedIn)
   const idealRatio = idealDimensions.ratio;
   const ratioDiff = Math.abs(aspectRatio - idealRatio);
@@ -808,43 +792,41 @@ export function validateWhatsAppDimensions(
     );
     recommendations.push("Use images with 1.91:1 aspect ratio (1200x630px) for optimal display");
   }
-  
-  const isValid = 
-    width >= minDimensions.width && 
-    height >= minDimensions.height &&
-    ratioDiff <= 0.5;
-  
+
+  const isValid =
+    width >= minDimensions.width && height >= minDimensions.height && ratioDiff <= 0.5;
+
   return { isValid, warnings, recommendations };
 }
 
 /**
  * Validate file size for WhatsApp (< 300KB)
  */
-export function validateWhatsAppFileSize(fileSizeBytes?: number): { 
-  isValid: boolean; 
+export function validateWhatsAppFileSize(fileSizeBytes?: number): {
+  isValid: boolean;
   warnings: string[];
   fileSizeKB?: number;
 } {
   const warnings: string[] = [];
-  
+
   if (!fileSizeBytes) {
     warnings.push("Image file size unknown");
     return { isValid: false, warnings };
   }
-  
+
   const fileSizeKB = fileSizeBytes / 1024;
   const { maxFileSizeKB } = WHATSAPP_OG_LIMITS;
-  
+
   if (fileSizeKB > maxFileSizeKB) {
     warnings.push(
       `Image file size (${fileSizeKB.toFixed(1)}KB) exceeds WhatsApp limit of ${maxFileSizeKB}KB`
     );
   }
-  
-  return { 
-    isValid: fileSizeKB <= maxFileSizeKB, 
+
+  return {
+    isValid: fileSizeKB <= maxFileSizeKB,
     warnings,
-    fileSizeKB 
+    fileSizeKB,
   };
 }
 
@@ -863,14 +845,14 @@ export function validateWhatsAppImage(
 ): WhatsAppImageValidation {
   const warnings: string[] = [];
   const recommendations: string[] = [];
-  
+
   // Check URL is absolute
   const isAbsolute = isAbsoluteUrl(imageUrl);
   if (!isAbsolute) {
     warnings.push("Image URL must be absolute (https://...) for Open Graph");
     recommendations.push("Use absolute URLs starting with https:// for og:image");
   }
-  
+
   // Check format
   const format = getImageFormat(imageUrl, options?.mimeType);
   const formatValid = isWhatsAppCompatibleFormat(format);
@@ -886,36 +868,34 @@ export function validateWhatsAppImage(
       recommendations.push("Use JPG or PNG format for best compatibility");
     }
   }
-  
+
   // Check file size
   const sizeValidation = validateWhatsAppFileSize(options?.fileSizeBytes);
   if (sizeValidation.warnings.length > 0) {
     warnings.push(...sizeValidation.warnings);
     recommendations.push("Compress image to under 300KB using tools like TinyPNG or Squoosh");
   }
-  
+
   // Check dimensions
   const dimensionValidation = validateWhatsAppDimensions(options?.width, options?.height);
   if (dimensionValidation.warnings.length > 0) {
     warnings.push(...dimensionValidation.warnings);
     recommendations.push(...dimensionValidation.recommendations);
   }
-  
+
   // Determine overall validity
-  const isValid = 
-    isAbsolute && 
-    formatValid && 
-    sizeValidation.isValid && 
-    dimensionValidation.isValid;
-  
+  const isValid =
+    isAbsolute && formatValid && sizeValidation.isValid && dimensionValidation.isValid;
+
   return {
     isValid,
     checks: {
       format: formatValid,
       fileSize: sizeValidation.isValid,
       dimensions: dimensionValidation.isValid,
-      minDimensions: (options?.width || 0) >= WHATSAPP_OG_LIMITS.minDimensions.width &&
-                    (options?.height || 0) >= WHATSAPP_OG_LIMITS.minDimensions.height,
+      minDimensions:
+        (options?.width || 0) >= WHATSAPP_OG_LIMITS.minDimensions.width &&
+        (options?.height || 0) >= WHATSAPP_OG_LIMITS.minDimensions.height,
       isAbsoluteUrl: isAbsolute,
     },
     warnings,
@@ -925,9 +905,7 @@ export function validateWhatsAppImage(
       fileSizeKB: sizeValidation.fileSizeKB,
       width: options?.width,
       height: options?.height,
-      aspectRatio: options?.width && options?.height 
-        ? options.width / options.height 
-        : undefined,
+      aspectRatio: options?.width && options?.height ? options.width / options.height : undefined,
     },
   };
 }
@@ -948,20 +926,18 @@ export function generateOGImage(
   }
 ): OGImage {
   // Make URL absolute
-  const absoluteUrl = options?.baseUrl 
-    ? makeAbsoluteUrl(imageUrl, options.baseUrl)
-    : imageUrl;
-  
+  const absoluteUrl = options?.baseUrl ? makeAbsoluteUrl(imageUrl, options.baseUrl) : imageUrl;
+
   // Validate for WhatsApp
   const validation = validateWhatsAppImage(absoluteUrl, options);
-  
+
   // Determine MIME type
   const format = getImageFormat(absoluteUrl, options?.mimeType);
-  
+
   // Use provided dimensions or defaults
   const width = options?.width || WHATSAPP_OG_LIMITS.idealDimensions.width;
   const height = options?.height || WHATSAPP_OG_LIMITS.idealDimensions.height;
-  
+
   return {
     url: absoluteUrl,
     alt: options?.alt || "",
@@ -987,31 +963,41 @@ export function validateSEO(
   content?: string
 ): string[] {
   const warnings: string[] = [];
-  
+
   // Title validation
   if (title.length < SEO_LIMITS.title.min) {
-    warnings.push(`Title is too short (${title.length} chars). Minimum recommended: ${SEO_LIMITS.title.min}`);
+    warnings.push(
+      `Title is too short (${title.length} chars). Minimum recommended: ${SEO_LIMITS.title.min}`
+    );
   } else if (title.length > SEO_LIMITS.title.max) {
     warnings.push(`Title is too long (${title.length} chars). Maximum: ${SEO_LIMITS.title.max}`);
   } else if (title.length < SEO_LIMITS.title.optimal) {
-    warnings.push(`Title could be longer (${title.length} chars). Optimal: ${SEO_LIMITS.title.optimal}-${SEO_LIMITS.title.max}`);
+    warnings.push(
+      `Title could be longer (${title.length} chars). Optimal: ${SEO_LIMITS.title.optimal}-${SEO_LIMITS.title.max}`
+    );
   }
-  
+
   // Description validation
   if (metaDescription.length < SEO_LIMITS.description.min) {
-    warnings.push(`Meta description is too short (${metaDescription.length} chars). Minimum recommended: ${SEO_LIMITS.description.min}`);
+    warnings.push(
+      `Meta description is too short (${metaDescription.length} chars). Minimum recommended: ${SEO_LIMITS.description.min}`
+    );
   } else if (metaDescription.length > SEO_LIMITS.description.max) {
-    warnings.push(`Meta description is too long (${metaDescription.length} chars). Maximum: ${SEO_LIMITS.description.max}`);
+    warnings.push(
+      `Meta description is too long (${metaDescription.length} chars). Maximum: ${SEO_LIMITS.description.max}`
+    );
   } else if (metaDescription.length < SEO_LIMITS.description.optimal) {
-    warnings.push(`Meta description could be longer (${metaDescription.length} chars). Optimal: ${SEO_LIMITS.description.optimal}-${SEO_LIMITS.description.max}`);
+    warnings.push(
+      `Meta description could be longer (${metaDescription.length} chars). Optimal: ${SEO_LIMITS.description.optimal}-${SEO_LIMITS.description.max}`
+    );
   }
-  
+
   // Focus keyword validation
   if (focusKeyword) {
     const titleLower = title.toLowerCase();
     const descLower = metaDescription.toLowerCase();
     const keywordLower = focusKeyword.toLowerCase();
-    
+
     if (!titleLower.includes(keywordLower)) {
       warnings.push(`Focus keyword "${focusKeyword}" not found in title`);
     }
@@ -1022,11 +1008,13 @@ export function validateSEO(
       const contentLower = content.toLowerCase();
       const keywordCount = (contentLower.match(new RegExp(keywordLower, "g")) || []).length;
       if (keywordCount < 2) {
-        warnings.push(`Focus keyword "${focusKeyword}" appears only ${keywordCount} times in content`);
+        warnings.push(
+          `Focus keyword "${focusKeyword}" appears only ${keywordCount} times in content`
+        );
       }
     }
   }
-  
+
   return warnings;
 }
 
@@ -1042,29 +1030,32 @@ export function calculateSEOScore(
   warnings: string[]
 ): number {
   let score = 100;
-  
+
   // Deduct for warnings
   score -= warnings.length * 5;
-  
+
   // Title length bonus
   if (title.length >= SEO_LIMITS.title.optimal && title.length <= SEO_LIMITS.title.max) {
     score += 5;
   }
-  
+
   // Description length bonus
-  if (metaDescription.length >= SEO_LIMITS.description.optimal && metaDescription.length <= SEO_LIMITS.description.max) {
+  if (
+    metaDescription.length >= SEO_LIMITS.description.optimal &&
+    metaDescription.length <= SEO_LIMITS.description.max
+  ) {
     score += 5;
   }
-  
+
   // Featured image bonus
   if (hasFeaturedImage) score += 10;
-  
+
   // Author bonus
   if (hasAuthor) score += 5;
-  
+
   // Keywords bonus
   if (hasKeywords) score += 5;
-  
+
   return Math.max(0, Math.min(100, score));
 }
 
@@ -1074,7 +1065,7 @@ export function calculateSEOScore(
 
 /**
  * Generate complete SEO metadata for a blog post
- * 
+ *
  * This is the main function that generates all SEO components:
  * - Meta tags for search engines
  * - Open Graph tags for social sharing
@@ -1083,49 +1074,47 @@ export function calculateSEOScore(
  */
 export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
   const { post, author, featuredImage, siteConfig, tags, categories, isNewsArticle } = options;
-  
+
   // Parse SEO overrides from post
   const seoOverrides: SEOOverrides = (post as any).seoOverrides || {};
-  
+
   // ─────────────────────────────────────────────────────────────────────────
   // BASIC METADATA
   // ─────────────────────────────────────────────────────────────────────────
-  
+
   // Generate title
-  const title = generateTitle(
-    post.title,
-    siteConfig.name,
-    " | ",
-    seoOverrides.metaTitle
-  );
-  
+  const title = generateTitle(post.title, siteConfig.name, " | ", seoOverrides.metaTitle);
+
   // Generate meta description
   const metaDescription = generateMetaDescription(
     post.excerpt,
     post.content,
     seoOverrides.metaDescription
   );
-  
+
   // Generate canonical URL
   const canonicalUrl = seoOverrides.canonicalUrl || generatePostUrl(siteConfig, post.slug);
-  
+
   // Determine robots directive
-  const robots = seoOverrides.robots || 
-    (seoOverrides.noindex ? "noindex" : "index") + "," + 
-    (seoOverrides.nofollow ? "nofollow" : "follow");
-  
+  const robots =
+    seoOverrides.robots ||
+    (seoOverrides.noindex ? "noindex" : "index") +
+      "," +
+      (seoOverrides.nofollow ? "nofollow" : "follow");
+
   // ─────────────────────────────────────────────────────────────────────────
   // OPEN GRAPH (WhatsApp, Facebook, LinkedIn)
   // ─────────────────────────────────────────────────────────────────────────
-  
+
   // Get media ID for OG image (from overrides, post ogImageId, or featured image)
-  const ogImageMediaId = seoOverrides.og?.imageId || (post as any).ogImageId || seoOverrides.og?.image;
+  const ogImageMediaId =
+    seoOverrides.og?.imageId || (post as any).ogImageId || seoOverrides.og?.image;
   const featuredImageId = (post as any).featuredImageId;
   const focalPoint = (post as any).featuredImageFocalPoint as FocalPoint | undefined;
-  
+
   // Generate OG image URL using transform endpoint (1200x630 for WhatsApp)
   let ogImageUrl: string | undefined;
-  
+
   if (ogImageMediaId) {
     // Use dedicated OG image with focal point support
     ogImageUrl = getOGImageUrl(ogImageMediaId, focalPoint, siteConfig.baseUrl);
@@ -1136,21 +1125,21 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     // Use site default
     ogImageUrl = siteConfig.defaultOgImage;
   }
-  
+
   // Generate validated OG Image with WhatsApp requirements
-  const ogImage: OGImage | undefined = ogImageUrl 
+  const ogImage: OGImage | undefined = ogImageUrl
     ? generateOGImage(ogImageUrl, {
         alt: seoOverrides.og?.imageAlt || (post as any).featuredImage?.alt || post.title,
         width: 1200,
         height: 630,
-        mimeType: 'image/jpeg',
+        mimeType: "image/jpeg",
         baseUrl: siteConfig.baseUrl,
       })
     : undefined;
-  
+
   // Validate for WhatsApp warnings (transform endpoint ensures correct dimensions)
-  const whatsAppValidation = ogImageUrl 
-    ? { 
+  const whatsAppValidation = ogImageUrl
+    ? {
         isValid: true,
         checks: {
           format: true,
@@ -1162,20 +1151,16 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
         warnings: [],
         recommendations: [],
         metadata: {
-          format: 'image/jpeg',
+          format: "image/jpeg",
           width: 1200,
           height: 630,
           aspectRatio: 1.91,
         },
       }
     : null;
-  
+
   const openGraph: OpenGraphData = {
-    title: truncateToLimit(
-      seoOverrides.og?.title || post.title,
-      SEO_LIMITS.ogTitle.max,
-      false
-    ),
+    title: truncateToLimit(seoOverrides.og?.title || post.title, SEO_LIMITS.ogTitle.max, false),
     description: truncateToLimit(
       seoOverrides.og?.description || metaDescription,
       SEO_LIMITS.ogDescription.max,
@@ -1191,10 +1176,10 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
       modifiedTime: formatISODate(post.updatedAt),
       author: author?.name,
       section: categories?.[0] || seoOverrides.schema?.articleSection,
-      tags: tags?.map(t => t.name),
+      tags: tags?.map((t) => t.name),
     },
   };
-  
+
   // ─────────────────────────────────────────────────────────────────────────
   // TWITTER CARD (X / Twitter)
   // ─────────────────────────────────────────────────────────────────────────
@@ -1206,34 +1191,41 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
   // - summary_large_image: Large rectangular image (2:1) - RECOMMENDED
   // - app: For mobile app promotion
   // - player: For video/audio embedding
-  
+
   const twitterCardType = seoOverrides.twitter?.card || TWITTER_CARD_TYPES.SUMMARY_LARGE_IMAGE;
-  
+
   // Generate Twitter card image using transform endpoint (1200x600 for summary_large_image)
   let twitterImageUrl: string | undefined = seoOverrides.twitter?.image;
-  
+
   if (!twitterImageUrl) {
     if (ogImageMediaId) {
-      twitterImageUrl = getTransformUrl(ogImageMediaId, 1200, 600, 
-        { fit: 'cover', format: 'jpeg', quality: 90, focalPoint }, 
+      twitterImageUrl = getTransformUrl(
+        ogImageMediaId,
+        1200,
+        600,
+        { fit: "cover", format: "jpeg", quality: 90, focalPoint },
         siteConfig.baseUrl
       );
     } else if (featuredImageId) {
-      twitterImageUrl = getTransformUrl(featuredImageId, 1200, 600, 
-        { fit: 'cover', format: 'jpeg', quality: 90, focalPoint }, 
+      twitterImageUrl = getTransformUrl(
+        featuredImageId,
+        1200,
+        600,
+        { fit: "cover", format: "jpeg", quality: 90, focalPoint },
         siteConfig.baseUrl
       );
     } else if (ogImage?.url) {
       twitterImageUrl = ogImage.url;
     }
   }
-  
+
   const twitterCard: TwitterCardData = {
     card: twitterCardType,
     site: siteConfig.twitterHandle,
-    creator: author?.name && siteConfig.twitterHandle 
-      ? `@${author.name.replace(/\s/g, "")}` 
-      : siteConfig.twitterHandle,
+    creator:
+      author?.name && siteConfig.twitterHandle
+        ? `@${author.name.replace(/\s/g, "")}`
+        : siteConfig.twitterHandle,
     title: truncateToLimit(
       seoOverrides.twitter?.title || post.title,
       SEO_LIMITS.twitterTitle.max,
@@ -1247,30 +1239,30 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     image: twitterImageUrl,
     imageAlt: seoOverrides.og?.imageAlt || featuredImage?.alt || post.title,
   };
-  
+
   // ─────────────────────────────────────────────────────────────────────────
   // META TAGS ARRAY
   // ─────────────────────────────────────────────────────────────────────────
-  
+
   const metaTags: MetaTag[] = [
     // Basic SEO
     { charset: "UTF-8" },
     { name: "viewport", content: "width=device-width, initial-scale=1.0" },
     { name: "description", content: metaDescription },
     { name: "robots", content: robots },
-    
+
     // Canonical
     { name: "canonical", content: canonicalUrl },
   ];
-  
+
   // Add keywords if available
   if (seoOverrides.keywords || tags?.length) {
-    const keywords = seoOverrides.keywords || tags?.map(t => t.name).join(", ");
+    const keywords = seoOverrides.keywords || tags?.map((t) => t.name).join(", ");
     if (keywords) {
       metaTags.push({ name: "keywords", content: keywords });
     }
   }
-  
+
   // Open Graph tags
   metaTags.push(
     { property: "og:title", content: openGraph.title },
@@ -1278,13 +1270,13 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     { property: "og:url", content: openGraph.url },
     { property: "og:type", content: openGraph.type },
     { property: "og:site_name", content: openGraph.siteName },
-    { property: "og:locale", content: openGraph.locale },
+    { property: "og:locale", content: openGraph.locale }
   );
-  
+
   if (openGraph.image) {
     metaTags.push(
       { property: "og:image", content: openGraph.image.url },
-      { property: "og:image:alt", content: openGraph.image.alt || "" },
+      { property: "og:image:alt", content: openGraph.image.alt || "" }
     );
     if (openGraph.image.width) {
       metaTags.push({ property: "og:image:width", content: String(openGraph.image.width) });
@@ -1293,12 +1285,10 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
       metaTags.push({ property: "og:image:height", content: String(openGraph.image.height) });
     }
   }
-  
+
   // Article-specific OG tags
   if (openGraph.article) {
-    metaTags.push(
-      { property: "article:published_time", content: openGraph.article.publishedTime },
-    );
+    metaTags.push({ property: "article:published_time", content: openGraph.article.publishedTime });
     if (openGraph.article.modifiedTime) {
       metaTags.push({ property: "article:modified_time", content: openGraph.article.modifiedTime });
     }
@@ -1308,18 +1298,18 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     if (openGraph.article.section) {
       metaTags.push({ property: "article:section", content: openGraph.article.section });
     }
-    openGraph.article.tags?.forEach(tag => {
+    openGraph.article.tags?.forEach((tag) => {
       metaTags.push({ property: "article:tag", content: tag });
     });
   }
-  
+
   // Twitter Card tags
   metaTags.push(
     { name: "twitter:card", content: twitterCard.card },
     { name: "twitter:title", content: twitterCard.title },
-    { name: "twitter:description", content: twitterCard.description },
+    { name: "twitter:description", content: twitterCard.description }
   );
-  
+
   if (twitterCard.site) {
     metaTags.push({ name: "twitter:site", content: twitterCard.site });
   }
@@ -1332,16 +1322,17 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
   if (twitterCard.imageAlt) {
     metaTags.push({ name: "twitter:image:alt", content: twitterCard.imageAlt });
   }
-  
+
   // ─────────────────────────────────────────────────────────────────────────
   // JSON-LD STRUCTURED DATA
   // ─────────────────────────────────────────────────────────────────────────
-  
-  const schemaType = seoOverrides.schema?.type || 
+
+  const schemaType =
+    seoOverrides.schema?.type ||
     (isNewsArticle ? SCHEMA_TYPES.NEWS_ARTICLE : SCHEMA_TYPES.BLOG_POSTING);
-  
+
   const jsonLd: JsonLdData[] = [];
-  
+
   // Main article Schema
   const articleSchema: JsonLdData = {
     "@context": "https://schema.org",
@@ -1351,35 +1342,47 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     url: canonicalUrl,
     datePublished: formatISODate(post.publishedAt || post.createdAt),
     dateModified: formatISODate(post.updatedAt),
-    author: author ? {
-      "@type": SCHEMA_TYPES.PERSON,
-      name: author.name,
-      url: author.url,
-      image: author.image,
-      jobTitle: author.jobTitle,
-      sameAs: author.sameAs,
-    } : undefined,
-    publisher: siteConfig.publisher ? {
-      "@type": SCHEMA_TYPES.ORGANIZATION,
-      name: siteConfig.publisher.name,
-      logo: siteConfig.publisher.logo ? {
-        "@type": SCHEMA_TYPES.IMAGE_OBJECT,
-        url: siteConfig.publisher.logo,
-      } : undefined,
-      url: siteConfig.publisher.url || siteConfig.baseUrl,
-      sameAs: siteConfig.socialProfiles ? Object.values(siteConfig.socialProfiles).filter(Boolean) : undefined,
-    } : undefined,
-    image: featuredImage ? {
-      "@type": SCHEMA_TYPES.IMAGE_OBJECT,
-      url: featuredImage.url,
-      width: featuredImage.width || 1200,
-      height: featuredImage.height || 630,
-    } : ogImage ? {
-      "@type": SCHEMA_TYPES.IMAGE_OBJECT,
-      url: ogImage.url,
-    } : undefined,
+    author: author
+      ? {
+          "@type": SCHEMA_TYPES.PERSON,
+          name: author.name,
+          url: author.url,
+          image: author.image,
+          jobTitle: author.jobTitle,
+          sameAs: author.sameAs,
+        }
+      : undefined,
+    publisher: siteConfig.publisher
+      ? {
+          "@type": SCHEMA_TYPES.ORGANIZATION,
+          name: siteConfig.publisher.name,
+          logo: siteConfig.publisher.logo
+            ? {
+                "@type": SCHEMA_TYPES.IMAGE_OBJECT,
+                url: siteConfig.publisher.logo,
+              }
+            : undefined,
+          url: siteConfig.publisher.url || siteConfig.baseUrl,
+          sameAs: siteConfig.socialProfiles
+            ? Object.values(siteConfig.socialProfiles).filter(Boolean)
+            : undefined,
+        }
+      : undefined,
+    image: featuredImage
+      ? {
+          "@type": SCHEMA_TYPES.IMAGE_OBJECT,
+          url: featuredImage.url,
+          width: featuredImage.width || 1200,
+          height: featuredImage.height || 630,
+        }
+      : ogImage
+        ? {
+            "@type": SCHEMA_TYPES.IMAGE_OBJECT,
+            url: ogImage.url,
+          }
+        : undefined,
     articleSection: categories?.[0] || seoOverrides.schema?.articleSection,
-    keywords: tags?.map(t => t.name).join(", ") || seoOverrides.keywords,
+    keywords: tags?.map((t) => t.name).join(", ") || seoOverrides.keywords,
     wordCount: estimateReadingTime(post.content, 1),
     timeRequired: post.readingTime ? `PT${post.readingTime}M` : undefined,
     mainEntityOfPage: {
@@ -1387,10 +1390,10 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
       "@id": canonicalUrl,
     },
   };
-  
+
   // Remove undefined values
   jsonLd.push(JSON.parse(JSON.stringify(articleSchema)));
-  
+
   // BreadcrumbList Schema
   const breadcrumbSchema: JsonLdData = {
     "@context": "https://schema.org",
@@ -1417,7 +1420,7 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     ],
   };
   jsonLd.push(breadcrumbSchema);
-  
+
   // WebSite Schema (for search box)
   const websiteSchema: JsonLdData = {
     "@context": "https://schema.org",
@@ -1425,32 +1428,27 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     name: siteConfig.name,
     url: `${siteConfig.baseUrl}/blog`,
     description: siteConfig.defaultDescription || metaDescription,
-    publisher: siteConfig.publisher ? {
-      "@type": SCHEMA_TYPES.ORGANIZATION,
-      name: siteConfig.publisher.name,
-    } : undefined,
+    publisher: siteConfig.publisher
+      ? {
+          "@type": SCHEMA_TYPES.ORGANIZATION,
+          name: siteConfig.publisher.name,
+        }
+      : undefined,
   };
   jsonLd.push(websiteSchema);
-  
+
   // ─────────────────────────────────────────────────────────────────────────
   // VALIDATION & SCORING
   // ─────────────────────────────────────────────────────────────────────────
-  
+
   const contentText = extractTextFromLexical(post.content);
-  const warnings = validateSEO(
-    title,
-    metaDescription,
-    seoOverrides.focusKeyword,
-    contentText
-  );
-  
+  const warnings = validateSEO(title, metaDescription, seoOverrides.focusKeyword, contentText);
+
   // Add WhatsApp-specific warnings to general warnings
   if (whatsAppValidation && !whatsAppValidation.isValid) {
-    warnings.push(
-      ...whatsAppValidation.warnings.map(w => `[WhatsApp] ${w}`)
-    );
+    warnings.push(...whatsAppValidation.warnings.map((w) => `[WhatsApp] ${w}`));
   }
-  
+
   const score = calculateSEOScore(
     title,
     metaDescription,
@@ -1459,11 +1457,11 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     !!(seoOverrides.keywords || tags?.length),
     warnings
   );
-  
+
   // ─────────────────────────────────────────────────────────────────────────
   // RETURN COMPLETE SEO PACKAGE
   // ─────────────────────────────────────────────────────────────────────────
-  
+
   return {
     title,
     metaDescription,
@@ -1474,7 +1472,7 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
     jsonLd,
     robots,
     hreflang: seoOverrides.hreflang,
-    keywords: seoOverrides.keywords || tags?.map(t => t.name).join(", "),
+    keywords: seoOverrides.keywords || tags?.map((t) => t.name).join(", "),
     readingTime: post.readingTime || estimateReadingTime(post.content),
     wordCount: countWords(contentText),
     warnings,
@@ -1491,30 +1489,35 @@ export function generateSEOMetadata(options: SEOMetadataOptions): SEOMetadata {
  * Render meta tags as HTML string
  */
 export function renderMetaTagsHTML(metaTags: MetaTag[]): string {
-  return metaTags.map(tag => {
-    if (tag.charset) {
-      return `<meta charset="${tag.charset}">`;
-    }
-    if (tag.httpEquiv && tag.content) {
-      return `<meta http-equiv="${tag.httpEquiv}" content="${escapeHtml(tag.content)}">`;
-    }
-    if (tag.property && tag.content) {
-      return `<meta property="${tag.property}" content="${escapeHtml(tag.content)}">`;
-    }
-    if (tag.name && tag.content) {
-      return `<meta name="${tag.name}" content="${escapeHtml(tag.content)}">`;
-    }
-    return `<!-- Unknown meta tag -->`;
-  }).join("\n");
+  return metaTags
+    .map((tag) => {
+      if (tag.charset) {
+        return `<meta charset="${tag.charset}">`;
+      }
+      if (tag.httpEquiv && tag.content) {
+        return `<meta http-equiv="${tag.httpEquiv}" content="${escapeHtml(tag.content)}">`;
+      }
+      if (tag.property && tag.content) {
+        return `<meta property="${tag.property}" content="${escapeHtml(tag.content)}">`;
+      }
+      if (tag.name && tag.content) {
+        return `<meta name="${tag.name}" content="${escapeHtml(tag.content)}">`;
+      }
+      return `<!-- Unknown meta tag -->`;
+    })
+    .join("\n");
 }
 
 /**
  * Render JSON-LD scripts as HTML string
  */
 export function renderJsonLdHTML(jsonLd: JsonLdData[]): string {
-  return jsonLd.map(schema => 
-    `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`
-  ).join("\n");
+  return jsonLd
+    .map(
+      (schema) =>
+        `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`
+    )
+    .join("\n");
 }
 
 /**
@@ -1528,9 +1531,9 @@ export function renderCanonicalHTML(canonicalUrl: string): string {
  * Render hreflang tags
  */
 export function renderHreflangHTML(hreflang: Array<{ lang: string; url: string }>): string {
-  return hreflang.map(h => 
-    `<link rel="alternate" hreflang="${h.lang}" href="${escapeHtml(h.url)}">`
-  ).join("\n");
+  return hreflang
+    .map((h) => `<link rel="alternate" hreflang="${h.lang}" href="${escapeHtml(h.url)}">`)
+    .join("\n");
 }
 
 /**
@@ -1544,7 +1547,7 @@ function escapeHtml(text: string): string {
     '"': "&quot;",
     "'": "&#039;",
   };
-  return text.replace(/[&<>"']/g, m => map[m]);
+  return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 /**
@@ -1557,7 +1560,9 @@ export function renderSEOHead(seo: SEOMetadata): string {
     renderCanonicalHTML(seo.canonicalUrl),
     seo.hreflang ? renderHreflangHTML(seo.hreflang) : "",
     renderJsonLdHTML(seo.jsonLd),
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

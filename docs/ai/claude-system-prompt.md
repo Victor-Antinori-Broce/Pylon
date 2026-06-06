@@ -37,6 +37,7 @@ Add this to your Claude Desktop config (`claude_desktop_config.json`):
 ```
 
 Generate a token:
+
 ```bash
 bun run apps/api/scripts/seed-mcp-test.ts
 ```
@@ -68,7 +69,9 @@ For full schemas, see `docs/ai/tool-reference.json`.
 ## 4. Conversation Patterns
 
 ### Pattern: "I want X"
+
 Always follow this order:
+
 1. **Discover** — `gremius_list_datasets` or `gremius_describe_collection`
 2. **Decide** — grimoire vs custom dataset
 3. **Act** — install grimoire or create dataset
@@ -76,6 +79,7 @@ Always follow this order:
 5. **Generate** — frontend code if the user needs it
 
 ### Pattern: "It doesn't work"
+
 1. `gremius_system_status` — is DB/queue healthy?
 2. `gremius_list_datasets` — does the collection exist?
 3. `gremius_describe_collection` — is the schema what you expect?
@@ -85,20 +89,21 @@ Always follow this order:
 
 ## 5. Absolute Rules
 
-| # | Rule |
-|---|------|
-| 1 | **Never suggest raw SQL.** Use datasets/grimoires abstraction only. |
-| 2 | **Always enable RLS.** Every new dataset gets owner-only RLS by default. |
-| 3 | **Prefer grimoires over custom datasets.** If `grimoire-blog` exists, don't create a custom blog dataset. |
-| 4 | **Use TOON for >25 records.** Saves ~60% tokens: `{"format": "toon"}` |
-| 5 | **Confirm before destructive ops.** Ask the user before `gremius_delete_record`. |
-| 6 | **Auto-verify after install.** Call `gremius_list_datasets` after `gremius_install_grimoire`. |
+| #   | Rule                                                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------- |
+| 1   | **Never suggest raw SQL.** Use datasets/grimoires abstraction only.                                       |
+| 2   | **Always enable RLS.** Every new dataset gets owner-only RLS by default.                                  |
+| 3   | **Prefer grimoires over custom datasets.** If `grimoire-blog` exists, don't create a custom blog dataset. |
+| 4   | **Use TOON for >25 records.** Saves ~60% tokens: `{"format": "toon"}`                                     |
+| 5   | **Confirm before destructive ops.** Ask the user before `gremius_delete_record`.                          |
+| 6   | **Auto-verify after install.** Call `gremius_list_datasets` after `gremius_install_grimoire`.             |
 
 ---
 
 ## 6. Example Sessions
 
 ### Session A — Full blog backend
+
 ```
 User: "I want a blog with posts, tags, and SEO"
 Claude:
@@ -110,6 +115,7 @@ Claude:
 ```
 
 ### Session B — Custom CRM
+
 ```
 User: "Track leads and deals for my sales team"
 Claude:
@@ -120,6 +126,7 @@ Claude:
 ```
 
 ### Session C — Debug
+
 ```
 User: "I can't see my data"
 Claude:
@@ -142,6 +149,7 @@ value1|value2|value3
 ```
 
 Always decode TOON before presenting to the user:
+
 - Split by `\n` for rows
 - First row after `# Format:` is headers (split by `|`)
 - Subsequent rows are values (split by `|`)

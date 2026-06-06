@@ -33,25 +33,30 @@
  * 6. Legacy fallbacks
  */
 
-import type { Hono } from "hono";
 import type { GrimoireContext, GrimoireDefinition } from "@gremius/shared";
+import type { Hono } from "hono";
+
 import { getConfig, staticConfig } from "../../gremius.config";
 let gremiusConfig = staticConfig;
 let cachedLoadedGrimoires: GrimoireDefinition[] = [];
 import { db } from "../db";
 import { siteSettings, modules as modulesTable, installedGrimoires } from "../db/schema";
+
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+
+import { requireAuth, requireRole, optionalAuth } from "../middleware/auth";
 import { GRIMOIRE_REGISTRY } from "../services/module-registry";
+
 import { eq } from "drizzle-orm";
 
+import { auth } from "./auth";
 import { invalidateCache } from "./cache";
 import { events } from "./events";
-import { realtimeManager } from "./realtime";
-import { requireAuth, requireRole, optionalAuth } from "../middleware/auth";
-import { auth } from "./auth";
 import { logger } from "./logger";
+import { realtimeManager } from "./realtime";
+
 import { registerGrimoire } from "@gremius/engine";
 // Content Publishing Registry - defined inline to avoid import issues
 class ContentPublishingRegistry {
@@ -64,7 +69,9 @@ class ContentPublishingRegistry {
 
   register(target: any): void {
     if (this.targets.has(target.id)) {
-      this.ctx.logger.warn(`ContentTarget '${target.id}' is being re-registered by ${target.grimoireId}`);
+      this.ctx.logger.warn(
+        `ContentTarget '${target.id}' is being re-registered by ${target.grimoireId}`
+      );
     }
     this.targets.set(target.id, target);
     this.ctx.logger.info(`ContentTarget registered: '${target.id}' (${target.name})`);
@@ -120,14 +127,14 @@ class ContentPublishingRegistry {
  */
 async function getRealmGrimoireKeys(activeRealm: string | null): Promise<Set<string>> {
   const keys = new Set<string>();
-  
+
   // Add hardcoded registry realm grimoires
-  for (const g of GRIMOIRE_REGISTRY.filter(g => g.category === "realm")) {
+  for (const g of GRIMOIRE_REGISTRY.filter((g) => g.category === "realm")) {
     keys.add(g.key);
     // Also add without grimoire- prefix for flexibility
     keys.add(g.key.replace(/^grimoire-/, ""));
   }
-  
+
   // Add grimoires from active realm (from realm.json)
   if (activeRealm) {
     const realmGrimoires = await getRealmGrimoires(activeRealm);
@@ -137,7 +144,7 @@ async function getRealmGrimoireKeys(activeRealm: string | null): Promise<Set<str
       keys.add(grimoireId.replace(/^grimoire-/, ""));
     }
   }
-  
+
   return keys;
 }
 
@@ -196,9 +203,7 @@ export function createGrimoireContext(): GrimoireContext {
       execute: async (sql: string) => db.execute(sql),
       tableExists: async (tableName: string) => {
         try {
-          await db.execute(
-            `SELECT 1 FROM "${tableName}" LIMIT 1`
-          );
+          await db.execute(`SELECT 1 FROM "${tableName}" LIMIT 1`);
           return true;
         } catch {
           return false;
@@ -298,11 +303,13 @@ export function createGrimoireContext(): GrimoireContext {
 async function getActiveRealm(): Promise<string | null> {
   try {
     const [settings] = await db.select().from(siteSettings).limit(1);
-    return (settings as any)?.activeRealm ||
+    return (
+      (settings as any)?.activeRealm ||
       settings?.activeTheme ||
       process.env.GREMIUS_ACTIVE_REALM ||
       process.env.GREMIUS_ACTIVE_THEME ||
-      null;
+      null
+    );
   } catch {
     return process.env.GREMIUS_ACTIVE_REALM || process.env.GREMIUS_ACTIVE_THEME || null;
   }
@@ -353,7 +360,7 @@ async function resolveWorkspaceRoot(): Promise<string> {
     if (await cwdCheck.exists()) {
       return process.cwd();
     }
-  } catch { }
+  } catch {}
   return devRoot;
 }
 
@@ -372,7 +379,7 @@ async function resolveNodeModules(workspaceRoot: string): Promise<string[]> {
   // 3. Current working directory
   paths.push(join(process.cwd(), "node_modules"));
 
-  return paths.filter(p => existsSync(p));
+  return paths.filter((p) => existsSync(p));
 }
 
 /**
@@ -384,7 +391,7 @@ async function readGrimoireManifest(dir: string): Promise<GrimoireManifest | nul
     const grimoireJsonPath = join(dir, "grimoire.json");
     const file = Bun.file(grimoireJsonPath);
     if (await file.exists()) {
-      return await file.json() as GrimoireManifest;
+      return (await file.json()) as GrimoireManifest;
     }
 
     // Fall back to package.json with gremius field
@@ -453,7 +460,7 @@ async function getEnabledGrimoiresFromDB(): Promise<string[]> {
       .from(modulesTable)
       .where(eq(modulesTable.enabled, true));
 
-    return rows.map(r => r.key);
+    return rows.map((r) => r.key);
   } catch {
     // Table might not exist yet on first run
     return [];
@@ -465,7 +472,9 @@ async function getEnabledGrimoiresFromDB(): Promise<string[]> {
  * These grimoires may not be in gremius.config.ts but were installed with
  * `gremius install <pkg>` and registered in the database.
  */
-async function getInstalledGrimoiresFromDB(): Promise<{ grimoireId: string; sourceUrl: string | null; path: string }[]> {
+async function getInstalledGrimoiresFromDB(): Promise<
+  { grimoireId: string; sourceUrl: string | null; path: string }[]
+> {
   try {
     const rows = await db
       .select({
@@ -488,9 +497,7 @@ async function getInstalledGrimoiresFromDB(): Promise<{ grimoireId: string; sour
  * Ensures dependencies are loaded before dependents.
  * Detects circular dependencies and throws.
  */
-function sortGrimoiresByDependencies(
-  grimoires: GrimoireSource[]
-): GrimoireSource[] {
+function sortGrimoiresByDependencies(grimoires: GrimoireSource[]): GrimoireSource[] {
   const map = new Map<string, GrimoireSource>();
   for (const g of grimoires) {
     map.set(g.id, g);
@@ -513,8 +520,8 @@ function sortGrimoiresByDependencies(
     visiting.add(key);
     stack.push(key);
 
-    const rawDeps = (g.manifest?.dependencies as any)?.grimoires ??
-      (g.manifest?.dependencies as string[]);
+    const rawDeps =
+      (g.manifest?.dependencies as any)?.grimoires ?? (g.manifest?.dependencies as string[]);
     const deps = Array.isArray(rawDeps) ? rawDeps : [];
 
     for (const depId of deps) {
@@ -597,10 +604,7 @@ async function resolveGrimoire(
     }
 
     // Community grimoire-xxx packages
-    const communityPaths = [
-      join(nmPath, dirName),
-      join(nmPath, `grimoire-${cleanName}`),
-    ];
+    const communityPaths = [join(nmPath, dirName), join(nmPath, `grimoire-${cleanName}`)];
 
     for (const communityPath of communityPaths) {
       if (existsSync(communityPath)) {
@@ -625,8 +629,12 @@ async function resolveGrimoire(
           const scopePath = join(nmPath, entry.name);
           const scopeEntries = await readdir(scopePath, { withFileTypes: true });
           for (const scopeEntry of scopeEntries) {
-            if (scopeEntry.isDirectory() &&
-              (scopeEntry.name === dirName || scopeEntry.name === cleanName || scopeEntry.name === name)) {
+            if (
+              scopeEntry.isDirectory() &&
+              (scopeEntry.name === dirName ||
+                scopeEntry.name === cleanName ||
+                scopeEntry.name === name)
+            ) {
               const thirdPartyPath = join(scopePath, scopeEntry.name);
               const manifest = await readGrimoireManifest(thirdPartyPath);
               return {
@@ -663,11 +671,7 @@ async function resolveGrimoire(
       .where(eq(installedGrimoires.enabled, true));
 
     for (const row of dbResult) {
-      if (
-        row.grimoireId === name ||
-        row.grimoireId === cleanName ||
-        row.grimoireId === dirName
-      ) {
+      if (row.grimoireId === name || row.grimoireId === cleanName || row.grimoireId === dirName) {
         // Try sourceUrl first (npm package name like @gremius/grimoire-crm)
         const sourceUrl = row.sourceUrl;
         if (sourceUrl) {
@@ -719,14 +723,17 @@ import { readdir } from "node:fs/promises";
 /**
  * Load and mount all configured grimoires.
  * Supports local, npm, and legacy grimoires.
- * 
+ *
  * @param app - Hono app instance
  * @param existingContext - Optional existing GrimoireContext to reuse (for Content Publishing)
  */
-export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireContext): Promise<void> {
+export async function loadGrimoires(
+  app: Hono<any>,
+  existingContext?: GrimoireContext
+): Promise<void> {
   // Cargar config dinámica con auto-discovery
   gremiusConfig = await getConfig();
-  
+
   const configGrimoires = gremiusConfig.grimoires ?? gremiusConfig.modules ?? [];
   const coreFlags = gremiusConfig.core;
 
@@ -737,16 +744,14 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
   console.log(`  📦 Node modules paths: ${nodeModulesPaths.length}`);
 
   const activeRealm = await getActiveRealm();
-  const realmGrimoires = activeRealm
-    ? await getRealmGrimoires(activeRealm, workspaceRoot)
-    : [];
+  const realmGrimoires = activeRealm ? await getRealmGrimoires(activeRealm, workspaceRoot) : [];
 
   // Get grimoires enabled in DB (includes filesystem-discovered grimoires toggled ON)
   const dbEnabledKeys = await getEnabledGrimoiresFromDB();
 
   // Get grimoires installed via npm/marketplace from installed_grimoires table
   const dbInstalled = await getInstalledGrimoiresFromDB();
-  const dbInstalledKeys = dbInstalled.map(r => r.grimoireId);
+  const dbInstalledKeys = dbInstalled.map((r) => r.grimoireId);
 
   // Build list of all grimoires to load:
   // 1. From gremius.config.ts (explicit)
@@ -767,13 +772,13 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
   };
 
   const CORE_MODULE_FLAGS: Record<string, boolean> = {
-    "webhooks": isCoreGrimoireEnabled("grimoire-webhooks"),
-    "connectors": isCoreGrimoireEnabled("grimoire-connectors"),
+    webhooks: isCoreGrimoireEnabled("grimoire-webhooks"),
+    connectors: isCoreGrimoireEnabled("grimoire-connectors"),
   };
 
   const CORE_DIR_MAP: Record<string, string> = {
-    "webhooks": "webhooks",
-    "connectors": "connectors",
+    webhooks: "webhooks",
+    connectors: "connectors",
   };
 
   for (const [moduleName, enabled] of Object.entries(CORE_MODULE_FLAGS)) {
@@ -862,9 +867,10 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
   // DEPENDENCY RESOLUTION: Topological sort
   // ═══════════════════════════════════════════════════════════════════════════
   const sortedGrimoires = sortGrimoiresByDependencies(resolvedGrimoires);
-  const depOrderInfo = sortedGrimoires.length === resolvedGrimoires.length
-    ? "dependency order applied"
-    : "warning: sort mismatch";
+  const depOrderInfo =
+    sortedGrimoires.length === resolvedGrimoires.length
+      ? "dependency order applied"
+      : "warning: sort mismatch";
 
   console.log(`\n📜 Loading ${sortedGrimoires.length} grimoire(s)... (${depOrderInfo})`);
 
@@ -935,7 +941,9 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
 
         const category = isRealmGrimoire ? "realm" : "grimoire";
         const sourceTag = grimoire.source === "npm" ? ", npm" : "";
-        console.log(`  ✅ ${grimoire.id} [${category}, auto-api${sourceTag}] → metadata registered`);
+        console.log(
+          `  ✅ ${grimoire.id} [${category}, auto-api${sourceTag}] → metadata registered`
+        );
 
         if (grimoire.source === "npm") {
           fromNpm.push(grimoire.id);
@@ -961,7 +969,10 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
 
         // Debug: log router routes
         console.log(`  [DEBUG ${grimoire.id}] Router type: ${router?.constructor?.name}`);
-        console.log(`  [DEBUG ${grimoire.id}] Router routes:`, (router as any)?.routes?.map((r: any) => `${r.method.toUpperCase()} ${r.path}`) || 'N/A');
+        console.log(
+          `  [DEBUG ${grimoire.id}] Router routes:`,
+          (router as any)?.routes?.map((r: any) => `${r.method.toUpperCase()} ${r.path}`) || "N/A"
+        );
         modern.push(grimoire.id);
         cachedLoadedGrimoires.push(grimoireDef);
 
@@ -1015,7 +1026,9 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
           id: grimoire.id,
           name: grimoire.name,
           version: grimoire.manifest?.version || "0.0.0",
-          createRouter: () => { throw new Error("Legacy grimoire has no createRouter"); },
+          createRouter: () => {
+            throw new Error("Legacy grimoire has no createRouter");
+          },
         } as GrimoireDefinition);
         legacy.push(grimoire.id);
         loaded.push(grimoire.id);
@@ -1031,10 +1044,10 @@ export async function loadGrimoires(app: Hono<any>, existingContext?: GrimoireCo
 
   console.log(
     `\n📜 Grimoires: ${loaded.length} loaded` +
-    (modern.length ? ` (${modern.length} modern)` : "") +
-    (legacy.length ? ` (${legacy.length} legacy)` : "") +
-    (fromNpm.length ? `, ${fromNpm.length} from npm` : "") +
-    (failed.length ? `, ${failed.length} failed` : "")
+      (modern.length ? ` (${modern.length} modern)` : "") +
+      (legacy.length ? ` (${legacy.length} legacy)` : "") +
+      (fromNpm.length ? `, ${fromNpm.length} from npm` : "") +
+      (failed.length ? `, ${failed.length} failed` : "")
   );
 }
 

@@ -11,18 +11,20 @@ El UI de DataSets está ahora correctamente reconocido como el **Custom UI de un
 ### 1. Frontend - Grimoire Loader (`packages/admin/src/lib/grimoire-loader.ts`)
 
 **Agregado al registro de vistas:**
+
 ```typescript
 export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Component }>> = {
   // ═══ CORE GRIMOIRES ═══
   // DataSets - Core grimoire for dynamic data collections
   datasets: () => import("$views/DataSets.svelte"),
   "grimoire-datasets": () => import("$views/DataSets.svelte"),
-  
+
   // ... resto del registro
 };
 ```
 
 **Esto permite que:**
+
 - El loader encuentre la vista custom para `grimoire-datasets`
 - Se cargue `DataSets.svelte` cuando se navegue al grimoire
 - El sistema reconozca que este grimoire tiene vista custom (no usa DataExplorer genérico)
@@ -32,11 +34,13 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
 ### 2. Backend - Admin Registry (`apps/api/src/services/admin-registry.ts`)
 
 #### A. Detección de Custom View
+
 **Agregado a `detectCustomView()`:**
+
 ```typescript
 const viewPaths = [
   // ... rutas existentes ...
-  
+
   // DataSets: maps to DataSets.svelte (Core grimoire)
   join(process.cwd(), "../admin/src/views/DataSets.svelte"),
   join(process.cwd(), "../admin/src/views/datasets/DataSetsView.svelte"),
@@ -45,7 +49,9 @@ const viewPaths = [
 ```
 
 #### B. Resolución de Ruta
+
 **Agregado a `getViewPath()`:**
+
 ```typescript
 // DataSets: Core grimoire - maps to DataSets.svelte
 if (grimoireId === "grimoire-datasets" || grimoireId === "datasets") {
@@ -54,11 +60,13 @@ if (grimoireId === "grimoire-datasets" || grimoireId === "datasets") {
 ```
 
 #### C. Icono
+
 **Ya estaba mapeado:**
+
 ```typescript
 const icons: Record<string, string> = {
   // ...
-  datasets: "Database"
+  datasets: "Database",
 };
 ```
 
@@ -89,6 +97,7 @@ UI de DataSets aparece con:
 ## 🎯 Cómo se Reconoce el Custom UI
 
 ### En el Admin Registry (API)
+
 Cuando se llama `GET /api/admin/registry`:
 
 ```json
@@ -99,14 +108,14 @@ Cuando se llama `GET /api/admin/registry`:
       "id": "grimoire-datasets",
       "name": "DataSets",
       "category": "core",
-      "hasCustomView": true,  // ← DETECTADO
+      "hasCustomView": true, // ← DETECTADO
       "tables": ["data_sets", "data_entries"],
       "views": [
         {
           "id": "custom",
           "type": "custom",
           "title": "Overview",
-          "component": "$views/DataSets.svelte"  // ← VISTA CUSTOM
+          "component": "$views/DataSets.svelte" // ← VISTA CUSTOM
         },
         {
           "id": "grid-data_sets",
@@ -122,15 +131,16 @@ Cuando se llama `GET /api/admin/registry`:
 ```
 
 ### En el Grimoire Loader (Frontend)
+
 ```typescript
 // hasCustomView() detecta:
 if (grimoireId in GRIMOIRE_VIEW_REGISTRY) {
-  return true;  // ← true para "grimoire-datasets"
+  return true; // ← true para "grimoire-datasets"
 }
 
 // loadCustomView() carga:
 const legacyLoader = GRIMOIRE_VIEW_REGISTRY["grimoire-datasets"];
-const mod = await legacyLoader();  // ← Carga DataSets.svelte
+const mod = await legacyLoader(); // ← Carga DataSets.svelte
 return mod.default;
 ```
 
@@ -138,15 +148,15 @@ return mod.default;
 
 ## ✅ Verificación Checklist
 
-| Aspecto | Estado | Detalle |
-|---------|--------|---------|
-| **Grimoire Registry** | ✅ | `grimoire-datasets` en GRIMOIRE_REGISTRY |
-| **Admin Config Export** | ✅ | `adminConfig` exportado desde `index.ts` |
-| **Vista Custom** | ✅ | `DataSets.svelte` detectada y cargable |
-| **Icono** | ✅ | `Database` icon mapeado |
-| **Ruta API** | ✅ | `/api/datasets` montada por el grimoire |
-| **Sidebar** | ✅ | Aparece primero en categoría "Core" |
-| **Toggleable** | ✅ | Puede activarse/desactivarse desde /grimoires |
+| Aspecto                 | Estado | Detalle                                       |
+| ----------------------- | ------ | --------------------------------------------- |
+| **Grimoire Registry**   | ✅     | `grimoire-datasets` en GRIMOIRE_REGISTRY      |
+| **Admin Config Export** | ✅     | `adminConfig` exportado desde `index.ts`      |
+| **Vista Custom**        | ✅     | `DataSets.svelte` detectada y cargable        |
+| **Icono**               | ✅     | `Database` icon mapeado                       |
+| **Ruta API**            | ✅     | `/api/datasets` montada por el grimoire       |
+| **Sidebar**             | ✅     | Aparece primero en categoría "Core"           |
+| **Toggleable**          | ✅     | Puede activarse/desactivarse desde /grimoires |
 
 ---
 
@@ -155,11 +165,13 @@ return mod.default;
 Para verificar que todo funciona:
 
 1. **Iniciar servidor:**
+
    ```bash
    bun dev
    ```
 
 2. **Abrir admin:**
+
    ```
    http://localhost:3001/admin
    ```
@@ -181,6 +193,7 @@ Para verificar que todo funciona:
 ## 📁 Archivos Involucrados
 
 ### Grimoire Package
+
 ```
 packages/grimoires/grimoire-datasets/
 ├── index.ts              # Exporta grimoire + adminConfig
@@ -190,6 +203,7 @@ packages/grimoires/grimoire-datasets/
 ```
 
 ### Admin (Frontend)
+
 ```
 packages/admin/src/
 ├── views/DataSets.svelte            # Vista custom
@@ -198,6 +212,7 @@ packages/admin/src/
 ```
 
 ### API (Backend)
+
 ```
 apps/api/src/
 ├── services/admin-registry.ts       # Detecta custom view
@@ -216,6 +231,6 @@ apps/api/src/
 ✅ Se posiciona primero en el sidebar  
 ✅ No está quemado en el código (cargado dinámicamente)  
 ✅ Tiene su propia vista custom (DataSets.svelte)  
-✅ Expone AdminConfig para el sistema  
+✅ Expone AdminConfig para el sistema
 
 **El sistema reconoce DataSets como un grimoire de primera clase, igual que Blog, Games, o cualquier otro.**

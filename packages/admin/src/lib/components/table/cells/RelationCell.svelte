@@ -1,18 +1,18 @@
 <script lang="ts">
   /**
    * RelationCell.svelte
-   * 
+   *
    * Celda para mostrar relaciones entre datasets.
    * Muestra badges con los elementos relacionados.
    */
   import { Link2, ExternalLink } from "lucide-svelte";
-  
+
   interface RelatedItem {
     id: string;
     label: string;
     href?: string;
   }
-  
+
   interface Props {
     /** Items relacionados */
     items?: RelatedItem[];
@@ -23,17 +23,12 @@
     /** Click handler */
     onClick?: (item: RelatedItem) => void;
   }
-  
-  let {
-    items = [],
-    maxItems = 2,
-    type = "many",
-    onClick
-  }: Props = $props();
-  
+
+  const { items = [], maxItems = 2, type = "many", onClick }: Props = $props();
+
   const visibleItems = $derived(items.slice(0, maxItems));
   const remainingCount = $derived(items.length - maxItems);
-  
+
   function handleClick(item: RelatedItem) {
     if (onClick) {
       onClick(item);
@@ -43,7 +38,7 @@
 
 <div class="flex items-center gap-2">
   <Link2 class="w-3.5 h-3.5 text-gremius-subtle shrink-0" />
-  
+
   {#if items.length === 0}
     <span class="text-xs text-gremius-subtle italic">—</span>
   {:else}
@@ -70,7 +65,7 @@
           </button>
         {/if}
       {/each}
-      
+
       {#if remainingCount > 0}
         <span class="text-xs text-gremius-subtle">
           +{remainingCount} more
@@ -79,4 +74,3 @@
     </div>
   {/if}
 </div>
-

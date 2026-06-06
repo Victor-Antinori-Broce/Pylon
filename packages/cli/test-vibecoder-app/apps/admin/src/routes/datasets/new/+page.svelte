@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import SchemaBuilder from "$lib/components/datasets/SchemaBuilder.svelte";
   import { datasetStore } from "$lib/states/datasets.svelte";
-  import { ArrowLeft } from "lucide-svelte";
   import type { DatasetDefinition } from "@gremius/shared";
+  import { ArrowLeft } from "lucide-svelte";
+
+  import { goto } from "$app/navigation";
 
   let saving = $state(false);
   let error = $state<string | null>(null);

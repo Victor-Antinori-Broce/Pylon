@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Academy Grimoire - Admin Configuration
- * 
+ *
  * LMS-style admin with courses, lessons, and enrollment management
  */
 
@@ -55,7 +55,7 @@ export const adminConfig: AdminConfig = {
   icon: "GraduationCap",
   category: "content",
   order: 20,
-  
+
   views: [
     {
       id: "courses",
@@ -68,11 +68,17 @@ export const adminConfig: AdminConfig = {
         { name: "title", type: "text", label: "Title", sortable: true, filterable: true },
         { name: "instructor", type: "relation", label: "Instructor", displayField: "name" },
         { name: "category", type: "text", label: "Category", sortable: true, filterable: true },
-        { name: "level", type: "text", label: "Level", badge: true, badgeColor: { 
-          "beginner": "green", 
-          "intermediate": "yellow", 
-          "advanced": "red" 
-        }},
+        {
+          name: "level",
+          type: "text",
+          label: "Level",
+          badge: true,
+          badgeColor: {
+            beginner: "green",
+            intermediate: "yellow",
+            advanced: "red",
+          },
+        },
         { name: "duration", type: "number", label: "Duration (min)" },
         { name: "enrolled_count", type: "number", label: "Students" },
         { name: "published", type: "boolean", label: "Published", badge: true },
@@ -81,11 +87,16 @@ export const adminConfig: AdminConfig = {
       defaultSort: { column: "created_at", direction: "desc" },
       filters: [
         { field: "category", type: "select", label: "Category" },
-        { field: "level", type: "select", label: "Level", options: [
-          { value: "beginner", label: "Beginner" },
-          { value: "intermediate", label: "Intermediate" },
-          { value: "advanced", label: "Advanced" },
-        ]},
+        {
+          field: "level",
+          type: "select",
+          label: "Level",
+          options: [
+            { value: "beginner", label: "Beginner" },
+            { value: "intermediate", label: "Intermediate" },
+            { value: "advanced", label: "Advanced" },
+          ],
+        },
         { field: "published", type: "boolean", label: "Published" },
       ],
       actions: ["view", "edit", "delete", "clone"],
@@ -117,20 +128,31 @@ export const adminConfig: AdminConfig = {
         { name: "student", type: "relation", label: "Student", displayField: "name" },
         { name: "course", type: "relation", label: "Course", displayField: "title" },
         { name: "progress", type: "number", label: "Progress %" },
-        { name: "status", type: "text", label: "Status", badge: true, badgeColor: {
-          "active": "green",
-          "completed": "blue",
-          "dropped": "red"
-        }},
+        {
+          name: "status",
+          type: "text",
+          label: "Status",
+          badge: true,
+          badgeColor: {
+            active: "green",
+            completed: "blue",
+            dropped: "red",
+          },
+        },
         { name: "enrolled_at", type: "datetime", label: "Enrolled" },
         { name: "completed_at", type: "datetime", label: "Completed" },
       ],
       filters: [
-        { field: "status", type: "select", label: "Status", options: [
-          { value: "active", label: "Active" },
-          { value: "completed", label: "Completed" },
-          { value: "dropped", label: "Dropped" },
-        ]},
+        {
+          field: "status",
+          type: "select",
+          label: "Status",
+          options: [
+            { value: "active", label: "Active" },
+            { value: "completed", label: "Completed" },
+            { value: "dropped", label: "Dropped" },
+          ],
+        },
       ],
       actions: ["view", "edit"],
     },
@@ -142,9 +164,9 @@ export const adminConfig: AdminConfig = {
       groupBy: "status",
       cardFields: ["title", "instructor", "enrolled_count"],
       draggable: true,
-    }
+    },
   ],
-  
+
   forms: {
     course: {
       layout: "tabs",
@@ -152,23 +174,23 @@ export const adminConfig: AdminConfig = {
         {
           id: "basic",
           label: "Basic Info",
-          fields: ["title", "slug", "description", "category", "level"]
+          fields: ["title", "slug", "description", "category", "level"],
         },
         {
           id: "content",
           label: "Content",
-          fields: ["thumbnail", "trailer_url", "syllabus"]
+          fields: ["thumbnail", "trailer_url", "syllabus"],
         },
         {
           id: "settings",
           label: "Settings",
-          fields: ["instructor_id", "duration", "price", "published"]
-        }
-      ]
-    }
+          fields: ["instructor_id", "duration", "price", "published"],
+        },
+      ],
+    },
   },
-  
-  apiEndpoint: "/api/explorer/courses"
+
+  apiEndpoint: "/api/explorer/courses",
 };
 
 export default adminConfig;

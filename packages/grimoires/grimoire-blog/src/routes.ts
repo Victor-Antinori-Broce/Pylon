@@ -8,37 +8,33 @@
  * Example: `/source/:postId` must come before `/:id`
  */
 
+import type { GrimoireContext, GrimoireRouterFactory } from "@gremius/shared";
+import { eq, desc, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, desc, sql } from "drizzle-orm";
-import type { GrimoireContext, GrimoireRouterFactory } from "@gremius/shared";
-import { blogPosts, blogPostsToTags, blogPostsToGames } from "./schema";
+
 import { blogContentTarget } from "./content-target";
-import { 
-  generateSEOMetadata, 
-  validateSEO, 
+import { validateBLUF, sanitizeHTML, sanitizeFAQText, buildAPIPayload } from "./geo-utils";
+import { blogPosts, blogPostsToTags, blogPostsToGames } from "./schema";
+import type { FAQItem } from "./schema";
+import {
+  generateSEOMetadata,
+  validateSEO,
   validateWhatsAppImage,
   SEO_LIMITS,
   type SiteSEOConfig,
 } from "./seo-utils";
 
-import {
-  validateBLUF,
-  sanitizeHTML,
-  sanitizeFAQText,
-  buildAPIPayload,
-} from "./geo-utils";
-
-import type { FAQItem } from "./schema";
-
 // ═══════════════════════════════════════════════════════════════════════════
 // ZOD SCHEMAS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const focalPointSchema = z.object({
-  x: z.number().min(0).max(1),
-  y: z.number().min(0).max(1),
-}).optional();
+const focalPointSchema = z
+  .object({
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+  })
+  .optional();
 
 const faqItemSchema = z.object({
   q: z.string().min(1),
@@ -128,11 +124,15 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     const limit = Math.min(Number(c.req.query("limit")) || 12, 100);
     const page = Math.max(Number(c.req.query("page")) || 1, 1);
     const offset = (page - 1) * limit;
-    const status = (c.req.query("status") || "published") as "draft" | "published" | "scheduled" | "archived";
+    const status = (c.req.query("status") || "published") as
+      | "draft"
+      | "published"
+      | "scheduled"
+      | "archived";
 
     // Cache key
     const cacheKey = `blog:list:${page}:${limit}:${status}`;
-    
+
     // Intentar leer de caché
     const cached = await cache.get(cacheKey);
     if (cached) {
@@ -237,7 +237,7 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     const { slug } = c.req.param();
     const siteName = c.req.query("siteName") || "Gremius CMS";
     const baseUrl = c.req.query("baseUrl") || new URL(c.req.url).origin;
-    
+
     try {
       // Obtener post
       const [post] = await db.instance
@@ -253,10 +253,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       // Solo posts publicados tienen SEO publico
       const isPreview = c.req.query("preview") === "true";
       if (post.status !== "published" && !isPreview) {
-        return c.json({ 
-          error: "Post not published",
-          message: "Add ?preview=true to see SEO for unpublished posts"
-        }, 403);
+        return c.json(
+          {
+            error: "Post not published",
+            message: "Add ?preview=true to see SEO for unpublished posts",
+          },
+          403
+        );
       }
 
       // Configuracion del sitio
@@ -274,12 +277,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       });
 
       // Helper para escapar HTML
-      const escapeHtml = (text: string) => text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      const escapeHtml = (text: string) =>
+        text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
 
       // Respuesta completa
       return c.json({
@@ -329,12 +333,12 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
           title: `<title>${escapeHtml(seoMetadata.title)}</title>`,
           metaTags: seoMetadata.metaTags,
           canonical: `<link rel="canonical" href="${escapeHtml(seoMetadata.canonicalUrl)}">`,
-          jsonLd: seoMetadata.jsonLd.map(schema => 
-            `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`
+          jsonLd: seoMetadata.jsonLd.map(
+            (schema) =>
+              `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>`
           ),
-        }
+        },
       });
-
     } catch (err: any) {
       ctx.logger.error("Failed to generate SEO metadata", { slug, error: err.message });
       return c.json({ error: "Failed to generate SEO metadata" }, 500);
@@ -350,7 +354,7 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     const siteName = c.req.query("siteName") || "Gremius CMS";
     const baseUrl = c.req.query("baseUrl") || new URL(c.req.url).origin;
     const isPreview = c.req.query("preview") === "true";
-    
+
     try {
       // Obtener post con campos GEO
       const [post] = await db.instance
@@ -382,10 +386,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
 
       // Solo posts publicados (a menos que sea preview)
       if (post.status !== "published" && !isPreview) {
-        return c.json({ 
-          error: "Post not published",
-          message: "Add ?preview=true to see unpublished posts"
-        }, 403);
+        return c.json(
+          {
+            error: "Post not published",
+            message: "Add ?preview=true to see unpublished posts",
+          },
+          403
+        );
       }
 
       // Construir payload optimizado
@@ -398,10 +405,12 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const faqData = post.faqData as FAQItem[] | null;
       const geoValidation = {
         bluf: post.blufText ? validateBLUF(post.blufText) : null,
-        faq: faqData ? {
-          count: faqData.length,
-          valid: faqData.every((f) => f.q && f.a)
-        } : null,
+        faq: faqData
+          ? {
+              count: faqData.length,
+              valid: faqData.every((f) => f.q && f.a),
+            }
+          : null,
       };
 
       return c.json({
@@ -410,9 +419,8 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
         _meta: {
           validation: geoValidation,
           generatedAt: new Date().toISOString(),
-        }
+        },
       });
-
     } catch (err: any) {
       ctx.logger.error("Failed to get GEO payload", { slug, error: err.message });
       return c.json({ error: "Failed to fetch post" }, 500);
@@ -429,10 +437,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const parseResult = validateSeoSchema.safeParse(rawBody);
 
       if (!parseResult.success) {
-        return c.json({
-          error: "Validation failed",
-          issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
-        }, 400);
+        return c.json(
+          {
+            error: "Validation failed",
+            issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
+          },
+          400
+        );
       }
 
       const body = parseResult.data;
@@ -448,15 +459,20 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
           optimal: SEO_LIMITS.title.optimal,
           max: SEO_LIMITS.title.max,
           isValid: title.length >= SEO_LIMITS.title.min && title.length <= SEO_LIMITS.title.max,
-          isOptimal: title.length >= SEO_LIMITS.title.optimal && title.length <= SEO_LIMITS.title.max,
+          isOptimal:
+            title.length >= SEO_LIMITS.title.optimal && title.length <= SEO_LIMITS.title.max,
         },
         description: {
           current: metaDescription.length,
           min: SEO_LIMITS.description.min,
           optimal: SEO_LIMITS.description.optimal,
           max: SEO_LIMITS.description.max,
-          isValid: metaDescription.length >= SEO_LIMITS.description.min && metaDescription.length <= SEO_LIMITS.description.max,
-          isOptimal: metaDescription.length >= SEO_LIMITS.description.optimal && metaDescription.length <= SEO_LIMITS.description.max,
+          isValid:
+            metaDescription.length >= SEO_LIMITS.description.min &&
+            metaDescription.length <= SEO_LIMITS.description.max,
+          isOptimal:
+            metaDescription.length >= SEO_LIMITS.description.optimal &&
+            metaDescription.length <= SEO_LIMITS.description.max,
         },
       };
 
@@ -483,8 +499,10 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
         validation,
         warnings,
         suggestions: [
-          !validation.title.isOptimal && `Ajusta el titulo a ${SEO_LIMITS.title.optimal}-${SEO_LIMITS.title.max} caracteres`,
-          !validation.description.isOptimal && `Ajusta la descripcion a ${SEO_LIMITS.description.optimal}-${SEO_LIMITS.description.max} caracteres`,
+          !validation.title.isOptimal &&
+            `Ajusta el titulo a ${SEO_LIMITS.title.optimal}-${SEO_LIMITS.title.max} caracteres`,
+          !validation.description.isOptimal &&
+            `Ajusta la descripcion a ${SEO_LIMITS.description.optimal}-${SEO_LIMITS.description.max} caracteres`,
           !focusKeyword && "Considera agregar una palabra clave principal",
         ].filter(Boolean),
         whatsApp: whatsAppValidation,
@@ -494,7 +512,7 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       return c.json({ error: "Failed to validate SEO" }, 500);
     }
   });
-  
+
   /**
    * POST /api/blog/validate-image — Validar imagen para WhatsApp/OG (requiere auth)
    * SPECIFIC ROUTE - must come before /:id
@@ -505,10 +523,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const parseResult = validateImageSchema.safeParse(rawBody);
 
       if (!parseResult.success) {
-        return c.json({
-          error: "Validation failed",
-          issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
-        }, 400);
+        return c.json(
+          {
+            error: "Validation failed",
+            issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
+          },
+          400
+        );
       }
 
       const body = parseResult.data;
@@ -550,10 +571,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const parseResult = promoteFromSourceSchema.safeParse(rawBody);
 
       if (!parseResult.success) {
-        return c.json({
-          error: "Validation failed",
-          issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
-        }, 400);
+        return c.json(
+          {
+            error: "Validation failed",
+            issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
+          },
+          400
+        );
       }
 
       const body = parseResult.data;
@@ -562,9 +586,9 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       // Obtener datos de la fuente
       let sourceData: Record<string, any> | null = null;
 
-      if (body.sourceType === 'dataset' && body.datasetId && body.entryId) {
+      if (body.sourceType === "dataset" && body.datasetId && body.entryId) {
         sourceData = await fetchDatasetEntry(ctx, body.datasetId, body.entryId);
-      } else if (body.sourceType === 'grimoire' && body.grimoireId && body.table && body.recordId) {
+      } else if (body.sourceType === "grimoire" && body.grimoireId && body.table && body.recordId) {
         sourceData = await fetchGrimoireRecord(ctx, body.grimoireId, body.table, body.recordId);
       }
 
@@ -584,9 +608,14 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
           },
           options: {
             title: body.titleTemplate
-              ? body.titleTemplate.replace(/\{(\w+)\}/g, (_: string, key: string) => sourceData![key] || '')
+              ? body.titleTemplate.replace(
+                  /\{(\w+)\}/g,
+                  (_: string, key: string) => sourceData![key] || ""
+                )
               : undefined,
-            slug: body.slugPrefix ? `${body.slugPrefix}/${sourceData.slug || sourceData.id}` : undefined,
+            slug: body.slugPrefix
+              ? `${body.slugPrefix}/${sourceData.slug || sourceData.id}`
+              : undefined,
             autoPublish: body.autoPublish || false,
             authorId: body.authorId || currentUser?.id,
             targetConfig: {
@@ -600,19 +629,22 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
 
       await cache.invalidate("blog:list:*");
 
-      events.emit("blog:post:promoted", { 
-        postId: result.contentId, 
+      events.emit("blog:post:promoted", {
+        postId: result.contentId,
         slug: result.slug,
         sourceType: body.sourceType,
       });
 
-      return c.json({
-        success: true,
-        postId: result.contentId,
-        slug: result.slug,
-        message: "Entry promoted to blog post successfully (legacy endpoint - use /api/content/promote)",
-      }, 201);
-
+      return c.json(
+        {
+          success: true,
+          postId: result.contentId,
+          slug: result.slug,
+          message:
+            "Entry promoted to blog post successfully (legacy endpoint - use /api/content/promote)",
+        },
+        201
+      );
     } catch (err: any) {
       ctx.logger.error("Failed to promote entry to blog", { error: err.message });
       return c.json({ error: "Failed to promote entry" }, 500);
@@ -652,7 +684,6 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
         slug: post.slug,
         source: post.source,
       });
-
     } catch (err: any) {
       ctx.logger.error("Failed to get source data", { error: err.message });
       return c.json({ error: "Failed to fetch source" }, 500);
@@ -672,10 +703,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const parseResult = createPostSchema.safeParse(rawBody);
 
       if (!parseResult.success) {
-        return c.json({
-          error: "Validation failed",
-          issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
-        }, 400);
+        return c.json(
+          {
+            error: "Validation failed",
+            issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
+          },
+          400
+        );
       }
 
       const body = parseResult.data;
@@ -685,14 +719,17 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       if (body.blufText) {
         const blufValidation = validateBLUF(body.blufText);
         if (!blufValidation.isValid) {
-          return c.json({
-            error: "Validation failed",
-            field: "blufText",
-            message: "BLUF validation failed",
-            details: blufValidation.errors,
-            warnings: blufValidation.warnings,
-            metrics: blufValidation.metrics,
-          }, 400);
+          return c.json(
+            {
+              error: "Validation failed",
+              field: "blufText",
+              message: "BLUF validation failed",
+              details: blufValidation.errors,
+              warnings: blufValidation.warnings,
+              metrics: blufValidation.metrics,
+            },
+            400
+          );
         }
       }
 
@@ -707,10 +744,12 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       }
 
       // Generar slug si no se proporciona
-      const slug = body.slug || body.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const slug =
+        body.slug ||
+        body.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
 
       // Insertar post
       const [post] = await db.instance
@@ -739,16 +778,16 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
 
       // Manejar relaciones con tags
       if (body.tagIds?.length) {
-        await db.instance.insert(blogPostsToTags).values(
-          body.tagIds.map((tagId: string) => ({ postId: post.id, tagId }))
-        );
+        await db.instance
+          .insert(blogPostsToTags)
+          .values(body.tagIds.map((tagId: string) => ({ postId: post.id, tagId })));
       }
 
       // Manejar relaciones con games
       if (body.gameIds?.length) {
-        await db.instance.insert(blogPostsToGames).values(
-          body.gameIds.map((gameId: string) => ({ postId: post.id, gameId }))
-        );
+        await db.instance
+          .insert(blogPostsToGames)
+          .values(body.gameIds.map((gameId: string) => ({ postId: post.id, gameId })));
       }
 
       // Emitir evento
@@ -802,10 +841,13 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const parseResult = updatePostSchema.safeParse(rawBody);
 
       if (!parseResult.success) {
-        return c.json({
-          error: "Validation failed",
-          issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
-        }, 400);
+        return c.json(
+          {
+            error: "Validation failed",
+            issues: parseResult.error.issues.map((i) => ({ path: i.path, message: i.message })),
+          },
+          400
+        );
       }
 
       const body = parseResult.data;
@@ -829,27 +871,23 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
 
       // Sincronizar tags si se proporcionaron
       if (tagIds !== undefined) {
-        await db.instance
-          .delete(blogPostsToTags)
-          .where(eq(blogPostsToTags.postId, postId));
-        
+        await db.instance.delete(blogPostsToTags).where(eq(blogPostsToTags.postId, postId));
+
         if (tagIds.length > 0) {
-          await db.instance.insert(blogPostsToTags).values(
-            tagIds.map((tagId: string) => ({ postId, tagId }))
-          );
+          await db.instance
+            .insert(blogPostsToTags)
+            .values(tagIds.map((tagId: string) => ({ postId, tagId })));
         }
       }
 
       // Sincronizar games si se proporcionaron
       if (gameIds !== undefined) {
-        await db.instance
-          .delete(blogPostsToGames)
-          .where(eq(blogPostsToGames.postId, postId));
-        
+        await db.instance.delete(blogPostsToGames).where(eq(blogPostsToGames.postId, postId));
+
         if (gameIds.length > 0) {
-          await db.instance.insert(blogPostsToGames).values(
-            gameIds.map((gameId: string) => ({ postId, gameId }))
-          );
+          await db.instance
+            .insert(blogPostsToGames)
+            .values(gameIds.map((gameId: string) => ({ postId, gameId })));
         }
       }
 
@@ -934,7 +972,7 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       }
 
       await cache.invalidate("blog:list:*");
-      
+
       events.emit("blog:post:published", { postId: updated.id, post: updated });
 
       ctx.logger.info("Blog post published", { postId });
@@ -955,22 +993,22 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
       const { slug } = c.req.param();
       const baseUrl = c.req.query("baseUrl") || new URL(c.req.url).origin;
       const postUrl = `${baseUrl.replace(/\/$/, "")}/blog/${slug}`;
-      
+
       // Intentar rescrapear con Facebook
       const fbResponse = await fetch(
         `https://graph.facebook.com/?id=${encodeURIComponent(postUrl)}&scrape=true`,
         { method: "POST" }
       );
-      
+
       const fbResult = await fbResponse.json().catch(() => null);
-      
-      ctx.logger.info("Facebook OG cache refresh attempted", { 
-        slug, 
-        postUrl, 
+
+      ctx.logger.info("Facebook OG cache refresh attempted", {
+        slug,
+        postUrl,
         status: fbResponse.status,
-        result: fbResult 
+        result: fbResult,
       });
-      
+
       return c.json({
         success: true,
         message: "Open Graph cache refresh requested",
@@ -978,21 +1016,24 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
         facebook: {
           status: fbResponse.status,
           result: fbResult,
-          debuggerUrl: `https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(postUrl)}`
+          debuggerUrl: `https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(postUrl)}`,
         },
         notes: [
           "Facebook puede tardar hasta 24 horas en actualizar el caché",
           "Usa el Facebook Debugger para forzar el rescrapeo manualmente",
           "LinkedIn tiene su propio caché separado",
-          "WhatsApp no tiene API pública para refrescar caché"
-        ]
+          "WhatsApp no tiene API pública para refrescar caché",
+        ],
       });
     } catch (err: any) {
       ctx.logger.error("Failed to refresh OG cache", { error: err.message });
-      return c.json({ 
-        error: "Failed to refresh cache",
-        message: err.message 
-      }, 500);
+      return c.json(
+        {
+          error: "Failed to refresh cache",
+          message: err.message,
+        },
+        500
+      );
     }
   });
 
@@ -1007,7 +1048,11 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     return name;
   }
 
-  async function fetchDatasetEntry(ctx: GrimoireContext, datasetId: string, entryId: string): Promise<Record<string, any> | null> {
+  async function fetchDatasetEntry(
+    ctx: GrimoireContext,
+    datasetId: string,
+    entryId: string
+  ): Promise<Record<string, any> | null> {
     try {
       const safeTable = sanitizeIdentifier(datasetId);
       const result = await ctx.db.instance.execute(
@@ -1019,7 +1064,12 @@ export const createBlogRouter: GrimoireRouterFactory = (ctx: GrimoireContext) =>
     }
   }
 
-  async function fetchGrimoireRecord(ctx: GrimoireContext, _grimoireId: string, table: string, recordId: string): Promise<Record<string, any> | null> {
+  async function fetchGrimoireRecord(
+    ctx: GrimoireContext,
+    _grimoireId: string,
+    table: string,
+    recordId: string
+  ): Promise<Record<string, any> | null> {
     try {
       const safeTable = sanitizeIdentifier(table);
       const result = await ctx.db.instance.execute(

@@ -8,18 +8,19 @@
  * Reemplaza todos los mockups con datos del sistema real.
  */
 
+import { sql, count, desc, gte } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
-import { sql, eq, count, desc, and, gte } from "drizzle-orm";
 import { 
-  dataSets, dataEntries, authUsers, apiKeys, 
+  dataSets, dataEntries, authUsers, 
   blogPosts, games, media, agentIdentities 
 } from "../db/schema";
-import { getValkeyClient } from "./valkey";
-import { realtimeManager } from "./realtime";
-import { Hono } from "hono";
-import type { Context } from "hono";
-import type { AppVariables } from "../types/hono";
 import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
+
+import { realtimeManager } from "./realtime";
+import { getValkeyClient } from "./valkey";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS

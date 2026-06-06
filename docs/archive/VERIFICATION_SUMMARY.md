@@ -3,6 +3,7 @@
 ## Resumen Ejecutivo
 
 Ambos componentes funcionan correctamente con:
+
 - ✅ **Funcionalidad vieja**: 100% retrocompatible
 - ✅ **Funcionalidad nueva**: Campos calculados, KPIs, field types extensibles
 
@@ -12,27 +13,28 @@ Ambos componentes funcionan correctamente con:
 
 ### Funcionalidad Vieja (Retrocompatible) ✅
 
-| Feature | Test | Resultado |
-|---------|------|-----------|
-| Tabla básica | Sin `fieldConfig` | ✅ Usa TextField por defecto |
-| Búsqueda | `searchableFields` | ✅ Funciona igual |
-| Filtros | `filterableFields` | ✅ Funciona igual |
-| Ordenamiento | Click en headers | ✅ Funciona igual |
-| Paginación | `pagination` prop | ✅ Funciona igual |
-| Edición inline | Doble click | ✅ Funciona igual |
-| Export CSV | Botón export | ✅ Funciona igual |
+| Feature        | Test               | Resultado                    |
+| -------------- | ------------------ | ---------------------------- |
+| Tabla básica   | Sin `fieldConfig`  | ✅ Usa TextField por defecto |
+| Búsqueda       | `searchableFields` | ✅ Funciona igual            |
+| Filtros        | `filterableFields` | ✅ Funciona igual            |
+| Ordenamiento   | Click en headers   | ✅ Funciona igual            |
+| Paginación     | `pagination` prop  | ✅ Funciona igual            |
+| Edición inline | Doble click        | ✅ Funciona igual            |
+| Export CSV     | Botón export       | ✅ Funciona igual            |
 
 **Código de prueba - Viejo:**
+
 ```svelte
 <DataExplorer
   table="users"
   config={{
     columns: [
-      { field: "name", label: "Name" },      // ← Sin fieldConfig
-      { field: "email", label: "Email" }     // ← Sin fieldConfig
+      { field: "name", label: "Name" }, // ← Sin fieldConfig
+      { field: "email", label: "Email" }, // ← Sin fieldConfig
     ],
     searchableFields: ["name", "email"],
-    filterableFields: ["status"]
+    filterableFields: ["status"],
   }}
   data={basicData}
 />
@@ -40,29 +42,30 @@ Ambos componentes funcionan correctamente con:
 
 ### Funcionalidad Nueva ✅
 
-| Feature | Implementación | Resultado |
-|---------|----------------|-----------|
+| Feature        | Implementación             | Resultado                |
+| -------------- | -------------------------- | ------------------------ |
 | Field Registry | `fieldRegistry.register()` | ✅ Componentes dinámicos |
-| Status Badge | `type: "status-badge"` | ✅ Colores por valor |
-| Boolean | `type: "boolean"` | ✅ Checkbox visual |
-| Date | `type: "date"` | ✅ Formato automático |
-| Calculated | `type: "calculated"` | ✅ Evalúa función |
-| Number | `type: "number"` | ✅ Formateo numérico |
+| Status Badge   | `type: "status-badge"`     | ✅ Colores por valor     |
+| Boolean        | `type: "boolean"`          | ✅ Checkbox visual       |
+| Date           | `type: "date"`             | ✅ Formato automático    |
+| Calculated     | `type: "calculated"`       | ✅ Evalúa función        |
+| Number         | `type: "number"`           | ✅ Formateo numérico     |
 
 **Código de prueba - Nuevo:**
+
 ```svelte
 <DataExplorer
   table="products"
   config={{
     columns: [
-      { 
-        field: "status", 
+      {
+        field: "status",
         fieldConfig: {                       // ← Con fieldConfig
           type: "status-badge",
           options: { colors: {...} }
         }
       },
-      { 
+      {
         field: "total",
         fieldConfig: {
           type: "calculated",
@@ -82,26 +85,27 @@ Ambos componentes funcionan correctamente con:
 
 ### Wizard de 4 Pasos ✅
 
-| Paso | Contenido | Estado |
-|------|-----------|--------|
-| 1 | Basic Info (nombre, label, descripción) | ✅ Completo |
-| 2 | Native Fields (10 tipos de campo) | ✅ Completo |
-| 3 | Calculated Fields + FormulaBuilder | ✅ Completo |
-| 4 | Review (resumen del dataset) | ✅ Completo |
+| Paso | Contenido                               | Estado      |
+| ---- | --------------------------------------- | ----------- |
+| 1    | Basic Info (nombre, label, descripción) | ✅ Completo |
+| 2    | Native Fields (10 tipos de campo)       | ✅ Completo |
+| 3    | Calculated Fields + FormulaBuilder      | ✅ Completo |
+| 4    | Review (resumen del dataset)            | ✅ Completo |
 
 ### Componentes Integrados ✅
 
-| Componente | Uso en DatasetCreator | Estado |
-|------------|----------------------|--------|
-| `FormulaBuilder` | Preview en paso 3 | ✅ Funciona |
-| `KpiCreator` | Modal para crear KPIs | ✅ Funciona |
-| `DataExplorer` | No usado directamente | N/A |
+| Componente       | Uso en DatasetCreator | Estado      |
+| ---------------- | --------------------- | ----------- |
+| `FormulaBuilder` | Preview en paso 3     | ✅ Funciona |
+| `KpiCreator`     | Modal para crear KPIs | ✅ Funciona |
+| `DataExplorer`   | No usado directamente | N/A         |
 
 ---
 
 ## Componentes de Campos Calculados
 
 ### FormulaBuilder.svelte ✅
+
 - Constructor visual de fórmulas
 - Drag & drop de campos
 - Operadores matemáticos
@@ -109,6 +113,7 @@ Ambos componentes funcionan correctamente con:
 - Preview en tiempo real
 
 ### KpiCreator.svelte ✅
+
 - Wizard de 3 pasos
 - 8 tipos de cálculo:
   - `formula` - Expresiones matemáticas
@@ -123,14 +128,15 @@ Ambos componentes funcionan correctamente con:
 - Targets y thresholds para KPIs
 
 ### Field Components ✅
-| Componente | Tipo | Modos |
-|------------|------|-------|
-| `TextField` | text, textarea, email, url, slug | view, edit |
-| `NumberField` | number | view, edit |
-| `BooleanField` | boolean | view, edit |
-| `DateField` | date, datetime | view, edit |
-| `StatusBadgeField` | status-badge, select | view |
-| `CalculatedField` | calculated | view |
+
+| Componente         | Tipo                             | Modos      |
+| ------------------ | -------------------------------- | ---------- |
+| `TextField`        | text, textarea, email, url, slug | view, edit |
+| `NumberField`      | number                           | view, edit |
+| `BooleanField`     | boolean                          | view, edit |
+| `DateField`        | date, datetime                   | view, edit |
+| `StatusBadgeField` | status-badge, select             | view       |
+| `CalculatedField`  | calculated                       | view       |
 
 ---
 
@@ -173,6 +179,7 @@ Ambos componentes funcionan correctamente con:
 ## Archivos Creados/Modificados
 
 ### Nuevos Componentes
+
 ```
 packages/admin/src/lib/components/
 ├── DataExplorer.svelte                    ← Principal (viejo+nuevo)
@@ -206,6 +213,7 @@ packages/core/src/types/
 ```
 
 ### Eliminados (Reemplazados)
+
 ```
 ❌ packages/grimoires/grimoire-formulas/    ← Reemplazado por sistema integrado
 ❌ packages/admin/src/views/formulas/           ← Reemplazado por KpiCreator
@@ -216,6 +224,7 @@ packages/core/src/types/
 ## Pruebas Manuales Recomendadas
 
 ### Test 1: DataExplorer Retrocompatible
+
 1. Abrir `/data-explorer-test`
 2. Click en tab "1. Basic DataExplorer"
 3. Verificar que se muestra tabla con datos
@@ -223,6 +232,7 @@ packages/core/src/types/
 5. ✅ Resultado esperado: Funciona igual que antes
 
 ### Test 2: DataExplorer con Field Types
+
 1. Click en tab "2. Advanced Field Types"
 2. Verificar badges de status con colores
 3. Verificar checkboxes en columna "Active"
@@ -230,12 +240,14 @@ packages/core/src/types/
 5. ✅ Resultado esperado: Renderiza componentes especializados
 
 ### Test 3: FormulaBuilder
+
 1. Click en tab "3. Formula Builder"
 2. Click en campos, operadores, funciones
 3. Verificar preview actualizado
 4. ✅ Resultado esperado: Fórmula construida visualmente
 
 ### Test 4: KpiCreator
+
 1. Click en tab "4. KPI Creator"
 2. Click "Crear Nuevo KPI"
 3. Completar wizard de 3 pasos
@@ -243,6 +255,7 @@ packages/core/src/types/
 5. ✅ Resultado esperado: Configuración completa guardada
 
 ### Test 5: DatasetCreator Completo
+
 1. Click en tab "5. Dataset Creator"
 2. Navegar 4 pasos del wizard
 3. Agregar campos nativos
@@ -254,12 +267,12 @@ packages/core/src/types/
 
 ## Issues Resueltos
 
-| Issue | Solución |
-|-------|----------|
-| Import path muy largo | Export centralizado en `index.ts` |
-| Retrocompatibilidad | Fallback a `TextField` si no hay `fieldConfig` |
-| Icono Save faltante | Agregado a imports |
-| CSS classes | Definidas en `<style>` de cada componente |
+| Issue                 | Solución                                       |
+| --------------------- | ---------------------------------------------- |
+| Import path muy largo | Export centralizado en `index.ts`              |
+| Retrocompatibilidad   | Fallback a `TextField` si no hay `fieldConfig` |
+| Icono Save faltante   | Agregado a imports                             |
+| CSS classes           | Definidas en `<style>` de cada componente      |
 
 ---
 

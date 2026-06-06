@@ -1,6 +1,6 @@
 /**
  * DataSets Schema
- * 
+ *
  * Drizzle ORM schema for dynamic data collections.
  */
 
@@ -15,22 +15,22 @@ export const dataSets = pgTable("data_sets", {
   slug: varchar("slug", { length: 200 }).notNull().unique(),
   description: text("description"),
   icon: varchar("icon", { length: 50 }),
-  
+
   // Schema definition (fields, types, validation)
   schema: jsonb("schema").default({ fields: [] }),
-  
+
   // Display configuration
   displayConfig: jsonb("display_config"),
-  
+
   // RLS Policy
   policyJson: jsonb("policy_json"),
-  
+
   // Workflow configuration
   workflowJson: jsonb("workflow_json"),
-  
+
   // Relations
   gameId: uuid("game_id"),
-  
+
   // Metadata
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -42,26 +42,28 @@ export const dataSets = pgTable("data_sets", {
 export const dataEntries = pgTable("data_entries", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 500 }).notNull(),
-  
+
   // Relation to dataset
-  dataSetId: uuid("data_set_id").notNull().references(() => dataSets.id, { onDelete: "cascade" }),
-  
+  dataSetId: uuid("data_set_id")
+    .notNull()
+    .references(() => dataSets.id, { onDelete: "cascade" }),
+
   // The actual data (JSONB)
   data: jsonb("data").default({}),
-  
+
   // Status
   status: varchar("status", { length: 50 }).default("published"),
-  
+
   // Sorting
   sortOrder: integer("sort_order").default(0),
-  
+
   // Media
   thumbnailId: uuid("thumbnail_id"),
-  
+
   // Metadata
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-  
+
   // Audit
   createdById: text("created_by_id"),
   updatedById: text("updated_by_id"),
@@ -78,7 +80,19 @@ export interface FieldDefinition {
   id: string;
   key: string;
   label: string;
-  type: "text" | "number" | "boolean" | "date" | "datetime" | "select" | "multiselect" | "relation" | "image" | "file" | "richtext" | "json";
+  type:
+    | "text"
+    | "number"
+    | "boolean"
+    | "date"
+    | "datetime"
+    | "select"
+    | "multiselect"
+    | "relation"
+    | "image"
+    | "file"
+    | "richtext"
+    | "json";
   required?: boolean;
   unique?: boolean;
   defaultValue?: any;

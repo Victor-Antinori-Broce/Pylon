@@ -1,9 +1,11 @@
-import chalk from 'chalk';
-import fs from 'fs/promises';
-import path from 'path';
-import { sql } from 'drizzle-orm';
-import { loadDatabase, closeDatabase } from '../utils/database.js';
-import { findProjectRoot } from '../utils/project.js';
+import fs from "fs/promises";
+import path from "path";
+
+import chalk from "chalk";
+import { sql } from "drizzle-orm";
+
+import { loadDatabase, closeDatabase } from "../utils/database.js";
+import { findProjectRoot } from "../utils/project.js";
 
 interface Migration {
   id: string;
@@ -42,7 +44,7 @@ export async function migrateCommand(options: {
 
     await closeDatabase(client);
   } catch (error) {
-    console.error(chalk.red('❌ Error:'), error);
+    console.error(chalk.red("❌ Error:"), error);
     process.exit(1);
   }
 }
@@ -60,14 +62,14 @@ async function ensureMigrationsTable(db: any) {
 }
 
 async function showStatus(db: any) {
-  console.log(chalk.blue('📊 Migration Status\n'));
+  console.log(chalk.blue("📊 Migration Status\n"));
 
   const projectRoot = await findProjectRoot();
-  const grimoiresPath = path.join(projectRoot, 'packages', 'grimoires');
+  const grimoiresPath = path.join(projectRoot, "packages", "grimoires");
   const grimoires = await fs.readdir(grimoiresPath);
 
   for (const grimoire of grimoires) {
-    const migrationsDir = path.join(grimoiresPath, grimoire, 'migrations');
+    const migrationsDir = path.join(grimoiresPath, grimoire, "migrations");
 
     try {
       await fs.access(migrationsDir);
@@ -89,13 +91,13 @@ async function showStatus(db: any) {
     files.sort();
 
     for (const file of files) {
-      if (!file.endsWith('.sql') && !file.endsWith('.ts')) continue;
+      if (!file.endsWith(".sql") && !file.endsWith(".ts")) continue;
 
-      const name = file.replace(/\.(sql|ts)$/, '');
+      const name = file.replace(/\.(sql|ts)$/, "");
       const isApplied = appliedNames.has(name);
 
-      const icon = isApplied ? chalk.green('✓') : chalk.gray('○');
-      const status = isApplied ? chalk.green('[APPLIED]') : chalk.yellow('[PENDING]');
+      const icon = isApplied ? chalk.green("✓") : chalk.gray("○");
+      const status = isApplied ? chalk.green("[APPLIED]") : chalk.yellow("[PENDING]");
       console.log(`  ${icon} ${name} ${status}`);
     }
 
@@ -104,15 +106,15 @@ async function showStatus(db: any) {
 }
 
 async function applyMigrations(db: any, fake: boolean = false) {
-  console.log(chalk.blue('🚀 Applying migrations...\n'));
+  console.log(chalk.blue("🚀 Applying migrations...\n"));
 
   const projectRoot = await findProjectRoot();
-  const grimoiresPath = path.join(projectRoot, 'packages', 'grimoires');
+  const grimoiresPath = path.join(projectRoot, "packages", "grimoires");
   const grimoires = await fs.readdir(grimoiresPath);
   let appliedCount = 0;
 
   for (const grimoire of grimoires) {
-    const migrationsDir = path.join(grimoiresPath, grimoire, 'migrations');
+    const migrationsDir = path.join(grimoiresPath, grimoire, "migrations");
 
     try {
       await fs.access(migrationsDir);
@@ -128,19 +130,19 @@ async function applyMigrations(db: any, fake: boolean = false) {
 
     const files = await fs.readdir(migrationsDir);
     const pendingFiles = files
-      .filter((f) => f.endsWith('.sql') || f.endsWith('.ts'))
-      .filter((f) => !appliedNames.has(f.replace(/\.(sql|ts)$/, '')))
+      .filter((f) => f.endsWith(".sql") || f.endsWith(".ts"))
+      .filter((f) => !appliedNames.has(f.replace(/\.(sql|ts)$/, "")))
       .sort();
 
     for (const file of pendingFiles) {
       const filepath = path.join(migrationsDir, file);
-      const name = file.replace(/\.(sql|ts)$/, '');
+      const name = file.replace(/\.(sql|ts)$/, "");
 
       console.log(chalk.gray(`  Applying ${grimoire}/${name}...`));
 
       if (!fake) {
-        if (file.endsWith('.sql')) {
-          const content = await fs.readFile(filepath, 'utf-8');
+        if (file.endsWith(".sql")) {
+          const content = await fs.readFile(filepath, "utf-8");
           await db.execute(sql.raw(content));
         } else {
           const module = await import(filepath);
@@ -161,14 +163,14 @@ async function applyMigrations(db: any, fake: boolean = false) {
   }
 
   if (appliedCount === 0) {
-    console.log(chalk.green('\n✅ No pending migrations.'));
+    console.log(chalk.green("\n✅ No pending migrations."));
   } else {
     console.log(chalk.green(`\n✅ Applied ${appliedCount} migration(s).`));
   }
 }
 
 async function rollbackLastMigration(db: any) {
-  console.log(chalk.blue('⏪ Rolling back last migration...\n'));
+  console.log(chalk.blue("⏪ Rolling back last migration...\n"));
 
   const lastMigration = await db.execute(sql`
     SELECT grimoire, name FROM _migrations
@@ -177,7 +179,7 @@ async function rollbackLastMigration(db: any) {
   `);
 
   if (lastMigration.length === 0) {
-    console.log(chalk.yellow('No migrations to rollback.'));
+    console.log(chalk.yellow("No migrations to rollback."));
     return;
   }
 
@@ -185,11 +187,25 @@ async function rollbackLastMigration(db: any) {
 
   // Intentar .ts primero, luego .sql (los .sql no tienen rollback automático)
   const projectRoot = await findProjectRoot();
-  let filepath = path.join(projectRoot, 'packages', 'grimoires', grimoire, 'migrations', `${name}.ts`);
+  let filepath = path.join(
+    projectRoot,
+    "packages",
+    "grimoires",
+    grimoire,
+    "migrations",
+    `${name}.ts`
+  );
   try {
     await fs.access(filepath);
   } catch {
-    filepath = path.join(projectRoot, 'packages', 'grimoires', grimoire, 'migrations', `${name}.sql`);
+    filepath = path.join(
+      projectRoot,
+      "packages",
+      "grimoires",
+      grimoire,
+      "migrations",
+      `${name}.sql`
+    );
     try {
       await fs.access(filepath);
     } catch {
@@ -200,8 +216,12 @@ async function rollbackLastMigration(db: any) {
 
   console.log(chalk.gray(`  Rolling back ${grimoire}/${name}...`));
 
-  if (filepath.endsWith('.sql')) {
-    console.log(chalk.yellow(`  ⚠️ SQL migrations don't have automatic rollback. Please revert manually if needed.`));
+  if (filepath.endsWith(".sql")) {
+    console.log(
+      chalk.yellow(
+        `  ⚠️ SQL migrations don't have automatic rollback. Please revert manually if needed.`
+      )
+    );
   } else {
     const module = await import(filepath);
     const migration: Migration = module.default;
@@ -217,7 +237,7 @@ async function rollbackLastMigration(db: any) {
 }
 
 async function calculateChecksum(filepath: string): Promise<string> {
-  const crypto = await import('crypto');
-  const content = await fs.readFile(filepath, 'utf-8');
-  return crypto.createHash('md5').update(content).digest('hex');
+  const crypto = await import("crypto");
+  const content = await fs.readFile(filepath, "utf-8");
+  return crypto.createHash("md5").update(content).digest("hex");
 }

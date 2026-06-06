@@ -1,10 +1,12 @@
 <script lang="ts">
   import { X, Loader2, Save } from "lucide-svelte";
-  import type { SchemaColumn } from "$lib/types/admin";
+  import { onMount } from "svelte";
+
   import { autosaveStore } from "$lib/states/autosave.svelte";
+  import type { SchemaColumn } from "$lib/types/admin";
+
   import AutoSaveIndicator from "./AutoSaveIndicator.svelte";
   import InlineRelationPanel from "./InlineRelationPanel.svelte";
-  import { onMount } from "svelte";
 
   interface Props {
     /** Table/collection name for API calls */
@@ -23,7 +25,15 @@
     onclose?: () => void;
   }
 
-  let { tableName, columns, editData = null, apiEndpoint, grimoireId, onsave, onclose }: Props = $props();
+  const {
+    tableName,
+    columns,
+    editData = null,
+    apiEndpoint,
+    grimoireId,
+    onsave,
+    onclose,
+  }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   const isEdit = $derived(!!editData);
@@ -32,11 +42,11 @@
   let formData = $state<Record<string, any>>({});
   let saving = $state(false);
   let error = $state<string | null>(null);
-  let relationOptions = $state<Record<string, { value: string; label: string }[]>>({});
+  const relationOptions = $state<Record<string, { value: string; label: string }[]>>({});
   let loadingRelations = $state(false);
 
   // Autosave key for this form
-  const autosaveKey = $derived(`${tableName}_${editData?.id || 'new'}`);
+  const autosaveKey = $derived(`${tableName}_${editData?.id || "new"}`);
 
   // Start autosave when form is ready
   onMount(() => {
@@ -62,7 +72,7 @@
   $effect(() => {
     if (autosaveStore.restoredData) {
       for (const key of Object.keys(autosaveStore.restoredData)) {
-        if (editableColumns.some(c => c.name === key)) {
+        if (editableColumns.some((c) => c.name === key)) {
           formData[key] = autosaveStore.restoredData[key];
         }
       }
@@ -74,26 +84,40 @@
   const READONLY_FIELDS = new Set(["id", "created_at", "updated_at", "createdAt", "updatedAt"]);
 
   // Editable columns = all except readonly
-  let editableColumns = $derived(
-    columns.filter(c => !READONLY_FIELDS.has(c.name) && !c.isPrimary)
+  const editableColumns = $derived(
+    columns.filter((c) => !READONLY_FIELDS.has(c.name) && !c.isPrimary)
   );
 
   // FK column name → related table name mapping
   const FK_TABLE_MAP: Record<string, string> = {
-    game_id: "games", gameId: "games",
-    platform_id: "platforms", platformId: "platforms",
-    tag_id: "tags", tagId: "tags",
-    streamer_id: "streamers", streamerId: "streamers",
-    collection_id: "collections", collectionId: "collections",
-    user_id: "auth_users", userId: "auth_users",
-    author_id: "auth_users", authorId: "auth_users",
-    assigned_to_id: "auth_users", assignedToId: "auth_users",
-    contact_id: "contacts", contactId: "contacts",
-    dataset_id: "datasets", datasetId: "datasets",
+    game_id: "games",
+    gameId: "games",
+    platform_id: "platforms",
+    platformId: "platforms",
+    tag_id: "tags",
+    tagId: "tags",
+    streamer_id: "streamers",
+    streamerId: "streamers",
+    collection_id: "collections",
+    collectionId: "collections",
+    user_id: "auth_users",
+    userId: "auth_users",
+    author_id: "auth_users",
+    authorId: "auth_users",
+    assigned_to_id: "auth_users",
+    assignedToId: "auth_users",
+    contact_id: "contacts",
+    contactId: "contacts",
+    dataset_id: "datasets",
+    datasetId: "datasets",
   };
 
   function isRelationColumn(col: SchemaColumn): boolean {
-    return col.type === "relation" || col.name.endsWith("_id") || (col.name.endsWith("Id") && col.name !== "id");
+    return (
+      col.type === "relation" ||
+      col.name.endsWith("_id") ||
+      (col.name.endsWith("Id") && col.name !== "id")
+    );
   }
 
   function getRelatedTable(colName: string): string | undefined {
@@ -113,7 +137,14 @@
     if (t === "json" || t === "jsonb") return "json";
     if (t === "email") return "email";
     if (t === "url") return "url";
-    if (col.name.includes("description") || col.name.includes("content") || col.name.includes("body") || col.name.includes("notes") || col.name.includes("bio")) return "textarea";
+    if (
+      col.name.includes("description") ||
+      col.name.includes("content") ||
+      col.name.includes("body") ||
+      col.name.includes("notes") ||
+      col.name.includes("bio")
+    )
+      return "textarea";
     return "text";
   }
 
@@ -123,7 +154,7 @@
       .replace(/Id$/, "")
       .replace(/([A-Z])/g, " $1")
       .replace(/_/g, " ")
-      .replace(/^\w/, c => c.toUpperCase())
+      .replace(/^\w/, (c) => c.toUpperCase())
       .trim();
   }
 
@@ -151,7 +182,9 @@
       const relTable = getRelatedTable(col.name);
       if (!relTable) return;
       try {
-        const res = await fetch(`${API_URL}/api/explorer/${relTable}/options`, { credentials: "include" });
+        const res = await fetch(`${API_URL}/api/explorer/${relTable}/options`, {
+          credentials: "include",
+        });
         if (res.ok) {
           const data = await res.json();
           relationOptions[col.name] = data.options || [];
@@ -161,7 +194,9 @@
       }
     });
 
-    Promise.all(promises).then(() => { loadingRelations = false; });
+    Promise.all(promises).then(() => {
+      loadingRelations = false;
+    });
   });
 
   async function handleSubmit() {
@@ -172,15 +207,15 @@
     const payload: Record<string, any> = {};
     for (const col of editableColumns) {
       const key = col.name;
-      let value = formData[key];
+      const value = formData[key];
       const inputType = inferInputType(col);
-      
+
       // Skip undefined values unless it's a required field
       if ((value === "" || value === undefined || value === null) && col.nullable) {
         payload[key] = null;
         continue;
       }
-      
+
       // Handle different types
       if (inputType === "number") {
         // Convert to number or null
@@ -217,9 +252,7 @@
       // Use custom apiEndpoint if provided, otherwise fall back to /api/explorer
       // apiEndpoint is the base path (e.g., /api/directory), tableName gets appended
       const baseUrl = apiEndpoint ? `${API_URL}${apiEndpoint}` : `${API_URL}/api/explorer`;
-      const url = isEdit
-        ? `${baseUrl}/${tableName}/${editData!.id}`
-        : `${baseUrl}/${tableName}`;
+      const url = isEdit ? `${baseUrl}/${tableName}/${editData!.id}` : `${baseUrl}/${tableName}`;
 
       const res = await fetch(url, {
         method: isEdit ? "PATCH" : "POST",
@@ -249,11 +282,21 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-  onclick={(e) => { if (e.target === e.currentTarget) { autosaveStore.stopAutosave(); onclose?.(); } }}
+  onclick={(e) => {
+    if (e.target === e.currentTarget) {
+      autosaveStore.stopAutosave();
+      onclose?.();
+    }
+  }}
 >
-  <div class="bg-gremius-card border border-gremius-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="bg-gremius-card border border-gremius-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+    onclick={(e) => e.stopPropagation()}
+  >
     <!-- Header -->
-    <div class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0">
+    <div
+      class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0"
+    >
       <div>
         <h2 class="text-lg font-semibold text-gremius-text">
           {isEdit ? "Edit" : "Create"} Record
@@ -277,7 +320,9 @@
     <!-- Form Body -->
     <div class="flex-1 overflow-y-auto px-6 py-5">
       {#if error}
-        <div class="mb-4 p-3 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-sm text-gremius-pink">
+        <div
+          class="mb-4 p-3 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-sm text-gremius-pink"
+        >
           {error}
         </div>
       {/if}
@@ -285,7 +330,9 @@
       <div class="space-y-4">
         {#if editableColumns.length === 0}
           <div class="p-8 text-center">
-            <div class="w-12 h-12 rounded-full bg-gremius-cyan/10 flex items-center justify-center mx-auto mb-3">
+            <div
+              class="w-12 h-12 rounded-full bg-gremius-cyan/10 flex items-center justify-center mx-auto mb-3"
+            >
               <span class="text-2xl">⚠️</span>
             </div>
             <h3 class="text-gremius-text font-medium mb-1">No fields available</h3>
@@ -293,7 +340,7 @@
               Could not load schema for table "{tableName}".
             </p>
             <p class="text-xs text-gremius-subtle mt-2">
-              Total columns received: {columns.length}<br>
+              Total columns received: {columns.length}<br />
               Editable columns: {editableColumns.length}
             </p>
           </div>
@@ -310,10 +357,7 @@
 
             {#if inputType === "relation"}
               <!-- FK Dropdown -->
-              <select
-                class="input w-full"
-                bind:value={formData[col.name]}
-              >
+              <select class="input w-full" bind:value={formData[col.name]}>
                 <option value="">— Select —</option>
                 {#if relationOptions[col.name]}
                   {#each relationOptions[col.name] as opt}
@@ -324,7 +368,6 @@
               <p class="text-[10px] text-gremius-subtle mt-1">
                 Related to: {getRelatedTable(col.name) || "unknown"}
               </p>
-
             {:else if inputType === "checkbox"}
               <label class="flex items-center gap-2 cursor-pointer">
                 <input
@@ -334,7 +377,6 @@
                 />
                 <span class="text-sm text-gremius-text-dim">Enabled</span>
               </label>
-
             {:else if inputType === "textarea"}
               <textarea
                 class="input w-full min-h-[80px] resize-y"
@@ -342,7 +384,6 @@
                 placeholder={formatLabel(col.name)}
                 rows="3"
               ></textarea>
-
             {:else if inputType === "json"}
               <textarea
                 class="input w-full font-mono text-xs min-h-[80px] resize-y"
@@ -350,7 +391,6 @@
                 placeholder={'{"key": "value"}'}
                 rows="3"
               ></textarea>
-
             {:else if inputType === "number"}
               <input
                 type="number"
@@ -358,14 +398,8 @@
                 bind:value={formData[col.name]}
                 placeholder={formatLabel(col.name)}
               />
-
             {:else if inputType === "date" || inputType === "datetime-local"}
-              <input
-                type={inputType}
-                class="input w-full"
-                bind:value={formData[col.name]}
-              />
-
+              <input type={inputType} class="input w-full" bind:value={formData[col.name]} />
             {:else}
               <input
                 type={inputType}
@@ -380,28 +414,18 @@
 
       <!-- Inline Relations (edit mode only) -->
       {#if isEdit && editData?.id}
-        <InlineRelationPanel
-          {grimoireId}
-          parentTable={tableName}
-          parentId={editData.id}
-        />
+        <InlineRelationPanel {grimoireId} parentTable={tableName} parentId={editData.id} />
       {/if}
     </div>
 
     <!-- Footer -->
-    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gremius-border shrink-0">
-      <button
-        class="btn-secondary-sm"
-        onclick={() => onclose?.()}
-        disabled={saving}
-      >
+    <div
+      class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gremius-border shrink-0"
+    >
+      <button class="btn-secondary-sm" onclick={() => onclose?.()} disabled={saving}>
         Cancel
       </button>
-      <button
-        class="btn-primary flex items-center gap-2"
-        onclick={handleSubmit}
-        disabled={saving}
-      >
+      <button class="btn-primary flex items-center gap-2" onclick={handleSubmit} disabled={saving}>
         {#if saving}
           <Loader2 class="w-4 h-4 animate-spin" />
           Saving...

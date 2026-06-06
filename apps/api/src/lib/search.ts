@@ -7,11 +7,12 @@
  * búsqueda semántica usando embeddings y PGVector.
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
-import type { AppVariables } from "../types/hono";
+
+import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -59,10 +60,10 @@ export async function initializeSearchExtensions(): Promise<void> {
   try {
     // Habilitar pgvector
     await db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector`);
-    
+
     // Habilitar pg_trgm para búsqueda fuzzy
     await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
-    
+
     console.log("✅ Search extensions initialized (vector, pg_trgm)");
   } catch (error) {
     console.error("Failed to initialize search extensions:", error);
@@ -75,7 +76,7 @@ export async function initializeSearchExtensions(): Promise<void> {
  */
 export async function createSearchIndexes(tableName: string, textColumns: string[]): Promise<void> {
   const tsvectorColumn = `${tableName}_search_vector`;
-  
+
   // Crear columna tsvector si no existe
   await db.execute(sql`
     ALTER TABLE ${sql.identifier(tableName)} 
@@ -87,13 +88,13 @@ export async function createSearchIndexes(tableName: string, textColumns: string
     CREATE OR REPLACE FUNCTION ${tableName}_search_update() RETURNS trigger AS $$
     BEGIN
       NEW.${tsvectorColumn} := to_tsvector('english', 
-        ${textColumns.map(col => `COALESCE(NEW.${col}, '')`).join(" || ' ' || ")}
+        ${textColumns.map((col) => `COALESCE(NEW.${col}, '')`).join(" || ' ' || ")}
       );
       RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
   `;
-  
+
   await db.execute(sql.raw(triggerFunction));
 
   // Crear trigger
@@ -129,7 +130,7 @@ export async function createSearchIndexes(tableName: string, textColumns: string
  */
 export async function searchFullText(options: SearchOptions): Promise<SearchResult[]> {
   const { query, limit = 20, offset = 0 } = options;
-  
+
   // Normalizar query para tsquery
   const results = await db.execute<{
     id: string;
@@ -159,7 +160,7 @@ export async function searchFullText(options: SearchOptions): Promise<SearchResu
     OFFSET ${offset}
   `);
 
-  return results.rows.map(row => ({
+  return results.rows.map((row) => ({
     id: row.id,
     title: row.title,
     content: row.content,
@@ -175,7 +176,7 @@ export async function searchFullText(options: SearchOptions): Promise<SearchResu
  * Búsqueda fuzzy usando trigrams (para typos)
  */
 export async function searchFuzzy(
-  query: string, 
+  query: string,
   table: string = "data_entries",
   column: string = "title",
   limit: number = 10
@@ -209,7 +210,7 @@ export async function searchFuzzy(
 export async function generateEmbedding(_text: string): Promise<number[]> {
   // TODO: Integrar con servicio real de embeddings (OpenAI, Ollama, etc.)
   // Por ahora retornamos un mock para desarrollo
-  
+
   // Ejemplo de integración con OpenAI:
   // const response = await fetch("https://api.openai.com/v1/embeddings", {
   //   method: "POST",
@@ -218,7 +219,7 @@ export async function generateEmbedding(_text: string): Promise<number[]> {
   // });
   // const data = await response.json();
   // return data.data[0].embedding;
-  
+
   // Mock: vector aleatorio de 384 dimensiones (compatible con all-MiniLM)
   return Array.from({ length: 384 }, () => (Math.random() - 0.5) * 2);
 }
@@ -272,7 +273,7 @@ export async function upsertVectorDocument(
     embedding?: number[];
   } = {}
 ): Promise<string> {
-  const embedding = options.embedding || await generateEmbedding(content);
+  const embedding = options.embedding || (await generateEmbedding(content));
   const embeddingLiteral = `[${embedding.join(",")}]`;
 
   if (options.id) {
@@ -318,7 +319,7 @@ export async function searchVector(
   } = {}
 ): Promise<SearchResult[]> {
   const { limit = 10, threshold = 0.7 } = options;
-  
+
   const queryEmbedding = await generateEmbedding(query);
   const embeddingLiteral = `[${queryEmbedding.join(",")}]`;
 
@@ -348,8 +349,8 @@ export async function searchVector(
   `);
 
   return results.rows
-    .filter(row => row.similarity >= threshold)
-    .map(row => ({
+    .filter((row) => row.similarity >= threshold)
+    .map((row) => ({
       id: row.id,
       title: row.metadata?.title || row.content.slice(0, 100),
       content: row.content,
@@ -379,8 +380,8 @@ export async function searchHybrid(options: SearchOptions): Promise<SearchResult
   const combined: SearchResult[] = [];
 
   // Normalizar scores (0-1)
-  const maxFulltextScore = Math.max(...fulltextResults.map(r => r.score), 1);
-  const maxVectorScore = Math.max(...vectorResults.map(r => r.score), 1);
+  const maxFulltextScore = Math.max(...fulltextResults.map((r) => r.score), 1);
+  const maxVectorScore = Math.max(...vectorResults.map((r) => r.score), 1);
 
   // Agregar full-text con peso 0.6
   for (const result of fulltextResults) {
@@ -403,7 +404,7 @@ export async function searchHybrid(options: SearchOptions): Promise<SearchResult
       });
     } else {
       // Boost existing result
-      const existing = combined.find(r => r.id === result.id);
+      const existing = combined.find((r) => r.id === result.id);
       if (existing) {
         existing.score += (result.score / maxVectorScore) * 0.4;
       }
@@ -411,9 +412,7 @@ export async function searchHybrid(options: SearchOptions): Promise<SearchResult
   }
 
   // Ordenar por score combinado y limitar
-  return combined
-    .sort((a, b) => b.score - a.score)
-    .slice(0, options.limit || 10);
+  return combined.sort((a, b) => b.score - a.score).slice(0, options.limit || 10);
 }
 
 /**
@@ -489,9 +488,9 @@ searchRoutes.get("/suggestions", async (c) => {
   try {
     // Búsqueda fuzzy rápida
     const results = await searchFuzzy(query, "data_entries", "title", limit);
-    
+
     return c.json({
-      suggestions: results.map(r => ({
+      suggestions: results.map((r) => ({
         text: r.title,
         similarity: r.similarity,
       })),
@@ -506,7 +505,7 @@ searchRoutes.get("/suggestions", async (c) => {
  */
 searchRoutes.post("/index", requireAuth, async (c) => {
   const body = await c.req.json();
-  
+
   try {
     const id = await upsertVectorDocument(body.content, body.metadata, {
       id: body.id,
@@ -544,7 +543,7 @@ searchRoutes.get("/stats", requireAuth, async (c) => {
 
     return c.json({
       vectorDocuments: vectorCount.rows[0]?.count || 0,
-      indexedTables: tableInfo.rows.filter(r => r.hassearch).map(r => r.tablename),
+      indexedTables: tableInfo.rows.filter((r) => r.hassearch).map((r) => r.tablename),
     });
   } catch (error) {
     return c.json({ error: "Failed to get stats" }, 500);
@@ -558,7 +557,7 @@ searchRoutes.post("/init", requireAuth, async (c) => {
   try {
     await initializeSearchExtensions();
     await createVectorTable();
-    
+
     // Crear índices para tablas principales
     await createSearchIndexes("data_entries", ["title", "content"]);
     await createSearchIndexes("blog_posts", ["title", "excerpt", "content"]);

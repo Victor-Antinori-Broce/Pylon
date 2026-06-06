@@ -4,10 +4,10 @@
   El token solo se muestra una vez (one-way)
 -->
 <script lang="ts">
-  import { cn } from '$lib/utils';
-  import { Copy, Check, Eye, EyeOff, AlertTriangle } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
+  import { cn } from '$lib/utils';
+  import { Copy, Check, Eye, EyeOff, AlertTriangle } from 'lucide-svelte';
   
   interface Props {
     token?: string;
@@ -15,7 +15,7 @@
     onCopy?: () => void;
   }
   
-  let {
+  const {
     token,
     tokenPrefix = 'grm_agent_',
     onCopy
@@ -39,8 +39,8 @@
     return t.slice(0, 8) + '•'.repeat(t.length - 12) + t.slice(-4);
   }
   
-  let displayToken = $derived(token || `${tokenPrefix}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
-  let isRevealed = $derived(showToken && !!token);
+  const displayToken = $derived(token || `${tokenPrefix}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
+  const isRevealed = $derived(showToken && !!token);
 </script>
 
 {#if token && !dismissed}

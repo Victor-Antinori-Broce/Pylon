@@ -5,36 +5,43 @@ Este documento muestra cómo integrar videos de YouTube en el Academy LMS.
 ## Formatos de URL Soportados
 
 ### 1. URL Estándar de YouTube
+
 ```
 https://www.youtube.com/watch?v=VIDEO_ID
 ```
 
 **Ejemplo:**
+
 ```
 https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
 ### 2. URL Corta (youtu.be)
+
 ```
 https://youtu.be/VIDEO_ID
 ```
 
 **Ejemplo:**
+
 ```
 https://youtu.be/dQw4w9WgXcQ
 ```
 
 ### 3. URL de Embed
+
 ```
 https://www.youtube.com/embed/VIDEO_ID
 ```
 
 **Ejemplo:**
+
 ```
 https://www.youtube.com/embed/dQw4w9WgXcQ
 ```
 
 ### 4. URL con Parámetros
+
 ```
 https://www.youtube.com/watch?v=VIDEO_ID&t=30s
 https://www.youtube.com/watch?v=VIDEO_ID&list=PLAYLIST_ID
@@ -54,6 +61,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "valido": true,
@@ -75,6 +83,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "tipo": "youtube",
@@ -106,6 +115,7 @@ Authorization: Bearer TOKEN
 ### Flujo Recomendado
 
 1. **Validar la URL de YouTube:**
+
 ```http
 POST /api/academy/media/youtube-info
 {
@@ -114,26 +124,27 @@ POST /api/academy/media/youtube-info
 ```
 
 2. **Usar la URL normalizada en el tema:**
+
 ```javascript
-const response = await fetch('/api/academy/media/youtube-info', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ url: userInputUrl })
+const response = await fetch("/api/academy/media/youtube-info", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: userInputUrl }),
 });
 
 const { embedUrl, thumbnailUrl } = await response.json();
 
 // Crear tema con URL normalizada
-await fetch('/api/academy/temas', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+await fetch("/api/academy/temas", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    moduloId: 'mod_123',
-    titulo: 'Nuevo Tema',
-    contenido: '...',
+    moduloId: "mod_123",
+    titulo: "Nuevo Tema",
+    contenido: "...",
     videoYoutube: embedUrl,
-    imagen: thumbnailUrl // Opcional: usar thumbnail
-  })
+    imagen: thumbnailUrl, // Opcional: usar thumbnail
+  }),
 });
 ```
 
@@ -142,32 +153,32 @@ await fetch('/api/academy/temas', {
 ### React Component
 
 ```tsx
-import { useState } from 'react';
+import { useState } from "react";
 
 function VideoYoutubeInput({ onVideoSelected }) {
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const validateYoutubeUrl = async (inputUrl) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/academy/media/youtube-info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: inputUrl })
+      const response = await fetch("/api/academy/media/youtube-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: inputUrl }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.valido) {
         setInfo(data);
         onVideoSelected(data);
       } else {
-        alert('URL de YouTube inválida');
+        alert("URL de YouTube inválida");
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -181,13 +192,10 @@ function VideoYoutubeInput({ onVideoSelected }) {
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
-      <button 
-        onClick={() => validateYoutubeUrl(url)}
-        disabled={loading}
-      >
-        {loading ? 'Validando...' : 'Validar'}
+      <button onClick={() => validateYoutubeUrl(url)} disabled={loading}>
+        {loading ? "Validando..." : "Validar"}
       </button>
-      
+
       {info && (
         <div className="video-preview">
           <img src={info.thumbnailUrl} alt="Thumbnail" />
@@ -205,11 +213,7 @@ function VideoYoutubeInput({ onVideoSelected }) {
 ```vue
 <template>
   <div>
-    <input 
-      v-model="url" 
-      placeholder="URL de YouTube"
-      @blur="validateUrl"
-    />
+    <input v-model="url" placeholder="URL de YouTube" @blur="validateUrl" />
     <div v-if="info" class="preview">
       <img :src="info.thumbnailUrl" />
       <p>{{ info.videoId }}</p>
@@ -218,18 +222,18 @@ function VideoYoutubeInput({ onVideoSelected }) {
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from "vue";
 
-const url = ref('');
+const url = ref("");
 const info = ref(null);
 
 const validateUrl = async () => {
-  const response = await fetch('/api/academy/media/youtube-info', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url: url.value })
+  const response = await fetch("/api/academy/media/youtube-info", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: url.value }),
   });
-  
+
   info.value = await response.json();
 };
 </script>
@@ -238,6 +242,7 @@ const validateUrl = async () => {
 ## URLs de Prueba
 
 ### Videos Válidos
+
 ```
 https://www.youtube.com/watch?v=dQw4w9WgXcQ
 https://youtu.be/dQw4w9WgXcQ
@@ -246,6 +251,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s
 ```
 
 ### Videos Inválidos (para testing)
+
 ```
 https://www.google.com
 https://www.youtube.com
@@ -262,6 +268,7 @@ https://img.youtube.com/vi/{VIDEO_ID}/maxresdefault.jpg
 ```
 
 Resoluciones disponibles:
+
 - `maxresdefault.jpg` - Máxima resolución (1280x720)
 - `sddefault.jpg` - Resolución estándar (640x480)
 - `hqdefault.jpg` - Alta calidad (480x360)
@@ -297,9 +304,9 @@ Resoluciones disponibles:
 export const temaTable = pgTable("temas", {
   // ... otros campos
   videoYoutube: text("video_youtube"), // URL embed de YouTube
-  videoLocal: text("video_local"),     // URL archivo local
+  videoLocal: text("video_local"), // URL archivo local
   videoExterno: text("video_externo"), // iframe o link externo
-  imagen: text("imagen"),              // Thumbnail
+  imagen: text("imagen"), // Thumbnail
 });
 ```
 
@@ -307,7 +314,8 @@ export const temaTable = pgTable("temas", {
 
 ```javascript
 // Regex para validar URLs de YouTube
-const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
+const youtubeRegex =
+  /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
 
 function isValidYoutubeUrl(url) {
   return youtubeRegex.test(url);

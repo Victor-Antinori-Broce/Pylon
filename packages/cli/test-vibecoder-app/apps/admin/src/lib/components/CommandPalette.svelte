@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { cn } from "$lib/utils";
   import {
     Search,
     FilePlus,
@@ -11,14 +11,11 @@
     Gamepad2,
     GraduationCap,
     Settings,
-    Book,
-    Castle,
-    Zap,
-    Bot,
     LayoutDashboard,
   } from "lucide-svelte";
   import { fade, scale } from "svelte/transition";
-  import { cn } from "$lib/utils";
+
+  import { goto } from "$app/navigation";
 
   interface NavItem {
     path: string;
@@ -37,7 +34,7 @@
     action: () => void;
   }
 
-  let {
+  const {
     navItems = [],
     bottomNavItems = [],
   }: {
@@ -141,7 +138,7 @@
   ];
 
   // Build full command list from props + static items
-  let allItems = $derived<CommandItem[]>([
+  const allItems = $derived<CommandItem[]>([
     ...actionItems,
     ...recentItems,
     ...navItems.map((item) => ({
@@ -160,7 +157,7 @@
     })),
   ]);
 
-  let filteredItems = $derived<CommandItem[]>(
+  const filteredItems = $derived<CommandItem[]>(
     query.trim() === ""
       ? allItems
       : allItems.filter((item) =>

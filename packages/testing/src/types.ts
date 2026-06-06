@@ -4,20 +4,20 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { Hono } from "hono";
 import type { GrimoireContext, GrimoireDefinition } from "@gremius/shared";
+import type { Hono } from "hono";
 
 /** Configuration for test sandbox */
 export interface SandboxConfig {
   /** Grimoires to load */
   grimoires: string[];
-  
+
   /** Fixtures to load before tests */
   fixtures?: string | Record<string, any>;
-  
+
   /** Database strategy */
   database?: "memory" | "transaction" | "postgres";
-  
+
   /** Auto-cleanup between tests */
   autoReset?: boolean;
 }
@@ -26,28 +26,28 @@ export interface SandboxConfig {
 export interface TestSandbox {
   /** Unique sandbox ID */
   id: string;
-  
+
   /** Full GrimoireContext like in production */
   context: TestGrimoireContext;
-  
+
   /** Loaded grimoires with their routers */
   grimoires: Record<string, TestGrimoire>;
-  
+
   /** Fixture data */
   fixtures: Record<string, any>;
-  
+
   /** HTTP test client */
   http: TestHttpClient;
-  
+
   /** Database helpers */
   db: TestDatabase;
-  
+
   /** Event tracking */
   events: TestEvents;
-  
+
   /** Simple assertions */
   assert: TestAssertions;
-  
+
   /** Lifecycle */
   setup: () => Promise<void>;
   teardown: () => Promise<void>;
@@ -64,7 +64,7 @@ export interface TestGrimoireContext extends GrimoireContext {
 export interface TestGrimoire {
   definition: GrimoireDefinition;
   router: Hono;
-  
+
   /** Direct access to grimoire's internal functions */
   invoke: <T>(method: string, ...args: any[]) => Promise<T>;
 }
@@ -73,13 +73,13 @@ export interface TestGrimoire {
 export interface TestHttpClient {
   /** Set authentication user */
   asUser: (userId: string | TestUser) => TestHttpClient;
-  
+
   /** Set bearer token */
   withToken: (token: string) => TestHttpClient;
-  
+
   /** Set headers */
   withHeaders: (headers: Record<string, string>) => TestHttpClient;
-  
+
   /** HTTP methods */
   get: (path: string) => Promise<TestResponse>;
   post: (path: string, body: any) => Promise<TestResponse>;
@@ -93,10 +93,10 @@ export interface TestResponse {
   status: number;
   headers: Record<string, string>;
   body: any;
-  
+
   /** Helper to parse JSON */
   json: <T = any>() => Promise<T>;
-  
+
   /** Helper to parse text */
   text: () => Promise<string>;
 }
@@ -114,19 +114,19 @@ export interface TestUser {
 export interface TestDatabase {
   /** Check if row exists */
   has: (table: string, where: Record<string, any>) => Promise<boolean>;
-  
+
   /** Get row by ID or conditions */
   get: (table: string, where: Record<string, any>) => Promise<any | null>;
-  
+
   /** Count rows */
   count: (table: string, where?: Record<string, any>) => Promise<number>;
-  
+
   /** Truncate tables */
   truncate: (...tables: string[]) => Promise<void>;
-  
+
   /** Raw query */
   query: (sql: string, params?: any[]) => Promise<any[]>;
-  
+
   /** Insert data */
   insert: (table: string, data: Record<string, any>) => Promise<any>;
 }
@@ -135,13 +135,13 @@ export interface TestDatabase {
 export interface TestEvents {
   /** All events emitted */
   all: Array<{ name: string; data: any; timestamp: Date }>;
-  
+
   /** Check if event was emitted */
   wasEmitted: (name: string, data?: Record<string, any>) => boolean;
-  
+
   /** Get last event by name */
   last: <T = any>(name: string) => { name: string; data: T; timestamp: Date } | undefined;
-  
+
   /** Clear events */
   clear: () => void;
 }
@@ -152,9 +152,14 @@ export interface TestAssertions {
   database: {
     has: (table: string, where: Record<string, any>, message?: string) => Promise<void>;
     missing: (table: string, where: Record<string, any>, message?: string) => Promise<void>;
-    count: (table: string, expected: number, where?: Record<string, any>, message?: string) => Promise<void>;
+    count: (
+      table: string,
+      expected: number,
+      where?: Record<string, any>,
+      message?: string
+    ) => Promise<void>;
   };
-  
+
   /** Event assertions */
   events: {
     emitted: (name: string, data?: Record<string, any>, message?: string) => void;

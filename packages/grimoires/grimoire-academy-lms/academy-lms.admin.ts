@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Academy LMS - Admin Configuration
- * 
+ *
  * Opcional: Si existe, el admin usa estas vistas custom.
  * Si no existe, usa Data Explorer auto-generado.
  */
@@ -12,10 +12,10 @@
 export const adminConfig: AdminConfig = {
   // Nombre en el sidebar
   name: "Academy",
-  
+
   // Icono (Lucide icon name)
   icon: "GraduationCap",
-  
+
   // Vistas principales
   views: [
     {
@@ -26,8 +26,8 @@ export const adminConfig: AdminConfig = {
       widgets: [
         { type: "stat", table: "cursos", label: "Active Courses" },
         { type: "stat", table: "grupo_usuarios", label: "Students" },
-        { type: "chart", table: "progreso_cursos", chartType: "completion" }
-      ]
+        { type: "chart", table: "progreso_cursos", chartType: "completion" },
+      ],
     },
     {
       id: "courses",
@@ -40,8 +40,8 @@ export const adminConfig: AdminConfig = {
       // Filtros por defecto
       filters: [
         { field: "tipoCurso", type: "select", options: ["INDUCCION", "GESTION", "TECNICO"] },
-        { field: "activo", type: "boolean" }
-      ]
+        { field: "activo", type: "boolean" },
+      ],
     },
     {
       id: "course-builder",
@@ -50,14 +50,14 @@ export const adminConfig: AdminConfig = {
       // Componente Svelte custom (opcional)
       component: "CourseBuilder",
       // Solo aparece en modo edición
-      context: "edit"
+      context: "edit",
     },
     {
       id: "groups",
       type: "grid",
       title: "Student Groups",
       table: "grupos_asignacion",
-      columns: ["nombre", "supervisorPrincipalId", "miembros.count"]
+      columns: ["nombre", "supervisorPrincipalId", "miembros.count"],
     },
     {
       id: "learning-paths",
@@ -65,10 +65,10 @@ export const adminConfig: AdminConfig = {
       title: "Learning Paths",
       table: "learning_paths",
       groupBy: "categoria",
-      columns: ["nombre", "totalCursos", "activo"]
-    }
+      columns: ["nombre", "totalCursos", "activo"],
+    },
   ],
-  
+
   // Configuración de formularios
   forms: {
     cursos: {
@@ -76,10 +76,10 @@ export const adminConfig: AdminConfig = {
       tabs: [
         { id: "general", label: "General", fields: ["titulo", "descripcion", "tipoCurso"] },
         { id: "media", label: "Media", fields: ["portada", "colorPortada"] },
-        { id: "schedule", label: "Schedule", fields: ["fechaInicio", "fechaFin", "duracionHoras"] }
-      ]
-    }
-  }
+        { id: "schedule", label: "Schedule", fields: ["fechaInicio", "fechaFin", "duracionHoras"] },
+      ],
+    },
+  },
 };
 
 // Exportar componentes custom (opcional)

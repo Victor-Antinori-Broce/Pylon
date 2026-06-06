@@ -1,6 +1,6 @@
 /**
  * CRM Grimoire - Schema Tests
- * 
+ *
  * Validates the Drizzle schema definitions including:
  * - Tables can be imported
  * - Enum definitions have correct values
@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+
 import {
   crmCompanies,
   crmContacts,

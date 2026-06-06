@@ -1,6 +1,6 @@
 /**
  * DataSets Admin Configuration
- * 
+ *
  * Core grimoire admin config for DataSets management.
  * Positioned first in the sidebar (order: 0).
  */
@@ -58,7 +58,7 @@ export const adminConfig: AdminConfig = {
   icon: "Database",
   category: "core",
   order: 0, // First in sidebar
-  
+
   views: [
     {
       id: "list",
@@ -77,8 +77,14 @@ export const adminConfig: AdminConfig = {
       defaultSort: { column: "name", direction: "asc" },
       actions: ["view", "edit", "delete"],
       bulkActions: [
-        { id: "delete", label: "Delete", icon: "Trash2", confirm: "Delete {count} datasets?", refresh: true },
-      ]
+        {
+          id: "delete",
+          label: "Delete",
+          icon: "Trash2",
+          confirm: "Delete {count} datasets?",
+          refresh: true,
+        },
+      ],
     },
     {
       id: "entries",
@@ -89,22 +95,32 @@ export const adminConfig: AdminConfig = {
         { name: "id", type: "text", hidden: true },
         { name: "title", type: "text", label: "Title", sortable: true, filterable: true },
         { name: "data_set_id", type: "relation", label: "DataSet", displayField: "name" },
-        { name: "status", type: "badge", label: "Status", badgeColor: { 
-          published: "green", 
-          draft: "yellow", 
-          archived: "gray" 
-        }},
+        {
+          name: "status",
+          type: "badge",
+          label: "Status",
+          badgeColor: {
+            published: "green",
+            draft: "yellow",
+            archived: "gray",
+          },
+        },
         { name: "sort_order", type: "number", label: "Order", sortable: true },
         { name: "created_at", type: "datetime", label: "Created", sortable: true },
       ],
       filters: [
-        { field: "status", type: "select", label: "Status", options: ["published", "draft", "archived"] },
+        {
+          field: "status",
+          type: "select",
+          label: "Status",
+          options: ["published", "draft", "archived"],
+        },
         { field: "data_set_id", type: "relation", label: "DataSet", table: "data_sets" },
       ],
       actions: ["view", "edit", "delete"],
-    }
+    },
   ],
-  
+
   forms: {
     dataset: {
       layout: "tabs",
@@ -113,32 +129,32 @@ export const adminConfig: AdminConfig = {
           id: "basic",
           label: "Basic Info",
           icon: "Info",
-          fields: ["name", "slug", "description", "icon"]
+          fields: ["name", "slug", "description", "icon"],
         },
         {
           id: "schema",
           label: "Schema",
           icon: "Table",
           fields: ["schema"],
-          component: "SchemaBuilder" // Custom component for field definition
+          component: "SchemaBuilder", // Custom component for field definition
         },
         {
           id: "security",
           label: "Security",
           icon: "Shield",
-          fields: ["policy_json"]
+          fields: ["policy_json"],
         },
         {
           id: "display",
           label: "Display",
           icon: "Layout",
-          fields: ["display_config"]
-        }
-      ]
-    }
+          fields: ["display_config"],
+        },
+      ],
+    },
   },
-  
-  apiEndpoint: "/api/datasets"
+
+  apiEndpoint: "/api/datasets",
 };
 
 // Sidebar configuration for Core grimoires
@@ -151,8 +167,8 @@ export const sidebarConfig = {
   category: "core",
   badge: {
     text: "Core",
-    variant: "default"
-  }
+    variant: "default",
+  },
 };
 
 export default adminConfig;

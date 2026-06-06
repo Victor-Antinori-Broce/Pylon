@@ -2,12 +2,14 @@
  * DEPLOY Command - Deploy to production
  */
 
-import chalk from "chalk";
-import ora from "ora";
-import { execa } from "execa";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+import chalk from "chalk";
+import { execa } from "execa";
+import ora from "ora";
+
 import { deployToRailway } from "../deploy/railway.js";
 
 export interface DeployOptions {
@@ -23,7 +25,10 @@ export async function deployCommand(options: DeployOptions) {
   const projectRoot = process.cwd();
 
   // Check if we're in a Gremius project
-  if (!existsSync(join(projectRoot, "apps", "api")) && !existsSync(join(projectRoot, "gremius.config.ts"))) {
+  if (
+    !existsSync(join(projectRoot, "apps", "api")) &&
+    !existsSync(join(projectRoot, "gremius.config.ts"))
+  ) {
     console.error(chalk.red("✖ Not in a Gremius project directory"));
     process.exit(1);
   }

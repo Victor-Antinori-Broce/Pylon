@@ -3,4 +3,4 @@
  * Servicios de API para el admin panel
  */
 
-export * from './agents';
+export * from "./agents";

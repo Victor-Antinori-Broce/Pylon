@@ -1,11 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-
   /* ── Theme Engine CSS Variables (overridden at runtime by useThemeEngine) ── */
   :root {
     --gremius-color-primary: #00e5ff;
@@ -28,8 +27,8 @@
     --gremius-yellow: 255 214 0;
     --gremius-purple: 179 136 255;
     --gremius-danger: 255 42 109;
-    --gremius-font-sans: 'Inter', system-ui, sans-serif;
-    --gremius-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --gremius-font-sans: "Inter", system-ui, sans-serif;
+    --gremius-font-mono: "JetBrains Mono", "Fira Code", monospace;
   }
 
   * {
@@ -62,6 +61,5 @@
     @apply bg-gremius-cyan/20 text-gremius-cyan;
   }
 }
-
 
 /* Trigger HMR 1 */

@@ -9,11 +9,14 @@
  * - API key authentication
  */
 
+import { createHash } from "crypto";
+
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { authUsers, apiKeys } from "../db/schema";
-import { eq } from "drizzle-orm";
-import { createHash } from "crypto";
+
 import { 
   isDatabaseAvailable, 
   clearTestData, 

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import DataExplorer from "$lib/components/admin/DataExplorer.svelte";
   import { fetchGrimoireConfig, generateDefaultConfig } from "$lib/grimoire-loader";
   import type { AdminConfig } from "$lib/types/admin";
+  import { onMount } from "svelte";
   
   const grimoireId = "esports";
   

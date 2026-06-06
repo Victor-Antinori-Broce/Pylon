@@ -132,20 +132,24 @@ cd grimoire-my-feature
 import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
 
-export const myFeatureItems = pgTable("my_feature_items", {
-  id: text("id").primaryKey().$defaultFn(createId),
-  name: text("name").notNull(),
-  description: text("description"),
-  category: text("category"),
-  status: text("status").default("draft").notNull(),
-  sortOrder: integer("sort_order").default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [
-  // IMPORTANTE: Usar sintaxis de ARRAY, no objeto
-  // ❌ NO: (t) => ({ idx: index("idx").on(t.name) })
-  // ✅ SÍ: (t) => [index("idx").on(t.name)]
-]);
+export const myFeatureItems = pgTable(
+  "my_feature_items",
+  {
+    id: text("id").primaryKey().$defaultFn(createId),
+    name: text("name").notNull(),
+    description: text("description"),
+    category: text("category"),
+    status: text("status").default("draft").notNull(),
+    sortOrder: integer("sort_order").default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    // IMPORTANTE: Usar sintaxis de ARRAY, no objeto
+    // ❌ NO: (t) => ({ idx: index("idx").on(t.name) })
+    // ✅ SÍ: (t) => [index("idx").on(t.name)]
+  ]
+);
 ```
 
 **⚠️ Sobre índices:** Si necesitas `UNIQUE` compuestos, créalos en una migración SQL manual (ver `0023_academy_indexes.sql` como ejemplo).
@@ -161,16 +165,14 @@ import { eq, desc } from "drizzle-orm";
 export class MyFeatureService {
   async listItems(options: { limit?: number; category?: string } = {}) {
     const query = db.select().from(myItemsTable);
-    
+
     if (options.category) {
       query.where(eq(myItemsTable.category, options.category));
     }
-    
-    return query
-      .orderBy(desc(myItemsTable.createdAt))
-      .limit(options.limit || 50);
+
+    return query.orderBy(desc(myItemsTable.createdAt)).limit(options.limit || 50);
   }
-  
+
   async createItem(data: CreateItemInput) {
     const [item] = await db
       .insert(myItemsTable)
@@ -181,12 +183,9 @@ export class MyFeatureService {
       .returning();
     return item;
   }
-  
+
   async getItem(id: string) {
-    const [item] = await db
-      .select()
-      .from(myItemsTable)
-      .where(eq(myItemsTable.id, id));
+    const [item] = await db.select().from(myItemsTable).where(eq(myItemsTable.id, id));
     return item;
   }
 }
@@ -277,9 +276,7 @@ export const grimoire = defineGrimoire({
   tables: ["myFeatureItems"],
   admin: {
     category: "content",
-    views: [
-      { id: "grid", type: "grid", title: "All Items", table: "myFeatureItems" },
-    ],
+    views: [{ id: "grid", type: "grid", title: "All Items", table: "myFeatureItems" }],
   },
   dependencies: {
     grimoires: ["grimoire-media"],
@@ -334,23 +331,17 @@ cd packages/realms/my-niche
   "version": "0.1.0",
   "description": "Gremius especializado para mi nicho",
   "author": "Tu nombre",
-  
+
   "grimoires": {
-    "required": [
-      "grimoire-datasets",
-      "grimoire-media",
-      "grimoire-my-feature"
-    ],
-    "optional": [
-      "grimoire-analytics"
-    ]
+    "required": ["grimoire-datasets", "grimoire-media", "grimoire-my-feature"],
+    "optional": ["grimoire-analytics"]
   },
-  
+
   "templates": {
     "default": "minimal",
     "available": ["minimal", "full", "enterprise"]
   },
-  
+
   "config": {
     "auth": {
       "defaultProvider": "discord",
@@ -363,7 +354,7 @@ cd packages/realms/my-niche
       "default": ["discord", "slack"]
     }
   },
-  
+
   "ui": {
     "theme": "dark",
     "primaryColor": "#6366f1",
@@ -399,7 +390,7 @@ import myNicheConfig from "@gremius/realm-my-niche/realm.json";
 export const realms = {
   "gaming-ecosystem": gamingConfig,
   "e-commerce": ecommerceConfig,
-  "my-niche": myNicheConfig,  // ← Tu nuevo realm
+  "my-niche": myNicheConfig, // ← Tu nuevo realm
 };
 
 export function getRealmConfig(name: string) {
@@ -420,7 +411,7 @@ import { MyFeatureService } from "./my-feature.service";
 
 describe("MyFeatureService", () => {
   const service = new MyFeatureService();
-  
+
   it("should create an item", async () => {
     const item = await service.createItem({
       name: "Test Item",
@@ -544,8 +535,7 @@ npm publish --access public
 import { defineGrimoire } from "@gremius/shared";
 import { Hono } from "hono";
 
-const router = new Hono()
-  .get("/health", (c) => c.json({ status: "ok" }));
+const router = new Hono().get("/health", (c) => c.json({ status: "ok" }));
 
 export const grimoire = defineGrimoire({
   id: "grimoire-health-check",
@@ -567,12 +557,14 @@ import { createBunWebSocket } from "hono/bun";
 
 const { upgradeWebSocket, websocket } = createBunWebSocket();
 
-export const realtimeRoutes = new Hono()
-  .get("/ws", upgradeWebSocket((c) => ({
+export const realtimeRoutes = new Hono().get(
+  "/ws",
+  upgradeWebSocket((c) => ({
     onMessage(event, ws) {
       ws.send(`Echo: ${event.data}`);
     },
-  })));
+  }))
+);
 
 export { websocket };
 ```
@@ -604,4 +596,4 @@ A: Solo si cambias la estructura de tablas. Para datos, usa el API.
 
 ---
 
-*¿Tienes dudas? Abre un issue en GitHub o pregunta en Discord.*
+_¿Tienes dudas? Abre un issue en GitHub o pregunta en Discord._

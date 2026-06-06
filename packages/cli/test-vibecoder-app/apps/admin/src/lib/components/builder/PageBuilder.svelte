@@ -1,26 +1,29 @@
 <script lang="ts">
-  import { slide } from "svelte/transition";
   import {
     LayoutGrid, Plus, GripVertical, ChevronUp, ChevronDown, Copy, Trash2,
     Sparkles, FileText, Images, Map, Tv, Code2, AlertTriangle, Minus,
   } from "lucide-svelte";
-  import BlockPicker from "./BlockPicker.svelte";
-  import BlockEditor from "./BlockEditor.svelte";
+  import { slide } from "svelte/transition";
+
   import { createBlock, getBlockDef, type PageBlock, type BlockType } from "../../../types/blocks";
+
+  import BlockEditor from "./BlockEditor.svelte";
+  import BlockPicker from "./BlockPicker.svelte";
+
 
   interface Props {
     blocks?: PageBlock[];
     onChange?: (blocks: PageBlock[]) => void;
   }
   
-  let { blocks = [], onChange }: Props = $props();
+  const { blocks = [], onChange }: Props = $props();
 
   let panelMode = $state<"picker" | "editor" | null>(null);
   let selectedBlockId = $state<string | null>(null);
   let dragOverIdx = $state(-1);
   let dragSourceIdx = $state(-1);
 
-  let selectedBlock = $derived(blocks.find((b) => b.id === selectedBlockId) || null);
+  const selectedBlock = $derived(blocks.find((b) => b.id === selectedBlockId) || null);
 
   const iconMap: Record<string, typeof Sparkles> = { Sparkles, FileText, Images, Map, Tv, Code2, AlertTriangle, Minus };
 

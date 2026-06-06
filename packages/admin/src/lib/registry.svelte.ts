@@ -60,12 +60,15 @@ export interface RegistryBlock {
   /** Componente de preview/renderizado */
   renderComponent: Component;
   /** Schema de props para el bloque */
-  propsSchema?: Record<string, {
-    type: "string" | "number" | "boolean" | "select" | "media";
-    label: string;
-    default?: unknown;
-    options?: { label: string; value: string }[];
-  }>;
+  propsSchema?: Record<
+    string,
+    {
+      type: "string" | "number" | "boolean" | "select" | "media";
+      label: string;
+      default?: unknown;
+      options?: { label: string; value: string }[];
+    }
+  >;
   /** Módulo al que pertenece */
   module?: string;
 }
@@ -133,13 +136,13 @@ class ComponentRegistry {
    */
   registerWidget(widget: RegistryWidget): void {
     const { slot } = widget;
-    
+
     if (!this.widgets.has(slot)) {
       this.widgets.set(slot, []);
     }
-    
+
     const slotWidgets = this.widgets.get(slot)!;
-    
+
     // Evitar duplicados por ID
     const existingIndex = slotWidgets.findIndex((w) => w.id === widget.id);
     if (existingIndex >= 0) {
@@ -147,7 +150,7 @@ class ComponentRegistry {
     } else {
       slotWidgets.push(widget);
     }
-    
+
     // Ordenar por orden descendente
     slotWidgets.sort((a, b) => b.order - a.order);
   }
@@ -189,10 +192,8 @@ class ComponentRegistry {
    */
   registerRoute(route: RegistryRoute): void {
     // Evitar duplicados
-    const exists = this.routes.some(
-      (r) => r.path === route.path && r.module === route.module
-    );
-    
+    const exists = this.routes.some((r) => r.path === route.path && r.module === route.module);
+
     if (!exists) {
       this.routes.push(route);
     }
@@ -209,9 +210,7 @@ class ComponentRegistry {
    * Obtener una ruta por path
    */
   getRouteByPath(path: string): RegistryRoute | undefined {
-    return this.routes.find(
-      (r) => this.isModuleActive(r.module) && r.path === path
-    );
+    return this.routes.find((r) => this.isModuleActive(r.module) && r.path === path);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -223,7 +222,7 @@ class ComponentRegistry {
    */
   registerBlock(block: RegistryBlock): void {
     const existingIndex = this.blocks.findIndex((b) => b.type === block.type);
-    
+
     if (existingIndex >= 0) {
       this.blocks[existingIndex] = block;
     } else {
@@ -242,9 +241,7 @@ class ComponentRegistry {
    * Obtener un bloque por tipo
    */
   getBlock(type: string): RegistryBlock | undefined {
-    return this.blocks.find(
-      (b) => b.type === type && this.isModuleActive(b.module)
-    );
+    return this.blocks.find((b) => b.type === type && this.isModuleActive(b.module));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -256,13 +253,13 @@ class ComponentRegistry {
    */
   registerAction(action: RegistryAction): void {
     const existingIndex = this.actions.findIndex((a) => a.id === action.id);
-    
+
     if (existingIndex >= 0) {
       this.actions[existingIndex] = action;
     } else {
       this.actions.push(action);
     }
-    
+
     // Ordenar por orden descendente
     this.actions.sort((a, b) => (b.order ?? 0) - (a.order ?? 0));
   }
@@ -292,16 +289,16 @@ class ComponentRegistry {
         widgets.filter((w) => w.module !== moduleKey)
       );
     }
-    
+
     // Routes
     this.routes = this.routes.filter((r) => r.module !== moduleKey);
-    
+
     // Blocks
     this.blocks = this.blocks.filter((b) => b.module !== moduleKey);
-    
+
     // Actions
     this.actions = this.actions.filter((a) => a.module !== moduleKey);
-    
+
     // Remove from enabled modules
     this.enabledModules.delete(moduleKey);
   }

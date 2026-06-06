@@ -8,17 +8,23 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/unit/**/*.test.ts"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/.git/**", "**/apps/**/node_modules/**", "**/packages/**/node_modules/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.git/**",
+      "**/apps/**/node_modules/**",
+      "**/packages/**/node_modules/**",
+    ],
     coverage: {
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "tests/"]
+      exclude: ["node_modules/", "tests/"],
     },
     setupFiles: ["./tests/unit/setup.ts"],
   },
   resolve: {
     alias: {
       "@core": path.resolve(__dirname, "../../packages/core"),
-      "@api": path.resolve(__dirname, "../../apps/api/src")
-    }
-  }
+      "@api": path.resolve(__dirname, "../../apps/api/src"),
+    },
+  },
 });

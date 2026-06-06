@@ -21,7 +21,10 @@ async function loginAsAdmin(page: Page): Promise<boolean> {
 test.describe("Sidebar Navigation", () => {
   test("All core nav items present", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     const sidebar = page.locator("aside");
 
@@ -42,7 +45,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Navigate to Games", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.locator("aside").locator("text=Games").first().click();
     await page.waitForURL("**/games", { timeout: 5_000 });
@@ -51,7 +57,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Navigate to Blog Posts", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.locator("aside").locator("text=Blog Posts").click();
     await page.waitForURL("**/posts", { timeout: 5_000 });
@@ -60,7 +69,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Navigate to Media Library", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.locator("aside").locator("text=Media Library").click();
     await page.waitForURL("**/media", { timeout: 5_000 });
@@ -69,7 +81,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Navigate to Data Sets", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.locator("aside").locator("text=Data Sets").click();
     await page.waitForURL("**/datasets", { timeout: 5_000 });
@@ -78,7 +93,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Navigate to Modules", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.locator("aside").locator("text=Modules").click();
     await page.waitForURL("**/modules", { timeout: 5_000 });
@@ -87,7 +105,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Navigate to Settings", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.locator("aside").locator("text=Settings").click();
     await page.waitForURL("**/settings", { timeout: 5_000 });
@@ -96,7 +117,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Sidebar collapse/expand", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     const sidebar = page.locator("aside");
 
@@ -126,7 +150,10 @@ test.describe("Sidebar Navigation", () => {
 
   test("Dashboard loads with welcome message", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await expect(page.locator("text=Welcome back")).toBeVisible();
     await expect(page.locator("text=API Connected")).toBeVisible();

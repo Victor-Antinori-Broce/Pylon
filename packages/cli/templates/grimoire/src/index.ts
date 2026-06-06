@@ -11,8 +11,8 @@
  * The loader tries each mode in order.
  */
 
-import { Hono } from "hono";
 import type { GrimoireContext, GrimoireDefinition } from "@gremius/shared";
+import { Hono } from "hono";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // OPTION 1: Modern Grimoire (Dependency Injection)

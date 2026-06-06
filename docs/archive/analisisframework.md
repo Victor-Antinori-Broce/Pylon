@@ -29,14 +29,14 @@ GremiusCMS es un **BaaS híbrido extensible** con características sólidas de f
 
 ## 📋 Evaluación por Criterios
 
-| Criterio | Estado | Puntuación | Detalles |
-|----------|--------|------------|----------|
-| **1. Routing y servidor** | 🟡 **Parcial** | 6/10 | Hono expuesto, pero `defineAction` abstrae HTTP |
-| **2. ORM y base de datos** | 🟡 **Parcial** | 5/10 | Drizzle expuesto; helpers CRUD en datasets |
-| **3. Estructura y scaffolding** | 🟢 **Cumplido** | 8/10 | CLI, realms, monorepo claro |
-| **4. Utilidades y convenciones** | 🟢 **Mejorado** | 8/10 | `defineAction` + Telemetry 🆕 |
-| **5. Observabilidad** | 🟢 **Cumplido** | 8/10 | Telemetry nativa tipo LangSmith 🆕 |
-| **6. Documentación** | 🟡 **Parcial** | 5/10 | Buena interna, falta guías externas |
+| Criterio                         | Estado          | Puntuación | Detalles                                        |
+| -------------------------------- | --------------- | ---------- | ----------------------------------------------- |
+| **1. Routing y servidor**        | 🟡 **Parcial**  | 6/10       | Hono expuesto, pero `defineAction` abstrae HTTP |
+| **2. ORM y base de datos**       | 🟡 **Parcial**  | 5/10       | Drizzle expuesto; helpers CRUD en datasets      |
+| **3. Estructura y scaffolding**  | 🟢 **Cumplido** | 8/10       | CLI, realms, monorepo claro                     |
+| **4. Utilidades y convenciones** | 🟢 **Mejorado** | 8/10       | `defineAction` + Telemetry 🆕                   |
+| **5. Observabilidad**            | 🟢 **Cumplido** | 8/10       | Telemetry nativa tipo LangSmith 🆕              |
+| **6. Documentación**             | 🟡 **Parcial**  | 5/10       | Buena interna, falta guías externas             |
 
 **Promedio ponderado:** ~70% (vs 65% anterior)
 
@@ -71,7 +71,7 @@ const webhookAction = defineAction({
     const { payload, db } = ctx;
     await db.insert(payments).values(payload.data);
     return { received: true };
-  }
+  },
 });
 
 // Agent Action (MCP Tool)
@@ -80,7 +80,7 @@ const searchAction = defineAction({
   inputSchema: z.object({ datasetId: z.string(), query: z.string() }),
   run: async (ctx) => {
     return await searchEntries(ctx.payload.datasetId, ctx.payload.query);
-  }
+  },
 });
 ```
 
@@ -112,10 +112,10 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
 ): ActionDefinition<TPayload, TResult> {
   // Parse trigger: http.post:/path, event:name, agent.tool:name
   const parsed = parseTrigger(definition.trigger);
-  
+
   // Wrap with telemetry 🆕
   const wrappedDefinition = wrapWithTelemetry(definition);
-  
+
   // Registrar en el adapter correspondiente
   switch (parsed.prefix) {
     case "http":
@@ -128,7 +128,7 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
       mcpAdapter.register(parsed, wrappedDefinition);
       break;
   }
-  
+
   return wrappedDefinition;
 }
 
@@ -140,7 +140,8 @@ export interface ActionContext<TPayload = unknown> {
   logger: Logger;
   queue: Queue;
   cache: Cache;
-  agent?: {              // 🆕 Agente context
+  agent?: {
+    // 🆕 Agente context
     agentId: string;
     agentName: string;
     scopes: string[];
@@ -156,6 +157,7 @@ export interface ActionContext<TPayload = unknown> {
 ```
 
 **Impacto:** Los developers pueden escribir lógica de negocio sin preocuparse por:
+
 - Crear routers Hono manualmente
 - Configurar BullMQ workers
 - Registrar MCP tools
@@ -184,15 +186,15 @@ function wrapWithTelemetry<TPayload, TResult>(
     run: async (ctx: ActionContext<TPayload>): Promise<ActionResult<TResult> | TResult | void> => {
       const traceId = (ctx.grimoire as any)?.telemetry?.traceId;
       const provider = globalTelemetryProvider;
-      
+
       if (!traceId || !provider) {
-        return originalRun(ctx);  // Sin telemetry si no hay trace
+        return originalRun(ctx); // Sin telemetry si no hay trace
       }
 
       // Insert step record
       const stepId = generateUUID();
       const startTime = performance.now();
-      
+
       await provider.insertStep({
         id: stepId,
         traceId,
@@ -252,30 +254,30 @@ export const myActions = [
     trigger: "http.get:/posts",
     run: async (ctx) => {
       return await ctx.db.query("posts").getAll();
-    }
+    },
   }),
-  
+
   defineAction({
     trigger: "event:user.created",
     run: async (ctx) => {
       await sendWelcomeEmail(ctx.payload.email);
-    }
+    },
   }),
-  
+
   defineAction({
     trigger: "agent.tool:create_post",
     inputSchema: PostSchema,
     run: async (ctx) => {
       return await createPost(ctx.payload);
-    }
+    },
   }),
-  
+
   defineAction({
-    trigger: "event.cron:0 0 * * *:cleanup",  // 🆕 Cron
+    trigger: "event.cron:0 0 * * *:cleanup", // 🆕 Cron
     run: async (ctx) => {
       await cleanupOldData();
-    }
-  })
+    },
+  }),
 ];
 ```
 
@@ -289,13 +291,13 @@ import { Hono } from "hono";
 
 function createCustomRouter(ctx: GrimoireContext) {
   const app = new Hono();
-  
+
   app.use("*", customMiddleware);
-  
+
   app.get("/complex", async (c) => {
     // Lógica compleja con acceso directo a Hono
   });
-  
+
   return app;
 }
 ```
@@ -304,16 +306,16 @@ function createCustomRouter(ctx: GrimoireContext) {
 
 ## 🆕 Comparativa: Antes vs Ahora
 
-| Aspecto | Antes (v0.7) | Ahora (v0.8) |
-|---------|-------------|--------------|
-| **HTTP Routes** | Crear Hono manualmente | `defineAction({ trigger: "http.get:/path" })` |
-| **Event Handlers** | BullMQ manual | `defineAction({ trigger: "event:name" })` |
-| **MCP Tools** | Registro manual en MCP server | `defineAction({ trigger: "agent.tool:name" })` |
-| **Context** | `HonoContext` + `GrimoireContext` | `ActionContext` unificado |
-| **Type Safety** | Manual | `defineAction<Payload, Result>()` |
-| **Telemetry** | ❌ No existía | ✅ Automática en actions 🆕 |
-| **Cron** | ❌ No implementado | ✅ `event.cron:` triggers 🆕 |
-| **Agent Playground** | ❌ No existía | ✅ UI integrada 🆕 |
+| Aspecto              | Antes (v0.7)                      | Ahora (v0.8)                                   |
+| -------------------- | --------------------------------- | ---------------------------------------------- |
+| **HTTP Routes**      | Crear Hono manualmente            | `defineAction({ trigger: "http.get:/path" })`  |
+| **Event Handlers**   | BullMQ manual                     | `defineAction({ trigger: "event:name" })`      |
+| **MCP Tools**        | Registro manual en MCP server     | `defineAction({ trigger: "agent.tool:name" })` |
+| **Context**          | `HonoContext` + `GrimoireContext` | `ActionContext` unificado                      |
+| **Type Safety**      | Manual                            | `defineAction<Payload, Result>()`              |
+| **Telemetry**        | ❌ No existía                     | ✅ Automática en actions 🆕                    |
+| **Cron**             | ❌ No implementado                | ✅ `event.cron:` triggers 🆕                   |
+| **Agent Playground** | ❌ No existía                     | ✅ UI integrada 🆕                             |
 
 ---
 
@@ -385,18 +387,18 @@ Firebase/Supabase  +  Framework Actions  +  AI-Native (MCP)  +  Observabilidad
 
 ## 📊 Comparativa con Alternativas (Actualizada)
 
-| Producto | Tipo | Flexibilidad | AI-Native | Observabilidad | Curva de Aprendizaje |
-|----------|------|--------------|-----------|----------------|---------------------|
-| **Firebase** | BaaS | Baja | ❌ | Básica | Muy baja |
-| **Supabase** | BaaS | Media | ❌ | Básica | Baja |
-| **Directus** | BaaS | Media | ❌ | Básica | Baja |
-| **Next.js** | Framework | Alta | ⚠️ (AI SDK) | Manual | Media |
-| **Express** | Framework | Muy Alta | ❌ | Manual | Media |
-| **LangSmith** | Observabilidad | N/A | ✅ | ✅ Nativa | Media |
-| **Gremius v0.8** | **BaaS + Framework** | **Alta** | ✅ **Sí** | ✅ **Nativa** | **Media** |
+| Producto         | Tipo                 | Flexibilidad | AI-Native   | Observabilidad | Curva de Aprendizaje |
+| ---------------- | -------------------- | ------------ | ----------- | -------------- | -------------------- |
+| **Firebase**     | BaaS                 | Baja         | ❌          | Básica         | Muy baja             |
+| **Supabase**     | BaaS                 | Media        | ❌          | Básica         | Baja                 |
+| **Directus**     | BaaS                 | Media        | ❌          | Básica         | Baja                 |
+| **Next.js**      | Framework            | Alta         | ⚠️ (AI SDK) | Manual         | Media                |
+| **Express**      | Framework            | Muy Alta     | ❌          | Manual         | Media                |
+| **LangSmith**    | Observabilidad       | N/A          | ✅          | ✅ Nativa      | Media                |
+| **Gremius v0.8** | **BaaS + Framework** | **Alta**     | ✅ **Sí**   | ✅ **Nativa**  | **Media**            |
 
 **Tu diferenciador:** El único que es BaaS (zero-config) + Framework (defineAction) + AI-Native (MCP) + Observabilidad (Telemetry)
 
 ---
 
-*Documento actualizado - GremiusCMS v0.8.0-beta*
+_Documento actualizado - GremiusCMS v0.8.0-beta_

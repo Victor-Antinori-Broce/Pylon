@@ -1,27 +1,28 @@
 /**
  * @file agent-rbac.ts
  * @description Middleware RBAC (Role-Based Access Control) para Agentes NHI
- * 
+ *
  * Fase 3: Implementa control de acceso granular basado en scopes.
  * Los scopes usan formato "action:resource" con soporte para wildcards.
- * 
+ *
  * Ejemplos de scopes:
  * - "read:database" - Permiso de lectura en base de datos
  * - "write:files" - Permiso de escritura en archivos
  * - "mcp:connect" - Conexión MCP permitida
  * - "read:*" - Permiso de lectura en todos los recursos
- * 
+ *
  * @author Gremius Security Team
  * @version 1.0.0
  */
 
 import type { MiddlewareHandler, Context, Next } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
+import { logger } from "@/lib/logger";
 import type { AgentAuthContext } from "@/services/agent-auth";
 // @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
 import { hasScope, hasAllScopes, hasAnyScope } from "@/services/agent-auth";
 // @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
-import { logger } from "@/lib/logger";
 
 /**
  * Opciones de configuración para el middleware RBAC
@@ -29,19 +30,19 @@ import { logger } from "@/lib/logger";
 export interface RBACOptions {
   /** Scopes requeridos para acceder al recurso */
   scopes: string[];
-  /** 
+  /**
    * Modo de verificación:
    * - "all": Requiere TODOS los scopes (AND)
    * - "any": Requiere AL MENOS UNO (OR)
    * @default "all"
    */
   requireAll?: boolean;
-  /** 
+  /**
    * Acción descriptiva para mensajes de error
    * @example "modificar registros de usuarios"
    */
   action?: string;
-  /** 
+  /**
    * Recurso protegido para mensajes de error
    * @example "base de datos"
    */
@@ -55,7 +56,7 @@ export enum RBACErrorCode {
   AGENT_NOT_AUTHENTICATED = "AGENT_NOT_AUTHENTICATED",
   INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS",
   SCOPE_MISSING = "SCOPE_MISSING",
-  FORBIDDEN = "FORBIDDEN"
+  FORBIDDEN = "FORBIDDEN",
 }
 
 /**
@@ -84,18 +85,18 @@ interface RBACContext {
 
 /**
  * Middleware factory: Requiere scopes específicos
- * 
+ *
  * @example
  * ```typescript
  * // Requiere todos los scopes
- * app.post("/api/database/query", 
+ * app.post("/api/database/query",
  *   requireAgentAuth(),
  *   requireScopes({ scopes: ["read:database", "write:database"] }),
  *   handler
  * );
- * 
+ *
  * // Requiere al menos uno
- * app.get("/api/files", 
+ * app.get("/api/files",
  *   requireAgentAuth(),
  *   requireScopes({ scopes: ["read:files", "admin:*"], requireAll: false }),
  *   handler
@@ -120,23 +121,24 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
         resource,
         action,
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
 
-      logger.warn({
-        path: c.req.path,
-        method: c.req.method,
-        requestId,
-        code: RBACErrorCode.AGENT_NOT_AUTHENTICATED
-      }, "RBAC: Agent not authenticated");
+      logger.warn(
+        {
+          path: c.req.path,
+          method: c.req.method,
+          requestId,
+          code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
+        },
+        "RBAC: Agent not authenticated"
+      );
 
       return c.json(error, 401);
     }
 
     // 2. Verificar scopes
-    const hasPermission = requireAll
-      ? hasAllScopes(agent, scopes)
-      : hasAnyScope(agent, scopes);
+    const hasPermission = requireAll ? hasAllScopes(agent, scopes) : hasAnyScope(agent, scopes);
 
     if (!hasPermission) {
       const error: RBACErrorResponse = {
@@ -148,20 +150,23 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
         resource,
         action,
         timestamp: new Date().toISOString(),
-        requestId
+        requestId,
       };
 
-      logger.warn({
-        agentId: agent.agentId,
-        agentName: agent.agentName,
-        path: c.req.path,
-        method: c.req.method,
-        required: scopes,
-        granted: agent.scopes,
-        requireAll,
-        requestId,
-        code: RBACErrorCode.INSUFFICIENT_PERMISSIONS
-      }, "RBAC: Permission denied");
+      logger.warn(
+        {
+          agentId: agent.agentId,
+          agentName: agent.agentName,
+          path: c.req.path,
+          method: c.req.method,
+          required: scopes,
+          granted: agent.scopes,
+          requireAll,
+          requestId,
+          code: RBACErrorCode.INSUFFICIENT_PERMISSIONS,
+        },
+        "RBAC: Permission denied"
+      );
 
       // Headers de seguridad para debugging
       c.header("X-RBAC-Required", scopes.join(","));
@@ -174,15 +179,18 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
     c.set("rbac", {
       checkedScopes: scopes,
       requireAll,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    logger.debug({
-      agentId: agent.agentId,
-      path: c.req.path,
-      scopes: scopes,
-      requestId
-    }, "RBAC: Permission granted");
+    logger.debug(
+      {
+        agentId: agent.agentId,
+        path: c.req.path,
+        scopes,
+        requestId,
+      },
+      "RBAC: Permission granted"
+    );
 
     await next();
   };
@@ -191,7 +199,7 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
 /**
  * Middleware factory: Requiere un scope específico
  * Versión simplificada para un solo scope
- * 
+ *
  * @example
  * ```typescript
  * app.get("/api/data", requireScope("read:database"), handler);
@@ -203,19 +211,23 @@ export function requireScope(scope: string, action?: string, resource?: string):
 
 /**
  * Middleware factory: Permite acceso si tiene cualquiera de los scopes
- * 
+ *
  * @example
  * ```typescript
  * app.get("/api/public", requireAnyScope(["read:public", "admin:*"]), handler);
  * ```
  */
-export function requireAnyScope(scopes: string[], action?: string, resource?: string): MiddlewareHandler {
+export function requireAnyScope(
+  scopes: string[],
+  action?: string,
+  resource?: string
+): MiddlewareHandler {
   return requireScopes({ scopes, requireAll: false, action, resource });
 }
 
 /**
  * Middleware: Solo administradores (scope especial admin:*)
- * 
+ *
  * @example
  * ```typescript
  * app.delete("/api/agents/:id", requireAdmin, handler);
@@ -226,10 +238,10 @@ export const requireAdmin: MiddlewareHandler = requireScope("admin:*", "administ
 /**
  * Middleware combinado: Autenticación + RBAC en un solo paso
  * Útil para rutas que siempre requieren ambos
- * 
+ *
  * @example
  * ```typescript
- * app.post("/api/mcp/invoke", 
+ * app.post("/api/mcp/invoke",
  *   agentAuthWithRBAC({ scopes: ["mcp:invoke"] }),
  *   handler
  * );
@@ -245,42 +257,48 @@ export function agentAuthWithRBAC(options: AgentAuthWithRBACOptions): Middleware
 
   return async (c: Context, next: Next) => {
     const requestId = c.get("requestId") || crypto.randomUUID();
-    
+
     // Importar dinámicamente para evitar dependencias circulares
     // @ts-ignore - Path alias @/ not resolved by tsc
     const { authenticateAgent } = await import("@/services/agent-auth");
 
     const authHeader = c.req.header("Authorization");
-    
+
     // Si no hay header y no es opcional, rechazar
     if (!authHeader) {
       if (optional) {
         return next();
       }
-      return c.json({
-        error: "Unauthorized",
-        code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
-        message: "Authorization header required",
-        requiredScopes: scopes,
-        grantedScopes: [],
-        timestamp: new Date().toISOString(),
-        requestId
-      }, 401);
+      return c.json(
+        {
+          error: "Unauthorized",
+          code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
+          message: "Authorization header required",
+          requiredScopes: scopes,
+          grantedScopes: [],
+          timestamp: new Date().toISOString(),
+          requestId,
+        },
+        401
+      );
     }
 
     // Verificar formato Bearer
     const [scheme, apiKey] = authHeader.split(" ");
-    
+
     if (scheme !== "Bearer" || !apiKey) {
-      return c.json({
-        error: "Unauthorized",
-        code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
-        message: "Invalid authorization format. Use: Bearer <api-key>",
-        requiredScopes: scopes,
-        grantedScopes: [],
-        timestamp: new Date().toISOString(),
-        requestId
-      }, 401);
+      return c.json(
+        {
+          error: "Unauthorized",
+          code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
+          message: "Invalid authorization format. Use: Bearer <api-key>",
+          requiredScopes: scopes,
+          grantedScopes: [],
+          timestamp: new Date().toISOString(),
+          requestId,
+        },
+        401
+      );
     }
 
     // Autenticar agente
@@ -290,15 +308,18 @@ export function agentAuthWithRBAC(options: AgentAuthWithRBACOptions): Middleware
     });
 
     if (!result.success || !result.context) {
-      return c.json({
-        error: "Unauthorized",
-        code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
-        message: result.error || "Authentication failed",
-        requiredScopes: scopes,
-        grantedScopes: [],
-        timestamp: new Date().toISOString(),
-        requestId
-      }, 401);
+      return c.json(
+        {
+          error: "Unauthorized",
+          code: RBACErrorCode.AGENT_NOT_AUTHENTICATED,
+          message: result.error || "Authentication failed",
+          requiredScopes: scopes,
+          grantedScopes: [],
+          timestamp: new Date().toISOString(),
+          requestId,
+        },
+        401
+      );
     }
 
     // Guardar en contexto
@@ -312,17 +333,20 @@ export function agentAuthWithRBAC(options: AgentAuthWithRBACOptions): Middleware
       : hasAnyScope(result.context, scopes);
 
     if (!hasPermission) {
-      return c.json({
-        error: "Forbidden",
-        code: RBACErrorCode.INSUFFICIENT_PERMISSIONS,
-        message: buildErrorMessage(action, resource, scopes, result.context.scopes),
-        requiredScopes: scopes,
-        grantedScopes: result.context.scopes,
-        resource,
-        action,
-        timestamp: new Date().toISOString(),
-        requestId
-      }, 403);
+      return c.json(
+        {
+          error: "Forbidden",
+          code: RBACErrorCode.INSUFFICIENT_PERMISSIONS,
+          message: buildErrorMessage(action, resource, scopes, result.context.scopes),
+          requiredScopes: scopes,
+          grantedScopes: result.context.scopes,
+          resource,
+          action,
+          timestamp: new Date().toISOString(),
+          requestId,
+        },
+        403
+      );
     }
 
     await next();
@@ -339,25 +363,31 @@ function buildErrorMessage(
   granted?: string[]
 ): string {
   if (action && resource) {
-    return `El agente no tiene permiso para ${action} en ${resource}. ` +
-           `Scopes requeridos: ${required?.join(", ") || "ninguno"}. ` +
-           `Scopes concedidos: ${granted?.join(", ") || "ninguno"}`;
-  }
-  
-  if (action) {
-    return `Permiso denegado para ${action}. ` +
-           `Scopes requeridos: ${required?.join(", ") || "ninguno"}`;
+    return (
+      `El agente no tiene permiso para ${action} en ${resource}. ` +
+      `Scopes requeridos: ${required?.join(", ") || "ninguno"}. ` +
+      `Scopes concedidos: ${granted?.join(", ") || "ninguno"}`
+    );
   }
 
-  return `Permisos insuficientes. ` +
-         `Requerido: ${required?.join(", ") || "ninguno"}, ` +
-         `Concedido: ${granted?.join(", ") || "ninguno"}`;
+  if (action) {
+    return (
+      `Permiso denegado para ${action}. ` +
+      `Scopes requeridos: ${required?.join(", ") || "ninguno"}`
+    );
+  }
+
+  return (
+    `Permisos insuficientes. ` +
+    `Requerido: ${required?.join(", ") || "ninguno"}, ` +
+    `Concedido: ${granted?.join(", ") || "ninguno"}`
+  );
 }
 
 /**
  * Helper: Verifica si un agente tiene acceso a un recurso específico
  * Útil para verificaciones manuales en controladores
- * 
+ *
  * @example
  * ```typescript
  * // En un controlador
@@ -389,7 +419,7 @@ export function checkResourceAccess(
 /**
  * Helper: Obtiene todos los recursos a los que el agente tiene acceso
  * para una acción específica
- * 
+ *
  * @example
  * ```typescript
  * const readableResources = getAccessibleResources(agent, "read");
@@ -439,5 +469,5 @@ export default {
   agentAuthWithRBAC,
   checkResourceAccess,
   getAccessibleResources,
-  RBACErrorCode
+  RBACErrorCode,
 };

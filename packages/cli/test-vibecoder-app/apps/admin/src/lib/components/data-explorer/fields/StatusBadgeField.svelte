@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
 
-  let { value, config }: FieldComponentProps = $props();
+  const { value, config }: FieldComponentProps = $props();
   
   // Colores por defecto para estados comunes
   const defaultColors: Record<string, string> = {
@@ -15,8 +15,8 @@
     rejected: "bg-red-500/10 text-red-500 border-red-500/20",
   };
   
-  let statusColors = $derived({ ...defaultColors, ...config.options?.colors });
-  let statusClass = $derived(
+  const statusColors = $derived({ ...defaultColors, ...config.options?.colors });
+  const statusClass = $derived(
     statusColors[String(value)?.toLowerCase()] || "bg-gremius-surface text-gremius-text-dim border-gremius-border"
   );
 </script>

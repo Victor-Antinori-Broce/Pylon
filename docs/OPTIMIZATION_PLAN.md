@@ -1,6 +1,7 @@
 # Gremius Image Size Optimization Plan
 
 ## Current State: 1.05 GB API Image
+
 ## Target: 300-400 MB (60% reduction)
 
 ---
@@ -74,10 +75,10 @@ interface DatabaseAdapter {
 
 // Only import the driver you need at runtime
 const driver = process.env.DB_DRIVER;
-if (driver === 'postgres') {
-  const { default: pg } = await import('pg');
-} else if (driver === 'mysql') {
-  const { default: mysql } = await import('mysql2');
+if (driver === "postgres") {
+  const { default: pg } = await import("pg");
+} else if (driver === "mysql") {
+  const { default: mysql } = await import("mysql2");
 }
 ```
 
@@ -88,6 +89,7 @@ if (driver === 'postgres') {
 ## 4. Remove DevDependencies (Save ~50 MB)
 
 **Current devDependencies in final image**:
+
 - `drizzle-kit` (~30 MB)
 - `typescript` (~15 MB)
 - `@types/*` packages (~5 MB)
@@ -126,6 +128,7 @@ async function generatePDF(data: any) {
 ```
 
 **Candidates for dynamic imports**:
+
 - `pdf-lib` (~10 MB) - PDF generation
 - `graphql` (~15 MB) - GraphQL support
 - `bullmq` (~20 MB) - Queue processing
@@ -176,15 +179,15 @@ apps/api/
 
 ## Expected Results
 
-| Optimization | Current | Target | Savings |
-|-------------|---------|--------|---------|
-| Base Image | 150 MB | 50 MB | 100 MB |
-| AWS SDK | 150 MB | 20 MB | 130 MB |
-| Sharp | 80 MB | 30 MB | 50 MB |
-| DevDependencies | 50 MB | 0 MB | 50 MB |
-| DB Drivers | 30 MB | 10 MB | 20 MB |
-| Misc bloat | 100 MB | 50 MB | 50 MB |
-| **TOTAL** | **1.05 GB** | **250 MB** | **~75%** |
+| Optimization    | Current     | Target     | Savings  |
+| --------------- | ----------- | ---------- | -------- |
+| Base Image      | 150 MB      | 50 MB      | 100 MB   |
+| AWS SDK         | 150 MB      | 20 MB      | 130 MB   |
+| Sharp           | 80 MB       | 30 MB      | 50 MB    |
+| DevDependencies | 50 MB       | 0 MB       | 50 MB    |
+| DB Drivers      | 30 MB       | 10 MB      | 20 MB    |
+| Misc bloat      | 100 MB      | 50 MB      | 50 MB    |
+| **TOTAL**       | **1.05 GB** | **250 MB** | **~75%** |
 
 ---
 

@@ -2,36 +2,37 @@
  * ============================================================================
  * RLS CONTEXT MIDDLEWARE - El Muro de Titanio (Nivel 2)
  * ============================================================================
- * 
+ *
  * FASE AI-READY: Middleware Transaccional para RLS Nativo de PostgreSQL
- * 
+ *
  * Este middleware implementa la "segunda línea de defensa" contra fugas de datos.
  * Inyecta el ID del usuario autenticado en el contexto de PostgreSQL usando
  * `SET LOCAL app.current_user_id`, permitiendo que el motor de la base de datos
  * evalúe políticas de Row Level Security (RLS) nativas.
- * 
+ *
  * ARQUITECTURA HÍBRIDA:
  * - Nivel 1 (Aplicación): RLS via Drizzle WHERE (rendimiento óptimo)
  * - Nivel 2 (Base de Datos): RLS Nativo PostgreSQL (seguridad absoluta)
- * 
+ *
  * El Nivel 2 actúa como "Muro de Titanio" para proteger contra:
  * - Queries dinámicas maliciosas generadas por IA (MCP)
  * - Bypass accidental del middleware de aplicación
  * - Acceso directo a la base de datos con credenciales filtradas
- * 
+ *
  * @example
  * ```typescript
  * // Aplicar a rutas críticas
  * app.use("/api/entries", rlsContextMiddleware());
- * 
+ *
  * // O a todo el API
  * app.use("/api/*", rlsContextMiddleware());
  * ```
  */
 
-import type { Context, Next } from "hono";
-import { db, type DatabaseTransaction } from "../db";
 import { sql } from "drizzle-orm";
+import type { Context, Next } from "hono";
+
+import { db, type DatabaseTransaction } from "../db";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tipos
@@ -68,17 +69,17 @@ const RLS_ROLE_KEY = "app.current_user_role";
 
 /**
  * Crea el middleware de contexto RLS para Hono.
- * 
+ *
  * Este middleware:
  * 1. Extrae el usuario de la sesión (ya establecido por auth middleware)
  * 2. Inyecta el user_id en PostgreSQL via SET LOCAL
  * 3. Ejecuta la petición dentro de un contexto seguro
  * 4. Limpia el contexto al finalizar
- * 
+ *
  * NOTA: Este middleware NO envuelve en transacción cada query automáticamente,
  * sino que establece el contexto para que las políticas RLS nativas lo usen.
  * Para queries críticas, usar `withRLSTransaction()`.
- * 
+ *
  * @returns Middleware de Hono
  */
 export function rlsContextMiddleware() {
@@ -136,14 +137,14 @@ type TransactionCallback<T> = (tx: DatabaseTransaction) => Promise<T>;
 
 /**
  * Ejecuta una función dentro de una transacción con contexto RLS inyectado.
- * 
+ *
  * ESTA es la función crítica para queries que bypassan el middleware,
  * como queries dinámicas generadas por IA (MCP Server).
- * 
+ *
  * @param userId - ID del usuario para inyectar en PostgreSQL
  * @param callback - Función a ejecutar dentro de la transacción
  * @returns Resultado de la callback
- * 
+ *
  * @example
  * ```typescript
  * // Query dinámica generada por IA
@@ -160,11 +161,13 @@ export async function withRLSTransaction<T>(
   return await db.transaction(async (tx) => {
     // Inyectar contexto al INICIO de la transacción
     await tx.execute(sql`SELECT set_config(${RLS_CONFIG_KEY}, ${userId || ""}, true)`);
-    await tx.execute(sql`SELECT set_config(${RLS_ROLE_KEY}, ${userId ? "user" : "anonymous"}, true)`);
-    
+    await tx.execute(
+      sql`SELECT set_config(${RLS_ROLE_KEY}, ${userId ? "user" : "anonymous"}, true)`
+    );
+
     // Ejecutar la operación dentro de la transacción protegida
     const result = await callback(tx);
-    
+
     // El RLS se evalúa en cada query dentro de esta transacción
     return result;
   });
@@ -181,11 +184,13 @@ export async function withRLSQuery<T>(
   try {
     // Establecer contexto
     await db.execute(sql`SELECT set_config(${RLS_CONFIG_KEY}, ${userId || ""}, true)`);
-    await db.execute(sql`SELECT set_config(${RLS_ROLE_KEY}, ${userId ? "user" : "anonymous"}, true)`);
-    
+    await db.execute(
+      sql`SELECT set_config(${RLS_ROLE_KEY}, ${userId ? "user" : "anonymous"}, true)`
+    );
+
     // Ejecutar query
     const result = await queryFn();
-    
+
     return result;
   } finally {
     // Limpiar contexto (best effort)
@@ -217,15 +222,15 @@ interface RLSVerificationResult {
  */
 export async function verifyRLSContext(): Promise<RLSVerificationResult> {
   try {
-    const result = await db.execute<{ 
-      user_id: string; 
+    const result = await db.execute<{
+      user_id: string;
       user_role: string;
     }>(sql`
       SELECT 
         current_setting('app.current_user_id', true) as user_id,
         current_setting('app.current_user_role', true) as user_role
     `);
-    
+
     const row = result.rows?.[0];
     return {
       userId: row?.user_id || null,

@@ -1,18 +1,19 @@
 // @ts-nocheck
 /**
  * Grimoire Loader Tests
- * 
+ *
  * Tests the frontend grimoire loader functionality
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
+
 import {
   hasCustomView,
   generateExplorerConfig,
   generateDefaultConfig,
   GRIMOIRE_VIEW_REGISTRY,
   clearRegistryCache,
-  getGrimoireIcon
+  getGrimoireIcon,
 } from "../lib/grimoire-loader";
 
 describe("Grimoire Loader", () => {
@@ -62,13 +63,9 @@ describe("Grimoire Loader", () => {
         icon: "Test",
         category: "data" as const,
         hasCustomView: false,
-        tables: [
-          { name: "items", label: "Items", primaryKey: "id" }
-        ],
-        views: [
-          { id: "grid", type: "grid" as const, title: "All Items", table: "items" }
-        ],
-        defaultView: "grid"
+        tables: [{ name: "items", label: "Items", primaryKey: "id" }],
+        views: [{ id: "grid", type: "grid" as const, title: "All Items", table: "items" }],
+        defaultView: "grid",
       };
 
       const config = generateExplorerConfig(mockGrimoire);
@@ -89,10 +86,8 @@ describe("Grimoire Loader", () => {
         category: "data" as const,
         hasCustomView: false,
         tables: [{ name: "tasks", label: "Tasks" }],
-        views: [
-          { id: "kanban", type: "kanban" as const, title: "Board", table: "tasks" }
-        ],
-        defaultView: "kanban"
+        views: [{ id: "kanban", type: "kanban" as const, title: "Board", table: "tasks" }],
+        defaultView: "kanban",
       };
 
       const config = generateExplorerConfig(mockGrimoire);
@@ -108,10 +103,8 @@ describe("Grimoire Loader", () => {
         category: "data" as const,
         hasCustomView: false,
         tables: [{ name: "events", label: "Events" }],
-        views: [
-          { id: "calendar", type: "calendar" as const, title: "Calendar", table: "events" }
-        ],
-        defaultView: "calendar"
+        views: [{ id: "calendar", type: "calendar" as const, title: "Calendar", table: "events" }],
+        defaultView: "calendar",
       };
 
       const config = generateExplorerConfig(mockGrimoire);
@@ -128,9 +121,9 @@ describe("Grimoire Loader", () => {
         tables: [{ name: "data", label: "Data" }],
         views: [
           { id: "custom", type: "custom" as const, title: "Custom", component: "Test" },
-          { id: "grid", type: "grid" as const, title: "Grid", table: "data" }
+          { id: "grid", type: "grid" as const, title: "Grid", table: "data" },
         ],
-        defaultView: "custom"
+        defaultView: "custom",
       };
 
       const config = generateExplorerConfig(mockGrimoire);

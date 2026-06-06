@@ -13,6 +13,7 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 ## Database Schema
 
 ### Tables
+
 - `crm_companies` - Company/Account records
 - `crm_contacts` - Contact/People records
 - `crm_pipelines` - Sales pipeline definitions
@@ -21,6 +22,7 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 - `crm_activities` - Activities and tasks
 
 ### Enums
+
 - `crm_contact_status`: lead, prospect, customer, churned, archived
 - `crm_deal_status`: open, won, lost, paused
 - `crm_activity_type`: call, email, meeting, task, note, sms, demo
@@ -29,6 +31,7 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 ## API Endpoints
 
 ### Companies
+
 - `GET /api/crm/companies` - List companies
 - `POST /api/crm/companies` - Create company
 - `GET /api/crm/companies/:id` - Get company
@@ -36,6 +39,7 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 - `DELETE /api/crm/companies/:id` - Delete company
 
 ### Contacts
+
 - `GET /api/crm/contacts` - List contacts
 - `POST /api/crm/contacts` - Create contact
 - `GET /api/crm/contacts/:id` - Get contact
@@ -43,6 +47,7 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 - `DELETE /api/crm/contacts/:id` - Delete contact
 
 ### Pipelines
+
 - `GET /api/crm/pipelines` - List pipelines
 - `POST /api/crm/pipelines` - Create pipeline
 - `GET /api/crm/pipelines/:id` - Get pipeline with stages
@@ -50,11 +55,13 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 - `DELETE /api/crm/pipelines/:id` - Delete pipeline
 
 ### Pipeline Stages
+
 - `POST /api/crm/pipelines/:id/stages` - Add stage
 - `PATCH /api/crm/stages/:id` - Update stage
 - `DELETE /api/crm/stages/:id` - Delete stage
 
 ### Deals
+
 - `GET /api/crm/deals` - List deals
 - `POST /api/crm/deals` - Create deal
 - `GET /api/crm/deals/:id` - Get deal
@@ -64,9 +71,11 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 - `POST /api/crm/deals/reorder` - Batch reorder deals
 
 ### Kanban
+
 - `GET /api/crm/pipelines/:id/kanban` - Get full kanban board
 
 ### Activities
+
 - `GET /api/crm/activities` - List activities
 - `POST /api/crm/activities` - Create activity
 - `GET /api/crm/activities/:id` - Get activity
@@ -75,11 +84,13 @@ Complete CRM & Pipeline Management system for Gremius CMS.
 - `DELETE /api/crm/activities/:id` - Delete activity
 
 ### Dashboard
+
 - `GET /api/crm/stats` - Get CRM statistics
 
 ## Setup
 
 1. Run migrations:
+
 ```bash
 cd apps/api
 bun run db:migrate

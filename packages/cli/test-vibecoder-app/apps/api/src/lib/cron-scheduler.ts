@@ -17,8 +17,10 @@
 
 import { Cron } from "croner";
 import { eq, and } from "drizzle-orm";
+
 import { db } from "../db";
-import { actions } from "../db/schema";
+import { actions , gremiusFunctions } from "../db/schema";
+
 import { executeActionById } from "./actions";
 
 // ═══════════════════════════════════════════════════════════════
@@ -178,7 +180,7 @@ export function getCronJobStatus(): Array<{
 // Legacy Compatibility (to be removed in Phase 4)
 // ═══════════════════════════════════════════════════════════════
 
-import { gremiusFunctions } from "../db/schema";
+
 
 /**
  * @deprecated Use refreshCronJob with actions table instead

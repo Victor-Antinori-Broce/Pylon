@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+
   import { goto } from "$app/navigation";
-  
+
   // Redirect to Settings MCP tab
   onMount(() => {
     goto("/settings?tab=mcp");

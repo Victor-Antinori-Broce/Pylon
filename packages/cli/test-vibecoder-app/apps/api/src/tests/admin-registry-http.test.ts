@@ -5,7 +5,7 @@
  * Validates the REST API endpoints for admin registry
  */
 
-import { describe, it, expect, beforeAll } from "bun:test";
+import { describe, it, expect } from "bun:test";
 
 describe("Admin Registry HTTP API", () => {
   const API_URL = process.env.API_URL || "http://localhost:3000";

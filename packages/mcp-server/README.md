@@ -60,29 +60,29 @@ Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
 
 ## 🛠️ Tools (11)
 
-| Tool | Description |
-|------|-------------|
-| `gremius_list_tables` | Discover all data tables with row counts |
-| `gremius_query_table` | Query records with pagination, sort, filter. Supports TOON format |
-| `gremius_create_record` | Create a new record in any table |
-| `gremius_update_record` | Update a record by ID |
-| `gremius_delete_record` | Delete a record by ID |
-| `gremius_get_schema` | Get JSON Schema for a table (fields, types, relations) |
-| `gremius_list_modules` | List all grimoire modules + status |
-| `gremius_toggle_module` | Enable/disable a module |
-| `gremius_encode_toon` | Encode JSON → TOON (60% fewer tokens) |
-| `gremius_list_datasets` | List dynamic datasets |
-| `gremius_api_request` | Raw API request (escape hatch) |
+| Tool                    | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| `gremius_list_tables`   | Discover all data tables with row counts                          |
+| `gremius_query_table`   | Query records with pagination, sort, filter. Supports TOON format |
+| `gremius_create_record` | Create a new record in any table                                  |
+| `gremius_update_record` | Update a record by ID                                             |
+| `gremius_delete_record` | Delete a record by ID                                             |
+| `gremius_get_schema`    | Get JSON Schema for a table (fields, types, relations)            |
+| `gremius_list_modules`  | List all grimoire modules + status                                |
+| `gremius_toggle_module` | Enable/disable a module                                           |
+| `gremius_encode_toon`   | Encode JSON → TOON (60% fewer tokens)                             |
+| `gremius_list_datasets` | List dynamic datasets                                             |
+| `gremius_api_request`   | Raw API request (escape hatch)                                    |
 
 ## 📚 Resources (5)
 
-| Resource | URI |
-|----------|-----|
-| Tables | `gremius://tables` |
-| Modules | `gremius://modules` |
-| Health | `gremius://health` |
-| Datasets | `gremius://datasets` |
-| Schema | `gremius://schema/{table}` (template) |
+| Resource | URI                                   |
+| -------- | ------------------------------------- |
+| Tables   | `gremius://tables`                    |
+| Modules  | `gremius://modules`                   |
+| Health   | `gremius://health`                    |
+| Datasets | `gremius://datasets`                  |
+| Schema   | `gremius://schema/{table}` (template) |
 
 ## 🔐 Authentication
 
@@ -98,18 +98,18 @@ GREMIUS_API_TOKEN=gremius_sk_xxx gremius mcp
 
 ## 📡 Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Server health + tool count |
-| `GET /sse` | SSE transport for MCP clients |
-| `POST /messages` | JSON-RPC messages |
-| `GET /ide-config` | List supported IDEs |
-| `GET /ide-config/:ide` | Get config for specific IDE |
+| Endpoint               | Description                   |
+| ---------------------- | ----------------------------- |
+| `GET /health`          | Server health + tool count    |
+| `GET /sse`             | SSE transport for MCP clients |
+| `POST /messages`       | JSON-RPC messages             |
+| `GET /ide-config`      | List supported IDEs           |
+| `GET /ide-config/:ide` | Get config for specific IDE   |
 
 ## ⚙️ Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GREMIUS_API_URL` | `http://localhost:3001` | Gremius API base URL |
-| `GREMIUS_API_TOKEN` | (empty) | API authentication key |
-| `PORT` | `3002` | MCP server port |
+| Variable            | Default                 | Description            |
+| ------------------- | ----------------------- | ---------------------- |
+| `GREMIUS_API_URL`   | `http://localhost:3001` | Gremius API base URL   |
+| `GREMIUS_API_TOKEN` | (empty)                 | API authentication key |
+| `PORT`              | `3002`                  | MCP server port        |

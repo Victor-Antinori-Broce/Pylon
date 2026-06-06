@@ -3,8 +3,8 @@
    * MdxEditor.svelte — Split-screen MDX editor with live preview
    * CodeMirror 6 integration for Svelte
    */
-  import { onMount, tick } from "svelte";
   import { Loader2 } from "lucide-svelte";
+  import { onMount, tick } from "svelte";
   
   // ─── Props ──────────────────────────────────────────
   interface Props {
@@ -12,7 +12,7 @@
     onChange?: (value: string) => void;
   }
   
-  let { value = "", onChange }: Props = $props();
+  const { value = "", onChange }: Props = $props();
   
   // ─── State ──────────────────────────────────────────
   let localContent = $state(value);

@@ -51,29 +51,34 @@ gremiuscms/
 GremiusCMS organizes functionality into three categories:
 
 ### Engine (Always Active)
+
 Schema Engine, Auth Manager, API Gateway, Valkey, Media Hub, Module Loader
 
 ### Core Modules (Toggleable)
-| Module | Purpose |
-|:---|:---|
-| `promote` | CMS / Promote to Content with slugs, SEO |
-| `webhooks` | Event-driven HTTP callbacks |
-| `connectors` | External APIs and databases |
-| `blocks` | Page Builder foundation |
-| `media` | S3/MinIO media library |
+
+| Module       | Purpose                                  |
+| :----------- | :--------------------------------------- |
+| `promote`    | CMS / Promote to Content with slugs, SEO |
+| `webhooks`   | Event-driven HTTP callbacks              |
+| `connectors` | External APIs and databases              |
+| `blocks`     | Page Builder foundation                  |
+| `media`      | S3/MinIO media library                   |
 
 ### Optional Modules (Toggleable)
-| Module | Purpose |
-|:---|:---|
-| `academy` | LMS with courses, quizzes, certificates |
-| `dms` | Document management with workflows |
-| `booking` | Room and resource reservations |
-| `directory` | Employee directory and org chart |
-| `formulas` | KPI calculations and expressions |
-| `blog` | Blog posts with scheduling |
+
+| Module      | Purpose                                 |
+| :---------- | :-------------------------------------- |
+| `academy`   | LMS with courses, quizzes, certificates |
+| `dms`       | Document management with workflows      |
+| `booking`   | Room and resource reservations          |
+| `directory` | Employee directory and org chart        |
+| `formulas`  | KPI calculations and expressions        |
+| `blog`      | Blog posts with scheduling              |
 
 ### Theme Modules (Auto-loaded)
+
 Bundled with realms like **Gremio CMS**:
+
 - `games` — Game catalog with IGDB sync
 - `streamers` — Twitch/YouTube/Kick integration
 - `platforms` — Gaming platforms
@@ -84,13 +89,16 @@ Bundled with realms like **Gremio CMS**:
 ## ⚡ Quick Start
 
 ### 1. Infrastructure (Docker)
+
 ```bash
 cp .env.example .env
 docker compose up -d
 ```
+
 Infrastructure includes: **PostgreSQL 16**, **Valkey** (Cache & Queues), and **MinIO** (S3 Storage).
 
 ### 2. Setup & Database
+
 ```bash
 pnpm install
 cd packages/shared && pnpm build && cd ../..
@@ -99,9 +107,11 @@ pnpm db:seed # Optional: initial admin and test data
 ```
 
 ### 3. Launch Development
+
 ```bash
 pnpm dev
 ```
+
 - **API**: [http://localhost:3000](http://localhost:3000)
 - **Admin**: [http://localhost:3001](http://localhost:3001)
 - **Web**: [http://localhost:3002](http://localhost:3002)
@@ -113,6 +123,7 @@ pnpm dev
 Realms are business ecosystems that bundle grimoires (modules) and provide custom styling. Realms define which grimoires are active via `realm.json`.
 
 ### Creating a Realm
+
 ```
 packages/realms/my-realm/
 ├── realm.json          # Manifest with grimoires
@@ -124,12 +135,22 @@ packages/realms/my-realm/
 ```
 
 ### Realm Manifest (realm.json)
+
 ```json
 {
   "id": "realm-esports",
   "name": "Esports Realm",
   "type": "realm",
-  "grimoires": ["games", "streamers", "platforms", "tags", "players", "teams", "tournaments", "matches"]
+  "grimoires": [
+    "games",
+    "streamers",
+    "platforms",
+    "tags",
+    "players",
+    "teams",
+    "tournaments",
+    "matches"
+  ]
 }
 ```
 
@@ -143,6 +164,7 @@ GremiusCMS natively supports **TOON (Token-Optimized Object Notation)**. This fo
 - **Request via Query**: `?format=toon`
 
 ### MCP Server
+
 Connect Claude Desktop, Cursor, or any MCP-compatible agent:
 
 ```json
@@ -169,15 +191,15 @@ npm install @gremius/sdk
 ```
 
 ```typescript
-import { GremiusClient } from '@gremius/sdk';
+import { GremiusClient } from "@gremius/sdk";
 
 const gremius = new GremiusClient({
-  url: 'https://api.yourgame.com',
-  apiKey: 'grm_agent_your_token'
+  url: "https://api.yourgame.com",
+  apiKey: "grm_agent_your_token",
 });
 
-const games = await gremius.from('games').list();
-const game = await gremius.from('games').create({ title: 'New Game' });
+const games = await gremius.from("games").list();
+const game = await gremius.from("games").create({ title: "New Game" });
 ```
 
 [Full SDK Documentation →](packages/sdk/README.md)
@@ -189,6 +211,7 @@ const game = await gremius.from('games').create({ title: 'New Game' });
 The frontend uses a **Partial Hydration** model with Astro Islands. Zero JavaScript is shipped for static content.
 
 ### Page Builder Blocks (Astro)
+
 - **Hero**: Motion-enhanced headers
 - **Smart Grid/Filter**: Interactive data exploration
 - **Image Gallery**: Optimized responsive layouts
@@ -196,6 +219,7 @@ The frontend uses a **Partial Hydration** model with Astro Islands. Zero JavaScr
 - **Game Map**: Interactive pan/zoom world maps
 
 ### Interactive Islands (Svelte 5)
+
 - **DataTable**: Pro-grade data management
 - **GameBuilder**: Custom loadout and stat planning
 - **CommandMenu**: Global shortcut-based navigation

@@ -12,21 +12,14 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { authUsers, agentIdentities, agentApiKeys } from "../db/schema";
-import { eq } from "drizzle-orm";
 // import { createHash } from "crypto"; // Not needed for Agent NHI tests
-import {
-  createAgent,
-  authenticateAgent,
-  revokeApiKey,
-} from "../services/agent-auth";
-import {
-  isDatabaseAvailable,
-  clearTestData,
-  createTestUserData,
-  generateTestId,
-} from "./setup";
+import { createAgent, authenticateAgent, revokeApiKey } from "../services/agent-auth";
+
+import { isDatabaseAvailable, clearTestData, createTestUserData, generateTestId } from "./setup";
 
 // Skip tests if database is not available
 let dbAvailable = false;
@@ -105,11 +98,7 @@ describe("Auth Module", () => {
 
       await db.delete(authUsers).where(eq(authUsers.id, userId));
 
-      const [result] = await db
-        .select()
-        .from(authUsers)
-        .where(eq(authUsers.id, userId))
-        .limit(1);
+      const [result] = await db.select().from(authUsers).where(eq(authUsers.id, userId)).limit(1);
 
       expect(result).toBeUndefined();
     });

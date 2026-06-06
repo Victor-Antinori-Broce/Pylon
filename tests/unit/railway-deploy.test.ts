@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { describe, it, expect } from "vitest";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -37,7 +38,9 @@ describe("Railway Deploy Implementation", () => {
   it('packages/cli/src/commands/deploy.ts imports deployToRailway from "../deploy/railway.js" or "../deploy/railway.ts"', () => {
     const content = readSrc("packages/cli/src/commands/deploy.ts");
     const hasImport =
-      /import\s+\{[^}]*deployToRailway[^}]*\}\s+from\s+["']\.\.\/deploy\/railway\.(js|ts)["']/.test(content);
+      /import\s+\{[^}]*deployToRailway[^}]*\}\s+from\s+["']\.\.\/deploy\/railway\.(js|ts)["']/.test(
+        content
+      );
     expect(hasImport).toBe(true);
   });
 
@@ -52,7 +55,9 @@ describe("Railway Deploy Implementation", () => {
     expect(content).toMatch(/return\s+["']railway["']/);
 
     // Returns "railway" when railway.json exists
-    expect(content).toMatch(/existsSync\(\s*join\(\s*projectRoot,\s*["']railway\.json["']\s*\)\s*\)/);
+    expect(content).toMatch(
+      /existsSync\(\s*join\(\s*projectRoot,\s*["']railway\.json["']\s*\)\s*\)/
+    );
   });
 
   it("packages/cli/src/commands/status.ts has logic to detect Railway (isRailwayProject)", () => {
@@ -66,7 +71,7 @@ describe("Railway Deploy Implementation", () => {
     expect(content).toMatch(/RAILWAY_PROJECT_ID|RAILWAY_TOKEN/);
   });
 
-  it('packages/cli/src/deploy/railway.ts creates railway.json if it does not exist', () => {
+  it("packages/cli/src/deploy/railway.ts creates railway.json if it does not exist", () => {
     const content = readSrc("packages/cli/src/deploy/railway.ts");
 
     // Looks for railway.json path

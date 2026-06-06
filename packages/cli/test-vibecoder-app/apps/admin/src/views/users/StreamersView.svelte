@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Plus, Tv } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { Plus } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Streamer {
     id: string;

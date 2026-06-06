@@ -1,18 +1,19 @@
 /**
  * NEW Command - Create a new GremiusCMS project from a starter/realm
- * 
+ *
  * Fase 3: CLI Mágica - Quickstart con rollback
  */
 
-import chalk from "chalk";
-import ora, { type Ora } from "ora";
-import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile, readFile, cp, rmdir, unlink } from "node:fs/promises";
-import { execa } from "execa";
+import { join } from "node:path";
+
+import chalk from "chalk";
 // @ts-ignore
 import degit from "degit";
+import { execa } from "execa";
 import inquirer from "inquirer";
+import ora, { type Ora } from "ora";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ESTADO PARA ROLLBACK
@@ -42,16 +43,16 @@ let currentState: QuickstartState | null = null;
 async function performRollback(state: QuickstartState, reason: string) {
   console.log(chalk.red(`\n✖ Error durante la instalación: ${reason}`));
   console.log(chalk.yellow("\n🔄 Realizando rollback para mantener el sistema limpio...\n"));
-  
+
   const spinner = ora("Limpiando archivos...").start();
-  
+
   try {
     // 1. Detener Docker si se inició
     if (state.steps.dockerStarted) {
       spinner.text = "Deteniendo contenedores Docker...";
       try {
-        await execa("docker", ["compose", "down", "-v"], { 
-          cwd: state.targetDir, 
+        await execa("docker", ["compose", "down", "-v"], {
+          cwd: state.targetDir,
           stdio: "ignore",
           timeout: 30000,
         });
@@ -59,7 +60,7 @@ async function performRollback(state: QuickstartState, reason: string) {
         // Ignorar errores al detener Docker
       }
     }
-    
+
     // 2. Eliminar archivos creados
     for (const file of state.createdFiles.reverse()) {
       try {
@@ -70,7 +71,7 @@ async function performRollback(state: QuickstartState, reason: string) {
         // Continuar aunque falle
       }
     }
-    
+
     // 3. Eliminar directorio si se creó
     if (state.steps.directoryCreated && existsSync(state.targetDir)) {
       spinner.text = "Eliminando directorio...";
@@ -80,15 +81,14 @@ async function performRollback(state: QuickstartState, reason: string) {
         // Ignorar errores al eliminar directorio
       }
     }
-    
+
     spinner.succeed(chalk.green("✓ Rollback completado"));
     console.log(chalk.gray("\nTu sistema está limpio. Puedes intentar nuevamente.\n"));
-    
   } catch (error) {
     spinner.fail(chalk.red("No se pudo completar el rollback completamente"));
     console.log(chalk.gray("Es posible que necesites limpiar manualmente algunos archivos.\n"));
   }
-  
+
   process.exit(1);
 }
 
@@ -106,13 +106,16 @@ interface NewOptions {
 // AVAILABLE REALMS (STARTERS)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const OFFICIAL_REALMS: Record<string, {
-  name: string;
-  description: string;
-  repo?: string;
-  grimoires: string[];
-  tags: string[];
-}> = {
+const OFFICIAL_REALMS: Record<
+  string,
+  {
+    name: string;
+    description: string;
+    repo?: string;
+    grimoires: string[];
+    tags: string[];
+  }
+> = {
   default: {
     name: "Default",
     description: "Standard GremiusCMS with core functionality",
@@ -124,8 +127,15 @@ const OFFICIAL_REALMS: Record<string, {
     description: "Gaming platform with tournaments, teams, and matches",
     repo: "gremiuscms/realm-esports",
     grimoires: [
-      "games", "streamers", "platforms", "tags", "collections",
-      "players", "teams", "tournaments", "matches"
+      "games",
+      "streamers",
+      "platforms",
+      "tags",
+      "collections",
+      "players",
+      "teams",
+      "tournaments",
+      "matches",
     ],
     tags: ["gaming", "esports", "competitive"],
   },
@@ -161,9 +171,9 @@ export async function newCommand(projectName: string, options: NewOptions) {
     console.log(chalk.bold("\n🚀 GremiusCMS - Quick Start Mode\n"));
     console.log(chalk.gray("Configurando todo automáticamente...\n"));
     console.log(chalk.gray("Tiempo estimado: ~3-5 minutos\n"));
-    
+
     const targetDir = join(process.cwd(), projectName);
-    
+
     // Check if directory exists
     if (existsSync(targetDir)) {
       console.error(chalk.red(`\n✖ El directorio "${projectName}" ya existe.`));
@@ -188,14 +198,14 @@ export async function newCommand(projectName: string, options: NewOptions) {
     };
 
     const realmInfo = OFFICIAL_REALMS["default"];
-    
+
     try {
       await createProjectQuickstart(projectName, targetDir, "default", realmInfo, currentState);
-      
+
       console.log(chalk.bold("\n" + "=".repeat(60)));
       console.log(chalk.green.bold("✓ ¡Proyecto creado exitosamente!"));
       console.log(chalk.bold("=".repeat(60) + "\n"));
-      
+
       console.log(chalk.bold("Próximos pasos:\n"));
       console.log(chalk.gray(`  cd ${projectName}`));
       console.log(chalk.gray("  pnpm dev\n"));
@@ -203,14 +213,13 @@ export async function newCommand(projectName: string, options: NewOptions) {
       console.log(chalk.gray("  API:     http://localhost:3000"));
       console.log(chalk.gray("  Admin:   http://localhost:3001"));
       console.log(chalk.gray("  Web:     http://localhost:3002\n"));
-      
+
       // Guardar progreso exitoso
       await saveProgressToFile(projectName, true);
-      
     } catch (error: any) {
       await performRollback(currentState, error.message);
     }
-    
+
     return;
   }
 
@@ -221,12 +230,14 @@ export async function newCommand(projectName: string, options: NewOptions) {
 
   // Check if directory exists
   if (existsSync(targetDir)) {
-    const { overwrite } = await inquirer.prompt([{
-      type: "confirm",
-      name: "overwrite",
-      message: `Directory "${projectName}" already exists. Overwrite?`,
-      default: false,
-    }]);
+    const { overwrite } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "overwrite",
+        message: `Directory "${projectName}" already exists. Overwrite?`,
+        default: false,
+      },
+    ]);
 
     if (!overwrite) {
       console.log(chalk.yellow("\n✖ Cancelled"));
@@ -237,16 +248,18 @@ export async function newCommand(projectName: string, options: NewOptions) {
   // Select realm if not specified
   let realm = options.realm || "default";
   if (!options.realm) {
-    const { selectedRealm } = await inquirer.prompt([{
-      type: "list",
-      name: "selectedRealm",
-      message: "Select a starter template:",
-      choices: Object.entries(OFFICIAL_REALMS).map(([key, info]) => ({
-        name: `${chalk.bold(info.name)} ${chalk.gray(`- ${info.description}`)}`,
-        value: key,
-        short: info.name,
-      })),
-    }]);
+    const { selectedRealm } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "selectedRealm",
+        message: "Select a starter template:",
+        choices: Object.entries(OFFICIAL_REALMS).map(([key, info]) => ({
+          name: `${chalk.bold(info.name)} ${chalk.gray(`- ${info.description}`)}`,
+          value: key,
+          short: info.name,
+        })),
+      },
+    ]);
     realm = selectedRealm;
   }
 
@@ -257,7 +270,11 @@ export async function newCommand(projectName: string, options: NewOptions) {
     process.exit(1);
   }
 
-  console.log(chalk.blue(`\n🚀 Creating ${chalk.bold(projectName)} with ${chalk.bold(realmInfo.name)} realm...\n`));
+  console.log(
+    chalk.blue(
+      `\n🚀 Creating ${chalk.bold(projectName)} with ${chalk.bold(realmInfo.name)} realm...\n`
+    )
+  );
 
   // Create project
   await createProject(projectName, targetDir, realm, realmInfo, options);
@@ -267,22 +284,22 @@ async function createProjectQuickstart(
   name: string,
   targetDir: string,
   realm: string,
-  realmInfo: typeof OFFICIAL_REALMS[string],
+  realmInfo: (typeof OFFICIAL_REALMS)[string],
   state: QuickstartState
 ) {
   const spinner = ora("Creando directorio del proyecto...").start();
-  
+
   try {
     // 1. Crear directorio
     await mkdir(targetDir, { recursive: true });
     state.steps.directoryCreated = true;
     state.createdFiles.push(targetDir);
-    
+
     // 2. Copiar template
     spinner.text = "Descargando plantilla...";
     await copyLocalTemplate(realm, targetDir);
     state.steps.templateCopied = true;
-    
+
     // Registrar archivos creados
     const templateFiles = [
       "package.json",
@@ -291,37 +308,40 @@ async function createProjectQuickstart(
       "apps/api/src/db/schema.ts",
       "apps/api/.env.example",
     ];
-    
+
     for (const file of templateFiles) {
       const fullPath = join(targetDir, file);
       if (existsSync(fullPath)) {
         state.createdFiles.push(fullPath);
       }
     }
-    
+
     // 3. Configurar proyecto
     spinner.text = "Configurando proyecto...";
     await updatePackageJson(targetDir, name);
     await updateGremiusConfig(targetDir, realmInfo.grimoires, []);
     await updateEnvFiles(targetDir, name);
     state.steps.envGenerated = true;
-    
+
     // 4. Inicializar git
     spinner.text = "Inicializando repositorio git...";
     try {
       await execa("git", ["init"], { cwd: targetDir, stdio: "ignore" });
       await execa("git", ["add", "."], { cwd: targetDir, stdio: "ignore" });
-      await execa("git", ["commit", "-m", "Initial commit from Gremius CLI"], { cwd: targetDir, stdio: "ignore" });
+      await execa("git", ["commit", "-m", "Initial commit from Gremius CLI"], {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
       state.steps.gitInitialized = true;
     } catch {
       // Git es opcional
     }
-    
+
     // 5. Instalar dependencias
     spinner.text = "Instalando dependencias (esto puede tomar varios minutos)...";
     try {
-      await execa("pnpm", ["install"], { 
-        cwd: targetDir, 
+      await execa("pnpm", ["install"], {
+        cwd: targetDir,
         stdio: "ignore",
         timeout: 300000, // 5 minutos
       });
@@ -330,8 +350,8 @@ async function createProjectQuickstart(
       // Intentar con npm
       spinner.text = "Intentando con npm...";
       try {
-        await execa("npm", ["install"], { 
-          cwd: targetDir, 
+        await execa("npm", ["install"], {
+          cwd: targetDir,
           stdio: "ignore",
           timeout: 300000,
         });
@@ -340,30 +360,29 @@ async function createProjectQuickstart(
         throw new Error(`No se pudieron instalar las dependencias: ${error.message}`);
       }
     }
-    
+
     // 6. Levantar Docker
     spinner.text = "Iniciando contenedores Docker...";
     try {
-      await execa("docker", ["compose", "up", "-d"], { 
-        cwd: targetDir, 
+      await execa("docker", ["compose", "up", "-d"], {
+        cwd: targetDir,
         stdio: "ignore",
         timeout: 60000,
       });
       state.steps.dockerStarted = true;
-      
+
       // Esperar a que PostgreSQL esté listo
       spinner.text = "Esperando a PostgreSQL (30s)...";
       await waitForPostgresQuickstart(targetDir, spinner);
-      
     } catch (error: any) {
       throw new Error(`No se pudieron iniciar los contenedores Docker: ${error.message}`);
     }
-    
+
     // 7. Migrar base de datos
     spinner.text = "Configurando base de datos...";
     try {
-      await execa("pnpm", ["db:push"], { 
-        cwd: targetDir, 
+      await execa("pnpm", ["db:push"], {
+        cwd: targetDir,
         stdio: "ignore",
         timeout: 60000,
       });
@@ -371,9 +390,8 @@ async function createProjectQuickstart(
     } catch (error: any) {
       throw new Error(`No se pudo configurar la base de datos: ${error.message}`);
     }
-    
+
     spinner.succeed(chalk.green("¡Proyecto configurado exitosamente!"));
-    
   } catch (error: any) {
     spinner.fail(chalk.red(`Error: ${error.message}`));
     throw error;
@@ -392,7 +410,7 @@ async function waitForPostgresQuickstart(targetDir: string, spinner: Ora): Promi
       return;
     } catch {
       spinner.text = `Esperando a PostgreSQL... (${i + 1}/${maxAttempts})`;
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
   throw new Error("PostgreSQL no respondió a tiempo");
@@ -407,17 +425,17 @@ async function saveProgressToFile(projectName: string, success: boolean) {
       projectName,
       success,
     };
-    
+
     // Actualizar progress.txt en la raíz
     const progressPath = join(process.cwd(), "progress.txt");
     let content = "";
-    
+
     try {
       content = await readFile(progressPath, "utf-8");
     } catch {
       // File doesn't exist yet
     }
-    
+
     const newEntry = `\n[CLI Quickstart] ${new Date().toLocaleString()} - Proyecto: ${projectName} - ${success ? "✅ ÉXITO" : "❌ FALLIDO"}\n`;
     await writeFile(progressPath, content + newEntry);
   } catch {
@@ -429,7 +447,7 @@ async function createProject(
   name: string,
   targetDir: string,
   realm: string,
-  realmInfo: typeof OFFICIAL_REALMS[string],
+  realmInfo: (typeof OFFICIAL_REALMS)[string],
   options: NewOptions
 ) {
   const spinner = ora("Creating project directory...").start();
@@ -447,7 +465,7 @@ async function createProject(
         force: true,
         verbose: false,
       });
-      
+
       await emitter.clone(targetDir);
     } else {
       // Use local template
@@ -498,10 +516,10 @@ async function createProject(
       try {
         // Start Docker containers
         await execa("docker", ["compose", "up", "-d"], { cwd: targetDir, stdio: "ignore" });
-        
+
         // Wait a bit for DB to be ready
-        await new Promise(r => setTimeout(r, 3000));
-        
+        await new Promise((r) => setTimeout(r, 3000));
+
         // Push schema
         await execa("pnpm", ["db:push"], { cwd: targetDir, stdio: "ignore" });
       } catch {
@@ -521,7 +539,6 @@ async function createProject(
     console.log(chalk.gray("\n  API:     http://localhost:3000"));
     console.log(chalk.gray("  Admin:   http://localhost:3001"));
     console.log(chalk.gray("  Web:     http://localhost:3002\n"));
-
   } catch (error: any) {
     spinner.fail(chalk.red(`Failed to create project: ${error.message}`));
     process.exit(1);
@@ -533,11 +550,11 @@ async function copyLocalTemplate(realm: string, targetDir: string) {
   // In production, copy from bundled templates
   const starterDir = join(__dirname, "../../../starters", `gremius-starter-${realm}`);
   const templateDir = join(__dirname, "../../templates", realm);
-  
+
   if (existsSync(starterDir)) {
     // Use official starter
     await cp(starterDir, targetDir, { recursive: true });
-    
+
     // Copy setup.js if it exists
     const setupScript = join(starterDir, "setup.js");
     if (existsSync(setupScript)) {
@@ -553,13 +570,7 @@ async function copyLocalTemplate(realm: string, targetDir: string) {
 
 async function createMinimalTemplate(targetDir: string, _realm: string) {
   // Create basic project structure
-  const dirs = [
-    "apps/api",
-    "apps/admin",
-    "apps/web",
-    "packages/shared",
-    "packages/grimoires",
-  ];
+  const dirs = ["apps/api", "apps/admin", "apps/web", "packages/shared", "packages/grimoires"];
 
   for (const dir of dirs) {
     await mkdir(join(targetDir, dir, "src"), { recursive: true });
@@ -568,20 +579,24 @@ async function createMinimalTemplate(targetDir: string, _realm: string) {
   // Create package.json
   await writeFile(
     join(targetDir, "package.json"),
-    JSON.stringify({
-      name: "gremius-project",
-      private: true,
-      type: "module",
-      scripts: {
-        dev: "pnpm -r dev",
-        build: "pnpm -r build",
-        "db:push": "cd apps/api && pnpm db:push",
-        "db:studio": "cd apps/api && pnpm db:studio",
+    JSON.stringify(
+      {
+        name: "gremius-project",
+        private: true,
+        type: "module",
+        scripts: {
+          dev: "pnpm -r dev",
+          build: "pnpm -r build",
+          "db:push": "cd apps/api && pnpm db:push",
+          "db:studio": "cd apps/api && pnpm db:studio",
+        },
+        devDependencies: {
+          typescript: "^5.3.0",
+        },
       },
-      devDependencies: {
-        typescript: "^5.3.0",
-      },
-    }, null, 2)
+      null,
+      2
+    )
   );
 
   // Create docker-compose.yml
@@ -623,7 +638,7 @@ volumes:
 
 async function updatePackageJson(targetDir: string, projectName: string) {
   const packageJsonPath = join(targetDir, "package.json");
-  
+
   try {
     const content = await readFile(packageJsonPath, "utf-8");
     const pkg = JSON.parse(content);
@@ -640,7 +655,7 @@ async function updateGremiusConfig(
   extraGrimoires?: string[]
 ) {
   const configPath = join(targetDir, "apps/api/gremius.config.ts");
-  
+
   const grimoires = [...defaultGrimoires];
   if (extraGrimoires) {
     grimoires.push(...extraGrimoires);
@@ -658,7 +673,7 @@ const config = {
     connectors: { enabled: true },
   },
   grimoires: [
-${grimoires.map(g => `    "${g}",`).join("\n")}
+${grimoires.map((g) => `    "${g}",`).join("\n")}
   ],
 };
 

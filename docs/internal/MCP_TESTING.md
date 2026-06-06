@@ -74,6 +74,7 @@ curl -X POST http://localhost:3000/api/admin/agents \
 ```
 
 **Respuesta esperada:**
+
 ```json
 {
   "success": true,
@@ -131,6 +132,7 @@ curl -N http://localhost:3000/api/mcp \
 ```
 
 **Evento inicial esperado:**
+
 ```
 event: endpoint
 data: /api/mcp?sessionId=xxxxx
@@ -152,6 +154,7 @@ curl -X POST "http://localhost:3000/api/mcp?sessionId=xxxxx" \
 ```
 
 **Respuesta esperada:**
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -206,6 +209,7 @@ wait
 ```
 
 Después de 60 requests (default), deberías recibir:
+
 ```json
 {
   "error": "Rate limit exceeded. Max 60 requests per minute"
@@ -229,12 +233,14 @@ curl -X POST http://localhost:3000/api/admin/agents \
 ```
 
 Intentar conectar MCP:
+
 ```bash
 curl -N http://localhost:3000/api/mcp \
   -H "Authorization: Bearer grm_agent_limited..."
 ```
 
 **Respuesta esperada:**
+
 ```json
 {
   "error": "No MCP scope"
@@ -246,11 +252,13 @@ curl -N http://localhost:3000/api/mcp \
 ## 7. Admin UI
 
 Abrir en navegador:
+
 ```
 http://localhost:3001/admin/agents
 ```
 
 Funcionalidades a probar:
+
 - [ ] Crear agente con formulario
 - [ ] Ver lista de agentes
 - [ ] Ver detalle de agente
@@ -272,6 +280,7 @@ curl http://localhost:3000/api/admin/agents/{agentId}/logs \
 ```
 
 Deberías ver acciones como:
+
 - `auth_success`
 - `mcp_connect`
 - `tool_call`
@@ -282,34 +291,38 @@ Deberías ver acciones como:
 ## Troubleshooting
 
 ### Error: "Invalid API key format"
+
 Asegúrate de usar el formato correcto: `grm_agent_xxxxx`
 
 ### Error: "Rate limit exceeded"
+
 Espera 1 minuto o aumenta el `rateLimit` del agente
 
 ### Error: "No MCP scope"
+
 El agente necesita el scope `mcp:connect` en su lista de scopes
 
 ### Error: "Agent is deactivated"
+
 El agente está marcado como `isActive: false`
 
 ---
 
 ## Resumen de Features Testeados
 
-| # | Feature | Status |
-|---|---------|--------|
-| 1 | Agent Identities (NHI) | ✅ |
-| 2 | Rate Limiting | ✅ |
-| 3 | Audit Logging | ✅ |
-| 4 | Scopes (Zero Trust) | ✅ |
-| 5 | MCP SSE Connection | ✅ |
-| 6 | Tool Discovery | ✅ |
-| 7 | Tool Execution | ✅ |
-| 8 | API Key Management | ✅ |
-| 9 | Admin UI | ✅ |
-| 10 | Statistics | ✅ |
+| #   | Feature                | Status |
+| --- | ---------------------- | ------ |
+| 1   | Agent Identities (NHI) | ✅     |
+| 2   | Rate Limiting          | ✅     |
+| 3   | Audit Logging          | ✅     |
+| 4   | Scopes (Zero Trust)    | ✅     |
+| 5   | MCP SSE Connection     | ✅     |
+| 6   | Tool Discovery         | ✅     |
+| 7   | Tool Execution         | ✅     |
+| 8   | API Key Management     | ✅     |
+| 9   | Admin UI               | ✅     |
+| 10  | Statistics             | ✅     |
 
 ---
 
-*Documento generado el 2026-03-17*
+_Documento generado el 2026-03-17_

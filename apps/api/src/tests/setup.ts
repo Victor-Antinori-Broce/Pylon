@@ -1,16 +1,17 @@
 /**
  * Test Setup and Utilities
- * 
+ *
  * Provides test database setup, teardown, and utility functions
  * for all test suites.
  */
 
-import { db, isPgMem } from "../db";
 import { sql } from "drizzle-orm";
 
+import { db, isPgMem } from "../db";
+
 // Test database URL from environment or default
-export const TEST_DATABASE_URL = process.env.DATABASE_URL || 
-  "postgres://gremius:gremiuspassword@localhost:5433/gremius_test";
+export const TEST_DATABASE_URL =
+  process.env.DATABASE_URL || "postgres://gremius:gremiuspassword@localhost:5433/gremius_test";
 
 /**
  * Check if a REAL PostgreSQL database is available.
@@ -42,13 +43,13 @@ export async function clearTestData() {
  */
 export async function setupTestEnv() {
   const isAvailable = await isDatabaseAvailable();
-  
+
   if (!isAvailable) {
     console.error("❌ Database not available. Skipping tests that require DB.");
     console.error(`Expected database at: ${TEST_DATABASE_URL}`);
     return false;
   }
-  
+
   console.log("✅ Database connected, running tests...");
   return true;
 }
@@ -81,8 +82,6 @@ export function createTestDatasetData() {
     name: `Test Dataset ${id}`,
     slug: `test-dataset-${id}`,
     description: "A test dataset",
-    schema: [
-      { fieldName: "title", fieldType: "text", required: true },
-    ],
+    schema: [{ fieldName: "title", fieldType: "text", required: true }],
   };
 }

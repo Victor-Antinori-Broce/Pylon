@@ -9,8 +9,9 @@
  */
 
 import { defineGrimoire } from "@gremius/shared";
-import { Hono } from "hono";
 import type { GrimoireContext } from "@gremius/shared";
+import { Hono } from "hono";
+
 import { createBookingRouter } from "./booking.routes";
 import * as schema from "./booking.schema";
 
@@ -21,24 +22,29 @@ export { createBookingRouter };
 /**
  * Ejecuta una sentencia SQL individual con manejo de errores
  */
-async function executeSQL(ctx: GrimoireContext, sql: string, description: string): Promise<boolean> {
+async function executeSQL(
+  ctx: GrimoireContext,
+  sql: string,
+  description: string
+): Promise<boolean> {
   try {
     await ctx.db.execute(sql);
     ctx.logger.info(`✅ Booking: ${description}`);
     return true;
   } catch (err: any) {
     // Errores que indican que ya existe (ignorables)
-    const ignoreCodes = ['42P07', '42710', '23505', '42P16'];
-    const ignoreMessages = ['already exists', 'duplicate', 'ya existe'];
-    
-    const shouldIgnore = ignoreCodes.includes(err.code) || 
-                         ignoreMessages.some(m => err.message?.toLowerCase().includes(m));
-    
+    const ignoreCodes = ["42P07", "42710", "23505", "42P16"];
+    const ignoreMessages = ["already exists", "duplicate", "ya existe"];
+
+    const shouldIgnore =
+      ignoreCodes.includes(err.code) ||
+      ignoreMessages.some((m) => err.message?.toLowerCase().includes(m));
+
     if (shouldIgnore) {
       ctx.logger.info(`⏩ Booking: ${description} (already exists)`);
       return true;
     }
-    
+
     ctx.logger.error(`❌ Booking: ${description} failed - ${err.message}`);
     return false;
   }
@@ -49,42 +55,48 @@ async function executeSQL(ctx: GrimoireContext, sql: string, description: string
  */
 async function runMigrations(ctx: GrimoireContext): Promise<void> {
   ctx.logger.info("🔄 Booking: Starting migrations...");
-  
+
   // Crear enums individualmente
   const enums = [
     {
-      name: 'booking_status',
-      values: "'pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'rejected', 'no_show'"
+      name: "booking_status",
+      values:
+        "'pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'rejected', 'no_show'",
     },
     {
-      name: 'booking_room_type', 
-      values: "'meeting_room', 'conference_room', 'office', 'desk', 'studio', 'event_space', 'classroom', 'auditorium', 'other'"
+      name: "booking_room_type",
+      values:
+        "'meeting_room', 'conference_room', 'office', 'desk', 'studio', 'event_space', 'classroom', 'auditorium', 'other'",
     },
     {
-      name: 'booking_room_status',
-      values: "'available', 'maintenance', 'closed', 'reserved'"
+      name: "booking_room_status",
+      values: "'available', 'maintenance', 'closed', 'reserved'",
     },
     {
-      name: 'booking_recurrence_type',
-      values: "'none', 'daily', 'weekly', 'monthly'"
-    }
+      name: "booking_recurrence_type",
+      values: "'none', 'daily', 'weekly', 'monthly'",
+    },
   ];
 
   for (const enumDef of enums) {
-    await executeSQL(ctx, `
+    await executeSQL(
+      ctx,
+      `
       DO $$
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${enumDef.name}') THEN
           CREATE TYPE ${enumDef.name} AS ENUM (${enumDef.values});
         END IF;
       END $$;
-    `, `Enum ${enumDef.name}`);
+    `,
+      `Enum ${enumDef.name}`
+    );
   }
 
   // Crear tablas individualmente
   const tables = [
     {
-      name: 'booking_rooms',
+      name: "booking_rooms",
       sql: `
         CREATE TABLE IF NOT EXISTS booking_rooms (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -111,10 +123,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
           is_active boolean DEFAULT true NOT NULL,
           created_at timestamp with time zone DEFAULT now() NOT NULL,
           updated_at timestamp with time zone DEFAULT now() NOT NULL
-        )`
+        )`,
     },
     {
-      name: 'booking_amenities',
+      name: "booking_amenities",
       sql: `
         CREATE TABLE IF NOT EXISTS booking_amenities (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -124,10 +136,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
           category varchar(50),
           is_active boolean DEFAULT true NOT NULL,
           created_at timestamp with time zone DEFAULT now() NOT NULL
-        )`
+        )`,
     },
     {
-      name: 'booking_room_amenities',
+      name: "booking_room_amenities",
       sql: `
         CREATE TABLE IF NOT EXISTS booking_room_amenities (
           room_id uuid NOT NULL REFERENCES booking_rooms(id) ON DELETE CASCADE,
@@ -135,10 +147,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
           quantity integer DEFAULT 1,
           notes text,
           PRIMARY KEY (room_id, amenity_id)
-        )`
+        )`,
     },
     {
-      name: 'booking_reservations',
+      name: "booking_reservations",
       sql: `
         CREATE TABLE IF NOT EXISTS booking_reservations (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -182,10 +194,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
           metadata jsonb DEFAULT '{}'::jsonb,
           created_at timestamp with time zone DEFAULT now() NOT NULL,
           updated_at timestamp with time zone DEFAULT now() NOT NULL
-        )`
+        )`,
     },
     {
-      name: 'booking_notes',
+      name: "booking_notes",
       sql: `
         CREATE TABLE IF NOT EXISTS booking_notes (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -194,10 +206,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
           note text NOT NULL,
           is_internal boolean DEFAULT false,
           created_at timestamp with time zone DEFAULT now() NOT NULL
-        )`
+        )`,
     },
     {
-      name: 'booking_blackout_dates',
+      name: "booking_blackout_dates",
       sql: `
         CREATE TABLE IF NOT EXISTS booking_blackout_dates (
           id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -208,8 +220,8 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
           is_recurring boolean DEFAULT false,
           created_by_id uuid,
           created_at timestamp with time zone DEFAULT now() NOT NULL
-        )`
-    }
+        )`,
+    },
   ];
 
   for (const table of tables) {
@@ -218,23 +230,74 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
 
   // Crear índices
   const indexes = [
-    { name: 'booking_rooms_slug_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_rooms_slug_idx ON booking_rooms(slug)' },
-    { name: 'booking_rooms_type_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_rooms_type_idx ON booking_rooms(type)' },
-    { name: 'booking_rooms_status_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_rooms_status_idx ON booking_rooms(status)' },
-    { name: 'booking_rooms_capacity_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_rooms_capacity_idx ON booking_rooms(capacity)' },
-    { name: 'booking_rooms_active_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_rooms_active_idx ON booking_rooms(is_active)' },
-    { name: 'booking_amenities_category_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_amenities_category_idx ON booking_amenities(category)' },
-    { name: 'booking_reservations_room_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_room_idx ON booking_reservations(room_id)' },
-    { name: 'booking_reservations_user_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_user_idx ON booking_reservations(user_id)' },
-    { name: 'booking_reservations_status_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_status_idx ON booking_reservations(status)' },
-    { name: 'booking_reservations_time_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_time_idx ON booking_reservations(start_time, end_time)' },
-    { name: 'booking_reservations_start_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_start_idx ON booking_reservations(start_time)' },
-    { name: 'booking_reservations_end_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_end_idx ON booking_reservations(end_time)' },
-    { name: 'booking_reservations_recurrence_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_recurrence_idx ON booking_reservations(parent_booking_id)' },
-    { name: 'booking_reservations_organization_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_reservations_organization_idx ON booking_reservations(organization_id)' },
-    { name: 'booking_notes_booking_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_notes_booking_idx ON booking_notes(booking_id)' },
-    { name: 'booking_blackout_room_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_blackout_room_idx ON booking_blackout_dates(room_id)' },
-    { name: 'booking_blackout_dates_idx', sql: 'CREATE INDEX IF NOT EXISTS booking_blackout_dates_idx ON booking_blackout_dates(start_date, end_date)' }
+    {
+      name: "booking_rooms_slug_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_rooms_slug_idx ON booking_rooms(slug)",
+    },
+    {
+      name: "booking_rooms_type_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_rooms_type_idx ON booking_rooms(type)",
+    },
+    {
+      name: "booking_rooms_status_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_rooms_status_idx ON booking_rooms(status)",
+    },
+    {
+      name: "booking_rooms_capacity_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_rooms_capacity_idx ON booking_rooms(capacity)",
+    },
+    {
+      name: "booking_rooms_active_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_rooms_active_idx ON booking_rooms(is_active)",
+    },
+    {
+      name: "booking_amenities_category_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_amenities_category_idx ON booking_amenities(category)",
+    },
+    {
+      name: "booking_reservations_room_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_room_idx ON booking_reservations(room_id)",
+    },
+    {
+      name: "booking_reservations_user_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_user_idx ON booking_reservations(user_id)",
+    },
+    {
+      name: "booking_reservations_status_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_status_idx ON booking_reservations(status)",
+    },
+    {
+      name: "booking_reservations_time_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_time_idx ON booking_reservations(start_time, end_time)",
+    },
+    {
+      name: "booking_reservations_start_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_start_idx ON booking_reservations(start_time)",
+    },
+    {
+      name: "booking_reservations_end_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_end_idx ON booking_reservations(end_time)",
+    },
+    {
+      name: "booking_reservations_recurrence_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_recurrence_idx ON booking_reservations(parent_booking_id)",
+    },
+    {
+      name: "booking_reservations_organization_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_reservations_organization_idx ON booking_reservations(organization_id)",
+    },
+    {
+      name: "booking_notes_booking_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_notes_booking_idx ON booking_notes(booking_id)",
+    },
+    {
+      name: "booking_blackout_room_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_blackout_room_idx ON booking_blackout_dates(room_id)",
+    },
+    {
+      name: "booking_blackout_dates_idx",
+      sql: "CREATE INDEX IF NOT EXISTS booking_blackout_dates_idx ON booking_blackout_dates(start_date, end_date)",
+    },
   ];
 
   for (const idx of indexes) {
@@ -287,18 +350,18 @@ export const grimoire = defineGrimoire({
     onStartup: async (ctx) => {
       // Ejecutar migraciones
       await runMigrations(ctx);
-      
+
       // Verificar tablas
       const requiredTables = ["booking_rooms", "booking_reservations"];
       const missingTables: string[] = [];
-      
+
       for (const table of requiredTables) {
         const exists = await ctx.db.tableExists(table);
         if (!exists) {
           missingTables.push(table);
         }
       }
-      
+
       if (missingTables.length > 0) {
         ctx.logger.warn(`⚠️ Booking tables not found: ${missingTables.join(", ")}`);
       } else {

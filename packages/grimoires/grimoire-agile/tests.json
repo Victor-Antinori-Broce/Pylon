@@ -82,11 +82,7 @@
             "stateId (uuid, FK)",
             "createdBy (text, notNull)"
           ],
-          "optional_fields": [
-            "assigneeId (text)",
-            "cycleId (uuid, FK)",
-            "moduleId (uuid, FK)"
-          ],
+          "optional_fields": ["assigneeId (text)", "cycleId (uuid, FK)", "moduleId (uuid, FK)"],
           "status": "PASSED"
         },
         {
@@ -99,10 +95,7 @@
             "source (text, notNull)",
             "status (enum, default 'pending')"
           ],
-          "optional_fields": [
-            "createdBy (text)",
-            "aiAgentId (en sourceData jsonb)"
-          ],
+          "optional_fields": ["createdBy (text)", "aiAgentId (en sourceData jsonb)"],
           "status": "PASSED"
         },
         {

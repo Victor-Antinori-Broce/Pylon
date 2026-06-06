@@ -21,16 +21,38 @@
     <div v-else-if="result" class="quiz-results">
       <div class="result-card" :class="result.passed ? 'result-passed' : 'result-failed'">
         <div class="result-icon">
-          <svg v-if="result.passed" class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            v-if="result.passed"
+            class="icon-check"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
-          <svg v-else class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            v-else
+            class="icon-x"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </div>
 
         <h3 class="result-title">
-          {{ result.passed ? '¡Felicidades!' : 'No alcanzaste el puntaje mínimo' }}
+          {{ result.passed ? "¡Felicidades!" : "No alcanzaste el puntaje mínimo" }}
         </h3>
 
         <div class="result-score">
@@ -41,7 +63,9 @@
         </div>
 
         <div v-if="result.passed && !surveyDone" class="survey-section">
-          <p class="survey-prompt">Completa la encuesta de satisfacción para descargar tu certificado.</p>
+          <p class="survey-prompt">
+            Completa la encuesta de satisfacción para descargar tu certificado.
+          </p>
           <SatisfactionSurvey :course-id="courseId" :api-base="apiBase" @submitted="onSurveyDone" />
         </div>
 
@@ -61,11 +85,7 @@
           Ver Certificado
         </button>
 
-        <button
-          v-if="!result.passed"
-          class="retry-btn"
-          @click="resetQuiz"
-        >
+        <button v-if="!result.passed" class="retry-btn" @click="resetQuiz">
           Intentar de nuevo
         </button>
       </div>
@@ -85,11 +105,7 @@
 
       <!-- Questions -->
       <div class="questions-list">
-        <div
-          v-for="(question, qIdx) in quiz.questions"
-          :key="question.id"
-          class="question-card"
-        >
+        <div v-for="(question, qIdx) in quiz.questions" :key="question.id" class="question-card">
           <div class="question-header">
             <span class="question-num">{{ qIdx + 1 }}</span>
             <p class="question-text">{{ question.questionText }}</p>
@@ -101,7 +117,7 @@
               :key="oIdx"
               class="option-label"
               :class="{
-                'option-selected': answers[question.id] === oIdx
+                'option-selected': answers[question.id] === oIdx,
               }"
             >
               <input
@@ -131,7 +147,7 @@
           @click="submitQuiz"
         >
           <span v-if="submitting" class="spinner-small" />
-          {{ submitting ? 'Enviando...' : 'Enviar respuestas' }}
+          {{ submitting ? "Enviando..." : "Enviar respuestas" }}
         </button>
       </div>
     </div>
@@ -252,7 +268,9 @@ onMounted(loadQuiz);
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Error ── */
@@ -335,7 +353,7 @@ onMounted(loadQuiz);
 }
 
 .result-title {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 1.25rem;
   font-weight: 700;
   color: #f1f5f9;
@@ -350,7 +368,7 @@ onMounted(loadQuiz);
 }
 
 .score-value {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 2.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -386,7 +404,7 @@ onMounted(loadQuiz);
 }
 
 .quiz-title {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: #f1f5f9;
@@ -441,7 +459,7 @@ onMounted(loadQuiz);
 }
 
 .question-text {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.9rem;
   color: #e2e8f0;
   line-height: 1.5;
@@ -552,7 +570,7 @@ onMounted(loadQuiz);
 }
 
 .survey-prompt {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
   margin-bottom: 1rem;

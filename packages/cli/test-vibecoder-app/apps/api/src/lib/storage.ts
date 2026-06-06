@@ -4,9 +4,10 @@
  * Supports upload, delete, signed URLs, and file access.
  */
 
+import { randomUUID } from "crypto";
+
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { randomUUID } from "crypto";
 
 export const s3 = new S3Client({
   region: process.env.S3_REGION || "us-east-1",

@@ -16,10 +16,18 @@ describe("Real-time WebSocket", () => {
     const ws = new WebSocket(WS_URL);
     wsAvailable = await Promise.race([
       new Promise<boolean>((resolve) => {
-        ws.onopen = () => { ws.close(); resolve(true); };
+        ws.onopen = () => {
+          ws.close();
+          resolve(true);
+        };
         ws.onerror = () => resolve(false);
       }),
-      new Promise<boolean>((resolve) => setTimeout(() => { ws.close(); resolve(false); }, 1000)),
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 1000)
+      ),
     ]);
   });
   it("should connect to WebSocket server", async () => {
@@ -49,7 +57,12 @@ describe("Real-time WebSocket", () => {
           resolve(false);
         };
       }),
-      new Promise<boolean>((resolve) => setTimeout(() => { ws.close(); resolve(false); }, 3000)),
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 3000)
+      ),
     ]);
 
     expect(result).toBe(true);
@@ -73,7 +86,12 @@ describe("Real-time WebSocket", () => {
         };
         ws.onerror = () => resolve(false);
       }),
-      new Promise<boolean>((resolve) => setTimeout(() => { ws.close(); resolve(false); }, 3000)),
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 3000)
+      ),
     ]);
 
     expect(result).toBe(true);
@@ -97,7 +115,12 @@ describe("Real-time WebSocket", () => {
         };
         ws.onerror = () => resolve(false);
       }),
-      new Promise<boolean>((resolve) => setTimeout(() => { ws.close(); resolve(false); }, 3000)),
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 3000)
+      ),
     ]);
 
     expect(result).toBe(true);
@@ -123,7 +146,12 @@ describe("Real-time WebSocket", () => {
         };
         ws.onerror = () => resolve(false);
       }),
-      new Promise<boolean>((resolve) => setTimeout(() => { ws.close(); resolve(false); }, 3000)),
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 3000)
+      ),
     ]);
 
     expect(result).toBe(true);
@@ -147,7 +175,12 @@ describe("Real-time WebSocket", () => {
         };
         ws.onerror = () => resolve(false);
       }),
-      new Promise<boolean>((resolve) => setTimeout(() => { ws.close(); resolve(false); }, 3000)),
+      new Promise<boolean>((resolve) =>
+        setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 3000)
+      ),
     ]);
 
     expect(result).toBe(true);

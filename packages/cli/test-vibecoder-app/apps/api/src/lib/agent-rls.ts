@@ -9,9 +9,11 @@
  */
 
 import { sql } from "drizzle-orm";
+
 import { db } from "../db";
 import type { AgentAuthContext } from "../services/agent-auth";
 import { hasScope } from "../services/agent-auth";
+
 import { logger } from "./logger";
 
 // ═══════════════════════════════════════════════════════════════════════════

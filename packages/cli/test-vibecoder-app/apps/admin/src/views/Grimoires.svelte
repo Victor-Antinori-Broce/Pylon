@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Puzzle, CheckCircle, XCircle, Loader2, Archive, Trash2, RotateCcw, AlertTriangle, Database, Package } from "lucide-svelte";
-  import { moduleStore, type ModuleInfo, type UninstalledGrimoire } from "$lib/states/modules.svelte";
   import UninstalledGrimoireCard from "$lib/components/modules/UninstalledGrimoireCard.svelte";
+  import { moduleStore, type ModuleInfo, type UninstalledGrimoire } from "$lib/states/modules.svelte";
+  import { Puzzle, CheckCircle, XCircle, Loader2, Archive, Trash2, AlertTriangle } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   let toggling = $state<string | null>(null);
   let uninstalling = $state<string | null>(null);
@@ -26,12 +26,12 @@
   };
 
   // Filter: hide infra modules, show everything else
-  let visibleModules = $derived(
+  const visibleModules = $derived(
     moduleStore.modules.filter((m: ModuleInfo) => !INFRASTRUCTURE_MODULES.includes(m.key))
   );
 
   // Get realm names from modules that have realmId
-  let realmNames = $derived.by(() => {
+  const realmNames = $derived.by(() => {
     const names: Record<string, string> = {};
     for (const mod of visibleModules) {
       if (mod.realmId && !names[mod.realmId]) {
@@ -47,7 +47,7 @@
   });
 
   // Group by category for display
-  let groupedModules = $derived.by(() => {
+  const groupedModules = $derived.by(() => {
     const groups: Record<string, ModuleInfo[]> = {};
     for (const mod of visibleModules) {
       let cat: string;

@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Archive, Database, Trash2, RotateCcw, AlertTriangle } from "lucide-svelte";
+  import { Archive, Database, Trash2, RotateCcw } from "lucide-svelte";
+
   import type { UninstalledGrimoire } from "$lib/states/modules.svelte";
-  
+
   interface Props {
     grimoire: UninstalledGrimoire;
     onRecover?: () => void;
@@ -9,34 +10,36 @@
     recovering?: boolean;
     deleting?: boolean;
   }
-  
-  let { 
-    grimoire, 
-    onRecover, 
-    onDelete,
-    recovering = false,
-    deleting = false
-  }: Props = $props();
-  
+
+  const { grimoire, onRecover, onDelete, recovering = false, deleting = false }: Props = $props();
+
   function formatNumber(num: number): string {
     if (num >= 1000) return (num / 1000).toFixed(1) + "k";
     return num.toString();
   }
 </script>
 
-<div class="card p-5 relative overflow-hidden border-dashed border-gremius-border/50 bg-gremius-surface/30">
+<div
+  class="card p-5 relative overflow-hidden border-dashed border-gremius-border/50 bg-gremius-surface/30"
+>
   <!-- Dashed border indicator for uninstalled state -->
-  <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gremius-subtle/40 via-gremius-subtle/20 to-transparent"></div>
-  
+  <div
+    class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gremius-subtle/40 via-gremius-subtle/20 to-transparent"
+  ></div>
+
   <div class="flex items-start gap-3">
-    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-gremius-surface/50 border border-gremius-border/50 grayscale opacity-70">
+    <div
+      class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-gremius-surface/50 border border-gremius-border/50 grayscale opacity-70"
+    >
       📦
     </div>
 
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 flex-wrap">
         <p class="font-semibold text-gremius-text text-sm opacity-80">{grimoire.name}</p>
-        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gremius-subtle/20 text-gremius-subtle border border-gremius-border/50 flex items-center gap-1">
+        <span
+          class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gremius-subtle/20 text-gremius-subtle border border-gremius-border/50 flex items-center gap-1"
+        >
           <Archive class="w-2.5 h-2.5" /> UNINSTALLED
         </span>
       </div>
@@ -46,16 +49,20 @@
           <Database class="w-3.5 h-3.5" />
           <span>Data preserved: {formatNumber(grimoire.dataSummary.totalRows)} rows</span>
         </div>
-        
+
         {#if grimoire.dataSummary.tables.length > 0}
           <div class="mt-1.5 flex flex-wrap gap-1">
             {#each grimoire.dataSummary.tables.slice(0, 3) as table}
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-gremius-bg border border-gremius-border/50 text-gremius-subtle font-mono">
+              <span
+                class="text-[10px] px-1.5 py-0.5 rounded bg-gremius-bg border border-gremius-border/50 text-gremius-subtle font-mono"
+              >
                 {table.name}: {formatNumber(table.rows)}
               </span>
             {/each}
             {#if grimoire.dataSummary.tables.length > 3}
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-gremius-bg border border-gremius-border/50 text-gremius-subtle">
+              <span
+                class="text-[10px] px-1.5 py-0.5 rounded bg-gremius-bg border border-gremius-border/50 text-gremius-subtle"
+              >
                 +{grimoire.dataSummary.tables.length - 3} more
               </span>
             {/if}
@@ -84,7 +91,7 @@
         {/if}
       </button>
     {/if}
-    
+
     {#if grimoire.canDelete}
       <button
         onclick={onDelete}

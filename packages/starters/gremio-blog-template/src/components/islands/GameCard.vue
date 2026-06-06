@@ -11,13 +11,7 @@
   >
     <!-- Cover image -->
     <div class="card-image">
-      <img
-        v-if="coverUrl"
-        :src="coverUrl"
-        :alt="game.title"
-        loading="lazy"
-        class="card-img"
-      />
+      <img v-if="coverUrl" :src="coverUrl" :alt="game.title" loading="lazy" class="card-img" />
       <div v-else class="card-placeholder">
         <span>🎮</span>
       </div>
@@ -34,7 +28,7 @@
     <!-- Info -->
     <div class="card-info">
       <h3 class="card-title">{{ game.title }}</h3>
-      <p class="card-developer">{{ game.developer || 'Unknown Studio' }}</p>
+      <p class="card-developer">{{ game.developer || "Unknown Studio" }}</p>
 
       <!-- Platform chips -->
       <div v-if="platformNames.length" class="card-platforms">
@@ -93,7 +87,10 @@ function onLeave() {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
   text-decoration: none;
   display: block;
 }
@@ -128,7 +125,7 @@ function onLeave() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,229,255,0.04));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(0, 229, 255, 0.04));
   font-size: 2rem;
   opacity: 0.3;
 }
@@ -149,17 +146,17 @@ function onLeave() {
 }
 .score-high {
   background: rgba(0, 200, 83, 0.2);
-  color: #00E676;
+  color: #00e676;
   border: 1px solid rgba(0, 200, 83, 0.3);
 }
 .score-mid {
   background: rgba(255, 214, 0, 0.2);
-  color: #FFD600;
+  color: #ffd600;
   border: 1px solid rgba(255, 214, 0, 0.3);
 }
 .score-low {
   background: rgba(255, 23, 68, 0.2);
-  color: #FF1744;
+  color: #ff1744;
   border: 1px solid rgba(255, 23, 68, 0.3);
 }
 
@@ -188,7 +185,7 @@ function onLeave() {
   transition: color 0.2s;
 }
 .game-card:hover .card-title {
-  color: #00E5FF;
+  color: #00e5ff;
 }
 
 .card-developer {

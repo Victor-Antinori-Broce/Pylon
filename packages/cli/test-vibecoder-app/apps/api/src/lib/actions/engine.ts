@@ -5,11 +5,21 @@
  * This is the unified replacement for function-dispatcher.ts and webhook handlers.
  */
 
+import { randomUUID } from "crypto";
+
 import { eq, and, desc } from "drizzle-orm";
+
 import { db } from "../../db";
 import { actions, actionExecutions } from "../../db/schema";
 import { events } from "../events";
-import { randomUUID } from "crypto";
+
+import {
+  executeCodeAction,
+  executeWebhookOutAction,
+  executeWebhookInAction,
+  executeAgentAction,
+  type WebhookInRequest,
+} from "./handlers";
 import type { 
   Action, 
   ActionContext, 
@@ -22,13 +32,6 @@ import type {
   ActionListItem,
   CronTriggerConfig,
 } from "./types";
-import {
-  executeCodeAction,
-  executeWebhookOutAction,
-  executeWebhookInAction,
-  executeAgentAction,
-  type WebhookInRequest,
-} from "./handlers";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuration
@@ -218,7 +221,7 @@ export async function listActions(options: {
 } = {}): Promise<ActionListItem[]> {
   const limit = Math.min(options.limit || 50, 200);
   
-  let query = db.select({
+  const query = db.select({
     id: actions.id,
     name: actions.name,
     slug: actions.slug,
@@ -362,7 +365,7 @@ export async function deleteAction(id: string): Promise<boolean> {
 // Cron Scheduling (placeholder - integrates with existing cron-scheduler.ts)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const cronSchedules = new Map<string, unknown>();
 
 async function refreshCronSchedule(action: Action) {

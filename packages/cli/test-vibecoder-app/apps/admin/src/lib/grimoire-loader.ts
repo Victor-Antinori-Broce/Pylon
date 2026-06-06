@@ -12,6 +12,7 @@
  */
 
 import type { Component } from "svelte";
+
 import type { AdminConfig } from "./types/admin";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";

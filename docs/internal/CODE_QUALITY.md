@@ -7,6 +7,7 @@ Este proyecto mantiene estándares estrictos de calidad de código mediante herr
 ### Pre-commit Hooks
 
 Todos los commits pasan por verificación automática:
+
 - ✅ ESLint fix
 - ✅ Prettier format
 - ✅ TypeScript type check
@@ -33,14 +34,14 @@ pnpm run qa            # lint + format:check + typecheck
 
 ### Reglas Principales
 
-| Regla | Nivel | Descripción |
-|-------|-------|-------------|
-| `@typescript-eslint/no-unused-vars` | error | Variables no usadas |
-| `@typescript-eslint/no-explicit-any` | warn | Evitar `any` |
-| `import/order` | error | Orden de imports |
-| `import/no-cycle` | error | Prevenir ciclos |
-| `no-console` | warn | Solo warn/error/info |
-| `eqeqeq` | error | Igualdad estricta |
+| Regla                                | Nivel | Descripción          |
+| ------------------------------------ | ----- | -------------------- |
+| `@typescript-eslint/no-unused-vars`  | error | Variables no usadas  |
+| `@typescript-eslint/no-explicit-any` | warn  | Evitar `any`         |
+| `import/order`                       | error | Orden de imports     |
+| `import/no-cycle`                    | error | Prevenir ciclos      |
+| `no-console`                         | warn  | Solo warn/error/info |
+| `eqeqeq`                             | error | Igualdad estricta    |
 
 ### Ignored Patterns
 
@@ -110,6 +111,7 @@ CI/CD Pipeline:        ✅ Configurado
 ## 🔒 Seguridad
 
 Herramientas de seguridad integradas:
+
 - Dependabot (GitHub)
 - `npm audit` en CI
 - Secret scanning
@@ -117,6 +119,7 @@ Herramientas de seguridad integradas:
 ## 📝 Guía de Contribución
 
 1. **Antes de commitear:**
+
    ```bash
    pnpm run qa
    ```

@@ -168,9 +168,7 @@
           "suggestedPriority": "string",
           "createdAt": "string (ISO 8601)"
         },
-        "nextSteps": [
-          "string"
-        ]
+        "nextSteps": ["string"]
       },
       "warning": "Esta herramienta SOLO crea intakes en estado 'pending'. Los issues solo se crean después de aprobación humana. El campo 'payload' es flexible y acepta cualquier objeto JSON."
     }

@@ -46,6 +46,7 @@ bun run src/index.ts
 ```
 
 **Verificar en logs:**
+
 ```
 [Actions] Engine initialized
 ⏰ Cron Scheduler initialized: X job(s) loaded
@@ -59,6 +60,7 @@ bun run src/db/migrations/migrate-to-actions.ts
 ```
 
 **Verificar:**
+
 - Functions migradas: X
 - Webhooks migradas: X
 
@@ -74,6 +76,7 @@ bun run src/db/migrations/verify-actions-integration.ts
 ### 6. Verificar Funcionalidad
 
 #### 6.1 UI Admin
+
 - [ ] Abrir `/actions` en admin
 - [ ] Ver lista de actions (workers + webhooks unificados)
 - [ ] Crear test action
@@ -81,6 +84,7 @@ bun run src/db/migrations/verify-actions-integration.ts
 - [ ] Ver logs de ejecución
 
 #### 6.2 API Endpoints
+
 ```bash
 # Listar actions
 curl http://localhost:3001/api/actions
@@ -100,11 +104,13 @@ curl -X POST http://localhost:3001/api/actions/{id}/execute
 ```
 
 #### 6.3 Cron Jobs
+
 - [ ] Verificar en logs: `⏰ [CRON] Scheduled "name"`
 - [ ] Esperar próxima ejecución programada
 - [ ] Verificar que se ejecuta correctamente
 
 #### 6.4 Event Dispatch
+
 - [ ] Crear entry en un dataset con action asociada
 - [ ] Verificar que se dispara el action
 - [ ] Verificar logs de ejecución
@@ -133,6 +139,7 @@ psql -c "SELECT status, COUNT(*) FROM action_executions WHERE created_at > NOW()
 ```
 
 #### Métricas Importantes
+
 - [ ] Actions activos: `SELECT COUNT(*) FROM actions WHERE status = 'active';`
 - [ ] Ejecuciones exitosas última hora
 - [ ] Ejecuciones fallidas última hora
@@ -154,6 +161,7 @@ bun run src/db/migrations/cleanup-legacy-actions.ts --execute --force
 ```
 
 Esto eliminará:
+
 - Tabla `gremius_functions`
 - Tabla `function_executions`
 - Tabla `webhooks` (si existe)
@@ -162,6 +170,7 @@ Esto eliminará:
 ### Limpieza de Código (Opcional)
 
 Después del cleanup de DB, se puede eliminar:
+
 - `apps/api/src/routes/functions.ts` (o marcar como deprecated)
 - Código legacy en `function-dispatcher.ts`
 - Fallbacks en UI para APIs legacy
@@ -171,12 +180,14 @@ Después del cleanup de DB, se puede eliminar:
 Si algo sale mal:
 
 ### 1. Revertir Código
+
 ```bash
 git checkout <commit-anterior>
 pm2 restart api
 ```
 
 ### 2. Restaurar DB (si es necesario)
+
 ```bash
 # Restaurar desde backup
 pg_restore -d gremius backup-pre-actions-unification.dump
@@ -187,29 +198,37 @@ pg_restore -d gremius backup-pre-actions-unification.dump
 ## Troubleshooting
 
 ### Problema: "actions table does not exist"
+
 **Solución:** Aplicar migración con `drizzle-kit push`
 
 ### Problema: "No actions found" después de migración
+
 **Solución:** Verificar que `migrate-to-actions.ts` se ejecutó sin errores. Revisar `actions.legacy_id` y `actions.legacy_type`.
 
 ### Problema: Cron jobs no se ejecutan
-**Solución:** 
+
+**Solución:**
+
 1. Verificar en logs: `⏰ Cron Scheduler initialized`
 2. Verificar actions con `trigger = 'cron'` y `status = 'active'`
 3. Verificar expresiones cron válidas
 
 ### Problema: Eventos no disparan actions
+
 **Solución:**
+
 1. Verificar `initActionsEngine()` en logs
 2. Verificar mapeo de eventos en `EVENT_MAP`
 3. Verificar `triggerConfig.eventName` en actions
 
 ### Problema: Legacy API no funciona
+
 **Solución:** Verificar que los IDs mapean correctamente entre `legacy_id` y `actions.id`
 
 ## Contacto
 
 En caso de problemas graves durante el deploy:
+
 - Revisar logs detalladamente
 - Ejecutar `verify-actions-integration.ts` para diagnóstico
 - Consultar documentación en `docs/ACTIONS_UNIFICATION.md`

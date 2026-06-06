@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { GripVertical, Plus, MoreHorizontal } from "lucide-svelte";
   import type { KanbanView } from "$lib/types/admin";
+  import { Plus, MoreHorizontal } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Props {
     view: KanbanView;
     apiEndpoint?: string;
   }
 
-  let { view, apiEndpoint }: Props = $props();
+  const { view, apiEndpoint }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   const endpoint = apiEndpoint || `/api/explorer/${view.table}`;
@@ -22,7 +22,7 @@
   let hasValidGroupBy = $state(true);
 
   // Discover unique values for the groupBy field
-  let stages = $derived.by<string[]>(() => {
+  const stages = $derived.by<string[]>(() => {
     const unique = new Set<string>();
     for (const item of data) {
       const val = item[view.groupBy];
@@ -33,7 +33,7 @@
   });
 
   // Group data by stage
-  let grouped = $derived.by<Record<string, any[]>>(() => {
+  const grouped = $derived.by<Record<string, any[]>>(() => {
     const groups: Record<string, any[]> = {};
     for (const stage of stages()) {
       groups[stage] = [];
@@ -47,7 +47,7 @@
   });
 
   // Card display fields
-  let cardFields = $derived(view.cardFields || []);
+  const cardFields = $derived(view.cardFields || []);
 
   onMount(async () => {
     await loadData();

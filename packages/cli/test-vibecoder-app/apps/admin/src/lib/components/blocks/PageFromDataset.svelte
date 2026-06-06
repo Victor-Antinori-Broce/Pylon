@@ -8,7 +8,8 @@
    * @production Ready for production use
    * @version 1.0.0
    */
-  import { onMount, onDestroy } from "svelte";
+  import { api } from "$lib/api";
+  import Modal from "$lib/components/ui/Modal.svelte";
   import { 
     Database, 
     Search, 
@@ -20,8 +21,7 @@
     AlertCircle,
     RefreshCw
   } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import Modal from "$lib/components/ui/Modal.svelte";
+  import { onMount, onDestroy } from "svelte";
 
   // ─── Types ──────────────────────────────────────────
   interface Dataset {
@@ -78,7 +78,7 @@
     onSelect: (data: PageData) => void;
   }
 
-  let { isOpen, onClose, onSelect }: Props = $props();
+  const { isOpen, onClose, onSelect }: Props = $props();
 
   // ─── State ──────────────────────────────────────────
   type Step = 'datasets' | 'entries' | 'preview';
@@ -97,7 +97,7 @@
 
   // Pagination
   let currentPage = $state(1);
-  let entriesPerPage = $state(20);
+  const entriesPerPage = $state(20);
 
   // ─── Lifecycle ──────────────────────────────────────
   onMount(async () => {
@@ -156,7 +156,7 @@
     try {
       const response = await api.getDatasetEntries(datasetId, {
         limit: entriesPerPage,
-        page: page,
+        page,
         search: searchQuery || undefined
       });
       
@@ -310,7 +310,7 @@
       columnSpan: 12,
       content: {
         headline: title,
-        description: description,
+        description,
         mediaId: imageId,
         mediaType: imageId ? 'image' : undefined,
         alignment: 'center',
@@ -477,7 +477,7 @@
         columnSpan: 12,
         content: {
           embedUrl: videoUrl,
-          provider: provider,
+          provider,
           autoplay: false,
           controls: true
         }
@@ -600,7 +600,7 @@
   }
 
   // ─── Derived State ──────────────────────────────────
-  let filteredDatasets = $derived(
+  const filteredDatasets = $derived(
     searchQuery 
       ? datasets.filter(d => 
           d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -609,9 +609,9 @@
       : datasets
   );
 
-  let totalPages = $derived(Math.ceil(totalEntries / entriesPerPage));
-  let hasNextPage = $derived(currentPage < totalPages);
-  let hasPrevPage = $derived(currentPage > 1);
+  const totalPages = $derived(Math.ceil(totalEntries / entriesPerPage));
+  const hasNextPage = $derived(currentPage < totalPages);
+  const hasPrevPage = $derived(currentPage > 1);
 
   // ─── Formatters ─────────────────────────────────────
   function formatDate(dateString: string): string {

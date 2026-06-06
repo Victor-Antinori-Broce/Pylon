@@ -1,12 +1,14 @@
 /**
  * Row Level Security (RLS) Tests
- * 
+ *
  * Tests for RLS middleware, context management, and tenant isolation.
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
+
 import { isDatabaseAvailable } from "./setup";
 
 let dbAvailable = false;
@@ -27,12 +29,8 @@ describe("Row Level Security", () => {
       const userRole = "admin";
 
       // Set RLS context
-      await db.execute(
-        sql`SELECT set_config('app.current_user_id', ${userId}, true)`
-      );
-      await db.execute(
-        sql`SELECT set_config('app.current_user_role', ${userRole}, true)`
-      );
+      await db.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
+      await db.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, true)`);
 
       // Get RLS context
       const userIdResult = await db.execute<{ set_config: string }>(
@@ -50,9 +48,7 @@ describe("Row Level Security", () => {
       if (!dbAvailable) return;
 
       // Reset context
-      await db.execute(
-        sql`SELECT set_config('app.current_user_id', '', true)`
-      );
+      await db.execute(sql`SELECT set_config('app.current_user_id', '', true)`);
 
       const result = await db.execute<{ current_setting: string }>(
         sql`SELECT current_setting('app.current_user_id', true)`
@@ -69,9 +65,7 @@ describe("Row Level Security", () => {
 
       await db.transaction(async (tx) => {
         // Set context in transaction
-        await tx.execute(
-          sql`SELECT set_config('app.current_user_id', ${testUserId}, true)`
-        );
+        await tx.execute(sql`SELECT set_config('app.current_user_id', ${testUserId}, true)`);
 
         // Verify context in same transaction
         const result = await tx.execute<{ current_setting: string }>(
@@ -97,7 +91,7 @@ describe("Row Level Security", () => {
 
       // Verify we can query RLS status
       expect(Array.isArray(result.rows)).toBe(true);
-      
+
       for (const row of result.rows || []) {
         expect(row.relname).toBeDefined();
         expect(typeof row.relrowsecurity).toBe("boolean");
@@ -131,9 +125,7 @@ describe("Row Level Security", () => {
       const maliciousUserId = "user'; DROP TABLE users; --";
 
       // Should handle safely via parameterized query
-      await db.execute(
-        sql`SELECT set_config('app.current_user_id', ${maliciousUserId}, true)`
-      );
+      await db.execute(sql`SELECT set_config('app.current_user_id', ${maliciousUserId}, true)`);
 
       const result = await db.execute<{ current_setting: string }>(
         sql`SELECT current_setting('app.current_user_id', true)`
@@ -148,9 +140,7 @@ describe("Row Level Security", () => {
 
       const longUserId = "user-" + "x".repeat(500);
 
-      await db.execute(
-        sql`SELECT set_config('app.current_user_id', ${longUserId}, true)`
-      );
+      await db.execute(sql`SELECT set_config('app.current_user_id', ${longUserId}, true)`);
 
       const result = await db.execute<{ current_setting: string }>(
         sql`SELECT current_setting('app.current_user_id', true)`
@@ -166,11 +156,9 @@ describe("Row Level Security", () => {
       if (!dbAvailable) return;
 
       const validRoles = ["admin", "editor", "user"];
-      
+
       for (const role of validRoles) {
-        await db.execute(
-          sql`SELECT set_config('app.current_user_role', ${role}, true)`
-        );
+        await db.execute(sql`SELECT set_config('app.current_user_role', ${role}, true)`);
 
         const result = await db.execute<{ current_setting: string }>(
           sql`SELECT current_setting('app.current_user_role', true)`
@@ -184,7 +172,7 @@ describe("Row Level Security", () => {
       if (!dbAvailable) return;
 
       const isAdmin = (role: string) => role === "admin";
-      
+
       expect(isAdmin("admin")).toBe(true);
       expect(isAdmin("user")).toBe(false);
       expect(isAdmin("editor")).toBe(false);

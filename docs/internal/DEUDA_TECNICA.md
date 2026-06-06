@@ -8,37 +8,37 @@
 
 ## 🎉 Mejoras Recientes (2026-04-26)
 
-| Item | Estado Antes | Estado Después |
-|------|--------------|----------------|
-| Errores TypeScript | 60 errores | ✅ 0 errores |
-| ESLint/Prettier | ❌ No configurado | ✅ Configurado y activo |
-| CI/CD | ❌ Inexistente | ✅ GitHub Actions |
-| Pre-commit hooks | ❌ No había | ✅ Husky + lint-staged |
-| Código Legacy | 445 archivos | ✅ Eliminado |
-| Tests Unitarios | 1 test | ✅ 20+ tests |
-| Admin monolitos (CRM/Conta/Agile) | ⚠️ Existentes | ✅ **Eliminados** |
-| API Client tipado | ❌ Strings sueltos | ✅ **Servicios completos** |
-| Settings General | ⚠️ Mock | ✅ **Persiste vía PATCH** |
-| Hybrid Rendering | ❌ No implementado | ✅ **100% funcional** |
-| Rate Limiting | ❌ No implementado | ✅ **Implementado** |
-| Observabilidad | ❌ No implementado | ✅ **Health checks + logs** |
+| Item                              | Estado Antes       | Estado Después              |
+| --------------------------------- | ------------------ | --------------------------- |
+| Errores TypeScript                | 60 errores         | ✅ 0 errores                |
+| ESLint/Prettier                   | ❌ No configurado  | ✅ Configurado y activo     |
+| CI/CD                             | ❌ Inexistente     | ✅ GitHub Actions           |
+| Pre-commit hooks                  | ❌ No había        | ✅ Husky + lint-staged      |
+| Código Legacy                     | 445 archivos       | ✅ Eliminado                |
+| Tests Unitarios                   | 1 test             | ✅ 20+ tests                |
+| Admin monolitos (CRM/Conta/Agile) | ⚠️ Existentes      | ✅ **Eliminados**           |
+| API Client tipado                 | ❌ Strings sueltos | ✅ **Servicios completos**  |
+| Settings General                  | ⚠️ Mock            | ✅ **Persiste vía PATCH**   |
+| Hybrid Rendering                  | ❌ No implementado | ✅ **100% funcional**       |
+| Rate Limiting                     | ❌ No implementado | ✅ **Implementado**         |
+| Observabilidad                    | ❌ No implementado | ✅ **Health checks + logs** |
 
 ---
 
 ## 🎯 Resumen Ejecutivo Actual
 
-| Categoría | Items | Severidad | Estado |
-|-----------|-------|-----------|--------|
-| Errores TypeScript | 0 | 🟢 Baja | ✅ Resuelto |
-| Código Legacy | 0 archivos | 🟢 Baja | ✅ Resuelto |
-| CI/CD | Configurado | 🟢 Baja | ✅ Resuelto |
-| Linting | Activo | 🟢 Baja | ✅ Resuelto |
-| Admin monolitos | 0 | 🟢 Baja | ✅ Resuelto |
-| Tests Faltantes | ~85% cobertura | 🟡 Media | 🔄 En progreso |
-| Scheduling | No implementado | 🟡 Media | ⏳ Pendiente |
-| Analytics | No implementado | 🟡 Media | ⏳ Pendiente |
-| i18n | No implementado | 🟢 Baja | ⏳ Pendiente |
-| CDN/Edge Cache | No implementado | 🟢 Baja | ⏳ Pendiente |
+| Categoría          | Items           | Severidad | Estado         |
+| ------------------ | --------------- | --------- | -------------- |
+| Errores TypeScript | 0               | 🟢 Baja   | ✅ Resuelto    |
+| Código Legacy      | 0 archivos      | 🟢 Baja   | ✅ Resuelto    |
+| CI/CD              | Configurado     | 🟢 Baja   | ✅ Resuelto    |
+| Linting            | Activo          | 🟢 Baja   | ✅ Resuelto    |
+| Admin monolitos    | 0               | 🟢 Baja   | ✅ Resuelto    |
+| Tests Faltantes    | ~85% cobertura  | 🟡 Media  | 🔄 En progreso |
+| Scheduling         | No implementado | 🟡 Media  | ⏳ Pendiente   |
+| Analytics          | No implementado | 🟡 Media  | ⏳ Pendiente   |
+| i18n               | No implementado | 🟢 Baja   | ⏳ Pendiente   |
+| CDN/Edge Cache     | No implementado | 🟢 Baja   | ⏳ Pendiente   |
 
 **Deuda Técnica Total:** ~10% (Reducida de ~45%)
 
@@ -49,6 +49,7 @@
 **Fecha de resolución:** 2026-04-22
 
 **Archivos eliminados:**
+
 - ✅ `packages/admin/src/views/crm/CRMView.svelte` — monolito CRM eliminado
 - ✅ `packages/admin/src/views/conta/ContaView.svelte` — monolito Conta eliminado
 - ✅ `packages/admin/src/views/agile/AgileView.svelte` — monolito Agile eliminado
@@ -60,6 +61,7 @@
 - ✅ `packages/admin/src/routes/webhooks/` — eliminado
 
 **Resultado:**
+
 - CRM: de ~11 componentes a **2 custom views**
 - Conta: de ~10 componentes a **4 custom views**
 - Agile: de 1 monolito de 702 líneas a **0 custom views** (puro DataExplorer)
@@ -72,6 +74,7 @@
 **Fecha de resolución:** 2026-04-22
 
 **Archivos creados:**
+
 - `packages/admin/src/lib/services/crm.ts` — 348 líneas
 - `packages/admin/src/lib/services/conta.ts` — 510 líneas
 - `packages/admin/src/lib/services/agile.ts` — 262 líneas
@@ -124,6 +127,7 @@
 | Tests de Integración | 0 | ❌ Faltante |
 
 **Plan de Mejora:**
+
 ```
 Fase 1 (1 semana): Tests críticos
   - Auth (login, registro, permisos)
@@ -141,6 +145,7 @@ Fase 3 (1 semana): Tests E2E
 ```
 
 **Archivos prioritarios para testing:**
+
 - `apps/api/src/lib/auth.ts` — Critical
 - `apps/api/src/middleware/transactional-rls.ts` — Critical
 - `apps/api/src/routes/items.ts` — High (API unificada)
@@ -157,10 +162,11 @@ Fase 3 (1 semana): Tests E2E
 **Impacto:** Limita workflows editoriales (blogs, landing pages).
 
 **Solución Propuesta:**
+
 ```typescript
 // 1. Agregar campo publishAt a entries
 // 2. Job de cron cada minuto:
-"UPDATE data_entries SET status='published' WHERE publishAt <= NOW()"
+"UPDATE data_entries SET status='published' WHERE publishAt <= NOW()";
 // 3. UI en admin: date picker en formularios
 ```
 
@@ -175,6 +181,7 @@ Fase 3 (1 semana): Tests E2E
 **Problema:** Métricas de sistema (CPU, memoria) sí existen, pero NO métricas de negocio.
 
 **Lo que falta:**
+
 ```typescript
 // Métricas de producto:
 - MAU/DAU (usuarios activos)
@@ -194,6 +201,7 @@ Fase 3 (1 semana): Tests E2E
 **Estado:** ❌ No implementado
 
 **Problema:**
+
 - UI del admin mezcla inglés/español
 - Sin localización consistente
 - Sin traducción de contenido
@@ -245,12 +253,14 @@ Fase 3 (1 semana): Tests E2E
 ## 🎯 Próximos Pasos (Roadmap)
 
 ### Q2 2026
+
 - [ ] Alcanzar 40% cobertura de tests
 - [ ] Implementar scheduling / publicación programada
 - [ ] Implementar analytics dashboard
 - [ ] Mover tipos inline de Settings.svelte a `@gremius/shared`
 
 ### Q3 2026
+
 - [ ] Alcanzar 60% cobertura de tests
 - [ ] Implementar i18n
 - [ ] Implementar CDN / edge caching

@@ -1,6 +1,6 @@
 /**
  * Table Cells Index
- * 
+ *
  * Exporta todas las celdas de tabla disponibles.
  */
 

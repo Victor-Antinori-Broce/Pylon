@@ -1,6 +1,6 @@
 /**
  * Calculated Fields / KPI Components
- * 
+ *
  * Componentes para crear y gestionar campos calculados en datasets.
  */
 
@@ -8,7 +8,7 @@ export { default as FormulaBuilder } from "./FormulaBuilder.svelte";
 export { default as KpiCreator } from "./KpiCreator.svelte";
 
 // Inline type definitions (avoiding external dependency)
-export type CalculatedFieldType = 
+export type CalculatedFieldType =
   | "formula"
   | "count"
   | "sum"

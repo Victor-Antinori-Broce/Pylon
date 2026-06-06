@@ -1,18 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import { 
     Plus, 
     ChevronRight, 
-    GraduationCap, 
     BookOpen,
     Search,
-    Filter,
-    MoreHorizontal,
     Edit,
-    Trash2,
-    Eye
+    Trash2
   } from "lucide-svelte";
-  import { api } from "$lib/api";
+  import { onMount } from "svelte";
+
   import { goto } from "$app/navigation";
 
   interface Curso {
@@ -30,7 +27,7 @@
   let cursos = $state<Curso[]>([]);
   let loading = $state(true);
   let searchQuery = $state("");
-  let filteredCursos = $derived(
+  const filteredCursos = $derived(
     cursos.filter(c => 
       c.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.descripcion?.toLowerCase() || "").includes(searchQuery.toLowerCase())

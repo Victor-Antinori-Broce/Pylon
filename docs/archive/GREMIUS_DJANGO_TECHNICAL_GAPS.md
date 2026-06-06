@@ -31,6 +31,7 @@ myapp/
 ```
 
 **Capacidades técnicas:**
+
 - **Auto-registro:** Django escanea `INSTALLED_APPS` y registra todo automáticamente
 - **URLs namespaced:** Cada app tiene sus propias URLs sin conflictos
 - **Templates namespaced:** `myapp/template.html` evita colisiones
@@ -59,6 +60,7 @@ packages/grimoires/grimoire-example/
 **Gaps técnicos:**
 
 #### 1.1 Auto-registro incompleto
+
 ```typescript
 // Django: Todo se registra automáticamente al añadir a INSTALLED_APPS
 
@@ -87,6 +89,7 @@ packages/grimoires/grimoire-example/
 ```
 
 #### 1.2 Namespacing de recursos
+
 ```python
 # Django: URLs con namespace evitan colisiones
 # urls.py
@@ -112,13 +115,14 @@ router.namespace('blog', () => {
 ```
 
 #### 1.3 Ciclo de vida de Apps
+
 ```python
 # Django: Apps tienen ciclo de vida definido
 # apps.py
 class BlogConfig(AppConfig):
     name = 'blog'
     verbose_name = 'Blog'
-    
+
     def ready(self):
         # Se ejecuta cuando Django inicia y app está lista
         # Ideal para registrar signals, inicializar caches, etc.
@@ -134,15 +138,15 @@ class BlogConfig(AppConfig):
 // Solución propuesta:
 // grimoire.ts - Clase con ciclo de vida
 export default class BlogGrimoire extends Grimoire {
-  name = 'grimoire-blog';
-  
+  name = "grimoire-blog";
+
   async ready(): Promise<void> {
     // Se ejecuta al iniciar servidor
     // Registrar signals, inicializar datos, etc.
     await this.registerSignals();
     await this.seedInitialData();
   }
-  
+
   async shutdown(): Promise<void> {
     // Cleanup al detener servidor
     await this.closeConnections();
@@ -200,7 +204,7 @@ with transaction.atomic():
 class PostManager(models.Manager):
     def published(self):
         return self.filter(status='published', publish_date__lte=timezone.now())
-    
+
     def by_author(self, author):
         return self.filter(author=author).select_related('category')
 
@@ -214,6 +218,7 @@ Post.objects.by_author(user)  # Posts por autor con optimizaciones
 ```
 
 **Capacidades:**
+
 - `select_related` - JOINs automáticos para ForeignKeys
 - `prefetch_related` - Queries separadas optimizadas para ManyToMany
 - `annotate` - Aggregaciones en la query (COUNT, AVG, SUM)
@@ -230,13 +235,13 @@ Post.objects.by_author(user)  # Posts por autor con optimizaciones
 
 // Query básica
 const posts = await db.query.posts.findMany({
-  where: eq(posts.status, 'published'),
+  where: eq(posts.status, "published"),
   with: {
-    author: true,      // JOIN
-    category: true,    // JOIN
-    tags: true,        // JOIN
-    comments: true     // JOIN (puede ser N+1)
-  }
+    author: true, // JOIN
+    category: true, // JOIN
+    tags: true, // JOIN
+    comments: true, // JOIN (puede ser N+1)
+  },
 });
 
 // Aggregaciones requieren SQL manual o helpers
@@ -249,6 +254,7 @@ const posts = await db.query.posts.findMany({
 **Gaps técnicos:**
 
 #### 2.1 Query Builder de alto nivel
+
 ```typescript
 // Solución propuesta: Abstracción QuerySet sobre Drizzle
 
@@ -261,59 +267,59 @@ class QuerySet<T extends Table> {
   private orderFields: { field: string; desc: boolean }[] = [];
   private limitValue?: number;
   private offsetValue?: number;
-  
+
   filter(conditions: FilterConditions<T>): this {
     // Convierte filtros a SQL
     return this;
   }
-  
+
   selectRelated(...relations: string[]): this {
     // Analiza relaciones y crea JOINs optimizados
     // Detecta automáticamente ForeignKeys
     return this;
   }
-  
+
   prefetchRelated(...relations: string[]): this {
     // Marca relaciones para query separada
     // Evita N+1 queries
     return this;
   }
-  
+
   annotate(aggregations: Record<string, AggregateConfig>): this {
     // COUNT, AVG, SUM, MIN, MAX
     return this;
   }
-  
+
   orderBy(...fields: string[]): this {
     // -field para descendente
     return this;
   }
-  
+
   limit(n: number): this {
     this.limitValue = n;
     return this;
   }
-  
+
   offset(n: number): this {
     this.offsetValue = n;
     return this;
   }
-  
+
   async execute(): Promise<Populated<T>[]> {
     // 1. Ejecuta query principal con JOINs
     // 2. Ejecuta queries de prefetch
     // 3. Combina resultados
     // 4. Aplica aggregations
   }
-  
+
   async count(): Promise<number> {
     // COUNT optimizado
   }
-  
+
   async exists(): Promise<boolean> {
     // EXISTS query
   }
-  
+
   async first(): Promise<Populated<T> | null> {
     return (await this.limit(1).execute())[0] ?? null;
   }
@@ -321,37 +327,37 @@ class QuerySet<T extends Table> {
 
 // Uso
 const posts = await Post.objects
-  .filter({ status: 'published', publishDate: { lte: new Date() } })
-  .selectRelated('author', 'category')
-  .prefetchRelated('tags', 'comments.author')
+  .filter({ status: "published", publishDate: { lte: new Date() } })
+  .selectRelated("author", "category")
+  .prefetchRelated("tags", "comments.author")
   .annotate({
-    commentCount: count('comments'),
-    avgRating: avg('ratings.value'),
-    totalViews: sum('viewLogs.count')
+    commentCount: count("comments"),
+    avgRating: avg("ratings.value"),
+    totalViews: sum("viewLogs.count"),
   })
-  .orderBy('-publishDate')
+  .orderBy("-publishDate")
   .limit(20)
   .execute();
 ```
 
 #### 2.2 F() Expressions
+
 ```typescript
 // Django: Post.objects.filter(id=1).update(views=F('views') + 1)
 // Atómico, evita race conditions
 
 // Solución propuesta:
-await Post.objects
-  .filter({ id: 1 })
-  .update({
-    views: F('views').add(1),
-    lastViewedAt: new Date()
-  });
+await Post.objects.filter({ id: 1 }).update({
+  views: F("views").add(1),
+  lastViewedAt: new Date(),
+});
 
 // Implementación genera:
 // UPDATE posts SET views = views + 1, last_viewed_at = NOW() WHERE id = 1
 ```
 
 #### 2.3 Managers personalizados
+
 ```typescript
 // Solución propuesta:
 class PostManager extends Manager<Post> {
@@ -361,14 +367,14 @@ class PostManager extends Manager<Post> {
       publishDate: { lte: new Date() }
     });
   }
-  
+
   byAuthor(authorId: string): QuerySet<Post> {
     return this
       .filter({ authorId })
       .selectRelated('category', 'author')
       .orderBy('-publishDate');
   }
-  
+
   async mostViewed(limit = 10): Promise<Post[]> {
     return this
       .filter({ status: 'published' })
@@ -464,6 +470,7 @@ ALLOWED_HOSTS = ['myapp.com']
 ```
 
 **Capacidades:**
+
 - Python puro = lógica condicional compleja
 - Herencia de settings
 - Estructura por environments
@@ -477,9 +484,9 @@ ALLOWED_HOSTS = ['myapp.com']
 export default {
   database: {
     host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432'),
+    port: parseInt(process.env.DB_PORT || "5432"),
   },
-  grimoires: ['grimoire-auth', 'grimoire-content'],
+  grimoires: ["grimoire-auth", "grimoire-content"],
   // Falta:
   // - Estructura por environments
   // - Validación de config
@@ -491,6 +498,7 @@ export default {
 **Gaps técnicos:**
 
 #### 3.1 Sistema de Environments
+
 ```typescript
 // Solución propuesta:
 // gremius/
@@ -503,46 +511,41 @@ export default {
 // base.ts
 export const baseConfig = {
   database: {
-    adapter: 'postgres' as const,
-    host: env('DB_HOST', 'localhost'),
-    port: env.int('DB_PORT', 5432),
+    adapter: "postgres" as const,
+    host: env("DB_HOST", "localhost"),
+    port: env.int("DB_PORT", 5432),
     pool: {
-      min: env.int('DB_POOL_MIN', 2),
-      max: env.int('DB_POOL_MAX', 10)
-    }
+      min: env.int("DB_POOL_MIN", 2),
+      max: env.int("DB_POOL_MAX", 10),
+    },
   },
-  
+
   grimoires: {
     autoDiscover: true,
-    enabled: ['grimoire-auth', 'grimoire-content']
+    enabled: ["grimoire-auth", "grimoire-content"],
   },
-  
-  middleware: [
-    'security',
-    'cors', 
-    'auth',
-    'logging'
-  ]
+
+  middleware: ["security", "cors", "auth", "logging"],
 };
 
 // local.ts
-import { baseConfig } from './base';
+import { baseConfig } from "./base";
 
 export default defineConfig({
   ...baseConfig,
   debug: true,
   database: {
     ...baseConfig.database,
-    adapter: 'sqlite',
-    path: './dev.db'
+    adapter: "sqlite",
+    path: "./dev.db",
   },
   logging: {
-    level: 'debug'
-  }
+    level: "debug",
+  },
 });
 
 // production.ts
-import { baseConfig } from './base';
+import { baseConfig } from "./base";
 
 export default defineConfig({
   ...baseConfig,
@@ -552,25 +555,26 @@ export default defineConfig({
     ssl: true,
     pool: {
       min: 5,
-      max: 20
-    }
+      max: 20,
+    },
   },
   cache: {
-    provider: 'redis',
-    url: env('REDIS_URL')
+    provider: "redis",
+    url: env("REDIS_URL"),
   },
   logging: {
-    level: 'error'
-  }
+    level: "error",
+  },
 });
 
 // Uso: GREMIUS_ENV=production bun run start
 ```
 
 #### 3.2 Validación de Configuración
+
 ```typescript
 // Solución propuesta:
-import { z } from 'zod';
+import { z } from "zod";
 
 const configSchema = z.object({
   database: z.object({
@@ -662,6 +666,7 @@ bun run migrate          # Corre migrations (básico)
 **Gaps técnicos:**
 
 #### 4.1 Generador de Grimoires
+
 ```bash
 # Solución propuesta:
 gremius grimoire:create ecommerce
@@ -679,6 +684,7 @@ gremius grimoire:create ecommerce
 ```
 
 #### 4.2 Shell Interactivo
+
 ```bash
 # Solución propuesta:
 gremius shell
@@ -695,6 +701,7 @@ gremius shell
 ```
 
 #### 4.3 Generador de Migrations
+
 ```bash
 # Solución propuesta:
 gremius makemigrations
@@ -713,6 +720,7 @@ gremius makemigrations
 ```
 
 #### 4.4 Inspector
+
 ```bash
 # Solución propuesta:
 gremius inspect routes
@@ -752,11 +760,11 @@ class PostModelTest(TestCase):
             content='Content',
             status='published'
         )
-    
+
     def test_creation(self):
         self.assertEqual(self.post.title, 'Test')
         self.assertTrue(self.post.slug)
-    
+
     def test_absolute_url(self):
         self.assertEqual(
             self.post.get_absolute_url(),
@@ -768,12 +776,12 @@ class PostAPITest(TestCase):
     def setUp(self):
         self.client = Client()
         self.post = Post.objects.create(...)
-    
+
     def test_list(self):
         response = self.client.get('/api/posts/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.post.title)
-    
+
     def test_create(self):
         response = self.client.post('/api/posts/', {
             'title': 'New',
@@ -785,7 +793,7 @@ class PostAPITest(TestCase):
 # Fixtures
 class FixtureTest(TestCase):
     fixtures = ['posts.json', 'users.json']
-    
+
     def test_with_data(self):
         # Datos cargados automáticamente
         self.assertEqual(Post.objects.count(), 10)
@@ -799,6 +807,7 @@ class FixtureTest(TestCase):
 ```
 
 **Capacidades:**
+
 - Test client HTTP completo
 - Fixtures (JSON, YAML, XML)
 - Test DB aislada automática
@@ -820,41 +829,43 @@ class FixtureTest(TestCase):
 **Gaps técnicos:**
 
 #### 5.1 Test Client HTTP
+
 ```typescript
 // Solución propuesta:
-import { GremiusTestClient } from '@gremius/testing';
+import { GremiusTestClient } from "@gremius/testing";
 
 const client = new GremiusTestClient();
 
 // Simula requests HTTP
-const response = await client.get('/api/posts');
+const response = await client.get("/api/posts");
 expect(response.status).toBe(200);
 expect(response.data).toHaveLength(5);
 
 // POST con auth
 const response = await client
-  .post('/api/posts')
-  .authAs(user)  // Login automático
-  .send({ title: 'Test', content: 'Content' });
+  .post("/api/posts")
+  .authAs(user) // Login automático
+  .send({ title: "Test", content: "Content" });
 
 expect(response.status).toBe(201);
 ```
 
 #### 5.2 Fixtures
+
 ```typescript
 // Solución propuesta:
 // tests/fixtures/posts.ts
 export const postFixtures = [
-  { id: '1', title: 'Post 1', status: 'published' },
-  { id: '2', title: 'Post 2', status: 'draft' }
+  { id: "1", title: "Post 1", status: "published" },
+  { id: "2", title: "Post 2", status: "draft" },
 ];
 
 // En test:
-import { GremiusTestCase } from '@gremius/testing';
+import { GremiusTestCase } from "@gremius/testing";
 
 class PostTest extends GremiusTestCase {
-  fixtures = ['posts', 'users'];
-  
+  fixtures = ["posts", "users"];
+
   async testList() {
     // Fixtures cargados automáticamente
     const posts = await Post.objects.all();
@@ -864,6 +875,7 @@ class PostTest extends GremiusTestCase {
 ```
 
 #### 5.3 Test DB Aislada
+
 ```typescript
 // Solución propuesta:
 // Al correr tests:
@@ -905,31 +917,31 @@ from .models import Post, Category
 class PostAdmin(admin.ModelAdmin):
     # Qué mostrar en lista
     list_display = ['title', 'author', 'status', 'publish_date']
-    
+
     # Filtros laterales
     list_filter = ['status', 'created_at', 'author', 'category']
-    
+
     # Búsqueda
     search_fields = ['title', 'content', 'author__username']
-    
+
     # Ordenamiento por defecto
     ordering = ['-publish_date']
-    
+
     # Paginación
     list_per_page = 25
-    
+
     # Campos pre-completados
     prepopulated_fields = {'slug': ('title',)}
-    
+
     # Fecha para jerarquía
     date_hierarchy = 'publish_date'
-    
+
     # Edición inline de campos en lista
     list_editable = ['status']
-    
+
     # Acciones en bulk
     actions = ['make_published', 'export_csv']
-    
+
     # Organización de campos
     fieldsets = (
         ('Contenido', {
@@ -944,14 +956,14 @@ class PostAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
-    
+
     # Inlines (edición de relaciones)
     inlines = [CommentInline, AttachmentInline]
-    
+
     # Permisos
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
-    
+
     # Acciones personalizadas
     @admin.action(description='Mark as published')
     def make_published(self, request, queryset):
@@ -964,6 +976,7 @@ class CommentInline(admin.TabularInline):
 ```
 
 **Capacidades:**
+
 - 100% auto-generado desde models
 - CRUD completo
 - Filtros, búsqueda, ordenamiento
@@ -989,6 +1002,7 @@ class CommentInline(admin.TabularInline):
 **Gaps técnicos:**
 
 #### 6.1 Configuración Declarativa
+
 ```typescript
 // Solución propuesta:
 // packages/grimoires/grimoire-content/src/admin.ts
@@ -996,75 +1010,74 @@ class CommentInline(admin.TabularInline):
 export const postAdminConfig = {
   // Lista
   list: {
-    display: ['title', 'author.name', 'status', 'publishDate'],
-    filters: ['status', 'author', 'category', 'tags'],
-    search: ['title', 'content'],
-    ordering: ['-publishDate', 'title'],
+    display: ["title", "author.name", "status", "publishDate"],
+    filters: ["status", "author", "category", "tags"],
+    search: ["title", "content"],
+    ordering: ["-publishDate", "title"],
     perPage: 25,
-    editable: ['status'],  // Editable inline
-    actions: ['publish', 'unpublish', 'delete', 'export']
+    editable: ["status"], // Editable inline
+    actions: ["publish", "unpublish", "delete", "export"],
   },
-  
+
   // Formulario
   form: {
     layout: [
       {
-        section: 'Contenido',
-        fields: ['title', 'slug', 'content'],
-        collapsible: false
+        section: "Contenido",
+        fields: ["title", "slug", "content"],
+        collapsible: false,
       },
       {
-        section: 'Metadata',
-        fields: ['author', 'status', 'category', 'tags'],
+        section: "Metadata",
+        fields: ["author", "status", "category", "tags"],
         collapsible: true,
-        defaultCollapsed: false
+        defaultCollapsed: false,
       },
       {
-        section: 'SEO',
-        fields: ['metaTitle', 'metaDescription'],
+        section: "SEO",
+        fields: ["metaTitle", "metaDescription"],
         collapsible: true,
-        defaultCollapsed: true
-      }
+        defaultCollapsed: true,
+      },
     ],
-    
+
     widgets: {
-      content: 'rich-text',
-      tags: 'multi-select',
-      author: 'search-select',
-      category: 'tree-select'
+      content: "rich-text",
+      tags: "multi-select",
+      author: "search-select",
+      category: "tree-select",
     },
-    
+
     inlines: [
       {
-        name: 'comments',
-        fields: ['author', 'content', 'approved'],
-        perPage: 5
+        name: "comments",
+        fields: ["author", "content", "approved"],
+        perPage: 5,
       },
       {
-        name: 'attachments',
-        fields: ['file', 'description'],
-        perPage: 3
-      }
-    ]
+        name: "attachments",
+        fields: ["file", "description"],
+        perPage: 3,
+      },
+    ],
   },
-  
+
   // Permisos
   permissions: {
-    view: ['admin', 'editor'],
-    edit: ['admin', 'editor'],
-    delete: ['admin']  // Solo admins pueden borrar
+    view: ["admin", "editor"],
+    edit: ["admin", "editor"],
+    delete: ["admin"], // Solo admins pueden borrar
   },
-  
+
   // Acciones personalizadas
   actions: {
     publish: async (selectedIds) => {
-      await Post.objects.filter({ id: { in: selectedIds } })
-        .update({ status: 'published' });
+      await Post.objects.filter({ id: { in: selectedIds } }).update({ status: "published" });
     },
     export: async (selectedIds) => {
       // Exporta a CSV
-    }
-  }
+    },
+  },
 };
 
 // Auto-registro en admin
@@ -1083,29 +1096,29 @@ export const postAdminConfig = {
 class ExampleMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-    
+
     def __call__(self, request):
         # 1. process_request - Antes de URL routing
         request.start_time = time.time()
-        
+
         response = self.get_response(request)
-        
+
         # 4. process_response - Después de vista
         duration = time.time() - request.start_time
         response['X-Request-Duration'] = str(duration)
-        
+
         return response
-    
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         # 2. process_view - Antes de la vista
         # Puede retornar Response para short-circuit
         logger.info(f"View: {view_func.__name__}")
-    
+
     def process_exception(self, request, exception):
         # 5. process_exception - Si vista lanza excepción
         logger.error(f"Exception: {exception}")
         # Puede retornar Response para manejar error
-    
+
     def process_template_response(self, request, response):
         # 3. process_template_response - Si vista retorna TemplateResponse
         response.context_data['debug'] = settings.DEBUG
@@ -1113,6 +1126,7 @@ class ExampleMiddleware:
 ```
 
 **5 Fases:**
+
 1. `process_request` - Antes de URL routing
 2. `process_view` - Antes de ejecutar vista
 3. `process_template_response` - Después de vista (template)
@@ -1139,6 +1153,7 @@ app.use(async (c, next) => {
 **Gaps técnicos:**
 
 #### 7.1 Middleware con Fases
+
 ```typescript
 // Solución propuesta:
 interface Middleware {
@@ -1150,11 +1165,11 @@ interface Middleware {
 
 // Configuración con prioridad
 export const middleware = [
-  { name: 'security', priority: 100, class: SecurityMiddleware },
-  { name: 'session', priority: 90, class: SessionMiddleware },
-  { name: 'cors', priority: 80, class: CorsMiddleware },
-  { name: 'auth', priority: 70, class: AuthMiddleware },
-  { name: 'timing', priority: 10, class: TimingMiddleware },
+  { name: "security", priority: 100, class: SecurityMiddleware },
+  { name: "session", priority: 90, class: SessionMiddleware },
+  { name: "cors", priority: 80, class: CorsMiddleware },
+  { name: "auth", priority: 70, class: AuthMiddleware },
+  { name: "timing", priority: 10, class: TimingMiddleware },
 ];
 
 // Implementación
@@ -1163,10 +1178,10 @@ class TimingMiddleware implements Middleware {
     request.startTime = Date.now();
     return request;
   }
-  
+
   async processResponse(request: Request, response: Response) {
     const duration = Date.now() - request.startTime;
-    response.headers.set('X-Request-Duration', String(duration));
+    response.headers.set("X-Request-Duration", String(duration));
     return response;
   }
 }
@@ -1193,7 +1208,7 @@ class PostForm(forms.ModelForm):
             'tags': forms.CheckboxSelectMultiple(),
             'publish_date': forms.DateTimeInput(attrs={'type': 'datetime-local'})
         }
-    
+
     # Validación field-level
     def clean_title(self):
         title = self.cleaned_data['title']
@@ -1202,16 +1217,16 @@ class PostForm(forms.ModelForm):
         if Post.objects.filter(title=title).exists():
             raise forms.ValidationError('Title already exists')
         return title
-    
+
     # Validación form-level
     def clean(self):
         cleaned_data = super().clean()
         title = cleaned_data.get('title')
         content = cleaned_data.get('content')
-        
+
         if title and content and title in content:
             raise forms.ValidationError('Content cannot contain title')
-        
+
         return cleaned_data
 
 # Uso
@@ -1225,6 +1240,7 @@ else:
 ```
 
 **Capacidades:**
+
 - Auto-generado desde modelos
 - Validaciones field-level y form-level
 - Widgets personalizables
@@ -1240,7 +1256,7 @@ else:
 const postSchema = z.object({
   title: z.string().min(1),
   content: z.string(),
-  categoryId: z.number()
+  categoryId: z.number(),
 });
 
 // Falta:
@@ -1253,17 +1269,18 @@ const postSchema = z.object({
 **Gaps técnicos:**
 
 #### 8.1 Forms Auto-generados
+
 ```typescript
 // Solución propuesta:
 class Form<T> {
   fields: Record<string, Field>;
   data: Partial<T>;
   errors: Record<string, string[]> = {};
-  
+
   async isValid(): Promise<boolean> {
     // Limpia errores previos
     this.errors = {};
-    
+
     // Valida cada field
     for (const [name, field] of Object.entries(this.fields)) {
       const value = this.data[name];
@@ -1273,21 +1290,21 @@ class Form<T> {
         this.errors[name] = [error.message];
       }
     }
-    
+
     // Valida form completo
     try {
       await this.clean();
     } catch (error) {
-      this.errors['__all__'] = [error.message];
+      this.errors["__all__"] = [error.message];
     }
-    
+
     return Object.keys(this.errors).length === 0;
   }
-  
+
   async clean(): Promise<void> {
     // Override en subclases
   }
-  
+
   // Guarda en DB
   async save(): Promise<T> {
     if (!(await this.isValid())) {
@@ -1299,29 +1316,29 @@ class Form<T> {
 
 // Auto-generado desde schema
 const PostForm = createForm(posts, {
-  fields: ['title', 'content', 'categoryId', 'tagIds'],
+  fields: ["title", "content", "categoryId", "tagIds"],
   widgets: {
-    content: 'rich-text',
-    tagIds: 'multi-select'
+    content: "rich-text",
+    tagIds: "multi-select",
   },
-  
+
   async cleanTitle(value: string) {
-    if (value.toLowerCase().includes('spam')) {
-      throw new ValidationError('No spam');
+    if (value.toLowerCase().includes("spam")) {
+      throw new ValidationError("No spam");
     }
     const exists = await Post.objects.filter({ title: value }).exists();
     if (exists) {
-      throw new ValidationError('Title already exists');
+      throw new ValidationError("Title already exists");
     }
     return value;
   },
-  
+
   async clean() {
     const { title, content } = this.data;
     if (content?.includes(title)) {
-      throw new ValidationError('Content cannot contain title');
+      throw new ValidationError("Content cannot contain title");
     }
-  }
+  },
 });
 ```
 
@@ -1359,6 +1376,7 @@ python manage.py migrate blog 0001
 ```
 
 **Capacidades:**
+
 - Auto-detecta cambios en models
 - Genera migrations automáticamente
 - SQL preview
@@ -1385,6 +1403,7 @@ bun drizzle-kit migrate
 **Gaps técnicos:**
 
 #### 9.1 Sistema de Migrations Integrado
+
 ```typescript
 // Solución propuesta:
 
@@ -1395,22 +1414,22 @@ bun drizzle-kit migrate
 
 // packages/grimoires/grimoire-content/migrations/0002_add_slug.ts
 export default {
-  name: '0002_add_slug',
-  grimoire: 'grimoire-content',
-  dependencies: ['0001_initial'],
-  
+  name: "0002_add_slug",
+  grimoire: "grimoire-content",
+  dependencies: ["0001_initial"],
+
   async up(db: Database) {
-    await db.schema.alterTable('posts', (table) => {
-      table.string('slug').notNullable().default('');
-      table.index('slug');
+    await db.schema.alterTable("posts", (table) => {
+      table.string("slug").notNullable().default("");
+      table.index("slug");
     });
   },
-  
+
   async down(db: Database) {
-    await db.schema.alterTable('posts', (table) => {
-      table.dropColumn('slug');
+    await db.schema.alterTable("posts", (table) => {
+      table.dropColumn("slug");
     });
-  }
+  },
 };
 
 // gremius migrate
@@ -1430,17 +1449,17 @@ export default {
 
 ## 📊 Resumen de Gaps Técnicos
 
-| # | Gap Técnico | Impacto | Esfuerzo Estimado |
-|---|-------------|---------|-------------------|
-| 1 | Auto-registro completo de grimoires | Alto | 2 semanas |
-| 2 | QuerySet de alto nivel (select_related, prefetch, annotate) | Alto | 1 mes |
-| 3 | Sistema de environments | Medio | 1 semana |
-| 4 | CLI completo (shell, makemigrations, etc) | Alto | 1 mes |
-| 5 | Testing framework integrado | Medio | 2 semanas |
-| 6 | Admin auto-generado avanzado | Alto | 1.5 meses |
-| 7 | Middleware con 5 fases | Medio | 2 semanas |
-| 8 | Forms auto-generados desde schema | Medio | 2 semanas |
-| 9 | Migrations automáticas integradas | Alto | 1 mes |
+| #   | Gap Técnico                                                 | Impacto | Esfuerzo Estimado |
+| --- | ----------------------------------------------------------- | ------- | ----------------- |
+| 1   | Auto-registro completo de grimoires                         | Alto    | 2 semanas         |
+| 2   | QuerySet de alto nivel (select_related, prefetch, annotate) | Alto    | 1 mes             |
+| 3   | Sistema de environments                                     | Medio   | 1 semana          |
+| 4   | CLI completo (shell, makemigrations, etc)                   | Alto    | 1 mes             |
+| 5   | Testing framework integrado                                 | Medio   | 2 semanas         |
+| 6   | Admin auto-generado avanzado                                | Alto    | 1.5 meses         |
+| 7   | Middleware con 5 fases                                      | Medio   | 2 semanas         |
+| 8   | Forms auto-generados desde schema                           | Medio   | 2 semanas         |
+| 9   | Migrations automáticas integradas                           | Alto    | 1 mes             |
 
 **Total estimado:** 6-7 meses de desarrollo para alcanzar paridad técnica con Django.
 
@@ -1461,4 +1480,4 @@ Con 6-7 meses de desarrollo enfocado en estos gaps, Gremius tendría **paridad t
 
 ---
 
-*Documento técnico - Sin considerar madurez/comunidad*
+_Documento técnico - Sin considerar madurez/comunidad_

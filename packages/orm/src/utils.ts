@@ -1,6 +1,7 @@
-import type { PgTable } from 'drizzle-orm/pg-core';
-import { Manager, CustomManager } from './manager.js';
-import type { RelationConfig } from './queryset.js';
+import type { PgTable } from "drizzle-orm/pg-core";
+
+import { Manager, CustomManager } from "./manager.js";
+import type { RelationConfig } from "./queryset.js";
 
 /**
  * Crea un Manager para una tabla
@@ -29,11 +30,11 @@ export function createCustomManager<T extends PgTable<any>>(
       return modifyFn(qs);
     }
   })(table);
-  
+
   if (relations) {
     manager.setRelations(relations);
   }
-  
+
   return manager;
 }
 
@@ -42,20 +43,23 @@ export function createCustomManager<T extends PgTable<any>>(
  */
 export function defineRelations<T extends PgTable<any>>(
   _table: T,
-  relationsConfig: Record<string, Omit<RelationConfig, 'targetTable'> & { targetTable: PgTable<any> }>
+  relationsConfig: Record<
+    string,
+    Omit<RelationConfig, "targetTable"> & { targetTable: PgTable<any> }
+  >
 ): Record<string, RelationConfig> {
   const relations: Record<string, RelationConfig> = {};
-  
+
   for (const [name, config] of Object.entries(relationsConfig)) {
     relations[name] = {
       type: config.type,
       targetTable: config.targetTable,
       foreignKey: config.foreignKey,
-      targetKey: config.targetKey || 'id',
-      through: config.through
+      targetKey: config.targetKey || "id",
+      through: config.through,
     };
   }
-  
+
   return relations;
 }
 
@@ -70,13 +74,13 @@ export interface ModelConfig<T extends PgTable<any>> {
 
 export function defineModel<T extends PgTable<any>>(config: ModelConfig<T>) {
   const defaultManager = createManager(config.table, config.relations);
-  
+
   const model = {
     table: config.table,
     objects: defaultManager,
     relations: config.relations || {},
-    ...config.managers
+    ...config.managers,
   };
-  
+
   return model;
 }

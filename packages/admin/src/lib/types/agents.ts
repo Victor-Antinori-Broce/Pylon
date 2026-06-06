@@ -5,9 +5,9 @@
 
 // ============== Base Types ==============
 
-export type AgentStatus = 'active' | 'paused' | 'error';
-export type TraceStatus = 'running' | 'completed' | 'error';
-export type StepType = 'thinking' | 'tool_call' | 'tool_result' | 'system' | 'error';
+export type AgentStatus = "active" | "paused" | "error";
+export type TraceStatus = "running" | "completed" | "error";
+export type StepType = "thinking" | "tool_call" | "tool_result" | "system" | "error";
 
 // ============== Agent ==============
 
@@ -104,7 +104,7 @@ export interface ListTracesResponse {
 }
 
 export interface PlaygroundMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -132,7 +132,7 @@ export interface TimelineProps {
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp: Date;
   metadata?: {

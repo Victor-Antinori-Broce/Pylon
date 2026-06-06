@@ -112,10 +112,7 @@ export interface GrimoirePackage {
 /**
  * Versión mínima del contrato (solo campos requeridos).
  */
-export type GrimoirePackageMinimal = Pick<
-  GrimoirePackage,
-  "id" | "name" | "version" | "type"
->;
+export type GrimoirePackageMinimal = Pick<GrimoirePackage, "id" | "name" | "version" | "type">;
 
 /**
  * Valida si un objeto cumple el contrato mínimo de GrimoirePackage.

@@ -17,16 +17,16 @@ export async function loadFixtures(
   if (typeof fixtures !== "string") {
     return fixtures;
   }
-  
+
   // Try to load from file
   try {
     const fixtureModule = await import(`./fixtures/${fixtures}.js`);
     const fixture: Fixture = fixtureModule.default || fixtureModule;
-    
+
     if (typeof fixture.setup === "function") {
       return await fixture.setup(context);
     }
-    
+
     // If it's just a plain object
     return fixture;
   } catch (error) {
@@ -45,9 +45,7 @@ export function defineFixture(fixture: Fixture): Fixture {
 /**
  * Helper to create simple data fixtures
  */
-export function createDataFixture<T extends Record<string, any>>(
-  data: T
-): T {
+export function createDataFixture<T extends Record<string, any>>(data: T): T {
   return data;
 }
 

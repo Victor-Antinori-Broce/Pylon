@@ -16,7 +16,7 @@
  * Playground: GET /api/graphql (returns GraphiQL HTML)
  */
 
-import { Hono } from "hono";
+import { eq, desc, asc, ilike, and, count } from "drizzle-orm";
 import {
   GraphQLSchema,
   GraphQLObjectType,
@@ -26,18 +26,18 @@ import {
   GraphQLBoolean,
   GraphQLList,
   GraphQLNonNull,
-  GraphQLEnumType,
-  GraphQLInputObjectType,
   graphql,
   type GraphQLFieldConfigMap,
 } from "graphql";
 import GraphQLJSON from "graphql-type-json";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import {
-  blogPosts, games, media, dataSets, dataEntries,
+  blogPosts, games, media, dataEntries,
   tags, platforms, streamers, authUsers as user
 } from "../db/schema";
-import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
+
 
 export const graphqlRoutes = new Hono();
 

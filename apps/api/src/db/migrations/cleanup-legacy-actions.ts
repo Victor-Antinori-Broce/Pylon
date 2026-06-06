@@ -21,27 +21,20 @@ interface CleanupResult {
   errors: string[];
 }
 
-const LEGACY_TABLES = [
-  "gremius_functions",
-  "function_executions",
-  "webhooks",
-];
+const LEGACY_TABLES = ["gremius_functions", "function_executions", "webhooks"];
 
-const LEGACY_ENUMS = [
-  "function_trigger",
-  "function_status",
-];
+const LEGACY_ENUMS = ["function_trigger", "function_status"];
 
 async function verifyMigration(): Promise<{ success: boolean; issues: string[] }> {
   console.log("[Cleanup] Verifying migration status...\n");
-  
+
   const issues: string[] = [];
-  
+
   // Check if new actions table exists and has data
   try {
     const actionsResult = await db.execute(`SELECT COUNT(*) FROM actions`);
     const actionsCount = parseInt(actionsResult.rows[0]?.count as string) || 0;
-    
+
     if (actionsCount === 0) {
       issues.push("No actions found in new 'actions' table");
     } else {
@@ -50,7 +43,7 @@ async function verifyMigration(): Promise<{ success: boolean; issues: string[] }
   } catch (err) {
     issues.push("actions table does not exist or is not accessible");
   }
-  
+
   // Check if action_executions table exists
   try {
     const execResult = await db.execute(`SELECT COUNT(*) FROM action_executions`);
@@ -59,28 +52,30 @@ async function verifyMigration(): Promise<{ success: boolean; issues: string[] }
   } catch (err) {
     issues.push("action_executions table does not exist or is not accessible");
   }
-  
+
   // Verify data integrity: compare counts
   try {
     const [legacyCount, newCount] = await Promise.all([
       db.execute(`SELECT COUNT(*) FROM gremius_functions`).catch(() => ({ rows: [{ count: 0 }] })),
-      db.execute(`SELECT COUNT(*) FROM actions WHERE legacy_type = 'function'`).catch(() => ({ rows: [{ count: 0 }] })),
+      db
+        .execute(`SELECT COUNT(*) FROM actions WHERE legacy_type = 'function'`)
+        .catch(() => ({ rows: [{ count: 0 }] })),
     ]);
-    
+
     const legacyFunctions = parseInt(legacyCount.rows[0]?.count as string) || 0;
     const migratedFunctions = parseInt(newCount.rows[0]?.count as string) || 0;
-    
+
     console.log(`  ✓ Migrated ${migratedFunctions}/${legacyFunctions} functions`);
-    
+
     if (migratedFunctions < legacyFunctions) {
       issues.push(`Not all functions migrated: ${migratedFunctions}/${legacyFunctions}`);
     }
   } catch (err) {
     // Legacy table might not exist, which is fine
   }
-  
+
   console.log("");
-  
+
   return {
     success: issues.length === 0,
     issues,
@@ -89,7 +84,7 @@ async function verifyMigration(): Promise<{ success: boolean; issues: string[] }
 
 async function checkLegacyTablesExist(): Promise<string[]> {
   const existing: string[] = [];
-  
+
   for (const table of LEGACY_TABLES) {
     try {
       const result = await db.execute(`
@@ -99,7 +94,7 @@ async function checkLegacyTablesExist(): Promise<string[]> {
           AND table_name = '${table}'
         )
       `);
-      
+
       if (result.rows[0]?.exists === true) {
         existing.push(table);
       }
@@ -107,7 +102,7 @@ async function checkLegacyTablesExist(): Promise<string[]> {
       console.warn(`[Cleanup] Could not check table ${table}:`, err);
     }
   }
-  
+
   return existing;
 }
 
@@ -117,16 +112,16 @@ async function dropLegacyTables(dryRun: boolean): Promise<CleanupResult> {
     enumsDropped: [],
     errors: [],
   };
-  
+
   const existingTables = await checkLegacyTablesExist();
-  
+
   if (existingTables.length === 0) {
     console.log("[Cleanup] No legacy tables found to drop\n");
     return result;
   }
-  
+
   console.log(`[Cleanup] Tables to drop: ${existingTables.join(", ")}\n`);
-  
+
   for (const table of existingTables) {
     try {
       if (dryRun) {
@@ -142,7 +137,7 @@ async function dropLegacyTables(dryRun: boolean): Promise<CleanupResult> {
       result.errors.push(`Failed to drop ${table}: ${err.message}`);
     }
   }
-  
+
   return result;
 }
 
@@ -152,7 +147,7 @@ async function dropLegacyEnums(dryRun: boolean): Promise<CleanupResult> {
     enumsDropped: [],
     errors: [],
   };
-  
+
   for (const enumName of LEGACY_ENUMS) {
     try {
       if (dryRun) {
@@ -168,7 +163,7 @@ async function dropLegacyEnums(dryRun: boolean): Promise<CleanupResult> {
       result.errors.push(`Failed to drop ${enumName}: ${err.message}`);
     }
   }
-  
+
   return result;
 }
 
@@ -176,10 +171,10 @@ async function runCleanup(dryRun: boolean): Promise<void> {
   console.log("═══════════════════════════════════════════════════════════");
   console.log(dryRun ? "  Cleanup: DRY RUN MODE" : "  Cleanup: EXECUTE MODE");
   console.log("═══════════════════════════════════════════════════════════\n");
-  
+
   // Step 1: Verify migration
   const verification = await verifyMigration();
-  
+
   if (!verification.success) {
     console.error("❌ Migration verification failed:");
     for (const issue of verification.issues) {
@@ -188,49 +183,49 @@ async function runCleanup(dryRun: boolean): Promise<void> {
     console.error("\n⚠️  DO NOT PROCEED WITH CLEANUP UNTIL ISSUES ARE RESOLVED\n");
     process.exit(1);
   }
-  
+
   console.log("✓ Migration verification passed\n");
-  
+
   if (dryRun) {
     console.log("[DRY-RUN] No changes will be made\n");
   } else {
     console.log("⚠️  THIS WILL PERMANENTLY DELETE DATA\n");
-    
+
     // In non-dry-run mode, ask for confirmation (unless --force is passed)
     const args = process.argv.slice(2);
     const force = args.includes("--force");
-    
+
     if (!force) {
       console.log("To proceed, run with --force flag:");
       console.log("  bun run cleanup-legacy-actions.ts --execute --force\n");
       process.exit(0);
     }
   }
-  
+
   // Step 2: Drop tables
   console.log("--- Dropping Legacy Tables ---\n");
   const tableResult = await dropLegacyTables(dryRun);
-  
+
   // Step 3: Drop enums
   console.log("\n--- Dropping Legacy Enums ---\n");
   const enumResult = await dropLegacyEnums(dryRun);
-  
+
   // Summary
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log(dryRun ? "  DRY RUN Complete" : "  Cleanup Complete");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`Tables ${dryRun ? 'to drop' : 'dropped'}: ${tableResult.tablesDropped.length}`);
-  console.log(`Enums ${dryRun ? 'to drop' : 'dropped'}: ${enumResult.enumsDropped.length}`);
-  
+  console.log(`Tables ${dryRun ? "to drop" : "dropped"}: ${tableResult.tablesDropped.length}`);
+  console.log(`Enums ${dryRun ? "to drop" : "dropped"}: ${enumResult.enumsDropped.length}`);
+
   if (tableResult.errors.length > 0 || enumResult.errors.length > 0) {
     console.log(`\nErrors: ${tableResult.errors.length + enumResult.errors.length}`);
     for (const error of [...tableResult.errors, ...enumResult.errors]) {
       console.log(`  - ${error}`);
     }
   }
-  
+
   console.log("");
-  
+
   if (dryRun) {
     console.log("To execute for real, run:");
     console.log("  bun run cleanup-legacy-actions.ts --execute --force\n");

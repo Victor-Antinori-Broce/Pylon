@@ -14,20 +14,20 @@
  * @version 1.0.0
  */
 
-import { Hono } from "hono";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { agentMemory } from "@/db/schema";
-import { eq, and, desc, sql, lt, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { logger } from "@/lib/logger";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { agentAuthWithRBAC, requireScope, requireScopes } from "@/middleware/agent-rbac";
+import { agentAuthWithRBAC, requireScope } from "@/middleware/agent-rbac";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type { AgentAuthContext } from "@/services/agent-auth";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type { AppVariables } from "@/types/hono";
+import { eq, and, desc, sql, lt, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
+import { Hono } from "hono";
 
 const agentMemoryRouter = new Hono<{ Variables: AppVariables }>();
 

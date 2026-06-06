@@ -5,9 +5,10 @@
    * Renderiza widgets registrados en un slot específico.
    * Usa svelte:component para montar componentes dinámicamente.
    */
-  import { componentRegistry, type RegistryWidget } from "./registry.svelte";
+  import { fade } from "svelte/transition";
+
   import DynamicComponent from "./DynamicComponent.svelte";
-  import { fade, slide } from "svelte/transition";
+  import { componentRegistry, type RegistryWidget } from "./registry.svelte";
   
   interface Props {
     /** Nombre del slot (ej: "dashboard:top", "sidebar:bottom") */
@@ -20,7 +21,7 @@
     wrapper?: "none" | "card" | "border";
   }
   
-  let { 
+  const { 
     name, 
     class: className = "", 
     animated = true,

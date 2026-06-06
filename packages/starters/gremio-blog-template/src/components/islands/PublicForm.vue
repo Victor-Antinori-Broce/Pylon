@@ -7,8 +7,12 @@
 <template>
   <form class="public-form" @submit.prevent="handleSubmit" novalidate>
     <div class="form-fields">
-      <div v-for="field in visibleFields" :key="field.id || field.key" class="field-group" :class="{ 'has-error': fieldErrors[field.key] }">
-
+      <div
+        v-for="field in visibleFields"
+        :key="field.id || field.key"
+        class="field-group"
+        :class="{ 'has-error': fieldErrors[field.key] }"
+      >
         <label :for="`field-${field.key}`" class="field-label">
           {{ field.label || field.key }}
           <span v-if="field.isRequired" class="required-dot">*</span>
@@ -66,7 +70,7 @@
           >
             <span class="toggle-thumb" />
           </button>
-          <span class="toggle-label">{{ formData[field.key] ? 'Yes' : 'No' }}</span>
+          <span class="toggle-label">{{ formData[field.key] ? "Yes" : "No" }}</span>
         </div>
 
         <!-- Select -->
@@ -79,11 +83,9 @@
           @blur="validateField(field)"
         >
           <option value="" disabled>Select {{ field.label }}...</option>
-          <option
-            v-for="opt in (field.options || [])"
-            :key="opt.value"
-            :value="opt.value"
-          >{{ opt.label }}</option>
+          <option v-for="opt in field.options || []" :key="opt.value" :value="opt.value">
+            {{ opt.label }}
+          </option>
         </select>
 
         <!-- Richtext / JSON / longtext → textarea -->
@@ -116,13 +118,9 @@
     </div>
 
     <!-- Submit -->
-    <button
-      type="submit"
-      class="submit-btn"
-      :disabled="submitting"
-    >
+    <button type="submit" class="submit-btn" :disabled="submitting">
       <span v-if="submitting" class="spinner" />
-      {{ submitting ? 'Submitting...' : 'Submit' }}
+      {{ submitting ? "Submitting..." : "Submit" }}
     </button>
 
     <!-- Server error -->
@@ -133,7 +131,9 @@
       <div v-if="submitted" class="success-card">
         <div class="success-icon">✓</div>
         <h3>Thank you!</h3>
-        <p>Your submission to <strong>{{ datasetName }}</strong> has been received.</p>
+        <p>
+          Your submission to <strong>{{ datasetName }}</strong> has been received.
+        </p>
         <button type="button" class="reset-btn" @click="resetForm">Submit another</button>
       </div>
     </Transition>
@@ -168,11 +168,13 @@ const props = defineProps<{
   datasetName: string;
 }>();
 
-const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000") as string;
+const API = (import.meta.env.PUBLIC_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3000") as string;
 
 const visibleFields = computed(() => {
   return [...props.fields]
-    .filter(f => !f.hidden && f.type !== "relation")
+    .filter((f) => !f.hidden && f.type !== "relation")
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 });
 
@@ -210,7 +212,9 @@ function validateField(field: FieldDef): boolean {
         fieldErrors[field.key] = `${field.label} format is invalid`;
         return false;
       }
-    } catch { /* bad regex in schema */ }
+    } catch {
+      /* bad regex in schema */
+    }
   }
 
   // Number range
@@ -289,7 +293,9 @@ function resetForm() {
       formData[field.key] = field.defaultValue || "";
     }
   }
-  Object.keys(fieldErrors).forEach(k => { fieldErrors[k] = ""; });
+  Object.keys(fieldErrors).forEach((k) => {
+    fieldErrors[k] = "";
+  });
 }
 </script>
 
@@ -313,16 +319,16 @@ function resetForm() {
 .field-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
 }
 .required-dot {
-  color: #FF2A6D;
+  color: #ff2a6d;
   margin-left: 2px;
 }
 
 .field-help {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   margin: 0;
 }
 
@@ -330,26 +336,28 @@ function resetForm() {
   width: 100%;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   color: #fff;
   font-size: 0.9rem;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .field-input::placeholder {
-  color: rgba(255,255,255,0.2);
+  color: rgba(255, 255, 255, 0.2);
 }
 .field-input:focus {
-  border-color: rgba(0,229,255,0.4);
-  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.08);
 }
 
 .has-error .field-input {
-  border-color: rgba(255,42,109,0.4);
+  border-color: rgba(255, 42, 109, 0.4);
 }
 .has-error .field-input:focus {
-  box-shadow: 0 0 0 3px rgba(255,42,109,0.1);
+  box-shadow: 0 0 0 3px rgba(255, 42, 109, 0.1);
 }
 
 .field-select {
@@ -376,14 +384,16 @@ function resetForm() {
   width: 44px;
   height: 24px;
   border-radius: 9999px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 .toggle-btn.active {
-  background: rgba(0,229,255,0.2);
-  border-color: rgba(0,229,255,0.3);
+  background: rgba(0, 229, 255, 0.2);
+  border-color: rgba(0, 229, 255, 0.3);
 }
 .toggle-thumb {
   position: absolute;
@@ -392,29 +402,29 @@ function resetForm() {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.6);
   transition: transform 0.2s;
 }
 .toggle-btn.active .toggle-thumb {
   transform: translateX(20px);
-  background: #00E5FF;
+  background: #00e5ff;
 }
 .toggle-label {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* Errors */
 .field-error {
   font-size: 0.7rem;
-  color: #FF2A6D;
+  color: #ff2a6d;
   margin: 0;
 }
 
 .server-error {
   text-align: center;
   font-size: 0.8rem;
-  color: #FF2A6D;
+  color: #ff2a6d;
   margin-top: 1rem;
 }
 
@@ -429,12 +439,14 @@ function resetForm() {
   padding: 0.9rem;
   border-radius: 0.75rem;
   border: none;
-  background: linear-gradient(135deg, #00E5FF, #00B8D4);
+  background: linear-gradient(135deg, #00e5ff, #00b8d4);
   color: #000;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
 }
 .submit-btn:hover:not(:disabled) {
   opacity: 0.9;
@@ -448,13 +460,15 @@ function resetForm() {
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(0,0,0,0.2);
+  border: 2px solid rgba(0, 0, 0, 0.2);
   border-top-color: #000;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Success */
@@ -466,7 +480,7 @@ function resetForm() {
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: rgba(12,12,20,0.98);
+  background: rgba(12, 12, 20, 0.98);
   border-radius: 1rem;
   padding: 3rem 2rem;
   z-index: 10;
@@ -475,13 +489,13 @@ function resetForm() {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(0,229,255,0.15);
-  border: 2px solid rgba(0,229,255,0.3);
+  background: rgba(0, 229, 255, 0.15);
+  border: 2px solid rgba(0, 229, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  color: #00E5FF;
+  color: #00e5ff;
   margin-bottom: 1rem;
 }
 .success-card h3 {
@@ -492,24 +506,24 @@ function resetForm() {
 }
 .success-card p {
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   margin: 0 0 1.5rem;
 }
 .success-card strong {
-  color: rgba(0,229,255,0.7);
+  color: rgba(0, 229, 255, 0.7);
 }
 .reset-btn {
   padding: 0.6rem 1.5rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.15s;
 }
 .reset-btn:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* Transitions */

@@ -11,8 +11,12 @@
    * ✓ Author Selector
    * ✓ Google/Social Preview
    */
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
+  import { api } from "$lib/api";
+  import PromoteFromDataset from "$lib/components/blog/PromoteFromDataset.svelte";
+  import SlashCommandEditor from "$lib/components/editor/SlashCommandEditor.svelte";
+  import LivePreview from "$lib/components/LivePreview.svelte";
+  import SplitPane from "$lib/components/SplitPane.svelte";
+  import Modal from "$lib/components/ui/Modal.svelte";
   import { 
     ArrowLeft, 
     Save, 
@@ -34,19 +38,16 @@
     Loader2,
     Database
   } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import SlashCommandEditor from "$lib/components/editor/SlashCommandEditor.svelte";
-  import Modal from "$lib/components/ui/Modal.svelte";
-  import PromoteFromDataset from "$lib/components/blog/PromoteFromDataset.svelte";
-  import SplitPane from "$lib/components/SplitPane.svelte";
-  import LivePreview from "$lib/components/LivePreview.svelte";
+  import { onMount } from "svelte";
+
+  import { goto } from "$app/navigation";
 
   // ─── Props ──────────────────────────────────────────
   interface Props {
     postId?: string | null;
   }
 
-  let { postId = null }: Props = $props();
+  const { postId = null }: Props = $props();
 
   // ─── State ──────────────────────────────────────────
   let loading = $state(true);
@@ -86,11 +87,11 @@
   });
 
   // ─── Derived state ─────────────────────────────────
-  let isScheduled = $derived(status === 'scheduled');
-  let isPublished = $derived(status === 'published');
-  let metaTitlePreview = $derived(seoOverrides.metaTitle || title);
-  let metaDescPreview = $derived(seoOverrides.metaDescription || excerpt);
-  let seoScore = $derived(calculateSeoScore());
+  const isScheduled = $derived(status === 'scheduled');
+  const isPublished = $derived(status === 'published');
+  const metaTitlePreview = $derived(seoOverrides.metaTitle || title);
+  const metaDescPreview = $derived(seoOverrides.metaDescription || excerpt);
+  const seoScore = $derived(calculateSeoScore());
 
   function calculateSeoScore(): number {
     let score = 0;

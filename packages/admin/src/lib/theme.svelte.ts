@@ -45,7 +45,7 @@ export const themes: ThemeConfig[] = [
       "--gremius-danger": "243 139 168",
       "--gremius-cyan-dim": "116 156 222",
       "--gremius-cyan-hover": "167 200 250",
-    }
+    },
   },
   {
     id: "latte",
@@ -74,8 +74,8 @@ export const themes: ThemeConfig[] = [
       "--gremius-danger": "210 15 57",
       "--gremius-cyan-dim": "47 87 183",
       "--gremius-cyan-hover": "90 140 220",
-    }
-  }
+    },
+  },
 ];
 
 // Current theme store
@@ -92,7 +92,7 @@ export async function loadTheme() {
     // Load from localStorage (no API call needed)
     const saved = localStorage.getItem("gremius-theme");
     if (saved) {
-      const theme = themes.find(t => t.id === saved);
+      const theme = themes.find((t) => t.id === saved);
       if (theme) {
         applyTheme(theme);
         currentTheme.set(saved);
@@ -106,7 +106,7 @@ export async function loadTheme() {
 }
 
 export function setTheme(themeId: string) {
-  const theme = themes.find(t => t.id === themeId);
+  const theme = themes.find((t) => t.id === themeId);
   if (theme) {
     applyTheme(theme);
     currentTheme.set(themeId);

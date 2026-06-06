@@ -1,12 +1,13 @@
 /**
  * Gremio CMS — Games Module Schema
- * 
+ *
  * Drizzle ORM schema for games, collections, and junction tables.
  * This schema is dynamically merged by schema-merger.ts when Gremio CMS is active.
- * 
+ *
  * Dependencies: grimoire-media (for cover art, screenshots, platform icons)
  */
 
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -22,7 +23,6 @@ import {
   index,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 
 // ─── Block Type ─────────────────────────────────
 interface PageBlock {
@@ -42,11 +42,7 @@ export interface FocalPoint {
 // Enums
 // ═══════════════════════════════════════════════
 
-export const contentStatusEnum = pgEnum("games_content_status", [
-  "draft",
-  "published",
-  "archived",
-]);
+export const contentStatusEnum = pgEnum("games_content_status", ["draft", "published", "archived"]);
 
 export const tagCategoryEnum = pgEnum("games_tag_category", [
   "genre",
@@ -81,12 +77,12 @@ export const games = pgTable(
     publisher: varchar("publisher", { length: 200 }),
     metacriticScore: integer("metacritic_score"),
     userRating: real("user_rating"),
-    
+
     // Media fields (references grimoire-media)
     coverArtId: uuid("cover_art_id"), // References media.id
     coverFocalPoint: jsonb("cover_focal_point").$type<FocalPoint>(),
     // Focal point for smart cropping: { x: 50, y: 50 } (center by default)
-    
+
     trailerUrl: text("trailer_url"),
     externalIds: jsonb("external_ids").$type<{
       igdbId?: number;
@@ -94,17 +90,17 @@ export const games = pgTable(
       twitchGameId?: string;
     }>(),
     specs: jsonb("specs").$type<Record<string, unknown>>(),
-    
+
     // Screenshots with media references
     screenshots: jsonb("screenshots").$type<
-      Array<{ 
-        mediaId: string; 
+      Array<{
+        mediaId: string;
         caption?: string;
         focalPoint?: FocalPoint;
         order?: number;
       }>
     >(),
-    
+
     blocks: jsonb("blocks").default([]).$type<PageBlock[]>(),
     isFeaturedOnHome: boolean("is_featured_on_home").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -131,10 +127,10 @@ export const platforms = pgTable(
     slug: varchar("slug", { length: 100 }).notNull(),
     shortName: varchar("short_name", { length: 20 }),
     manufacturer: varchar("manufacturer", { length: 100 }),
-    
+
     // Media field (references grimoire-media)
     iconId: uuid("icon_id"), // References media.id
-    
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("platforms_slug_idx").on(t.slug)]
@@ -244,13 +240,13 @@ export const gameCollectionsRelations = relations(gameCollections, ({ many }) =>
 }));
 
 export const gameCollectionEntriesRelations = relations(gameCollectionEntries, ({ one }) => ({
-  collection: one(gameCollections, { 
-    fields: [gameCollectionEntries.collectionId], 
-    references: [gameCollections.id] 
+  collection: one(gameCollections, {
+    fields: [gameCollectionEntries.collectionId],
+    references: [gameCollections.id],
   }),
-  game: one(games, { 
-    fields: [gameCollectionEntries.gameId], 
-    references: [games.id] 
+  game: one(games, {
+    fields: [gameCollectionEntries.gameId],
+    references: [games.id],
   }),
 }));
 
@@ -278,18 +274,18 @@ export function getMediaTransformUrl(
   focalPoint?: FocalPoint
 ): string | null {
   if (!mediaId) return null;
-  
+
   const baseUrl = `/api/media/transform/${mediaId}`;
   const params = new URLSearchParams();
-  
+
   params.append("preset", preset);
-  
+
   // Add focal point for smart cropping if provided
   if (focalPoint) {
     params.append("fpx", focalPoint.x.toString());
     params.append("fpy", focalPoint.y.toString());
   }
-  
+
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
@@ -336,7 +332,7 @@ export function buildScreenshotUrls(
   original: string | null;
 } | null {
   if (!screenshot?.mediaId) return null;
-  
+
   return {
     gallery: getMediaPresetUrl(screenshot.mediaId, "gallery"),
     thumbnail: getMediaPresetUrl(screenshot.mediaId, "thumbnail"),
@@ -347,9 +343,7 @@ export function buildScreenshotUrls(
 /**
  * Build platform icon URLs
  */
-export function buildPlatformIconUrls(
-  iconId: string | null | undefined
-): {
+export function buildPlatformIconUrls(iconId: string | null | undefined): {
   thumbnail: string | null;
   original: string | null;
 } {

@@ -25,7 +25,7 @@
     class?: string;
   }
   
-  let {
+  const {
     variant = "default",
     size = "md",
     label,

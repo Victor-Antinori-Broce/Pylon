@@ -1,6 +1,6 @@
 /**
  * Academy LMS - Schema
- * 
+ *
  * Modela un sistema completo de gestión de aprendizaje con:
  * - Cursos, módulos y temas
  * - Sistema de quizzes y evaluaciones
@@ -10,8 +10,17 @@
  * - Encuestas de satisfacción
  */
 
-import { pgTable, text, timestamp, decimal, integer, boolean, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
+import {
+  pgTable,
+  text,
+  timestamp,
+  decimal,
+  integer,
+  boolean,
+  jsonb,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 
 // ============================================
 // ENUMS
@@ -19,7 +28,7 @@ import { createId } from "@paralleldrive/cuid2";
 
 export const rolCapacitacionesEnum = pgEnum("rol_capacitaciones", [
   "administrador",
-  "supervisor", 
+  "supervisor",
   "estudiante",
 ]);
 
@@ -31,11 +40,7 @@ export const tipoCursoEnum = pgEnum("tipo_curso", [
   "DESARROLLO",
 ]);
 
-export const metodoAsignacionEnum = pgEnum("metodo_asignacion", [
-  "manual",
-  "grupo",
-  "automatico",
-]);
+export const metodoAsignacionEnum = pgEnum("metodo_asignacion", ["manual", "grupo", "automatico"]);
 
 export const departamentoEnum = pgEnum("departamento", [
   "CONTABILIDAD",
@@ -63,11 +68,7 @@ export const cargoEnum = pgEnum("cargo", [
   "Gerente",
 ]);
 
-export const lugarEnum = pgEnum("lugar", [
-  "OFICINA",
-  "CASA",
-  "TRANSPORTE",
-]);
+export const lugarEnum = pgEnum("lugar", ["OFICINA", "CASA", "TRANSPORTE"]);
 
 export const rolEncuestaEnum = pgEnum("rol_encuesta", [
   "Participante",
@@ -131,7 +132,9 @@ export const grupoAsignacionTable = pgTable("grupos_asignacion", {
  */
 export const grupoUsuarioTable = pgTable("grupo_usuarios", {
   id: text("id").primaryKey().$defaultFn(createId),
-  grupoId: text("grupo_id").notNull().references(() => grupoAsignacionTable.id, { onDelete: "cascade" }),
+  grupoId: text("grupo_id")
+    .notNull()
+    .references(() => grupoAsignacionTable.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
   fechaAsignacion: timestamp("fecha_asignacion").defaultNow(),
 });
@@ -141,7 +144,9 @@ export const grupoUsuarioTable = pgTable("grupo_usuarios", {
  */
 export const grupoSupervisorTable = pgTable("grupo_supervisores", {
   id: text("id").primaryKey().$defaultFn(createId),
-  grupoId: text("grupo_id").notNull().references(() => grupoAsignacionTable.id, { onDelete: "cascade" }),
+  grupoId: text("grupo_id")
+    .notNull()
+    .references(() => grupoAsignacionTable.id, { onDelete: "cascade" }),
   supervisorId: text("supervisor_id").notNull(), // Referencia a perfilUsuarioTable
   fechaAsignacion: timestamp("fecha_asignacion").defaultNow(),
 });
@@ -151,7 +156,9 @@ export const grupoSupervisorTable = pgTable("grupo_supervisores", {
  */
 export const moduloTable = pgTable("modulos", {
   id: text("id").primaryKey().$defaultFn(createId),
-  cursoId: text("curso_id").notNull().references(() => cursoTable.id, { onDelete: "cascade" }),
+  cursoId: text("curso_id")
+    .notNull()
+    .references(() => cursoTable.id, { onDelete: "cascade" }),
   titulo: text("titulo").notNull(),
   descripcion: text("descripcion"),
   orden: integer("orden").notNull().default(1),
@@ -165,7 +172,9 @@ export const moduloTable = pgTable("modulos", {
  */
 export const temaTable = pgTable("temas", {
   id: text("id").primaryKey().$defaultFn(createId),
-  moduloId: text("modulo_id").notNull().references(() => moduloTable.id, { onDelete: "cascade" }),
+  moduloId: text("modulo_id")
+    .notNull()
+    .references(() => moduloTable.id, { onDelete: "cascade" }),
   titulo: text("titulo").notNull(),
   contenido: text("contenido").notNull(),
   orden: integer("orden").notNull().default(1),
@@ -185,7 +194,9 @@ export const temaTable = pgTable("temas", {
  */
 export const archivoAdicionalTable = pgTable("archivos_adicionales", {
   id: text("id").primaryKey().$defaultFn(createId),
-  temaId: text("tema_id").notNull().references(() => temaTable.id, { onDelete: "cascade" }),
+  temaId: text("tema_id")
+    .notNull()
+    .references(() => temaTable.id, { onDelete: "cascade" }),
   nombre: text("nombre").notNull(),
   archivo: text("archivo").notNull(), // Referencia a grimoire-media
   orden: integer("orden").notNull().default(1),
@@ -201,7 +212,10 @@ export const archivoAdicionalTable = pgTable("archivos_adicionales", {
  */
 export const quizTable = pgTable("quizzes", {
   id: text("id").primaryKey().$defaultFn(createId),
-  moduloId: text("modulo_id").notNull().unique().references(() => moduloTable.id, { onDelete: "cascade" }),
+  moduloId: text("modulo_id")
+    .notNull()
+    .unique()
+    .references(() => moduloTable.id, { onDelete: "cascade" }),
   titulo: text("titulo").notNull(),
   instrucciones: text("instrucciones"),
   mediaId: text("media_id"), // Referencia a grimoire-media (para portada del quiz)
@@ -217,7 +231,9 @@ export const quizTable = pgTable("quizzes", {
  */
 export const preguntaTable = pgTable("preguntas", {
   id: text("id").primaryKey().$defaultFn(createId),
-  quizId: text("quiz_id").notNull().references(() => quizTable.id, { onDelete: "cascade" }),
+  quizId: text("quiz_id")
+    .notNull()
+    .references(() => quizTable.id, { onDelete: "cascade" }),
   texto: text("texto").notNull(),
   puntaje: integer("puntaje").notNull().default(10),
   orden: integer("orden").notNull().default(1),
@@ -231,7 +247,9 @@ export const preguntaTable = pgTable("preguntas", {
  */
 export const opcionTable = pgTable("opciones", {
   id: text("id").primaryKey().$defaultFn(createId),
-  preguntaId: text("pregunta_id").notNull().references(() => preguntaTable.id, { onDelete: "cascade" }),
+  preguntaId: text("pregunta_id")
+    .notNull()
+    .references(() => preguntaTable.id, { onDelete: "cascade" }),
   texto: text("texto").notNull(),
   esCorrecta: boolean("es_correcta").notNull().default(false),
   orden: integer("orden").notNull().default(1),
@@ -248,7 +266,9 @@ export const opcionTable = pgTable("opciones", {
 export const progresoCursoTable = pgTable("progreso_cursos", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  cursoId: text("curso_id").notNull().references(() => cursoTable.id, { onDelete: "cascade" }),
+  cursoId: text("curso_id")
+    .notNull()
+    .references(() => cursoTable.id, { onDelete: "cascade" }),
   completado: boolean("completado").notNull().default(false),
   fechaCompletado: timestamp("fecha_completado"),
   encuestaCompletada: boolean("encuesta_completada").notNull().default(false),
@@ -264,8 +284,12 @@ export const progresoCursoTable = pgTable("progreso_cursos", {
  */
 export const progresoModuloTable = pgTable("progreso_modulos", {
   id: text("id").primaryKey().$defaultFn(createId),
-  progresoCursoId: text("progreso_curso_id").notNull().references(() => progresoCursoTable.id, { onDelete: "cascade" }),
-  moduloId: text("modulo_id").notNull().references(() => moduloTable.id, { onDelete: "cascade" }),
+  progresoCursoId: text("progreso_curso_id")
+    .notNull()
+    .references(() => progresoCursoTable.id, { onDelete: "cascade" }),
+  moduloId: text("modulo_id")
+    .notNull()
+    .references(() => moduloTable.id, { onDelete: "cascade" }),
   fechaCompletado: timestamp("fecha_completado").defaultNow(),
 });
 
@@ -275,7 +299,9 @@ export const progresoModuloTable = pgTable("progreso_modulos", {
 export const progresoTemaTable = pgTable("progreso_temas", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  temaId: text("tema_id").notNull().references(() => temaTable.id, { onDelete: "cascade" }),
+  temaId: text("tema_id")
+    .notNull()
+    .references(() => temaTable.id, { onDelete: "cascade" }),
   completado: boolean("completado").notNull().default(false),
   fechaCompletado: timestamp("fecha_completado"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -288,8 +314,12 @@ export const progresoTemaTable = pgTable("progreso_temas", {
 export const respuestaUsuarioTable = pgTable("respuestas_usuario", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  preguntaId: text("pregunta_id").notNull().references(() => preguntaTable.id, { onDelete: "cascade" }),
-  opcionSeleccionadaId: text("opcion_seleccionada_id").notNull().references(() => opcionTable.id, { onDelete: "cascade" }),
+  preguntaId: text("pregunta_id")
+    .notNull()
+    .references(() => preguntaTable.id, { onDelete: "cascade" }),
+  opcionSeleccionadaId: text("opcion_seleccionada_id")
+    .notNull()
+    .references(() => opcionTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -299,7 +329,9 @@ export const respuestaUsuarioTable = pgTable("respuestas_usuario", {
 export const resultadoQuizTable = pgTable("resultados_quiz", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  quizId: text("quiz_id").notNull().references(() => quizTable.id, { onDelete: "cascade" }),
+  quizId: text("quiz_id")
+    .notNull()
+    .references(() => quizTable.id, { onDelete: "cascade" }),
   puntaje: integer("puntaje").notNull(),
   puntajePorcentaje: integer("puntaje_porcentaje").notNull(),
   aprobado: boolean("aprobado").notNull().default(false),
@@ -336,8 +368,12 @@ export const learningPathTable = pgTable("learning_paths", {
  */
 export const learningPathCursoTable = pgTable("learning_path_cursos", {
   id: text("id").primaryKey().$defaultFn(createId),
-  learningPathId: text("learning_path_id").notNull().references(() => learningPathTable.id, { onDelete: "cascade" }),
-  cursoId: text("curso_id").notNull().references(() => cursoTable.id, { onDelete: "cascade" }),
+  learningPathId: text("learning_path_id")
+    .notNull()
+    .references(() => learningPathTable.id, { onDelete: "cascade" }),
+  cursoId: text("curso_id")
+    .notNull()
+    .references(() => cursoTable.id, { onDelete: "cascade" }),
   orden: integer("orden").notNull().default(1),
   obligatorio: boolean("obligatorio").notNull().default(true), // true = debe completarse para terminar el path
   duracionEstimadaDias: integer("duracion_estimada_dias"), // Días sugeridos para completar
@@ -350,7 +386,9 @@ export const learningPathCursoTable = pgTable("learning_path_cursos", {
 export const progresoLearningPathTable = pgTable("progreso_learning_paths", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  learningPathId: text("learning_path_id").notNull().references(() => learningPathTable.id, { onDelete: "cascade" }),
+  learningPathId: text("learning_path_id")
+    .notNull()
+    .references(() => learningPathTable.id, { onDelete: "cascade" }),
   porcentajeCompletado: integer("porcentaje_completado").notNull().default(0),
   cursosCompletados: integer("cursos_completados").notNull().default(0),
   totalCursos: integer("total_cursos").notNull().default(0),
@@ -368,7 +406,9 @@ export const progresoLearningPathTable = pgTable("progreso_learning_paths", {
  */
 export const asignacionLearningPathTable = pgTable("asignaciones_learning_path", {
   id: text("id").primaryKey().$defaultFn(createId),
-  learningPathId: text("learning_path_id").notNull().references(() => learningPathTable.id, { onDelete: "cascade" }),
+  learningPathId: text("learning_path_id")
+    .notNull()
+    .references(() => learningPathTable.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
   asignadoPorId: text("asignado_por_id"), // Quién hizo la asignación
   fechaLimite: timestamp("fecha_limite"), // Fecha límite personalizada
@@ -386,7 +426,9 @@ export const asignacionLearningPathTable = pgTable("asignaciones_learning_path",
  */
 export const asignacionTable = pgTable("asignaciones", {
   id: text("id").primaryKey().$defaultFn(createId),
-  cursoId: text("curso_id").notNull().references(() => cursoTable.id, { onDelete: "cascade" }),
+  cursoId: text("curso_id")
+    .notNull()
+    .references(() => cursoTable.id, { onDelete: "cascade" }),
   userId: text("user_id"), // Referencia a gremius-core-users (nullable si es asignación a grupo)
   grupoId: text("grupo_id").references(() => grupoAsignacionTable.id, { onDelete: "cascade" }),
   metodo: metodoAsignacionEnum("metodo").notNull().default("manual"),
@@ -405,7 +447,9 @@ export const asignacionTable = pgTable("asignaciones", {
 export const feedbackTable = pgTable("feedback", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  temaId: text("tema_id").notNull().references(() => temaTable.id, { onDelete: "cascade" }),
+  temaId: text("tema_id")
+    .notNull()
+    .references(() => temaTable.id, { onDelete: "cascade" }),
   puntuacion: integer("puntuacion").notNull(), // 1-5 estrellas
   comentario: text("comentario"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -418,11 +462,11 @@ export const encuestaSatisfaccionTable = pgTable("encuestas_satisfaccion", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id"), // Referencia a gremius-core-users
   cursoId: text("curso_id").references(() => cursoTable.id, { onDelete: "set null" }),
-  
+
   // Información demográfica
   departamento: departamentoEnum("departamento").notNull(),
   cargo: cargoEnum("cargo").notNull(),
-  
+
   // Evaluación del curso
   expositor: integer("expositor").notNull(), // 1-5
   utilidad: boolean("utilidad").notNull(), // true=si, false=no
@@ -432,7 +476,7 @@ export const encuestaSatisfaccionTable = pgTable("encuestas_satisfaccion", {
   rol: rolEncuestaEnum("rol").notNull(),
   recomendacion: text("recomendacion"), // Máx 200 chars
   comentariosCurso: text("comentarios_curso").notNull(), // Máx 500 chars
-  
+
   fecha: timestamp("fecha").defaultNow(),
 });
 
@@ -446,7 +490,9 @@ export const encuestaSatisfaccionTable = pgTable("encuestas_satisfaccion", {
 export const certificadoTable = pgTable("certificados", {
   id: text("id").primaryKey().$defaultFn(createId),
   userId: text("user_id").notNull(), // Referencia a gremius-core-users
-  cursoId: text("curso_id").notNull().references(() => cursoTable.id, { onDelete: "cascade" }),
+  cursoId: text("curso_id")
+    .notNull()
+    .references(() => cursoTable.id, { onDelete: "cascade" }),
   codigo: text("codigo").notNull().unique(), // Código único de verificación
   archivo: text("archivo"), // Referencia a grimoire-media (PDF generado)
   fechaGeneracion: timestamp("fecha_generacion").defaultNow(),
@@ -503,10 +549,10 @@ export type ProgresoLearningPath = typeof progresoLearningPathTable.$inferSelect
 export type AsignacionLearningPath = typeof asignacionLearningPathTable.$inferSelect;
 
 // Tipos de enums
-export type RolCapacitaciones = typeof rolCapacitacionesEnum.enumValues[number];
-export type TipoCurso = typeof tipoCursoEnum.enumValues[number];
-export type MetodoAsignacion = typeof metodoAsignacionEnum.enumValues[number];
-export type Departamento = typeof departamentoEnum.enumValues[number];
-export type Cargo = typeof cargoEnum.enumValues[number];
-export type Lugar = typeof lugarEnum.enumValues[number];
-export type RolEncuesta = typeof rolEncuestaEnum.enumValues[number];
+export type RolCapacitaciones = (typeof rolCapacitacionesEnum.enumValues)[number];
+export type TipoCurso = (typeof tipoCursoEnum.enumValues)[number];
+export type MetodoAsignacion = (typeof metodoAsignacionEnum.enumValues)[number];
+export type Departamento = (typeof departamentoEnum.enumValues)[number];
+export type Cargo = (typeof cargoEnum.enumValues)[number];
+export type Lugar = (typeof lugarEnum.enumValues)[number];
+export type RolEncuesta = (typeof rolEncuestaEnum.enumValues)[number];

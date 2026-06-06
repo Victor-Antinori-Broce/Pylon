@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * DYNAMIC DOCS ROUTER - Auto-generated API Documentation
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Provides endpoints for:
  * - /api/docs/openapi.json - Full OpenAPI spec from all grimoires
  * - /api/docs/:grimoire/openapi.json - Spec for specific grimoire
@@ -12,16 +12,17 @@
  * - /api/docs/sdk - SDK download links
  */
 
-import { Hono } from "hono";
 import { swaggerUI } from "@hono/swagger-ui";
-import type { AppVariables } from "../types/hono";
-import { 
-  generateOpenAPISpec, 
-  generateGrimoireSpec, 
-  listOperations 
-} from "../lib/openapi-aggregator";
-import { getLoadedGrimoires } from "../lib/module-loader";
+import { Hono } from "hono";
+
 import { logger } from "../lib/logger";
+import { getLoadedGrimoires } from "../lib/module-loader";
+import {
+  generateOpenAPISpec,
+  generateGrimoireSpec,
+  listOperations,
+} from "../lib/openapi-aggregator";
+import type { AppVariables } from "../types/hono";
 
 export const dynamicDocsRouter = new Hono<{ Variables: AppVariables }>();
 
@@ -58,7 +59,7 @@ const scalarHtml = `
 
 /**
  * GET /api/docs/openapi.json
- * 
+ *
  * Returns the complete OpenAPI specification from all active grimoires.
  * This spec is auto-generated from grimoire definitions.
  */
@@ -67,78 +68,89 @@ dynamicDocsRouter.get("/openapi.json", async (c) => {
     const grimoires = await getLoadedGrimoires();
     const spec = await generateOpenAPISpec(grimoires, {
       servers: [
-        { 
-          url: `${new URL(c.req.url).origin}/api`, 
-          description: "Current server" 
+        {
+          url: `${new URL(c.req.url).origin}/api`,
+          description: "Current server",
         },
-        { 
-          url: "http://localhost:3001/api", 
-          description: "Local development" 
+        {
+          url: "http://localhost:3001/api",
+          description: "Local development",
         },
       ],
     });
-    
+
     return c.json(spec);
   } catch (error) {
     logger.error({ error }, "Failed to generate OpenAPI spec");
-    return c.json({ 
-      error: "Failed to generate OpenAPI spec",
-      message: error instanceof Error ? error.message : "Unknown error"
-    }, 500);
+    return c.json(
+      {
+        error: "Failed to generate OpenAPI spec",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 
 /**
  * GET /api/docs/:grimoire/openapi.json
- * 
+ *
  * Returns OpenAPI specification for a specific grimoire.
  */
 dynamicDocsRouter.get("/:grimoire/openapi.json", async (c) => {
   try {
     const grimoireId = c.req.param("grimoire");
     const grimoires = await getLoadedGrimoires();
-    const grimoire = grimoires.find(g => 
-      g.id === grimoireId || 
-      g.id === `grimoire-${grimoireId}`
+    const grimoire = grimoires.find(
+      (g) => g.id === grimoireId || g.id === `grimoire-${grimoireId}`
     );
-    
+
     if (!grimoire) {
-      return c.json({ 
-        error: "Grimoire not found",
-        available: grimoires.map(g => ({ id: g.id, name: g.name }))
-      }, 404);
+      return c.json(
+        {
+          error: "Grimoire not found",
+          available: grimoires.map((g) => ({ id: g.id, name: g.name })),
+        },
+        404
+      );
     }
-    
+
     const spec = await generateGrimoireSpec(grimoire);
-    
+
     if (!spec) {
-      return c.json({ 
-        error: "Grimoire does not expose OpenAPI spec",
-        grimoire: grimoire.name
-      }, 404);
+      return c.json(
+        {
+          error: "Grimoire does not expose OpenAPI spec",
+          grimoire: grimoire.name,
+        },
+        404
+      );
     }
-    
+
     // Add server URL
     spec.servers = [
-      { 
-        url: `${new URL(c.req.url).origin}/api`, 
-        description: "Current server" 
-      }
+      {
+        url: `${new URL(c.req.url).origin}/api`,
+        description: "Current server",
+      },
     ];
-    
+
     return c.json(spec);
   } catch (error) {
     logger.error({ error }, "Failed to generate grimoire spec");
-    return c.json({ 
-      error: "Failed to generate grimoire spec",
-      message: error instanceof Error ? error.message : "Unknown error"
-    }, 500);
+    return c.json(
+      {
+        error: "Failed to generate grimoire spec",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 
 /**
  * GET /api/docs/operations
- * 
+ *
  * List all available operations across all grimoires.
  * Useful for code generation and discovery.
  */
@@ -146,42 +158,40 @@ dynamicDocsRouter.get("/operations", async (c) => {
   try {
     const grimoires = await getLoadedGrimoires();
     const operations = listOperations(grimoires);
-    
+
     const query = c.req.query();
     let filtered = operations;
-    
+
     // Filter by grimoire
     if (query.grimoire) {
-      filtered = filtered.filter(op => 
-        op.grimoireId === query.grimoire ||
-        op.grimoireId === `grimoire-${query.grimoire}`
+      filtered = filtered.filter(
+        (op) => op.grimoireId === query.grimoire || op.grimoireId === `grimoire-${query.grimoire}`
       );
     }
-    
+
     // Filter by tag
     if (query.tag) {
-      filtered = filtered.filter(op => 
-        op.tags.some(t => t.toLowerCase() === query.tag!.toLowerCase())
+      filtered = filtered.filter((op) =>
+        op.tags.some((t) => t.toLowerCase() === query.tag!.toLowerCase())
       );
     }
-    
+
     // Filter by method
     if (query.method) {
-      filtered = filtered.filter(op => 
-        op.method.toLowerCase() === query.method!.toLowerCase()
-      );
+      filtered = filtered.filter((op) => op.method.toLowerCase() === query.method!.toLowerCase());
     }
-    
+
     // Search
     if (query.search) {
       const search = query.search.toLowerCase();
-      filtered = filtered.filter(op =>
-        op.operationId.toLowerCase().includes(search) ||
-        op.summary.toLowerCase().includes(search) ||
-        op.path.toLowerCase().includes(search)
+      filtered = filtered.filter(
+        (op) =>
+          op.operationId.toLowerCase().includes(search) ||
+          op.summary.toLowerCase().includes(search) ||
+          op.path.toLowerCase().includes(search)
       );
     }
-    
+
     return c.json({
       total: operations.length,
       filtered: filtered.length,
@@ -189,26 +199,32 @@ dynamicDocsRouter.get("/operations", async (c) => {
     });
   } catch (error) {
     logger.error({ error }, "Failed to list operations");
-    return c.json({ 
-      error: "Failed to list operations",
-      message: error instanceof Error ? error.message : "Unknown error"
-    }, 500);
+    return c.json(
+      {
+        error: "Failed to list operations",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 
 /**
  * GET /api/docs/
- * 
+ *
  * Swagger UI - Classic API documentation.
  */
-dynamicDocsRouter.get("/", swaggerUI({
-  url: "/api/docs/openapi.json",
-  title: "GremiusCMS API Documentation",
-}));
+dynamicDocsRouter.get(
+  "/",
+  swaggerUI({
+    url: "/api/docs/openapi.json",
+    title: "GremiusCMS API Documentation",
+  })
+);
 
 /**
  * GET /api/docs/modern
- * 
+ *
  * Scalar API Reference - Modern, beautiful documentation.
  */
 dynamicDocsRouter.get("/modern", (c) => {
@@ -217,14 +233,14 @@ dynamicDocsRouter.get("/modern", (c) => {
 
 /**
  * GET /api/docs/grimoires
- * 
+ *
  * List all grimoires with their OpenAPI status.
  */
 dynamicDocsRouter.get("/grimoires", async (c) => {
   try {
     const grimoires = await getLoadedGrimoires();
-    
-    const grimoireList = grimoires.map(g => ({
+
+    const grimoireList = grimoires.map((g) => ({
       id: g.id,
       name: g.name,
       version: g.version,
@@ -232,32 +248,35 @@ dynamicDocsRouter.get("/grimoires", async (c) => {
       hasOpenApi: !!g.openApi,
       endpointCount: g.openApi?.paths.length || 0,
       schemaCount: Object.keys(g.openApi?.schemas || {}).length,
-      tags: g.openApi?.tags?.map(t => t.name) || [g.name],
+      tags: g.openApi?.tags?.map((t) => t.name) || [g.name],
       docsUrl: `/api/docs/${g.id.replace(/^grimoire-/, "")}/openapi.json`,
     }));
-    
+
     return c.json({
       total: grimoires.length,
-      withOpenApi: grimoires.filter(g => !!g.openApi).length,
+      withOpenApi: grimoires.filter((g) => !!g.openApi).length,
       grimoires: grimoireList,
     });
   } catch (error) {
     logger.error({ error }, "Failed to list grimoires");
-    return c.json({ 
-      error: "Failed to list grimoires",
-      message: error instanceof Error ? error.message : "Unknown error"
-    }, 500);
+    return c.json(
+      {
+        error: "Failed to list grimoires",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 
 /**
  * GET /api/docs/sdk
- * 
+ *
  * SDK download links and generation info.
  */
 dynamicDocsRouter.get("/sdk", async (c) => {
   const baseUrl = new URL(c.req.url).origin;
-  
+
   return c.json({
     sdks: [
       {
@@ -301,14 +320,14 @@ dynamicDocsRouter.get("/sdk", async (c) => {
 
 /**
  * GET /api/docs/postman.json
- * 
+ *
  * Export a Postman collection.
  */
 dynamicDocsRouter.get("/postman.json", async (c) => {
   try {
     const grimoires = await getLoadedGrimoires();
     const operations = listOperations(grimoires);
-    
+
     const collection = {
       info: {
         name: "GremiusCMS API",
@@ -316,7 +335,7 @@ dynamicDocsRouter.get("/postman.json", async (c) => {
         schema: "https://schema.getpostman.com/json/collection/v2.1.0/",
         version: "0.8.0-beta",
       },
-      item: operations.map(op => ({
+      item: operations.map((op) => ({
         name: op.summary,
         request: {
           method: op.method,
@@ -353,14 +372,17 @@ dynamicDocsRouter.get("/postman.json", async (c) => {
         },
       ],
     };
-    
+
     return c.json(collection);
   } catch (error) {
     logger.error({ error }, "Failed to generate Postman collection");
-    return c.json({ 
-      error: "Failed to generate Postman collection",
-      message: error instanceof Error ? error.message : "Unknown error"
-    }, 500);
+    return c.json(
+      {
+        error: "Failed to generate Postman collection",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 

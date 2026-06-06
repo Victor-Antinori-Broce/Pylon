@@ -7,46 +7,73 @@
  */
 
 import { defineGrimoire } from "@gremius/shared";
-import { Hono } from "hono";
 import type { GrimoireContext } from "@gremius/shared";
+import { Hono } from "hono";
 
 // Import DI-enabled routes factory
 import { createAcademyLMSRoutes } from "../academy-lms.routes";
 
 // Import schema for re-export
 import {
-  perfilUsuarioTable, cursoTable, grupoAsignacionTable,
-  grupoUsuarioTable, grupoSupervisorTable, moduloTable, temaTable,
-  archivoAdicionalTable, quizTable, preguntaTable, opcionTable,
-  progresoCursoTable, progresoModuloTable, progresoTemaTable,
-  respuestaUsuarioTable, resultadoQuizTable, asignacionTable,
-  feedbackTable, encuestaSatisfaccionTable, certificadoTable,
-  actividadLogTable, learningPathTable, learningPathCursoTable,
-  progresoLearningPathTable, asignacionLearningPathTable,
-  rolCapacitacionesEnum, tipoCursoEnum, metodoAsignacionEnum,
-  departamentoEnum, cargoEnum, lugarEnum, rolEncuestaEnum,
+  perfilUsuarioTable,
+  cursoTable,
+  grupoAsignacionTable,
+  grupoUsuarioTable,
+  grupoSupervisorTable,
+  moduloTable,
+  temaTable,
+  archivoAdicionalTable,
+  quizTable,
+  preguntaTable,
+  opcionTable,
+  progresoCursoTable,
+  progresoModuloTable,
+  progresoTemaTable,
+  respuestaUsuarioTable,
+  resultadoQuizTable,
+  asignacionTable,
+  feedbackTable,
+  encuestaSatisfaccionTable,
+  certificadoTable,
+  actividadLogTable,
+  learningPathTable,
+  learningPathCursoTable,
+  progresoLearningPathTable,
+  asignacionLearningPathTable,
+  rolCapacitacionesEnum,
+  tipoCursoEnum,
+  metodoAsignacionEnum,
+  departamentoEnum,
+  cargoEnum,
+  lugarEnum,
+  rolEncuestaEnum,
 } from "../academy-lms.schema";
 
 /**
  * Ejecuta una sentencia SQL individual con manejo de errores
  */
-async function executeSQL(ctx: GrimoireContext, sql: string, description: string): Promise<boolean> {
+async function executeSQL(
+  ctx: GrimoireContext,
+  sql: string,
+  description: string
+): Promise<boolean> {
   try {
     await ctx.db.execute(sql);
     ctx.logger.info(`✅ Academy: ${description}`);
     return true;
   } catch (err: any) {
-    const ignoreCodes = ['42P07', '42710', '23505', '42P16'];
-    const ignoreMessages = ['already exists', 'duplicate', 'ya existe'];
-    
-    const shouldIgnore = ignoreCodes.includes(err.code) || 
-                         ignoreMessages.some(m => err.message?.toLowerCase().includes(m));
-    
+    const ignoreCodes = ["42P07", "42710", "23505", "42P16"];
+    const ignoreMessages = ["already exists", "duplicate", "ya existe"];
+
+    const shouldIgnore =
+      ignoreCodes.includes(err.code) ||
+      ignoreMessages.some((m) => err.message?.toLowerCase().includes(m));
+
     if (shouldIgnore) {
       ctx.logger.info(`⏩ Academy: ${description} (already exists)`);
       return true;
     }
-    
+
     ctx.logger.error(`❌ Academy: ${description} failed - ${err.message}`);
     return false;
   }
@@ -61,50 +88,56 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
   // Enums
   const enums = [
     {
-      name: 'academy_rol_capacitaciones',
-      values: "'administrador', 'supervisor', 'estudiante'"
+      name: "academy_rol_capacitaciones",
+      values: "'administrador', 'supervisor', 'estudiante'",
     },
     {
-      name: 'academy_tipo_curso',
-      values: "'INDUCCION', 'GESTION', 'TECNICO', 'HERRAMIENTAS', 'DESARROLLO'"
+      name: "academy_tipo_curso",
+      values: "'INDUCCION', 'GESTION', 'TECNICO', 'HERRAMIENTAS', 'DESARROLLO'",
     },
     {
-      name: 'academy_metodo_asignacion',
-      values: "'manual', 'grupo', 'automatico'"
+      name: "academy_metodo_asignacion",
+      values: "'manual', 'grupo', 'automatico'",
     },
     {
-      name: 'academy_departamento',
-      values: "'CONTABILIDAD', 'COBROS', 'COMPUTO', 'EXPERIENCIA_AL_CLIENTE', 'FINANZAS', 'GERENCIA', 'ITICO', 'LEGAL', 'NEGOCIOS', 'PROCESOS', 'RECURSOS_HUMANOS', 'SERVICIOS_GENERALES', 'TRAMITE'"
+      name: "academy_departamento",
+      values:
+        "'CONTABILIDAD', 'COBROS', 'COMPUTO', 'EXPERIENCIA_AL_CLIENTE', 'FINANZAS', 'GERENCIA', 'ITICO', 'LEGAL', 'NEGOCIOS', 'PROCESOS', 'RECURSOS_HUMANOS', 'SERVICIOS_GENERALES', 'TRAMITE'",
     },
     {
-      name: 'academy_cargo',
-      values: "'Asistente', 'Analista', 'Oficial_Profesional', 'Coordinador', 'Encargada_Supervisor', 'Jefe', 'Gerente'"
+      name: "academy_cargo",
+      values:
+        "'Asistente', 'Analista', 'Oficial_Profesional', 'Coordinador', 'Encargada_Supervisor', 'Jefe', 'Gerente'",
     },
     {
-      name: 'academy_lugar',
-      values: "'OFICINA', 'CASA', 'TRANSPORTE'"
+      name: "academy_lugar",
+      values: "'OFICINA', 'CASA', 'TRANSPORTE'",
     },
     {
-      name: 'academy_rol_encuesta',
-      values: "'Participante', 'Expositor', 'Organizador', 'Otro'"
-    }
+      name: "academy_rol_encuesta",
+      values: "'Participante', 'Expositor', 'Organizador', 'Otro'",
+    },
   ];
 
   for (const enumDef of enums) {
-    await executeSQL(ctx, `
+    await executeSQL(
+      ctx,
+      `
       DO $$
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${enumDef.name}') THEN
           CREATE TYPE ${enumDef.name} AS ENUM (${enumDef.values});
         END IF;
       END $$;
-    `, `Enum ${enumDef.name}`);
+    `,
+      `Enum ${enumDef.name}`
+    );
   }
 
   // Tablas
   const tables = [
     {
-      name: 'perfil_usuario_capacitaciones',
+      name: "perfil_usuario_capacitaciones",
       sql: `CREATE TABLE IF NOT EXISTS perfil_usuario_capacitaciones (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL UNIQUE,
@@ -114,10 +147,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         notas text,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'cursos',
+      name: "cursos",
       sql: `CREATE TABLE IF NOT EXISTS cursos (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         titulo text NOT NULL,
@@ -131,10 +164,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         activo boolean NOT NULL DEFAULT true,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'grupos_asignacion',
+      name: "grupos_asignacion",
       sql: `CREATE TABLE IF NOT EXISTS grupos_asignacion (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         nombre text NOT NULL,
@@ -143,28 +176,28 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         activo boolean NOT NULL DEFAULT true,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'grupo_usuarios',
+      name: "grupo_usuarios",
       sql: `CREATE TABLE IF NOT EXISTS grupo_usuarios (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         grupo_id text NOT NULL REFERENCES grupos_asignacion(id) ON DELETE CASCADE,
         user_id text NOT NULL,
         fecha_asignacion timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'grupo_supervisores',
+      name: "grupo_supervisores",
       sql: `CREATE TABLE IF NOT EXISTS grupo_supervisores (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         grupo_id text NOT NULL REFERENCES grupos_asignacion(id) ON DELETE CASCADE,
         supervisor_id text NOT NULL,
         fecha_asignacion timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'modulos',
+      name: "modulos",
       sql: `CREATE TABLE IF NOT EXISTS modulos (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         curso_id text NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
@@ -174,10 +207,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         activo boolean NOT NULL DEFAULT true,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'temas',
+      name: "temas",
       sql: `CREATE TABLE IF NOT EXISTS temas (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         modulo_id text NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
@@ -192,10 +225,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         activo boolean NOT NULL DEFAULT true,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'archivos_adicionales',
+      name: "archivos_adicionales",
       sql: `CREATE TABLE IF NOT EXISTS archivos_adicionales (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         tema_id text NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
@@ -203,10 +236,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         archivo text NOT NULL,
         orden integer NOT NULL DEFAULT 1,
         created_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'quizzes',
+      name: "quizzes",
       sql: `CREATE TABLE IF NOT EXISTS quizzes (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         modulo_id text NOT NULL UNIQUE REFERENCES modulos(id) ON DELETE CASCADE,
@@ -218,10 +251,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         activo boolean NOT NULL DEFAULT true,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'preguntas',
+      name: "preguntas",
       sql: `CREATE TABLE IF NOT EXISTS preguntas (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         quiz_id text NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
@@ -231,10 +264,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         archivo text,
         activo boolean NOT NULL DEFAULT true,
         created_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'opciones',
+      name: "opciones",
       sql: `CREATE TABLE IF NOT EXISTS opciones (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         pregunta_id text NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
@@ -242,10 +275,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         es_correcta boolean NOT NULL DEFAULT false,
         orden integer NOT NULL DEFAULT 1,
         created_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'progreso_cursos',
+      name: "progreso_cursos",
       sql: `CREATE TABLE IF NOT EXISTS progreso_cursos (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -259,19 +292,19 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now(),
         UNIQUE(user_id, curso_id)
-      )`
+      )`,
     },
     {
-      name: 'progreso_modulos',
+      name: "progreso_modulos",
       sql: `CREATE TABLE IF NOT EXISTS progreso_modulos (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         progreso_curso_id text NOT NULL REFERENCES progreso_cursos(id) ON DELETE CASCADE,
         modulo_id text NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
         fecha_completado timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'progreso_temas',
+      name: "progreso_temas",
       sql: `CREATE TABLE IF NOT EXISTS progreso_temas (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -281,10 +314,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now(),
         UNIQUE(user_id, tema_id)
-      )`
+      )`,
     },
     {
-      name: 'respuestas_usuario',
+      name: "respuestas_usuario",
       sql: `CREATE TABLE IF NOT EXISTS respuestas_usuario (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -292,10 +325,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         opcion_seleccionada_id text NOT NULL REFERENCES opciones(id) ON DELETE CASCADE,
         created_at timestamp DEFAULT now(),
         UNIQUE(user_id, pregunta_id)
-      )`
+      )`,
     },
     {
-      name: 'resultados_quiz',
+      name: "resultados_quiz",
       sql: `CREATE TABLE IF NOT EXISTS resultados_quiz (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -306,10 +339,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         respuestas_json jsonb,
         fecha_realizacion timestamp DEFAULT now(),
         tiempo_empleado_segundos integer
-      )`
+      )`,
     },
     {
-      name: 'asignaciones',
+      name: "asignaciones",
       sql: `CREATE TABLE IF NOT EXISTS asignaciones (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         curso_id text NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
@@ -319,10 +352,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         asignado_por_id text,
         fecha timestamp DEFAULT now(),
         notas text
-      )`
+      )`,
     },
     {
-      name: 'feedback',
+      name: "feedback",
       sql: `CREATE TABLE IF NOT EXISTS feedback (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -330,10 +363,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         puntuacion integer NOT NULL,
         comentario text,
         created_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'encuestas_satisfaccion',
+      name: "encuestas_satisfaccion",
       sql: `CREATE TABLE IF NOT EXISTS encuestas_satisfaccion (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text,
@@ -349,10 +382,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         recomendacion text,
         comentarios_curso text NOT NULL,
         fecha timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'certificados',
+      name: "certificados",
       sql: `CREATE TABLE IF NOT EXISTS certificados (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -362,10 +395,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         fecha_generacion timestamp DEFAULT now(),
         fecha_descarga timestamp,
         datos_json jsonb
-      )`
+      )`,
     },
     {
-      name: 'actividad_log',
+      name: "actividad_log",
       sql: `CREATE TABLE IF NOT EXISTS actividad_log (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text,
@@ -375,10 +408,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         descripcion text NOT NULL,
         metadata jsonb,
         created_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'learning_paths',
+      name: "learning_paths",
       sql: `CREATE TABLE IF NOT EXISTS learning_paths (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         nombre text NOT NULL,
@@ -391,10 +424,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         created_by_id text,
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'learning_path_cursos',
+      name: "learning_path_cursos",
       sql: `CREATE TABLE IF NOT EXISTS learning_path_cursos (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         learning_path_id text NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
@@ -403,10 +436,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         obligatorio boolean NOT NULL DEFAULT true,
         duracion_estimada_dias integer,
         created_at timestamp DEFAULT now()
-      )`
+      )`,
     },
     {
-      name: 'progreso_learning_paths',
+      name: "progreso_learning_paths",
       sql: `CREATE TABLE IF NOT EXISTS progreso_learning_paths (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id text NOT NULL,
@@ -421,10 +454,10 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         created_at timestamp DEFAULT now(),
         updated_at timestamp DEFAULT now(),
         UNIQUE(user_id, learning_path_id)
-      )`
+      )`,
     },
     {
-      name: 'asignaciones_learning_path',
+      name: "asignaciones_learning_path",
       sql: `CREATE TABLE IF NOT EXISTS asignaciones_learning_path (
         id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
         learning_path_id text NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
@@ -434,8 +467,8 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
         prioridad text DEFAULT 'normal',
         notas text,
         fecha timestamp DEFAULT now()
-      )`
-    }
+      )`,
+    },
   ];
 
   for (const table of tables) {
@@ -444,20 +477,20 @@ async function runMigrations(ctx: GrimoireContext): Promise<void> {
 
   // Índices
   const indexes = [
-    'CREATE INDEX IF NOT EXISTS idx_cursos_activo ON cursos(activo)',
-    'CREATE INDEX IF NOT EXISTS idx_cursos_tipo ON cursos(tipo_curso)',
-    'CREATE INDEX IF NOT EXISTS idx_modulos_curso ON modulos(curso_id)',
-    'CREATE INDEX IF NOT EXISTS idx_temas_modulo ON temas(modulo_id)',
-    'CREATE INDEX IF NOT EXISTS idx_quizzes_modulo ON quizzes(modulo_id)',
-    'CREATE INDEX IF NOT EXISTS idx_preguntas_quiz ON preguntas(quiz_id)',
-    'CREATE INDEX IF NOT EXISTS idx_opciones_pregunta ON opciones(pregunta_id)',
-    'CREATE INDEX IF NOT EXISTS idx_progreso_curso_user ON progreso_cursos(user_id, curso_id)',
-    'CREATE INDEX IF NOT EXISTS idx_progreso_tema_user ON progreso_temas(user_id, tema_id)',
-    'CREATE INDEX IF NOT EXISTS idx_asignaciones_curso ON asignaciones(curso_id)',
-    'CREATE INDEX IF NOT EXISTS idx_asignaciones_user ON asignaciones(user_id)',
-    'CREATE INDEX IF NOT EXISTS idx_resultados_quiz_user ON resultados_quiz(user_id, quiz_id)',
-    'CREATE INDEX IF NOT EXISTS idx_certificados_user ON certificados(user_id)',
-    'CREATE INDEX IF NOT EXISTS idx_certificados_curso ON certificados(curso_id)'
+    "CREATE INDEX IF NOT EXISTS idx_cursos_activo ON cursos(activo)",
+    "CREATE INDEX IF NOT EXISTS idx_cursos_tipo ON cursos(tipo_curso)",
+    "CREATE INDEX IF NOT EXISTS idx_modulos_curso ON modulos(curso_id)",
+    "CREATE INDEX IF NOT EXISTS idx_temas_modulo ON temas(modulo_id)",
+    "CREATE INDEX IF NOT EXISTS idx_quizzes_modulo ON quizzes(modulo_id)",
+    "CREATE INDEX IF NOT EXISTS idx_preguntas_quiz ON preguntas(quiz_id)",
+    "CREATE INDEX IF NOT EXISTS idx_opciones_pregunta ON opciones(pregunta_id)",
+    "CREATE INDEX IF NOT EXISTS idx_progreso_curso_user ON progreso_cursos(user_id, curso_id)",
+    "CREATE INDEX IF NOT EXISTS idx_progreso_tema_user ON progreso_temas(user_id, tema_id)",
+    "CREATE INDEX IF NOT EXISTS idx_asignaciones_curso ON asignaciones(curso_id)",
+    "CREATE INDEX IF NOT EXISTS idx_asignaciones_user ON asignaciones(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_resultados_quiz_user ON resultados_quiz(user_id, quiz_id)",
+    "CREATE INDEX IF NOT EXISTS idx_certificados_user ON certificados(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_certificados_curso ON certificados(curso_id)",
   ];
 
   for (const idx of indexes) {
@@ -492,20 +525,38 @@ export const grimoire = defineGrimoire({
   id: "grimoire-academy-lms",
   name: "Academy LMS",
   version: "1.1.0",
-  description: "Learning Management System completo con cursos, módulos, quizzes, progreso de estudiantes, grupos de asignación, Learning Paths, encuestas de satisfacción, certificados PDF y exportación Excel.",
+  description:
+    "Learning Management System completo con cursos, módulos, quizzes, progreso de estudiantes, grupos de asignación, Learning Paths, encuestas de satisfacción, certificados PDF y exportación Excel.",
   icon: "GraduationCap",
 
   createRouter: createAcademyRouter,
 
   tables: [
-    "perfil_usuario_capacitaciones", "cursos", "grupos_asignacion",
-    "grupo_usuarios", "grupo_supervisores", "modulos", "temas",
-    "archivos_adicionales", "quizzes", "preguntas", "opciones",
-    "progreso_cursos", "progreso_modulos", "progreso_temas",
-    "respuestas_usuario", "resultados_quiz", "asignaciones",
-    "feedback", "encuestas_satisfaccion", "certificados",
-    "actividad_log", "learning_paths", "learning_path_cursos",
-    "progreso_learning_paths", "asignaciones_learning_path"
+    "perfil_usuario_capacitaciones",
+    "cursos",
+    "grupos_asignacion",
+    "grupo_usuarios",
+    "grupo_supervisores",
+    "modulos",
+    "temas",
+    "archivos_adicionales",
+    "quizzes",
+    "preguntas",
+    "opciones",
+    "progreso_cursos",
+    "progreso_modulos",
+    "progreso_temas",
+    "respuestas_usuario",
+    "resultados_quiz",
+    "asignaciones",
+    "feedback",
+    "encuestas_satisfaccion",
+    "certificados",
+    "actividad_log",
+    "learning_paths",
+    "learning_path_cursos",
+    "progreso_learning_paths",
+    "asignaciones_learning_path",
   ],
 
   hooks: {
@@ -519,17 +570,17 @@ export const grimoire = defineGrimoire({
 
     onStartup: async (ctx) => {
       await runMigrations(ctx);
-      
+
       const requiredTables = ["cursos", "modulos", "quizzes"];
       const missingTables: string[] = [];
-      
+
       for (const table of requiredTables) {
         const exists = await ctx.db.tableExists(table);
         if (!exists) {
           missingTables.push(table);
         }
       }
-      
+
       if (missingTables.length > 0) {
         ctx.logger.warn(`⚠️ Academy tables not found: ${missingTables.join(", ")}`);
       } else {
@@ -563,62 +614,141 @@ export const grimoire = defineGrimoire({
 
 // Re-export schema
 export {
-  perfilUsuarioTable, cursoTable, grupoAsignacionTable,
-  grupoUsuarioTable, grupoSupervisorTable, moduloTable, temaTable,
-  archivoAdicionalTable, quizTable, preguntaTable, opcionTable,
-  progresoCursoTable, progresoModuloTable, progresoTemaTable,
-  respuestaUsuarioTable, resultadoQuizTable, asignacionTable,
-  feedbackTable, encuestaSatisfaccionTable, certificadoTable,
-  actividadLogTable, learningPathTable, learningPathCursoTable,
-  progresoLearningPathTable, asignacionLearningPathTable,
-  rolCapacitacionesEnum, tipoCursoEnum, metodoAsignacionEnum,
-  departamentoEnum, cargoEnum, lugarEnum, rolEncuestaEnum,
+  perfilUsuarioTable,
+  cursoTable,
+  grupoAsignacionTable,
+  grupoUsuarioTable,
+  grupoSupervisorTable,
+  moduloTable,
+  temaTable,
+  archivoAdicionalTable,
+  quizTable,
+  preguntaTable,
+  opcionTable,
+  progresoCursoTable,
+  progresoModuloTable,
+  progresoTemaTable,
+  respuestaUsuarioTable,
+  resultadoQuizTable,
+  asignacionTable,
+  feedbackTable,
+  encuestaSatisfaccionTable,
+  certificadoTable,
+  actividadLogTable,
+  learningPathTable,
+  learningPathCursoTable,
+  progresoLearningPathTable,
+  asignacionLearningPathTable,
+  rolCapacitacionesEnum,
+  tipoCursoEnum,
+  metodoAsignacionEnum,
+  departamentoEnum,
+  cargoEnum,
+  lugarEnum,
+  rolEncuestaEnum,
 };
 
 // Re-export services
 export {
-  generarCertificadoPDF, generarCertificadoOverlay,
-  generarCertificadoConPlantilla, generarVistaPreviaCertificado,
-  validarCodigoCertificado, extraerInfoCodigo,
-  type CertificadoData, type PlantillaCertificado, type OverlayConfig,
+  generarCertificadoPDF,
+  generarCertificadoOverlay,
+  generarCertificadoConPlantilla,
+  generarVistaPreviaCertificado,
+  validarCodigoCertificado,
+  extraerInfoCodigo,
+  type CertificadoData,
+  type PlantillaCertificado,
+  type OverlayConfig,
 } from "../services/pdf.service";
 
 export {
-  generarExcelAsignaciones, generarExcelProgreso, generarExcelEncuestas,
-  type AsignacionExcelRow, type ProgresoExcelRow, type EncuestaExcelRow,
+  generarExcelAsignaciones,
+  generarExcelProgreso,
+  generarExcelEncuestas,
+  type AsignacionExcelRow,
+  type ProgresoExcelRow,
+  type EncuestaExcelRow,
 } from "../services/excel.service";
 
 export {
-  MediaService, validarArchivo, determinarTipoMedia, formatBytes,
-  extraerInfoYoutube, normalizarVideoUrl, procesarPortadaCurso,
-  procesarVideoTema, procesarDocumento, procesarImagenPregunta,
+  MediaService,
+  validarArchivo,
+  determinarTipoMedia,
+  formatBytes,
+  extraerInfoYoutube,
+  normalizarVideoUrl,
+  procesarPortadaCurso,
+  procesarVideoTema,
+  procesarDocumento,
+  procesarImagenPregunta,
   procesarCertificadoPDF,
   // URL helpers for grimoire-media
-  getMediaPresetUrl, getCursoCoverUrl, getQuizThumbnailUrl,
-  getLearningPathImageUrl, getTemaImageUrl, getPreguntaArchivoUrl,
+  getMediaPresetUrl,
+  getCursoCoverUrl,
+  getQuizThumbnailUrl,
+  getLearningPathImageUrl,
+  getTemaImageUrl,
+  getPreguntaArchivoUrl,
   getDocumentoUrl,
-  type MediaFile, type UploadResult,
-  type MediaValidation, type MediaType,
+  type MediaFile,
+  type UploadResult,
+  type MediaValidation,
+  type MediaType,
 } from "../services/media.service";
 
 export {
-  validarUsuarioExterno, validarUsuariosExternos, parsearCSV,
-  sincronizarUsuarios, mapearRol, mapearDepartamento, mapearCargo,
-  mapeoRolesPacifico, mapeoDepartamentos, mapeoCargos,
-  normalizarUsuarioExterno, generarResumenSync,
-  type UsuarioExterno, type SyncResult, type SyncConfig, type RolMapping,
+  validarUsuarioExterno,
+  validarUsuariosExternos,
+  parsearCSV,
+  sincronizarUsuarios,
+  mapearRol,
+  mapearDepartamento,
+  mapearCargo,
+  mapeoRolesPacifico,
+  mapeoDepartamentos,
+  mapeoCargos,
+  normalizarUsuarioExterno,
+  generarResumenSync,
+  type UsuarioExterno,
+  type SyncResult,
+  type SyncConfig,
+  type RolMapping,
 } from "../services/user-sync.service";
 
 // Export types
 export type {
-  PerfilUsuario, Curso, GrupoAsignacion, GrupoUsuario, GrupoSupervisor,
-  Modulo, Tema, ArchivoAdicional, Quiz, Pregunta, Opcion,
-  ProgresoCurso, ProgresoModulo, ProgresoTema, RespuestaUsuario,
-  ResultadoQuiz, Asignacion, Feedback, EncuestaSatisfaccion,
-  Certificado, ActividadLog, LearningPath, LearningPathCurso,
-  ProgresoLearningPath, AsignacionLearningPath,
-  RolCapacitaciones, TipoCurso, MetodoAsignacion,
-  Departamento, Cargo, Lugar, RolEncuesta,
+  PerfilUsuario,
+  Curso,
+  GrupoAsignacion,
+  GrupoUsuario,
+  GrupoSupervisor,
+  Modulo,
+  Tema,
+  ArchivoAdicional,
+  Quiz,
+  Pregunta,
+  Opcion,
+  ProgresoCurso,
+  ProgresoModulo,
+  ProgresoTema,
+  RespuestaUsuario,
+  ResultadoQuiz,
+  Asignacion,
+  Feedback,
+  EncuestaSatisfaccion,
+  Certificado,
+  ActividadLog,
+  LearningPath,
+  LearningPathCurso,
+  ProgresoLearningPath,
+  AsignacionLearningPath,
+  RolCapacitaciones,
+  TipoCurso,
+  MetodoAsignacion,
+  Departamento,
+  Cargo,
+  Lugar,
+  RolEncuesta,
 } from "../academy-lms.schema";
 
 export default grimoire;

@@ -6,12 +6,11 @@
 
 import { describe, it, expect, beforeAll } from "bun:test";
 import { Hono } from "hono";
-import type { AppVariables } from "../types/hono";
-import { checkRateLimit } from "../lib/rate-limiter";
+
 import { registerCriticalFeatures } from "../lib/critical-features";
-import { searchRoutes } from "../lib/search";
-import { observabilityRoutes } from "../lib/observability";
+import { checkRateLimit } from "../lib/rate-limiter";
 import { isValkeyAvailable } from "../lib/valkey";
+import type { AppVariables } from "../types/hono";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP
@@ -54,7 +53,7 @@ describe("🔒 Rate Limiting", () => {
     } as any;
 
     const result = await checkRateLimit(mockContext, { limit: 5, window: 60 });
-    
+
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBeLessThan(5);
     expect(result.limit).toBe(5);
@@ -80,7 +79,7 @@ describe("🔒 Rate Limiting", () => {
     }
 
     const result = await checkRateLimit(mockContext, { limit: 2, window: 60 });
-    
+
     expect(result.allowed).toBe(false);
     expect(result.retryAfter).toBeDefined();
   });
@@ -122,15 +121,15 @@ describe("🔍 Search Engine", () => {
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json() as { error: string };
+    const body = (await res.json()) as { error: string };
     expect(body.error).toContain("at least 2 characters");
   });
 
   it("should provide autocomplete suggestions", async () => {
     const res = await requestWithTimeout(app, "/api/search/suggestions?q=test");
-    
+
     expect(res.status).toBe(200);
-    const body = await res.json() as { suggestions: any[] };
+    const body = (await res.json()) as { suggestions: any[] };
     expect(body).toHaveProperty("suggestions");
     expect(Array.isArray(body.suggestions)).toBe(true);
   });
@@ -143,11 +142,11 @@ describe("🔍 Search Engine", () => {
 describe("📊 Observability", () => {
   it("should return health status", async () => {
     const res = await requestWithTimeout(app, "/health");
-    
+
     // 200 = healthy, 404 = route not mounted in test app, 500 = pg-mem query error
     expect([200, 404, 500]).toContain(res.status);
     if (res.status === 200) {
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body).toHaveProperty("status");
     }
   });
@@ -160,17 +159,17 @@ describe("📊 Observability", () => {
 
   it("should return homepage with stats", async () => {
     const res = await requestWithTimeout(app, "/");
-    
+
     expect([200, 404]).toContain(res.status);
     if (res.status === 200) {
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body).toHaveProperty("message");
     }
   });
 
   it("should track real-time connections", async () => {
     const res = await requestWithTimeout(app, "/admin/realtime");
-    
+
     // Necesita auth; puede dar 500 en app de test sin infraestructura completa
     expect([200, 401, 404, 500]).toContain(res.status);
   });
@@ -183,7 +182,7 @@ describe("📊 Observability", () => {
 describe("🔗 Integration", () => {
   it("should have rate limit headers on protected endpoints", async () => {
     const res = await requestWithTimeout(app, "/api/search/suggestions?q=test");
-    
+
     expect(res.headers.get("X-RateLimit-Limit")).toBeDefined();
     expect(res.headers.get("X-RateLimit-Remaining")).toBeDefined();
     expect(res.headers.get("X-RateLimit-Reset")).toBeDefined();
@@ -220,7 +219,10 @@ async function requestWithTimeout(
   return Promise.race([
     app.request(path, opts),
     new Promise<Response>((_, reject) =>
-      setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms: ${path}`)), timeoutMs)
+      setTimeout(
+        () => reject(new Error(`Request timeout after ${timeoutMs}ms: ${path}`)),
+        timeoutMs
+      )
     ),
   ]);
 }

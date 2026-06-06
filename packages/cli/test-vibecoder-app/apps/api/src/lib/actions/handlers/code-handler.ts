@@ -5,8 +5,8 @@
  * This replaces the old worker-sandbox.ts with a unified interface.
  */
 
-import type { Action, ActionContext, ActionResult } from "../types";
 import { executeSandbox } from "../../worker-sandbox";
+import type { Action, ActionContext, ActionResult } from "../types";
 
 interface CodeActionConfig {
   code: string;

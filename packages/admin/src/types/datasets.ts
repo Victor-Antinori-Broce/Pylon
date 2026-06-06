@@ -1,11 +1,11 @@
 /**
  * Dataset Module Types
  * Defines the schema for virtual tables (dataset_definitions + dataset_entries)
- * 
+ *
  * ═══════════════════════════════════════════════════════════════════════════
  * MIGRADO: Este archivo ahora re-exporta desde @gremius/shared
  * para mantener una única fuente de verdad.
- * 
+ *
  * El "Puente Zod" garantiza que Frontend y Backend usen los mismos tipos.
  * ═══════════════════════════════════════════════════════════════════════════
  */
@@ -61,18 +61,72 @@ export interface FieldTypeOption {
  * Opciones de tipos de campo disponibles en el SchemaBuilder
  */
 export const FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
-  { type: "text", label: "Text", icon: "Type", description: "Single or multi-line text", color: "#00E5FF" },
-  { type: "number", label: "Number", icon: "Hash", description: "Integer or decimal", color: "#76FF03" },
-  { type: "boolean", label: "Boolean", icon: "ToggleLeft", description: "True / False toggle", color: "#FFD600" },
-  { type: "date", label: "Date", icon: "Calendar", description: "Date or datetime", color: "#E040FB" },
-  { type: "image", label: "Image", icon: "ImageIcon", description: "Image upload or URL", color: "#FF6E40" },
+  {
+    type: "text",
+    label: "Text",
+    icon: "Type",
+    description: "Single or multi-line text",
+    color: "#00E5FF",
+  },
+  {
+    type: "number",
+    label: "Number",
+    icon: "Hash",
+    description: "Integer or decimal",
+    color: "#76FF03",
+  },
+  {
+    type: "boolean",
+    label: "Boolean",
+    icon: "ToggleLeft",
+    description: "True / False toggle",
+    color: "#FFD600",
+  },
+  {
+    type: "date",
+    label: "Date",
+    icon: "Calendar",
+    description: "Date or datetime",
+    color: "#E040FB",
+  },
+  {
+    type: "image",
+    label: "Image",
+    icon: "ImageIcon",
+    description: "Image upload or URL",
+    color: "#FF6E40",
+  },
   { type: "url", label: "URL", icon: "Link2", description: "Web address", color: "#40C4FF" },
   { type: "email", label: "Email", icon: "Mail", description: "Email address", color: "#FFAB00" },
-  { type: "select", label: "Select", icon: "List", description: "Dropdown from options", color: "#69F0AE" },
+  {
+    type: "select",
+    label: "Select",
+    icon: "List",
+    description: "Dropdown from options",
+    color: "#69F0AE",
+  },
   { type: "json", label: "JSON", icon: "Braces", description: "Raw JSON object", color: "#B388FF" },
-  { type: "richtext", label: "Rich Text", icon: "FileText", description: "Formatted content", color: "#FF80AB" },
-  { type: "relation", label: "Relation", icon: "GitBranch", description: "Link to another collection", color: "#FF2A6D" },
-  { type: "kpi", label: "KPI / Formula", icon: "Calculator", description: "Calculated metric", color: "#FF1493" },
+  {
+    type: "richtext",
+    label: "Rich Text",
+    icon: "FileText",
+    description: "Formatted content",
+    color: "#FF80AB",
+  },
+  {
+    type: "relation",
+    label: "Relation",
+    icon: "GitBranch",
+    description: "Link to another collection",
+    color: "#FF2A6D",
+  },
+  {
+    type: "kpi",
+    label: "KPI / Formula",
+    icon: "Calculator",
+    description: "Calculated metric",
+    color: "#FF1493",
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -80,11 +134,17 @@ export const FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function generateSlug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function generateFieldKey(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

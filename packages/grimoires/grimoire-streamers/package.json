@@ -9,7 +9,14 @@
     "build": "pnpm exec tsc",
     "dev": "pnpm exec tsc --watch"
   },
-  "keywords": ["gremius", "grimoire", "streamers", "twitch", "youtube", "gaming"],
+  "keywords": [
+    "gremius",
+    "grimoire",
+    "streamers",
+    "twitch",
+    "youtube",
+    "gaming"
+  ],
   "author": "Gremius Team",
   "license": "MIT",
   "devDependencies": {

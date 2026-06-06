@@ -1,15 +1,15 @@
 /**
  * Admin Registry Tests
- * 
+ *
  * Validates the zero-config grimoire registration system
  */
 
 import { describe, it, expect } from "bun:test";
+
 import { buildAdminRegistry, getGrimoireAdminConfig } from "../services/admin-registry";
 import { scanPackages } from "../services/scanner";
 
 describe("Admin Registry", () => {
-  
   describe("Service", () => {
     it("should build registry without errors", async () => {
       const registry = await buildAdminRegistry();
@@ -19,7 +19,7 @@ describe("Admin Registry", () => {
 
     it("should return grimoires with required fields", async () => {
       const registry = await buildAdminRegistry();
-      
+
       for (const grimoire of registry) {
         expect(grimoire.id).toBeDefined();
         expect(grimoire.name).toBeDefined();
@@ -33,17 +33,17 @@ describe("Admin Registry", () => {
 
     it("should detect tables from grimoire.json", async () => {
       const registry = await buildAdminRegistry();
-      const gamesGrimoire = registry.find(g => g.id === "grimoire-games");
-      
+      const gamesGrimoire = registry.find((g) => g.id === "grimoire-games");
+
       if (gamesGrimoire) {
         expect(gamesGrimoire.tables.length).toBeGreaterThan(0);
-        expect(gamesGrimoire.tables.some(t => t.name === "games")).toBe(true);
+        expect(gamesGrimoire.tables.some((t) => t.name === "games")).toBe(true);
       }
     });
 
     it("should get specific grimoire config", async () => {
       const config = await getGrimoireAdminConfig("grimoire-games");
-      
+
       if (config) {
         expect(config.id).toBe("grimoire-games");
         expect(config.name).toBeDefined();
@@ -58,21 +58,21 @@ describe("Admin Registry", () => {
 
     it("should have consistent view configuration", async () => {
       const registry = await buildAdminRegistry();
-      
+
       for (const grimoire of registry) {
         // All views should have required fields
         for (const view of grimoire.views) {
           expect(view.id).toBeDefined();
           expect(view.type).toBeDefined();
           expect(view.title).toBeDefined();
-          
+
           // Type should be valid
           expect(["grid", "kanban", "calendar", "custom"]).toContain(view.type);
         }
-        
+
         // Default view should exist in views array (if views are defined)
         if (grimoire.views.length > 0) {
-          const defaultViewExists = grimoire.views.some(v => v.id === grimoire.defaultView);
+          const defaultViewExists = grimoire.views.some((v) => v.id === grimoire.defaultView);
           // Some grimoires may have a defaultView that doesn't match any view id;
           // in that case, we just verify the defaultView is a string.
           expect(typeof grimoire.defaultView).toBe("string");
@@ -91,7 +91,7 @@ describe("Admin Registry", () => {
 
     it("should have valid grimoire.json files", async () => {
       const grimoires = await scanPackages("grimoires");
-      
+
       for (const grimoire of grimoires) {
         expect(grimoire.id).toBeDefined();
         expect(grimoire.name).toBeDefined();
@@ -103,7 +103,7 @@ describe("Admin Registry", () => {
   describe("Table Configuration", () => {
     it("should parse table configs from grimoire.json", async () => {
       const registry = await buildAdminRegistry();
-      
+
       for (const grimoire of registry) {
         for (const table of grimoire.tables) {
           expect(table.name).toBeDefined();
@@ -115,7 +115,7 @@ describe("Admin Registry", () => {
 
     it("should support searchable and filterable fields", async () => {
       const registry = await buildAdminRegistry();
-      
+
       for (const grimoire of registry) {
         for (const table of grimoire.tables) {
           if (table.searchableFields) {

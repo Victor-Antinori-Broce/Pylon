@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { 
-    BarChart3, Table2, Database, Search, Filter, Plus, 
-    ChevronLeft, ChevronRight, MoreHorizontal, Save, 
-    RefreshCw, Eye, Edit2, Trash2, X, Check, ChevronDown,
-    ChevronRight as ChevronRightIcon, Settings, Download, Upload,
-    Folder, FolderOpen, Box
+  import { Table2, Database, Search, Filter, Plus, 
+    ChevronLeft, ChevronRight, 
+    RefreshCw, Edit2, Trash2, X, Check, ChevronDown,
+    ChevronRight as ChevronRightIcon, Settings
   } from "lucide-svelte";
+  import { onMount } from "svelte";
   
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   
@@ -22,7 +20,7 @@
   
   // Pagination
   let currentPage = $state(1);
-  let pageSize = $state(25);
+  const pageSize = $state(25);
   let totalCount = $state(0);
   let totalPages = $state(1);
   

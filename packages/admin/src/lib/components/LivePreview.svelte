@@ -12,7 +12,7 @@
     status?: string;
   }
 
-  let {
+  const {
     title = "",
     content = "",
     excerpt = "",
@@ -20,7 +20,7 @@
     slug = "",
     authorName = "",
     publishedAt = "",
-    status = ""
+    status = "",
   }: Props = $props();
 
   type Viewport = "desktop" | "tablet" | "mobile";
@@ -29,17 +29,15 @@
   const viewportWidths = {
     desktop: "100%",
     tablet: "768px",
-    mobile: "375px"
+    mobile: "375px",
   };
 
-  let htmlContent = $derived.by(() => {
-    const dateText = publishedAt
-      ? new Date(publishedAt).toLocaleDateString()
-      : "";
+  const htmlContent = $derived.by(() => {
+    const dateText = publishedAt ? new Date(publishedAt).toLocaleDateString() : "";
     const metaParts = [
       authorName ? `By ${authorName}` : "",
       dateText,
-      status ? status.charAt(0).toUpperCase() + status.slice(1) : ""
+      status ? status.charAt(0).toUpperCase() + status.slice(1) : "",
     ].filter(Boolean);
 
     return `
@@ -109,26 +107,36 @@
 
 <div class="flex flex-col h-full bg-gremius-bg">
   <!-- Toolbar -->
-  <div class="flex items-center justify-between px-4 py-2 border-b border-gremius-border bg-gremius-card/50 shrink-0">
-    <span class="text-xs font-medium text-gremius-subtle uppercase tracking-wider">Live Preview</span>
+  <div
+    class="flex items-center justify-between px-4 py-2 border-b border-gremius-border bg-gremius-card/50 shrink-0"
+  >
+    <span class="text-xs font-medium text-gremius-subtle uppercase tracking-wider"
+      >Live Preview</span
+    >
     <div class="flex items-center gap-1">
       <button
-        class="p-1.5 rounded-md transition-colors {viewport === 'desktop' ? 'bg-gremius-cyan/10 text-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-border/30'}"
-        onclick={() => viewport = 'desktop'}
+        class="p-1.5 rounded-md transition-colors {viewport === 'desktop'
+          ? 'bg-gremius-cyan/10 text-gremius-cyan'
+          : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-border/30'}"
+        onclick={() => (viewport = "desktop")}
         aria-label="Desktop view"
       >
         <Monitor class="w-4 h-4" />
       </button>
       <button
-        class="p-1.5 rounded-md transition-colors {viewport === 'tablet' ? 'bg-gremius-cyan/10 text-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-border/30'}"
-        onclick={() => viewport = 'tablet'}
+        class="p-1.5 rounded-md transition-colors {viewport === 'tablet'
+          ? 'bg-gremius-cyan/10 text-gremius-cyan'
+          : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-border/30'}"
+        onclick={() => (viewport = "tablet")}
         aria-label="Tablet view"
       >
         <Tablet class="w-4 h-4" />
       </button>
       <button
-        class="p-1.5 rounded-md transition-colors {viewport === 'mobile' ? 'bg-gremius-cyan/10 text-gremius-cyan' : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-border/30'}"
-        onclick={() => viewport = 'mobile'}
+        class="p-1.5 rounded-md transition-colors {viewport === 'mobile'
+          ? 'bg-gremius-cyan/10 text-gremius-cyan'
+          : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-border/30'}"
+        onclick={() => (viewport = "mobile")}
         aria-label="Mobile view"
       >
         <Smartphone class="w-4 h-4" />

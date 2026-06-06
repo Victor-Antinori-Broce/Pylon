@@ -60,43 +60,43 @@ POST /api/booking/bookings
 
 ### Rooms
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/booking/rooms` | List rooms (with filters) |
-| POST | `/api/booking/rooms` | Create room |
-| GET | `/api/booking/rooms/:id` | Get room details |
-| PATCH | `/api/booking/rooms/:id` | Update room |
-| DELETE | `/api/booking/rooms/:id` | Delete room |
-| GET | `/api/booking/rooms/:id/slots` | Get available time slots |
-| GET | `/api/booking/rooms/:id/blackout` | List blackout dates |
-| POST | `/api/booking/rooms/:id/blackout` | Add blackout period |
+| Method | Endpoint                          | Description               |
+| ------ | --------------------------------- | ------------------------- |
+| GET    | `/api/booking/rooms`              | List rooms (with filters) |
+| POST   | `/api/booking/rooms`              | Create room               |
+| GET    | `/api/booking/rooms/:id`          | Get room details          |
+| PATCH  | `/api/booking/rooms/:id`          | Update room               |
+| DELETE | `/api/booking/rooms/:id`          | Delete room               |
+| GET    | `/api/booking/rooms/:id/slots`    | Get available time slots  |
+| GET    | `/api/booking/rooms/:id/blackout` | List blackout dates       |
+| POST   | `/api/booking/rooms/:id/blackout` | Add blackout period       |
 
 ### Amenities
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/booking/amenities` | List amenities |
-| POST | `/api/booking/amenities` | Create amenity |
+| Method | Endpoint                 | Description    |
+| ------ | ------------------------ | -------------- |
+| GET    | `/api/booking/amenities` | List amenities |
+| POST   | `/api/booking/amenities` | Create amenity |
 
 ### Bookings
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/booking/bookings` | List bookings (with filters) |
-| POST | `/api/booking/bookings` | Create booking |
-| GET | `/api/booking/bookings/:id` | Get booking details |
-| PATCH | `/api/booking/bookings/:id` | Update booking |
-| POST | `/api/booking/bookings/:id/cancel` | Cancel booking |
-| POST | `/api/booking/bookings/:id/check-in` | Check in |
-| POST | `/api/booking/bookings/:id/check-out` | Check out |
-| POST | `/api/booking/bookings/:id/notes` | Add note |
+| Method | Endpoint                              | Description                  |
+| ------ | ------------------------------------- | ---------------------------- |
+| GET    | `/api/booking/bookings`               | List bookings (with filters) |
+| POST   | `/api/booking/bookings`               | Create booking               |
+| GET    | `/api/booking/bookings/:id`           | Get booking details          |
+| PATCH  | `/api/booking/bookings/:id`           | Update booking               |
+| POST   | `/api/booking/bookings/:id/cancel`    | Cancel booking               |
+| POST   | `/api/booking/bookings/:id/check-in`  | Check in                     |
+| POST   | `/api/booking/bookings/:id/check-out` | Check out                    |
+| POST   | `/api/booking/bookings/:id/notes`     | Add note                     |
 
 ### Availability
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/booking/availability` | Check if slot is available |
-| GET | `/api/booking/my-bookings?userId={id}` | Get user's upcoming bookings |
+| Method | Endpoint                               | Description                  |
+| ------ | -------------------------------------- | ---------------------------- |
+| GET    | `/api/booking/availability`            | Check if slot is available   |
+| GET    | `/api/booking/my-bookings?userId={id}` | Get user's upcoming bookings |
 
 ## Room Types
 
@@ -112,33 +112,37 @@ POST /api/booking/bookings
 
 ## Booking Statuses
 
-| Status | Description |
-|--------|-------------|
-| `pending` | Awaiting approval |
-| `confirmed` | Booking confirmed |
-| `checked_in` | Guest has checked in |
+| Status        | Description           |
+| ------------- | --------------------- |
+| `pending`     | Awaiting approval     |
+| `confirmed`   | Booking confirmed     |
+| `checked_in`  | Guest has checked in  |
 | `checked_out` | Guest has checked out |
-| `cancelled` | Cancelled by user |
-| `rejected` | Rejected by admin |
-| `no_show` | Guest didn't arrive |
+| `cancelled`   | Cancelled by user     |
+| `rejected`    | Rejected by admin     |
+| `no_show`     | Guest didn't arrive   |
 
 ## Database Schema
 
 ### rooms
+
 - Core room information (name, type, capacity, location)
 - Availability settings (hours, days)
 - Features (JSON: projector, whiteboard, etc.)
 - Pricing (hourly/daily rates)
 
 ### amenities
+
 - Shared amenity definitions
 - Can be attached to multiple rooms
 
 ### room_amenities
+
 - Junction table for rooms ↔ amenities
 - Supports quantity and notes per room
 
 ### bookings
+
 - Full booking details
 - User/guest information
 - Timing (start/end, timezone)
@@ -148,16 +152,19 @@ POST /api/booking/bookings
 - Approval workflow fields
 
 ### booking_notes
+
 - Internal and public notes
 - Activity log per booking
 
 ### blackout_dates
+
 - Room unavailability periods
 - Supports recurring blackouts
 
 ## Conflict Detection
 
 The system prevents double-booking by checking:
+
 1. Existing bookings in the time range
 2. Blackout dates
 3. Room status (available/maintenance/closed)

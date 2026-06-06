@@ -26,6 +26,7 @@ Nivel 4: URLs slug (/en/products vs /es/productos)
 ### Opción A: Columnas por idioma (Recomendada)
 
 **Cambio en schema de datasets:**
+
 ```typescript
 // packages/grimoires/grimoire-datasets/datasets.schema.ts
 
@@ -49,11 +50,12 @@ export interface DataSetField {
 ```
 
 **Generación de columnas SQL:**
+
 ```sql
 -- Tabla generada para un dataset "products" con i18n
 CREATE TABLE dataset_products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Campos traducibles (sufijo _{lang})
   title_en TEXT,
   title_es TEXT,
@@ -61,21 +63,22 @@ CREATE TABLE dataset_products (
   description_en JSONB,
   description_es JSONB,
   description_fr JSONB,
-  
+
   -- Campos NO traducibles (compartidos)
   slug TEXT UNIQUE NOT NULL,
   price DECIMAL(10,2),
-  
+
   -- Metadata
   _lang_versions JSONB DEFAULT '[]', -- ['en', 'es', 'fr']
   _default_lang TEXT DEFAULT 'en',
-  
+
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
 **API de entries:**
+
 ```typescript
 // POST /api/datasets/:id/entries
 {
@@ -139,13 +142,13 @@ CREATE INDEX idx_i18n_lookup ON dataset_products_i18n(entry_id, lang);
 
 **Comparación:**
 
-| Aspecto | Opción A (Columnas) | Opción B (Tabla separada) |
-|---------|---------------------|---------------------------|
-| Queries | Más rápidas | Necesitan JOIN |
+| Aspecto       | Opción A (Columnas)             | Opción B (Tabla separada)                |
+| ------------- | ------------------------------- | ---------------------------------------- |
+| Queries       | Más rápidas                     | Necesitan JOIN                           |
 | Escalabilidad | Limitada a idiomas predefinidos | Ilimitada (añadir idiomas dinámicamente) |
-| Complejidad | Menor | Mayor |
-| Storage | Menor (sin overhead de filas) | Mayor (metadata por traducción) |
-| Flexibilidad | Menor | Mayor |
+| Complejidad   | Menor                           | Mayor                                    |
+| Storage       | Menor (sin overhead de filas)   | Mayor (metadata por traducción)          |
+| Flexibilidad  | Menor                           | Mayor                                    |
 
 **Recomendación:** Opción A para la mayoría de casos. Opción B si necesitas soportar 10+ idiomas dinámicos.
 
@@ -168,7 +171,7 @@ app.use("/api/datasets/:id/entries", async (c, next) => {
 // Transformación de respuesta
 function localizeEntry(entry: any, lang: string, defaultLang: string) {
   const result = { ...entry };
-  
+
   for (const [key, value] of Object.entries(entry.data || {})) {
     if (typeof value === "object" && value !== null) {
       // Campo traducible
@@ -178,7 +181,7 @@ function localizeEntry(entry: any, lang: string, defaultLang: string) {
       result[key] = value;
     }
   }
-  
+
   return result;
 }
 ```
@@ -188,18 +191,15 @@ function localizeEntry(entry: any, lang: string, defaultLang: string) {
 ```svelte
 <!-- Componente de selección de idioma -->
 <script>
-  import { locale, locales } from '$lib/i18n/store';
-  
-  const availableLocales = ['en', 'es', 'fr'];
-  let currentLang = 'en';
+  import { locale, locales } from "$lib/i18n/store";
+
+  const availableLocales = ["en", "es", "fr"];
+  let currentLang = "en";
 </script>
 
 <div class="lang-switcher">
   {#each availableLocales as lang}
-    <button 
-      class:active={currentLang === lang}
-      on:click={() => currentLang = lang}
-    >
+    <button class:active={currentLang === lang} on:click={() => (currentLang = lang)}>
       {lang.toUpperCase()}
     </button>
   {/each}
@@ -209,14 +209,8 @@ function localizeEntry(entry: any, lang: string, defaultLang: string) {
 <div class="i18n-tabs">
   {#each availableLocales as lang}
     <div class="tab" class:active={currentLang === lang}>
-      <input 
-        bind:value={data.title[lang]} 
-        placeholder="Título ({lang})"
-      />
-      <textarea 
-        bind:value={data.description[lang]}
-        placeholder="Descripción ({lang})"
-      />
+      <input bind:value={data.title[lang]} placeholder="Título ({lang})" />
+      <textarea bind:value={data.description[lang]} placeholder="Descripción ({lang})" />
     </div>
   {/each}
 </div>
@@ -248,15 +242,15 @@ interface FieldConfig {
 // gremius.config.ts
 export default {
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'es', 'fr', 'de', 'pt'],
+    defaultLocale: "en",
+    locales: ["en", "es", "fr", "de", "pt"],
     fallback: {
-      'es-MX': 'es',
-      'es-AR': 'es',
-      'en-US': 'en',
-      'en-GB': 'en'
-    }
-  }
+      "es-MX": "es",
+      "es-AR": "es",
+      "en-US": "en",
+      "en-GB": "en",
+    },
+  },
 };
 ```
 
@@ -290,23 +284,27 @@ export default {
 ## 📝 Checklist de Implementación
 
 ### Fase 1: Backend (3 días)
+
 - [ ] Añadir campo `i18n` a schema de datasets
 - [ ] Modificar generador de tablas SQL
 - [ ] Actualizar endpoints CRUD para manejar objetos traducibles
 - [ ] Middleware de detección de idioma (`?lang=` o `Accept-Language`)
 
 ### Fase 2: Admin UI (4 días)
+
 - [ ] Toggle i18n en Schema Builder
 - [ ] Componente de tabs de idioma en Entry Editor
 - [ ] Selector de idioma en header
 - [ ] Indicadores de campos sin traducir
 
 ### Fase 3: Frontend SDK (2 días)
+
 - [ ] Helper `$t()` para componentes
 - [ ] Auto-detección de idioma del navegador
 - [ ] Switch de idioma persistente
 
 ### Fase 4: Utilities (3 días)
+
 - [ ] Import/Export con soporte i18n (XLIFF, JSON)
 - [ ] Reporte de traducciones incompletas
 - [ ] API de traducción automática (Google Translate/DeepL)
@@ -372,6 +370,7 @@ GET /api/datasets/blog-posts/entries/how-to-build-cms?lang=es
 ## 🎯 Conclusión
 
 **Multi-idioma implica:**
+
 1. Cambios en schema (marcar campos traducibles)
 2. Cambios en base de datos (columnas o tabla separada)
 3. Cambios en API (parámetro `?lang=`)

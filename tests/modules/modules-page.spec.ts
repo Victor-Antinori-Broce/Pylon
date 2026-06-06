@@ -22,7 +22,10 @@ async function loginAsAdmin(page: Page): Promise<boolean> {
 test.describe("Modules System", () => {
   test("7.1 Modules page shows three sections", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     // Navigate via sidebar — Modules is under "System" section
     await page.locator("aside").locator("text=Modules").click();
@@ -48,7 +51,10 @@ test.describe("Modules System", () => {
 
   test.skip("7.2 Data Sets shows as native with NATIVE badge", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.goto(`${ADMIN}/modules`);
     await page.waitForLoadState("networkidle");
@@ -61,7 +67,10 @@ test.describe("Modules System", () => {
 
   test("7.3 Core modules: Games, Blog Posts, Media Library", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.goto(`${ADMIN}/modules`);
     await page.waitForLoadState("networkidle");
@@ -75,7 +84,10 @@ test.describe("Modules System", () => {
 
   test("7.4 Streamers is optional (not core, not duplicated)", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.goto(`${ADMIN}/modules`);
     await page.waitForLoadState("networkidle");
@@ -93,7 +105,10 @@ test.describe("Modules System", () => {
 
   test("7.5 Fórmulas KPI is optional", async ({ page }) => {
     const ok = await loginAsAdmin(page);
-    if (!ok) { test.skip(true, "Fresh install"); return; }
+    if (!ok) {
+      test.skip(true, "Fresh install");
+      return;
+    }
 
     await page.goto(`${ADMIN}/modules`);
     await page.waitForLoadState("networkidle");

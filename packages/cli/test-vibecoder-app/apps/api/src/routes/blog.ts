@@ -2,8 +2,9 @@
  * Blog Posts API Routes
  */
 
-import { Hono } from "hono";
 import { eq, desc, sql } from "drizzle-orm"; // and, ilike removed - unused
+import { Hono } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "../db";
 // @ts-ignore - Path alias @/ not resolved by tsc
@@ -11,11 +12,11 @@ import { blogPosts, authUsers as user, media, blogPostsToTags, blogPostsToGames,
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { cachedQuery, invalidateCache } from "../lib/cache";
 // @ts-ignore - Path alias @/ not resolved by tsc
+import { events } from "../lib/events";
 import { broadcastContentUpdate } from "../lib/realtime";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { events } from "../lib/events";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { requireAuth, requireRole, optionalAuth } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type { AppVariables } from "../types/hono";
 

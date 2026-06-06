@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import type { AdminConfig, SchemaColumn, KanbanView, CalendarView as CalendarViewType } from "$lib/types/admin";
   import { 
-    Search, Filter, Plus, MoreHorizontal, 
+    Search, Filter, Plus, 
     ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
     ArrowUpDown, ArrowUp, ArrowDown,
     Eye, EyeOff, Edit, Trash2, Download, RefreshCw,
-    X, Check, ExternalLink, Mail, Palette,
-    ChevronDown, FileJson, Settings2, Columns3,
+    X, Check, ExternalLink, Mail, FileJson, Columns3,
     Copy
   } from "lucide-svelte";
-  import type { AdminConfig, AdminView, TableColumn, SchemaColumn, KanbanView, CalendarView as CalendarViewType } from "$lib/types/admin";
+  import { onMount } from "svelte";
+
   import AutoFormModal from "./AutoFormModal.svelte";
-  import KanbanBoard from "./KanbanBoard.svelte";
   import CalendarView from "./CalendarView.svelte";
+  import KanbanBoard from "./KanbanBoard.svelte";
 
   interface TableSchema {
     name: string;
@@ -39,8 +39,8 @@
   // Multi-column sort: array of { column, direction } in priority order
   let sortStack = $state<{ column: string; direction: "asc" | "desc" }[]>([]);
   // Backward-compatible single sort accessors
-  let sortColumn = $derived(sortStack[0]?.column || null);
-  let sortDirection = $derived<"asc" | "desc">(sortStack[0]?.direction || "asc");
+  const sortColumn = $derived(sortStack[0]?.column || null);
+  const sortDirection = $derived<"asc" | "desc">(sortStack[0]?.direction || "asc");
   // Column visibility
   let hiddenColumns = $state<Set<string>>(new Set());
   let showColumnMenu = $state(false);
@@ -63,27 +63,27 @@
   let filterRelationOptions = $state<Record<string, { value: string; label: string }[]>>({});
   
   // Computed
-  let activeView = $derived(
+  const activeView = $derived(
     config?.views?.find(v => v.id === viewId) || 
     config?.views?.[0] ||
     { type: "grid", table: grimoireId, id: "default", title: grimoireId } as any
   );
   
-  let displayTable = $derived(
+  const displayTable = $derived(
     activeView?.type === "grid" ? (activeView as any).table : grimoireId
   );
   
-  let columns = $derived<SchemaColumn[]>(
+  const columns = $derived<SchemaColumn[]>(
     schema?.columns || 
     generateColumnsFromData(data)
   );
 
   // Separate columns for display vs filtering
-  let visibleColumns = $derived(
+  const visibleColumns = $derived(
     columns.filter(c => !hiddenColumns.has(c.name))
   );
-  let displayColumns = $derived(visibleColumns.slice(0, 12));
-  let filterableColumns = $derived(
+  const displayColumns = $derived(visibleColumns.slice(0, 12));
+  const filterableColumns = $derived(
     columns.filter(c => 
       c.name !== "id" && 
       !c.name.endsWith("At") && 
@@ -94,7 +94,7 @@
   );
 
   // Search fields: all text-like columns
-  let searchFields = $derived(
+  const searchFields = $derived(
     columns
       .filter(c => ["text", "string", "varchar", "email", "url"].includes(c.type || "") || 
                    ["name", "title", "label", "slug", "description", "displayName", "display_name", "email"].includes(c.name))
@@ -102,7 +102,7 @@
   );
 
   // View tabs (when config has multiple views) + discovered views
-  let views = $derived([
+  const views = $derived([
     ...(config?.views || []),
     ...discoveredViews.filter(dv => !(config?.views || []).some((cv: any) => cv.table === dv.table)),
   ]);
@@ -142,7 +142,7 @@
   }
 
   /** The base API endpoint (without table) — used by AutoFormModal */
-  let apiBaseEndpoint = $derived.by(() => {
+  const apiBaseEndpoint = $derived.by(() => {
     const ep = config?.apiEndpoint;
     if (!ep) return undefined;
     const segments = ep.replace(/^\//, '').split('/');

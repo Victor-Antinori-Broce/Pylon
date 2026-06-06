@@ -1,16 +1,17 @@
 /**
  * Agent Playground API
- * 
+ *
  * Endpoint para chatear con agentes desde el Admin UI.
  * Conecta con el MCP server para procesar mensajes.
  */
 
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { agentIdentities, agentTraces, agentTraceSteps } from "@/db/schema";
-import { eq } from "drizzle-orm";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { logger } from "@/lib/logger";
 
@@ -102,7 +103,6 @@ playgroundRouter.post("/:id/chat", async (c) => {
       traceId: trace.id,
       sessionId,
     });
-
   } catch (error: any) {
     const _agentId = c.req.param("id");
     logger.error({ error, agentId: _agentId }, "Agent playground chat failed");
@@ -112,7 +112,7 @@ playgroundRouter.post("/:id/chat", async (c) => {
 
 /**
  * Procesa un mensaje con el agente
- * 
+ *
  * Por ahora es una simulación. En producción esto debería:
  * 1. Llamar a la API de OpenAI/Claude con el system prompt del agente
  * 2. Ejecutar tools si el LLM las solicita
@@ -139,7 +139,7 @@ async function processWithAgent(
 
   if (lowerMsg.includes("capacidades") || lowerMsg.includes("qué puedes hacer")) {
     const capabilities = agent.capabilities as string[] | undefined;
-    const caps = capabilities?.length 
+    const caps = capabilities?.length
       ? `Mis capacidades incluyen: ${capabilities.join(", ")}.`
       : "Tengo capacidades generales de asistencia.";
     return caps;
@@ -201,7 +201,6 @@ playgroundRouter.get("/:id/chat/history", async (c) => {
       history,
       sessionId,
     });
-
   } catch (error: any) {
     logger.error({ error }, "Failed to get chat history");
     return c.json({ error: error.message }, 500);

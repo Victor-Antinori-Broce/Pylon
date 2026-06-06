@@ -7,16 +7,19 @@
 Elimina un grimoire del sistema.
 
 #### Parámetros de Query
+
 - `force` (boolean, opcional): Si es `true`, fuerza la eliminación incluso si tiene dependencias
 
 #### Ejemplos
 
 **Eliminar un grimoire standalone:**
+
 ```bash
 curl -X DELETE /api/modules/grimoire-crm
 ```
 
 **Respuesta exitosa:**
+
 ```json
 {
   "success": true,
@@ -31,11 +34,13 @@ curl -X DELETE /api/modules/grimoire-crm
 ```
 
 **Eliminar un grimoire de realm:**
+
 ```bash
 curl -X DELETE /api/modules/grimoire-games
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -51,6 +56,7 @@ curl -X DELETE /api/modules/grimoire-games
 ```
 
 **Error - Grimoire con dependencias:**
+
 ```bash
 curl -X DELETE /api/modules/grimoire-games
 ```
@@ -75,6 +81,7 @@ curl -X DELETE /api/modules/grimoire-games
 ```
 
 **Forzar eliminación:**
+
 ```bash
 curl -X DELETE "/api/modules/grimoire-games?force=true"
 ```
@@ -88,6 +95,7 @@ curl -X DELETE "/api/modules/grimoire-games?force=true"
 Elimina un realm del sistema.
 
 #### Parámetros de Query
+
 - `deleteGrimoires` (boolean, opcional): Si es `true`, elimina también los grimoires asociados. Default: `false`
 - `force` (boolean, opcional): Si es `true`, fuerza la eliminación incluso si está activo o tiene grimoires activos
 
@@ -102,6 +110,7 @@ curl -X DELETE "/api/system/realms/gremius-cms-realm?deleteGrimoires=false"
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -115,6 +124,7 @@ curl -X DELETE "/api/system/realms/gremius-cms-realm?deleteGrimoires=false"
 ```
 
 **Qué sucede:**
+
 - El realm se "elimina" (ya no está disponible para activar)
 - Los grimoires se convierten a "standalone" (grimoires independientes)
 - Se mantiene `enabled` según su estado actual
@@ -129,6 +139,7 @@ curl -X DELETE "/api/system/realms/gremius-cms-realm?deleteGrimoires=true"
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -143,6 +154,7 @@ curl -X DELETE "/api/system/realms/gremius-cms-realm?deleteGrimoires=true"
 ```
 
 **Qué sucede:**
+
 - El realm se elimina
 - Todos sus grimoires se eliminan de la tabla `modules`
 - Si estaba activo, se limpia `activeTheme` en `site_settings`
@@ -154,6 +166,7 @@ curl -X DELETE /api/system/realms/gremius-cms-realm
 ```
 
 **Respuesta (error):**
+
 ```json
 {
   "error": "Cannot delete realm",
@@ -183,6 +196,7 @@ curl -X DELETE "/api/system/realms/gremius-cms-realm?deleteGrimoires=true&force=
 Lista todos los realms con información detallada de sus grimoires.
 
 **Respuesta:**
+
 ```json
 [
   {
@@ -225,6 +239,7 @@ Lista todos los realms con información detallada de sus grimoires.
 Obtiene información detallada de un realm específico.
 
 **Respuesta:**
+
 ```json
 {
   "id": "gremius-cms-realm",

@@ -16,53 +16,58 @@
  * DELETE /api/modules/:key         — delete grimoire and its data
  */
 
-import { Hono } from "hono";
+import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+
 import { eq, sql as drizzleSql } from "drizzle-orm";
+import { Hono } from "hono";
+
+import { staticConfig as gremiusConfig } from "../../gremius.config";
 import { db } from "../db";
 import { modules, siteSettings } from "../db/schema";
-import { scanPackages } from "../services/scanner";
 import {
   CORE_MODULES,
   CORE_MODULE_KEYS,
   checkCanDisable,
   getCoreModules,
   getOptionalModules,
-
   getGrimoireCoreGrimoires,
 } from "../services/module-registry";
-import { staticConfig as gremiusConfig } from "../../gremius.config";
-import { readdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { scanPackages } from "../services/scanner";
 
 /**
  * Check if a grimoire has data in the database
  * Returns table names and row counts if data exists
  */
-async function checkGrimoireData(grimoireKey: string): Promise<{ hasData: boolean; tables: Array<{ name: string; rowCount: number }>; totalRows: number }> {
+async function checkGrimoireData(grimoireKey: string): Promise<{
+  hasData: boolean;
+  tables: Array<{ name: string; rowCount: number }>;
+  totalRows: number;
+}> {
   // Get tables from grimoire.json
   const grimoiresDir = join(getWorkspaceRoot(), "packages", "grimoires");
   const grimoireJsonPath = join(grimoiresDir, grimoireKey, "grimoire.json");
-  
+
   let tablesToCheck: string[] = [];
-  
+
   try {
     const file = Bun.file(grimoireJsonPath);
     if (await file.exists()) {
       const manifest = await file.json();
       if (manifest.tables && Array.isArray(manifest.tables)) {
-        tablesToCheck = manifest.tables.map((t: any) => 
-          typeof t === "string" ? t : (t.name || t.table)
-        ).filter(Boolean);
+        tablesToCheck = manifest.tables
+          .map((t: any) => (typeof t === "string" ? t : t.name || t.table))
+          .filter(Boolean);
       }
     }
   } catch {
     // If can't read grimoire.json, infer from key
     tablesToCheck = [grimoireKey.replace(/^grimoire-/, "").replace(/-/g, "_")];
   }
-  
+
   const existingTables: Array<{ name: string; rowCount: number }> = [];
-  
+
   for (const tableName of tablesToCheck) {
     try {
       const result = await db.execute(
@@ -76,9 +81,9 @@ async function checkGrimoireData(grimoireKey: string): Promise<{ hasData: boolea
       // Table doesn't exist or error counting
     }
   }
-  
+
   const totalRows = existingTables.reduce((sum, t) => sum + t.rowCount, 0);
-  
+
   return {
     hasData: existingTables.length > 0 && totalRows > 0,
     tables: existingTables,
@@ -89,28 +94,30 @@ async function checkGrimoireData(grimoireKey: string): Promise<{ hasData: boolea
 /**
  * Get all uninstalled grimoires that have preserved data
  */
-async function getUninstalledGrimoiresWithData(): Promise<Array<{
-  key: string;
-  name: string;
-  uninstalledAt: string | null;
-  data: {
-    hasData: boolean;
-    tables: Array<{ name: string; rowCount: number }>;
-    totalRows: number;
-  };
-}>> {
+async function getUninstalledGrimoiresWithData(): Promise<
+  Array<{
+    key: string;
+    name: string;
+    uninstalledAt: string | null;
+    data: {
+      hasData: boolean;
+      tables: Array<{ name: string; rowCount: number }>;
+      totalRows: number;
+    };
+  }>
+> {
   const dbModules = await db.select().from(modules);
-  const installedKeys = new Set(dbModules.map(m => m.key));
-  
+  const installedKeys = new Set(dbModules.map((m) => m.key));
+
   // Get all available grimoires from filesystem
   const availableGrimoires = await scanPackages("grimoires");
   const uninstalled: Array<any> = [];
-  
+
   for (const grimoire of availableGrimoires) {
     if (!installedKeys.has(grimoire.id)) {
       // Check if this grimoire has data
       const dataCheck = await checkGrimoireData(grimoire.id);
-      
+
       if (dataCheck.hasData) {
         uninstalled.push({
           key: grimoire.id,
@@ -121,7 +128,7 @@ async function getUninstalledGrimoiresWithData(): Promise<Array<{
       }
     }
   }
-  
+
   return uninstalled;
 }
 
@@ -157,17 +164,19 @@ interface DynamicRealm {
 async function scanRealmsDynamic(): Promise<DynamicRealm[]> {
   const realmsDir = join(getPackagesRoot(), "realms");
   const realms: DynamicRealm[] = [];
-  
+
   try {
     const entries = await readdir(realmsDir, { withFileTypes: true });
-    const realmDirs = entries.filter(e => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules");
-    
+    const realmDirs = entries.filter(
+      (e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
+    );
+
     for (const dir of realmDirs) {
       const realmJsonPath = join(realmsDir, dir.name, "realm.json");
       const legacyPath = join(realmsDir, dir.name, "gremius.json");
-      
+
       let manifest: any = null;
-      
+
       // Try realm.json first
       const realmFile = Bun.file(realmJsonPath);
       if (await realmFile.exists()) {
@@ -177,7 +186,7 @@ async function scanRealmsDynamic(): Promise<DynamicRealm[]> {
           console.warn(`[ModulesAPI] Failed to parse ${realmJsonPath}`);
         }
       }
-      
+
       // Fallback to gremius.json
       if (!manifest) {
         const legacyFile = Bun.file(legacyPath);
@@ -189,7 +198,7 @@ async function scanRealmsDynamic(): Promise<DynamicRealm[]> {
           }
         }
       }
-      
+
       if (manifest && manifest.id) {
         realms.push({
           id: manifest.id,
@@ -203,7 +212,7 @@ async function scanRealmsDynamic(): Promise<DynamicRealm[]> {
   } catch (err) {
     // Realms directory might not exist
   }
-  
+
   return realms;
 }
 
@@ -211,29 +220,31 @@ async function scanRealmsDynamic(): Promise<DynamicRealm[]> {
  * Get all realm grimoires dynamically
  * Combines hardcoded registry with dynamically scanned realms
  */
-async function getDynamicRealmGrimoires(): Promise<Array<{
-  key: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  category: "realm";
-  realmId: string;
-  tables: string[];
-  dependsOn: string[];
-  referencedBy: any[];
-}>> {
+async function getDynamicRealmGrimoires(): Promise<
+  Array<{
+    key: string;
+    name: string;
+    description: string;
+    icon: string;
+    color: string;
+    category: "realm";
+    realmId: string;
+    tables: string[];
+    dependsOn: string[];
+    referencedBy: any[];
+  }>
+> {
   const realms = await scanRealmsDynamic();
   const grimoireList = await scanPackages("grimoires");
-  const grimoireMap = new Map(grimoireList.map(g => [g.id, g]));
-  
+  const grimoireMap = new Map(grimoireList.map((g) => [g.id, g]));
+
   const result: Array<any> = [];
-  
+
   for (const realm of realms) {
     for (const grimoireId of realm.grimoires) {
       // Get grimoire info from scanned packages
       const grimoire = grimoireMap.get(grimoireId);
-      
+
       if (grimoire) {
         result.push({
           key: grimoireId.replace(/^grimoire-/, "").replace(/-/g, "_"),
@@ -251,7 +262,10 @@ async function getDynamicRealmGrimoires(): Promise<Array<{
         // Fallback if grimoire not found in packages
         result.push({
           key: grimoireId.replace(/^grimoire-/, "").replace(/-/g, "_"),
-          name: grimoireId.replace(/^grimoire-/, "").replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+          name: grimoireId
+            .replace(/^grimoire-/, "")
+            .replace(/-/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
           description: `Grimoire from ${realm.name}`,
           icon: "📦",
           color: "#6366F1",
@@ -264,7 +278,7 @@ async function getDynamicRealmGrimoires(): Promise<Array<{
       }
     }
   }
-  
+
   return result;
 }
 
@@ -275,7 +289,7 @@ export const modulesRoutes = new Hono();
 // Blog and Blocks are now Nivel 3 Grimoires — loaded dynamically.
 // Helper to check if a grimoire is enabled in config
 const isGrimoireEnabledInConfig = (id: string): boolean => {
-  const grimoire = gremiusConfig.core.find(g => g.id === id);
+  const grimoire = gremiusConfig.core.find((g) => g.id === id);
   return grimoire?.enabled ?? false;
 };
 
@@ -310,22 +324,28 @@ modulesRoutes.get("/", async (c) => {
   const activeTheme = await getActiveTheme();
 
   // Transform registry module to API response
-  const transformModule = (m: typeof CORE_MODULES[0], source: "core" | "realm" | "filesystem") => {
+  const transformModule = (
+    m: (typeof CORE_MODULES)[0],
+    source: "core" | "realm" | "filesystem"
+  ) => {
     const stored = dbMap.get(m.key);
 
     // Realm modules are auto-enabled when their realm is active
     const isRealmActive = m.category === "realm" && m.realmId === activeTheme;
-    
+
     // Check if this grimoire is linked to the active realm in DB
     const enabledByRealm = stored?.realmId === activeTheme && activeTheme !== null;
 
     // Core infrastructure flags from gremius.config.ts take precedence
     const configFlag = CORE_FLAG_MAP[m.key];
-    const enabled = configFlag !== undefined
-      ? configFlag
-      : enabledByRealm
-        ? true
-        : (stored ? stored.enabled : defaultEnabled(m.category));
+    const enabled =
+      configFlag !== undefined
+        ? configFlag
+        : enabledByRealm
+          ? true
+          : stored
+            ? stored.enabled
+            : defaultEnabled(m.category);
 
     // Unify core categories: both "core" and "grimoire-core" become "core"
     const unifiedCategory = m.category === "grimoire-core" ? "core" : m.category;
@@ -352,26 +372,26 @@ modulesRoutes.get("/", async (c) => {
   };
 
   // Core modules (media, webhooks, connectors)
-  const coreModules = getCoreModules().map(m => transformModule(m, "core"));
+  const coreModules = getCoreModules().map((m) => transformModule(m, "core"));
 
   // Grimoire-Core modules (blog, blocks, formulas)
-  const grimoireCoreModules = getGrimoireCoreGrimoires().map(m => transformModule(m, "core"));
+  const grimoireCoreModules = getGrimoireCoreGrimoires().map((m) => transformModule(m, "core"));
 
   // Optional modules (academy, dms, booking, directory, crm, blog)
-  const optionalModules = getOptionalModules().map(m => transformModule(m, "core"));
+  const optionalModules = getOptionalModules().map((m) => transformModule(m, "core"));
 
   // Realm modules — DYNAMICALLY loaded from packages/realms/*/
   const allRealmGrimoires = await getDynamicRealmGrimoires();
-  const realmModules = allRealmGrimoires.map(m => transformModule(m, "realm"));
+  const realmModules = allRealmGrimoires.map((m) => transformModule(m, "realm"));
 
   // Auto-discovered grimoires from filesystem (not in hardcoded registry)
   // This is the key to zero-config: drop a grimoire directory with grimoire.json
   // and it auto-appears in the admin panel.
   const registryKeys = new Set([
-    ...coreModules.map(m => m.key),
-    ...grimoireCoreModules.map(m => m.key),
-    ...optionalModules.map(m => m.key),
-    ...realmModules.map(m => m.key),
+    ...coreModules.map((m) => m.key),
+    ...grimoireCoreModules.map((m) => m.key),
+    ...optionalModules.map((m) => m.key),
+    ...realmModules.map((m) => m.key),
   ]);
 
   let filesystemModules: any[] = [];
@@ -382,11 +402,16 @@ modulesRoutes.get("/", async (c) => {
       .map((m) => {
         const stored = dbMap.get(m.id);
         const enabledByRealm = stored?.realmId === activeTheme && activeTheme !== null;
-        const enabled = enabledByRealm ? true : (stored?.enabled || false);
-        
+        const enabled = enabledByRealm ? true : stored?.enabled || false;
+
         return {
           key: m.id,
-          name: m.name || m.id.replace(/^grimoire-/, "").replace(/-/g, " ").replace(/^\w/, (c: string) => c.toUpperCase()),
+          name:
+            m.name ||
+            m.id
+              .replace(/^grimoire-/, "")
+              .replace(/-/g, " ")
+              .replace(/^\w/, (c: string) => c.toUpperCase()),
           description: m.description || "",
           version: m.version,
           icon: m.icon || "📦",
@@ -436,17 +461,18 @@ modulesRoutes.get("/", async (c) => {
       },
       uninstalled: {
         label: "Uninstalled (Data Preserved)",
-        description: uninstalledGrimoires.length > 0
-          ? `${uninstalledGrimoires.length} grimoires with data available for recovery`
-          : "No uninstalled grimoires with preserved data",
-        modules: uninstalledGrimoires.map(g => ({
+        description:
+          uninstalledGrimoires.length > 0
+            ? `${uninstalledGrimoires.length} grimoires with data available for recovery`
+            : "No uninstalled grimoires with preserved data",
+        modules: uninstalledGrimoires.map((g) => ({
           key: g.key,
           name: g.name,
           status: "uninstalled",
           hasPreservedData: true,
           dataSummary: {
             totalRows: g.data.totalRows,
-            tables: g.data.tables.map(t => ({ name: t.name, rows: t.rowCount })),
+            tables: g.data.tables.map((t) => ({ name: t.name, rows: t.rowCount })),
           },
           canRecover: true,
           canDelete: true, // Can permanently delete from here
@@ -455,8 +481,19 @@ modulesRoutes.get("/", async (c) => {
       },
     },
     // Flat list for backward compatibility (sidebar, etc.)
-    docs: [...coreModules, ...grimoireCoreModules, ...optionalModules, ...realmModules, ...filesystemModules],
-    totalDocs: coreModules.length + grimoireCoreModules.length + optionalModules.length + realmModules.length + filesystemModules.length,
+    docs: [
+      ...coreModules,
+      ...grimoireCoreModules,
+      ...optionalModules,
+      ...realmModules,
+      ...filesystemModules,
+    ],
+    totalDocs:
+      coreModules.length +
+      grimoireCoreModules.length +
+      optionalModules.length +
+      realmModules.length +
+      filesystemModules.length,
   };
 
   return c.json(response);
@@ -467,7 +504,7 @@ modulesRoutes.get("/:key", async (c) => {
   const key = c.req.param("key");
   const activeTheme = await getActiveTheme();
   const [stored] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
-  const registryDef = CORE_MODULES.find(m => m.key === key);
+  const registryDef = CORE_MODULES.find((m) => m.key === key);
 
   if (!stored && !registryDef) {
     return c.json({ error: `Module '${key}' not found` }, 404);
@@ -475,17 +512,21 @@ modulesRoutes.get("/:key", async (c) => {
 
   // Check if enabled by realm (stored in DB and realm matches active)
   const enabledByRealm = stored?.realmId === activeTheme && activeTheme !== null;
-  
+
   // Calculate isRealmActive - either from registry or from DB
-  const isRealmActive = (registryDef?.category === "realm" && registryDef?.realmId === activeTheme) || enabledByRealm;
-  
+  const isRealmActive =
+    (registryDef?.category === "realm" && registryDef?.realmId === activeTheme) || enabledByRealm;
+
   // Calculate enabled status
   const configFlag = CORE_FLAG_MAP[key];
-  const enabled = configFlag !== undefined
-    ? configFlag
-    : enabledByRealm
-      ? true
-      : (stored ? stored.enabled : defaultEnabled(registryDef?.category || "optional"));
+  const enabled =
+    configFlag !== undefined
+      ? configFlag
+      : enabledByRealm
+        ? true
+        : stored
+          ? stored.enabled
+          : defaultEnabled(registryDef?.category || "optional");
 
   // Check if this is a realm grimoire (either from registry or DB)
   const isRealmGrimoire = registryDef?.category === "realm" || !!stored?.realmId;
@@ -496,7 +537,10 @@ modulesRoutes.get("/:key", async (c) => {
     description: registryDef?.description || stored?.description || "",
     icon: registryDef?.icon || stored?.icon || "📦",
     color: registryDef?.color || "",
-    category: registryDef?.category === "grimoire-core" ? "core" : (registryDef?.category || stored?.category || "optional"),
+    category:
+      registryDef?.category === "grimoire-core"
+        ? "core"
+        : registryDef?.category || stored?.category || "optional",
     realmId: stored?.realmId || registryDef?.realmId || null,
     enabled,
     settings: stored?.settings || {},
@@ -516,7 +560,7 @@ modulesRoutes.get("/:key/check", async (c) => {
 
   // Check if this is a realm grimoire - realm grimoires CAN be toggled individually now
   // but we show a warning that it's part of a realm
-  const moduleDef = CORE_MODULES.find(m => m.key === key);
+  const moduleDef = CORE_MODULES.find((m) => m.key === key);
   const [stored] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
   const isRealmGrimoire = moduleDef?.category === "realm" || !!stored?.realmId;
 
@@ -538,15 +582,17 @@ modulesRoutes.get("/:key/check", async (c) => {
   }
 
   const result = await checkCanDisable(key, enabledKeys);
-  
+
   // Add realm info to result
   const checkResult = {
     ...result,
     isRealmGrimoire,
     realmId: stored?.realmId || moduleDef?.realmId || null,
-    warning: isRealmGrimoire ? "This grimoire is part of a realm. Disabling it may affect realm functionality." : undefined,
+    warning: isRealmGrimoire
+      ? "This grimoire is part of a realm. Disabling it may affect realm functionality."
+      : undefined,
   };
-  
+
   return c.json(checkResult);
 });
 
@@ -556,7 +602,7 @@ modulesRoutes.patch("/:key", async (c) => {
   const body = await c.req.json();
 
   const registryDef = CORE_MODULES.find((m) => m.key === key);
-  
+
   // Check if this is a realm grimoire
   const [_existingModule] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
 
@@ -653,28 +699,32 @@ modulesRoutes.patch("/:key", async (c) => {
   const activeTheme = await getActiveTheme();
   const enabledByRealm = updated?.realmId === activeTheme && activeTheme !== null;
 
-  return c.json(updated ? {
-    ...updated,
-    enabledByRealm,
-    isRealmGrimoire: !!updated.realmId,
-  } : { key, enabled: body.enabled || false, realmId: null, enabledByRealm: false });
+  return c.json(
+    updated
+      ? {
+          ...updated,
+          enabledByRealm,
+          isRealmGrimoire: !!updated.realmId,
+        }
+      : { key, enabled: body.enabled || false, realmId: null, enabledByRealm: false }
+  );
 });
 
 // ── POST /:key/uninstall — Uninstall grimoire but preserve data ──
 modulesRoutes.post("/:key/uninstall", async (c) => {
   const key = c.req.param("key");
-  
+
   // Check if module exists in DB
   const [existing] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
-  
+
   if (!existing) {
     return c.json({ error: `Grimoire '${key}' not found` }, 404);
   }
-  
+
   // Check for dependencies
   const dbModulesList = await db.select().from(modules);
   const dbMap = new Map(dbModulesList.map((m) => [m.key, m]));
-  
+
   const enabledKeys = new Set<string>();
   for (const cm of CORE_MODULES) {
     const stored = dbMap.get(cm.key);
@@ -685,26 +735,29 @@ modulesRoutes.post("/:key/uninstall", async (c) => {
   for (const [k, v] of dbMap) {
     if (!CORE_MODULE_KEYS.includes(k) && v.enabled) enabledKeys.add(k);
   }
-  
+
   const check = await checkCanDisable(key, enabledKeys);
-  
+
   if (existing.enabled && !check.canDisable) {
-    return c.json({
-      error: "Cannot uninstall",
-      message: `${key} has active dependencies. Disable it first.`,
-      blockers: check.blockers,
-      enabled: existing.enabled,
-    }, 409);
+    return c.json(
+      {
+        error: "Cannot uninstall",
+        message: `${key} has active dependencies. Disable it first.`,
+        blockers: check.blockers,
+        enabled: existing.enabled,
+      },
+      409
+    );
   }
-  
+
   // Get data info before uninstalling
   const dataInfo = await checkGrimoireData(key);
-  
+
   // Delete the module from DB (preserves data in actual tables)
   await db.delete(modules).where(eq(modules.key, key));
-  
+
   console.log(`[Modules] Grimoire ${key} uninstalled, data preserved (${dataInfo.totalRows} rows)`);
-  
+
   return c.json({
     success: true,
     action: "uninstall",
@@ -729,31 +782,34 @@ modulesRoutes.post("/:key/uninstall", async (c) => {
 // ── POST /:key/recover — Recover/Reinstall an uninstalled grimoire ──
 modulesRoutes.post("/:key/recover", async (c) => {
   const key = c.req.param("key");
-  
+
   // Check if already installed
   const [existing] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
-  
+
   if (existing) {
-    return c.json({
-      error: "Already installed",
-      message: `Grimoire ${key} is already installed.`,
-      key,
-      enabled: existing.enabled,
-    }, 409);
+    return c.json(
+      {
+        error: "Already installed",
+        message: `Grimoire ${key} is already installed.`,
+        key,
+        enabled: existing.enabled,
+      },
+      409
+    );
   }
-  
+
   // Get grimoire info from filesystem
   const grimoires = await scanPackages("grimoires");
-  const grimoire = grimoires.find(g => g.id === key);
-  const registryDef = CORE_MODULES.find(m => m.key === key);
-  
+  const grimoire = grimoires.find((g) => g.id === key);
+  const registryDef = CORE_MODULES.find((m) => m.key === key);
+
   if (!grimoire && !registryDef) {
     return c.json({ error: `Grimoire '${key}' not found in filesystem or registry` }, 404);
   }
-  
+
   // Check if there's preserved data
   const dataInfo = await checkGrimoireData(key);
-  
+
   // Run migrations (will restore schema if needed)
   try {
     const { runModuleMigrations } = await import("../services/scanner");
@@ -761,13 +817,13 @@ modulesRoutes.post("/:key/recover", async (c) => {
   } catch (err) {
     console.error(`[Modules] Migration error for ${key}:`, err);
   }
-  
+
   // Re-insert into modules table
   const name = grimoire?.name || registryDef?.name || key;
   const description = grimoire?.description || registryDef?.description;
   const icon = grimoire?.icon || registryDef?.icon || "📦";
   const category = registryDef?.category || "optional";
-  
+
   await db.insert(modules).values({
     key,
     name,
@@ -777,9 +833,9 @@ modulesRoutes.post("/:key/recover", async (c) => {
     enabled: true,
     settings: {},
   });
-  
+
   console.log(`[Modules] Grimoire ${key} recovered, data restored (${dataInfo.totalRows} rows)`);
-  
+
   return c.json({
     success: true,
     action: "recover",
@@ -802,27 +858,30 @@ modulesRoutes.delete("/:key", async (c) => {
   const key = c.req.param("key");
   const purge = c.req.query("purge") === "true";
   const force = c.req.query("force") === "true";
-  
+
   // Check if module exists in DB
   const [existing] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
-  
+
   // If still installed, require purge flag
   if (existing && !purge) {
-    return c.json({
-      error: "Grimoire is installed",
-      message: `Grimoire ${key} is still installed. Use POST /api/modules/${key}/uninstall first, or use ?purge=true to uninstall and delete in one step.`,
-      key,
-      status: "installed",
-      enabled: existing.enabled,
-      canUninstall: true,
-    }, 409);
+    return c.json(
+      {
+        error: "Grimoire is installed",
+        message: `Grimoire ${key} is still installed. Use POST /api/modules/${key}/uninstall first, or use ?purge=true to uninstall and delete in one step.`,
+        key,
+        status: "installed",
+        enabled: existing.enabled,
+        canUninstall: true,
+      },
+      409
+    );
   }
-  
+
   // Check for dependencies if still "enabled" somehow
   if (existing?.enabled) {
     const dbModulesList = await db.select().from(modules);
     const dbMap = new Map(dbModulesList.map((m) => [m.key, m]));
-    
+
     const enabledKeys = new Set<string>();
     for (const cm of CORE_MODULES) {
       const stored = dbMap.get(cm.key);
@@ -830,28 +889,31 @@ modulesRoutes.delete("/:key", async (c) => {
         enabledKeys.add(cm.key);
       }
     }
-    
+
     const check = await checkCanDisable(key, enabledKeys);
-    
+
     if (!check.canDisable && !force) {
-      return c.json({
-        error: "Cannot delete",
-        message: `${key} has active dependencies. Disable it first or use ?force=true.`,
-        blockers: check.blockers,
-      }, 409);
+      return c.json(
+        {
+          error: "Cannot delete",
+          message: `${key} has active dependencies. Disable it first or use ?force=true.`,
+          blockers: check.blockers,
+        },
+        409
+      );
     }
   }
-  
+
   // Get data info before deletion
   const dataInfo = await checkGrimoireData(key);
-  
+
   // Delete from modules table if exists
   if (existing) {
     await db.delete(modules).where(eq(modules.key, key));
   }
-  
+
   // If purge, also drop the actual tables
-  let droppedTables: string[] = [];
+  const droppedTables: string[] = [];
   if (purge) {
     for (const table of dataInfo.tables) {
       try {
@@ -862,20 +924,24 @@ modulesRoutes.delete("/:key", async (c) => {
       }
     }
   }
-  
-  console.log(`[Modules] Grimoire ${key} deleted${purge ? ` with ${droppedTables.length} tables dropped` : " (data preserved)"}`);
-  
+
+  console.log(
+    `[Modules] Grimoire ${key} deleted${purge ? ` with ${droppedTables.length} tables dropped` : " (data preserved)"}`
+  );
+
   return c.json({
     success: true,
     action: "delete",
     key,
     name: existing?.name || key,
     purge,
-    dataDeleted: purge ? {
-      tablesDropped: droppedTables.length,
-      tables: droppedTables,
-      totalRows: dataInfo.totalRows,
-    } : undefined,
+    dataDeleted: purge
+      ? {
+          tablesDropped: droppedTables.length,
+          tables: droppedTables,
+          totalRows: dataInfo.totalRows,
+        }
+      : undefined,
     message: purge
       ? `Grimoire ${key} permanently deleted. ${droppedTables.length} tables dropped (${dataInfo.totalRows} rows).`
       : `Grimoire ${key} removed from registry. Data preserved in ${dataInfo.tables.length} tables.`,

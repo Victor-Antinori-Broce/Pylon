@@ -5,6 +5,7 @@
 ## 🎯 Filosofía
 
 Este documento asume:
+
 - **Usuarios**: Desarrolladores técnicos, no content editors casuales
 - **Consumidores**: Agents de IA (MCP), scripts automatizados, SPAs (Vue/Svelte)
 - **Arquitectura**: Headless/API-first, JSONB dinámico
@@ -16,18 +17,19 @@ Este documento asume:
 
 ## 📋 Mejoras Aprobadas
 
-| # | Mejora | Prioridad | Estado |
-|---|--------|-----------|--------|
-| 1 | [Auto-Join API (`?expand`)](#1-auto-join-api-expand) | 🔴 Crítica | ✅ **IMPLEMENTADO** |
-| 2 | [Batch API Transaccional](#2-batch-api-transaccional) | 🔴 Crítica | ✅ **IMPLEMENTADO** |
-| 3 | [Query Language JSON](#3-query-language-json) | 🔴 Crítica | ✅ **IMPLEMENTADO** |
-| 4 | [Validación Declarativa](#4-validación-declarativa) | 🔴 Crítica | ✅ **IMPLEMENTADO** |
-| 5 | [Import/Export JSON](#5-importexport-json) | 🟡 Alta | ✅ **IMPLEMENTADO** |
-| 6 | [Snapshots/Denormalización](#6-snapshotsdenormalización) | 🟡 Alta | ✅ **IMPLEMENTADO** |
-| 7 | [Calculated Fields](#7-calculated-fields) | 🟢 Media | ✅ **IMPLEMENTADO** |
-| 8 | [Índices Automáticos](#8-índices-automáticos) | 🟢 Media | ✅ **IMPLEMENTADO** |
+| #   | Mejora                                                   | Prioridad  | Estado              |
+| --- | -------------------------------------------------------- | ---------- | ------------------- |
+| 1   | [Auto-Join API (`?expand`)](#1-auto-join-api-expand)     | 🔴 Crítica | ✅ **IMPLEMENTADO** |
+| 2   | [Batch API Transaccional](#2-batch-api-transaccional)    | 🔴 Crítica | ✅ **IMPLEMENTADO** |
+| 3   | [Query Language JSON](#3-query-language-json)            | 🔴 Crítica | ✅ **IMPLEMENTADO** |
+| 4   | [Validación Declarativa](#4-validación-declarativa)      | 🔴 Crítica | ✅ **IMPLEMENTADO** |
+| 5   | [Import/Export JSON](#5-importexport-json)               | 🟡 Alta    | ✅ **IMPLEMENTADO** |
+| 6   | [Snapshots/Denormalización](#6-snapshotsdenormalización) | 🟡 Alta    | ✅ **IMPLEMENTADO** |
+| 7   | [Calculated Fields](#7-calculated-fields)                | 🟢 Media   | ✅ **IMPLEMENTADO** |
+| 8   | [Índices Automáticos](#8-índices-automáticos)            | 🟢 Media   | ✅ **IMPLEMENTADO** |
 
 **❌ Rechazadas**:
+
 - ~~Inline Editing~~: Overkill para técnicos/Agents. El Batch API cubre el caso de uso.
 - ~~Query Language SQL~~: Inseguro y difícil para Agents. JSON es mejor.
 - ~~Validación JS Sandboxed~~: Riesgo de seguridad. Usar validación declarativa o Actions.
@@ -38,19 +40,23 @@ Este documento asume:
 
 **Estado**: ✅ **IMPLEMENTADO** - Vital
 
-**Archivos**: 
+**Archivos**:
+
 - `packages/engine/src/translator.ts` → `executeWithRelations()`, `buildWithObject()`
 - `apps/api/src/routes/datasets-query.ts` → Endpoint `POST /api/datasets/:id/query`
 
 ### Problema
+
 7 requests para mostrar un build completo (character + weapon + 5 artifacts).
 
 ### Solución
+
 ```http
 GET /api/datasets/characters/entries/1?expand=weapon,artifacts
 ```
 
 Respuesta:
+
 ```json
 {
   "id": "char-1",
@@ -67,6 +73,7 @@ Respuesta:
 ```
 
 ### Nested Expand
+
 ```http
 GET /datasets/builds/1?expand=character.weapon,character.artifacts
 ```
@@ -78,13 +85,16 @@ GET /datasets/builds/1?expand=character.weapon,character.artifacts
 **Estado**: ✅ **IMPLEMENTADO** - Vital
 
 **Archivos**:
+
 - `packages/engine/src/batch.ts` → Clase `BatchProcessor`, método `execute()`
 - `apps/api/src/routes/datasets-query.ts` → Endpoint `POST /api/datasets/batch`
 
 ### Problema
+
 Crear character + 3 skills = 4 requests. Si falla #3, queda data inconsistente.
 
 ### Solución
+
 ```http
 POST /api/datasets/batch
 Content-Type: application/json
@@ -121,6 +131,7 @@ Content-Type: application/json
 ```
 
 ### Respuesta Exitosa
+
 ```json
 {
   "success": true,
@@ -133,6 +144,7 @@ Content-Type: application/json
 ```
 
 ### Respuesta Error (Rollback)
+
 ```json
 {
   "success": false,
@@ -151,12 +163,14 @@ Content-Type: application/json
 **Estado**: ✅ **IMPLEMENTADO** - Más seguro y AI-friendly que SQL
 
 **Archivos**:
+
 - `packages/engine/src/translator.ts` → `parseGremiusQuery()`, `parseWhereClause()`
 - `apps/api/src/routes/datasets-query.ts` → Endpoints REST
 
 **Nota**: NO es reinventar Prisma. Es un traductor completo JSON→Drizzle SQL de ~1000 líneas.
 
 ### Ejemplo
+
 ```http
 POST /api/datasets/query
 Content-Type: application/json
@@ -180,33 +194,44 @@ Content-Type: application/json
 ```
 
 ### Operadores Soportados
+
 ```typescript
-type Operator = 
-  | "eq" | "neq"           // Igual, diferente
-  | "gt" | "gte"           // Mayor que
-  | "lt" | "lte"           // Menor que
-  | "in" | "nin"           // En lista, no en lista
-  | "contains"             // Contiene texto
-  | "startsWith"           // Empieza con
-  | "exists";              // Campo existe
+type Operator =
+  | "eq"
+  | "neq" // Igual, diferente
+  | "gt"
+  | "gte" // Mayor que
+  | "lt"
+  | "lte" // Menor que
+  | "in"
+  | "nin" // En lista, no en lista
+  | "contains" // Contiene texto
+  | "startsWith" // Empieza con
+  | "exists"; // Campo existe
 ```
 
 ### Implementación Simple
+
 ```typescript
 function buildWhereClause(filter: Filter): SQL {
   const fieldRef = sql`data->>${filter.field}`;
-  
-  switch(filter.op) {
-    case 'eq': return eq(fieldRef, filter.value);
-    case 'gt': return gt(sql`(data->>${filter.field})::numeric`, filter.value);
-    case 'in': return inArray(fieldRef, filter.value);
-    case 'contains': return sql`data->>${filter.field} ILIKE ${`%${filter.value}%`}`;
+
+  switch (filter.op) {
+    case "eq":
+      return eq(fieldRef, filter.value);
+    case "gt":
+      return gt(sql`(data->>${filter.field})::numeric`, filter.value);
+    case "in":
+      return inArray(fieldRef, filter.value);
+    case "contains":
+      return sql`data->>${filter.field} ILIKE ${`%${filter.value}%`}`;
     // ... etc
   }
 }
 ```
 
 **Ventajas sobre SQL crudo**:
+
 - ✅ Sin riesgo de SQL injection
 - ✅ Agents entienden JSON mejor que SQL
 - ✅ Portable entre bases de datos
@@ -219,14 +244,17 @@ function buildWhereClause(filter: Filter): SQL {
 **Estado**: ✅ **IMPLEMENTADO** - Configurable desde panel, sin código
 
 **Archivos**:
+
 - `packages/engine/src/zod-validator.ts` → Schemas Zod dinámicos desde reglas declarativa
 - `packages/engine/src/batch.ts` → Integración con `BatchProcessor` (parámetro `validation`)
 
 **Separación de responsabilidades**:
+
 - **Validación simple** (rango, enum, regex): Declarativa en el schema
 - **Validación compleja** (ej: árbol de POE conectado): Actions
 
 ### Schema de Validación
+
 ```json
 {
   "dataset": "characters",
@@ -234,9 +262,12 @@ function buildWhereClause(filter: Filter): SQL {
     "rules": [
       { "field": "name", "required": true, "minLength": 2, "maxLength": 50 },
       { "field": "rarity", "type": "number", "min": 3, "max": 5 },
-      { "field": "element", "enum": ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"] },
-      { 
-        "field": "email", 
+      {
+        "field": "element",
+        "enum": ["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"]
+      },
+      {
+        "field": "email",
         "regex": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
         "message": "Email inválido"
       },
@@ -254,16 +285,17 @@ function buildWhereClause(filter: Filter): SQL {
 
 ### Tipos de Reglas
 
-| Tipo | Descripción | Ejemplo |
-|------|-------------|---------|
-| `required` | Campo obligatorio | `{ "field": "name", "required": true }` |
-| `min/max` | Rango numérico | `{ "field": "rarity", "min": 3, "max": 5 }` |
-| `enum` | Lista permitida | `{ "field": "element", "enum": ["pyro", "hydro"] }` |
-| `regex` | Patrón texto | `{ "field": "slug", "regex": "^[a-z0-9-]+$" }` |
-| `if/then` | Condicional | Si elemento=pyro, entonces arma≠bow |
-| `customRef` | Delegar a Action | Para validación compleja |
+| Tipo        | Descripción       | Ejemplo                                             |
+| ----------- | ----------------- | --------------------------------------------------- |
+| `required`  | Campo obligatorio | `{ "field": "name", "required": true }`             |
+| `min/max`   | Rango numérico    | `{ "field": "rarity", "min": 3, "max": 5 }`         |
+| `enum`      | Lista permitida   | `{ "field": "element", "enum": ["pyro", "hydro"] }` |
+| `regex`     | Patrón texto      | `{ "field": "slug", "regex": "^[a-z0-9-]+$" }`      |
+| `if/then`   | Condicional       | Si elemento=pyro, entonces arma≠bow                 |
+| `customRef` | Delegar a Action  | Para validación compleja                            |
 
 ### Flujo de Validación
+
 ```
 1. Usuario envía POST /datasets/characters/entries
 2. Sistema valida reglas declarativas (rango, enum, etc.)
@@ -273,12 +305,14 @@ function buildWhereClause(filter: Filter): SQL {
 ```
 
 **¿Por qué no JS Sandboxed?**
+
 - ❌ Riesgo de seguridad
 - ❌ Problemas de performance
 - ❌ Difícil de debuggear
 - ❌ No type-safe
 
 **¿Por qué no Actions puros?**
+
 - ❌ Requiere deploy para cada cambio de validación
 - ❌ No configurable desde UI
 
@@ -291,6 +325,7 @@ function buildWhereClause(filter: Filter): SQL {
 **Estado**: ✅ Aprobado
 
 ### Export
+
 ```http
 GET /api/datasets/export?datasets=characters,weapons,skills
 ```
@@ -312,6 +347,7 @@ GET /api/datasets/export?datasets=characters,weapons,skills
 ```
 
 ### Import
+
 ```http
 POST /api/datasets/import
 Content-Type: multipart/form-data
@@ -328,6 +364,7 @@ Content-Type: multipart/form-data
 ```
 
 **Casos de uso**:
+
 - Migraciones entre ambientes (staging → prod)
 - Backups versionados
 - Seed data inicial
@@ -340,9 +377,11 @@ Content-Type: multipart/form-data
 **Estado**: ✅ Aprobado - Para inmutabilidad de builds
 
 ### Problema
+
 Si cambia el weapon, todas las builds que lo usan muestran stats diferentes.
 
 ### Solución
+
 ```json
 {
   "dataset": "builds",
@@ -359,6 +398,7 @@ Si cambia el weapon, todas las builds que lo usan muestran stats diferentes.
 ```
 
 ### Resultado
+
 ```json
 {
   "id": "build-123",
@@ -376,6 +416,7 @@ Si cambia el weapon, todas las builds que lo usan muestran stats diferentes.
 ```
 
 **Beneficios**:
+
 - ✅ Builds históricos inmutables
 - ✅ Performance (cero joins para mostrar)
 - ✅ Auditoría completa
@@ -387,13 +428,16 @@ Si cambia el weapon, todas las builds que lo usan muestran stats diferentes.
 **Estado**: ✅ **IMPLEMENTADO** - Mejorar el existente
 
 **Archivos**:
+
 - `apps/api/src/db/schema.ts` → Campo `formula` en `dataSets.calculatedFields`
 - `CALCULATED_FIELDS_MIGRATION.md` → Documentación de migración
 
 ### Limitación Actual
+
 Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 
 ### Mejora: Soporte para Relaciones
+
 ```json
 {
   "name": "total_atk",
@@ -405,6 +449,7 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 ```
 
 **Implementación**:
+
 ```typescript
 // 1. Detectar campos necesarios
 // 2. Hacer auto-join de esas relaciones
@@ -418,6 +463,7 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 **Estado**: ✅ Aprobado
 
 ### Declarativo
+
 ```json
 {
   "dataset": "characters",
@@ -430,6 +476,7 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 ```
 
 ### Auto-detección
+
 ```
 [INFO] Dataset 'characters': Alto volumio de queries en 'element'
 [SUGGESTION] Crear índice: CREATE INDEX ON data_entries ((data->>'element'))
@@ -440,16 +487,19 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 ## 🗺️ Roadmap de Implementación
 
 ### ✅ Fase 1: Core - COMPLETADA
+
 1. **Auto-Join** (`?expand`) - ✅ Implementado en `translator.ts`
 2. **Batch API** (transaccional) - ✅ Implementado en `batch.ts`
 3. **Validación declarativa** básica - ✅ Implementado en `zod-validator.ts`
 
 ### ✅ Fase 2: Queries - COMPLETADA
+
 4. **Query Language** (filtros, orderBy, pagination) - ✅ Implementado en `translator.ts`
 5. **Calculated Fields** - ✅ Implementado en schema
 6. **Integración API + MCP** - ✅ Endpoints REST y Tools MCP registradas
 
 ### ✅ Fase 3: Avanzado - COMPLETADA
+
 7. **Índices automáticos** - ✅ Implementado en `datasets.indexes.ts`
 8. **Import/Export JSON** - ✅ Implementado en `datasets.import-export.ts`
 9. **Snapshots** auto-generados - ✅ Implementado en `datasets.snapshots.ts`
@@ -481,6 +531,7 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 ```
 
 **Separación clara**:
+
 - **Configuración** → Dataset Creator
 - **Código complejo** → Actions
 
@@ -488,16 +539,16 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 
 ## 📊 Checklist de Decisión
 
-| Pregunta | Respuesta |
-|----------|-----------|
-| ¿Inline editing? | ❌ No. Batch API es suficiente para técnicos |
-| ¿SQL crudo en queries? | ❌ No. JSON es más seguro y AI-friendly |
-| ¿JS sandboxed para validación? | ❌ No. Riesgo de seguridad |
-| ¿Actions para toda validación? | ❌ No. Solo para lógica compleja |
-| ¿Validación declarativa? | ✅ Sí. Configurable desde UI |
-| ¿Auto-join? | ✅ Sí. Reduce N+1 queries |
-| ¿Batch transaccional? | ✅ Sí. Integridad de datos |
-| ¿Query Language JSON? | ✅ Sí. Simple y portable |
+| Pregunta                       | Respuesta                                    |
+| ------------------------------ | -------------------------------------------- |
+| ¿Inline editing?               | ❌ No. Batch API es suficiente para técnicos |
+| ¿SQL crudo en queries?         | ❌ No. JSON es más seguro y AI-friendly      |
+| ¿JS sandboxed para validación? | ❌ No. Riesgo de seguridad                   |
+| ¿Actions para toda validación? | ❌ No. Solo para lógica compleja             |
+| ¿Validación declarativa?       | ✅ Sí. Configurable desde UI                 |
+| ¿Auto-join?                    | ✅ Sí. Reduce N+1 queries                    |
+| ¿Batch transaccional?          | ✅ Sí. Integridad de datos                   |
+| ¿Query Language JSON?          | ✅ Sí. Simple y portable                     |
 
 ---
 
@@ -507,13 +558,13 @@ Solo accede al registro actual. No puede hacer `{weapon.atk}`.
 
 ### Funcionalidades Implementadas
 
-| Feature | Estado | Archivo Principal | Endpoint API | Tool MCP |
-|---------|--------|-------------------|--------------|----------|
-| Auto-Join (`?expand`) | ✅ Listo | `packages/engine/src/translator.ts` | `POST /api/datasets/:id/query` | `gremius_query_dataset` |
-| Batch Transaccional | ✅ Listo | `packages/engine/src/batch.ts` | `POST /api/datasets/batch` | `gremius_execute_batch` |
-| Query Language JSON | ✅ Listo | `packages/engine/src/translator.ts` | `POST /api/datasets/:id/query` | `gremius_query_dataset` |
-| Validación Zod | ✅ Listo | `packages/engine/src/zod-validator.ts` | - | - |
-| Calculated Fields | ✅ Listo | `apps/api/src/db/schema.ts` | - | - |
+| Feature               | Estado   | Archivo Principal                      | Endpoint API                   | Tool MCP                |
+| --------------------- | -------- | -------------------------------------- | ------------------------------ | ----------------------- |
+| Auto-Join (`?expand`) | ✅ Listo | `packages/engine/src/translator.ts`    | `POST /api/datasets/:id/query` | `gremius_query_dataset` |
+| Batch Transaccional   | ✅ Listo | `packages/engine/src/batch.ts`         | `POST /api/datasets/batch`     | `gremius_execute_batch` |
+| Query Language JSON   | ✅ Listo | `packages/engine/src/translator.ts`    | `POST /api/datasets/:id/query` | `gremius_query_dataset` |
+| Validación Zod        | ✅ Listo | `packages/engine/src/zod-validator.ts` | -                              | -                       |
+| Calculated Fields     | ✅ Listo | `apps/api/src/db/schema.ts`            | -                              | -                       |
 
 ### API Endpoints Disponibles
 
@@ -639,16 +690,19 @@ POST /api/datasets/:id/indexes/apply
 Se ha implementado una suite completa de validación (`test-validation.spec.ts`) que verifica:
 
 #### 1. Exportación de Funciones (46 tests)
+
 - ✅ Import/Export: `exportDatasets`, `importToDataset`, `importPackage`, `exportToCSV`, `exportToJSONL`
 - ✅ Snapshots: `generateSnapshot`, `saveSnapshot`, `getCurrentSnapshot`, `restoreToSnapshot`, `compareSnapshots`, `diffBuilds`
 - ✅ Indexes: `suggestIndexesForDataset`, `applyAutoIndexes`, `generateIndexReport`, `getGameIndexConfig`, `createIndex`, `dropIndex`
 
 #### 2. Validación de Schemas Zod
+
 - ✅ `exportConfigSchema` - Validación de configuración de exportación
 - ✅ `importConfigSchema` - Validación de estrategias (upsert/replace/merge/insert)
 - ✅ `indexConfigSchema` - Validación de tipos de índices (btree/gin/gist)
 
 #### 3. Lógica de Negocio
+
 - ✅ CSV/JSONL conversion con escaping correcto
 - ✅ Detección de necesidad de snapshot según trigger
 - ✅ Comparación de snapshots con deep diff
@@ -656,26 +710,27 @@ Se ha implementado una suite completa de validación (`test-validation.spec.ts`)
 - ✅ Configuraciones gaming para POE/Diablo/WoW/Genshin
 
 #### 4. Router Validation
+
 - ✅ Router crea correctamente con Hono
 - ✅ 26 endpoints registrados sin errores 404/500
 
 ### Endpoints Verificados
 
-| Método | Endpoint | Estado |
-|--------|----------|--------|
-| POST | `/export` | ✅ |
-| POST | `/import` | ✅ |
-| POST | `/import/package` | ✅ |
-| GET | `/:id/entries/:entryId/snapshot` | ✅ |
-| GET | `/:id/entries/:entryId/snapshots` | ✅ |
-| POST | `/:id/entries/:entryId/snapshots` | ✅ |
-| POST | `/:id/entries/:entryId/restore` | ✅ |
-| POST | `/:id/entries/:entryId/compare` | ✅ |
-| GET | `/:id/indexes/suggest` | ✅ |
-| GET | `/indexes/stats` | ✅ |
-| POST | `/indexes/report` | ✅ |
-| POST | `/:id/indexes/apply` | ✅ |
-| POST | `/indexes/auto` | ✅ |
+| Método | Endpoint                          | Estado |
+| ------ | --------------------------------- | ------ |
+| POST   | `/export`                         | ✅     |
+| POST   | `/import`                         | ✅     |
+| POST   | `/import/package`                 | ✅     |
+| GET    | `/:id/entries/:entryId/snapshot`  | ✅     |
+| GET    | `/:id/entries/:entryId/snapshots` | ✅     |
+| POST   | `/:id/entries/:entryId/snapshots` | ✅     |
+| POST   | `/:id/entries/:entryId/restore`   | ✅     |
+| POST   | `/:id/entries/:entryId/compare`   | ✅     |
+| GET    | `/:id/indexes/suggest`            | ✅     |
+| GET    | `/indexes/stats`                  | ✅     |
+| POST   | `/indexes/report`                 | ✅     |
+| POST   | `/:id/indexes/apply`              | ✅     |
+| POST   | `/indexes/auto`                   | ✅     |
 
 ### Gaming Configurations
 
@@ -692,4 +747,4 @@ Se ha implementado una suite completa de validación (`test-validation.spec.ts`)
 
 ---
 
-*Versión 2.2 - Validación Completa - Todos los tests pasan ✅*
+_Versión 2.2 - Validación Completa - Todos los tests pasan ✅_

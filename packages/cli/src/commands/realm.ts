@@ -2,10 +2,11 @@
  * REALM Command - Manage realms (starters)
  */
 
-import chalk from "chalk";
+import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+
+import chalk from "chalk";
 import { execa } from "execa";
 
 interface RealmInfo {
@@ -30,22 +31,22 @@ export async function listRealms() {
 
   const projectRoot = process.cwd();
   const realmsDir = join(projectRoot, "packages", "realms");
-  
+
   const localRealms: RealmInfo[] = [];
-  
+
   // Scan local realms
   if (existsSync(realmsDir)) {
     try {
       const entries = await readdir(realmsDir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isDirectory() && entry.name.startsWith("realm-")) {
           const realmJsonPath = join(realmsDir, entry.name, "realm.json");
-          
+
           if (existsSync(realmJsonPath)) {
             const content = await readFile(realmJsonPath, "utf-8");
             const manifest = JSON.parse(content);
-            
+
             localRealms.push({
               id: manifest.id,
               name: manifest.name,
@@ -64,9 +65,9 @@ export async function listRealms() {
 
   // Show official realms
   for (const realm of OFFICIAL_REALMS) {
-    const isLocal = localRealms.some(r => r.id === realm.id);
+    const isLocal = localRealms.some((r) => r.id === realm.id);
     const icon = isLocal ? chalk.green("●") : chalk.gray("○");
-    
+
     console.log(`  ${icon} ${chalk.bold(realm.name)} ${chalk.gray(`(${realm.id})`)}`);
     console.log(chalk.gray(`     ${realm.description}`));
     if (isLocal) {
@@ -76,11 +77,11 @@ export async function listRealms() {
   }
 
   // Show custom local realms
-  const customRealms = localRealms.filter(r => !OFFICIAL_REALMS.some(o => o.id === r.id));
-  
+  const customRealms = localRealms.filter((r) => !OFFICIAL_REALMS.some((o) => o.id === r.id));
+
   if (customRealms.length > 0) {
     console.log(chalk.bold("\n🏰 Custom Realms\n"));
-    
+
     for (const realm of customRealms) {
       console.log(`  ${chalk.green("●")} ${chalk.bold(realm.name)} ${chalk.gray(`(${realm.id})`)}`);
       console.log(chalk.gray(`     ${realm.description}`));
@@ -115,21 +116,17 @@ export async function switchRealm(realmId: string) {
 
     // Update grimoires list
     const grimoiresList = manifest.grimoires.map((g: string) => `    "${g}",`).join("\n");
-    
-    config = config.replace(
-      /grimoires:\s*\[[^\]]*\]/s,
-      `grimoires: [\n${grimoiresList}\n  ]`
-    );
+
+    config = config.replace(/grimoires:\s*\[[^\]]*\]/s, `grimoires: [\n${grimoiresList}\n  ]`);
 
     await execa("writeFile", [configPath, config]);
 
     console.log(chalk.green(`✓ Switched to realm: ${manifest.name}`));
     console.log(chalk.gray(`  Grimoires: ${manifest.grimoires.join(", ")}`));
-    
+
     console.log(chalk.bold("\nNext steps:\n"));
     console.log(chalk.gray("  pnpm db:push    # Update database schema"));
     console.log(chalk.gray("  pnpm dev        # Start development server\n"));
-
   } catch (error: any) {
     console.error(chalk.red(`✖ Failed to switch realm: ${error.message}`));
     process.exit(1);
@@ -138,13 +135,13 @@ export async function switchRealm(realmId: string) {
 
 export async function realmInfo(realmId?: string) {
   const projectRoot = process.cwd();
-  
+
   // If no realm specified, get current from config
   if (!realmId) {
     try {
       const configPath = join(projectRoot, "apps", "api", "gremius.config.ts");
       const config = await readFile(configPath, "utf-8");
-      
+
       // Try to detect active realm from config
       const realmMatch = config.match(/activeRealm[:\s]*["']([^"']+)["']/);
       if (realmMatch) {
@@ -175,7 +172,7 @@ export async function realmInfo(realmId?: string) {
     console.log(chalk.gray(`ID:          ${manifest.id}`));
     console.log(chalk.gray(`Version:     ${manifest.version}`));
     console.log(chalk.gray(`Description: ${manifest.description}`));
-    
+
     if (manifest.author) {
       console.log(chalk.gray(`Author:      ${manifest.author}`));
     }
@@ -193,7 +190,6 @@ export async function realmInfo(realmId?: string) {
     }
 
     console.log();
-
   } catch (error: any) {
     console.error(chalk.red(`✖ Failed to read realm: ${error.message}`));
   }

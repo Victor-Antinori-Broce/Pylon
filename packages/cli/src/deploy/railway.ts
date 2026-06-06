@@ -5,12 +5,13 @@
  * Supports both Nixpacks auto-detection and Dockerfile builds.
  */
 
-import chalk from "chalk";
-import ora from "ora";
-import { execa } from "execa";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+import chalk from "chalk";
+import { execa } from "execa";
+import ora from "ora";
 
 interface RailwayDeployOptions {
   preview?: boolean;
@@ -185,7 +186,7 @@ export async function deployToRailway(
         try {
           const health = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(30000) });
           if (health.ok) {
-            const body = await health.json() as { status?: string };
+            const body = (await health.json()) as { status?: string };
             healthSpinner.succeed(chalk.green(`Health check passed ✅ (${body.status || "ok"})`));
           } else {
             healthSpinner.warn(chalk.yellow(`Health check returned ${health.status}`));

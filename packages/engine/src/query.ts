@@ -50,6 +50,7 @@ import {
   desc,
 } from "drizzle-orm";
 import type { PgTable, PgColumn } from "drizzle-orm/pg-core";
+
 import { db } from "../../../apps/api/src/db";
 import * as schema from "../../../apps/api/src/db/schema";
 
@@ -59,15 +60,15 @@ import * as schema from "../../../apps/api/src/db/schema";
 
 /** Operadores de filtro soportados según GremiusDataset.md */
 export type FilterOperator =
-  | "eq"      // Igual
-  | "neq"     // Diferente
-  | "gt"      // Mayor que
-  | "gte"     // Mayor o igual
-  | "lt"      // Menor que
-  | "lte"     // Menor o igual
-  | "in"      // En lista
-  | "nin"     // No en lista
-  | "contains"// Contiene texto
+  | "eq" // Igual
+  | "neq" // Diferente
+  | "gt" // Mayor que
+  | "gte" // Mayor o igual
+  | "lt" // Menor que
+  | "lte" // Menor o igual
+  | "in" // En lista
+  | "nin" // No en lista
+  | "contains" // Contiene texto
   | "startsWith" // Empieza con
   | "exists"; // Campo existe
 
@@ -139,7 +140,7 @@ export interface QueryTranslatorResult<T = any> {
 export class QueryTranslatorError extends Error {
   constructor(
     message: string,
-    public code: 
+    public code:
       | "INVALID_OPERATOR"
       | "INVALID_COLUMN"
       | "INVALID_EXPAND"
@@ -261,8 +262,8 @@ function getColumn(table: PgTable, columnName: string): PgColumn | undefined {
 }
 
 function getTableColumns(table: PgTable): string[] {
-  return Object.keys(table).filter(k => 
-    !["_", "$inferSelect", "$inferInsert", Symbol.for("drizzle:Columns")].includes(k)
+  return Object.keys(table).filter(
+    (k) => !["_", "$inferSelect", "$inferInsert", Symbol.for("drizzle:Columns")].includes(k)
   );
 }
 
@@ -270,11 +271,7 @@ function getTableColumns(table: PgTable): string[] {
 // BUILDER DE OPERADORES (Mapeo a Drizzle)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildOperatorCondition(
-  column: PgColumn,
-  operator: FilterOperator,
-  value: any
-): SQL {
+function buildOperatorCondition(column: PgColumn, operator: FilterOperator, value: any): SQL {
   switch (operator) {
     case "eq":
       return eq(column, value);
@@ -290,20 +287,18 @@ function buildOperatorCondition(
       return lte(column, value);
     case "in":
       if (!Array.isArray(value)) {
-        throw new QueryTranslatorError(
-          `El operador "in" requiere un array`,
-          "INVALID_OPERATOR",
-          { operator, value }
-        );
+        throw new QueryTranslatorError(`El operador "in" requiere un array`, "INVALID_OPERATOR", {
+          operator,
+          value,
+        });
       }
       return inArray(column, value);
     case "nin":
       if (!Array.isArray(value)) {
-        throw new QueryTranslatorError(
-          `El operador "nin" requiere un array`,
-          "INVALID_OPERATOR",
-          { operator, value }
-        );
+        throw new QueryTranslatorError(`El operador "nin" requiere un array`, "INVALID_OPERATOR", {
+          operator,
+          value,
+        });
       }
       return notInArray(column, value);
     case "contains":
@@ -330,11 +325,22 @@ function buildOperatorCondition(
     case "exists":
       return value ? isNotNull(column) : isNull(column);
     default:
-      throw new QueryTranslatorError(
-        `Operador no soportado: ${operator}`,
-        "INVALID_OPERATOR",
-        { operator, supportedOperators: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "nin", "contains", "startsWith", "exists"] }
-      );
+      throw new QueryTranslatorError(`Operador no soportado: ${operator}`, "INVALID_OPERATOR", {
+        operator,
+        supportedOperators: [
+          "eq",
+          "neq",
+          "gt",
+          "gte",
+          "lt",
+          "lte",
+          "in",
+          "nin",
+          "contains",
+          "startsWith",
+          "exists",
+        ],
+      });
   }
 }
 
@@ -455,13 +461,13 @@ interface ExpandNode {
 
 function parseExpand(expand: string[]): ExpandNode[] {
   const root: ExpandNode[] = [];
-  
+
   for (const item of expand) {
     const parts = item.split(".");
     let current = root;
-    
+
     for (const part of parts) {
-      let node = current.find(n => n.relation === part);
+      let node = current.find((n) => n.relation === part);
       if (!node) {
         node = { relation: part };
         current.push(node);
@@ -470,11 +476,15 @@ function parseExpand(expand: string[]): ExpandNode[] {
       current = node.nested;
     }
   }
-  
+
   return root;
 }
 
-function validateExpandDepth(nodes: ExpandNode[], maxDepth: number, currentDepth: number = 1): void {
+function validateExpandDepth(
+  nodes: ExpandNode[],
+  maxDepth: number,
+  currentDepth: number = 1
+): void {
   if (currentDepth > maxDepth) {
     throw new QueryTranslatorError(
       `Profundidad máxima de expand excedida (${maxDepth})`,
@@ -482,7 +492,7 @@ function validateExpandDepth(nodes: ExpandNode[], maxDepth: number, currentDepth
       { maxDepth, currentDepth }
     );
   }
-  
+
   for (const node of nodes) {
     if (node.nested && node.nested.length > 0) {
       validateExpandDepth(node.nested, maxDepth, currentDepth + 1);
@@ -498,20 +508,20 @@ async function executeWithExpansions<T>(
 ): Promise<T[]> {
   const tableName = getTableName(table);
   const expandTree = parseExpand(expand);
-  
+
   // Validar profundidad (protección DoS)
   validateExpandDepth(expandTree, maxDepth);
-  
+
   // Ejecutar query base
   const rows = await baseQuery;
   if (rows.length === 0 || expand.length === 0) {
     return rows as T[];
   }
-  
+
   // Obtener IDs
   const ids = rows.map((r: any) => r.id).filter(Boolean);
   if (ids.length === 0) return rows as T[];
-  
+
   // Cargar relaciones en paralelo (Anti N+1)
   const relationsData = await Promise.all(
     expandTree.map(async (node) => {
@@ -520,15 +530,19 @@ async function executeWithExpansions<T>(
         throw new QueryTranslatorError(
           `Relación "${node.relation}" no existe en "${tableName}"`,
           "INVALID_EXPAND",
-          { relation: node.relation, table: tableName, availableRelations: getAvailableRelations(table) }
+          {
+            relation: node.relation,
+            table: tableName,
+            availableRelations: getAvailableRelations(table),
+          }
         );
       }
-      
+
       const data = await loadRelationBatch(relation, ids);
       return { name: node.relation, data, relation };
     })
   );
-  
+
   // Mergear resultados
   return rows.map((row: any) => {
     const expanded: any = { ...row };
@@ -548,17 +562,17 @@ async function loadRelationBatch(
   parentIds: string[]
 ): Promise<Map<string, any | any[]>> {
   const result = new Map<string, any | any[]>();
-  
+
   if (relation.type === "one") {
     // N:1
     const targetColumn = getColumn(relation.targetTable, "id");
     if (!targetColumn) return result;
-    
+
     const rows = await db
       .select()
       .from(relation.targetTable)
       .where(inArray(targetColumn, parentIds));
-    
+
     for (const row of rows) {
       result.set((row as any).id, row);
     }
@@ -566,12 +580,9 @@ async function loadRelationBatch(
     // 1:N
     const fkColumn = getColumn(relation.table, relation.fkColumn);
     if (!fkColumn) return result;
-    
-    const rows = await db
-      .select()
-      .from(relation.table)
-      .where(inArray(fkColumn, parentIds));
-    
+
+    const rows = await db.select().from(relation.table).where(inArray(fkColumn, parentIds));
+
     for (const row of rows) {
       const parentId = (row as any)[relation.fkColumn];
       if (!result.has(parentId)) {
@@ -580,7 +591,7 @@ async function loadRelationBatch(
       (result.get(parentId) as any[]).push(row);
     }
   }
-  
+
   return result;
 }
 
@@ -624,20 +635,20 @@ export async function queryTranslator<T = any>(
     offset = 0,
     orderBy,
   } = options;
-  
+
   const tableName = getTableName(table);
-  
+
   try {
     // 1. Parsear where clause
     const whereClause = parseWhereClause(table, where);
-    
+
     // 2. Construir query base
     let query = db.select().from(table).$dynamic();
-    
+
     if (whereClause) {
       query = query.where(whereClause);
     }
-    
+
     // 3. Aplicar ordenamiento
     if (orderBy) {
       const orderList = Array.isArray(orderBy) ? orderBy : [orderBy];
@@ -648,34 +659,34 @@ export async function queryTranslator<T = any>(
           return o.direction === "desc" ? desc(col) : asc(col);
         })
         .filter(Boolean);
-      
+
       if (orderConditions.length > 0) {
         query = query.orderBy(...(orderConditions as any));
       }
     }
-    
+
     // 4. Aplicar paginación
     const limitSafe = Math.min(Math.max(1, limit), 1000);
     const offsetSafe = Math.max(0, offset);
     query = query.limit(limitSafe).offset(offsetSafe);
-    
+
     // 5. Ejecutar con o sin expansiones
     let data: T[];
     if (expand.length > 0) {
       data = await executeWithExpansions<T>(table, query, expand, maxExpandDepth);
     } else {
-      data = await query as T[];
+      data = (await query) as T[];
     }
-    
+
     // 6. Contar total
     let countQuery = db.select({ count: sql<number>`count(*)` }).from(table);
     if (whereClause) {
       countQuery = countQuery.where(whereClause) as any;
     }
     const [{ count: total }] = await countQuery;
-    
+
     const queryTimeMs = performance.now() - startTime;
-    
+
     return {
       data,
       meta: {
@@ -709,7 +720,7 @@ export function validateQueryTranslator(
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   const tableName = getTableName(table);
-  
+
   try {
     parseWhereClause(table, options.where);
   } catch (error) {
@@ -719,7 +730,7 @@ export function validateQueryTranslator(
       errors.push(`Error inesperado: ${(error as Error).message}`);
     }
   }
-  
+
   // Validar expansiones
   if (options.expand) {
     const tableRels = relationsMap.get(tableName);
@@ -727,25 +738,27 @@ export function validateQueryTranslator(
       const relName = rel.split(".")[0]; // Solo primer nivel para validación simple
       if (!tableRels?.has(relName)) {
         const available = tableRels ? Array.from(tableRels.keys()) : [];
-        errors.push(`INVALID_EXPAND: Relación "${relName}" no existe. Disponibles: ${available.join(", ")}`);
+        errors.push(
+          `INVALID_EXPAND: Relación "${relName}" no existe. Disponibles: ${available.join(", ")}`
+        );
       }
     }
-    
+
     // Validar profundidad
     if (options.maxExpandDepth && options.maxExpandDepth > 5) {
       errors.push(`MAX_EXPAND_DEPTH_EXCEEDED: maxExpandDepth no puede ser mayor a 5`);
     }
   }
-  
+
   // Validar límites
   if (options.limit !== undefined && (options.limit < 1 || options.limit > 1000)) {
     errors.push("INVALID_LIMIT: limit debe estar entre 1 y 1000");
   }
-  
+
   if (options.offset !== undefined && options.offset < 0) {
     errors.push("INVALID_OFFSET: offset no puede ser negativo");
   }
-  
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -780,9 +793,4 @@ export function getRelationsMap(): Map<string, Map<string, RelationDef>> {
 // EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export {
-  relationsMap,
-  getTableName,
-  getColumn,
-  parseWhereClause,
-};
+export { relationsMap, getTableName, getColumn, parseWhereClause };

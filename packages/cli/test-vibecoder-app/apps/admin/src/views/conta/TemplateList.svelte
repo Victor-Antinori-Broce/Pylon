@@ -1,17 +1,16 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
-  import Button from "$lib/components/ui/Button.svelte";
   import Badge from "$lib/components/ui/Badge.svelte";
-  import Input from "$lib/components/ui/Input.svelte";
-  import { Plus, Eye, Trash2, FileStack } from "lucide-svelte";
+  import Button from "$lib/components/ui/Button.svelte";
+  import { Plus, Eye, Trash2 } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     onView: (id: string) => void;
     onCreate: () => void;
   }
-  let { onView, onCreate }: Props = $props();
+  const { onView, onCreate }: Props = $props();
 
   let templates = $state<any[]>([]);
   let loading = $state(true);

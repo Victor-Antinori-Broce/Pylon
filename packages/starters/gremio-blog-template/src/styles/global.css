@@ -6,11 +6,11 @@
 
 @layer base {
   :root {
-    --color-cyan: #00E5FF;
-    --color-pink: #FF2A6D;
-    --color-bg: #0A0A0F;
-    --color-surface: #12121A;
-    --color-border: #1E1E2E;
+    --color-cyan: #00e5ff;
+    --color-pink: #ff2a6d;
+    --color-bg: #0a0a0f;
+    --color-surface: #12121a;
+    --color-border: #1e1e2e;
   }
 
   html {
@@ -66,7 +66,6 @@
 }
 
 @layer components {
-
   /* ── Glass Cards ── */
   .glass-card {
     @apply relative bg-white/[0.03] border border-white/[0.06] rounded-2xl backdrop-blur-md overflow-hidden transition-all duration-500;
@@ -74,7 +73,9 @@
 
   .glass-card:hover {
     @apply border-gremius-cyan/20;
-    box-shadow: 0 0 40px rgba(0, 229, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow:
+      0 0 40px rgba(0, 229, 255, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   /* Inner glow on glass cards */
@@ -99,11 +100,15 @@
 
   /* ── Neon Text ── */
   .neon-text {
-    text-shadow: 0 0 10px rgba(0, 229, 255, 0.4), 0 0 30px rgba(0, 229, 255, 0.15);
+    text-shadow:
+      0 0 10px rgba(0, 229, 255, 0.4),
+      0 0 30px rgba(0, 229, 255, 0.15);
   }
 
   .neon-text-pink {
-    text-shadow: 0 0 10px rgba(255, 42, 109, 0.4), 0 0 30px rgba(255, 42, 109, 0.15);
+    text-shadow:
+      0 0 10px rgba(255, 42, 109, 0.4),
+      0 0 30px rgba(255, 42, 109, 0.15);
   }
 
   /* ── Badges ── */
@@ -299,7 +304,6 @@
 }
 
 @keyframes pulse-dot {
-
   0%,
   100% {
     opacity: 1;

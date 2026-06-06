@@ -5,11 +5,13 @@ This document describes the unified Actions system that replaces the separate Wo
 ## Overview
 
 The Actions system unifies three previously separate concepts:
+
 - **Workers** (scheduled/event-driven code execution)
 - **Webhooks** (outgoing HTTP notifications)
 - **Agents** (AI-driven actions)
 
 Into a single cohesive system with:
+
 - One database table (`actions`)
 - One API endpoint (`/api/actions`)
 - One execution engine (`ActionEngine`)
@@ -43,28 +45,28 @@ Into a single cohesive system with:
 
 ### actions table
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| name | varchar(200) | Action name |
-| slug | varchar(200) | URL-friendly identifier |
-| type | enum | `code`, `webhook_out`, `webhook_in`, `agent` |
-| trigger | enum | `manual`, `cron`, `event`, `http` |
-| triggerConfig | jsonb | Trigger-specific configuration |
-| config | jsonb | Action-specific configuration |
-| status | enum | `active`, `paused`, `error` |
+| Column        | Type         | Description                                  |
+| ------------- | ------------ | -------------------------------------------- |
+| id            | uuid         | Primary key                                  |
+| name          | varchar(200) | Action name                                  |
+| slug          | varchar(200) | URL-friendly identifier                      |
+| type          | enum         | `code`, `webhook_out`, `webhook_in`, `agent` |
+| trigger       | enum         | `manual`, `cron`, `event`, `http`            |
+| triggerConfig | jsonb        | Trigger-specific configuration               |
+| config        | jsonb        | Action-specific configuration                |
+| status        | enum         | `active`, `paused`, `error`                  |
 
 ### action_executions table
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| actionId | uuid | Reference to actions |
-| status | enum | `pending`, `running`, `success`, `error`, `timeout` |
-| triggerType | enum | How the execution was triggered |
-| logs | text | Captured console output |
-| result | jsonb | Execution result |
-| durationMs | integer | Execution time |
+| Column      | Type    | Description                                         |
+| ----------- | ------- | --------------------------------------------------- |
+| id          | uuid    | Primary key                                         |
+| actionId    | uuid    | Reference to actions                                |
+| status      | enum    | `pending`, `running`, `success`, `error`, `timeout` |
+| triggerType | enum    | How the execution was triggered                     |
+| logs        | text    | Captured console output                             |
+| result      | jsonb   | Execution result                                    |
+| durationMs  | integer | Execution time                                      |
 
 ## Action Types
 
@@ -169,28 +171,34 @@ Content-Type: application/json
 ## Migration Guide
 
 ### Phase 1: UI Unification (Completed)
+
 - New `/actions` page combines Workers and Webhooks UI
 - Legacy routes redirect to new page
 - No backend changes
 
 ### Phase 2: Backend Implementation (Completed)
+
 1. New `actions` and `action_executions` tables
 2. ActionEngine with unified execution
 3. New `/api/actions` endpoints
 4. Backward-compatible legacy APIs
 
 ### Phase 3: Data Migration (Current)
+
 1. Run schema migration:
+
    ```bash
    bunx drizzle-kit push
    ```
 
 2. Migrate data:
+
    ```bash
    bun run apps/api/src/db/migrations/migrate-to-actions.ts
    ```
 
 3. Verify migration:
+
    ```bash
    # Check that all data is migrated
    # Test all actions work correctly
@@ -204,6 +212,7 @@ Content-Type: application/json
 ## Backward Compatibility
 
 During the transition period:
+
 - `/api/functions` → delegates to ActionEngine
 - `/api/webhooks` → delegates to ActionEngine
 - Legacy UI redirects to new Actions UI
@@ -220,6 +229,7 @@ Actions can be triggered by:
 4. **HTTP**: Incoming webhook requests
 
 Event mapping:
+
 ```typescript
 "entry:created" → "entry.created"
 "entry:updated" → "entry.updated"
@@ -232,6 +242,7 @@ Event mapping:
 Actions are automatically disabled after 10 consecutive errors.
 
 Error tracking:
+
 - Stored in `actions.errorCount`
 - Last error message in `actions.lastError`
 - Full error details in `action_executions.errorMessage`
@@ -239,6 +250,7 @@ Error tracking:
 ## Future Enhancements
 
 Potential new action types:
+
 - `email`: Send email notifications
 - `sms`: Send SMS messages
 - `queue`: Add to external queue
@@ -247,16 +259,19 @@ Potential new action types:
 ## Troubleshooting
 
 ### Actions not executing
+
 1. Check status is `active`
 2. Verify trigger configuration
 3. Check `action_executions` for error logs
 
 ### Migration issues
+
 1. Run verification: `migrate-to-actions.ts` logs
 2. Check `actions.legacy_id` mapping
 3. Compare counts between old and new tables
 
 ### Performance
+
 - Actions execute in isolated sandboxes (code type)
 - Webhooks have configurable retry policies
 - Event dispatch is fire-and-forget (non-blocking)

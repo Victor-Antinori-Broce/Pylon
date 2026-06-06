@@ -5,12 +5,10 @@
    * Uses the new unified /api/actions API.
    * Falls back to legacy APIs if the new API is not available.
    */
-  import { onMount } from "svelte";
   import { 
-    Zap, Webhook, Plus, Play, Pause, RotateCcw, X, Loader2,
-    Clock, Activity, AlertCircle, CheckCircle, Eye, Code, Globe,
-    ChevronRight, Terminal, Timer
+    Zap, Webhook, Plus, Play, Pause, RotateCcw, X, Loader2, Activity, Code, Globe, Terminal
   } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   const API = import.meta.env.VITE_API_URL ?? "";
 

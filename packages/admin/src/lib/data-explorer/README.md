@@ -31,16 +31,16 @@ Sistema de exploración de datos genérico para Gremius Admin con field types ex
 ```svelte
 <script>
   import DataExplorer from "$lib/components/DataExplorer.svelte";
-  
+
   const config = {
     table: "blog_posts",
     label: "Blog Posts",
     columns: [
       { field: "title", label: "Title", fieldConfig: { type: "text" } },
-      { field: "status", label: "Status", fieldConfig: { type: "status-badge" } }
+      { field: "status", label: "Status", fieldConfig: { type: "status-badge" } },
     ],
     searchableFields: ["title"],
-    filterableFields: ["status"]
+    filterableFields: ["status"],
   };
 </script>
 
@@ -72,10 +72,10 @@ Sistema de exploración de datos genérico para Gremius Admin con field types ex
 ```typescript
 // En la respuesta de la API
 {
-  docs: posts.map(p => ({
+  docs: posts.map((p) => ({
     ...p,
-    readingTime: calculateReadingTime(p.content) // Backend
-  }))
+    readingTime: calculateReadingTime(p.content), // Backend
+  }));
 }
 ```
 
@@ -95,16 +95,16 @@ Sistema de exploración de datos genérico para Gremius Admin con field types ex
 
 ## Field Types Disponibles
 
-| Type | Descripción | Opciones |
-|------|-------------|----------|
-| `text` | Texto simple | maxLength, placeholder |
-| `number` | Número | min, max, step |
-| `boolean` | Checkbox | — |
-| `date` | Fecha | format |
-| `datetime` | Fecha y hora | format |
+| Type           | Descripción     | Opciones                 |
+| -------------- | --------------- | ------------------------ |
+| `text`         | Texto simple    | maxLength, placeholder   |
+| `number`       | Número          | min, max, step           |
+| `boolean`      | Checkbox        | —                        |
+| `date`         | Fecha           | format                   |
+| `datetime`     | Fecha y hora    | format                   |
 | `status-badge` | Badge con color | colors: { value: class } |
-| `select` | Select | choices: [...] |
-| `calculated` | Valor calculado | calculate, format |
+| `select`       | Select          | choices: [...]           |
+| `calculated`   | Valor calculado | calculate, format        |
 
 ## Registro de Tipos Custom
 
@@ -120,13 +120,13 @@ fieldRegistry.register("my-type", MyCustomField);
 ```typescript
 import { calculatedHelpers } from "$lib/data-explorer/fieldRegistry";
 
-calculatedHelpers.count(array)
-calculatedHelpers.sum(array, "field")
-calculatedHelpers.avg(array, "field")
-calculatedHelpers.timeAgo(date)
-calculatedHelpers.dateFormat(date, "YYYY-MM-DD")
-calculatedHelpers.currency(value, "USD")
-calculatedHelpers.get(obj, "path.nested")
+calculatedHelpers.count(array);
+calculatedHelpers.sum(array, "field");
+calculatedHelpers.avg(array, "field");
+calculatedHelpers.timeAgo(date);
+calculatedHelpers.dateFormat(date, "YYYY-MM-DD");
+calculatedHelpers.currency(value, "USD");
+calculatedHelpers.get(obj, "path.nested");
 ```
 
 ## Presets
@@ -135,30 +135,31 @@ calculatedHelpers.get(obj, "path.nested")
 import { fieldPresets } from "$lib/data-explorer/fieldRegistry";
 
 // Status con colores
-fieldPresets.status({ active: "green", inactive: "gray" })
+fieldPresets.status({ active: "green", inactive: "gray" });
 
 // Relación
-fieldPresets.relation("users", "name")
+fieldPresets.relation("users", "name");
 
 // Media
-fieldPresets.media({ crop: true, aspectRatio: "16:9" })
+fieldPresets.media({ crop: true, aspectRatio: "16:9" });
 
 // Conteo (calculado)
-fieldPresets.count("comments", "Comments")
+fieldPresets.count("comments", "Comments");
 
 // Tiempo relativo (calculado)
-fieldPresets.timeAgo("createdAt", "Age")
+fieldPresets.timeAgo("createdAt", "Age");
 ```
 
 ## ¿Dónde van los campos calculados?
 
-| Ubicación | Cuándo usar | Ejemplo |
-|-----------|-------------|---------|
-| **Backend** | Datos pesados, agregaciones SQL | `COUNT(*)`, `SUM(amount)` |
-| **Frontend** | Transformaciones simples, UX | `timeAgo`, concat strings |
-| **grimoire.json** | Configuración declarativa | `expression: "field1 + field2"` |
+| Ubicación         | Cuándo usar                     | Ejemplo                         |
+| ----------------- | ------------------------------- | ------------------------------- |
+| **Backend**       | Datos pesados, agregaciones SQL | `COUNT(*)`, `SUM(amount)`       |
+| **Frontend**      | Transformaciones simples, UX    | `timeAgo`, concat strings       |
+| **grimoire.json** | Configuración declarativa       | `expression: "field1 + field2"` |
 
 ### Regla general:
+
 - **Backend**: Cuando necesitas datos de otras tablas o agregaciones
 - **Frontend**: Cuando es pura presentación/transformación
 - **JSON**: Cuando quieres que sea configurable sin código

@@ -11,8 +11,9 @@
  */
 
 import { drizzle } from "drizzle-orm/node-postgres";
-import { newDb, DataType } from "pg-mem";
 import { Pool } from "pg";
+import { newDb, DataType } from "pg-mem";
+
 import type { TestGrimoireContext } from "./types.js";
 
 export interface DrizzleTestConfig {

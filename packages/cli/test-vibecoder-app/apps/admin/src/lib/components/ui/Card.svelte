@@ -10,7 +10,7 @@
     children?: import('svelte').Snippet;
   }
   
-  let {
+  const {
     class: className = '',
     children
   }: Props = $props();

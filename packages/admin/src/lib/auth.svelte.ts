@@ -26,13 +26,27 @@ let checked = $state(false);
 let initialized = $state(true); // Default to true to prevent flash of setup screen
 
 // Getters for readonly access (cannot export derived directly)
-export function getUser() { return user; }
-export function getLoading() { return loading; }
-export function getError() { return error; }
-export function getChecked() { return checked; }
-export function isLoggedIn() { return !!user; }
-export function isAdmin() { return user?.role === "admin"; }
-export function isInitialized() { return initialized; }
+export function getUser() {
+  return user;
+}
+export function getLoading() {
+  return loading;
+}
+export function getError() {
+  return error;
+}
+export function getChecked() {
+  return checked;
+}
+export function isLoggedIn() {
+  return !!user;
+}
+export function isAdmin() {
+  return user?.role === "admin";
+}
+export function isInitialized() {
+  return initialized;
+}
 
 /**
  * Check if the system is initialized (has at least one user)
@@ -67,7 +81,12 @@ export async function checkSession() {
       return;
     }
     const data = await res.json();
-    console.log(`[auth] checkSession data:`, JSON.stringify(data?.user ? { id: data.user.id, role: data.user.role, name: data.user.name } : null));
+    console.log(
+      `[auth] checkSession data:`,
+      JSON.stringify(
+        data?.user ? { id: data.user.id, role: data.user.role, name: data.user.name } : null
+      )
+    );
     user = data?.user || null;
   } catch (err) {
     console.error(`[auth] checkSession error:`, err);
@@ -75,7 +94,9 @@ export async function checkSession() {
   } finally {
     loading = false;
     checked = true;
-    console.log(`[auth] checkSession done → user=${user?.name || 'null'}, role=${user?.role || 'null'}, loggedIn=${!!user}`);
+    console.log(
+      `[auth] checkSession done → user=${user?.name || "null"}, role=${user?.role || "null"}, loggedIn=${!!user}`
+    );
   }
 }
 

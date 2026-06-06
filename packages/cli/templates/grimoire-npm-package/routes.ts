@@ -3,9 +3,10 @@
  * Example Grimoire — Hono Router
  */
 
-import { Hono } from "hono";
-import { eq } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { examples } from "./schema.js";
 
 export function createExampleRouter(ctx: GrimoireContext): Hono {
@@ -32,7 +33,11 @@ export function createExampleRouter(ctx: GrimoireContext): Hono {
   app.patch("/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json();
-    const [row] = await ctx.db.instance.update(examples).set(body).where(eq(examples.id, id)).returning();
+    const [row] = await ctx.db.instance
+      .update(examples)
+      .set(body)
+      .where(eq(examples.id, id))
+      .returning();
     if (!row) return c.json({ error: "Not found" }, 404);
     return c.json(row);
   });

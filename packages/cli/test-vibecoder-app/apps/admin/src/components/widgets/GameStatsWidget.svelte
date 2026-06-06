@@ -12,7 +12,7 @@
     showChart?: boolean;
   }
   
-  let { title = "Game Statistics", showChart = true }: Props = $props();
+  const { title = "Game Statistics", showChart = true }: Props = $props();
   
   // Datos de ejemplo
   const stats = [

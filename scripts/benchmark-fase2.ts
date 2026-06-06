@@ -12,8 +12,8 @@
  */
 
 import { db } from "../apps/api/src/db";
-import { queryTranslator } from "../packages/engine/src/query";
 import { agentIdentities } from "../apps/api/src/db/schema";
+import { queryTranslator } from "../packages/engine/src/query";
 
 interface BenchmarkResult {
   name: string;
@@ -83,7 +83,11 @@ async function benchmark() {
 
   try {
     // Query 1: Agentes
-    const agents = await db.select().from(agentIdentities).where(eq(agentIdentities.isActive, true)).limit(10);
+    const agents = await db
+      .select()
+      .from(agentIdentities)
+      .where(eq(agentIdentities.isActive, true))
+      .limit(10);
     queryCount2++;
 
     // Query 2: Traces para cada agente (N queries)
@@ -131,12 +135,22 @@ async function benchmark() {
     const autoJoin = results[0];
     const nPlusOne = results[1];
 
-    console.log(`Auto-Join (Expand):    ${autoJoin.durationMs.toFixed(2)}ms (${autoJoin.queryCount} queries)`);
-    console.log(`Consultas Separadas:   ${nPlusOne.durationMs.toFixed(2)}ms (${nPlusOne.queryCount} queries)`);
+    console.log(
+      `Auto-Join (Expand):    ${autoJoin.durationMs.toFixed(2)}ms (${autoJoin.queryCount} queries)`
+    );
+    console.log(
+      `Consultas Separadas:   ${nPlusOne.durationMs.toFixed(2)}ms (${nPlusOne.queryCount} queries)`
+    );
     console.log();
 
-    const improvement = ((nPlusOne.durationMs - autoJoin.durationMs) / nPlusOne.durationMs * 100).toFixed(1);
-    const queryReduction = ((nPlusOne.queryCount - autoJoin.queryCount) / nPlusOne.queryCount * 100).toFixed(1);
+    const improvement = (
+      ((nPlusOne.durationMs - autoJoin.durationMs) / nPlusOne.durationMs) *
+      100
+    ).toFixed(1);
+    const queryReduction = (
+      ((nPlusOne.queryCount - autoJoin.queryCount) / nPlusOne.queryCount) *
+      100
+    ).toFixed(1);
 
     console.log(`Mejora de performance: ${improvement}%`);
     console.log(`Reducción de queries:  ${queryReduction}%`);
@@ -148,7 +162,9 @@ async function benchmark() {
       console.log("⚠️  En este caso particular N+1 fue más rápido (posible caché)");
     }
 
-    console.log(`\n📊 Ratio N+1 vs Auto-Join: ${(nPlusOne.queryCount / autoJoin.queryCount).toFixed(1)}x más queries`);
+    console.log(
+      `\n📊 Ratio N+1 vs Auto-Join: ${(nPlusOne.queryCount / autoJoin.queryCount).toFixed(1)}x más queries`
+    );
   } else {
     console.log("No se pudieron completar todos los tests.");
   }
@@ -159,6 +175,7 @@ async function benchmark() {
 
 // Importaciones necesarias para el test N+1
 import { agentTraces, agentApiKeys, agentMemory } from "../apps/api/src/db/schema";
+
 import { eq } from "drizzle-orm";
 
 benchmark().catch(console.error);

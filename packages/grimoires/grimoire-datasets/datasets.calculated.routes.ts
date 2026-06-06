@@ -1,6 +1,6 @@
 /**
  * DataSets Calculated Fields - API Routes
- * 
+ *
  * CRUD API para gestionar campos calculados de DataSets.
  * Endpoints:
  *   GET    /api/datasets/:datasetId/calculated-fields
@@ -11,10 +11,10 @@
  *   POST   /api/datasets/:datasetId/calculated-fields/:fieldId/test
  */
 
-import { Hono } from "hono";
-import { eq, and } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
-import { dataSetCalculatedFields } from "./datasets.calculated.schema";
+import { eq, and } from "drizzle-orm";
+import { Hono } from "hono";
+
 import {
   createCalculatedFieldSchema,
   updateCalculatedFieldSchema,
@@ -22,6 +22,7 @@ import {
   formatCalculatedValue,
   type EvaluationContext,
 } from "./datasets.calculated";
+import { dataSetCalculatedFields } from "./datasets.calculated.schema";
 
 export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   const app = new Hono();
@@ -32,17 +33,17 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   // ═══════════════════════════════════════════════════════════════════════════
   app.get("/", async (c) => {
     const datasetId = c.req.param("datasetId");
-    
+
     try {
       const fields = await db.instance
         .select()
         .from(dataSetCalculatedFields)
         .where(eq(dataSetCalculatedFields.dataSetId, datasetId))
         .orderBy(dataSetCalculatedFields.sortOrder);
-      
+
       return c.json({
         success: true,
-        fields: fields.map(f => ({
+        fields: fields.map((f) => ({
           ...f,
           config: f.config || {},
           format: f.format || {},
@@ -61,23 +62,26 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   app.post("/", async (c) => {
     const datasetId = c.req.param("datasetId");
     const body = await c.req.json();
-    
+
     // Validar
     const validation = createCalculatedFieldSchema.safeParse({
       ...body,
       dataSetId: datasetId,
     });
-    
+
     if (!validation.success) {
-      return c.json({
-        success: false,
-        error: "Validation failed",
-        details: validation.error.errors,
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validation.error.errors,
+        },
+        400
+      );
     }
-    
+
     const data = validation.data;
-    
+
     try {
       // Verificar que no existe otro campo con el mismo nombre
       const existing = await db.instance
@@ -90,14 +94,17 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
           )
         )
         .limit(1);
-      
+
       if (existing.length > 0) {
-        return c.json({
-          success: false,
-          error: `A calculated field with name "${data.name}" already exists`,
-        }, 409);
+        return c.json(
+          {
+            success: false,
+            error: `A calculated field with name "${data.name}" already exists`,
+          },
+          409
+        );
       }
-      
+
       // Crear
       const [field] = await db.instance
         .insert(dataSetCalculatedFields)
@@ -118,9 +125,9 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
           sortOrder: 0,
         })
         .returning();
-      
+
       logger.info(`Created calculated field "${data.name}" for dataset ${datasetId}`);
-      
+
       return c.json({ success: true, field }, 201);
     } catch (err: any) {
       logger.error("Error creating calculated field:", err);
@@ -133,7 +140,7 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   // ═══════════════════════════════════════════════════════════════════════════
   app.get("/:fieldId", async (c) => {
     const { datasetId, fieldId } = c.req.param();
-    
+
     try {
       const [field] = await db.instance
         .select()
@@ -145,11 +152,11 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
           )
         )
         .limit(1);
-      
+
       if (!field) {
         return c.json({ success: false, error: "Field not found" }, 404);
       }
-      
+
       return c.json({
         success: true,
         field: {
@@ -171,20 +178,23 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   app.patch("/:fieldId", async (c) => {
     const { datasetId, fieldId } = c.req.param();
     const body = await c.req.json();
-    
+
     // Validar
     const validation = updateCalculatedFieldSchema.safeParse(body);
-    
+
     if (!validation.success) {
-      return c.json({
-        success: false,
-        error: "Validation failed",
-        details: validation.error.errors,
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: validation.error.errors,
+        },
+        400
+      );
     }
-    
+
     const data = validation.data;
-    
+
     try {
       // Verificar que existe
       const [existing] = await db.instance
@@ -197,11 +207,11 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
           )
         )
         .limit(1);
-      
+
       if (!existing) {
         return c.json({ success: false, error: "Field not found" }, 404);
       }
-      
+
       // Si cambia el nombre, verificar que no existe otro con ese nombre
       if (data.name && data.name !== existing.name) {
         const duplicate = await db.instance
@@ -215,15 +225,18 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
             )
           )
           .limit(1);
-        
+
         if (duplicate.length > 0) {
-          return c.json({
-            success: false,
-            error: `A calculated field with name "${data.name}" already exists`,
-          }, 409);
+          return c.json(
+            {
+              success: false,
+              error: `A calculated field with name "${data.name}" already exists`,
+            },
+            409
+          );
         }
       }
-      
+
       // Actualizar
       const [updated] = await db.instance
         .update(dataSetCalculatedFields)
@@ -245,9 +258,9 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
         })
         .where(eq(dataSetCalculatedFields.id, fieldId))
         .returning();
-      
+
       logger.info(`Updated calculated field ${fieldId}`);
-      
+
       return c.json({ success: true, field: updated });
     } catch (err: any) {
       logger.error("Error updating calculated field:", err);
@@ -260,7 +273,7 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   // ═══════════════════════════════════════════════════════════════════════════
   app.delete("/:fieldId", async (c) => {
     const { datasetId, fieldId } = c.req.param();
-    
+
     try {
       const [existing] = await db.instance
         .select({ id: dataSetCalculatedFields.id })
@@ -272,17 +285,17 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
           )
         )
         .limit(1);
-      
+
       if (!existing) {
         return c.json({ success: false, error: "Field not found" }, 404);
       }
-      
+
       await db.instance
         .delete(dataSetCalculatedFields)
         .where(eq(dataSetCalculatedFields.id, fieldId));
-      
+
       logger.info(`Deleted calculated field ${fieldId}`);
-      
+
       return c.json({ success: true });
     } catch (err: any) {
       logger.error("Error deleting calculated field:", err);
@@ -297,7 +310,7 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   app.post("/:fieldId/test", async (c) => {
     const { fieldId } = c.req.param();
     const { sampleData } = await c.req.json();
-    
+
     try {
       // Obtener el campo
       const [field] = await db.instance
@@ -305,20 +318,20 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
         .from(dataSetCalculatedFields)
         .where(eq(dataSetCalculatedFields.id, fieldId))
         .limit(1);
-      
+
       if (!field) {
         return c.json({ success: false, error: "Field not found" }, 404);
       }
-      
+
       // Evaluar con datos de ejemplo
       const context: EvaluationContext = {
         row: sampleData || {},
         now: new Date(),
       };
-      
+
       const result = evaluateCalculatedField(field, context);
       const formatted = formatCalculatedValue(result, field.format || undefined);
-      
+
       return c.json({
         success: true,
         result,
@@ -327,10 +340,13 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
       });
     } catch (err: any) {
       logger.error("Error testing calculated field:", err);
-      return c.json({
-        success: false,
-        error: err.message,
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: err.message,
+        },
+        500
+      );
     }
   });
 
@@ -340,11 +356,11 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
   app.post("/reorder", async (c) => {
     const datasetId = c.req.param("datasetId");
     const { fieldIds } = await c.req.json();
-    
+
     if (!Array.isArray(fieldIds)) {
       return c.json({ success: false, error: "fieldIds must be an array" }, 400);
     }
-    
+
     try {
       // Actualizar orden de cada campo
       for (let i = 0; i < fieldIds.length; i++) {
@@ -358,9 +374,9 @@ export function createCalculatedFieldsRouter(ctx: GrimoireContext): Hono {
             )
           );
       }
-      
+
       logger.info(`Reordered calculated fields for dataset ${datasetId}`);
-      
+
       return c.json({ success: true });
     } catch (err: any) {
       logger.error("Error reordering calculated fields:", err);

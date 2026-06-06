@@ -17,17 +17,6 @@
  * - Seguridad: Reutiliza middleware de auth existente
  */
 
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { db } from "../db";
-import { dataSets, dataEntries } from "../db/schema";
-import { eq } from "drizzle-orm";
-import type { AppVariables } from "../types/hono";
-import { requireAuth } from "../middleware/auth";
-import { checkDatasetReadAccess, checkDatasetWriteAccess } from "../middleware/permissions";
-
-// Importar motores core del engine
 import {
   parseGremiusQuery,
   GremiusQLError,
@@ -37,7 +26,20 @@ import {
   BatchProcessor,
   BatchProcessorError,
 } from "@gremius/engine";
+import { zValidator } from "@hono/zod-validator";
+import { eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
+import { Hono } from "hono";
+import { z } from "zod";
+
+import { db } from "../db";
+import { dataSets, dataEntries } from "../db/schema";
+import * as schema from "../db/schema";
+import { requireAuth } from "../middleware/auth";
+import { checkDatasetReadAccess, checkDatasetWriteAccess } from "../middleware/permissions";
+import type { AppVariables } from "../types/hono";
+
+// Importar motores core del engine
 
 export const datasetsQueryRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -104,7 +106,6 @@ const BatchRequestSchema = z.object({
 // HELPER: Obtener tabla Drizzle por nombre
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import * as schema from "../db/schema";
 
 const TABLE_MAP: Record<string, PgTable> = {
   dataEntries: schema.dataEntries,

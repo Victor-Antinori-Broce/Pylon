@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-03-05
 
 ### Added
+
 - Initial release of the Gremius CLI
 - `init` command to scaffold new projects
 - `start` command to start services locally
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for Valkey (Redis alternative)
 
 ### Features
+
 - One-command project initialization
 - Integrated MCP server for Claude/Cursor
 - Hot-reload development setup

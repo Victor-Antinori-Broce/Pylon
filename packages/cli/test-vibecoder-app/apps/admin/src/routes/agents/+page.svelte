@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { Plus, Bot, Play, Activity, MoreVertical, Trash2, Key } from 'lucide-svelte';
+  import TokenDisplay from '$lib/components/agents/TokenDisplay.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
-  import TokenDisplay from '$lib/components/agents/TokenDisplay.svelte';
-  import { listAgents, createAgent, deleteAgent, regenerateToken } from '$lib/services/agents';
+  import { listAgents, createAgent, deleteAgent } from '$lib/services/agents';
   import type { Agent, CreateAgentInput } from '$lib/types/agents';
+  import { Plus, Bot, Play, Activity, Trash2, Key } from 'lucide-svelte';
+  import { onMount } from 'svelte';
   
   let agents: Agent[] = $state([]);
   let loading = $state(true);

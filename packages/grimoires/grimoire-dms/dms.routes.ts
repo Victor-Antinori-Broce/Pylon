@@ -1,6 +1,6 @@
 /**
  * Gremius DMS - Document Management System Routes
- * 
+ *
  * REST API for versioned document management with:
  * - CRUD completo de documentos y versiones
  * - Versionado semántico (major.minor.patch)
@@ -10,9 +10,10 @@
  * - Audit trail completo
  */
 
-import { Hono } from "hono";
-import { eq, and, or, sql, desc, asc, like, isNull, inArray, gte, lte } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { eq, and, or, sql, desc, asc, like, isNull, inArray, gte, lte } from "drizzle-orm";
+import { Hono } from "hono";
+
 import {
   dmsCategories,
   dmsDocuments,
@@ -82,19 +83,18 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const matches = content.match(/\[\[(.*?)\]\]/g);
     if (!matches) return [];
 
-    const targets = [...new Set(matches.map(m => m.slice(2, -2).trim()))];
+    const targets = [...new Set(matches.map((m) => m.slice(2, -2).trim()))];
     const warnings = [];
     for (const target of targets) {
       const [found] = await dbInstance
         .select({ id: dmsDocuments.id })
         .from(dmsDocuments)
-        .where(and(
-          eq(dmsDocuments.isActive, true),
-          or(
-            eq(dmsDocuments.code, target),
-            eq(dmsDocuments.slug, target)
+        .where(
+          and(
+            eq(dmsDocuments.isActive, true),
+            or(eq(dmsDocuments.code, target), eq(dmsDocuments.slug, target))
           )
-        ))
+        )
         .limit(1);
       warnings.push({ target, exists: !!found });
     }
@@ -113,7 +113,7 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const uniqueUserIds = [...new Set(userIds)];
     try {
       await dbInstance.insert(dmsWorkflowNotifications).values(
-        uniqueUserIds.map(uid => ({
+        uniqueUserIds.map((uid) => ({
           documentId,
           versionId,
           userId: uid,
@@ -177,8 +177,10 @@ export function createDMSRouter(ctx: GrimoireContext) {
       while ((match = headerRegex.exec(content)) !== null) {
         const level = parseInt(match[1]);
         const text = match[2].replace(/<[^>]+>/g, "").trim();
-        const id = text.toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        const id = text
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
         toc.push({ id: id || `section-${toc.length}`, text, level });
@@ -191,8 +193,10 @@ export function createDMSRouter(ctx: GrimoireContext) {
         if (match) {
           const level = match[1].length;
           const text = match[2].trim();
-          const id = text.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          const id = text
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "");
           toc.push({ id: id || `section-${toc.length}`, text, level });
@@ -207,16 +211,21 @@ export function createDMSRouter(ctx: GrimoireContext) {
     let counter = 0;
     return content.replace(/<h([1-6])[^>]*>(.*?)<\/h\1>/gi, (_match, level, text) => {
       const plainText = text.replace(/<[^>]+>/g, "").trim();
-      const id = plainText.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "") || `section-${counter++}`;
+      const id =
+        plainText
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || `section-${counter++}`;
       return `<h${level} id="${id}">${text}</h${level}>`;
     });
   }
 
   // Fase 1: Construir breadcrumb de categorías
-  async function buildBreadcrumb(categoryId: string | null): Promise<{ id: string; name: string; slug: string }[]> {
+  async function buildBreadcrumb(
+    categoryId: string | null
+  ): Promise<{ id: string; name: string; slug: string }[]> {
     const breadcrumb: { id: string; name: string; slug: string }[] = [];
     let currentId = categoryId;
     const visited = new Set<string>();
@@ -224,7 +233,12 @@ export function createDMSRouter(ctx: GrimoireContext) {
     while (currentId && !visited.has(currentId)) {
       visited.add(currentId);
       const [cat] = await dbInstance
-        .select({ id: dmsCategories.id, name: dmsCategories.name, slug: dmsCategories.slug, parentId: dmsCategories.parentId })
+        .select({
+          id: dmsCategories.id,
+          name: dmsCategories.name,
+          slug: dmsCategories.slug,
+          parentId: dmsCategories.parentId,
+        })
         .from(dmsCategories)
         .where(eq(dmsCategories.id, currentId))
         .limit(1);
@@ -239,23 +253,23 @@ export function createDMSRouter(ctx: GrimoireContext) {
   async function injectDiagrams(content: string | null, versionId: string): Promise<string> {
     if (!content) return "";
     const diagramRegex = /\[\[diagram:(.*?)\]\]/g;
-    const ids = [...content.matchAll(diagramRegex)].map(m => m[1]);
+    const ids = [...content.matchAll(diagramRegex)].map((m) => m[1]);
     if (!ids.length) return content;
 
     const diagrams = await dbInstance
       .select()
       .from(dmsDocumentDiagrams)
-      .where(and(
-        inArray(dmsDocumentDiagrams.id, ids),
-        eq(dmsDocumentDiagrams.versionId, versionId)
-      ));
+      .where(
+        and(inArray(dmsDocumentDiagrams.id, ids), eq(dmsDocumentDiagrams.versionId, versionId))
+      );
 
     const map = new Map<string, any>(diagrams.map((d: any) => [d.id, d]));
     return content.replace(diagramRegex, (_match, id) => {
       const diagram = map.get(id);
       if (!diagram) return `<!-- diagram not found: ${id} -->`;
       if (diagram.renderedSvg) return diagram.renderedSvg;
-      if (diagram.mediaId) return `<img src="/api/media/${diagram.mediaId}" alt="${diagram.name}" />`;
+      if (diagram.mediaId)
+        return `<img src="/api/media/${diagram.mediaId}" alt="${diagram.name}" />`;
       return `<!-- diagram: ${diagram.name} -->`;
     });
   }
@@ -284,10 +298,14 @@ export function createDMSRouter(ctx: GrimoireContext) {
       query = dbInstance
         .select()
         .from(dmsCategories)
-        .where(and(
-          eq(dmsCategories.isActive, true),
-          parentId === "null" ? isNull(dmsCategories.parentId) : eq(dmsCategories.parentId, parentId)
-        ))
+        .where(
+          and(
+            eq(dmsCategories.isActive, true),
+            parentId === "null"
+              ? isNull(dmsCategories.parentId)
+              : eq(dmsCategories.parentId, parentId)
+          )
+        )
         .orderBy(asc(dmsCategories.sortOrder));
     }
 
@@ -301,11 +319,13 @@ export function createDMSRouter(ctx: GrimoireContext) {
           count: sql<number>`count(*)::int`,
         })
         .from(dmsDocuments)
-        .where(and(
-          inArray(dmsDocuments.categoryId, categoryIds),
-          eq(dmsDocuments.isActive, true),
-          eq(dmsDocuments.status, "published")
-        ))
+        .where(
+          and(
+            inArray(dmsDocuments.categoryId, categoryIds),
+            eq(dmsDocuments.isActive, true),
+            eq(dmsDocuments.status, "published")
+          )
+        )
         .groupBy(dmsDocuments.categoryId);
 
       const countMap = new Map(docCounts.map((c: any) => [c.categoryId, c.count]));
@@ -325,12 +345,14 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const userId = getUserId(c);
 
     // Generar slug único
-    const slug = body.slug || body.name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+    const slug =
+      body.slug ||
+      body.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
     // Calcular path y level
     let level = 0;
@@ -400,7 +422,7 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const page = parseInt(query.page || "1");
     const offset = (page - 1) * limit;
 
-    let conditions: any[] = [eq(dmsDocuments.isActive, true)];
+    const conditions: any[] = [eq(dmsDocuments.isActive, true)];
 
     // Filtros
     if (query.categoryId) conditions.push(eq(dmsDocuments.categoryId, query.categoryId));
@@ -416,11 +438,13 @@ export function createDMSRouter(ctx: GrimoireContext) {
     // Búsqueda
     if (query.search) {
       const searchTerm = `%${query.search.toLowerCase()}%`;
-      conditions.push(or(
-        like(sql`LOWER(${dmsDocuments.title})`, searchTerm),
-        like(sql`LOWER(${dmsDocuments.code})`, searchTerm),
-        like(sql`LOWER(${dmsDocuments.description})`, searchTerm)
-      ));
+      conditions.push(
+        or(
+          like(sql`LOWER(${dmsDocuments.title})`, searchTerm),
+          like(sql`LOWER(${dmsDocuments.code})`, searchTerm),
+          like(sql`LOWER(${dmsDocuments.description})`, searchTerm)
+        )
+      );
     }
 
     // Contar total
@@ -463,12 +487,13 @@ export function createDMSRouter(ctx: GrimoireContext) {
 
     // Obtener nombres de categorías
     const categoryIds = [...new Set(docs.map((d: any) => d.categoryId).filter(Boolean))];
-    const categories = categoryIds.length > 0
-      ? await dbInstance
-          .select({ id: dmsCategories.id, name: dmsCategories.name })
-          .from(dmsCategories)
-          .where(inArray(dmsCategories.id, categoryIds as string[]))
-      : [];
+    const categories =
+      categoryIds.length > 0
+        ? await dbInstance
+            .select({ id: dmsCategories.id, name: dmsCategories.name })
+            .from(dmsCategories)
+            .where(inArray(dmsCategories.id, categoryIds as string[]))
+        : [];
     const categoryMap = new Map(categories.map((c: any) => [c.id, c.name]));
 
     return c.json({
@@ -580,12 +605,14 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const [recentView] = await dbInstance
       .select({ id: dmsAccessLog.id })
       .from(dmsAccessLog)
-      .where(and(
-        eq(dmsAccessLog.documentId, id),
-        eq(dmsAccessLog.userId, userId),
-        eq(dmsAccessLog.action, "view"),
-        gte(dmsAccessLog.createdAt, sql`NOW() - INTERVAL '5 minutes'`)
-      ))
+      .where(
+        and(
+          eq(dmsAccessLog.documentId, id),
+          eq(dmsAccessLog.userId, userId),
+          eq(dmsAccessLog.action, "view"),
+          gte(dmsAccessLog.createdAt, sql`NOW() - INTERVAL '5 minutes'`)
+        )
+      )
       .limit(1);
 
     if (!recentView) {
@@ -663,10 +690,24 @@ export function createDMSRouter(ctx: GrimoireContext) {
 
     // Campos actualizables
     const allowedFields = [
-      "title", "description", "type", "categoryId", "tags", "ownerId",
-      "reviewerIds", "approverIds", "visibility", "allowedUserIds",
-      "allowedRoleIds", "metadata", "effectiveDate", "reviewDueDate",
-      "expirationDate", "requiresAcknowledgment", "status", "slug",
+      "title",
+      "description",
+      "type",
+      "categoryId",
+      "tags",
+      "ownerId",
+      "reviewerIds",
+      "approverIds",
+      "visibility",
+      "allowedUserIds",
+      "allowedRoleIds",
+      "metadata",
+      "effectiveDate",
+      "reviewDueDate",
+      "expirationDate",
+      "requiresAcknowledgment",
+      "status",
+      "slug",
     ];
 
     for (const field of allowedFields) {
@@ -714,11 +755,13 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const [template] = await dbInstance
       .select()
       .from(dmsDocuments)
-      .where(and(
-        eq(dmsDocuments.id, templateId),
-        eq(dmsDocuments.isTemplate, true),
-        eq(dmsDocuments.isActive, true)
-      ))
+      .where(
+        and(
+          eq(dmsDocuments.id, templateId),
+          eq(dmsDocuments.isTemplate, true),
+          eq(dmsDocuments.isActive, true)
+        )
+      )
       .limit(1);
 
     if (!template) return c.json({ error: "Template not found" }, 404);
@@ -925,17 +968,19 @@ export function createDMSRouter(ctx: GrimoireContext) {
     const [version] = await dbInstance
       .update(dmsDocumentVersions)
       .set({ status: "review_pending" })
-      .where(and(
-        eq(dmsDocumentVersions.id, versionId),
-        eq(dmsDocumentVersions.status, "draft")
-      ))
+      .where(and(eq(dmsDocumentVersions.id, versionId), eq(dmsDocumentVersions.status, "draft")))
       .returning();
 
     if (!version) return c.json({ error: "Version not found or not in draft" }, 404);
 
     // Quick Win: Notificar a reviewers
     const [doc] = await dbInstance
-      .select({ id: dmsDocuments.id, title: dmsDocuments.title, reviewerIds: dmsDocuments.reviewerIds, createdById: dmsDocuments.createdById })
+      .select({
+        id: dmsDocuments.id,
+        title: dmsDocuments.title,
+        reviewerIds: dmsDocuments.reviewerIds,
+        createdById: dmsDocuments.createdById,
+      })
       .from(dmsDocuments)
       .where(eq(dmsDocuments.id, version.documentId))
       .limit(1);
@@ -972,26 +1017,31 @@ export function createDMSRouter(ctx: GrimoireContext) {
         reviewedAt: new Date(),
         reviewNotes: body.notes,
       })
-      .where(and(
-        eq(dmsDocumentVersions.id, versionId),
-        eq(dmsDocumentVersions.status, "review_pending")
-      ))
+      .where(
+        and(eq(dmsDocumentVersions.id, versionId), eq(dmsDocumentVersions.status, "review_pending"))
+      )
       .returning();
 
     if (!version) return c.json({ error: "Version not found or not pending review" }, 404);
 
     // Quick Win: Notificar al autor del documento
     const [doc] = await dbInstance
-      .select({ id: dmsDocuments.id, title: dmsDocuments.title, createdById: dmsDocuments.createdById, ownerId: dmsDocuments.ownerId })
+      .select({
+        id: dmsDocuments.id,
+        title: dmsDocuments.title,
+        createdById: dmsDocuments.createdById,
+        ownerId: dmsDocuments.ownerId,
+      })
       .from(dmsDocuments)
       .where(eq(dmsDocuments.id, version.documentId))
       .limit(1);
 
     if (doc) {
       const notifyType = body.decision === "approved" ? "approved" : "changes_requested";
-      const notifyMessage = body.decision === "approved"
-        ? `Document "${doc.title}" version ${version.versionNumber} has been approved`
-        : `Changes requested on "${doc.title}" version ${version.versionNumber}: ${body.notes || ""}`;
+      const notifyMessage =
+        body.decision === "approved"
+          ? `Document "${doc.title}" version ${version.versionNumber} has been approved`
+          : `Changes requested on "${doc.title}" version ${version.versionNumber}: ${body.notes || ""}`;
       const recipients = [...new Set([doc.createdById, doc.ownerId].filter(Boolean))] as string[];
       if (recipients.length > 0) {
         await createWorkflowNotification(doc.id, versionId, recipients, notifyType, notifyMessage);
@@ -1051,7 +1101,12 @@ export function createDMSRouter(ctx: GrimoireContext) {
 
     // Quick Win: Notificar al autor del documento
     const [doc] = await dbInstance
-      .select({ id: dmsDocuments.id, title: dmsDocuments.title, createdById: dmsDocuments.createdById, ownerId: dmsDocuments.ownerId })
+      .select({
+        id: dmsDocuments.id,
+        title: dmsDocuments.title,
+        createdById: dmsDocuments.createdById,
+        ownerId: dmsDocuments.ownerId,
+      })
       .from(dmsDocuments)
       .where(eq(dmsDocuments.id, version.documentId))
       .limit(1);
@@ -1096,7 +1151,7 @@ export function createDMSRouter(ctx: GrimoireContext) {
     // Guardar archivo usando storage del contexto
     const buffer = Buffer.from(await file.arrayBuffer());
     const storagePath = `dms/${version.documentId}/${versionId}/${file.name}`;
-    
+
     let publicUrl: string | undefined;
     if (storage) {
       const result = await (storage as any).upload(storagePath, buffer, {
@@ -1275,10 +1330,12 @@ export function createDMSRouter(ctx: GrimoireContext) {
       replies = await dbInstance
         .select()
         .from(dmsDocumentComments)
-        .where(and(
-          inArray(dmsDocumentComments.parentId, commentIds),
-          eq(dmsDocumentComments.documentId, id)
-        ))
+        .where(
+          and(
+            inArray(dmsDocumentComments.parentId, commentIds),
+            eq(dmsDocumentComments.documentId, id)
+          )
+        )
         .orderBy(asc(dmsDocumentComments.createdAt));
     }
 
@@ -1359,9 +1416,7 @@ export function createDMSRouter(ctx: GrimoireContext) {
     if (!existing) return c.json({ error: "Comment not found" }, 404);
     if (existing.userId !== userId) return c.json({ error: "Forbidden" }, 403);
 
-    await dbInstance
-      .delete(dmsDocumentComments)
-      .where(eq(dmsDocumentComments.id, commentId));
+    await dbInstance.delete(dmsDocumentComments).where(eq(dmsDocumentComments.id, commentId));
 
     return c.json({ success: true });
   });
@@ -1413,14 +1468,16 @@ export function createDMSRouter(ctx: GrimoireContext) {
       })
       .from(dmsDocuments)
       .innerJoin(dmsDocumentVersions, eq(dmsDocumentVersions.documentId, dmsDocuments.id))
-      .where(and(
-        eq(dmsDocuments.isActive, true),
-        eq(dmsDocumentVersions.status, "published"),
-        or(
-          like(dmsDocumentVersions.content, `%${patterns[0]}%`),
-          like(dmsDocumentVersions.content, `%${patterns[1]}%`)
+      .where(
+        and(
+          eq(dmsDocuments.isActive, true),
+          eq(dmsDocumentVersions.status, "published"),
+          or(
+            like(dmsDocumentVersions.content, `%${patterns[0]}%`),
+            like(dmsDocumentVersions.content, `%${patterns[1]}%`)
+          )
         )
-      ))
+      )
       .groupBy(dmsDocuments.id);
 
     return c.json({ docs: backlinks });
@@ -1480,9 +1537,10 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
 
     if (!version) return c.json({ error: "Version not found" }, 404);
 
-    const markdown = version.contentFormat === "markdown"
-      ? version.content
-      : `<!-- Original format: ${version.contentFormat} -->\n\n${version.content}`;
+    const markdown =
+      version.contentFormat === "markdown"
+        ? version.content
+        : `<!-- Original format: ${version.contentFormat} -->\n\n${version.content}`;
 
     c.header("Content-Type", "text/markdown; charset=utf-8");
     return c.body(markdown || "");
@@ -1502,11 +1560,13 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const docs = await dbInstance
       .select()
       .from(dmsDocuments)
-      .where(and(
-        eq(dmsDocuments.categoryId, id),
-        eq(dmsDocuments.isActive, true),
-        eq(dmsDocuments.status, "published")
-      ));
+      .where(
+        and(
+          eq(dmsDocuments.categoryId, id),
+          eq(dmsDocuments.isActive, true),
+          eq(dmsDocuments.status, "published")
+        )
+      );
 
     const files: { path: string; content: string; contentType: string }[] = [];
 
@@ -1514,25 +1574,28 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
       const [version] = await dbInstance
         .select()
         .from(dmsDocumentVersions)
-        .where(and(
-          eq(dmsDocumentVersions.documentId, doc.id),
-          eq(dmsDocumentVersions.isLatest, true)
-        ))
+        .where(
+          and(eq(dmsDocumentVersions.documentId, doc.id), eq(dmsDocumentVersions.isLatest, true))
+        )
         .limit(1);
 
       if (!version) continue;
 
       files.push({
         path: `${doc.slug}/metadata.json`,
-        content: JSON.stringify({
-          id: doc.id,
-          code: doc.code,
-          title: doc.title,
-          slug: doc.slug,
-          type: doc.type,
-          versionNumber: version.versionNumber,
-          publishedAt: doc.publishedAt,
-        }, null, 2),
+        content: JSON.stringify(
+          {
+            id: doc.id,
+            code: doc.code,
+            title: doc.title,
+            slug: doc.slug,
+            type: doc.type,
+            versionNumber: version.versionNumber,
+            publishedAt: doc.publishedAt,
+          },
+          null,
+          2
+        ),
         contentType: "application/json",
       });
 
@@ -1615,9 +1678,7 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
 
   router.delete("/diagrams/:diagramId", async (c) => {
     const { diagramId } = c.req.param();
-    await dbInstance
-      .delete(dmsDocumentDiagrams)
-      .where(eq(dmsDocumentDiagrams.id, diagramId));
+    await dbInstance.delete(dmsDocumentDiagrams).where(eq(dmsDocumentDiagrams.id, diagramId));
     return c.json({ success: true });
   });
 
@@ -1668,9 +1729,7 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
           results.documentsCreated++;
 
           // Crear versión inicial
-          const contentFile = body.files.find(
-            (f: any) => f.path === `${docSlug}/content.md`
-          );
+          const contentFile = body.files.find((f: any) => f.path === `${docSlug}/content.md`);
           if (contentFile) {
             await dbInstance.insert(dmsDocumentVersions).values({
               documentId: doc.id,
@@ -1702,7 +1761,7 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const page = parseInt(query.page || "1");
     const offset = (page - 1) * limit;
 
-    let conditions: any[] = [];
+    const conditions: any[] = [];
 
     if (query.documentId) conditions.push(eq(dmsAccessLog.documentId, query.documentId));
     if (query.userId) conditions.push(eq(dmsAccessLog.userId, query.userId));
@@ -1763,10 +1822,7 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const [updated] = await dbInstance
       .update(dmsWorkflowNotifications)
       .set({ read: true })
-      .where(and(
-        eq(dmsWorkflowNotifications.id, id),
-        eq(dmsWorkflowNotifications.userId, userId)
-      ))
+      .where(and(eq(dmsWorkflowNotifications.id, id), eq(dmsWorkflowNotifications.userId, userId)))
       .returning();
 
     if (!updated) return c.json({ error: "Notification not found" }, 404);
@@ -1779,10 +1835,9 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     await dbInstance
       .update(dmsWorkflowNotifications)
       .set({ read: true })
-      .where(and(
-        eq(dmsWorkflowNotifications.userId, userId),
-        eq(dmsWorkflowNotifications.read, false)
-      ));
+      .where(
+        and(eq(dmsWorkflowNotifications.userId, userId), eq(dmsWorkflowNotifications.read, false))
+      );
 
     return c.json({ success: true });
   });
@@ -1798,7 +1853,7 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const userDepartmentId: string | null = c.get("userDepartmentId") || null;
 
     // 1. Buscar documento por slug
-    let [document] = await dbInstance
+    const [document] = await dbInstance
       .select()
       .from(dmsDocuments)
       .where(and(eq(dmsDocuments.slug, slug), eq(dmsDocuments.isActive, true)))
@@ -1834,11 +1889,13 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const [version] = await dbInstance
       .select()
       .from(dmsDocumentVersions)
-      .where(and(
-        eq(dmsDocumentVersions.documentId, document.id),
-        eq(dmsDocumentVersions.status, "published"),
-        eq(dmsDocumentVersions.isLatest, true)
-      ))
+      .where(
+        and(
+          eq(dmsDocumentVersions.documentId, document.id),
+          eq(dmsDocumentVersions.status, "published"),
+          eq(dmsDocumentVersions.isLatest, true)
+        )
+      )
       .limit(1);
 
     if (!version) {
@@ -1862,16 +1919,19 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const siblings = await dbInstance
       .select({ id: dmsDocuments.id, slug: dmsDocuments.slug, title: dmsDocuments.title })
       .from(dmsDocuments)
-      .where(and(
-        eq(dmsDocuments.categoryId, document.categoryId),
-        eq(dmsDocuments.isActive, true),
-        eq(dmsDocuments.status, "published")
-      ))
+      .where(
+        and(
+          eq(dmsDocuments.categoryId, document.categoryId),
+          eq(dmsDocuments.isActive, true),
+          eq(dmsDocuments.status, "published")
+        )
+      )
       .orderBy(asc(dmsDocuments.publishedAt));
 
     const currentIndex = siblings.findIndex((s: any) => s.id === document.id);
     const prev = currentIndex > 0 ? siblings[currentIndex - 1] : null;
-    const next = currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
+    const next =
+      currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 
     // 7. Breadcrumb
     const breadcrumb = await buildBreadcrumb(document.categoryId);
@@ -1880,12 +1940,14 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
     const [recentView] = await dbInstance
       .select({ id: dmsAccessLog.id })
       .from(dmsAccessLog)
-      .where(and(
-        eq(dmsAccessLog.documentId, document.id),
-        eq(dmsAccessLog.userId, userId),
-        eq(dmsAccessLog.action, "view"),
-        gte(dmsAccessLog.createdAt, sql`NOW() - INTERVAL '5 minutes'`)
-      ))
+      .where(
+        and(
+          eq(dmsAccessLog.documentId, document.id),
+          eq(dmsAccessLog.userId, userId),
+          eq(dmsAccessLog.action, "view"),
+          gte(dmsAccessLog.createdAt, sql`NOW() - INTERVAL '5 minutes'`)
+        )
+      )
       .limit(1);
 
     if (!recentView) {
@@ -1909,12 +1971,14 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
         changelog: version.changelog,
         requiresReview: computeRequiresReview(document),
       },
-      category: document.categoryId ? {
-        id: document.categoryId,
-        name: breadcrumb[breadcrumb.length - 1]?.name || null,
-        slug: breadcrumb[breadcrumb.length - 1]?.slug || null,
-        breadcrumb,
-      } : null,
+      category: document.categoryId
+        ? {
+            id: document.categoryId,
+            name: breadcrumb[breadcrumb.length - 1]?.name || null,
+            slug: breadcrumb[breadcrumb.length - 1]?.slug || null,
+            breadcrumb,
+          }
+        : null,
       content: renderedContent,
       contentFormat: version.contentFormat,
       toc,
@@ -1976,12 +2040,14 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
         reviewDueDate: dmsDocuments.reviewDueDate,
       })
       .from(dmsDocuments)
-      .where(and(
-        eq(dmsDocuments.isActive, true),
-        eq(dmsDocuments.status, "published"),
-        gte(dmsDocuments.reviewDueDate, new Date()),
-        lte(dmsDocuments.reviewDueDate, sql`NOW() + INTERVAL '30 days'`)
-      ))
+      .where(
+        and(
+          eq(dmsDocuments.isActive, true),
+          eq(dmsDocuments.status, "published"),
+          gte(dmsDocuments.reviewDueDate, new Date()),
+          lte(dmsDocuments.reviewDueDate, sql`NOW() + INTERVAL '30 days'`)
+        )
+      )
       .orderBy(asc(dmsDocuments.reviewDueDate))
       .limit(10);
 
@@ -2022,7 +2088,8 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
 
     // Construir filtros adicionales
     const docFilters: any[] = [eq(dmsDocuments.isActive, true)];
-    if (queryFilters.categoryId) docFilters.push(eq(dmsDocuments.categoryId, queryFilters.categoryId));
+    if (queryFilters.categoryId)
+      docFilters.push(eq(dmsDocuments.categoryId, queryFilters.categoryId));
     if (queryFilters.type) docFilters.push(eq(dmsDocuments.type, queryFilters.type as any));
     if (queryFilters.status) docFilters.push(eq(dmsDocuments.status, queryFilters.status as any));
 
@@ -2074,22 +2141,31 @@ ${version.contentFormat === "markdown" ? `<pre>${version.content}</pre>` : versi
 
     // Búsqueda en categorías
     const categories = await dbInstance
-      .select({ id: dmsCategories.id, name: dmsCategories.name, description: dmsCategories.description })
+      .select({
+        id: dmsCategories.id,
+        name: dmsCategories.name,
+        description: dmsCategories.description,
+      })
       .from(dmsCategories)
-      .where(and(
-        eq(dmsCategories.isActive, true),
-        or(
-          like(sql`LOWER(${dmsCategories.name})`, searchTerm),
-          like(sql`LOWER(${dmsCategories.description})`, searchTerm)
+      .where(
+        and(
+          eq(dmsCategories.isActive, true),
+          or(
+            like(sql`LOWER(${dmsCategories.name})`, searchTerm),
+            like(sql`LOWER(${dmsCategories.description})`, searchTerm)
+          )
         )
-      ))
+      )
       .limit(10);
 
     return c.json({
       documents: documentResults,
       categories,
       total: documentResults.length + categories.length,
-      searchType: documentResults.length > 0 && (documentResults[0] as any).rank !== undefined ? "fulltext" : "fallback",
+      searchType:
+        documentResults.length > 0 && (documentResults[0] as any).rank !== undefined
+          ? "fulltext"
+          : "fallback",
     });
   });
 

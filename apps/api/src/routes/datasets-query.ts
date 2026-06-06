@@ -16,17 +16,6 @@
  * - Seguridad: Reutiliza middleware de auth existente
  */
 
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { db, mergedSchema } from "../db";
-import { dataSets, dataEntries } from "../db/schema-core";
-import { eq } from "drizzle-orm";
-import type { AppVariables } from "../types/hono";
-import { requireAuth } from "../middleware/auth";
-import { checkDatasetReadAccess, checkDatasetWriteAccess } from "../middleware/permissions";
-
-// Importar motores core del engine
 import {
   parseGremiusQuery,
   GremiusQLError,
@@ -36,7 +25,19 @@ import {
   BatchProcessor,
   BatchProcessorError,
 } from "@gremius/engine";
+import { zValidator } from "@hono/zod-validator";
+import { eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
+import { Hono } from "hono";
+import { z } from "zod";
+
+import { db, mergedSchema } from "../db";
+import { dataSets, dataEntries } from "../db/schema-core";
+import { requireAuth } from "../middleware/auth";
+import { checkDatasetReadAccess, checkDatasetWriteAccess } from "../middleware/permissions";
+import type { AppVariables } from "../types/hono";
+
+// Importar motores core del engine
 
 export const datasetsQueryRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -48,56 +49,72 @@ datasetsQueryRoutes.use("/*", requireAuth);
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /** Schema para operadores de filtro */
-const FieldFilterSchema = z.object({
-  eq: z.any().optional(),
-  neq: z.any().optional(),
-  gt: z.any().optional(),
-  gte: z.any().optional(),
-  lt: z.any().optional(),
-  lte: z.any().optional(),
-  in: z.array(z.any()).optional(),
-  contains: z.string().optional(),
-  startsWith: z.string().optional(),
-  endsWith: z.string().optional(),
-}).strict().optional();
+const FieldFilterSchema = z
+  .object({
+    eq: z.any().optional(),
+    neq: z.any().optional(),
+    gt: z.any().optional(),
+    gte: z.any().optional(),
+    lt: z.any().optional(),
+    lte: z.any().optional(),
+    in: z.array(z.any()).optional(),
+    contains: z.string().optional(),
+    startsWith: z.string().optional(),
+    endsWith: z.string().optional(),
+  })
+  .strict()
+  .optional();
 
 /** Schema recursivo para where (soporta AND/OR/NOT) */
 const WhereFilterSchema: z.ZodType<any> = z.lazy(() =>
-  z.object({
-    AND: z.array(z.lazy(() => WhereFilterSchema)).optional(),
-    OR: z.array(z.lazy(() => WhereFilterSchema)).optional(),
-    NOT: z.lazy(() => WhereFilterSchema).optional(),
-  }).catchall(FieldFilterSchema).strict()
+  z
+    .object({
+      AND: z.array(z.lazy(() => WhereFilterSchema)).optional(),
+      OR: z.array(z.lazy(() => WhereFilterSchema)).optional(),
+      NOT: z.lazy(() => WhereFilterSchema).optional(),
+    })
+    .catchall(FieldFilterSchema)
+    .strict()
 );
 
 /** Schema para query de dataset */
-const DatasetQuerySchema = z.object({
-  where: WhereFilterSchema.optional(),
-  expand: z.array(z.string()).optional(),
-  select: z.array(z.string()).optional(),
-  limit: z.number().min(1).max(1000).default(50).optional(),
-  offset: z.number().min(0).default(0).optional(),
-  orderBy: z.array(z.object({
-    field: z.string(),
-    direction: z.enum(["asc", "desc"]).default("asc").optional(),
-  })).optional(),
-}).strict();
+const DatasetQuerySchema = z
+  .object({
+    where: WhereFilterSchema.optional(),
+    expand: z.array(z.string()).optional(),
+    select: z.array(z.string()).optional(),
+    limit: z.number().min(1).max(1000).default(50).optional(),
+    offset: z.number().min(0).default(0).optional(),
+    orderBy: z
+      .array(
+        z.object({
+          field: z.string(),
+          direction: z.enum(["asc", "desc"]).default("asc").optional(),
+        })
+      )
+      .optional(),
+  })
+  .strict();
 
 /** Schema para operación de batch individual */
-const BatchOperationSchema = z.object({
-  op: z.enum(["create", "update", "delete", "upsert"]),
-  table: z.string().min(1), // Cualquier tabla del mergedSchema (datasets o nativas)
-  data: z.record(z.any()).optional(),
-  id: z.string().optional(),
-  alias: z.string().optional(),
-  where: z.record(z.any()).optional(),
-}).strict();
+const BatchOperationSchema = z
+  .object({
+    op: z.enum(["create", "update", "delete", "upsert"]),
+    table: z.string().min(1), // Cualquier tabla del mergedSchema (datasets o nativas)
+    data: z.record(z.any()).optional(),
+    id: z.string().optional(),
+    alias: z.string().optional(),
+    where: z.record(z.any()).optional(),
+  })
+  .strict();
 
 /** Schema para batch de operaciones */
-const BatchRequestSchema = z.object({
-  operations: z.array(BatchOperationSchema).min(1).max(100),
-  datasetId: z.string().optional(), // Para validar permisos
-}).strict();
+const BatchRequestSchema = z
+  .object({
+    operations: z.array(BatchOperationSchema).min(1).max(100),
+    datasetId: z.string().optional(), // Para validar permisos
+  })
+  .strict();
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPER: Obtener tabla Drizzle por nombre desde mergedSchema
@@ -150,58 +167,59 @@ function getTableByName(name: string): PgTable | undefined {
  *   }
  * }
  */
-datasetsQueryRoutes.post(
-  "/:id/query",
-  zValidator("json", DatasetQuerySchema),
-  async (c) => {
-    const datasetId = c.req.param("id");
-    const body = c.req.valid("json");
+datasetsQueryRoutes.post("/:id/query", zValidator("json", DatasetQuerySchema), async (c) => {
+  const datasetId = c.req.param("id");
+  const body = c.req.valid("json");
 
-    try {
-      // 1. Verificar que el dataset existe
-      const [dataset] = await db.select().from(dataSets).where(eq(dataSets.id, datasetId)).limit(1);
+  try {
+    // 1. Verificar que el dataset existe
+    const [dataset] = await db.select().from(dataSets).where(eq(dataSets.id, datasetId)).limit(1);
 
-      if (!dataset) {
-        return c.json({ error: "Dataset not found" }, 404);
-      }
+    if (!dataset) {
+      return c.json({ error: "Dataset not found" }, 404);
+    }
 
-      // 2. Verificar permisos de lectura
-      const hasAccess = await checkDatasetReadAccess(c, datasetId);
-      if (!hasAccess) {
-        return c.json({ error: "Forbidden: No read access to this dataset" }, 403);
-      }
+    // 2. Verificar permisos de lectura
+    const hasAccess = await checkDatasetReadAccess(c, datasetId);
+    if (!hasAccess) {
+      return c.json({ error: "Forbidden: No read access to this dataset" }, 403);
+    }
 
-      // 3. Ejecutar query usando el motor Gremius QL
-      const result = await parseGremiusQuery(dataEntries, {
-        ...body,
-        where: {
-          ...body.where,
-          dataSetId: { eq: datasetId }, // Filtrar por dataset
-        },
-      } as any);
+    // 3. Ejecutar query usando el motor Gremius QL
+    const result = await parseGremiusQuery(dataEntries, {
+      ...body,
+      where: {
+        ...body.where,
+        dataSetId: { eq: datasetId }, // Filtrar por dataset
+      },
+    } as any);
 
-      return c.json(result, 200);
+    return c.json(result, 200);
+  } catch (error) {
+    console.error("[QueryEngine] Error:", error);
 
-    } catch (error) {
-      console.error("[QueryEngine] Error:", error);
-
-      // Manejar errores semánticos del traductor
-      if (error instanceof GremiusQLError) {
-        return c.json({
+    // Manejar errores semánticos del traductor
+    if (error instanceof GremiusQLError) {
+      return c.json(
+        {
           error: error.message,
           code: error.code,
           details: error.details,
-        }, 400);
-      }
+        },
+        400
+      );
+    }
 
-      // Error genérico
-      return c.json({
+    // Error genérico
+    return c.json(
+      {
         error: "Query execution failed",
         message: (error as Error).message,
-      }, 500);
-    }
+      },
+      500
+    );
   }
-);
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POST /query/:tableName - Query directo sobre tabla (admin only)
@@ -211,48 +229,53 @@ datasetsQueryRoutes.post(
  * Query directo sobre cualquier tabla del esquema (solo administradores).
  * Útil para queries administrativas o cross-dataset.
  */
-datasetsQueryRoutes.post(
-  "/query/:tableName",
-  zValidator("json", DatasetQuerySchema),
-  async (c) => {
-    const tableName = c.req.param("tableName");
-    const body = c.req.valid("json");
-    const user = c.get("user");
+datasetsQueryRoutes.post("/query/:tableName", zValidator("json", DatasetQuerySchema), async (c) => {
+  const tableName = c.req.param("tableName");
+  const body = c.req.valid("json");
+  const user = c.get("user");
 
-    // Solo admins pueden hacer queries directas
-    if (user?.role !== "admin") {
-      return c.json({ error: "Forbidden: Admin access required" }, 403);
-    }
+  // Solo admins pueden hacer queries directas
+  if (user?.role !== "admin") {
+    return c.json({ error: "Forbidden: Admin access required" }, 403);
+  }
 
-    const table = getTableByName(tableName);
-    if (!table) {
-      return c.json({
+  const table = getTableByName(tableName);
+  if (!table) {
+    return c.json(
+      {
         error: `Table "${tableName}" not found`,
         availableTables: Object.keys(mergedSchema as Record<string, unknown>),
-      }, 400);
-    }
+      },
+      400
+    );
+  }
 
-    try {
-      const result = await parseGremiusQuery(table, body as any);
-      return c.json(result, 200);
-    } catch (error) {
-      console.error("[QueryEngine] Error:", error);
+  try {
+    const result = await parseGremiusQuery(table, body as any);
+    return c.json(result, 200);
+  } catch (error) {
+    console.error("[QueryEngine] Error:", error);
 
-      if (error instanceof GremiusQLError) {
-        return c.json({
+    if (error instanceof GremiusQLError) {
+      return c.json(
+        {
           error: error.message,
           code: error.code,
           details: error.details,
-        }, 400);
-      }
+        },
+        400
+      );
+    }
 
-      return c.json({
+    return c.json(
+      {
         error: "Query execution failed",
         message: (error as Error).message,
-      }, 500);
-    }
+      },
+      500
+    );
   }
-);
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET /:id/relations - Listar relaciones disponibles
@@ -268,11 +291,14 @@ datasetsQueryRoutes.get("/:id/relations", async (c) => {
   // Las relaciones disponibles para dataEntries están definidas en el translator
   const availableRels = getAvailableRelations(dataEntries);
 
-  return c.json({
-    datasetId,
-    availableRelations: availableRels,
-    description: "Use these relation names in the 'expand' parameter of your queries",
-  }, 200);
+  return c.json(
+    {
+      datasetId,
+      availableRelations: availableRels,
+      description: "Use these relation names in the 'expand' parameter of your queries",
+    },
+    200
+  );
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -318,75 +344,75 @@ datasetsQueryRoutes.get("/:id/relations", async (c) => {
  *   "results": [...]
  * }
  */
-datasetsQueryRoutes.post(
-  "/batch",
-  zValidator("json", BatchRequestSchema),
-  async (c) => {
-    const body = c.req.valid("json");
+datasetsQueryRoutes.post("/batch", zValidator("json", BatchRequestSchema), async (c) => {
+  const body = c.req.valid("json");
 
-    try {
-      // 1. Validar permisos para cada operación
-      // Extraer datasetIds de las operaciones (solo para tablas dataset)
-      const datasetIds = new Set<string>();
-      const nativeTables = new Set<string>();
-      for (const op of body.operations) {
-        if (op.table === "dataEntries" && op.data?.dataSetId) {
-          datasetIds.add(op.data.dataSetId);
-        } else if (op.table === "dataSets" && op.id) {
-          datasetIds.add(op.id);
-        } else if (op.table !== "dataEntries" && op.table !== "dataSets") {
-          nativeTables.add(op.table);
-        }
+  try {
+    // 1. Validar permisos para cada operación
+    // Extraer datasetIds de las operaciones (solo para tablas dataset)
+    const datasetIds = new Set<string>();
+    const nativeTables = new Set<string>();
+    for (const op of body.operations) {
+      if (op.table === "dataEntries" && op.data?.dataSetId) {
+        datasetIds.add(op.data.dataSetId);
+      } else if (op.table === "dataSets" && op.id) {
+        datasetIds.add(op.id);
+      } else if (op.table !== "dataEntries" && op.table !== "dataSets") {
+        nativeTables.add(op.table);
       }
+    }
 
-      // Verificar acceso de escritura a todos los datasets involucrados
-      for (const dsId of datasetIds) {
-        const hasAccess = await checkDatasetWriteAccess(c, dsId);
-        if (!hasAccess) {
-          return c.json({
+    // Verificar acceso de escritura a todos los datasets involucrados
+    for (const dsId of datasetIds) {
+      const hasAccess = await checkDatasetWriteAccess(c, dsId);
+      if (!hasAccess) {
+        return c.json(
+          {
             error: `Forbidden: No write access to dataset "${dsId}"`,
-          }, 403);
-        }
+          },
+          403
+        );
+      }
+    }
+
+    // Para tablas nativas, el auth + RLS ya provee seguridad
+    // (el middleware requireAuth se aplicó arriba)
+    if (nativeTables.size > 0) {
+      // Opcional: verificar permisos granulares por grimoire aquí
+      // Por ahora, confiamos en RLS a nivel de base de datos
+    }
+
+    // 2. Transformar operaciones al formato del BatchProcessor
+    const batchOps = body.operations.map((op) => {
+      const table = getTableByName(op.table);
+      if (!table) {
+        throw new Error(`Table "${op.table}" not found`);
       }
 
-      // Para tablas nativas, el auth + RLS ya provee seguridad
-      // (el middleware requireAuth se aplicó arriba)
-      if (nativeTables.size > 0) {
-        // Opcional: verificar permisos granulares por grimoire aquí
-        // Por ahora, confiamos en RLS a nivel de base de datos
-      }
+      return {
+        op: op.op,
+        table,
+        data: op.data,
+        id: op.id,
+        alias: op.alias,
+        where: op.where,
+      };
+    });
 
-      // 2. Transformar operaciones al formato del BatchProcessor
-      const batchOps = body.operations.map(op => {
-        const table = getTableByName(op.table);
-        if (!table) {
-          throw new Error(`Table "${op.table}" not found`);
-        }
+    // 3. Ejecutar batch usando el BatchProcessor
+    const batchProcessor = new BatchProcessor();
+    const result = await batchProcessor.execute(batchOps);
 
-        return {
-          op: op.op,
-          table,
-          data: op.data,
-          id: op.id,
-          alias: op.alias,
-          where: op.where,
-        };
-      });
+    // 4. Retornar resultado
+    const statusCode = result.success ? 200 : 400;
+    return c.json(result, statusCode);
+  } catch (error) {
+    console.error("[BatchEngine] Error:", error);
 
-      // 3. Ejecutar batch usando el BatchProcessor
-      const batchProcessor = new BatchProcessor();
-      const result = await batchProcessor.execute(batchOps);
-
-      // 4. Retornar resultado
-      const statusCode = result.success ? 200 : 400;
-      return c.json(result, statusCode);
-
-    } catch (error) {
-      console.error("[BatchEngine] Error:", error);
-
-      // Manejar errores específicos del BatchProcessor
-      if (error instanceof BatchProcessorError) {
-        return c.json({
+    // Manejar errores específicos del BatchProcessor
+    if (error instanceof BatchProcessorError) {
+      return c.json(
+        {
           success: false,
           error: {
             message: error.message,
@@ -394,20 +420,24 @@ datasetsQueryRoutes.post(
             operationIndex: error.operationIndex,
             details: error.details,
           },
-        }, 400);
-      }
+        },
+        400
+      );
+    }
 
-      // Error inesperado
-      return c.json({
+    // Error inesperado
+    return c.json(
+      {
         success: false,
         error: {
           message: (error as Error).message,
           code: "INTERNAL_ERROR",
         },
-      }, 500);
-    }
+      },
+      500
+    );
   }
-);
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POST /validate-query - Validar query sin ejecutarla
@@ -426,11 +456,14 @@ datasetsQueryRoutes.post(
 
     const table = getTableByName(tableName);
     if (!table) {
-      return c.json({
-        valid: false,
-        errors: [`Table "${tableName}" not found`],
-        availableTables: Object.keys(mergedSchema as Record<string, unknown>),
-      }, 400);
+      return c.json(
+        {
+          valid: false,
+          errors: [`Table "${tableName}" not found`],
+          availableTables: Object.keys(mergedSchema as Record<string, unknown>),
+        },
+        400
+      );
     }
 
     const validation = validateGremiusQuery(table, body as any);
@@ -471,11 +504,14 @@ datasetsQueryRoutes.post(
 
     const debug = debugQuery(table, body as any);
 
-    return c.json({
-      table: tableName,
-      query: body,
-      generatedSql: debug.sql,
-      params: debug.params,
-    }, 200);
+    return c.json(
+      {
+        table: tableName,
+        query: body,
+        generatedSql: debug.sql,
+        params: debug.params,
+      },
+      200
+    );
   }
 );

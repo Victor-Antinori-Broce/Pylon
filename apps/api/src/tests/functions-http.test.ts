@@ -5,13 +5,10 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+
 import { app } from "../index";
 
-import {
-  isDatabaseAvailable,
-  clearTestData,
-  generateTestId,
-} from "./setup";
+import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
@@ -86,7 +83,7 @@ describe("Functions HTTP", () => {
       );
 
       expect(res.status).toBe(201);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.id).toBeDefined();
       expect(body.slug).toBe(fnSlug);
       fnId = body.id;
@@ -98,7 +95,7 @@ describe("Functions HTTP", () => {
       const res = await app.request(req("/api/functions", {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(Array.isArray(body.docs)).toBe(true);
       expect(body.docs.some((f: any) => f.id === fnId)).toBe(true);
     });
@@ -106,12 +103,10 @@ describe("Functions HTTP", () => {
     it("should filter functions by trigger", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req("/api/functions?trigger=manual", {}, cookie)
-      );
+      const res = await app.request(req("/api/functions?trigger=manual", {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.docs.every((f: any) => f.trigger === "manual")).toBe(true);
     });
 
@@ -121,7 +116,7 @@ describe("Functions HTTP", () => {
       const res = await app.request(req(`/api/functions/${fnId}`, {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.id).toBe(fnId);
       expect(body.slug).toBe(fnSlug);
     });
@@ -144,7 +139,7 @@ describe("Functions HTTP", () => {
       );
 
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(body.code).toBe("return { updated: true };");
     });
 
@@ -171,7 +166,7 @@ describe("Functions HTTP", () => {
       const res = await app.request(req("/api/functions/cron/status", {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(Array.isArray(body.jobs)).toBe(true);
     });
   });
@@ -194,12 +189,10 @@ describe("Functions HTTP", () => {
     it("should get execution logs", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req(`/api/functions/${fnId}/executions`, {}, cookie)
-      );
+      const res = await app.request(req(`/api/functions/${fnId}/executions`, {}, cookie));
       expect(res.status).toBe(200);
 
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(Array.isArray(body.docs)).toBe(true);
     });
   });
@@ -208,9 +201,7 @@ describe("Functions HTTP", () => {
     it("should delete function", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req(`/api/functions/${fnId}`, { method: "DELETE" }, cookie)
-      );
+      const res = await app.request(req(`/api/functions/${fnId}`, { method: "DELETE" }, cookie));
       expect(res.status).toBe(200);
 
       // Verify deletion

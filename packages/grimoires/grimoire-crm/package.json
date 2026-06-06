@@ -13,7 +13,14 @@
     "test:coverage": "vitest run --config=tests/vitest.config.ts --coverage",
     "test:integration": "npx playwright test tests/crm.integration.spec.ts"
   },
-  "keywords": ["gremius", "grimoire", "crm", "kanban", "sales", "pipeline"],
+  "keywords": [
+    "gremius",
+    "grimoire",
+    "crm",
+    "kanban",
+    "sales",
+    "pipeline"
+  ],
   "author": "Gremius Team",
   "license": "MIT",
   "devDependencies": {

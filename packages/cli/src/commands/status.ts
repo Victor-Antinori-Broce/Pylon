@@ -1,8 +1,9 @@
 import { execSync } from "child_process";
-import chalk from "chalk";
-import ora from "ora";
-import fs from "fs-extra";
 import path from "path";
+
+import chalk from "chalk";
+import fs from "fs-extra";
+import ora from "ora";
 
 async function isRailwayProject(projectRoot: string): Promise<boolean> {
   return (
@@ -74,9 +75,7 @@ export async function statusCommand() {
       const railwayStatus = await getRailwayStatus(projectRoot);
       if (railwayStatus) {
         console.log(chalk.green("  🚂 Railway Deployment\n"));
-        console.log(
-          `  ${chalk.white("Project:")} ${chalk.cyan(railwayStatus.name || "Unknown")}`
-        );
+        console.log(`  ${chalk.white("Project:")} ${chalk.cyan(railwayStatus.name || "Unknown")}`);
         console.log(
           `  ${chalk.white("Status:")}  ${chalk.green(railwayStatus.status || "active")}`
         );
@@ -117,15 +116,11 @@ export async function statusCommand() {
 
           for (const service of services) {
             const container = containers.find(
-              (c: any) =>
-                c.Service === service.name || c.Name?.includes(service.name)
+              (c: any) => c.Service === service.name || c.Name?.includes(service.name)
             );
             if (container) {
-              const status =
-                container.State === "running" ? chalk.green("●") : chalk.red("●");
-              console.log(
-                `  ${status} ${service.label.padEnd(15)} ${chalk.gray(service.url)}`
-              );
+              const status = container.State === "running" ? chalk.green("●") : chalk.red("●");
+              console.log(`  ${status} ${service.label.padEnd(15)} ${chalk.gray(service.url)}`);
             } else {
               console.log(
                 `  ${chalk.gray("○")} ${service.label.padEnd(15)} ${chalk.gray("stopped")}`
@@ -140,13 +135,9 @@ export async function statusCommand() {
     }
 
     // ── Project info ──
-    const packageJson = await fs
-      .readJson(path.join(projectRoot, "package.json"))
-      .catch(() => ({}));
+    const packageJson = await fs.readJson(path.join(projectRoot, "package.json")).catch(() => ({}));
     console.log(chalk.cyan("  📁 Project: ") + chalk.white(packageJson.name || "Unknown"));
-    console.log(
-      chalk.cyan("  🔧 Version: ") + chalk.white(packageJson.version || "0.1.0")
-    );
+    console.log(chalk.cyan("  🔧 Version: ") + chalk.white(packageJson.version || "0.1.0"));
     console.log("");
   } catch (error) {
     spinner.fail(chalk.red("Failed to check status"));

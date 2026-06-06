@@ -11,7 +11,7 @@ if (blogModule.grimoire) {
   console.log("Grimoire ID:", blogModule.grimoire.id);
   console.log("MountPath:", blogModule.grimoire.mountPath);
   console.log("Has createRouter:", typeof blogModule.grimoire.createRouter === "function");
-  
+
   // Crear un contexto mínimo
   const ctx = {
     db: { instance: {} },
@@ -19,14 +19,14 @@ if (blogModule.grimoire) {
     auth: { requireAuth: (c, next) => next(), optionalAuth: (c, next) => next() },
     logger: { info: console.log, warn: console.warn, error: console.error },
   };
-  
+
   const router = blogModule.grimoire.createRouter(ctx);
   console.log("Router type:", router.constructor.name);
   console.log("Router has fetch:", typeof router.fetch === "function");
   console.log("Router has route:", typeof router.route === "function");
-  
+
   app.route("/api/blog", router);
-  
+
   // Test
   const req = new Request("http://localhost/api/blog");
   const res = await app.fetch(req);

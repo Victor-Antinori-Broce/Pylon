@@ -78,7 +78,7 @@ async function twitchFetch<T>(endpoint: string): Promise<T> {
   const response = await fetch(`https://api.twitch.tv/helix${endpoint}`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       "Client-Id": process.env.TWITCH_CLIENT_ID!,
     },
   });
@@ -86,7 +86,9 @@ async function twitchFetch<T>(endpoint: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function getStreamStatus(channelIds: string[]): Promise<Map<string, TwitchStreamData>> {
+export async function getStreamStatus(
+  channelIds: string[]
+): Promise<Map<string, TwitchStreamData>> {
   const result = new Map<string, TwitchStreamData>();
   if (!channelIds.length) return result;
   const params = channelIds.map((id) => `user_id=${id}`).join("&");

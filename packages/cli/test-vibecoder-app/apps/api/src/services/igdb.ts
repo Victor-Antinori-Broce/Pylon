@@ -96,7 +96,7 @@ async function igdbQuery<T>(endpoint: string, body: string): Promise<T[]> {
   const response = await fetch(`${IGDB_API_URL}${endpoint}`, {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       "Client-ID": process.env.IGDB_CLIENT_ID!,
       Authorization: `Bearer ${token}`,
       "Content-Type": "text/plain",
@@ -110,7 +110,7 @@ async function igdbQuery<T>(endpoint: string, body: string): Promise<T[]> {
 export async function searchGames(query: string, limit = 10): Promise<IGDBGame[]> {
   return igdbQuery<IGDBGame>(
     "/games",
-    // eslint-disable-next-line max-len
+     
     `search "${query}"; fields name,slug,summary,rating,aggregated_rating,first_release_date,cover.url,platforms.name,platforms.abbreviation,genres.name,screenshots.url,videos.video_id,videos.name; limit ${limit};`
   );
 }
@@ -118,7 +118,7 @@ export async function searchGames(query: string, limit = 10): Promise<IGDBGame[]
 export async function getGameById(id: number): Promise<IGDBGame | null> {
   const results = await igdbQuery<IGDBGame>(
     "/games",
-    // eslint-disable-next-line max-len
+     
     `where id = ${id}; fields name,slug,summary,storyline,rating,aggregated_rating,first_release_date,cover.url,platforms.name,platforms.abbreviation,genres.name,screenshots.url,videos.video_id,videos.name;`
   );
   return results[0] || null;
@@ -128,7 +128,7 @@ export async function getPopularGames(limit = 20): Promise<IGDBGame[]> {
   const sixMonthsAgo = Math.floor(Date.now() / 1000) - 6 * 30 * 24 * 60 * 60;
   return igdbQuery<IGDBGame>(
     "/games",
-    // eslint-disable-next-line max-len
+     
     `where first_release_date > ${sixMonthsAgo} & rating > 70; fields name,slug,summary,rating,aggregated_rating,first_release_date,cover.url,platforms.name,genres.name; sort rating desc; limit ${limit};`
   );
 }

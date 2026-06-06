@@ -11,20 +11,17 @@ Constructor visual de fórmulas matemáticas.
 ```svelte
 <script>
   import { FormulaBuilder } from "$lib/components/calculated-fields";
-  
+
   const fields = [
     { name: "price", label: "Price", type: "number" },
     { name: "quantity", label: "Quantity", type: "number" },
-    { name: "discount", label: "Discount %", type: "number" }
+    { name: "discount", label: "Discount %", type: "number" },
   ];
-  
+
   let formula = "{price} * {quantity} * (1 - {discount} / 100)";
 </script>
 
-<FormulaBuilder
-  availableFields={fields}
-  bind:value={formula}
-/>
+<FormulaBuilder availableFields={fields} bind:value={formula} />
 ```
 
 ### KpiCreator
@@ -34,39 +31,37 @@ Wizard completo para crear campos calculados con todos los tipos soportados.
 ```svelte
 <script>
   import { KpiCreator } from "$lib/components/calculated-fields";
-  
+
   const fields = [
     { name: "revenue", label: "Revenue", type: "number" },
-    { name: "cost", label: "Cost", type: "number" }
+    { name: "cost", label: "Cost", type: "number" },
   ];
-  
+
   function handleSave(field) {
     console.log("New calculated field:", field);
   }
 </script>
 
-<KpiCreator
-  availableFields={fields}
-  onSave={handleSave}
-/>
+<KpiCreator availableFields={fields} onSave={handleSave} />
 ```
 
 ## Tipos de Campos Calculados
 
-| Tipo | Descripción | Uso típico |
-|------|-------------|------------|
-| `formula` | Expresión matemática | `{price} * {quantity}` |
-| `count` | Contar registros | Número de órdenes por cliente |
-| `sum` | Sumar valores | Total de ventas por categoría |
-| `average` | Promedio | Valor promedio de pedido |
-| `concat` | Unir textos | `{firstName} {lastName}` |
-| `date_diff` | Diferencia de fechas | Días desde la última compra |
-| `conditional` | IF/THEN/ELSE | `{status} = 'active' ? 1 : 0` |
-| `lookup` | Buscar en otra tabla | Nombre del cliente desde ID |
+| Tipo          | Descripción          | Uso típico                    |
+| ------------- | -------------------- | ----------------------------- |
+| `formula`     | Expresión matemática | `{price} * {quantity}`        |
+| `count`       | Contar registros     | Número de órdenes por cliente |
+| `sum`         | Sumar valores        | Total de ventas por categoría |
+| `average`     | Promedio             | Valor promedio de pedido      |
+| `concat`      | Unir textos          | `{firstName} {lastName}`      |
+| `date_diff`   | Diferencia de fechas | Días desde la última compra   |
+| `conditional` | IF/THEN/ELSE         | `{status} = 'active' ? 1 : 0` |
+| `lookup`      | Buscar en otra tabla | Nombre del cliente desde ID   |
 
 ## Funciones Disponibles
 
 ### Matemáticas
+
 - `ABS(x)` - Valor absoluto
 - `ROUND(x, n)` - Redondear a n decimales
 - `CEIL(x)` - Redondear arriba
@@ -75,6 +70,7 @@ Wizard completo para crear campos calculados con todos los tipos soportados.
 - `MAX(a, b)` - Máximo
 
 ### Texto
+
 - `LEN(text)` - Longitud
 - `UPPER(text)` - Mayúsculas
 - `LOWER(text)` - Minúsculas
@@ -82,6 +78,7 @@ Wizard completo para crear campos calculados con todos los tipos soportados.
 - `SUBSTRING(text, start, length)` - Extraer substring
 
 ### Fecha
+
 - `NOW()` - Fecha/hora actual
 - `TODAY()` - Fecha actual
 - `YEAR(date)` - Año
@@ -90,6 +87,7 @@ Wizard completo para crear campos calculados con todos los tipos soportados.
 - `DATEDIFF(date1, date2)` - Días entre fechas
 
 ### Lógica
+
 - `IF(condition, true, false)` - Condicional
 - `AND(a, b)` - Y lógico
 - `OR(a, b)` - O lógico
@@ -110,6 +108,7 @@ Wizard completo para crear campos calculados con todos los tipos soportados.
 ```
 
 Tipos de formato:
+
 - `text` - Texto plano
 - `number` - Número con decimales configurables
 - `currency` - Moneda con símbolo
@@ -120,6 +119,7 @@ Tipos de formato:
 ## Ejemplos de KPIs
 
 ### Revenue Total
+
 ```json
 {
   "name": "total_revenue",
@@ -139,6 +139,7 @@ Tipos de formato:
 ```
 
 ### Tasa de Conversión
+
 ```json
 {
   "name": "conversion_rate",
@@ -155,6 +156,7 @@ Tipos de formato:
 ```
 
 ### Cliente VIP
+
 ```json
 {
   "name": "is_vip",
@@ -177,6 +179,7 @@ Tipos de formato:
 ```
 
 ### Días Inactivo
+
 ```json
 {
   "name": "days_inactive",
@@ -202,40 +205,42 @@ Los campos calculados se configuran en el grimoire.json y el DataExplorer los re
 
 ```json
 {
-  "tables": [{
-    "name": "customers",
-    "fields": {
-      "lifetime_value": {
-        "type": "calculated",
-        "config": {
-          "type": "sum",
-          "sourceTable": "orders",
-          "sourceField": "total"
-        }
-      },
-      "is_vip": {
-        "type": "calculated",
-        "config": {
-          "type": "conditional",
-          "condition": { "field": "lifetime_value", "operator": "gte", "value": 10000 }
+  "tables": [
+    {
+      "name": "customers",
+      "fields": {
+        "lifetime_value": {
+          "type": "calculated",
+          "config": {
+            "type": "sum",
+            "sourceTable": "orders",
+            "sourceField": "total"
+          }
+        },
+        "is_vip": {
+          "type": "calculated",
+          "config": {
+            "type": "conditional",
+            "condition": { "field": "lifetime_value", "operator": "gte", "value": 10000 }
+          }
         }
       }
     }
-  }]
+  ]
 }
 ```
 
 ## Diferencia con el antiguo grimoire-formulas
 
-| Aspecto | Antiguo grimoire-formulas | Nuevo sistema integrado |
-|---------|---------------------------|-------------------------|
-| Ubicación | Grimoire separado | Feature del core |
-| UI | Vista custom separada | Integrado en DataExplorer |
-| Configuración | JSON manual | Builder visual |
-| Tipos | Solo fórmulas | 8 tipos de cálculo |
-| Formatos | Limitado | 6 tipos de formato |
-| KPIs | No soportado | Targets y alertas |
-| Relaciones | No soportado | Agregaciones de tablas |
+| Aspecto       | Antiguo grimoire-formulas | Nuevo sistema integrado   |
+| ------------- | ------------------------- | ------------------------- |
+| Ubicación     | Grimoire separado         | Feature del core          |
+| UI            | Vista custom separada     | Integrado en DataExplorer |
+| Configuración | JSON manual               | Builder visual            |
+| Tipos         | Solo fórmulas             | 8 tipos de cálculo        |
+| Formatos      | Limitado                  | 6 tipos de formato        |
+| KPIs          | No soportado              | Targets y alertas         |
+| Relaciones    | No soportado              | Agregaciones de tablas    |
 
 ## Migración desde grimoire-formulas
 

@@ -18,8 +18,18 @@ import { z } from "zod";
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const FieldTypeSchema = z.enum([
-  "text", "number", "boolean", "date", "image", "url", "email",
-  "select", "json", "richtext", "relation", "kpi",
+  "text",
+  "number",
+  "boolean",
+  "date",
+  "image",
+  "url",
+  "email",
+  "select",
+  "json",
+  "richtext",
+  "relation",
+  "kpi",
 ]);
 
 const FieldDefinitionSchema = z.object({
@@ -105,7 +115,9 @@ function expect(actual: any) {
     },
     toContain(expected: any) {
       if (!actual.includes(expected)) {
-        throw new Error(`Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`);
+        throw new Error(
+          `Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`
+        );
       }
     },
     toHaveLength(expected: number) {
@@ -128,7 +140,7 @@ test("Transform native fields to FieldDefinition", () => {
     { id: "fld_1", name: "title", label: "Title", type: "text", config: {} },
     { id: "fld_2", name: "price", label: "Price", type: "number", config: {} },
   ];
-  
+
   const transformed = nativeFields.map((f, index) => ({
     id: f.id,
     key: f.name,
@@ -138,9 +150,9 @@ test("Transform native fields to FieldDefinition", () => {
     isRequired: false,
     isUnique: false,
     hidden: false,
-    ...f.config
+    ...f.config,
   }));
-  
+
   expect(transformed).toHaveLength(2);
   expect(transformed[0].key).toBe("title");
   expect(transformed[0].type).toBe("text");
@@ -151,10 +163,16 @@ test("Transform native fields to FieldDefinition", () => {
 // Test 1.2: Transformar campos calculados a KPI
 test("Transform calculated fields to KPI fields", () => {
   const calculatedFields = [
-    { id: "cf_1", name: "total", label: "Total", type: "formula", config: { expression: "price * quantity" } },
+    {
+      id: "cf_1",
+      name: "total",
+      label: "Total",
+      type: "formula",
+      config: { expression: "price * quantity" },
+    },
     { id: "cf_2", name: "avg_price", label: "Average Price", type: "average", config: {} },
   ];
-  
+
   const baseFieldsCount = 2;
   const transformed = calculatedFields.map((cf, index) => ({
     id: cf.id,
@@ -167,7 +185,7 @@ test("Transform calculated fields to KPI fields", () => {
     hidden: false,
     helpText: cf.config?.expression || `${cf.type} calculation`,
   }));
-  
+
   expect(transformed).toHaveLength(2);
   expect(transformed[0].type).toBe("kpi");
   expect(transformed[0].key).toBe("total");
@@ -180,11 +198,17 @@ test("Create complete CreateDatasetPayload", () => {
   const nativeFields = [
     { id: "fld_1", name: "product", label: "Product", type: "text", config: {} },
   ];
-  
+
   const calculatedFields = [
-    { id: "cf_1", name: "total", label: "Total", type: "formula", config: { expression: "price * qty" } },
+    {
+      id: "cf_1",
+      name: "total",
+      label: "Total",
+      type: "formula",
+      config: { expression: "price * qty" },
+    },
   ];
-  
+
   const transformedNative = nativeFields.map((f, index) => ({
     id: f.id,
     key: f.name,
@@ -195,7 +219,7 @@ test("Create complete CreateDatasetPayload", () => {
     isUnique: false,
     hidden: false,
   }));
-  
+
   const transformedCalculated = calculatedFields.map((cf, index) => ({
     id: cf.id,
     key: cf.name,
@@ -207,7 +231,7 @@ test("Create complete CreateDatasetPayload", () => {
     hidden: false,
     helpText: cf.config?.expression || `${cf.type} calculation`,
   }));
-  
+
   const payload = {
     name: "Sales Orders",
     slug: "sales_orders",
@@ -216,7 +240,7 @@ test("Create complete CreateDatasetPayload", () => {
     policyJson: null,
     workflowJson: null,
   };
-  
+
   const result = CreateDatasetPayloadSchema.safeParse(payload);
   expect(result.success).toBe(true);
   if (result.success) {
@@ -233,7 +257,7 @@ test("Generate slug from label", () => {
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "");
   };
-  
+
   expect(generateSlug("Sales Orders")).toBe("sales_orders");
   expect(generateSlug("Product Inventory")).toBe("product_inventory");
   expect(generateSlug("Test---Data")).toBe("test_data");
@@ -252,12 +276,21 @@ test("Valid payload passes schema validation", () => {
     slug: "test_dataset",
     description: "A test dataset",
     fields: [
-      { id: "fld_1", key: "name", label: "Name", type: "text", order: 0, isRequired: false, isUnique: false, hidden: false },
+      {
+        id: "fld_1",
+        key: "name",
+        label: "Name",
+        type: "text",
+        order: 0,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
     ],
     policyJson: null,
     workflowJson: null,
   };
-  
+
   const result = CreateDatasetPayloadSchema.safeParse(payload);
   expect(result.success).toBe(true);
 });
@@ -269,7 +302,7 @@ test("Payload without name fails validation", () => {
     slug: "test",
     fields: [],
   };
-  
+
   const result = CreateDatasetPayloadSchema.safeParse(payload);
   expect(result.success).toBe(false);
 });
@@ -280,10 +313,19 @@ test("Field without key fails validation", () => {
     name: "Test",
     slug: "test",
     fields: [
-      { id: "fld_1", key: "", label: "Name", type: "text", order: 0, isRequired: false, isUnique: false, hidden: false },
+      {
+        id: "fld_1",
+        key: "",
+        label: "Name",
+        type: "text",
+        order: 0,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
     ],
   };
-  
+
   const result = CreateDatasetPayloadSchema.safeParse(payload);
   expect(result.success).toBe(false);
 });
@@ -294,10 +336,19 @@ test("Invalid field type fails validation", () => {
     name: "Test",
     slug: "test",
     fields: [
-      { id: "fld_1", key: "name", label: "Name", type: "invalid_type", order: 0, isRequired: false, isUnique: false, hidden: false },
+      {
+        id: "fld_1",
+        key: "name",
+        label: "Name",
+        type: "invalid_type",
+        order: 0,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
     ],
   };
-  
+
   const result = CreateDatasetPayloadSchema.safeParse(payload);
   expect(result.success).toBe(false);
 });
@@ -308,10 +359,19 @@ test("KPI field type is valid", () => {
     name: "Test",
     slug: "test",
     fields: [
-      { id: "fld_1", key: "total", label: "Total", type: "kpi", order: 0, isRequired: false, isUnique: false, hidden: false },
+      {
+        id: "fld_1",
+        key: "total",
+        label: "Total",
+        type: "kpi",
+        order: 0,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
     ],
   };
-  
+
   const result = CreateDatasetPayloadSchema.safeParse(payload);
   expect(result.success).toBe(true);
 });
@@ -331,7 +391,7 @@ class MockDatasetStore {
   async createDataset(payload: any): Promise<any> {
     this.isLoading = true;
     this.error = null;
-    
+
     // Simular validación
     const validation = CreateDatasetPayloadSchema.safeParse(payload);
     if (!validation.success) {
@@ -339,19 +399,19 @@ class MockDatasetStore {
       this.isLoading = false;
       return null;
     }
-    
+
     // Simular creación exitosa
     const newDataset = {
       id: `ds_${Date.now()}`,
       ...payload,
       createdAt: new Date().toISOString(),
     };
-    
+
     this.datasets.push(newDataset);
     this.isLoading = false;
     return newDataset;
   }
-  
+
   reset() {
     this.datasets = [];
     this.isLoading = false;
@@ -364,17 +424,26 @@ const mockStore = new MockDatasetStore();
 // Test 3.1: Crear dataset válido
 test("DatasetStore creates valid dataset", async () => {
   mockStore.reset();
-  
+
   const payload = {
     name: "Products",
     slug: "products",
     fields: [
-      { id: "fld_1", key: "name", label: "Name", type: "text", order: 0, isRequired: false, isUnique: false, hidden: false },
+      {
+        id: "fld_1",
+        key: "name",
+        label: "Name",
+        type: "text",
+        order: 0,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
     ],
     policyJson: null,
     workflowJson: null,
   };
-  
+
   const result = await mockStore.createDataset(payload);
   expect(result).toBeDefined();
   expect(result.name).toBe("Products");
@@ -384,13 +453,13 @@ test("DatasetStore creates valid dataset", async () => {
 // Test 3.2: Rechazar dataset inválido
 test("DatasetStore rejects invalid dataset", async () => {
   mockStore.reset();
-  
+
   const payload = {
     name: "", // Inválido: vacío
     slug: "test",
     fields: [],
   };
-  
+
   const result = await mockStore.createDataset(payload);
   expect(result).toBeNull();
   expect(mockStore.error).toContain("Validation failed");
@@ -399,19 +468,19 @@ test("DatasetStore rejects invalid dataset", async () => {
 // Test 3.3: Estado de carga durante operación
 test("DatasetStore sets isLoading during operation", async () => {
   mockStore.reset();
-  
+
   const payload = {
     name: "Test",
     slug: "test",
     fields: [],
   };
-  
+
   // Antes de empezar
   expect(mockStore.isLoading).toBe(false);
-  
+
   // Durante la operación (no podemos verificar en el mock, pero en el real sí)
   const promise = mockStore.createDataset(payload);
-  
+
   // Después
   await promise;
   expect(mockStore.isLoading).toBe(false);
@@ -420,19 +489,46 @@ test("DatasetStore sets isLoading during operation", async () => {
 // Test 3.4: Dataset con campos calculados
 test("DatasetStore creates dataset with calculated fields", async () => {
   mockStore.reset();
-  
+
   const payload = {
     name: "Orders",
     slug: "orders",
     fields: [
-      { id: "fld_1", key: "price", label: "Price", type: "number", order: 0, isRequired: false, isUnique: false, hidden: false },
-      { id: "fld_2", key: "quantity", label: "Quantity", type: "number", order: 1, isRequired: false, isUnique: false, hidden: false },
-      { id: "cf_1", key: "total", label: "Total", type: "kpi", order: 2, isRequired: false, isUnique: false, hidden: false },
+      {
+        id: "fld_1",
+        key: "price",
+        label: "Price",
+        type: "number",
+        order: 0,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
+      {
+        id: "fld_2",
+        key: "quantity",
+        label: "Quantity",
+        type: "number",
+        order: 1,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
+      {
+        id: "cf_1",
+        key: "total",
+        label: "Total",
+        type: "kpi",
+        order: 2,
+        isRequired: false,
+        isUnique: false,
+        hidden: false,
+      },
     ],
     policyJson: null,
     workflowJson: null,
   };
-  
+
   const result = await mockStore.createDataset(payload);
   expect(result).toBeDefined();
   expect(result.fields).toHaveLength(3);
@@ -448,25 +544,37 @@ console.log("\n🧙 Testing Wizard Flow...\n");
 // Test 4.1: Flujo completo de creación
 test("Complete wizard flow creates dataset", async () => {
   mockStore.reset();
-  
+
   // Step 1: Basic Info
   const datasetLabel = "Sales Orders";
   const datasetName = "sales_orders";
   const description = "Track all sales orders";
-  
+
   // Step 2: Native Fields
   const nativeFields = [
     { id: "fld_1", name: "order_number", label: "Order #", type: "text", config: {} },
     { id: "fld_2", name: "customer", label: "Customer", type: "text", config: {} },
     { id: "fld_3", name: "amount", label: "Amount", type: "number", config: {} },
   ];
-  
+
   // Step 3: Calculated Fields
   const calculatedFields = [
-    { id: "cf_1", name: "tax", label: "Tax", type: "formula", config: { expression: "amount * 0.16" } },
-    { id: "cf_2", name: "total", label: "Total", type: "formula", config: { expression: "amount + tax" } },
+    {
+      id: "cf_1",
+      name: "tax",
+      label: "Tax",
+      type: "formula",
+      config: { expression: "amount * 0.16" },
+    },
+    {
+      id: "cf_2",
+      name: "total",
+      label: "Total",
+      type: "formula",
+      config: { expression: "amount + tax" },
+    },
   ];
-  
+
   // Transformar
   const transformedNative = nativeFields.map((f, index) => ({
     id: f.id,
@@ -478,7 +586,7 @@ test("Complete wizard flow creates dataset", async () => {
     isUnique: false,
     hidden: false,
   }));
-  
+
   const transformedCalculated = calculatedFields.map((cf, index) => ({
     id: cf.id,
     key: cf.name,
@@ -490,7 +598,7 @@ test("Complete wizard flow creates dataset", async () => {
     hidden: false,
     helpText: cf.config?.expression || `${cf.type} calculation`,
   }));
-  
+
   // Crear payload
   const payload = {
     name: datasetLabel,
@@ -500,10 +608,10 @@ test("Complete wizard flow creates dataset", async () => {
     policyJson: null,
     workflowJson: null,
   };
-  
+
   // Guardar
   const result = await mockStore.createDataset(payload);
-  
+
   // Verificar
   expect(result).toBeDefined();
   expect(result.name).toBe("Sales Orders");
@@ -519,18 +627,18 @@ test("Removing field cascades to calculated fields", () => {
     { id: "fld_1", name: "price", label: "Price" },
     { id: "fld_2", name: "quantity", label: "Quantity" },
   ];
-  
-  let calculatedFields = [
+
+  const calculatedFields = [
     { id: "cf_1", name: "subtotal", label: "Subtotal", dependsOn: ["price", "quantity"] },
     { id: "cf_2", name: "total", label: "Total", dependsOn: ["price"] },
   ];
-  
+
   // Simular eliminación de campo "price"
   const fieldToRemove = nativeFields[0]; // price
-  const updatedCalculated = calculatedFields.filter(cf => 
-    !cf.dependsOn?.includes(fieldToRemove.name)
+  const updatedCalculated = calculatedFields.filter(
+    (cf) => !cf.dependsOn?.includes(fieldToRemove.name)
   );
-  
+
   // Ambos campos calculados dependen de price
   expect(updatedCalculated).toHaveLength(0);
 });
@@ -543,7 +651,7 @@ test("Wizard steps are valid", () => {
     { id: 3, label: "Calculated Fields" },
     { id: 4, label: "Review" },
   ];
-  
+
   expect(steps).toHaveLength(4);
   expect(steps[0].label).toBe("Basic Info");
   expect(steps[1].label).toBe("Fields");
@@ -560,10 +668,18 @@ console.log("\n🧮 Testing Calculated Fields (KPI Creator)...\n");
 // Test 5.1: Tipos de campos calculados soportados
 test("All calculated field types are supported", () => {
   const types = [
-    "formula", "count", "sum", "average", "min", "max",
-    "concat", "date_diff", "conditional", "lookup"
+    "formula",
+    "count",
+    "sum",
+    "average",
+    "min",
+    "max",
+    "concat",
+    "date_diff",
+    "conditional",
+    "lookup",
   ];
-  
+
   expect(types).toContain("formula");
   expect(types).toContain("conditional");
   expect(types).toContain("date_diff");
@@ -580,18 +696,18 @@ test("Output formats are valid", () => {
     { id: "duration", label: "Duration" },
     { id: "badge", label: "Status Badge" },
   ];
-  
+
   expect(formatTypes).toHaveLength(6);
-  expect(formatTypes.map(f => f.id)).toContain("currency");
-  expect(formatTypes.map(f => f.id)).toContain("percentage");
+  expect(formatTypes.map((f) => f.id)).toContain("currency");
+  expect(formatTypes.map((f) => f.id)).toContain("percentage");
 });
 
 // Test 5.3: Detección de dependencias
 test("Formula dependencies are extracted correctly", () => {
   const expression = "{price} * {quantity} + {tax}";
   const matches = expression.match(/\{([^}]+)\}/g) || [];
-  const deps = matches.map(m => m.slice(1, -1));
-  
+  const deps = matches.map((m) => m.slice(1, -1));
+
   expect(deps).toContain("price");
   expect(deps).toContain("quantity");
   expect(deps).toContain("tax");

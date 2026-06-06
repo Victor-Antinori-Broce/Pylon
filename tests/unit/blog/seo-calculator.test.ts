@@ -1,6 +1,6 @@
 /**
  * Tests for SEO Score Calculator
- * 
+ *
  * Tests the algorithm that calculates SEO score based on various factors:
  * - Title length (optimal: 30-60 chars)
  * - Slug presence
@@ -74,7 +74,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(20);
     });
@@ -87,7 +87,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(10);
     });
@@ -100,7 +100,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       // Title gives 0 but other fields contribute to score
       expect(result).toBeGreaterThanOrEqual(0);
@@ -112,7 +112,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeLessThan(resultWithTitle);
     });
@@ -125,7 +125,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       const result60 = calculateSeoScore({
         title: "x".repeat(60),
@@ -134,7 +134,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result30).toBe(result60);
     });
@@ -149,7 +149,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(10);
     });
@@ -162,7 +162,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       // Should be less than when slug is present
       const resultWithSlug = calculateSeoScore({
@@ -172,7 +172,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeLessThan(resultWithSlug);
     });
@@ -187,7 +187,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(20);
     });
@@ -200,7 +200,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       // Should have some points for content
       expect(result).toBeGreaterThanOrEqual(10);
@@ -214,7 +214,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       // Content section contributes 0, others give partial points
       expect(result).toBeGreaterThanOrEqual(0);
@@ -226,7 +226,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeLessThan(resultWithContent);
     });
@@ -241,7 +241,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       // Full excerpt points
       expect(result).toBeGreaterThanOrEqual(10);
@@ -255,7 +255,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       const resultShort = calculateSeoScore({
         title: "x".repeat(40),
@@ -264,7 +264,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "short",
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(resultShort).toBeLessThan(resultOptimal);
     });
@@ -279,7 +279,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "Custom Meta Title", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(10);
     });
@@ -292,7 +292,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "Custom description here" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(10);
     });
@@ -305,7 +305,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "Title", metaDescription: "Description" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(20);
     });
@@ -320,7 +320,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "image-123",
-        tags: []
+        tags: [],
       });
       expect(result).toBeGreaterThanOrEqual(10);
     });
@@ -333,7 +333,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "image-123",
-        tags: []
+        tags: [],
       });
       const resultWithout = calculateSeoScore({
         title: "x".repeat(40),
@@ -342,7 +342,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(resultWithout).toBeLessThan(resultWith);
     });
@@ -357,7 +357,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: [{ id: "1" }]
+        tags: [{ id: "1" }],
       });
       const result5 = calculateSeoScore({
         title: "x".repeat(40),
@@ -366,7 +366,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }, { id: "5" }]
+        tags: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }, { id: "5" }],
       });
       expect(result5).toBeGreaterThan(result1);
     });
@@ -379,7 +379,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: Array(5).fill({ id: "x" })
+        tags: Array(5).fill({ id: "x" }),
       });
       const result10 = calculateSeoScore({
         title: "x".repeat(40),
@@ -388,7 +388,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: Array(10).fill({ id: "x" })
+        tags: Array(10).fill({ id: "x" }),
       });
       expect(result5).toBe(result10);
     });
@@ -403,7 +403,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "x".repeat(140),
         seoOverrides: { metaTitle: "Custom Title", metaDescription: "Custom description" },
         featuredImageId: "img-123",
-        tags: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }, { id: "5" }]
+        tags: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }, { id: "5" }],
       });
       expect(result).toBe(100);
     });
@@ -416,7 +416,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "",
         seoOverrides: { metaTitle: "", metaDescription: "" },
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       expect(result).toBe(0);
     });
@@ -429,7 +429,7 @@ describe("SEO Score Calculator", () => {
         excerpt: "", // 0
         seoOverrides: { metaTitle: "", metaDescription: "" }, // 0
         featuredImageId: "",
-        tags: []
+        tags: [],
       });
       // Title: 10, Slug: 10, Content: 10, rest: 0 = 30/100
       expect(result).toBeLessThan(50);

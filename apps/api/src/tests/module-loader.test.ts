@@ -126,13 +126,7 @@ describe("Module Loader Logic", () => {
     });
 
     it("should reject invalid grimoire definitions", () => {
-      const invalid = [
-        {},
-        { id: "x" },
-        { createRouter: () => {} },
-        null,
-        "string",
-      ];
+      const invalid = [{}, { id: "x" }, { createRouter: () => {} }, null, "string"];
       for (const def of invalid) {
         const isValid =
           typeof def === "object" &&

@@ -8,9 +8,10 @@
  *   - metadata (JSONB) carries all domain-specific data.
  */
 
-import { eq, and, gte, lte, sql } from "drizzle-orm";
-import { Decimal } from "decimal.js";
 import dayjs from "dayjs";
+import { Decimal } from "decimal.js";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
+
 import {
   accounts,
   journals,
@@ -78,7 +79,9 @@ export function validateLedgerLines(
   const totalCredits = lines.reduce((sum, line) => sum.plus(d(line.credit)), zero());
 
   if (!totalDebits.equals(totalCredits)) {
-    errors.push(`Unbalanced: debits (${totalDebits.toString()}) != credits (${totalCredits.toString()})`);
+    errors.push(
+      `Unbalanced: debits (${totalDebits.toString()}) != credits (${totalCredits.toString()})`
+    );
   }
 
   if (lines.length < 2) {
@@ -129,10 +132,7 @@ function safeEvaluateArithmetic(expression: string): number {
   return result;
 }
 
-export function evaluateFormula(
-  formula: string,
-  variables: TemplateVariables
-): Decimal {
+export function evaluateFormula(formula: string, variables: TemplateVariables): Decimal {
   const scope: Record<string, Decimal> = {
     total: d(variables.total ?? 0),
     amount: d(variables.amount ?? 0),
@@ -573,9 +573,7 @@ export class ContaService {
     let runningBalance = d(account.openingBalance);
     const movements = rows.map((row: any) => {
       const normal = getNormalBalance(account.type);
-      runningBalance = runningBalance.plus(
-        d(row.debit).minus(row.credit).times(normal)
-      );
+      runningBalance = runningBalance.plus(d(row.debit).minus(row.credit).times(normal));
       return {
         date: row.date,
         description: row.description,
@@ -682,7 +680,9 @@ export class ContaService {
     return { disbursement, journal: journalResult.journal, lines: journalResult.lines };
   }
 
-  async billDisbursement(disbursementId: string): Promise<{ journal: Journal; lines: LedgerEntry[] }> {
+  async billDisbursement(
+    disbursementId: string
+  ): Promise<{ journal: Journal; lines: LedgerEntry[] }> {
     const [disb] = await this.db
       .select()
       .from(disbursements)
@@ -754,10 +754,7 @@ export class ContaService {
 
   // ── Reports ─────────────────────────────────────────────────────────────
 
-  async getTrialBalance(options?: {
-    dateFrom?: string;
-    dateTo?: string;
-  }): Promise<
+  async getTrialBalance(options?: { dateFrom?: string; dateTo?: string }): Promise<
     Array<{
       account: Account;
       totalDebit: Decimal;
@@ -769,10 +766,7 @@ export class ContaService {
 
     const result = await Promise.all(
       allAccounts.map(async (acc: Account) => {
-        const conditions = [
-          eq(ledgerEntries.accountId, acc.id),
-          eq(journals.status, "posted"),
-        ];
+        const conditions = [eq(ledgerEntries.accountId, acc.id), eq(journals.status, "posted")];
         if (options?.dateFrom) conditions.push(gte(journals.date, options.dateFrom));
         if (options?.dateTo) conditions.push(lte(journals.date, options.dateTo));
 
@@ -825,10 +819,7 @@ export class ContaService {
     };
   }
 
-  async getProfitAndLoss(options?: {
-    dateFrom?: string;
-    dateTo?: string;
-  }): Promise<{
+  async getProfitAndLoss(options?: { dateFrom?: string; dateTo?: string }): Promise<{
     revenue: Array<{ account: Account; balance: Decimal }>;
     expenses: Array<{ account: Account; balance: Decimal }>;
     totalRevenue: Decimal;

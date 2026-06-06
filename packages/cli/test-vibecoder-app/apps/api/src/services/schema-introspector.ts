@@ -10,8 +10,9 @@
  * Enables any table to work without manual configuration.
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
 
 export interface IntrospectedColumn {
   name: string;

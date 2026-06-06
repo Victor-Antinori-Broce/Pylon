@@ -3,41 +3,42 @@
   Ventana modal con backdrop y animaciones
 -->
 <script lang="ts">
-  import { X } from 'lucide-svelte';
-  import { cn } from '$lib/utils';
-  import { fade, scale } from 'svelte/transition';
-  
+  import { X } from "lucide-svelte";
+  import { fade, scale } from "svelte/transition";
+
+  import { cn } from "$lib/utils";
+
   interface Props {
     open?: boolean;
     title?: string;
     description?: string;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: "sm" | "md" | "lg" | "xl";
     showClose?: boolean;
     onClose?: () => void;
     onOpenChange?: (v: boolean) => void;
-    children?: import('svelte').Snippet;
-    footer?: import('svelte').Snippet;
+    children?: import("svelte").Snippet;
+    footer?: import("svelte").Snippet;
   }
-  
+
   let {
     open = $bindable(false),
-    title = '',
+    title = "",
     description,
-    size = 'md',
+    size = "md",
     showClose = true,
     onClose,
     onOpenChange,
     children,
-    footer
+    footer,
   }: Props = $props();
-  
+
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl'
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-lg",
+    xl: "max-w-xl",
   };
-  
+
   function handleBackdropClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
       open = false;
@@ -45,9 +46,9 @@
       onClose?.();
     }
   }
-  
+
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       open = false;
       onOpenChange?.(false);
       onClose?.();
@@ -67,7 +68,7 @@
     <!-- Modal -->
     <div
       class={cn(
-        'w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl',
+        "w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl",
         sizeClasses[size]
       )}
       transition:scale={{ duration: 150, start: 0.95 }}
@@ -84,19 +85,23 @@
           {#if showClose}
             <button
               class="p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
-              onclick={() => { open = false; onOpenChange?.(false); onClose?.(); }}
+              onclick={() => {
+                open = false;
+                onOpenChange?.(false);
+                onClose?.();
+              }}
             >
               <X size={20} />
             </button>
           {/if}
         </div>
       {/if}
-      
+
       <!-- Body -->
       <div class="px-6 py-4">
         {@render children?.()}
       </div>
-      
+
       <!-- Footer -->
       {#if footer}
         <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-800">

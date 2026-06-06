@@ -3,13 +3,16 @@
  * Endpoints for generating, listing, and revoking machine authentication keys.
  */
 
-import { Hono } from "hono";
-import { eq, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
+
+import { zValidator } from "@hono/zod-validator";
+import { eq, desc } from "drizzle-orm";
+import { Hono } from "hono";
+import { z } from "zod";
+
 import { db } from "../db";
 import { apiKeys } from "../db/schema";
-import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
+
 
 export const apiKeysRoutes = new Hono<{
     Variables: {

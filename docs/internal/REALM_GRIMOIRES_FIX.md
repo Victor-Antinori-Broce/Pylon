@@ -21,9 +21,7 @@ El problema estaba en `apps/api/src/lib/module-loader.ts`:
 ```typescript
 // Línea 117-121 - ANTES
 const REALM_GRIMOIRE_KEYS = new Set(
-  GRIMOIRE_REGISTRY
-    .filter(g => g.category === "realm")
-    .map(g => g.key)
+  GRIMOIRE_REGISTRY.filter((g) => g.category === "realm").map((g) => g.key)
 );
 
 // Línea 722 - ANTES
@@ -33,6 +31,7 @@ const isRealmGrimoire = REALM_GRIMOIRE_KEYS.has(grimoire.id) || REALM_GRIMOIRE_K
 ## Solución
 
 Se reemplazó la constante estática con una función asíncrona que:
+
 1. Obtiene los grimoires del registro hardcodeado
 2. Obtiene los grimoires del `realm.json` del realm activo
 3. Combina ambos en un Set dinámico
@@ -46,13 +45,13 @@ Se reemplazó la constante estática con una función asíncrona que:
 ```typescript
 async function getRealmGrimoireKeys(activeRealm: string | null): Promise<Set<string>> {
   const keys = new Set<string>();
-  
+
   // Add hardcoded registry realm grimoires
-  for (const g of GRIMOIRE_REGISTRY.filter(g => g.category === "realm")) {
+  for (const g of GRIMOIRE_REGISTRY.filter((g) => g.category === "realm")) {
     keys.add(g.key);
     keys.add(g.key.replace(/^grimoire-/, ""));
   }
-  
+
   // Add grimoires from active realm (from realm.json)
   if (activeRealm) {
     const realmGrimoires = await getRealmGrimoires(activeRealm);
@@ -61,7 +60,7 @@ async function getRealmGrimoireKeys(activeRealm: string | null): Promise<Set<str
       keys.add(grimoireId.replace(/^grimoire-/, ""));
     }
   }
-  
+
   return keys;
 }
 ```
@@ -95,7 +94,8 @@ Resultado: Los grimoires existen físicamente y están correctamente definidos e
 bun run scripts/test-realm-grimoires-fix.ts
 ```
 
-Resultado: 
+Resultado:
+
 - ✅ Los grimoires del realm se identifican correctamente
 - ✅ Tanto el ID completo (`grimoire-games`) como el corto (`games`) funcionan
 - ✅ Los grimoires que no son de realm se identifican correctamente como no-realm
@@ -103,6 +103,7 @@ Resultado:
 ## Impacto
 
 Este fix asegura que:
+
 1. Los grimoires definidos en `realm.json` se monten en la ruta correcta (`/api/{name}`)
 2. Los grimoires del realm activo se carguen automáticamente cuando se activa el realm
 3. La detección de grimoires de realm sea dinámica y no dependa solo del registro hardcodeado

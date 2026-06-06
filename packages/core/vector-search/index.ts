@@ -1,12 +1,12 @@
 /**
  * @gremius/core/vector-search — Vector Search Extension for Datasets
- * 
+ *
  * MIGRADO desde: packages/grimoires/ai-memories
  * Fecha: 2026-03-19
- * 
+ *
  * Transforms AI Memories from standalone Grimoire into a Dataset Extension.
  * Any dataset can enable vector search on specific fields.
- * 
+ *
  * Usage:
  * ```typescript
  * // In dataset definition
@@ -22,40 +22,38 @@
  *   }
  * }
  * ```
- * 
+ *
  * Auto-generated endpoints:
  * - POST /api/datasets/:id/vector-index — Index content
  * - POST /api/datasets/:id/vector-search — Semantic search
  * - GET /api/datasets/:id/vector-status — Index status
- * 
+ *
  * @version 1.0.0
  * @since 0.8.0
  * @migrationFrom ai-memories
  */
 
 // @ts-ignore - Hono imported for type re-export
-import type { Hono } from "hono";
 // @ts-ignore - Imported for type re-export
-import type { vectorSearchRoutes } from "./routes";
 
 // Re-export for core integration
 export { vectorSearchRoutes } from "./routes";
-export { 
-  vectorIndexTable, 
+export {
+  vectorIndexTable,
   vectorChunksTable,
   type VectorIndex,
   type VectorChunk,
   type VectorSearchResult,
-  type DatasetVectorStatus
+  type DatasetVectorStatus,
 } from "./schema";
 
 // Re-export embedding utilities
-export { 
-  generateEmbedding, 
+export {
+  generateEmbedding,
   generateEmbeddings,
   isEmbeddingAvailable,
   getEmbeddingStatus,
-  type EmbeddingOptions 
+  type EmbeddingOptions,
 } from "./embeddings";
 
 // Re-export config types (declared below)
@@ -63,12 +61,12 @@ export {
 // Extension configuration interface
 export interface VectorSearchExtension {
   enabled: boolean;
-  fields: string[];                    // Which fields to index
-  embeddingModel?: string;             // Default: text-embedding-3-small
-  dimensions?: number;                 // Default: 1536
-  autoIndex?: boolean;                 // Index on create/update
-  chunkSize?: number;                  // For long text: 2000
-  chunkOverlap?: number;               // For long text: 200
+  fields: string[]; // Which fields to index
+  embeddingModel?: string; // Default: text-embedding-3-small
+  dimensions?: number; // Default: 1536
+  autoIndex?: boolean; // Index on create/update
+  chunkSize?: number; // For long text: 2000
+  chunkOverlap?: number; // For long text: 200
 }
 
 // Extension metadata for core registry
@@ -77,12 +75,7 @@ export const vectorSearchMetadata = {
   name: "Vector Search",
   description: "Semantic search with embeddings for any dataset",
   version: "1.0.0",
-  features: [
-    "semantic-search",
-    "auto-embeddings",
-    "document-chunking",
-    "similarity-scoring"
-  ]
+  features: ["semantic-search", "auto-embeddings", "document-chunking", "similarity-scoring"],
 };
 
 // Default configuration
@@ -91,5 +84,5 @@ export const defaultVectorSearchConfig: Partial<VectorSearchExtension> = {
   dimensions: 1536,
   autoIndex: true,
   chunkSize: 2000,
-  chunkOverlap: 200
+  chunkOverlap: 200,
 };

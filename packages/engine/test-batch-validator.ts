@@ -77,7 +77,9 @@ function expect(actual: any) {
     },
     toContain(expected: any) {
       if (!actual.includes(expected)) {
-        throw new Error(`Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`);
+        throw new Error(
+          `Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`
+        );
       }
     },
     toHaveLength(expected: number) {
@@ -108,13 +110,7 @@ function expect(actual: any) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Importamos el validator
-import {
-  validate,
-  createValidator,
-  composeSchemas,
-  type ValidationSchema,
-  type ValidationResult,
-} from "./src/validator";
+import { validate, createValidator, composeSchemas, type ValidationSchema } from "./src/validator";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECCIÓN 1: VALIDADOR - REGLAS BÁSICAS
@@ -532,7 +528,8 @@ function simulateBatch(operations: any[], shouldFail: number[] = []): MockBatchR
 
   // Fase 2: Ejecución en transacción
   for (let i = 0; i < operations.length; i++) {
-    if (shouldFail.includes(i + 100)) { // Error en ejecución
+    if (shouldFail.includes(i + 100)) {
+      // Error en ejecución
       rollback = true;
       errors.push(`Operation ${i} failed during execution`);
       return { success: false, errors, rollback };
@@ -544,7 +541,10 @@ function simulateBatch(operations: any[], shouldFail: number[] = []): MockBatchR
 
 // Test 5.1: Batch exitoso
 test("Batch: successful execution", () => {
-  const ops = [{ table: "users", action: "insert" }, { table: "profiles", action: "insert" }];
+  const ops = [
+    { table: "users", action: "insert" },
+    { table: "profiles", action: "insert" },
+  ];
   const result = simulateBatch(ops);
 
   expect(result.success).toBeTrue();
@@ -554,7 +554,10 @@ test("Batch: successful execution", () => {
 
 // Test 5.2: Fallo en validación (no se ejecuta)
 test("Batch: validation failure prevents execution", () => {
-  const ops = [{ table: "users", action: "insert" }, { table: "profiles", action: "insert" }];
+  const ops = [
+    { table: "users", action: "insert" },
+    { table: "profiles", action: "insert" },
+  ];
   const result = simulateBatch(ops, [1]); // Falla validación de op 1
 
   expect(result.success).toBeFalse();
@@ -564,7 +567,10 @@ test("Batch: validation failure prevents execution", () => {
 
 // Test 5.3: Rollback en fallo de ejecución
 test("Batch: execution failure triggers rollback", () => {
-  const ops = [{ table: "users", action: "insert" }, { table: "profiles", action: "insert" }];
+  const ops = [
+    { table: "users", action: "insert" },
+    { table: "profiles", action: "insert" },
+  ];
   const result = simulateBatch(ops, [101]); // Falla ejecución de op 1
 
   expect(result.success).toBeFalse();

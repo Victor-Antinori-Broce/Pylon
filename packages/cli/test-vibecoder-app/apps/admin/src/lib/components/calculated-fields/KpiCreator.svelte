@@ -9,6 +9,7 @@
    * - Targets y alertas
    */
   import { X, Calculator, TrendingUp, Hash, Text, Calendar, Filter, Target, AlertTriangle, Check, ChevronRight } from "lucide-svelte";
+
   import FormulaBuilder from "./FormulaBuilder.svelte";
   import type { CalculatedField, CalculatedFieldType } from "./index.ts";
   
@@ -20,7 +21,7 @@
     onCancel?: () => void;
   }
   
-  let { 
+  const { 
     availableFields, 
     availableTables = [], 
     value,
@@ -30,7 +31,7 @@
   
   // Estado del formulario
   let step = $state(1);
-  let field = $state<Partial<CalculatedField>>({
+  const field = $state<Partial<CalculatedField>>({
     id: value?.id || crypto.randomUUID(),
     name: value?.name || "",
     label: value?.label || "",

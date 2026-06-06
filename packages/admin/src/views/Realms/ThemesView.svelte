@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Palette, Check, Download, Trash2, Eye, X, Upload, AlertCircle } from "lucide-svelte";
-  import { currentTheme, setTheme, themes as builtinThemes } from "$lib/theme.svelte";
+  import { Palette, Check, Download, Trash2, Eye, Upload, AlertCircle } from "lucide-svelte";
   import { toast } from "svelte-sonner";
+
   import Modal from "$lib/components/ui/Modal.svelte";
+  import { currentTheme, setTheme, themes as builtinThemes } from "$lib/theme.svelte";
 
   interface ThemeConfig {
     id: string;
@@ -93,7 +94,9 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-purple/20 to-gremius-cyan/20 border border-gremius-purple/20 flex items-center justify-center">
+        <div
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-purple/20 to-gremius-cyan/20 border border-gremius-purple/20 flex items-center justify-center"
+        >
           <Palette class="w-5 h-5 text-gremius-purple" />
         </div>
         Themes
@@ -116,7 +119,9 @@
           >
             {#if $currentTheme === theme.id}
               <div class="absolute top-2 right-2">
-                <span class="px-2 py-1 text-[10px] font-medium bg-gremius-cyan/10 text-gremius-cyan rounded-full">
+                <span
+                  class="px-2 py-1 text-[10px] font-medium bg-gremius-cyan/10 text-gremius-cyan rounded-full"
+                >
                   Active
                 </span>
               </div>
@@ -163,7 +168,11 @@
         <!-- Install New Theme Card -->
         <button
           class="card p-4 border-dashed border-2 border-gremius-border hover:border-gremius-cyan/50 transition-colors flex flex-col items-center justify-center min-h-[160px] gap-3"
-          onclick={() => { showImportModal = true; jsonInput = ""; jsonError = ""; }}
+          onclick={() => {
+            showImportModal = true;
+            jsonInput = "";
+            jsonError = "";
+          }}
         >
           <div class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center">
             <Download class="w-5 h-5 text-gremius-cyan" />
@@ -195,15 +204,20 @@
             style="background: rgb(var(--gremius-surface)); border-color: rgb(var(--gremius-border));"
           >
             <div class="flex items-center gap-2">
-              <div
-                class="w-6 h-6 rounded"
-                style="background: rgb(var(--gremius-primary));"
-              ></div>
-              <span class="text-sm font-medium" style="color: rgb(var(--gremius-text));">Dashboard</span>
+              <div class="w-6 h-6 rounded" style="background: rgb(var(--gremius-primary));"></div>
+              <span class="text-sm font-medium" style="color: rgb(var(--gremius-text));"
+                >Dashboard</span
+              >
             </div>
             <div class="flex gap-1.5">
-              <div class="w-2 h-2 rounded-full" style="background: rgb(var(--gremius-muted));"></div>
-              <div class="w-2 h-2 rounded-full" style="background: rgb(var(--gremius-muted));"></div>
+              <div
+                class="w-2 h-2 rounded-full"
+                style="background: rgb(var(--gremius-muted));"
+              ></div>
+              <div
+                class="w-2 h-2 rounded-full"
+                style="background: rgb(var(--gremius-muted));"
+              ></div>
             </div>
           </div>
 
@@ -223,9 +237,18 @@
                 </span>
               </div>
               <div class="space-y-1.5">
-                <div class="h-2 rounded w-full" style="background: rgb(var(--gremius-border));"></div>
-                <div class="h-2 rounded w-3/4" style="background: rgb(var(--gremius-border));"></div>
-                <div class="h-2 rounded w-1/2" style="background: rgb(var(--gremius-border));"></div>
+                <div
+                  class="h-2 rounded w-full"
+                  style="background: rgb(var(--gremius-border));"
+                ></div>
+                <div
+                  class="h-2 rounded w-3/4"
+                  style="background: rgb(var(--gremius-border));"
+                ></div>
+                <div
+                  class="h-2 rounded w-1/2"
+                  style="background: rgb(var(--gremius-border));"
+                ></div>
               </div>
               <div class="flex items-center gap-2 pt-1">
                 <button
@@ -274,7 +297,9 @@
                   title={entry.value}
                 ></div>
                 <code class="text-xs text-gremius-text-dim font-mono truncate">{entry.key}</code>
-                <span class="text-xs text-gremius-subtle ml-auto font-mono shrink-0">{entry.value}</span>
+                <span class="text-xs text-gremius-subtle ml-auto font-mono shrink-0"
+                  >{entry.value}</span
+                >
               </div>
             {/each}
           </div>
@@ -312,21 +337,18 @@
   {#snippet footer()}
     <button
       class="btn-secondary"
-      onclick={() => { showImportModal = false; jsonError = ""; }}
+      onclick={() => {
+        showImportModal = false;
+        jsonError = "";
+      }}
     >
       Cancel
     </button>
-    <button
-      class="btn-secondary"
-      onclick={validateJson}
-    >
+    <button class="btn-secondary" onclick={validateJson}>
       <AlertCircle class="w-4 h-4" />
       Validate
     </button>
-    <button
-      class="btn-primary"
-      onclick={importTheme}
-    >
+    <button class="btn-primary" onclick={importTheme}>
       <Upload class="w-4 h-4" />
       Import
     </button>

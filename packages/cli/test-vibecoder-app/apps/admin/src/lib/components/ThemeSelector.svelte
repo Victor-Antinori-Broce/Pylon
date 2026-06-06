@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Coffee, Check, Download, Trash2 } from "lucide-svelte";
   import { currentTheme, setTheme, themes } from "$lib/theme.svelte";
+  import { Coffee, Check, Download, Trash2 } from "lucide-svelte";
 
   function installTheme(id: string) {
     // Install logic would go here

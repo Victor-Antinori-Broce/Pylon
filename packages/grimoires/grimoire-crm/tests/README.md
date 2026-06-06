@@ -47,10 +47,12 @@ pnpm test:integration
 ## Test Coverage
 
 ### Unit Tests
+
 - **Schema Tests**: Validates Drizzle table definitions, columns, enums, and relations
 - **Routes Tests**: Verifies all API endpoints are properly registered with correct HTTP methods
 
 ### Integration Tests
+
 - **Companies API**: CRUD operations, filtering, pagination
 - **Contacts API**: CRUD operations, search, company association
 - **Pipelines API**: CRUD operations, default stages creation
@@ -62,6 +64,7 @@ pnpm test:integration
 ## Environment Variables
 
 For integration tests:
+
 - `API_URL`: Base URL for API (default: `http://localhost:3000`)
 
 ## Writing New Tests

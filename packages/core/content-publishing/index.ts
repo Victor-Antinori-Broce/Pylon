@@ -21,7 +21,9 @@ export class ContentPublishingRegistry {
 
   register(target: ContentTarget): void {
     if (this.targets.has(target.id)) {
-      this.ctx.logger.warn(`ContentTarget '${target.id}' is being re-registered by ${target.grimoireId}`);
+      this.ctx.logger.warn(
+        `ContentTarget '${target.id}' is being re-registered by ${target.grimoireId}`
+      );
     }
     this.targets.set(target.id, target);
     this.ctx.logger.info(`ContentTarget registered: '${target.id}' (${target.name})`);

@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { ChevronLeft, ChevronRight, Plus } from "lucide-svelte";
   import type { CalendarView as CalendarViewType } from "$lib/types/admin";
+  import { ChevronLeft, ChevronRight } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Props {
     view: CalendarViewType;
     apiEndpoint?: string;
   }
 
-  let { view, apiEndpoint }: Props = $props();
+  const { view, apiEndpoint }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   const endpoint = apiEndpoint || `/api/explorer/${view.table}`;
@@ -28,7 +28,7 @@
   ];
 
   // Calendar grid computation
-  let calendarDays = $derived.by(() => {
+  const calendarDays = $derived.by(() => {
     const firstDay = new Date(currentYear, currentMonth, 1);
     const lastDay = new Date(currentYear, currentMonth + 1, 0);
     const startPad = firstDay.getDay();
@@ -57,7 +57,7 @@
   });
 
   // Group events by date
-  let eventsByDate = $derived.by<Record<string, any[]>>(() => {
+  const eventsByDate = $derived.by<Record<string, any[]>>(() => {
     const map: Record<string, any[]> = {};
     for (const item of data) {
       const raw = item[view.dateField];

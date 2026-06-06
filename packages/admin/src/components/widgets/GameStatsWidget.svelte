@@ -1,26 +1,26 @@
 <script lang="ts">
   /**
    * GameStatsWidget
-   * 
+   *
    * Widget de ejemplo que muestra estadísticas de juegos.
    * Demuestra cómo recibir props y usar componentes dinámicos.
    */
   import { Gamepad2, TrendingUp, Users, Star } from "lucide-svelte";
-  
+
   interface Props {
     title?: string;
     showChart?: boolean;
   }
-  
-  let { title = "Game Statistics", showChart = true }: Props = $props();
-  
+
+  const { title = "Game Statistics", showChart = true }: Props = $props();
+
   // Datos de ejemplo
   const stats = [
     { label: "Total Games", value: 156, icon: Gamepad2, color: "text-gremius-cyan" },
     { label: "Active Players", value: "12.5K", icon: Users, color: "text-gremius-green" },
     { label: "Avg Rating", value: "4.8", icon: Star, color: "text-gremius-amber" },
   ];
-  
+
   const recentGames = [
     { name: "Cyberpunk 2077", players: 5420, trend: "up" },
     { name: "Elden Ring", players: 4890, trend: "up" },
@@ -36,7 +36,7 @@
     </h3>
     <span class="badge-cyan text-[10px]">GAMES MODULE</span>
   </div>
-  
+
   <!-- Stats Grid -->
   <div class="grid grid-cols-3 gap-3">
     {#each stats as stat}
@@ -48,12 +48,14 @@
       </div>
     {/each}
   </div>
-  
+
   <!-- Recent Games List -->
   <div class="space-y-2">
     <p class="text-xs text-gremius-subtle uppercase tracking-wider">Popular Now</p>
     {#each recentGames as game}
-      <div class="flex items-center justify-between p-2 hover:bg-gremius-bg rounded-lg transition-colors">
+      <div
+        class="flex items-center justify-between p-2 hover:bg-gremius-bg rounded-lg transition-colors"
+      >
         <span class="text-sm text-gremius-text">{game.name}</span>
         <div class="flex items-center gap-2">
           <span class="text-xs text-gremius-subtle">{game.players.toLocaleString()} players</span>
@@ -66,7 +68,7 @@
       </div>
     {/each}
   </div>
-  
+
   {#if showChart}
     <div class="pt-2 border-t border-gremius-border">
       <div class="flex items-center justify-between text-xs text-gremius-subtle">
@@ -75,10 +77,7 @@
       </div>
       <div class="mt-2 h-8 flex items-end gap-1">
         {#each [40, 65, 45, 80, 55, 90, 70] as height}
-          <div 
-            class="flex-1 bg-gremius-cyan/20 rounded-t"
-            style="height: {height}%"
-          ></div>
+          <div class="flex-1 bg-gremius-cyan/20 rounded-t" style="height: {height}%"></div>
         {/each}
       </div>
     </div>

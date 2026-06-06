@@ -14,7 +14,7 @@
 		onUpdate: (data: SEOData) => void;
 	}
 
-	let { data, onUpdate }: Props = $props();
+	const { data, onUpdate }: Props = $props();
 
 	let dragOver = $state(false);
 	let fileInput: HTMLInputElement | undefined = $state();

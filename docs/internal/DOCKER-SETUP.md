@@ -3,11 +3,13 @@
 ## ✅ Archivos Actualizados
 
 ### Producción (Recomendado para servidores)
+
 - **`docker-compose.yml`** - Inicia TODO: DB, Cache, Storage, API, Admin, Web
 - **`docker/Dockerfile.prod`** - Multi-stage build (API + Admin + Web en uno)
 - **`docker/migrate.sh`** - Script de migraciones seguras
 
 ### Desarrollo (Local)
+
 - **`docker-compose.dev.yml`** - Solo infraestructura (DB, MinIO, Valkey)
 - **`scripts/dev-start-*.ps1`** - Scripts para iniciar en dev
 
@@ -23,6 +25,7 @@ cp .env.example .env
 ```
 
 Variables mínimas requeridas:
+
 ```env
 POSTGRES_PASSWORD=password_seguro
 S3_SECRET_KEY=secret_key_seguro
@@ -84,27 +87,27 @@ pnpm dev
 
 ## 📊 Diferencias entre Dev y Prod
 
-| Característica | Desarrollo | Producción |
-|----------------|------------|------------|
-| **Archivo compose** | `docker-compose.dev.yml` | `docker-compose.yml` |
-| **Apps** | Corren local (`pnpm dev`) | En contenedores |
-| **Migraciones** | `db:push` (auto-acepta) | `db:migrate` (seguro) |
-| **Hot reload** | ✅ Sí | ❌ No |
-| **Puertos expuestos** | Todos (5432, 9000, etc.) | Solo apps (3000, 3001, 3002) |
-| **Optimización** | Rápido | Optimizado |
+| Característica        | Desarrollo                | Producción                   |
+| --------------------- | ------------------------- | ---------------------------- |
+| **Archivo compose**   | `docker-compose.dev.yml`  | `docker-compose.yml`         |
+| **Apps**              | Corren local (`pnpm dev`) | En contenedores              |
+| **Migraciones**       | `db:push` (auto-acepta)   | `db:migrate` (seguro)        |
+| **Hot reload**        | ✅ Sí                     | ❌ No                        |
+| **Puertos expuestos** | Todos (5432, 9000, etc.)  | Solo apps (3000, 3001, 3002) |
+| **Optimización**      | Rápido                    | Optimizado                   |
 
 ---
 
 ## 🗂️ Dockerfiles Disponibles
 
-| Dockerfile | Uso | Estado |
-|------------|-----|--------|
-| `Dockerfile.prod` | Producción (multi-stage) | ✅ **USAR ESTE** |
-| `Dockerfile.dev` | Desarrollo con auto-setup | ✅ Opcional |
-| `Dockerfile.api` | API individual (antiguo) | ⚠️ Legacy |
-| `Dockerfile.web` | Web individual (antiguo) | ⚠️ Legacy |
-| `Dockerfile.admin` | Admin individual (antiguo) | ⚠️ Legacy |
-| `Dockerfile.cms` | CMS (antiguo) | ⚠️ Legacy |
+| Dockerfile         | Uso                        | Estado           |
+| ------------------ | -------------------------- | ---------------- |
+| `Dockerfile.prod`  | Producción (multi-stage)   | ✅ **USAR ESTE** |
+| `Dockerfile.dev`   | Desarrollo con auto-setup  | ✅ Opcional      |
+| `Dockerfile.api`   | API individual (antiguo)   | ⚠️ Legacy        |
+| `Dockerfile.web`   | Web individual (antiguo)   | ⚠️ Legacy        |
+| `Dockerfile.admin` | Admin individual (antiguo) | ⚠️ Legacy        |
+| `Dockerfile.cms`   | CMS (antiguo)              | ⚠️ Legacy        |
 
 **Nota**: Los archivos "Legacy" se mantienen por compatibilidad. El nuevo `Dockerfile.prod` reemplaza a todos los individuales con un build multi-stage más eficiente.
 
@@ -115,6 +118,7 @@ pnpm dev
 ### "Bind for 0.0.0.0:3000 failed"
 
 El puerto está ocupado. Cambia en `.env`:
+
 ```env
 API_PORT=3003
 ADMIN_PORT=3004
@@ -124,6 +128,7 @@ WEB_PORT=3005
 ### "relation does not exist"
 
 Las migraciones no se ejecutaron. En producción:
+
 ```bash
 docker compose exec gremius_api bun run db:migrate
 ```
@@ -131,6 +136,7 @@ docker compose exec gremius_api bun run db:migrate
 ### Permisos de MinIO
 
 Si hay errores de S3, asegúrate de:
+
 1. Crear el bucket en http://localhost:9001
 2. Verificar S3_BUCKET en `.env` coincide con el nombre del bucket
 

@@ -51,9 +51,10 @@
  * ```
  */
 
-import type { Hono, Context as HonoContext } from "hono";
-import type { Worker, Job, Queue } from "bullmq";
 import type { GrimoireContext } from "@gremius/shared";
+import type { Worker, Job, Queue } from "bullmq";
+import type { Hono, Context as HonoContext } from "hono";
+
 import { validate, ValidationSchema } from "./validator";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -190,14 +191,17 @@ export type ActionRunFunction<TPayload = unknown, TResult = unknown> = (
  */
 export interface InputSchema {
   type: "object";
-  properties?: Record<string, {
-    type: string;
-    description?: string;
-    default?: unknown;
-    enum?: unknown[];
-    items?: InputSchema;
-    required?: string[];
-  }>;
+  properties?: Record<
+    string,
+    {
+      type: string;
+      description?: string;
+      default?: unknown;
+      enum?: unknown[];
+      items?: InputSchema;
+      required?: string[];
+    }
+  >;
   required?: string[];
   description?: string;
 }
@@ -279,9 +283,7 @@ export function parseTrigger(trigger: string): ParsedTrigger {
 
   // Validate prefix
   if (!["http", "event", "agent"].includes(prefix)) {
-    throw new Error(
-      `Invalid trigger prefix: "${prefix}". Must be one of: http, event, agent`
-    );
+    throw new Error(`Invalid trigger prefix: "${prefix}". Must be one of: http, event, agent`);
   }
 
   // Handle cron special case: event.cron:{expression}:{name}
@@ -388,7 +390,9 @@ class HonoAdapter implements ActionAdapter {
           http: {
             hono: c,
             headers: c.req.header() as any,
-            status: (code: number) => { c.status(code as any); },
+            status: (code: number) => {
+              c.status(code as any);
+            },
             header: (name: string, value: string) => c.header(name, value),
           },
         });
@@ -524,7 +528,9 @@ class BullMQAdapter implements ActionAdapter {
     });
 
     this.workers.set(trigger.path, worker);
-    console.log(`  🔷 [Actions] Event worker "${trigger.path}" registered (concurrency: ${concurrency})`);
+    console.log(
+      `  🔷 [Actions] Event worker "${trigger.path}" registered (concurrency: ${concurrency})`
+    );
   }
 
   async shutdown(): Promise<void> {
@@ -593,7 +599,7 @@ class MCPAdapter implements ActionAdapter {
       handler: async (args: TPayload, extra: any) => {
         // Generate traceId for agent tool execution (telemetry)
         const traceId = extra?.traceId || generateUUID();
-        
+
         const ctx = buildActionContext({
           payload: args,
           grimoire: null as any,
@@ -766,7 +772,7 @@ function wrapWithValidation<TPayload, TResult>(
         // Return validation error as ActionResult
         return {
           success: false,
-          error: `Validation failed: ${validationResult.errors.map(e => `${e.field}: ${e.message}`).join(", ")}`,
+          error: `Validation failed: ${validationResult.errors.map((e) => `${e.field}: ${e.message}`).join(", ")}`,
           statusCode: 400,
           meta: {
             validationErrors: validationResult.errors,
@@ -800,10 +806,10 @@ function wrapWithTelemetry<TPayload, TResult>(
     run: async (ctx: ActionContext<TPayload>): Promise<ActionResult<TResult> | TResult | void> => {
       // Check if we have a traceId in the context (set by agent/trigger)
       const traceId = (ctx.grimoire as any)?.telemetry?.traceId as string | undefined;
-      
+
       // Check if telemetry provider is available
       const provider = globalTelemetryProvider;
-      
+
       // If no traceId or no provider, run normally without telemetry
       if (!traceId || !provider) {
         return originalRun(ctx);
@@ -812,15 +818,15 @@ function wrapWithTelemetry<TPayload, TResult>(
       // Parse tool name from trigger
       const parsedTrigger = parseTrigger(definition.trigger);
       const toolName = parsedTrigger.path || definition.trigger;
-      
+
       // Generate step ID
       const stepId = generateUUID();
       const startTime = performance.now();
-      
+
       // Get step order (from grimoire telemetry state or default to 0)
       const telemetryState = (ctx.grimoire as any)?.telemetry;
       const stepOrder = telemetryState?.stepOrder || 0;
-      
+
       // Increment step order for next step
       if (telemetryState) {
         telemetryState.stepOrder = stepOrder + 1;
@@ -858,12 +864,14 @@ function wrapWithTelemetry<TPayload, TResult>(
         }
 
         // Update step with success result (async, don't await)
-        provider.updateStep(stepId, {
-          toolOutput,
-          durationMs,
-        }).catch((err: any) => {
-          ctx.logger.warn("Failed to update telemetry step", { error: err?.message, stepId });
-        });
+        provider
+          .updateStep(stepId, {
+            toolOutput,
+            durationMs,
+          })
+          .catch((err: any) => {
+            ctx.logger.warn("Failed to update telemetry step", { error: err?.message, stepId });
+          });
 
         return result;
       } catch (error: any) {
@@ -871,13 +879,18 @@ function wrapWithTelemetry<TPayload, TResult>(
         const errorMessage = error?.message || String(error);
 
         // Update step with error result (async, don't await)
-        provider.updateStep(stepId, {
-          toolOutput: { error: errorMessage },
-          errorMessage,
-          durationMs,
-        }).catch((err: any) => {
-          ctx.logger.warn("Failed to update telemetry step with error", { error: err?.message, stepId });
-        });
+        provider
+          .updateStep(stepId, {
+            toolOutput: { error: errorMessage },
+            errorMessage,
+            durationMs,
+          })
+          .catch((err: any) => {
+            ctx.logger.warn("Failed to update telemetry step with error", {
+              error: err?.message,
+              stepId,
+            });
+          });
 
         // Relaunch the error to maintain original behavior
         throw error;
@@ -903,7 +916,7 @@ function buildActionContext<TPayload>(opts: ContextBuildOptions): ActionContext<
   const { payload, grimoire, http, event, agent, traceId } = opts;
 
   // Inject telemetry state into grimoire context if traceId provided
-  const enhancedGrimoire = grimoire || {} as GrimoireContext;
+  const enhancedGrimoire = grimoire || ({} as GrimoireContext);
   if (traceId && enhancedGrimoire) {
     (enhancedGrimoire as any).telemetry = {
       traceId,
@@ -929,8 +942,8 @@ function buildActionContext<TPayload>(opts: ContextBuildOptions): ActionContext<
     },
     cache: (enhancedGrimoire as any)?.cache || {
       get: async () => null,
-      set: async () => { },
-      invalidate: async () => { },
+      set: async () => {},
+      invalidate: async () => {},
     },
     http,
     event,
@@ -1161,7 +1174,11 @@ export async function shutdownActions(): Promise<void> {
 /**
  * List MCP tools (for MCP server tools/list handler)
  */
-export function listMCPTools(): Array<{ name: string; description: string; inputSchema: InputSchema }> {
+export function listMCPTools(): Array<{
+  name: string;
+  description: string;
+  inputSchema: InputSchema;
+}> {
   return globalRegistry.listMCPTools();
 }
 
@@ -1181,13 +1198,13 @@ export async function executeMCPTool(name: string, args: any, extra: any): Promi
  */
 export type InferHttpPayload<T extends string> = T extends `http.post:${infer Path}`
   ? Path extends `/webhooks/${string}`
-  ? { event: string; data: Record<string, unknown> }
-  : Record<string, unknown>
+    ? { event: string; data: Record<string, unknown> }
+    : Record<string, unknown>
   : T extends `http.get:${infer Path}`
-  ? Path extends `${string}?${string}`
-  ? Record<string, string>
-  : Record<string, never>
-  : Record<string, unknown>;
+    ? Path extends `${string}?${string}`
+      ? Record<string, string>
+      : Record<string, never>
+    : Record<string, unknown>;
 
 /**
  * Helper to create typed action definition
@@ -1201,4 +1218,9 @@ export function defineTypedAction<TPayload, TResult = unknown>(
 // Types already exported above via 'export interface' declarations
 
 // Re-export validation types for convenience
-export type { ValidationSchema, ValidationResult, ValidationError, ValidationRule } from "./validator";
+export type {
+  ValidationSchema,
+  ValidationResult,
+  ValidationError,
+  ValidationRule,
+} from "./validator";

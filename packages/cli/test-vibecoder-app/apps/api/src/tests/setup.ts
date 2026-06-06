@@ -6,8 +6,9 @@
  * for all test suites.
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
 
 // Test database URL from environment or default
 export const TEST_DATABASE_URL = process.env.DATABASE_URL || 

@@ -13,8 +13,9 @@
 // import { eq } from "drizzle-orm"; // Not used in legacy wrapper
 import { db } from "../db";
 import { gremiusFunctions } from "../db/schema";
-import { events } from "./events";
+
 import { dispatchEvent, executeActionById } from "./actions";
+import { events } from "./events";
 import type { SandboxResult } from "./worker-sandbox";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -42,16 +43,15 @@ export async function executeFunction(
   payload: Record<string, unknown>
 ): Promise<SandboxResult> {
   console.warn("[DEPRECATED] executeFunction called, migrate to ActionEngine");
-  
+
   // Check if this function has been migrated to actions
   const { actions } = await import("../db/schema");
   const { eq, and } = await import("drizzle-orm");
-  
-  const [migratedAction] = await db.select().from(actions)
-    .where(and(
-      eq(actions.legacyId, fn.id),
-      eq(actions.legacyType, "function")
-    ))
+
+  const [migratedAction] = await db
+    .select()
+    .from(actions)
+    .where(and(eq(actions.legacyId, fn.id), eq(actions.legacyType, "function")))
     .limit(1);
 
   if (migratedAction) {
@@ -73,7 +73,11 @@ export async function executeFunction(
       error: result.error ?? null,
       durationMs: result.durationMs ?? 0,
       memoryUsedBytes: result.memoryUsedBytes ?? 0,
-      exitReason: result.success ? "success" : result.error?.includes("timeout") ? "timeout" : "error",
+      exitReason: result.success
+        ? "success"
+        : result.error?.includes("timeout")
+          ? "timeout"
+          : "error",
     };
   }
 
@@ -97,27 +101,28 @@ export async function executeManually(
   customPayload?: Record<string, unknown>
 ): Promise<SandboxResult> {
   console.warn("[DEPRECATED] executeManually called, migrate to ActionEngine");
-  
+
   const { actions } = await import("../db/schema");
   const { eq, and } = await import("drizzle-orm");
-  
+
   // Try to find by legacy ID first
-  const [migratedAction] = await db.select().from(actions)
-    .where(and(
-      eq(actions.legacyId, functionId),
-      eq(actions.legacyType, "function")
-    ))
+  const [migratedAction] = await db
+    .select()
+    .from(actions)
+    .where(and(eq(actions.legacyId, functionId), eq(actions.legacyType, "function")))
     .limit(1);
 
   const actionId = migratedAction?.id || functionId;
 
   const result = await executeActionById(actionId, {
     trigger: "manual",
-    event: customPayload ? {
-      name: "manual",
-      data: customPayload,
-      timestamp: new Date().toISOString(),
-    } : undefined,
+    event: customPayload
+      ? {
+          name: "manual",
+          data: customPayload,
+          timestamp: new Date().toISOString(),
+        }
+      : undefined,
   });
 
   return {
@@ -127,7 +132,11 @@ export async function executeManually(
     error: result.error ?? null,
     durationMs: result.durationMs ?? 0,
     memoryUsedBytes: result.memoryUsedBytes ?? 0,
-    exitReason: result.success ? "success" : result.error?.includes("timeout") ? "timeout" : "error",
+    exitReason: result.success
+      ? "success"
+      : result.error?.includes("timeout")
+        ? "timeout"
+        : "error",
   };
 }
 
@@ -158,7 +167,7 @@ async function dispatchToActions(
  */
 export function initFunctionDispatcher() {
   console.warn("[DEPRECATED] initFunctionDispatcher called, events now handled by ActionEngine");
-  
+
   // Keep event listeners for backward compatibility during transition
   // These will be removed in Phase 4
   for (const eventName of Object.keys(EVENT_MAP)) {

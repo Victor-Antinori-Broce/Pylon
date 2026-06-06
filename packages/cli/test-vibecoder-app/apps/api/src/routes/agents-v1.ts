@@ -8,11 +8,12 @@
  * - GET /api/v1/identities -> alias for agents list
  */
 
-import { Hono } from "hono";
 import { db } from "@/db";
 import { agentIdentities, agentApiKeys, agentTraces, agentTraceSteps } from "@/db/schema";
-import { desc, eq, sql, count, and } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { desc, eq, count } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { requireAuth } from "../middleware/auth";
 import type { AppVariables } from "../types/hono";
 
@@ -298,7 +299,7 @@ agentsV1Router.get("/traces/:id", async (c) => {
       return c.json({ error: "Trace not found" }, 404);
     }
 
-    let result: any = { ...trace };
+    const result: any = { ...trace };
 
     // Include steps if requested
     if (expand === "steps") {

@@ -5,15 +5,13 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { app } from "../index";
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { authUsers } from "../db/schema";
-import { eq } from "drizzle-orm";
-import {
-  isDatabaseAvailable,
-  clearTestData,
-  generateTestId,
-} from "./setup";
+import { app } from "../index";
+
+import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
@@ -70,7 +68,7 @@ describe("RLS E2E", () => {
       );
       cookieA = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieA));
-      _userAId = (await s.json() as any).user.id;
+      _userAId = ((await s.json()) as any).user.id;
     });
 
     it("creates user B and signs in", async () => {
@@ -90,7 +88,7 @@ describe("RLS E2E", () => {
       );
       cookieB = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieB));
-      _userBId = (await s.json() as any).user.id;
+      _userBId = ((await s.json()) as any).user.id;
     });
 
     it("creates admin and signs in", async () => {
@@ -110,7 +108,7 @@ describe("RLS E2E", () => {
       );
       cookieAdmin = extractCookie(res.headers);
       const s = await app.request(req("/api/auth/get-session", {}, cookieAdmin));
-      adminId = (await s.json() as any).user.id;
+      adminId = ((await s.json()) as any).user.id;
       await db.update(authUsers).set({ role: "admin" }).where(eq(authUsers.id, adminId));
     });
 
@@ -131,7 +129,7 @@ describe("RLS E2E", () => {
           cookieA
         )
       );
-      datasetId = (await res.json() as any).id;
+      datasetId = ((await res.json()) as any).id;
     });
 
     it("user A inserts an entry", async () => {
@@ -151,7 +149,7 @@ describe("RLS E2E", () => {
           cookieA
         )
       );
-      entryAId = (await res.json() as any)[0].id;
+      entryAId = ((await res.json()) as any)[0].id;
     });
   });
 
@@ -159,20 +157,16 @@ describe("RLS E2E", () => {
     it("user A can see their own entry", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req(`/api/data-sets/${datasetId}/entries`, {}, cookieA)
-      );
-      const body = await res.json() as any;
+      const res = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieA));
+      const body = (await res.json()) as any;
       expect(body.docs.some((e: any) => e.id === entryAId)).toBe(true);
     });
 
     it("user B should not see user A entry (RLS isolation)", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req(`/api/data-sets/${datasetId}/entries`, {}, cookieB)
-      );
-      const body = await res.json() as any;
+      const res = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieB));
+      const body = (await res.json()) as any;
       // If RLS is enforced at route level, user B sees nothing.
       // If not, this test documents the gap.
       const hasAccess = body.docs.some((e: any) => e.id === entryAId);
@@ -183,11 +177,9 @@ describe("RLS E2E", () => {
     it("admin can see entries of both users", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req(`/api/data-sets/${datasetId}/entries`, {}, cookieAdmin)
-      );
+      const res = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieAdmin));
       expect(res.status).toBe(200);
-      const body = await res.json() as any;
+      const body = (await res.json()) as any;
       expect(Array.isArray(body.docs)).toBe(true);
     });
   });

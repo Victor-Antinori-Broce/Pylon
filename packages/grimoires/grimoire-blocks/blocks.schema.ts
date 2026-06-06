@@ -1,10 +1,11 @@
 /**
  * Gremio CMS — Page Builder (Blocks) Schema
- * 
+ *
  * Drizzle ORM schema for dynamic page layouts with block-based content.
  * Supports drag & drop positioning and multiple block types.
  */
 
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -18,17 +19,12 @@ import {
   index,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 
 // ═══════════════════════════════════════════════
 // Enums
 // ═══════════════════════════════════════════════
 
-export const pageStatusEnum = pgEnum("block_page_status", [
-  "draft",
-  "published",
-  "archived",
-]);
+export const pageStatusEnum = pgEnum("block_page_status", ["draft", "published", "archived"]);
 
 export const blockTypeEnum = pgEnum("block_content_type", [
   "hero",
@@ -57,25 +53,25 @@ export const pages = pgTable(
     slug: varchar("slug", { length: 500 }).notNull().unique(),
     description: text("description"),
     status: pageStatusEnum("status").default("draft").notNull(),
-    
+
     // SEO & Meta
     metaTitle: varchar("meta_title", { length: 500 }),
     metaDescription: text("meta_description"),
     ogImageId: uuid("og_image_id"), // References media.id
-    
+
     // Layout settings
     layout: varchar("layout", { length: 50 }).default("default").notNull(), // default, full-width, sidebar-left, sidebar-right
     cssClass: varchar("css_class", { length: 200 }),
     customCss: text("custom_css"),
-    
+
     // Publishing
     publishedAt: timestamp("published_at", { withTimezone: true }),
     authorId: uuid("author_id"), // References users.id
-    
+
     // Settings
     isHomepage: boolean("is_homepage").default(false).notNull(),
     requireAuth: boolean("require_auth").default(false).notNull(),
-    
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -98,29 +94,29 @@ export const blocks = pgTable(
     pageId: uuid("page_id")
       .references(() => pages.id, { onDelete: "cascade" })
       .notNull(),
-    
+
     // Block configuration
     type: blockTypeEnum("type").notNull(),
     name: varchar("name", { length: 200 }), // Human-readable label
-    
+
     // Positioning (for drag & drop)
     sortOrder: integer("sort_order").default(0).notNull(),
     columnSpan: integer("column_span").default(12).notNull(), // 1-12 grid system
-    
+
     // Content (varies by block type)
     content: jsonb("content").$type<BlockContent>().notNull(),
-    
+
     // Styling
     cssClass: varchar("css_class", { length: 200 }),
     backgroundColor: varchar("background_color", { length: 50 }),
     textColor: varchar("text_color", { length: 50 }),
     padding: varchar("padding", { length: 50 }), // sm, md, lg, xl
-    
+
     // Visibility
     isVisible: boolean("is_visible").default(true).notNull(),
     visibleFrom: timestamp("visible_from", { withTimezone: true }),
     visibleUntil: timestamp("visible_until", { withTimezone: true }),
-    
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -282,19 +278,19 @@ export const blockTemplates = pgTable(
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description"),
     category: varchar("category", { length: 100 }).notNull(), // layout, content, media, marketing
-    
+
     type: blockTypeEnum("type").notNull(),
     content: jsonb("content").$type<BlockContent>().notNull(),
-    
+
     // Default styling
     cssClass: varchar("css_class", { length: 200 }),
     backgroundColor: varchar("background_color", { length: 50 }),
     textColor: varchar("text_color", { length: 50 }),
     padding: varchar("padding", { length: 50 }),
-    
+
     isActive: boolean("is_active").default(true).notNull(),
     usageCount: integer("usage_count").default(0).notNull(),
-    
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

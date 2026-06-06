@@ -3,13 +3,13 @@ name: Publish Docker Images
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., 1.0.0)'
+        description: "Version tag (e.g., 1.0.0)"
         required: false
-        default: ''
+        default: ""
 
 env:
   REGISTRY: docker.io

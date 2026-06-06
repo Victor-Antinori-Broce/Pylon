@@ -7,12 +7,12 @@
 
 ## Executive Summary
 
-| Category | Status | Notes |
-|----------|--------|-------|
-| **Port Configuration** | ✅ **FIXED** | Root `.env` ports corrected |
-| **Docker Build** | ✅ **RESOLVED** | Added `mermaid`, `{@const}` syntax fixed, build passes |
-| **API Routes** | ✅ **OK** | `/api/health` active |
-| **Admin Views** | ✅ **OK** | Admin container spun up successfully |
+| Category               | Status          | Notes                                                  |
+| ---------------------- | --------------- | ------------------------------------------------------ |
+| **Port Configuration** | ✅ **FIXED**    | Root `.env` ports corrected                            |
+| **Docker Build**       | ✅ **RESOLVED** | Added `mermaid`, `{@const}` syntax fixed, build passes |
+| **API Routes**         | ✅ **OK**       | `/api/health` active                                   |
+| **Admin Views**        | ✅ **OK**       | Admin container spun up successfully                   |
 
 ---
 
@@ -20,11 +20,11 @@
 
 ### ✅ FIXED - Root `.env` Corrected
 
-| Service | Before | After | Status |
-|---------|--------|-------|--------|
-| PostgreSQL | `5433` | `5432` | ✅ Fixed |
-| Valkey/Redis | `6381` | `6379` | ✅ Fixed |
-| API Port | `3000` | `3001` | ✅ Fixed |
+| Service        | Before  | After   | Status   |
+| -------------- | ------- | ------- | -------- |
+| PostgreSQL     | `5433`  | `5432`  | ✅ Fixed |
+| Valkey/Redis   | `6381`  | `6379`  | ✅ Fixed |
+| API Port       | `3000`  | `3001`  | ✅ Fixed |
 | Public API URL | `:3000` | `:3001` | ✅ Fixed |
 
 ### Current Port Configuration
@@ -51,7 +51,7 @@ The `docker-compose.yml` and `Dockerfile.prod` use port `3000` **internally** fo
 ```yaml
 # docker-compose.yml line 137
 ports:
-  - "${API_PORT:-3001}:3000"  # HOST:CONTAINER
+  - "${API_PORT:-3001}:3000" # HOST:CONTAINER
 ```
 
 This is valid - the container listens on 3000, but external access is via 3001.
@@ -63,7 +63,7 @@ This is valid - the container listens on 3000, but external access is via 3001.
 ### Error Summary
 
 ```
-[vite]: Rollup failed to resolve import "mermaid" from 
+[vite]: Rollup failed to resolve import "mermaid" from
 "/app/apps/admin/src/lib/components/editor/MdxEditor.svelte"
 ```
 
@@ -93,16 +93,17 @@ Add `mermaid` to `apps/admin/package.json`:
 
 ### Build Log Analysis
 
-| Stage | Status | Duration | Notes |
-|-------|--------|----------|-------|
-| dependencies | ✅ OK | Cached | pnpm install successful |
-| builder (shared) | ✅ OK | 8.9s | @gremius/shared build |
-| builder (api) | ✅ OK | 4.6s | @gremius/api build (6.86 MB) |
-| builder (admin) | ❌ FAIL | 20.6s | Missing mermaid dependency |
+| Stage            | Status  | Duration | Notes                        |
+| ---------------- | ------- | -------- | ---------------------------- |
+| dependencies     | ✅ OK   | Cached   | pnpm install successful      |
+| builder (shared) | ✅ OK   | 8.9s     | @gremius/shared build        |
+| builder (api)    | ✅ OK   | 4.6s     | @gremius/api build (6.86 MB) |
+| builder (admin)  | ❌ FAIL | 20.6s    | Missing mermaid dependency   |
 
 ### Warnings (Non-blocking)
 
 Multiple Svelte a11y warnings were emitted but did not block the build:
+
 - `a11y_no_static_element_interactions` - Drag/drop handlers need ARIA roles
 - `a11y_label_has_associated_control` - Labels need explicit `for` attributes
 - `a11y_click_events_have_key_events` - Click handlers need keyboard support
@@ -114,18 +115,18 @@ Multiple Svelte a11y warnings were emitted but did not block the build:
 
 ### Verified Routes
 
-| # | Route | File | Status |
-|---|-------|------|--------|
-| 1 | `GET /api/health` | `index.ts:288` | ✅ Mounted |
-| 2 | `/api/auth/*` | `index.ts:282` | ✅ Mounted (Better Auth) |
-| 3 | `/api/datasets` | `index.ts:389` | ✅ Mounted (Core) |
-| 4 | `/api/media` | `index.ts:396` | ✅ Conditional |
-| 5 | `/api/admin/registry` | `index.ts:430` | ✅ Mounted |
-| 6 | `/api/modules` | `index.ts:419` | ✅ Mounted |
-| 7 | `/api/settings` | `index.ts:418` | ✅ Mounted |
-| 8 | `/api/mcp` | `index.ts:425` | ✅ Conditional |
-| 9 | `/api/realtime` | `index.ts:612` | ✅ WebSocket |
-| 10 | `/api/graphql` | `index.ts:421` | ✅ Mounted |
+| #   | Route                 | File           | Status                   |
+| --- | --------------------- | -------------- | ------------------------ |
+| 1   | `GET /api/health`     | `index.ts:288` | ✅ Mounted               |
+| 2   | `/api/auth/*`         | `index.ts:282` | ✅ Mounted (Better Auth) |
+| 3   | `/api/datasets`       | `index.ts:389` | ✅ Mounted (Core)        |
+| 4   | `/api/media`          | `index.ts:396` | ✅ Conditional           |
+| 5   | `/api/admin/registry` | `index.ts:430` | ✅ Mounted               |
+| 6   | `/api/modules`        | `index.ts:419` | ✅ Mounted               |
+| 7   | `/api/settings`       | `index.ts:418` | ✅ Mounted               |
+| 8   | `/api/mcp`            | `index.ts:425` | ✅ Conditional           |
+| 9   | `/api/realtime`       | `index.ts:612` | ✅ WebSocket             |
+| 10  | `/api/graphql`        | `index.ts:421` | ✅ Mounted               |
 
 ### Route Files Verified
 
@@ -200,11 +201,11 @@ apps/admin/src/routes/
 
 ### Views Status
 
-| View | Status | Notes |
-|------|--------|-------|
-| All 36 pages | ✅ Exist | No missing route files |
-| Build | ❌ Broken | Missing `mermaid` dependency |
-| Runtime | ⚠️ Unknown | Cannot test without successful build |
+| View         | Status     | Notes                                |
+| ------------ | ---------- | ------------------------------------ |
+| All 36 pages | ✅ Exist   | No missing route files               |
+| Build        | ❌ Broken  | Missing `mermaid` dependency         |
+| Runtime      | ⚠️ Unknown | Cannot test without successful build |
 
 ---
 
@@ -215,6 +216,7 @@ apps/admin/src/routes/
 **Issue**: Missing `mermaid` dependency  
 **File**: `apps/admin/package.json`  
 **Fix**:
+
 ```bash
 cd apps/admin
 pnpm add mermaid
@@ -255,12 +257,12 @@ curl http://localhost:3001/api/health
 
 ## Summary
 
-| Item | Status | Priority |
-|------|--------|----------|
-| Root `.env` ports | ✅ Fixed | High |
-| API routes | ✅ Verified | High |
-| Admin views | ✅ 36 pages exist | Medium |
-| **Docker build** | ✅ **Passed** | **Resolved** |
-| mermaid dependency | ✅ Added | **Resolved** |
+| Item               | Status            | Priority     |
+| ------------------ | ----------------- | ------------ |
+| Root `.env` ports  | ✅ Fixed          | High         |
+| API routes         | ✅ Verified       | High         |
+| Admin views        | ✅ 36 pages exist | Medium       |
+| **Docker build**   | ✅ **Passed**     | **Resolved** |
+| mermaid dependency | ✅ Added          | **Resolved** |
 
 **Next Action**: Enjoy the pristine build! The system is fully operational.

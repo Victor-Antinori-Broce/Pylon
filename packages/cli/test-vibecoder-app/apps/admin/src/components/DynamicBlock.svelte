@@ -6,8 +6,9 @@
    * Renderiza bloques de contenido basados en su tipo.
    */
   import type { Component } from "svelte";
-  import { componentRegistry } from "../lib/registry.svelte";
+
   import DynamicComponent from "../lib/DynamicComponent.svelte";
+  import { componentRegistry } from "../lib/registry.svelte";
   
   interface Props {
     /** Tipo de bloque a renderizar */
@@ -20,7 +21,7 @@
     onChange?: (data: any) => void;
   }
   
-  let { 
+  const { 
     type, 
     props = {}, 
     mode = "render",
@@ -28,10 +29,10 @@
   }: Props = $props();
   
   // Obtener definición del bloque
-  let block = $derived(componentRegistry.getBlock(type));
+  const block = $derived(componentRegistry.getBlock(type));
   
   // Seleccionar componente según modo
-  let Component = $derived<Component | null>(() => {
+  const Component = $derived<Component | null>(() => {
     if (!block) return null;
     
     switch (mode) {

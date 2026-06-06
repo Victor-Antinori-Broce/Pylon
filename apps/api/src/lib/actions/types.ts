@@ -1,6 +1,6 @@
 /**
  * Actions Engine - Type Definitions
- * 
+ *
  * Unified type system for the Actions engine.
  * This replaces the separate types for workers and webhooks.
  */
@@ -32,19 +32,19 @@ export interface CronTriggerConfig {
 }
 
 export interface EventTriggerConfig {
-  eventName: string;      // "entry:created", "entry:updated", "post:published", etc.
-  datasetId?: string;     // Optional: filter by specific dataset
+  eventName: string; // "entry:created", "entry:updated", "post:published", etc.
+  datasetId?: string; // Optional: filter by specific dataset
 }
 
 export interface HttpTriggerConfig {
-  httpMethod: string;     // "POST", "GET", "PUT", "DELETE"
-  httpPath: string;       // "/webhooks/stripe", "/custom/endpoint"
+  httpMethod: string; // "POST", "GET", "PUT", "DELETE"
+  httpPath: string; // "/webhooks/stripe", "/custom/endpoint"
 }
 
-export type TriggerConfig = 
-  | CronTriggerConfig 
-  | EventTriggerConfig 
-  | HttpTriggerConfig 
+export type TriggerConfig =
+  | CronTriggerConfig
+  | EventTriggerConfig
+  | HttpTriggerConfig
   | Record<string, never>; // For manual triggers
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -61,7 +61,7 @@ export interface CodeActionConfig {
 export interface WebhookOutConfig {
   url: string;
   headers?: Record<string, string>;
-  secret?: string;           // For HMAC signature
+  secret?: string; // For HMAC signature
   retryPolicy?: {
     maxRetries: number;
     backoffMs: number;
@@ -94,18 +94,18 @@ export interface ActionContext {
   actionId: string;
   actionName: string;
   actionType: ActionType;
-  
+
   // Trigger information
   trigger: ActionTrigger;
   triggerEvent?: string;
-  
+
   // Event payload (for event triggers)
   event?: {
     name: string;
     data: Record<string, unknown>;
     timestamp: string;
   };
-  
+
   // HTTP request (for http triggers)
   request?: {
     method: string;
@@ -114,10 +114,10 @@ export interface ActionContext {
     body: unknown;
     query: Record<string, string>;
   };
-  
+
   // Environment variables
   env: Record<string, string>;
-  
+
   // Execution metadata
   executionId: string;
   startedAt: Date;
@@ -134,7 +134,7 @@ export interface ActionResult {
   error?: string;
   durationMs: number;
   memoryUsedBytes?: number;
-  
+
   // For webhook_out actions
   httpResponse?: {
     statusCode: number;

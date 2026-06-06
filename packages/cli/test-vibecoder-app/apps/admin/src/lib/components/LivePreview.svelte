@@ -12,7 +12,7 @@
     status?: string;
   }
 
-  let {
+  const {
     title = "",
     content = "",
     excerpt = "",
@@ -32,7 +32,7 @@
     mobile: "375px"
   };
 
-  let htmlContent = $derived.by(() => {
+  const htmlContent = $derived.by(() => {
     const dateText = publishedAt
       ? new Date(publishedAt).toLocaleDateString()
       : "";

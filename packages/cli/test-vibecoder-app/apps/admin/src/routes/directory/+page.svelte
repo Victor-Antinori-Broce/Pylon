@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import {
     Building2, Users, Briefcase, Network, Plus, Search,
     Mail, Phone, MapPin, X, Loader2, User
   } from "lucide-svelte";
-  import { api } from "$lib/api";
+  import { onMount } from "svelte";
 
   interface Organization {
     id: string;

@@ -1,8 +1,8 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { eq, desc, and, count } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { zValidator } from "@hono/zod-validator";
+import { eq, desc, and, count } from "drizzle-orm";
+import { Hono } from "hono";
+import { z } from "zod";
 
 import {
   accounts,
@@ -19,11 +19,7 @@ import {
   type Journal,
   type Disbursement,
 } from "./conta.schema";
-import {
-  ContaService,
-  validateLedgerLines,
-  applyJournalTemplate,
-} from "./conta.service";
+import { ContaService, validateLedgerLines, applyJournalTemplate } from "./conta.service";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Zod Schemas
@@ -193,7 +189,12 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
     const isTrust = c.req.query("isTrust");
     const limit = Math.min(Number(c.req.query("limit")) || 500, 1000);
 
-    let query = db.select().from(accounts).where(eq(accounts.isActive, true)).orderBy(accounts.code).limit(limit);
+    let query = db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.isActive, true))
+      .orderBy(accounts.code)
+      .limit(limit);
 
     if (type) {
       query = db
@@ -217,7 +218,11 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.get("/accounts/:id", async (c) => {
-    const [account] = await db.select().from(accounts).where(eq(accounts.id, c.req.param("id"))).limit(1);
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, c.req.param("id")))
+      .limit(1);
     if (!account) return c.json({ error: "Account not found" }, 404);
     return c.json({ data: account });
   });
@@ -276,14 +281,21 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.get("/counterparties/:id", async (c) => {
-    const [cp] = await db.select().from(counterparties).where(eq(counterparties.id, c.req.param("id"))).limit(1);
+    const [cp] = await db
+      .select()
+      .from(counterparties)
+      .where(eq(counterparties.id, c.req.param("id")))
+      .limit(1);
     if (!cp) return c.json({ error: "Counterparty not found" }, 404);
     return c.json({ data: cp });
   });
 
   app.post("/counterparties", zValidator("json", counterpartySchema), async (c) => {
     const body = c.req.valid("json");
-    const [cp] = await db.insert(counterparties).values({ ...body, updatedAt: new Date() }).returning();
+    const [cp] = await db
+      .insert(counterparties)
+      .values({ ...body, updatedAt: new Date() })
+      .returning();
     return c.json({ data: cp }, 201);
   });
 
@@ -299,7 +311,10 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.delete("/counterparties/:id", async (c) => {
-    const [cp] = await db.delete(counterparties).where(eq(counterparties.id, c.req.param("id"))).returning();
+    const [cp] = await db
+      .delete(counterparties)
+      .where(eq(counterparties.id, c.req.param("id")))
+      .returning();
     if (!cp) return c.json({ error: "Counterparty not found" }, 404);
     return c.json({ success: true });
   });
@@ -316,21 +331,33 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
 
     const data =
       conditions.length > 0
-        ? await db.select().from(matters).where(and(...conditions)).orderBy(desc(matters.openedAt)).limit(limit)
+        ? await db
+            .select()
+            .from(matters)
+            .where(and(...conditions))
+            .orderBy(desc(matters.openedAt))
+            .limit(limit)
         : await db.select().from(matters).orderBy(desc(matters.openedAt)).limit(limit);
 
     return c.json({ data });
   });
 
   app.get("/matters/:id", async (c) => {
-    const [matter] = await db.select().from(matters).where(eq(matters.id, c.req.param("id"))).limit(1);
+    const [matter] = await db
+      .select()
+      .from(matters)
+      .where(eq(matters.id, c.req.param("id")))
+      .limit(1);
     if (!matter) return c.json({ error: "Matter not found" }, 404);
     return c.json({ data: matter });
   });
 
   app.post("/matters", zValidator("json", matterSchema), async (c) => {
     const body = c.req.valid("json");
-    const [matter] = await db.insert(matters).values({ ...body, updatedAt: new Date() }).returning();
+    const [matter] = await db
+      .insert(matters)
+      .values({ ...body, updatedAt: new Date() })
+      .returning();
     return c.json({ data: matter }, 201);
   });
 
@@ -346,7 +373,10 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.delete("/matters/:id", async (c) => {
-    const [matter] = await db.delete(matters).where(eq(matters.id, c.req.param("id"))).returning();
+    const [matter] = await db
+      .delete(matters)
+      .where(eq(matters.id, c.req.param("id")))
+      .returning();
     if (!matter) return c.json({ error: "Matter not found" }, 404);
     return c.json({ success: true });
   });
@@ -355,20 +385,35 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   app.get("/templates", async (c) => {
     const type = c.req.query("type");
     const data = type
-      ? await db.select().from(journalTemplates).where(and(eq(journalTemplates.isActive, true), eq(journalTemplates.templateType, type))).orderBy(journalTemplates.name)
-      : await db.select().from(journalTemplates).where(eq(journalTemplates.isActive, true)).orderBy(journalTemplates.name);
+      ? await db
+          .select()
+          .from(journalTemplates)
+          .where(and(eq(journalTemplates.isActive, true), eq(journalTemplates.templateType, type)))
+          .orderBy(journalTemplates.name)
+      : await db
+          .select()
+          .from(journalTemplates)
+          .where(eq(journalTemplates.isActive, true))
+          .orderBy(journalTemplates.name);
     return c.json({ data });
   });
 
   app.get("/templates/:id", async (c) => {
-    const [tmpl] = await db.select().from(journalTemplates).where(eq(journalTemplates.id, c.req.param("id"))).limit(1);
+    const [tmpl] = await db
+      .select()
+      .from(journalTemplates)
+      .where(eq(journalTemplates.id, c.req.param("id")))
+      .limit(1);
     if (!tmpl) return c.json({ error: "Template not found" }, 404);
     return c.json({ data: tmpl });
   });
 
   app.post("/templates", zValidator("json", templateSchema), async (c) => {
     const body = c.req.valid("json");
-    const [tmpl] = await db.insert(journalTemplates).values({ ...body, updatedAt: new Date() }).returning();
+    const [tmpl] = await db
+      .insert(journalTemplates)
+      .values({ ...body, updatedAt: new Date() })
+      .returning();
     return c.json({ data: tmpl }, 201);
   });
 
@@ -397,7 +442,12 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   app.post("/templates/:id/apply", async (c) => {
     try {
       const body = await c.req.json();
-      const result = await applyJournalTemplate(db, c.req.param("id"), body.variables || {}, body.metadata || {});
+      const result = await applyJournalTemplate(
+        db,
+        c.req.param("id"),
+        body.variables || {},
+        body.metadata || {}
+      );
       return c.json({ data: result });
     } catch (err: any) {
       return c.json({ error: err.message }, 400);
@@ -418,12 +468,21 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
 
     const data =
       conditions.length > 0
-        ? await db.select().from(journals).where(and(...conditions)).orderBy(desc(journals.date)).limit(limit).offset(offset)
+        ? await db
+            .select()
+            .from(journals)
+            .where(and(...conditions))
+            .orderBy(desc(journals.date))
+            .limit(limit)
+            .offset(offset)
         : await db.select().from(journals).orderBy(desc(journals.date)).limit(limit).offset(offset);
 
     const countResult =
       conditions.length > 0
-        ? await db.select({ total: count() }).from(journals).where(and(...conditions))
+        ? await db
+            .select({ total: count() })
+            .from(journals)
+            .where(and(...conditions))
         : await db.select({ total: count() }).from(journals);
 
     const total = Number(countResult[0].total);
@@ -434,10 +493,17 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.get("/journals/:id", async (c) => {
-    const [entry] = await db.select().from(journals).where(eq(journals.id, c.req.param("id"))).limit(1);
+    const [entry] = await db
+      .select()
+      .from(journals)
+      .where(eq(journals.id, c.req.param("id")))
+      .limit(1);
     if (!entry) return c.json({ error: "Journal not found" }, 404);
 
-    const lines = await db.select().from(ledgerEntries).where(eq(ledgerEntries.journalId, entry.id));
+    const lines = await db
+      .select()
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.journalId, entry.id));
     return c.json({ data: { ...entry, lines } });
   });
 
@@ -512,7 +578,10 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.delete("/journals/:id", async (c) => {
-    const [entry] = await db.delete(journals).where(eq(journals.id, c.req.param("id"))).returning();
+    const [entry] = await db
+      .delete(journals)
+      .where(eq(journals.id, c.req.param("id")))
+      .returning();
     if (!entry) return c.json({ error: "Journal not found" }, 404);
     return c.json({ success: true });
   });
@@ -600,14 +669,23 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
 
     const data =
       conditions.length > 0
-        ? await db.select().from(disbursements).where(and(...conditions)).orderBy(desc(disbursements.createdAt)).limit(limit)
+        ? await db
+            .select()
+            .from(disbursements)
+            .where(and(...conditions))
+            .orderBy(desc(disbursements.createdAt))
+            .limit(limit)
         : await db.select().from(disbursements).orderBy(desc(disbursements.createdAt)).limit(limit);
 
     return c.json({ data });
   });
 
   app.get("/disbursements/:id", async (c) => {
-    const [disb] = await db.select().from(disbursements).where(eq(disbursements.id, c.req.param("id"))).limit(1);
+    const [disb] = await db
+      .select()
+      .from(disbursements)
+      .where(eq(disbursements.id, c.req.param("id")))
+      .limit(1);
     if (!disb) return c.json({ error: "Disbursement not found" }, 404);
     return c.json({ data: disb });
   });
@@ -641,7 +719,10 @@ export function createContaRouter(ctx: GrimoireContext): Hono {
   });
 
   app.delete("/disbursements/:id", async (c) => {
-    const [disb] = await db.delete(disbursements).where(eq(disbursements.id, c.req.param("id"))).returning();
+    const [disb] = await db
+      .delete(disbursements)
+      .where(eq(disbursements.id, c.req.param("id")))
+      .returning();
     if (!disb) return c.json({ error: "Disbursement not found" }, 404);
     return c.json({ success: true });
   });

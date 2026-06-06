@@ -3,20 +3,21 @@
  * Features: CRUD, Signed URLs, Image Optimization (WebP), Valkey Caching
  */
 
-import { Hono } from "hono";
 import { eq, desc, sql } from "drizzle-orm";
+import { Hono } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "../db";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { media } from "../db/schema";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { uploadFile, deleteFile, generateSignedDownloadUrl, generateS3Key, uploadBuffer } from "../services/storage";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { cachedQuery, invalidateCache } from "../lib/cache";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { optimizeImage, getImageDimensions } from "../lib/image";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { requireAuth } from "../middleware/auth";
+import { deleteFile, generateSignedDownloadUrl, generateS3Key, uploadBuffer } from "../services/storage";
 
 export const mediaRoutes = new Hono();
 

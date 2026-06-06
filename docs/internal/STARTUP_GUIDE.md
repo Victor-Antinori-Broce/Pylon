@@ -23,6 +23,7 @@ docker compose up -d
 ```
 
 **Servicios levantados:**
+
 - **PostgreSQL 16**: Capa de persistencia relacional.
 - **Valkey / DragonflyDB**: Fork optimizado de Redis para colas de BullMQ y cache.
 - **MinIO**: Almacenamiento de objetos S3 para media.
@@ -32,6 +33,7 @@ docker compose up -d
 ## ⚡ Paso 2: Configuración del Entorno
 
 1. Copia el archivo de ejemplo:
+
    ```bash
    cp apps/api/.env.example apps/api/.env
    ```
@@ -48,15 +50,17 @@ docker compose up -d
 GremiusCMS es **Modular por Diseño**. No necesitas cargar código que no usas.
 
 ### Habilitar Módulos
+
 Edita `apps/api/gremius.config.ts`:
+
 ```typescript
 const config: GremiusConfig = {
   modules: [
-    "booking",   // Sistema de Reservas
+    "booking", // Sistema de Reservas
     "directory", // Directorio de Empleados
-    "academy",   // LMS / Academia
-    "dms",       // Gestión Documental
-    "formulas",  // Motor de KPIs
+    "academy", // LMS / Academia
+    "dms", // Gestión Documental
+    "formulas", // Motor de KPIs
   ],
 };
 ```
@@ -71,6 +75,7 @@ Al arrancar, el `module-loader` importa dinámicamente las rutas Hono, los servi
 TOON es un formato ultra-compacto para agentes de IA.
 
 ### Probar TOON:
+
 ```bash
 # Usando Header
 curl http://localhost:3001/api/custom/academy/courses -H "Accept: application/vnd.toon"
@@ -84,12 +89,15 @@ curl http://localhost:3001/api/custom/academy/courses?format=toon
 ## 🛠️ Comandos de Desarrollo Frecuentes
 
 ### Base de Datos (Drizzle)
+
 Desde la raíz o en `apps/api`:
+
 - `pnpm db:push`: Sincroniza el esquema consolidado (Core + Módulos) con la DB.
 - `pnpm db:seed`: Puebla la base de datos con un superadmin y datos de prueba.
 - `pnpm db:studio`: Abre una interfaz web para ver los datos.
 
 ### Infraestructura (Valkey)
+
 ```bash
 # Verificar conexión
 docker exec -it gremius-cache redis-cli ping
@@ -102,14 +110,14 @@ docker exec -it gremius-cache redis-cli keys "bull:*"
 
 ## 📊 Inventario de Módulos Core
 
-| Módulo | Key | Base URL | Rol |
-|:---|:---|:---|:---|
-| **Academy** | `academy` | `/api/custom/academy` | Creador de cursos, tests y diplomas. |
-| **DMS** | `dms` | `/api/custom/docs` | Aprobación de manuales y documentos. |
-| **Booking** | `booking` | `/api/custom/reservations` | Alquiler de espacios y recursos. |
-| **Directory** | `directory` | `/api/custom/directorio` | Gestión de headcount y departamentos. |
-| **Formulas** | `formulas` | `/api/custom/formulas` | Generador dinámico de KPIs matemáticos. |
-| **CRM** | `gremius-crm` | — | Automatización de pipeline de ventas. |
+| Módulo        | Key           | Base URL                   | Rol                                     |
+| :------------ | :------------ | :------------------------- | :-------------------------------------- |
+| **Academy**   | `academy`     | `/api/custom/academy`      | Creador de cursos, tests y diplomas.    |
+| **DMS**       | `dms`         | `/api/custom/docs`         | Aprobación de manuales y documentos.    |
+| **Booking**   | `booking`     | `/api/custom/reservations` | Alquiler de espacios y recursos.        |
+| **Directory** | `directory`   | `/api/custom/directorio`   | Gestión de headcount y departamentos.   |
+| **Formulas**  | `formulas`    | `/api/custom/formulas`     | Generador dinámico de KPIs matemáticos. |
+| **CRM**       | `gremius-crm` | —                          | Automatización de pipeline de ventas.   |
 
 ---
 

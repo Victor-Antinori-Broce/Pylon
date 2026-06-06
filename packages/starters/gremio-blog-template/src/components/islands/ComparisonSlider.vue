@@ -37,8 +37,20 @@
       <div class="divider-line" />
       <div class="divider-handle">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M7 4L3 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 4L17 10L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M7 4L3 10L7 16"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M13 4L17 10L13 16"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </div>
     </div>
@@ -97,12 +109,12 @@ function nudge(delta: number) {
   cursor: ew-resize;
   user-select: none;
   touch-action: none;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background: #000;
   outline: none;
 }
 .comparison-slider:focus-visible {
-  box-shadow: 0 0 0 2px rgba(0,229,255,0.4);
+  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.4);
 }
 
 .layer {
@@ -130,15 +142,15 @@ function nudge(delta: number) {
 }
 .before-label {
   left: 1rem;
-  background: rgba(0,229,255,0.2);
-  color: #00E5FF;
-  border: 1px solid rgba(0,229,255,0.25);
+  background: rgba(0, 229, 255, 0.2);
+  color: #00e5ff;
+  border: 1px solid rgba(0, 229, 255, 0.25);
 }
 .after-label {
   right: 1rem;
-  background: rgba(224,64,251,0.2);
-  color: #E040FB;
-  border: 1px solid rgba(224,64,251,0.25);
+  background: rgba(224, 64, 251, 0.2);
+  color: #e040fb;
+  border: 1px solid rgba(224, 64, 251, 0.25);
 }
 
 /* Divider */
@@ -156,8 +168,8 @@ function nudge(delta: number) {
 .divider-line {
   flex: 1;
   width: 2px;
-  background: rgba(255,255,255,0.8);
-  box-shadow: 0 0 12px rgba(0,229,255,0.3);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
 }
 
 .divider-handle {
@@ -167,19 +179,21 @@ function nudge(delta: number) {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
-  border: 2px solid rgba(255,255,255,0.6);
+  border: 2px solid rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.5);
-  transition: transform 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
 }
 .comparison-slider:hover .divider-handle,
 .comparison-slider:focus-visible .divider-handle {
-  border-color: #00E5FF;
+  border-color: #00e5ff;
   transform: translateY(-50%) scale(1.1);
 }
 </style>

@@ -10,11 +10,11 @@ Guía de configuración para integrar Academy LMS con el sistema de Gremius.
 
 El Academy LMS ya está **registrado** en el sistema Gremius:
 
-| Componente | Estado | Ubicación |
-|------------|--------|-----------|
+| Componente        | Estado        | Ubicación                                              |
+| ----------------- | ------------- | ------------------------------------------------------ |
 | GRIMOIRE_REGISTRY | ✅ Registrado | `apps/api/src/services/module-registry.ts` (línea 129) |
-| gremius.config.ts | ✅ Incluido | `apps/api/gremius.config.ts` (línea 67) |
-| GRIMOIRE_DIR_MAP | ✅ Mapeado | `apps/api/src/lib/module-loader.ts` (línea 343) |
+| gremius.config.ts | ✅ Incluido   | `apps/api/gremius.config.ts` (línea 67)                |
+| GRIMOIRE_DIR_MAP  | ✅ Mapeado    | `apps/api/src/lib/module-loader.ts` (línea 343)        |
 
 ### Configuración de Grimoire
 
@@ -67,10 +67,10 @@ PATCH /api/modules/academy
 
 ### Estados del Toggle
 
-| Estado | Comportamiento |
-|--------|----------------|
-| `enabled: true` | ✅ Rutas montadas en `/api/academy`, visible en sidebar |
-| `enabled: false` | ❌ Rutas no disponibles, oculto en sidebar |
+| Estado           | Comportamiento                                          |
+| ---------------- | ------------------------------------------------------- |
+| `enabled: true`  | ✅ Rutas montadas en `/api/academy`, visible en sidebar |
+| `enabled: false` | ❌ Rutas no disponibles, oculto en sidebar              |
 
 ---
 
@@ -81,16 +81,19 @@ PATCH /api/modules/academy
 Archivo creado: `packages/admin/src/views/academy/AcademyView.svelte`
 
 El sistema detecta automáticamente la vista si sigue la convención:
+
 - 📁 `packages/admin/src/views/{grimoire-id}/`
 - 📄 `{PascalCase(grimoire-id)}View.svelte`
 
 Para Academy:
+
 - 📁 `packages/admin/src/views/academy/`
 - 📄 `AcademyView.svelte`
 
 ### Detección Automática
 
 El `admin-registry.ts` detecta la vista buscando:
+
 1. `views/academy/AcademyView.svelte` ✅
 2. `views/AcademyView.svelte`
 3. `views/academy/index.svelte`
@@ -114,20 +117,21 @@ El `admin-registry.ts` detecta la vista buscando:
 Cuando el toggle está **ON**:
 
 ### Base URL
+
 ```
 /api/academy
 ```
 
 ### Endpoints Principales
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/cursos` | Listar cursos |
-| POST | `/cursos` | Crear curso |
-| GET | `/cursos/:id` | Ver curso |
-| GET | `/dashboard` | Métricas |
-| GET | `/certificados/:id/pdf` | Descargar PDF |
-| GET | `/exportar/asignaciones` | Excel |
+| Método | Endpoint                 | Descripción   |
+| ------ | ------------------------ | ------------- |
+| GET    | `/cursos`                | Listar cursos |
+| POST   | `/cursos`                | Crear curso   |
+| GET    | `/cursos/:id`            | Ver curso     |
+| GET    | `/dashboard`             | Métricas      |
+| GET    | `/certificados/:id/pdf`  | Descargar PDF |
+| GET    | `/exportar/asignaciones` | Excel         |
 
 ### Documentación Completa
 
@@ -140,6 +144,7 @@ Ver: `packages/grimoires/grimoire-academy-lms/API.md`
 ### Vista Principal (AcademyView.svelte)
 
 Incluye:
+
 - 📊 Stats cards (Cursos, Estudiantes, Completados, Tasa)
 - ⚡ Quick actions (Cursos, Grupos, Learning Paths)
 - 📚 Lista de cursos recientes
@@ -148,15 +153,13 @@ Incluye:
 ### Iconos Usados
 
 ```svelte
-import { 
-  GraduationCap,  // Logo principal
-  BookOpen,       // Cursos
-  Users,          // Estudiantes
-  Trophy,         // Completados
-  TrendingUp,     // Tasa éxito
-  Route,          // Learning Paths
-  Award           // Certificados
-} from "lucide-svelte";
+import {(GraduationCap, // Logo principal
+BookOpen, // Cursos
+Users, // Estudiantes
+Trophy, // Completados
+TrendingUp, // Tasa éxito
+Route, // Learning Paths
+Award)} from "lucide-svelte";
 ```
 
 ---
@@ -166,6 +169,7 @@ import {
 Al activar el grimoire, se crean automáticamente:
 
 ### Tablas Principales (20)
+
 - `perfil_usuario_capacitaciones` - Roles de usuarios
 - `cursos` - Cursos disponibles
 - `grupos_asignacion` - Grupos de estudiantes
@@ -178,6 +182,7 @@ Al activar el grimoire, se crean automáticamente:
 - `encuestas_satisfaccion` - Feedback
 
 ### Enums (7)
+
 - `rol_capacitaciones` - admin, supervisor, estudiante
 - `tipo_curso` - INDUCCION, GESTION, TECNICO, etc.
 - `departamento` - 13 departamentos
@@ -209,7 +214,7 @@ Asegúrate de que Academy esté en `gremius.config.ts`:
 // apps/api/gremius.config.ts
 const GRIMOIRES = [
   // ...
-  "academy",  // ← Debe estar aquí
+  "academy", // ← Debe estar aquí
   // ...
 ];
 ```
@@ -271,6 +276,7 @@ curl http://localhost:3000/api/academy/dashboard \
 **Causa posible**: El toggle está OFF
 
 **Solución**:
+
 ```bash
 # Activar via API
 curl -X PATCH http://localhost:3000/api/modules/academy \
@@ -284,6 +290,7 @@ curl -X PATCH http://localhost:3000/api/modules/academy \
 **Causa posible**: Grimoire no cargado
 
 **Solución**:
+
 1. Verificar logs del servidor
 2. Revisar que `grimoire-academy-lms/index.ts` exporte `academyLMSRoutes`
 3. Reiniciar servidor
@@ -293,6 +300,7 @@ curl -X PATCH http://localhost:3000/api/modules/academy \
 **Causa posible**: Archivo Svelte no encontrado
 
 **Solución**:
+
 ```bash
 # Verificar que existe
 ls packages/admin/src/views/academy/AcademyView.svelte

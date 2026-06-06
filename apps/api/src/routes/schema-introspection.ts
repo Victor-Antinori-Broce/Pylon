@@ -1,6 +1,6 @@
 /**
  * Schema Introspection API
- * 
+ *
  * Provides database schema introspection endpoints for:
  * - Auto-discovery of table structure
  * - Column types and constraints
@@ -9,14 +9,15 @@
  */
 
 import { Hono } from "hono";
+
 import { requireAuth } from "../middleware/auth";
-import { 
-  introspectTable, 
-  getAllTables, 
-  searchTables, 
+import {
+  introspectTable,
+  getAllTables,
+  searchTables,
   getRelatedTables,
   generateAdminConfigFromIntrospection,
-  clearIntrospectionCache
+  clearIntrospectionCache,
 } from "../services/schema-introspector";
 
 export const schemaIntrospectionRoutes = new Hono();
@@ -34,14 +35,17 @@ schemaIntrospectionRoutes.get("/tables", async (c) => {
     return c.json({
       success: true,
       tables,
-      count: tables.length
+      count: tables.length,
     });
   } catch (err) {
     console.error("[SchemaIntrospection] Failed to get tables:", err);
-    return c.json({
-      success: false,
-      error: "Failed to retrieve tables"
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to retrieve tables",
+      },
+      500
+    );
   }
 });
 
@@ -51,27 +55,33 @@ schemaIntrospectionRoutes.get("/tables", async (c) => {
  */
 schemaIntrospectionRoutes.get("/tables/:tableName", async (c) => {
   const tableName = c.req.param("tableName");
-  
+
   try {
     const introspected = await introspectTable(tableName);
-    
+
     if (!introspected) {
-      return c.json({
-        success: false,
-        error: `Table '${tableName}' not found`
-      }, 404);
+      return c.json(
+        {
+          success: false,
+          error: `Table '${tableName}' not found`,
+        },
+        404
+      );
     }
 
     return c.json({
       success: true,
-      table: introspected
+      table: introspected,
     });
   } catch (err) {
     console.error(`[SchemaIntrospection] Failed to introspect ${tableName}:`, err);
-    return c.json({
-      success: false,
-      error: "Failed to introspect table"
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to introspect table",
+      },
+      500
+    );
   }
 });
 
@@ -81,20 +91,23 @@ schemaIntrospectionRoutes.get("/tables/:tableName", async (c) => {
  */
 schemaIntrospectionRoutes.get("/tables/:tableName/admin-config", async (c) => {
   const tableName = c.req.param("tableName");
-  
+
   try {
     const config = await generateAdminConfigFromIntrospection(tableName);
-    
+
     return c.json({
       success: true,
-      config
+      config,
     });
   } catch (err) {
     console.error(`[SchemaIntrospection] Failed to generate config for ${tableName}:`, err);
-    return c.json({
-      success: false,
-      error: err instanceof Error ? err.message : "Failed to generate config"
-    }, 404);
+    return c.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Failed to generate config",
+      },
+      404
+    );
   }
 });
 
@@ -104,21 +117,24 @@ schemaIntrospectionRoutes.get("/tables/:tableName/admin-config", async (c) => {
  */
 schemaIntrospectionRoutes.get("/tables/:tableName/related", async (c) => {
   const tableName = c.req.param("tableName");
-  
+
   try {
     const related = await getRelatedTables(tableName);
-    
+
     return c.json({
       success: true,
       table: tableName,
-      related
+      related,
     });
   } catch (err) {
     console.error(`[SchemaIntrospection] Failed to get related tables for ${tableName}:`, err);
-    return c.json({
-      success: false,
-      error: "Failed to get related tables"
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to get related tables",
+      },
+      500
+    );
   }
 });
 
@@ -128,29 +144,35 @@ schemaIntrospectionRoutes.get("/tables/:tableName/related", async (c) => {
  */
 schemaIntrospectionRoutes.get("/search", async (c) => {
   const query = c.req.query("q");
-  
+
   if (!query) {
-    return c.json({
-      success: false,
-      error: "Query parameter 'q' is required"
-    }, 400);
+    return c.json(
+      {
+        success: false,
+        error: "Query parameter 'q' is required",
+      },
+      400
+    );
   }
 
   try {
     const tables = await searchTables(query);
-    
+
     return c.json({
       success: true,
       query,
       tables,
-      count: tables.length
+      count: tables.length,
     });
   } catch (err) {
     console.error("[SchemaIntrospection] Failed to search tables:", err);
-    return c.json({
-      success: false,
-      error: "Failed to search tables"
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to search tables",
+      },
+      500
+    );
   }
 });
 
@@ -161,16 +183,19 @@ schemaIntrospectionRoutes.get("/search", async (c) => {
 schemaIntrospectionRoutes.post("/refresh", async (c) => {
   try {
     clearIntrospectionCache();
-    
+
     return c.json({
       success: true,
-      message: "Schema cache cleared"
+      message: "Schema cache cleared",
     });
   } catch (err) {
     console.error("[SchemaIntrospection] Failed to clear cache:", err);
-    return c.json({
-      success: false,
-      error: "Failed to clear cache"
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to clear cache",
+      },
+      500
+    );
   }
 });

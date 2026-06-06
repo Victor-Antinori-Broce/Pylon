@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Video, Loader2, AlertCircle, Check, ExternalLink } from "lucide-svelte";
+
   import { api } from "$lib/api";
 
   interface YouTubeInfo {
@@ -17,7 +18,7 @@
     required?: boolean;
   }
 
-  let { value = "", onChange, label = "Video de YouTube", required = false }: Props = $props();
+  const { value = "", onChange, label = "Video de YouTube", required = false }: Props = $props();
 
   let loading = $state(false);
   let error = $state<string | null>(null);
@@ -30,7 +31,7 @@
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
       /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
     ];
-    return patterns.some(p => p.test(url));
+    return patterns.some((p) => p.test(url));
   }
 
   async function handleValidate() {
@@ -48,10 +49,10 @@
     }
 
     loading = true;
-    
+
     try {
       const info = await api.getYouTubeInfo(inputValue);
-      
+
       if (!info.valido) {
         error = "No se pudo extraer información del video";
         return;
@@ -131,11 +132,7 @@
     <div class="card p-3 border-gremius-cyan/20">
       <div class="flex gap-3">
         <div class="w-32 h-20 bg-gremius-surface rounded-lg overflow-hidden flex-shrink-0">
-          <img 
-            src={videoInfo.thumbnailUrl} 
-            alt="Thumbnail"
-            class="w-full h-full object-cover"
-          />
+          <img src={videoInfo.thumbnailUrl} alt="Thumbnail" class="w-full h-full object-cover" />
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-gremius-text truncate">
@@ -144,9 +141,9 @@
           <p class="text-xs text-gremius-subtle mt-1">
             ID: {videoInfo.videoId}
           </p>
-          <a 
-            href={inputValue} 
-            target="_blank" 
+          <a
+            href={inputValue}
+            target="_blank"
             rel="noopener noreferrer"
             class="inline-flex items-center gap-1 text-xs text-gremius-cyan hover:underline mt-2"
           >

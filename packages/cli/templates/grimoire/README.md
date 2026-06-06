@@ -5,6 +5,7 @@ A minimal example grimoire for GremiusCMS. Use this as a template to build your 
 ## Quick Start
 
 1. **Copy this template:**
+
    ```bash
    cp -r packages/cli/templates/grimoire packages/grimoires/grimoire-myfeature
    cd packages/grimoires/grimoire-myfeature
@@ -34,16 +35,16 @@ A minimal example grimoire for GremiusCMS. Use this as a template to build your 
 
 ## Manifest Fields
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | ✅ | Unique grimoire ID (e.g. `grimoire-myfeature`) |
-| `name` | ✅ | Human-readable name |
-| `version` | ✅ | Semver version |
-| `type` | ✅ | Always `"grimoire"` |
-| `mount.path` | ❌ | Router mount path (default: `/api/custom/{id}`) |
-| `dependencies.grimoires` | ❌ | Array of grimoire IDs this depends on |
-| `tables` | ❌ | Tables exposed for the admin UI |
-| `selfMigrating` | ❌ | If `true`, schema-merger skips this grimoire |
+| Field                    | Required | Description                                     |
+| ------------------------ | -------- | ----------------------------------------------- |
+| `id`                     | ✅       | Unique grimoire ID (e.g. `grimoire-myfeature`)  |
+| `name`                   | ✅       | Human-readable name                             |
+| `version`                | ✅       | Semver version                                  |
+| `type`                   | ✅       | Always `"grimoire"`                             |
+| `mount.path`             | ❌       | Router mount path (default: `/api/custom/{id}`) |
+| `dependencies.grimoires` | ❌       | Array of grimoire IDs this depends on           |
+| `tables`                 | ❌       | Tables exposed for the admin UI                 |
+| `selfMigrating`          | ❌       | If `true`, schema-merger skips this grimoire    |
 
 ## Installation
 

@@ -11,6 +11,7 @@
  */
 
 import { Queue, Worker, type Processor, type ConnectionOptions, type Job } from "bullmq";
+
 import { valkeyConnection, isValkeyAvailable, VALKEY_URL } from "./valkey";
 
 const connection: ConnectionOptions = valkeyConnection;
@@ -68,7 +69,9 @@ export function createWorker<T = unknown>(
     if (!errorLogged) {
       console.warn(`  ⚠️  [${name}] Worker connection error (suppressing repeats): ${err.message}`);
       errorLogged = true;
-      setTimeout(() => { errorLogged = false; }, 60000);
+      setTimeout(() => {
+        errorLogged = false;
+      }, 60000);
     }
   });
 
@@ -102,7 +105,9 @@ export const emailQueue = {
   async add(name: string, data: EmailJobData & Record<string, unknown>) {
     const available = await checkRedis();
     if (!available) {
-      console.warn(`  📧 [QUEUE OFFLINE] Valkey unavailable — skipping job "${name}" for ${data.to}`);
+      console.warn(
+        `  📧 [QUEUE OFFLINE] Valkey unavailable — skipping job "${name}" for ${data.to}`
+      );
       return null;
     }
     try {
@@ -121,7 +126,9 @@ export const emailQueue = {
     try {
       const queue = getQueue<EmailJobData>("gremius-email");
       return await queue.getWaitingCount();
-    } catch { return 0; }
+    } catch {
+      return 0;
+    }
   },
 
   async getActiveCount() {
@@ -130,7 +137,9 @@ export const emailQueue = {
     try {
       const queue = getQueue<EmailJobData>("gremius-email");
       return await queue.getActiveCount();
-    } catch { return 0; }
+    } catch {
+      return 0;
+    }
   },
 };
 

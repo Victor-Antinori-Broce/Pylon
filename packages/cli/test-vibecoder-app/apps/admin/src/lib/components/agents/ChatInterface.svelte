@@ -3,9 +3,9 @@
   Panel de chat interactivo para probar agentes
 -->
 <script lang="ts">
+  import Button from '$lib/components/ui/Button.svelte';
   import { cn } from '$lib/utils';
   import { Send, Bot, User, Loader2 } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
   import { tick } from 'svelte';
   
   interface Message {

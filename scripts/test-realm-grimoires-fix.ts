@@ -14,19 +14,19 @@ async function getRealmGrimoires(realmId: string, workspaceRoot?: string): Promi
   try {
     const realmJsonPath = join(root, "packages/realms", realmId, "realm.json");
     const realmFile = Bun.file(realmJsonPath);
-    
+
     if (await realmFile.exists()) {
       const manifest = await realmFile.json();
       return manifest.grimoires || [];
     }
-    
+
     const legacyPath = join(root, "packages/realms", realmId, "gremius.json");
     const legacyFile = Bun.file(legacyPath);
     if (await legacyFile.exists()) {
       const manifest = await legacyFile.json();
       return manifest.grimoires || manifest.bundled_modules || [];
     }
-    
+
     return [];
   } catch (err) {
     console.warn(`  ⚠️  Could not read realm manifest for ${realmId}:`, err);
@@ -37,33 +37,33 @@ async function getRealmGrimoires(realmId: string, workspaceRoot?: string): Promi
 // Simulamos la función getRealmGrimoireKeys (la que acabamos de crear)
 async function getRealmGrimoireKeys(activeRealm: string | null): Promise<Set<string>> {
   const keys = new Set<string>();
-  
+
   // Simulamos los grimoires del hardcoded registry
   const hardcodedRealmGrimoires = [
     { key: "grimoire-games" },
     { key: "grimoire-esports" },
     { key: "grimoire-streamers" },
   ];
-  
+
   // Add hardcoded registry realm grimoires
   for (const g of hardcodedRealmGrimoires) {
     keys.add(g.key);
     // Also add without grimoire- prefix for flexibility
     keys.add(g.key.replace(/^grimoire-/, ""));
   }
-  
+
   // Add grimoires from active realm (from realm.json)
   if (activeRealm) {
     const realmGrimoires = await getRealmGrimoires(activeRealm);
     console.log(`   📖 Grimoires from realm.json for ${activeRealm}: ${realmGrimoires.join(", ")}`);
-    
+
     for (const grimoireId of realmGrimoires) {
       keys.add(grimoireId);
       // Also add without grimoire- prefix
       keys.add(grimoireId.replace(/^grimoire-/, ""));
     }
   }
-  
+
   return keys;
 }
 
@@ -100,12 +100,14 @@ async function main() {
     { id: "grimoire-crm", expected: false }, // No es de realm
     { id: "grimoire-blog", expected: false }, // No es de realm
   ];
-  
+
   for (const test of testGrimoires) {
     const cleanName = test.id.replace(/^grimoire-/, "");
     const isRealmGrimoire = keysWithRealm.has(test.id) || keysWithRealm.has(cleanName);
     const status = isRealmGrimoire === test.expected ? "✅" : "❌";
-    console.log(`   ${status} ${test.id}: isRealmGrimoire=${isRealmGrimoire} (esperado=${test.expected})`);
+    console.log(
+      `   ${status} ${test.id}: isRealmGrimoire=${isRealmGrimoire} (esperado=${test.expected})`
+    );
   }
 
   console.log("\n" + "═".repeat(70));

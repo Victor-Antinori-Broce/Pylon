@@ -8,11 +8,12 @@
    * - Relaciones
    * - Vistas del DataExplorer
    */
-  import { Plus, Settings, Table2, Calculator, ChevronRight, Save, X, Loader2 } from "lucide-svelte";
   import { KpiCreator, FormulaBuilder, type CalculatedField } from "$lib/components/calculated-fields";
-  import { goto } from "$app/navigation";
   import { datasetStore } from "$lib/states/datasets.svelte";
   import type { CreateDatasetPayload, FieldDefinition } from "@gremius/shared";
+  import { Plus, Settings, Table2, Calculator, ChevronRight, Save, X, Loader2 } from "lucide-svelte";
+
+  import { goto } from "$app/navigation";
   
   // Tipos de campo nativos
   const nativeFieldTypes = [
@@ -142,7 +143,7 @@
   });
   
   // Campos disponibles para fórmulas
-  let availableFormulaFields = $derived([
+  const availableFormulaFields = $derived([
     ...fields.map(f => ({ name: f.name, label: f.label, type: f.type })),
     ...calculatedFields.map(f => ({ name: f.name, label: f.label, type: "number" }))
   ].filter(f => f.name));

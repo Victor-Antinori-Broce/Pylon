@@ -1,19 +1,34 @@
 <script lang="ts">
   /**
    * DatasetCreator - Creador de Datasets con soporte para campos calculados
-   * 
+   *
    * Vista para crear y configurar datasets con:
    * - Campos nativos
    * - Campos calculados/KPIs
    * - Relaciones
    * - Vistas del DataExplorer
    */
-  import { Plus, Settings, Table2, Calculator, ChevronRight, Save, X, Loader2 } from "lucide-svelte";
-  import { KpiCreator, FormulaBuilder, type CalculatedField } from "$lib/components/calculated-fields";
-  import { goto } from "$app/navigation";
-  import { datasetStore } from "$lib/states/datasets.svelte";
   import type { CreateDatasetPayload, FieldDefinition } from "@gremius/shared";
-  
+  import {
+    Plus,
+    Settings,
+    Table2,
+    Calculator,
+    ChevronRight,
+    Save,
+    X,
+    Loader2,
+  } from "lucide-svelte";
+
+  import {
+    KpiCreator,
+    FormulaBuilder,
+    type CalculatedField,
+  } from "$lib/components/calculated-fields";
+  import { datasetStore } from "$lib/states/datasets.svelte";
+
+  import { goto } from "$app/navigation";
+
   // Tipos de campo nativos
   const nativeFieldTypes = [
     { id: "text", label: "Text", description: "Short text input" },
@@ -28,64 +43,67 @@
     { id: "media", label: "Media", description: "Images or files" },
     { id: "kpi", label: "KPI", description: "Calculated metric" },
   ];
-  
+
   // Estado
   let step = $state(1);
   let datasetName = $state("");
   let datasetLabel = $state("");
   let description = $state("");
-  
+
   // Campos
-  let fields = $state<Array<{ id: string; name: string; label: string; type: string; config?: any }>>([]);
+  let fields = $state<
+    Array<{ id: string; name: string; label: string; type: string; config?: any }>
+  >([]);
   let calculatedFields = $state<CalculatedField[]>([]);
-  
+
   // UI state
   let showAddField = $state(false);
   let showAddCalculated = $state(false);
   let editingField = $state<any>(null);
-  
+
   // Preview field para formula builder
   let previewFormula = $state("");
-  
+
   const steps = [
     { id: 1, label: "Basic Info", icon: Settings },
     { id: 2, label: "Fields", icon: Table2 },
     { id: 3, label: "Calculated Fields", icon: Calculator },
     { id: 4, label: "Review", icon: Save },
   ];
-  
+
   function addField(type: string) {
     const id = crypto.randomUUID();
-    fields = [...fields, { 
-      id, 
-      name: ``, 
-      label: `New ${type}`, 
-      type,
-      config: {}
-    }];
+    fields = [
+      ...fields,
+      {
+        id,
+        name: ``,
+        label: `New ${type}`,
+        type,
+        config: {},
+      },
+    ];
     editingField = fields[fields.length - 1];
     showAddField = false;
   }
-  
+
   function removeField(index: number) {
     const field = fields[index];
     fields = fields.filter((_, i) => i !== index);
-    
+
     // Remover campos calculados que dependen de este campo
-    calculatedFields = calculatedFields.filter(cf => 
-      !cf.dependsOn?.includes(field.name)
-    );
+    calculatedFields = calculatedFields.filter((cf) => !cf.dependsOn?.includes(field.name));
   }
-  
+
   function addCalculatedField(field: CalculatedField) {
     calculatedFields = [...calculatedFields, field];
     showAddCalculated = false;
   }
-  
+
   function removeCalculatedField(index: number) {
     calculatedFields = calculatedFields.filter((_, i) => i !== index);
   }
-  
+
   async function saveDataset() {
     // Transformar campos al formato FieldDefinition
     const transformedFields: FieldDefinition[] = fields.map((f, index) => ({
@@ -97,9 +115,9 @@
       isRequired: false,
       isUnique: false,
       hidden: false,
-      ...f.config
+      ...f.config,
     }));
-    
+
     // Agregar campos calculados como campos de tipo KPI
     const calculatedFieldsAsKpi: FieldDefinition[] = calculatedFields.map((cf, index) => ({
       id: cf.id,
@@ -112,7 +130,7 @@
       hidden: false,
       helpText: cf.config?.expression || `${cf.type} calculation`,
     }));
-    
+
     const payload: CreateDatasetPayload = {
       name: datasetLabel,
       slug: datasetName,
@@ -121,16 +139,16 @@
       policyJson: null,
       workflowJson: null,
     };
-    
+
     const result = await datasetStore.createDataset(payload);
-    
+
     if (result) {
       goto("/datasets");
     } else {
       alert(`Failed to create dataset: ${datasetStore.error}`);
     }
   }
-  
+
   // Generar nombre desde label
   $effect(() => {
     if (datasetLabel && !datasetName) {
@@ -140,12 +158,14 @@
         .replace(/^_+|_+$/g, "");
     }
   });
-  
+
   // Campos disponibles para fórmulas
-  let availableFormulaFields = $derived([
-    ...fields.map(f => ({ name: f.name, label: f.label, type: f.type })),
-    ...calculatedFields.map(f => ({ name: f.name, label: f.label, type: "number" }))
-  ].filter(f => f.name));
+  const availableFormulaFields = $derived(
+    [
+      ...fields.map((f) => ({ name: f.name, label: f.label, type: f.type })),
+      ...calculatedFields.map((f) => ({ name: f.name, label: f.label, type: "number" })),
+    ].filter((f) => f.name)
+  );
 </script>
 
 <div class="max-w-5xl mx-auto space-y-6">
@@ -160,9 +180,7 @@
     </div>
     <div class="flex items-center gap-2">
       {#if step > 1}
-        <button class="btn-secondary" onclick={() => step--}>
-          Back
-        </button>
+        <button class="btn-secondary" onclick={() => step--}> Back </button>
       {/if}
       {#if step < 4}
         <button class="btn-primary flex items-center gap-2" onclick={() => step++}>
@@ -170,8 +188,8 @@
           <ChevronRight class="w-4 h-4" />
         </button>
       {:else}
-        <button 
-          class="btn-primary flex items-center gap-2" 
+        <button
+          class="btn-primary flex items-center gap-2"
           onclick={saveDataset}
           disabled={datasetStore.isLoading}
         >
@@ -186,13 +204,18 @@
       {/if}
     </div>
   </div>
-  
+
   <!-- Steps -->
   <div class="flex items-center gap-2">
     {#each steps as s, index}
       <button
-        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all {step === s.id ? 'bg-gremius-cyan text-black' : step > s.id ? 'bg-gremius-cyan/20 text-gremius-cyan' : 'bg-gremius-surface text-gremius-subtle'}"
-        onclick={() => step = s.id}
+        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all {step ===
+        s.id
+          ? 'bg-gremius-cyan text-black'
+          : step > s.id
+            ? 'bg-gremius-cyan/20 text-gremius-cyan'
+            : 'bg-gremius-surface text-gremius-subtle'}"
+        onclick={() => (step = s.id)}
       >
         <svelte:component this={s.icon} class="w-4 h-4" />
         {s.label}
@@ -202,15 +225,17 @@
       {/if}
     {/each}
   </div>
-  
+
   <!-- Error Message -->
   {#if datasetStore.error}
-    <div class="bg-gremius-pink/10 border border-gremius-pink/30 text-gremius-pink px-4 py-3 rounded-lg mb-4">
+    <div
+      class="bg-gremius-pink/10 border border-gremius-pink/30 text-gremius-pink px-4 py-3 rounded-lg mb-4"
+    >
       <p class="font-medium">Error</p>
       <p class="text-sm">{datasetStore.error}</p>
     </div>
   {/if}
-  
+
   <!-- Content -->
   <div class="bg-gremius-card border border-gremius-border rounded-xl p-6">
     {#if step === 1}
@@ -227,7 +252,7 @@
             class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text focus:outline-none focus:border-gremius-cyan"
           />
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-gremius-text mb-2">
             Dataset Name <span class="text-gremius-pink">*</span>
@@ -242,11 +267,9 @@
             Used in API endpoints. Auto-generated from label.
           </p>
         </div>
-        
+
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-2">
-            Description
-          </label>
+          <label class="block text-sm font-medium text-gremius-text mb-2"> Description </label>
           <textarea
             bind:value={description}
             placeholder="What data does this dataset contain?"
@@ -255,7 +278,6 @@
           />
         </div>
       </div>
-      
     {:else if step === 2}
       <!-- Step 2: Fields -->
       <div class="space-y-6">
@@ -265,20 +287,20 @@
           </h3>
           <button
             class="btn-secondary flex items-center gap-2"
-            onclick={() => showAddField = true}
+            onclick={() => (showAddField = true)}
           >
             <Plus class="w-4 h-4" />
             Add Field
           </button>
         </div>
-        
+
         {#if fields.length === 0}
           <div class="text-center py-12 border-2 border-dashed border-gremius-border rounded-xl">
             <Table2 class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
             <p class="text-gremius-text-dim">No fields yet</p>
             <button
               class="text-gremius-cyan hover:underline mt-2"
-              onclick={() => showAddField = true}
+              onclick={() => (showAddField = true)}
             >
               Add your first field
             </button>
@@ -286,7 +308,9 @@
         {:else}
           <div class="space-y-3">
             {#each fields as field, index}
-              <div class="flex items-center gap-4 p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border">
+              <div
+                class="flex items-center gap-4 p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border"
+              >
                 <div class="flex-1">
                   {#if editingField?.id === field.id}
                     <div class="flex items-center gap-3">
@@ -317,7 +341,7 @@
                       </select>
                       <button
                         class="p-1.5 text-gremius-green hover:bg-gremius-green/10 rounded"
-                        onclick={() => editingField = null}
+                        onclick={() => (editingField = null)}
                       >
                         <Save class="w-4 h-4" />
                       </button>
@@ -325,9 +349,13 @@
                   {:else}
                     <div class="flex items-center gap-3">
                       <span class="font-medium text-gremius-text">{field.label}</span>
-                      <code class="text-xs text-gremius-subtle bg-gremius-bg px-2 py-0.5 rounded">{field.name}</code>
-                      <span class="text-xs text-gremius-subtle px-2 py-0.5 bg-gremius-cyan/10 text-gremius-cyan rounded">
-                        {nativeFieldTypes.find(t => t.id === field.type)?.label}
+                      <code class="text-xs text-gremius-subtle bg-gremius-bg px-2 py-0.5 rounded"
+                        >{field.name}</code
+                      >
+                      <span
+                        class="text-xs text-gremius-subtle px-2 py-0.5 bg-gremius-cyan/10 text-gremius-cyan rounded"
+                      >
+                        {nativeFieldTypes.find((t) => t.id === field.type)?.label}
                       </span>
                     </div>
                   {/if}
@@ -335,7 +363,7 @@
                 <div class="flex items-center gap-1">
                   <button
                     class="p-1.5 text-gremius-subtle hover:text-gremius-text"
-                    onclick={() => editingField = field}
+                    onclick={() => (editingField = field)}
                   >
                     <Settings class="w-4 h-4" />
                   </button>
@@ -351,7 +379,6 @@
           </div>
         {/if}
       </div>
-      
     {:else if step === 3}
       <!-- Step 3: Calculated Fields -->
       <div class="space-y-6">
@@ -366,13 +393,13 @@
           </div>
           <button
             class="btn-primary flex items-center gap-2"
-            onclick={() => showAddCalculated = true}
+            onclick={() => (showAddCalculated = true)}
           >
             <Calculator class="w-4 h-4" />
             Add Calculated Field
           </button>
         </div>
-        
+
         {#if calculatedFields.length === 0}
           <div class="text-center py-12 border-2 border-dashed border-gremius-border rounded-xl">
             <Calculator class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
@@ -384,15 +411,21 @@
         {:else}
           <div class="space-y-3">
             {#each calculatedFields as cf, index}
-              <div class="flex items-center gap-4 p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border">
-                <div class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center">
+              <div
+                class="flex items-center gap-4 p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border"
+              >
+                <div
+                  class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center"
+                >
                   <Calculator class="w-5 h-5 text-gremius-cyan" />
                 </div>
                 <div class="flex-1">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-gremius-text">{cf.label}</span>
                     {#if cf.isKpi}
-                      <span class="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded">KPI</span>
+                      <span class="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded"
+                        >KPI</span
+                      >
                     {/if}
                   </div>
                   <code class="text-xs text-gremius-subtle">{cf.name}</code>
@@ -415,7 +448,7 @@
             {/each}
           </div>
         {/if}
-        
+
         <!-- Quick Formula Builder -->
         {#if fields.length > 0}
           <div class="mt-8 p-4 bg-gremius-surface/30 rounded-xl border border-gremius-border">
@@ -426,17 +459,16 @@
             <FormulaBuilder
               availableFields={availableFormulaFields}
               value={previewFormula}
-              onChange={(v) => previewFormula = v}
+              onChange={(v) => (previewFormula = v)}
             />
           </div>
         {/if}
       </div>
-      
     {:else if step === 4}
       <!-- Step 4: Review -->
       <div class="space-y-6">
         <h3 class="font-medium text-gremius-text">Review Dataset Configuration</h3>
-        
+
         <div class="space-y-4">
           <div class="p-4 bg-gremius-surface/50 rounded-lg">
             <h4 class="text-sm font-medium text-gremius-text mb-2">Basic Info</h4>
@@ -451,7 +483,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="p-4 bg-gremius-surface/50 rounded-lg">
             <h4 class="text-sm font-medium text-gremius-text mb-2">
               Native Fields ({fields.length})
@@ -465,14 +497,16 @@
               {/each}
             </div>
           </div>
-          
+
           <div class="p-4 bg-gremius-surface/50 rounded-lg">
             <h4 class="text-sm font-medium text-gremius-text mb-2">
               Calculated Fields ({calculatedFields.length})
             </h4>
             <div class="flex flex-wrap gap-2">
               {#each calculatedFields as cf}
-                <span class="px-3 py-1 bg-gremius-cyan/10 border border-gremius-cyan/20 rounded-lg text-sm text-gremius-cyan">
+                <span
+                  class="px-3 py-1 bg-gremius-cyan/10 border border-gremius-cyan/20 rounded-lg text-sm text-gremius-cyan"
+                >
                   {cf.label}
                   {#if cf.isKpi}
                     <span class="text-amber-400 ml-1">★</span>
@@ -503,10 +537,7 @@
           </button>
         {/each}
       </div>
-      <button
-        class="mt-4 w-full py-2 btn-secondary"
-        onclick={() => showAddField = false}
-      >
+      <button class="mt-4 w-full py-2 btn-secondary" onclick={() => (showAddField = false)}>
         Cancel
       </button>
     </div>
@@ -519,7 +550,7 @@
     <KpiCreator
       availableFields={availableFormulaFields}
       onSave={addCalculatedField}
-      onCancel={() => showAddCalculated = false}
+      onCancel={() => (showAddCalculated = false)}
     />
   </div>
 {/if}

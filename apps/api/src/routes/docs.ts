@@ -6,8 +6,9 @@
  * Provides interactive API documentation at /api/docs
  */
 
-import { Hono } from "hono";
 import { swaggerUI } from "@hono/swagger-ui";
+import { Hono } from "hono";
+
 import type { AppVariables } from "../types/hono";
 
 export const docsRoutes = new Hono<{ Variables: AppVariables }>();
@@ -177,10 +178,13 @@ const scalarHtml = `
  * Swagger UI - La documentación OpenAPI clásica
  * Familiar para muchos developers
  */
-docsRoutes.get("/", swaggerUI({
-  url: "/api/docs/openapi.json",
-  title: "GremiusCMS API Documentation",
-}));
+docsRoutes.get(
+  "/",
+  swaggerUI({
+    url: "/api/docs/openapi.json",
+    title: "GremiusCMS API Documentation",
+  })
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCALAR REFERENCE
@@ -196,7 +200,7 @@ docsRoutes.get("/modern", (c) => {
 
 /**
  * GET /api/docs/openapi.json
- * 
+ *
  * Retorna la especificación OpenAPI completa.
  * Usado por Swagger UI y Scalar.
  */
@@ -246,7 +250,7 @@ docsRoutes.get("/openapi.json", async (c) => {
           },
         },
       },
-      
+
       "/datasets": {
         get: {
           tags: ["Datasets"],
@@ -302,7 +306,7 @@ docsRoutes.get("/openapi.json", async (c) => {
           },
         },
       },
-      
+
       "/datasets/{id}/entries": {
         get: {
           tags: ["Entries"],
@@ -332,7 +336,7 @@ docsRoutes.get("/openapi.json", async (c) => {
           },
         },
       },
-      
+
       "/query": {
         post: {
           tags: ["Query"],
@@ -357,10 +361,7 @@ docsRoutes.get("/openapi.json", async (c) => {
                 example: {
                   dataset: "products",
                   where: {
-                    AND: [
-                      { price: { gte: 10 } },
-                      { category: { in: ["electronics", "gaming"] } },
-                    ],
+                    AND: [{ price: { gte: 10 } }, { category: { in: ["electronics", "gaming"] } }],
                   },
                   orderBy: { createdAt: "desc" },
                   limit: 20,
@@ -374,7 +375,7 @@ docsRoutes.get("/openapi.json", async (c) => {
           },
         },
       },
-      
+
       "/batch": {
         post: {
           tags: ["Batch"],
@@ -413,7 +414,7 @@ docsRoutes.get("/openapi.json", async (c) => {
           },
         },
       },
-      
+
       "/health": {
         get: {
           tags: ["System"],
@@ -439,7 +440,6 @@ docsRoutes.get("/openapi.json", async (c) => {
           },
         },
       },
-      
     },
     components: {
       schemas: {
@@ -500,10 +500,7 @@ docsRoutes.get("/openapi.json", async (c) => {
         },
       },
     },
-    security: [
-      { bearerAuth: [] },
-      { cookieAuth: [] },
-    ],
+    security: [{ bearerAuth: [] }, { cookieAuth: [] }],
   };
 
   return c.json(spec);
@@ -522,7 +519,7 @@ docsRoutes.get("/swagger", (c) => c.redirect("/api/docs"));
 
 /**
  * GET /api/docs/postman.json
- * 
+ *
  * Exporta una colección de Postman lista para importar.
  */
 docsRoutes.get("/postman.json", (c) => {
@@ -541,7 +538,11 @@ docsRoutes.get("/postman.json", (c) => {
             request: {
               method: "POST",
               header: [{ key: "Content-Type", value: "application/json" }],
-              url: { raw: "{{baseUrl}}/auth/login", host: ["{{baseUrl}}"], path: ["auth", "login"] },
+              url: {
+                raw: "{{baseUrl}}/auth/login",
+                host: ["{{baseUrl}}"],
+                path: ["auth", "login"],
+              },
               body: {
                 mode: "raw",
                 raw: JSON.stringify({ email: "user@example.com", password: "password" }, null, 2),
@@ -563,9 +564,7 @@ docsRoutes.get("/postman.json", (c) => {
         ],
       },
     ],
-    variable: [
-      { key: "baseUrl", value: "http://localhost:3001/api" },
-    ],
+    variable: [{ key: "baseUrl", value: "http://localhost:3001/api" }],
   };
 
   return c.json(collection);
@@ -577,7 +576,7 @@ docsRoutes.get("/postman.json", (c) => {
 
 /**
  * GET /api/docs/sdk
- * 
+ *
  * Links para descargar SDKs oficiales.
  */
 docsRoutes.get("/sdk", (c) => {

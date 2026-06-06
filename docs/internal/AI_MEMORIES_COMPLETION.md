@@ -13,27 +13,28 @@ The **ai-memories** grimoire has been fully implemented with comprehensive API r
 
 ## Files Created/Updated
 
-| File | Size | Description |
-|------|------|-------------|
-| `memories.routes.ts` | 20 KB | Full CRUD + semantic search API |
-| `index.ts` | 1.5 KB | Module exports & health check |
-| `gremius.json` | 2.7 KB | Grimoire metadata & configuration |
-| `README.md` | 6.8 KB | Complete documentation |
-| `schema.ts` | 9.2 KB | Existing - pgvector schema |
+| File                 | Size   | Description                       |
+| -------------------- | ------ | --------------------------------- |
+| `memories.routes.ts` | 20 KB  | Full CRUD + semantic search API   |
+| `index.ts`           | 1.5 KB | Module exports & health check     |
+| `gremius.json`       | 2.7 KB | Grimoire metadata & configuration |
+| `README.md`          | 6.8 KB | Complete documentation            |
+| `schema.ts`          | 9.2 KB | Existing - pgvector schema        |
 
 ### Configuration Updates
 
-| File | Change |
-|------|--------|
-| `apps/api/gremius.config.ts` | Added `"ai-memories"` to modules list |
-| `apps/api/src/services/module-registry.ts` | Added ai-memories to registry |
-| `apps/api/src/lib/module-loader.ts` | Added directory mapping |
+| File                                       | Change                                |
+| ------------------------------------------ | ------------------------------------- |
+| `apps/api/gremius.config.ts`               | Added `"ai-memories"` to modules list |
+| `apps/api/src/services/module-registry.ts` | Added ai-memories to registry         |
+| `apps/api/src/lib/module-loader.ts`        | Added directory mapping               |
 
 ---
 
 ## Features Implemented
 
 ### ✅ CRUD Operations
+
 - `GET /api/ai-memories` - List memories with filters
 - `GET /api/ai-memories/:id` - Get memory with chunks
 - `POST /api/ai-memories` - Create memory with auto-embedding
@@ -41,31 +42,37 @@ The **ai-memories** grimoire has been fully implemented with comprehensive API r
 - `DELETE /api/ai-memories/:id` - Delete memory (cascades to chunks)
 
 ### ✅ Semantic Search
+
 - `POST /api/ai-memories/search` - Basic semantic search with cosine similarity
 - `POST /api/ai-memories/search/advanced` - Advanced search with custom operators
 
 Search features:
+
 - OpenAI embedding generation for queries
 - Searches both main memories and chunks
 - Configurable similarity threshold
 - Support for all pgvector operators (cosine, euclidean, inner_product, manhattan)
 
 ### ✅ Document Chunking
+
 - Automatic chunking for documents > 2000 characters
 - Configurable chunk size and overlap
 - Generates embeddings for each chunk
 - Tracks chunk position (start/end offsets)
 
 ### ✅ Batch Operations
+
 - `POST /api/ai-memories/batch` - Bulk import memories
 - `POST /api/ai-memories/batch/delete` - Bulk delete memories
 
 ### ✅ Statistics & Health
+
 - `GET /api/ai-memories/stats/overview` - Memory statistics by type
 - `GET /api/ai-memories/health/embedding` - Check OpenAI configuration
 - `GET /api/ai-memories/health` - Grimoire health check
 
 ### ✅ Chunk Management
+
 - `GET /api/ai-memories/:id/chunks` - List chunks for a memory
 - `DELETE /api/ai-memories/:memoryId/chunks/:chunkId` - Delete specific chunk
 
@@ -73,22 +80,22 @@ Search features:
 
 ## API Endpoints Summary
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/ai-memories` | List memories |
-| POST | `/api/ai-memories` | Create memory |
-| GET | `/api/ai-memories/:id` | Get memory |
-| PATCH | `/api/ai-memories/:id` | Update memory |
-| DELETE | `/api/ai-memories/:id` | Delete memory |
-| POST | `/api/ai-memories/search` | Semantic search |
-| POST | `/api/ai-memories/search/advanced` | Advanced search |
-| POST | `/api/ai-memories/batch` | Bulk import |
-| POST | `/api/ai-memories/batch/delete` | Bulk delete |
-| GET | `/api/ai-memories/stats/overview` | Statistics |
-| GET | `/api/ai-memories/health/embedding` | Embedding status |
-| GET | `/api/ai-memories/health` | Health check |
-| GET | `/api/ai-memories/:id/chunks` | List chunks |
-| DELETE | `/api/ai-memories/:memoryId/chunks/:chunkId` | Delete chunk |
+| Method | Path                                         | Description      |
+| ------ | -------------------------------------------- | ---------------- |
+| GET    | `/api/ai-memories`                           | List memories    |
+| POST   | `/api/ai-memories`                           | Create memory    |
+| GET    | `/api/ai-memories/:id`                       | Get memory       |
+| PATCH  | `/api/ai-memories/:id`                       | Update memory    |
+| DELETE | `/api/ai-memories/:id`                       | Delete memory    |
+| POST   | `/api/ai-memories/search`                    | Semantic search  |
+| POST   | `/api/ai-memories/search/advanced`           | Advanced search  |
+| POST   | `/api/ai-memories/batch`                     | Bulk import      |
+| POST   | `/api/ai-memories/batch/delete`              | Bulk delete      |
+| GET    | `/api/ai-memories/stats/overview`            | Statistics       |
+| GET    | `/api/ai-memories/health/embedding`          | Embedding status |
+| GET    | `/api/ai-memories/health`                    | Health check     |
+| GET    | `/api/ai-memories/:id/chunks`                | List chunks      |
+| DELETE | `/api/ai-memories/:memoryId/chunks/:chunkId` | Delete chunk     |
 
 ---
 
@@ -96,9 +103,9 @@ Search features:
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | No | - | OpenAI API key for embeddings |
+| Variable         | Required | Default | Description                   |
+| ---------------- | -------- | ------- | ----------------------------- |
+| `OPENAI_API_KEY` | No       | -       | OpenAI API key for embeddings |
 
 ### Memory Types
 
@@ -112,6 +119,7 @@ Search features:
 ## Database Schema
 
 ### ai_memories Table
+
 ```sql
 - id: uuid (primary key)
 - content: text (memory content)
@@ -125,6 +133,7 @@ Search features:
 ```
 
 ### ai_memory_chunks Table
+
 ```sql
 - id: uuid (primary key)
 - memory_id: uuid (foreign key)
@@ -137,6 +146,7 @@ Search features:
 ```
 
 ### Indexes
+
 - `ai_memories_embedding_idx` - IVFFlat index for similarity search
 - `ai_chunks_embedding_idx` - IVFFlat index for chunk search
 - `ai_memories_type_idx` - Type filtering
@@ -147,11 +157,13 @@ Search features:
 ## Quick Start
 
 ### 1. Verify pgvector is installed
+
 ```bash
 curl http://localhost:3000/api/health/pgvector
 ```
 
 ### 2. Create a memory
+
 ```bash
 curl -X POST http://localhost:3000/api/ai-memories \
   -H "Content-Type: application/json" \
@@ -163,6 +175,7 @@ curl -X POST http://localhost:3000/api/ai-memories \
 ```
 
 ### 3. Search memories
+
 ```bash
 curl -X POST http://localhost:3000/api/ai-memories/search \
   -H "Content-Type: application/json" \
@@ -176,14 +189,14 @@ curl -X POST http://localhost:3000/api/ai-memories/search \
 
 ## Integration Status
 
-| Integration | Status |
-|-------------|--------|
-| pgvector Extension | ✅ Auto-installs with Docker |
-| OpenAI Embeddings | ✅ Configurable via env var |
-| MCP Tool | ✅ `gremius_encode_toon` available |
-| Module Loader | ✅ Registered in gremius.config.ts |
-| Health Checks | ✅ `/health` and `/health/embedding` |
-| Caching | ✅ Uses existing cache system |
+| Integration        | Status                               |
+| ------------------ | ------------------------------------ |
+| pgvector Extension | ✅ Auto-installs with Docker         |
+| OpenAI Embeddings  | ✅ Configurable via env var          |
+| MCP Tool           | ✅ `gremius_encode_toon` available   |
+| Module Loader      | ✅ Registered in gremius.config.ts   |
+| Health Checks      | ✅ `/health` and `/health/embedding` |
+| Caching            | ✅ Uses existing cache system        |
 
 ---
 
@@ -205,11 +218,13 @@ curl -X POST http://localhost:3000/api/ai-memories/search \
 ## Next Steps
 
 1. **Start the API** to load the new grimoire:
+
    ```bash
    cd apps/api && bun run dev
    ```
 
 2. **Set OpenAI API key** for embeddings:
+
    ```bash
    export OPENAI_API_KEY=sk-...
    ```

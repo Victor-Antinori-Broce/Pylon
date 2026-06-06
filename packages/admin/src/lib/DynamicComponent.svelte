@@ -1,12 +1,12 @@
 <script lang="ts">
   /**
    * DynamicComponent.svelte
-   * 
+   *
    * Renderiza componentes dinámicamente usando <svelte:component>.
    * Permite inyectar componentes registrados externamente.
    */
   import type { Component } from "svelte";
-  
+
   interface Props {
     /** Componente a renderizar */
     component: Component;
@@ -17,12 +17,12 @@
     /** Callback cuando el componente se monta */
     onMount?: () => void;
   }
-  
-  let { component, props = {}, class: className = "", onMount }: Props = $props();
-  
+
+  const { component, props = {}, class: className = "", onMount }: Props = $props();
+
   // Referencia al componente instanciado
   let componentRef: any = $state(null);
-  
+
   // Ejecutar callback cuando se monta
   $effect(() => {
     if (componentRef && onMount) {
@@ -32,11 +32,7 @@
 </script>
 
 <div class="dynamic-component {className}" data-testid="dynamic-component">
-  <svelte:component 
-    this={component} 
-    {...props}
-    bind:this={componentRef}
-  />
+  <svelte:component this={component} {...props} bind:this={componentRef} />
 </div>
 
 <style>

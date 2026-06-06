@@ -1,6 +1,6 @@
 /**
  * Editor Components Index
- * 
+ *
  * Content editing components.
  */
 

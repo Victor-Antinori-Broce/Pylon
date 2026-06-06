@@ -13,7 +13,6 @@
 
 import { Buffer } from "buffer";
 
-
 // ═══════════════════════════════════════════════════════════════════════════
 // LAZY LOADING DE DEPENDENCIAS OPCIONALES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -165,18 +164,26 @@ export async function generarCertificadoOverlay(
   // Nombre del estudiante (con auto-ajuste)
   if (overlay.nombreUsuario) {
     const nombre = data.nombreUsuario || "Estudiante";
-    drawText(nombre, {
-      ...overlay.nombreUsuario,
-      font: fontBold,
-    }, { align: "center", maxWidth: width - 80 });
+    drawText(
+      nombre,
+      {
+        ...overlay.nombreUsuario,
+        font: fontBold,
+      },
+      { align: "center", maxWidth: width - 80 }
+    );
   }
 
   // Nombre del curso
   if (overlay.nombreCurso) {
-    drawText(data.nombreCurso || "", {
-      ...overlay.nombreCurso,
-      font: fontBold,
-    }, { align: "center", maxWidth: width - 80 });
+    drawText(
+      data.nombreCurso || "",
+      {
+        ...overlay.nombreCurso,
+        font: fontBold,
+      },
+      { align: "center", maxWidth: width - 80 }
+    );
   }
 
   // Fecha
@@ -305,18 +312,10 @@ export async function generarCertificadoPDF(
         .fontSize(14)
         .font("Helvetica")
         .fillColor("#333")
-        .text(
-          plantilla?.textoPrincipal || "Se certifica que",
-          centerX,
-          200,
-          { align: "center" }
-        );
+        .text(plantilla?.textoPrincipal || "Se certifica que", centerX, 200, { align: "center" });
 
       // Nombre del estudiante (auto-ajuste de tamaño)
-      const nombreSize = Math.min(
-        36,
-        Math.max(24, 600 / Math.max(data.nombreUsuario.length, 1))
-      );
+      const nombreSize = Math.min(36, Math.max(24, 600 / Math.max(data.nombreUsuario.length, 1)));
       doc
         .fontSize(nombreSize)
         .font("Helvetica-Bold")
@@ -347,12 +346,7 @@ export async function generarCertificadoPDF(
         .fontSize(12)
         .font("Helvetica")
         .fillColor("#666")
-        .text(
-          `Duración: ${data.duracionHoras} horas`,
-          centerX,
-          420,
-          { align: "center" }
-        );
+        .text(`Duración: ${data.duracionHoras} horas`, centerX, 420, { align: "center" });
 
       doc
         .fontSize(12)
@@ -438,9 +432,7 @@ function drawDefaultBackground(doc: any, color: string): void {
 /**
  * Genera una vista previa del certificado (versión simplificada)
  */
-export async function generarVistaPreviaCertificado(
-  data: CertificadoData
-): Promise<Buffer> {
+export async function generarVistaPreviaCertificado(data: CertificadoData): Promise<Buffer> {
   return generarCertificadoPDF(data, {
     tipo: "generado",
     primaryColor: "#009c3c",

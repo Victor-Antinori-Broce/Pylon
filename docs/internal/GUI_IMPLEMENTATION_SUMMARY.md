@@ -24,6 +24,7 @@ packages/admin/src/routes/booking/
 ### Features Implementadas
 
 #### Dashboard (`/booking`)
+
 - ✅ Calendario semanal con navegación (anterior/siguiente semana)
 - ✅ Vista de reservas por día con indicadores de estado
 - ✅ Tarjetas de estadísticas (salas disponibles, reservas hoy, pendientes, check-ins)
@@ -31,6 +32,7 @@ packages/admin/src/routes/booking/
 - ✅ Indicadores visuales de estado con colores
 
 #### Salas (`/booking/rooms`)
+
 - ✅ Grid de salas con información completa
 - ✅ Filtros por tipo de sala
 - ✅ Selector de fecha para ver disponibilidad
@@ -39,6 +41,7 @@ packages/admin/src/routes/booking/
 - ✅ Botón rápido para reservar
 
 #### Reservas (`/booking/bookings`)
+
 - ✅ Listado con filtros por estado
 - ✅ Búsqueda por título, solicitante o sala
 - ✅ Acciones rápidas: Confirmar, Check-in, Check-out, Cancelar
@@ -46,6 +49,7 @@ packages/admin/src/routes/booking/
 - ✅ Indicadores de estado visuales
 
 #### Detalle de Reserva (`/booking/bookings/[id]`)
+
 - ✅ Timeline completo de la reserva
 - ✅ Información de sala y horarios
 - ✅ Datos de contacto del solicitante
@@ -69,6 +73,7 @@ packages/admin/src/routes/directory/
 ### Features Implementadas
 
 #### Org Chart (`/directory/org-chart`)
+
 - ✅ Visualización en árbol de la organización
 - ✅ Selector de organización
 - ✅ Nodos expandibles/colapsables
@@ -78,6 +83,7 @@ packages/admin/src/routes/directory/
 - ✅ Link a perfil completo
 
 #### Directory Home (`/directory`)
+
 - ✅ Quick link al organigrama
 - ✅ Integración con GrimoirePage para grids estándar
 
@@ -89,18 +95,10 @@ Todos los componentes utilizan el sistema de diseño existente:
 
 ```css
 /* Colores principales */
---gremius-cyan: #00d4ff
---gremius-bg: #0a0a0a
---gremius-card: #141414
---gremius-border: #2a2a2a
---gremius-subtle: #6b7280
-
-/* Estados */
---status-pending: #f59e0b (amber)
---status-confirmed: #10b981 (emerald)
---status-checked_in: #06b6d4 (cyan)
---status-checked_out: #6b7280 (zinc)
---status-cancelled: #ef4444 (red)
+--gremius-cyan: #00d4ff --gremius-bg: #0a0a0a --gremius-card: #141414 --gremius-border: #2a2a2a
+  --gremius-subtle: #6b7280 /* Estados */ --status-pending: #f59e0b (amber)
+  --status-confirmed: #10b981 (emerald) --status-checked_in: #06b6d4 (cyan)
+  --status-checked_out: #6b7280 (zinc) --status-cancelled: #ef4444 (red);
 ```
 
 ---
@@ -134,6 +132,7 @@ GET /api/directory/org-chart?organizationId=
 ## 🚀 Cómo Usar
 
 ### Acceder a Booking
+
 1. Navegar a `/booking` en el admin
 2. Ver el dashboard con el calendario semanal
 3. Click en "Salas" para gestionar espacios
@@ -141,6 +140,7 @@ GET /api/directory/org-chart?organizationId=
 5. Click en cualquier reserva para ver detalle y acciones
 
 ### Acceder a Directory
+
 1. Navegar a `/directory` en el admin
 2. Ver grids estándar de empleados/departamentos
 3. Click en "Organigrama" para vista jerárquica
@@ -161,12 +161,14 @@ GET /api/directory/org-chart?organizationId=
 ## 🎯 Próximos Pasos Sugeridos
 
 ### Booking
+
 1. **Crear/Editar Sala** - Modal o página para gestión completa
 2. **Crear Reserva** - Wizard step-by-step (sala → fecha → hora → confirmar)
 3. **Calendario de Sala** - Vista día/semana de una sala específica
 4. **Notificaciones** - Email de confirmación, recordatorios
 
 ### Directory
+
 1. **Perfil de Empleado** - Vista detallada con documentos, historial
 2. **Import/Export** - CSV/Excel de empleados
 3. **Búsqueda Avanzada** - Por skills, ubicación, etc.
@@ -175,14 +177,14 @@ GET /api/directory/org-chart?organizationId=
 
 ## ✅ Estado de Implementación
 
-| Feature | Estado | Archivo |
-|---------|--------|---------|
-| Booking Dashboard | ✅ Completo | `booking/+page.svelte` |
-| Booking Rooms List | ✅ Completo | `booking/rooms/+page.svelte` |
-| Booking Bookings List | ✅ Completo | `booking/bookings/+page.svelte` |
-| Booking Detail | ✅ Completo | `booking/bookings/[id]/+page.svelte` |
-| Directory Org Chart | ✅ Completo | `directory/org-chart/+page.svelte` |
-| Directory Home | ✅ Completo | `directory/+page.svelte` |
+| Feature               | Estado      | Archivo                              |
+| --------------------- | ----------- | ------------------------------------ |
+| Booking Dashboard     | ✅ Completo | `booking/+page.svelte`               |
+| Booking Rooms List    | ✅ Completo | `booking/rooms/+page.svelte`         |
+| Booking Bookings List | ✅ Completo | `booking/bookings/+page.svelte`      |
+| Booking Detail        | ✅ Completo | `booking/bookings/[id]/+page.svelte` |
+| Directory Org Chart   | ✅ Completo | `directory/org-chart/+page.svelte`   |
+| Directory Home        | ✅ Completo | `directory/+page.svelte`             |
 
 ---
 

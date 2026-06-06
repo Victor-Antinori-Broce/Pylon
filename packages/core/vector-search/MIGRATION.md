@@ -44,13 +44,13 @@ POST /api/vector-search/global          // Buscar en todos los datasets (admin)
 
 ## Ventajas de la Migración
 
-| Aspecto | Antes (Grimoire) | Después (Core) |
-|---------|------------------|----------------|
-| **Scope** | Memoria general del sistema | Extensión de cualquier dataset |
-| **API** | Endpoints separados | Integrado con `/api/datasets/*` |
-| **Configuración** | Instalar grimoire | Toggle en definición de dataset |
-| **Flexibilidad** | Tablas fijas | Cualquier dataset puede usar vectores |
-| **Mantenimiento** | Código duplicado | Centralizado en core |
+| Aspecto           | Antes (Grimoire)            | Después (Core)                        |
+| ----------------- | --------------------------- | ------------------------------------- |
+| **Scope**         | Memoria general del sistema | Extensión de cualquier dataset        |
+| **API**           | Endpoints separados         | Integrado con `/api/datasets/*`       |
+| **Configuración** | Instalar grimoire           | Toggle en definición de dataset       |
+| **Flexibilidad**  | Tablas fijas                | Cualquier dataset puede usar vectores |
+| **Mantenimiento** | Código duplicado            | Centralizado en core                  |
 
 ---
 
@@ -59,6 +59,7 @@ POST /api/vector-search/global          // Buscar en todos los datasets (admin)
 ### 1. Actualizar Definición de Dataset
 
 **Antes:**
+
 ```typescript
 // Crear memoria en grimoire separado
 POST /api/ai-memories
@@ -70,6 +71,7 @@ POST /api/ai-memories
 ```
 
 **Después:**
+
 ```typescript
 // Definir dataset con extensión vector-search
 POST /api/datasets
@@ -101,6 +103,7 @@ POST /api/datasets/products/entries
 ### 2. Actualizar Búsquedas
 
 **Antes:**
+
 ```bash
 POST /api/ai-memories/search
 {
@@ -111,6 +114,7 @@ POST /api/ai-memories/search
 ```
 
 **Después:**
+
 ```bash
 POST /api/datasets/products/vector-search
 {
@@ -151,15 +155,15 @@ Para migrar datos existentes de `ai_memories` a `vector_index`:
 ```sql
 -- Migrar memorias existentes
 INSERT INTO vector_index (
-  dataset_id, 
-  entry_id, 
-  content, 
-  embedding, 
+  dataset_id,
+  entry_id,
+  content,
+  embedding,
   field_name,
   metadata,
   created_at
 )
-SELECT 
+SELECT
   'legacy-ai-memories' as dataset_id,
   id::text as entry_id,
   content,
@@ -225,15 +229,15 @@ POST /api/datasets/products/vector-search
 ### Indexación Programática
 
 ```typescript
-import { indexContent } from '@gremius/core/vector-search';
+import { indexContent } from "@gremius/core/vector-search";
 
 // En tu código
 await indexContent({
-  datasetId: 'products',
+  datasetId: "products",
   entryId: entry.id,
   content: entry.description,
-  fieldName: 'description',
-  metadata: { source: 'auto-index' }
+  fieldName: "description",
+  metadata: { source: "auto-index" },
 });
 ```
 
@@ -276,9 +280,9 @@ Si necesitas mantener compatibilidad temporal:
 // En tu router o middleware
 // Redirect /api/ai-memories/search → /api/vector-search/global
 
-app.post('/api/ai-memories/search', async (c) => {
+app.post("/api/ai-memories/search", async (c) => {
   const body = await c.req.json();
-  
+
   // Transformar payload antiguo al nuevo formato
   const newBody = {
     query: body.query,
@@ -286,7 +290,7 @@ app.post('/api/ai-memories/search', async (c) => {
     threshold: body.threshold || 0.7,
     // Mapear memoryType a datasetIds si es necesario
   };
-  
+
   // Llamar al nuevo endpoint
   return c.json(await globalVectorSearch(newBody));
 });
@@ -323,7 +327,7 @@ export OPENAI_API_KEY=sk-...
 SELECT * FROM pg_indexes WHERE tablename = 'vector_index';
 
 -- Recrear índice IVFFlat si es necesario
-CREATE INDEX vector_index_embedding_idx 
+CREATE INDEX vector_index_embedding_idx
 ON vector_index USING ivfflat (embedding vector_cosine_ops);
 ```
 
@@ -339,16 +343,17 @@ ON vector_index USING ivfflat (embedding vector_cosine_ops);
 
 ## Resumen de Breaking Changes
 
-| Cambio | Impacto | Solución |
-|--------|---------|----------|
-| Tablas renombradas | Alto | Ejecutar migración SQL |
-| API endpoints cambiados | Alto | Actualizar llamadas HTTP |
-| Concepto: memoria general → extensión dataset | Medio | Redefinir datasets con extensión |
-| Eliminación de memoryType | Medio | Usar datasetId + fieldName |
+| Cambio                                        | Impacto | Solución                         |
+| --------------------------------------------- | ------- | -------------------------------- |
+| Tablas renombradas                            | Alto    | Ejecutar migración SQL           |
+| API endpoints cambiados                       | Alto    | Actualizar llamadas HTTP         |
+| Concepto: memoria general → extensión dataset | Medio   | Redefinir datasets con extensión |
+| Eliminación de memoryType                     | Medio   | Usar datasetId + fieldName       |
 
 ---
 
 **Para soporte adicional, consulta:**
+
 - Issue #XXX (Migración AI Memories)
 - Discusiones en GitHub
 - Documentación de Vector Search

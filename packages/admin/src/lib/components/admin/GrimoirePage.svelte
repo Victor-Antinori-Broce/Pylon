@@ -1,12 +1,12 @@
 <script lang="ts">
   /**
    * GrimoirePage.svelte — Hybrid Rendering Edition
-   * 
+   *
    * Supports two modes:
    * 1. LEGACY: Full custom Svelte view (monolith) — loaded via GRIMOIRE_VIEW_REGISTRY
    * 2. HYBRID: Multiple views per grimoire — DataExplorer for grid/kanban/calendar,
    *    Custom Svelte components only for type: "custom" views
-   * 
+   *
    * Flow:
    * 1. Fetch grimoire config from /api/admin/registry
    * 2. If legacy custom view exists → load monolith (backward compat)
@@ -14,29 +14,30 @@
    * 4. Fallback to auto-generated DataExplorer config
    */
   import { onMount } from "svelte";
+  import type { Component } from "svelte";
+
   import DataExplorer from "$lib/components/admin/DataExplorer.svelte";
-  import { 
-    getGrimoireConfig, 
-    loadCustomView, 
+  import {
+    getGrimoireConfig,
+    loadCustomView,
     generateExplorerConfig,
     generateDefaultConfig,
     hasCustomView,
     type GrimoireAdminConfig,
-    type AdminViewConfig
+    type AdminViewConfig,
   } from "$lib/grimoire-loader";
-  import type { Component } from "svelte";
   import type { AdminConfig } from "$lib/types/admin";
 
-  let { grimoireId, initialViewId }: { grimoireId: string; initialViewId?: string } = $props();
+  const { grimoireId, initialViewId }: { grimoireId: string; initialViewId?: string } = $props();
 
   // Legacy mode state
   let LegacyView: Component | null = $state(null);
-  
+
   // Hybrid mode state
   let grimoireConfig = $state<GrimoireAdminConfig | null>(null);
   let activeViewId = $state<string>(initialViewId || "");
   let customViews = $state<Record<string, Component>>({});
-  
+
   // Shared state
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -58,8 +59,9 @@
 
         // Step 2: Check for LEGACY monolith view (full grimoire custom view)
         // This takes precedence for backward compatibility during migration
-        const hasLegacyCustom = hasCustomView(grimoireId) || CORE_ENGINES_WITH_VIEWS.includes(grimoireId);
-        
+        const hasLegacyCustom =
+          hasCustomView(grimoireId) || CORE_ENGINES_WITH_VIEWS.includes(grimoireId);
+
         if (hasLegacyCustom && !hasHybridViews(config)) {
           // Legacy mode: load the full monolith view
           const view = await loadCustomView(grimoireId);
@@ -99,7 +101,7 @@
             return;
           }
         }
-        
+
         console.warn(`[GrimoirePage] No registry config for ${grimoireId}, using defaults`);
       }
     } catch (err) {
@@ -114,8 +116,8 @@
    * Check if grimoire config uses hybrid rendering (mix of custom + DataExplorer views)
    */
   function hasHybridViews(config: GrimoireAdminConfig): boolean {
-    const customCount = config.views.filter(v => v.type === "custom").length;
-    const explorerCount = config.views.filter(v => v.type !== "custom").length;
+    const customCount = config.views.filter((v) => v.type === "custom").length;
+    const explorerCount = config.views.filter((v) => v.type !== "custom").length;
     // Hybrid = has BOTH custom and explorer views, OR only explorer views (no legacy monolith)
     return customCount > 0 || explorerCount > 0;
   }
@@ -133,7 +135,7 @@
    */
   function isActiveViewCustom(): boolean {
     if (!grimoireConfig) return false;
-    const view = grimoireConfig.views.find(v => v.id === activeViewId);
+    const view = grimoireConfig.views.find((v) => v.id === activeViewId);
     return view?.type === "custom" && activeViewId in customViews;
   }
 
@@ -155,7 +157,9 @@
 {#if loading}
   <div class="flex items-center justify-center h-96">
     <div class="flex flex-col items-center gap-4">
-      <div class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+      <div
+        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+      ></div>
       <p class="text-gremius-subtle text-sm">Loading {grimoireId}...</p>
     </div>
   </div>
@@ -179,9 +183,9 @@
         <div class="flex gap-1">
           {#each grimoireConfig.views as view}
             {@const isActive = activeViewId === view.id}
-            {@const isCustomReady = view.type === "custom" ? (view.id in customViews) : true}
+            {@const isCustomReady = view.type === "custom" ? view.id in customViews : true}
             <button
-              onclick={() => activeViewId = view.id}
+              onclick={() => (activeViewId = view.id)}
               class="group px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 inline-flex items-center gap-2"
               class:border-gremius-cyan={isActive}
               class:text-gremius-cyan={isActive}
@@ -189,7 +193,9 @@
               class:text-gremius-text-dim={!isActive}
               class:hover:text-gremius-text={!isActive}
               disabled={view.type === "custom" && !isCustomReady}
-              title={view.type === "custom" && !isCustomReady ? "Custom view not yet implemented" : undefined}
+              title={view.type === "custom" && !isCustomReady
+                ? "Custom view not yet implemented"
+                : undefined}
             >
               {#if view.type === "custom"}
                 <span class="w-2 h-2 rounded-full bg-gremius-pink"></span>
@@ -221,11 +227,11 @@
       {:else}
         {@const explorerConfig = getActiveExplorerConfig()}
         {#if explorerConfig}
-          <DataExplorer 
-            {grimoireId} 
-            config={explorerConfig} 
-            viewId={activeViewId || "default"} 
-            allTables={grimoireConfig.tables.map(t => ({ name: t.name, label: t.label }))}
+          <DataExplorer
+            {grimoireId}
+            config={explorerConfig}
+            viewId={activeViewId || "default"}
+            allTables={grimoireConfig.tables.map((t) => ({ name: t.name, label: t.label }))}
           />
         {:else}
           <div class="card p-12 text-center">
@@ -238,11 +244,11 @@
 {:else}
   <!-- FALLBACK: Auto-generated DataExplorer -->
   {#await generateDefaultConfig(grimoireId) then fallbackConfig}
-    <DataExplorer 
-      {grimoireId} 
-      config={fallbackConfig} 
-      viewId="default" 
-      allTables={grimoireConfig?.tables.map(t => ({ name: t.name, label: t.label }))}
+    <DataExplorer
+      {grimoireId}
+      config={fallbackConfig}
+      viewId="default"
+      allTables={grimoireConfig?.tables.map((t) => ({ name: t.name, label: t.label }))}
     />
   {:catch}
     <div class="flex items-center justify-center h-96">
@@ -259,9 +265,15 @@
   .animate-fade-in {
     animation: fadeIn 0.2s ease-out;
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

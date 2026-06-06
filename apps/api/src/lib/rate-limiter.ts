@@ -8,8 +8,8 @@
  */
 
 import { getValkeyClient } from "./valkey";
+
 import type { Context, Next } from "hono";
-import type { AppVariables } from "../types/hono";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN
@@ -38,26 +38,50 @@ const DEFAULT_CONFIG: RateLimitConfig = {
 /** Configuraciones específicas por ruta */
 export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   // Auth - más estricto para prevenir brute force
-  "/api/auth/login": { limit: 5, window: 300, message: "Too many login attempts. Try again in 5 minutes." },
-  "/api/auth/register": { limit: 3, window: 3600, message: "Too many registration attempts. Try again later." },
-  "/api/auth/forgot-password": { limit: 3, window: 3600, message: "Too many password reset attempts." },
-  
+  "/api/auth/login": {
+    limit: 5,
+    window: 300,
+    message: "Too many login attempts. Try again in 5 minutes.",
+  },
+  "/api/auth/register": {
+    limit: 3,
+    window: 3600,
+    message: "Too many registration attempts. Try again later.",
+  },
+  "/api/auth/forgot-password": {
+    limit: 3,
+    window: 3600,
+    message: "Too many password reset attempts.",
+  },
+
   // MCP - moderado por uso intensivo de AI
   "/api/mcp": { limit: 200, window: 60, message: "MCP rate limit exceeded." },
-  
+
   // Agents playground - uso intensivo
   "/api/agents/playground": { limit: 50, window: 60, message: "Playground rate limit exceeded." },
-  
+
   // Batch operations - más permisivo pero controlado
-  "/api/datasets/batch": { limit: 30, window: 60, message: "Batch operations limited to 30/minute." },
-  
+  "/api/datasets/batch": {
+    limit: 30,
+    window: 60,
+    message: "Batch operations limited to 30/minute.",
+  },
+
   // Import/Export - muy permisivo pero trackeable
-  "/api/datasets/export": { limit: 10, window: 60, message: "Export operations limited to 10/minute." },
-  "/api/datasets/import": { limit: 10, window: 60, message: "Import operations limited to 10/minute." },
-  
+  "/api/datasets/export": {
+    limit: 10,
+    window: 60,
+    message: "Export operations limited to 10/minute.",
+  },
+  "/api/datasets/import": {
+    limit: 10,
+    window: 60,
+    message: "Import operations limited to 10/minute.",
+  },
+
   // Search - moderado
   "/api/search": { limit: 120, window: 60, message: "Search rate limit exceeded." },
-  
+
   // GraphQL - moderado
   "/api/graphql": { limit: 100, window: 60, message: "GraphQL rate limit exceeded." },
 };
@@ -126,7 +150,7 @@ export async function checkRateLimit(
   try {
     // Usar sorted set para sliding window
     const windowStart = now - windowMs;
-    
+
     // Remover entradas antiguas fuera de la ventana
     await valkey.zRemRangeByScore(key, 0, windowStart);
 
@@ -135,7 +159,7 @@ export async function checkRateLimit(
 
     // Verificar si está dentro del límite
     const allowed = currentCount < config.limit;
-    
+
     if (allowed) {
       // Añadir entrada actual
       await valkey.zAdd(key, { score: now, value: `${now}-${Math.random()}` });
@@ -165,7 +189,7 @@ export async function checkRateLimit(
 export function rateLimit(config?: Partial<RateLimitConfig>) {
   return async (c: Context<{ Variables: AppVariables }>, next: Next) => {
     const path = c.req.path;
-    
+
     // Buscar configuración específica o usar default
     const pathConfig = RATE_LIMIT_CONFIGS[path] || DEFAULT_CONFIG;
     const finalConfig = { ...pathConfig, ...config };
@@ -208,9 +232,11 @@ export function rateLimit(config?: Partial<RateLimitConfig>) {
 export function globalRateLimit() {
   return async (c: Context<{ Variables: AppVariables }>, next: Next) => {
     // Skip para health checks y assets estáticos
-    if (c.req.path.startsWith("/health") || 
-        c.req.path.startsWith("/assets") ||
-        c.req.path === "/") {
+    if (
+      c.req.path.startsWith("/health") ||
+      c.req.path.startsWith("/assets") ||
+      c.req.path === "/"
+    ) {
       return await next();
     }
 
@@ -249,7 +275,9 @@ export function globalRateLimit() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { Hono } from "hono";
+
 import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
 
 export const rateLimitRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -258,7 +286,7 @@ export const rateLimitRoutes = new Hono<{ Variables: AppVariables }>();
  */
 rateLimitRoutes.get("/", requireAuth, async (c) => {
   const valkey = await getValkeyClient();
-  
+
   if (!valkey) {
     return c.json({ error: "Valkey not available" }, 503);
   }
@@ -267,7 +295,7 @@ rateLimitRoutes.get("/", requireAuth, async (c) => {
     // Scanear keys de rate limit
     const keys: string[] = [];
     let cursor = "0";
-    
+
     do {
       const result = await valkey.scan(cursor, { MATCH: "ratelimit:*", COUNT: 100 });
       cursor = result.cursor;
@@ -276,12 +304,13 @@ rateLimitRoutes.get("/", requireAuth, async (c) => {
 
     // Agrupar por ruta
     const stats: Record<string, { active: number; totalRequests: number }> = {};
-    
-    for (const key of keys.slice(0, 100)) { // Limitar a 100 keys
+
+    for (const key of keys.slice(0, 100)) {
+      // Limitar a 100 keys
       const parts = key.split(":");
       const route = parts[1] || "unknown";
       const count = await valkey.zCard(key);
-      
+
       if (!stats[route]) {
         stats[route] = { active: 0, totalRequests: 0 };
       }
@@ -305,13 +334,13 @@ rateLimitRoutes.get("/", requireAuth, async (c) => {
  */
 rateLimitRoutes.delete("/:key", requireAuth, async (c) => {
   const valkey = await getValkeyClient();
-  
+
   if (!valkey) {
     return c.json({ error: "Valkey not available" }, 503);
   }
 
   const key = c.req.param("key");
-  
+
   try {
     await valkey.del(`ratelimit:${key}`);
     return c.json({ success: true, message: `Rate limit cleared for ${key}` });

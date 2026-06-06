@@ -2,13 +2,14 @@
  * PLUGIN Command - Manage grimoire plugins
  */
 
-import chalk from "chalk";
-import ora from "ora";
-import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+import chalk from "chalk";
 import { execa } from "execa";
 import fetch from "node-fetch";
+import ora from "ora";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PLUGIN REGISTRY
@@ -48,21 +49,25 @@ export async function install(packageName: string, options: InstallOptions) {
   try {
     // Resolve package
     const resolvedName = resolvePackageName(packageName);
-    
+
     // Check if already installed
     const projectRoot = findProjectRoot();
     const isInstalled = await checkInstalled(projectRoot, resolvedName);
-    
+
     if (isInstalled) {
       spinner.warn(chalk.yellow(`${resolvedName} is already installed`));
-      
-      const { reinstall } = await (await import("inquirer")).default.prompt([{
-        type: "confirm",
-        name: "reinstall",
-        message: "Reinstall/Update?",
-        default: false,
-      }]);
-      
+
+      const { reinstall } = await (
+        await import("inquirer")
+      ).default.prompt([
+        {
+          type: "confirm",
+          name: "reinstall",
+          message: "Reinstall/Update?",
+          default: false,
+        },
+      ]);
+
       if (!reinstall) {
         console.log(chalk.gray("Cancelled"));
         return;
@@ -73,16 +78,16 @@ export async function install(packageName: string, options: InstallOptions) {
 
     // Install with npm/pnpm
     const packageManager = detectPackageManager(projectRoot);
-    
+
     if (packageManager === "pnpm") {
-      await execa("pnpm", ["add", resolvedName], { 
-        cwd: projectRoot, 
-        stdio: "ignore" 
+      await execa("pnpm", ["add", resolvedName], {
+        cwd: projectRoot,
+        stdio: "ignore",
       });
     } else if (packageManager === "npm") {
-      await execa("npm", ["install", resolvedName], { 
-        cwd: projectRoot, 
-        stdio: "ignore" 
+      await execa("npm", ["install", resolvedName], {
+        cwd: projectRoot,
+        stdio: "ignore",
       });
     } else {
       throw new Error("No package manager found (pnpm or npm required)");
@@ -92,7 +97,7 @@ export async function install(packageName: string, options: InstallOptions) {
 
     // Read grimoire manifest from node_modules
     const manifest = await readGrimoireManifest(projectRoot, resolvedName);
-    
+
     if (!manifest) {
       spinner.warn("No grimoire.json found. Package might not be a valid grimoire.");
     }
@@ -131,7 +136,6 @@ export async function install(packageName: string, options: InstallOptions) {
     console.log(chalk.bold("\nNext steps:\n"));
     console.log(chalk.gray("  Restart your development server:"));
     console.log(chalk.gray("  pnpm dev\n"));
-
   } catch (error: any) {
     spinner.fail(chalk.red(`Installation failed: ${error.message}`));
     process.exit(1);
@@ -157,16 +161,16 @@ export async function uninstall(packageName: string, options: UninstallOptions) 
 
     // Uninstall with npm/pnpm
     const packageManager = detectPackageManager(projectRoot);
-    
+
     if (packageManager === "pnpm") {
-      await execa("pnpm", ["remove", resolvedName], { 
-        cwd: projectRoot, 
-        stdio: "ignore" 
+      await execa("pnpm", ["remove", resolvedName], {
+        cwd: projectRoot,
+        stdio: "ignore",
       });
     } else if (packageManager === "npm") {
-      await execa("npm", ["uninstall", resolvedName], { 
-        cwd: projectRoot, 
-        stdio: "ignore" 
+      await execa("npm", ["uninstall", resolvedName], {
+        cwd: projectRoot,
+        stdio: "ignore",
       });
     }
 
@@ -189,7 +193,6 @@ export async function uninstall(packageName: string, options: UninstallOptions) 
     }
 
     spinner.succeed(chalk.green(`Uninstalled ${chalk.bold(packageName)}`));
-
   } catch (error: any) {
     spinner.fail(chalk.red(`Uninstall failed: ${error.message}`));
     process.exit(1);
@@ -207,7 +210,7 @@ interface ListOptions {
 
 export async function list(options: ListOptions) {
   const projectRoot = findProjectRoot();
-  
+
   // Read installed from DB
   const installed = await getInstalledGrimoires(projectRoot);
 
@@ -226,10 +229,9 @@ export async function list(options: ListOptions) {
 
   for (const g of installed) {
     const statusIcon = g.enabled ? chalk.green("●") : chalk.gray("○");
-    const officialBadge = g.source === "npm" && g.sourceUrl?.startsWith("@gremius/") 
-      ? chalk.blue("[official]") 
-      : "";
-    
+    const officialBadge =
+      g.source === "npm" && g.sourceUrl?.startsWith("@gremius/") ? chalk.blue("[official]") : "";
+
     console.log(`  ${statusIcon} ${chalk.bold(g.name)} ${chalk.gray(g.version)} ${officialBadge}`);
     if (g.description) {
       console.log(chalk.gray(`    ${g.description}`));
@@ -240,10 +242,10 @@ export async function list(options: ListOptions) {
   // Show available if --all
   if (options.all) {
     console.log(chalk.bold("\n📦 Available Grimoires\n"));
-    
+
     const available = await searchNpm("grimoire");
-    const notInstalled = available.filter(a => !installed.some(i => i.grimoireId === a.id));
-    
+    const notInstalled = available.filter((a) => !installed.some((i) => i.grimoireId === a.id));
+
     for (const g of notInstalled.slice(0, 10)) {
       console.log(`  ${chalk.gray("○")} ${chalk.bold(g.name)} ${chalk.gray(g.version)}`);
       if (g.description) {
@@ -264,7 +266,7 @@ interface SearchOptions {
 
 export async function search(query: string, options: SearchOptions) {
   const limit = parseInt(options.limit || "20");
-  
+
   console.log(chalk.blue(`\n🔍 Searching for "${chalk.bold(query)}"...\n`));
 
   const spinner = ora("Searching npm registry...").start();
@@ -272,7 +274,7 @@ export async function search(query: string, options: SearchOptions) {
   try {
     // Search npm
     const npmResults = await searchNpm(query, limit);
-    
+
     spinner.stop();
 
     if (npmResults.length === 0) {
@@ -283,8 +285,10 @@ export async function search(query: string, options: SearchOptions) {
     for (const pkg of npmResults) {
       const officialBadge = pkg.official ? chalk.blue("[official]") : "";
       const installedBadge = pkg.installed ? chalk.green("[installed]") : "";
-      
-      console.log(`  ${chalk.bold(pkg.name)} ${chalk.gray(pkg.version)} ${officialBadge} ${installedBadge}`);
+
+      console.log(
+        `  ${chalk.bold(pkg.name)} ${chalk.gray(pkg.version)} ${officialBadge} ${installedBadge}`
+      );
       if (pkg.description) {
         console.log(chalk.gray(`    ${pkg.description}`));
       }
@@ -293,7 +297,6 @@ export async function search(query: string, options: SearchOptions) {
       }
       console.log();
     }
-
   } catch (error: any) {
     spinner.fail(chalk.red(`Search failed: ${error.message}`));
   }
@@ -305,14 +308,14 @@ export async function search(query: string, options: SearchOptions) {
 
 export async function enable(packageName: string) {
   const projectRoot = findProjectRoot();
-  
+
   await updateGrimoireStatus(projectRoot, packageName, true);
   console.log(chalk.green(`✓ Enabled ${packageName}`));
 }
 
 export async function disable(packageName: string) {
   const projectRoot = findProjectRoot();
-  
+
   await updateGrimoireStatus(projectRoot, packageName, false);
   console.log(chalk.yellow(`✓ Disabled ${packageName}`));
 }
@@ -328,10 +331,10 @@ interface UpdateOptions {
 export async function update(packageName: string | undefined, options: UpdateOptions) {
   if (options.all) {
     console.log(chalk.blue("\n🔄 Updating all grimoires...\n"));
-    
+
     const projectRoot = findProjectRoot();
     const installed = await getInstalledGrimoires(projectRoot);
-    
+
     for (const g of installed) {
       if (g.sourceUrl) {
         await install(g.sourceUrl, { version: "latest" });
@@ -353,22 +356,24 @@ function resolvePackageName(name: string): string {
   if (name.startsWith("@") || name.startsWith("grimoire-")) {
     return name;
   }
-  
+
   // Try official @gremius scope first
   return `@gremius/grimoire-${name}`;
 }
 
 function findProjectRoot(): string {
   let current = process.cwd();
-  
+
   while (current !== "/") {
-    if (existsSync(join(current, "apps", "api", "gremius.config.ts")) ||
-        existsSync(join(current, "gremius.config.ts"))) {
+    if (
+      existsSync(join(current, "apps", "api", "gremius.config.ts")) ||
+      existsSync(join(current, "gremius.config.ts"))
+    ) {
       return current;
     }
     current = join(current, "..");
   }
-  
+
   throw new Error("Not in a Gremius project. Run from project root.");
 }
 
@@ -407,25 +412,22 @@ async function readGrimoireManifest(projectRoot: string, packageName: string): P
 
 async function addToConfig(projectRoot: string, grimoireId: string) {
   const configPath = join(projectRoot, "apps", "api", "gremius.config.ts");
-  
+
   try {
     let content = await readFile(configPath, "utf-8");
-    
+
     // Simple regex-based addition (in production, use AST parsing)
     const grimoiresMatch = content.match(/grimoires:\s*\[([^\]]*)\]/);
-    
+
     if (grimoiresMatch) {
       const existing = grimoiresMatch[1];
       if (!existing.includes(grimoireId)) {
-        const newGrimoires = existing.trim() 
+        const newGrimoires = existing.trim()
           ? `${existing.trim()},\n    "${grimoireId}",`
           : `\n    "${grimoireId}",`;
-        
-        content = content.replace(
-          /grimoires:\s*\[[^\]]*\]/,
-          `grimoires: [${newGrimoires}\n  ]`
-        );
-        
+
+        content = content.replace(/grimoires:\s*\[[^\]]*\]/, `grimoires: [${newGrimoires}\n  ]`);
+
         await writeFile(configPath, content);
       }
     }
@@ -436,16 +438,13 @@ async function addToConfig(projectRoot: string, grimoireId: string) {
 
 async function removeFromConfig(projectRoot: string, grimoireId: string) {
   const configPath = join(projectRoot, "apps", "api", "gremius.config.ts");
-  
+
   try {
     let content = await readFile(configPath, "utf-8");
-    
+
     // Remove from grimoires array
-    content = content.replace(
-      new RegExp(`\\s*"${grimoireId}",?`, "g"),
-      ""
-    );
-    
+    content = content.replace(new RegExp(`\\s*"${grimoireId}",?`, "g"), "");
+
     await writeFile(configPath, content);
   } catch {
     // Ignore
@@ -466,21 +465,21 @@ async function getInstalledGrimoires(projectRoot: string): Promise<any[]> {
   try {
     const response = await fetch("http://localhost:3000/api/admin/grimoires/installed");
     if (response.ok) {
-      const data = await response.json() as any[];
+      const data = (await response.json()) as any[];
       return data;
     }
   } catch {
     // API not running, scan node_modules
   }
-  
+
   // Fallback: scan node_modules for @gremius packages
   const grimoires: any[] = [];
   const nodeModules = join(projectRoot, "node_modules");
-  
+
   try {
     const { readdir } = await import("node:fs/promises");
     const entries = await readdir(nodeModules);
-    
+
     for (const entry of entries) {
       if (entry.startsWith("grimoire-") || entry.startsWith("@")) {
         const manifest = await readGrimoireManifest(projectRoot, entry);
@@ -500,7 +499,7 @@ async function getInstalledGrimoires(projectRoot: string): Promise<any[]> {
   } catch {
     // Ignore
   }
-  
+
   return grimoires;
 }
 
@@ -512,7 +511,7 @@ async function updateGrimoireStatus(_projectRoot: string, grimoireId: string, en
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled }),
     });
-    
+
     if (!response.ok) {
       throw new Error("Failed to update status");
     }
@@ -523,18 +522,18 @@ async function updateGrimoireStatus(_projectRoot: string, grimoireId: string, en
 
 async function searchNpm(query: string, limit = 20): Promise<GrimoireInfo[]> {
   const searchQuery = query.includes("grimoire") ? query : `grimoire-${query}`;
-  
+
   try {
     const response = await fetch(
       `${NPM_REGISTRY}/-/v1/search?text=${encodeURIComponent(searchQuery)}&size=${limit}`
     );
-    
+
     if (!response.ok) {
       return [];
     }
-    
-    const data = await response.json() as any;
-    
+
+    const data = (await response.json()) as any;
+
     return data.objects.map((obj: any) => ({
       id: obj.package.name.replace(/^@gremius\/grimoire-/, "").replace(/^grimoire-/, ""),
       name: obj.package.name,

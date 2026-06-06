@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { signIn, signOut, checkSession, getLoading, getError, isLoggedIn, isAdmin } from "../../lib/auth.svelte";
+
+  import { goto } from "$app/navigation";
   
   let email = $state("");
   let password = $state("");

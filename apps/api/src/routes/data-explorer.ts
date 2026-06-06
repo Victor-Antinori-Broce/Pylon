@@ -11,7 +11,9 @@
  *   ✅ Smart Views (saved filter presets)
  */
 
+import { count, eq, sql, asc, desc, ilike, gt, lt, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
+
 import { db } from "../db";
 import {
   authUsers as user,
@@ -21,7 +23,6 @@ import {
   siteSettings,
   modules,
 } from "../db/schema";
-import { count, eq, sql, asc, desc, ilike, gt, lt, gte, lte } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth";
 import { introspectTable, getAllTables } from "../services/schema-introspector";
 
@@ -51,7 +52,9 @@ async function resolveTable(name: string): Promise<TableMeta | null> {
   const pk = introspected.primaryKey[0] || "id";
   const readonlyFields = [
     pk,
-    ...introspected.columns.filter(c => c.name.endsWith("_at") || c.name === "createdAt" || c.name === "updatedAt").map(c => c.name),
+    ...introspected.columns
+      .filter((c) => c.name.endsWith("_at") || c.name === "createdAt" || c.name === "updatedAt")
+      .map((c) => c.name),
   ];
 
   return {
@@ -65,7 +68,10 @@ async function resolveTable(name: string): Promise<TableMeta | null> {
 }
 
 function humanizeTableNameLocal(name: string): string {
-  return name.replace(/_/g, " ").replace(/^./, s => s.toUpperCase()).trim();
+  return name
+    .replace(/_/g, " ")
+    .replace(/^./, (s) => s.toUpperCase())
+    .trim();
 }
 
 // ═══════════════════════════════════════════════
@@ -95,7 +101,7 @@ explorerRoutes.get("/schema/:grimoire", async (c) => {
   const tables = grimoireTables[grimoireId] || [grimoireId];
 
   // Return schema info for each table
-  const schema = tables.map(tableName => {
+  const schema = tables.map((tableName) => {
     const meta = tableRegistry[tableName];
     return {
       name: tableName,
@@ -114,10 +120,13 @@ explorerRoutes.get("/schema/:grimoire/:table", async (c) => {
   const meta = tableRegistry[tableName];
 
   if (!meta) {
-    return c.json({
-      error: `Table '${tableName}' not found`,
-      available: Object.keys(tableRegistry)
-    }, 404);
+    return c.json(
+      {
+        error: `Table '${tableName}' not found`,
+        available: Object.keys(tableRegistry),
+      },
+      404
+    );
   }
 
   // Get sample row to infer columns
@@ -126,11 +135,11 @@ explorerRoutes.get("/schema/:grimoire/:table", async (c) => {
 
     const columns = sample
       ? Object.entries(sample).map(([key, value]) => ({
-        name: key,
-        type: inferColumnType(key, value),
-        editable: !meta.readonlyFields.includes(key),
-        nullable: value === null,
-      }))
+          name: key,
+          type: inferColumnType(key, value),
+          editable: !meta.readonlyFields.includes(key),
+          nullable: value === null,
+        }))
       : [];
 
     return c.json({
@@ -152,10 +161,13 @@ explorerRoutes.get("/schema/json/:table", async (c) => {
   const meta = tableRegistry[tableName];
 
   if (!meta) {
-    return c.json({
-      error: `Table '${tableName}' not found`,
-      available: Object.keys(tableRegistry)
-    }, 404);
+    return c.json(
+      {
+        error: `Table '${tableName}' not found`,
+        available: Object.keys(tableRegistry),
+      },
+      404
+    );
   }
 
   try {
@@ -175,15 +187,15 @@ explorerRoutes.get("/schema/json/:table", async (c) => {
         };
 
         // Add format hints
-        if (colType === 'date') prop.format = 'date-time';
-        if (colType === 'email') prop.format = 'email';
-        if (colType === 'url') prop.format = 'uri';
-        if (colType === 'id') prop.format = 'uuid';
+        if (colType === "date") prop.format = "date-time";
+        if (colType === "email") prop.format = "email";
+        if (colType === "url") prop.format = "uri";
+        if (colType === "id") prop.format = "uuid";
 
         // Add relation metadata
-        if (colType === 'relation' && relatedTable) {
-          prop.format = 'uuid';
-          prop['x-relation'] = {
+        if (colType === "relation" && relatedTable) {
+          prop.format = "uuid";
+          prop["x-relation"] = {
             table: relatedTable,
             optionsEndpoint: `/api/explorer/${relatedTable}/options`,
           };
@@ -252,12 +264,48 @@ interface TableMeta {
 }
 
 const tableRegistry: Record<string, TableMeta> = {
-  auth_users: { table: user, label: "Auth Users", icon: "🔐", readonlyFields: ["id", "created_at", "updated_at"], pk: "id" },
-  media: { table: media, label: "Media", icon: "🖼️", readonlyFields: ["id", "created_at", "s3_key"], pk: "id" },
-  datasets: { table: dataSets, label: "Data Sets", icon: "📊", readonlyFields: ["id", "created_at"], pk: "id" },
-  entries: { table: dataEntries, label: "Data Entries", icon: "📋", readonlyFields: ["id", "created_at", "updated_at"], pk: "id" },
-  settings: { table: siteSettings, label: "Site Settings", icon: "⚙️", readonlyFields: ["id"], pk: "id" },
-  modules: { table: modules, label: "Modules", icon: "🧩", readonlyFields: ["created_at"], pk: "key" },
+  auth_users: {
+    table: user,
+    label: "Auth Users",
+    icon: "🔐",
+    readonlyFields: ["id", "created_at", "updated_at"],
+    pk: "id",
+  },
+  media: {
+    table: media,
+    label: "Media",
+    icon: "🖼️",
+    readonlyFields: ["id", "created_at", "s3_key"],
+    pk: "id",
+  },
+  datasets: {
+    table: dataSets,
+    label: "Data Sets",
+    icon: "📊",
+    readonlyFields: ["id", "created_at"],
+    pk: "id",
+  },
+  entries: {
+    table: dataEntries,
+    label: "Data Entries",
+    icon: "📋",
+    readonlyFields: ["id", "created_at", "updated_at"],
+    pk: "id",
+  },
+  settings: {
+    table: siteSettings,
+    label: "Site Settings",
+    icon: "⚙️",
+    readonlyFields: ["id"],
+    pk: "id",
+  },
+  modules: {
+    table: modules,
+    label: "Modules",
+    icon: "🧩",
+    readonlyFields: ["created_at"],
+    pk: "key",
+  },
 };
 
 // ── GET /tables — List ALL available tables (static + dynamic from DB) ──
@@ -284,8 +332,8 @@ explorerRoutes.get("/tables", async (c) => {
   const allDbTables = await getAllTables();
   const staticKeys = new Set(Object.keys(tableRegistry));
   const dynamicTables = allDbTables
-    .filter(t => !staticKeys.has(t) && !t.startsWith("auth_") && !t.startsWith("_"))
-    .map(t => ({
+    .filter((t) => !staticKeys.has(t) && !t.startsWith("auth_") && !t.startsWith("_"))
+    .map((t) => ({
       key: t,
       label: humanizeTableNameLocal(t),
       icon: "📋",
@@ -305,23 +353,34 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
   // Strategy 1: Check grimoire.json for declared tables
   const { scanPackages } = await import("../services/scanner");
   const grimoires = await scanPackages("grimoires");
-  const manifest = grimoires.find(g => g.id === grimoireId || g.id === `grimoire-${grimoireId}`);
+  const manifest = grimoires.find((g) => g.id === grimoireId || g.id === `grimoire-${grimoireId}`);
 
   let declaredTables: string[] = [];
   if (manifest?.tables) {
-    declaredTables = (manifest.tables as any[]).map(t => typeof t === "string" ? t : t.name).filter(Boolean);
+    declaredTables = (manifest.tables as any[])
+      .map((t) => (typeof t === "string" ? t : t.name))
+      .filter(Boolean);
   }
 
   // Strategy 2: Pattern-match DB tables by grimoire name prefix
   const shortId = grimoireId.replace(/^grimoire-/, "").replace(/-/g, "_");
-  const patternMatches = allDbTables.filter(t =>
-    t.startsWith(shortId + "_") || t === shortId || t === shortId + "s"
+  const patternMatches = allDbTables.filter(
+    (t) => t.startsWith(shortId + "_") || t === shortId || t === shortId + "s"
   );
 
   // Strategy 3: Check for well-known table name patterns
   const knownPatterns: Record<string, string[]> = {
     booking: ["reservations", "rooms", "amenities", "room_amenities"],
-    academy: ["academy_courses", "academy_enrollments", "academy_topics", "academy_quizzes", "academy_questions", "academy_quiz_attempts", "academy_satisfaction_surveys", "academy_user_progress"],
+    academy: [
+      "academy_courses",
+      "academy_enrollments",
+      "academy_topics",
+      "academy_quizzes",
+      "academy_questions",
+      "academy_quiz_attempts",
+      "academy_satisfaction_surveys",
+      "academy_user_progress",
+    ],
     dms: ["documents", "document_versions"],
     directory: ["employee_profile"],
     blog: ["blog_posts", "blog_posts_to_tags", "blog_posts_to_games"],
@@ -335,7 +394,7 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
     collections: ["game_collections", "game_collection_entries"],
     "ai-memories": ["ai_memories", "ai_memory_chunks"],
     workers: ["gremius_functions", "function_executions"],
-    "gremius-crm": [],  // No tables in migration yet
+    "gremius-crm": [], // No tables in migration yet
   };
   const knownTables = knownPatterns[shortId] || knownPatterns[grimoireId] || [];
 
@@ -350,17 +409,20 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
       try {
         const result = await db.execute(sql`SELECT count(*) as c FROM "${sql.raw(tableName)}"`);
         rowCount = Number((result.rows[0] as any)?.c ?? 0);
-      } catch { }
+      } catch {}
     }
-    const source = declaredTables.includes(tableName) ? "grimoire.json" :
-      knownTables.includes(tableName) ? "known-pattern" : "prefix-match";
+    const source = declaredTables.includes(tableName)
+      ? "grimoire.json"
+      : knownTables.includes(tableName)
+        ? "known-pattern"
+        : "prefix-match";
     verified.push({ name: tableName, exists, rowCount, source });
   }
 
   return c.json({
     grimoireId,
-    tables: verified.filter(t => t.exists),
-    missing: verified.filter(t => !t.exists).map(t => t.name),
+    tables: verified.filter((t) => t.exists),
+    missing: verified.filter((t) => !t.exists).map((t) => t.name),
     manifestFound: !!manifest,
   });
 });
@@ -371,7 +433,10 @@ explorerRoutes.get("/:collection", async (c) => {
   const meta = await resolveTable(collectionName);
 
   if (!meta) {
-    return c.json({ error: `Collection '${collectionName}' not found.`, available: Object.keys(tableRegistry) }, 404);
+    return c.json(
+      { error: `Collection '${collectionName}' not found.`, available: Object.keys(tableRegistry) },
+      404
+    );
   }
 
   // Dynamic tables use raw SQL
@@ -467,13 +532,14 @@ explorerRoutes.get("/:collection", async (c) => {
     const data = await query;
 
     // Column metadata (derived from first row or table definition)
-    const columns = data.length > 0
-      ? Object.keys(data[0]).map((key) => ({
-        field: key,
-        editable: !meta.readonlyFields.includes(key),
-        type: inferColumnType(key, data[0][key]),
-      }))
-      : [];
+    const columns =
+      data.length > 0
+        ? Object.keys(data[0]).map((key) => ({
+            field: key,
+            editable: !meta.readonlyFields.includes(key),
+            type: inferColumnType(key, data[0][key]),
+          }))
+        : [];
 
     const totalPages = Math.ceil(total / limit);
 
@@ -527,11 +593,7 @@ explorerRoutes.patch("/:collection/:id", async (c) => {
     }
 
     const pkCol = meta.table[meta.pk];
-    const [updated] = await db
-      .update(meta.table)
-      .set(body)
-      .where(eq(pkCol, id))
-      .returning();
+    const [updated] = await db.update(meta.table).set(body).where(eq(pkCol, id)).returning();
 
     if (!updated) {
       return c.json({ error: "Record not found" }, 404);
@@ -569,10 +631,7 @@ explorerRoutes.post("/:collection", async (c) => {
       return c.json({ error: "No fields provided" }, 400);
     }
 
-    const result = await db
-      .insert(meta.table)
-      .values(body)
-      .returning();
+    const result = await db.insert(meta.table).values(body).returning();
 
     const created = Array.isArray(result) ? result[0] : result;
 
@@ -599,10 +658,7 @@ explorerRoutes.delete("/:collection/:id", async (c) => {
 
   try {
     const pkCol = meta.table[meta.pk];
-    const [deleted] = await db
-      .delete(meta.table)
-      .where(eq(pkCol, id))
-      .returning() as any[];
+    const [deleted] = (await db.delete(meta.table).where(eq(pkCol, id)).returning()) as any[];
 
     if (!deleted) {
       return c.json({ error: "Record not found" }, 404);
@@ -646,12 +702,12 @@ explorerRoutes.get("/:collection/options", async (c) => {
       }
       // Fallback: first string column that isn't the PK
       if (displayField === "id") {
-        const textCol = keys.find(k => k !== meta.pk && typeof rows[0][k] === "string");
+        const textCol = keys.find((k) => k !== meta.pk && typeof rows[0][k] === "string");
         if (textCol) displayField = textCol;
       }
     }
 
-    const options = rows.map(row => ({
+    const options = rows.map((row) => ({
       value: (row as any)[meta.pk],
       label: String((row as any)[displayField] || (row as any)[meta.pk]),
     }));
@@ -703,19 +759,27 @@ async function handleDynamicQuery(c: any, tableName: string, meta: TableMeta) {
 
     const dataResult = await db.execute(dataSql);
     const data = dataResult.rows;
-    const columns = data.length > 0
-      ? Object.keys(data[0]).map(key => ({
-        field: key,
-        editable: !meta.readonlyFields.includes(key),
-        type: inferColumnType(key, (data[0] as any)[key]),
-      }))
-      : [];
+    const columns =
+      data.length > 0
+        ? Object.keys(data[0]).map((key) => ({
+            field: key,
+            editable: !meta.readonlyFields.includes(key),
+            type: inferColumnType(key, (data[0] as any)[key]),
+          }))
+        : [];
 
     const totalPages = Math.ceil(total / limit);
     return c.json({
       data,
       columns,
-      pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPrevPage: page > 1 },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     });
   } catch (error: any) {
     console.error(`Explorer Dynamic Query [${tableName}]:`, error);
@@ -730,11 +794,13 @@ async function handleDynamicCreate(c: any, tableName: string, meta: TableMeta) {
     if (Object.keys(body).length === 0) return c.json({ error: "No fields provided" }, 400);
 
     const keys = Object.keys(body);
-    const safeKeys = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}"`);
-    const values = keys.map(k => pgLiteral(body[k]));
+    const safeKeys = keys.map((k) => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}"`);
+    const values = keys.map((k) => pgLiteral(body[k]));
 
     const result = await db.execute(
-      sql.raw(`INSERT INTO "${tableName}" (${safeKeys.join(", ")}) VALUES (${values.join(", ")}) RETURNING *`)
+      sql.raw(
+        `INSERT INTO "${tableName}" (${safeKeys.join(", ")}) VALUES (${values.join(", ")}) RETURNING *`
+      )
     );
     return c.json(result.rows[0], 201);
   } catch (error: any) {
@@ -747,14 +813,19 @@ async function handleDynamicUpdate(c: any, tableName: string, meta: TableMeta, i
   try {
     const body = await c.req.json();
     for (const field of meta.readonlyFields) delete body[field];
-    if (Object.keys(body).length === 0) return c.json({ error: "No editable fields provided" }, 400);
+    if (Object.keys(body).length === 0)
+      return c.json({ error: "No editable fields provided" }, 400);
 
     const keys = Object.keys(body);
-    const setClauses = keys.map(k => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}" = ${pgLiteral(body[k])}`);
+    const setClauses = keys.map(
+      (k) => `"${k.replace(/[^a-zA-Z0-9_]/g, "")}" = ${pgLiteral(body[k])}`
+    );
     const safePk = meta.pk.replace(/[^a-zA-Z0-9_]/g, "");
 
     const result = await db.execute(
-      sql.raw(`UPDATE "${tableName}" SET ${setClauses.join(", ")} WHERE "${safePk}" = ${pgLiteral(id)} RETURNING *`)
+      sql.raw(
+        `UPDATE "${tableName}" SET ${setClauses.join(", ")} WHERE "${safePk}" = ${pgLiteral(id)} RETURNING *`
+      )
     );
     if (result.rows.length === 0) return c.json({ error: "Record not found" }, 404);
     return c.json(result.rows[0]);
@@ -780,23 +851,27 @@ async function handleDynamicDelete(c: any, tableName: string, meta: TableMeta, i
 
 async function handleDynamicOptions(c: any, tableName: string, meta: TableMeta) {
   try {
-    const result = await db.execute(
-      sql.raw(`SELECT * FROM "${tableName}" LIMIT 200`)
-    );
+    const result = await db.execute(sql.raw(`SELECT * FROM "${tableName}" LIMIT 200`));
     const rows = result.rows as any[];
     const displayPriority = ["name", "title", "label", "email", "slug", "display_name"];
     let displayField = meta.pk;
     if (rows.length > 0) {
       const keys = Object.keys(rows[0]);
       for (const prio of displayPriority) {
-        if (keys.includes(prio)) { displayField = prio; break; }
+        if (keys.includes(prio)) {
+          displayField = prio;
+          break;
+        }
       }
       if (displayField === meta.pk) {
-        const textCol = keys.find(k => k !== meta.pk && typeof rows[0][k] === "string");
+        const textCol = keys.find((k) => k !== meta.pk && typeof rows[0][k] === "string");
         if (textCol) displayField = textCol;
       }
     }
-    const options = rows.map(row => ({ value: row[meta.pk], label: String(row[displayField] || row[meta.pk]) }));
+    const options = rows.map((row) => ({
+      value: row[meta.pk],
+      label: String(row[displayField] || row[meta.pk]),
+    }));
     return c.json({ options, displayField, collection: tableName });
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
@@ -869,9 +944,9 @@ explorerRoutes.delete("/:collection/views/:viewId", async (c) => {
  * Safely format a JS value for use as a PostgreSQL literal in raw SQL.
  */
 function pgLiteral(value: unknown): string {
-  if (value === null || value === undefined) return 'NULL';
-  if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
-  if (typeof value === 'number') return String(value);
+  if (value === null || value === undefined) return "NULL";
+  if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
+  if (typeof value === "number") return String(value);
   if (value instanceof Date) return `'${value.toISOString()}'`;
   return `'${String(value).replace(/'/g, "''")}'`;
 }
@@ -904,7 +979,8 @@ function inferColumnType(key: string, value: any): string {
   if (key === "id") return "id";
   if (key.endsWith("_id") || (key.endsWith("Id") && key !== "id")) return "relation";
   if (key.includes("at") || key.includes("At") || key.includes("date") || key.includes("Date")) {
-    if (value instanceof Date || (typeof value === "string" && !isNaN(Date.parse(value)))) return "date";
+    if (value instanceof Date || (typeof value === "string" && !isNaN(Date.parse(value))))
+      return "date";
   }
   if (typeof value === "boolean") return "boolean";
   if (typeof value === "number") return "number";
@@ -929,35 +1005,38 @@ function getRelatedTable(columnName: string): string | undefined {
 /** Map internal column types to JSON Schema types */
 function mapToJsonSchemaType(colType: string, value: any): string {
   switch (colType) {
-    case 'id':
-    case 'text':
-    case 'email':
-    case 'url':
-    case 'color':
-    case 'date':
-    case 'relation':
-      return 'string';
-    case 'number':
-      return Number.isInteger(value) ? 'integer' : 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'json':
-      return 'object';
+    case "id":
+    case "text":
+    case "email":
+    case "url":
+    case "color":
+    case "date":
+    case "relation":
+      return "string";
+    case "number":
+      return Number.isInteger(value) ? "integer" : "number";
+    case "boolean":
+      return "boolean";
+    case "json":
+      return "object";
     default:
-      return 'string';
+      return "string";
   }
 }
 
 /** Generate a human-readable field description */
 function generateFieldDescription(key: string, colType: string, relatedTable?: string): string {
-  if (colType === 'relation' && relatedTable) {
+  if (colType === "relation" && relatedTable) {
     return `Foreign key to ${relatedTable} table`;
   }
-  if (colType === 'id') return 'Unique identifier (UUID)';
-  if (colType === 'date') return `Timestamp field`;
-  if (key === 'createdAt') return 'Record creation timestamp';
-  if (key === 'updatedAt') return 'Last modification timestamp';
+  if (colType === "id") return "Unique identifier (UUID)";
+  if (colType === "date") return `Timestamp field`;
+  if (key === "createdAt") return "Record creation timestamp";
+  if (key === "updatedAt") return "Last modification timestamp";
   // Convert camelCase to human-readable
-  const readable = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+  const readable = key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (s) => s.toUpperCase())
+    .trim();
   return readable;
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import { 
     Plus, 
     ChevronRight, 
@@ -7,13 +7,12 @@
     Search,
     Edit,
     Trash2,
-    UserPlus,
     Shield
   } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
-  interface Grupo {
+  
+interface Grupo {
     id: string;
     nombre: string;
     descripcion: string | null;
@@ -28,7 +27,7 @@
   let grupos = $state<Grupo[]>([]);
   let loading = $state(true);
   let searchQuery = $state("");
-  let filteredGrupos = $derived(
+  const filteredGrupos = $derived(
     grupos.filter(g => 
       g.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (g.descripcion?.toLowerCase() || "").includes(searchQuery.toLowerCase())

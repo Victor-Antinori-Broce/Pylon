@@ -133,9 +133,4 @@ export {
   createRLSFilter,
 } from "./rls-builder";
 
-export type {
-  RLSType,
-  RLSRule,
-  PolicyJson,
-  RLSUser,
-} from "./rls-builder";
+export type { RLSType, RLSRule, PolicyJson, RLSUser } from "./rls-builder";

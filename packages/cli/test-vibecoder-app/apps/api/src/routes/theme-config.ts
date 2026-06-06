@@ -13,8 +13,10 @@
  * and falls back to siteSettings branding data.
  */
 
-import { Hono } from "hono";
 import { join } from "node:path";
+
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { siteSettings } from "../db/schema";
 
@@ -26,7 +28,7 @@ themeConfigRoute.get("/", async (c) => {
 
   // Try to load theme.json from the theme package
   // Try new realms path first
-  let configPath = join(process.cwd(), "../../packages/realms", activeId, "theme.json");
+  const configPath = join(process.cwd(), "../../packages/realms", activeId, "theme.json");
   
   // Fallback to legacy themes path
   const legacyPath = join(process.cwd(), "../../packages/themes", activeId, "theme.json");

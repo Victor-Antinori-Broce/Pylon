@@ -28,12 +28,12 @@
  *     id: "blog",
  *     createRouter: (ctx: GrimoireContext) => {
  *       const router = new Hono();
- *       
+ *
  *       router.get("/", async (c) => {
  *         const posts = await ctx.db.select().from(blogPosts);
  *         return c.json(posts);
  *       });
- *       
+ *
  *       return router;
  *     }
  *   };
@@ -107,7 +107,7 @@ export interface GrimoireStorage {
 
 /**
  * Abstracción de base de datos para grimoires
- * 
+ *
  * NOTA: En lugar de abstraer todo Drizzle, proporcionamos
  * la instancia directa ya que los grimoires definen sus propios schemas.
  */
@@ -122,7 +122,7 @@ export interface GrimoireDatabase {
 
 /**
  * Abstracción de Content Publishing para grimoires
- * 
+ *
  * Permite promover datos de cualquier fuente a Content Targets
  * (Blog, Documentation, Shop, etc.) que son provistos por grimoires primarios.
  */
@@ -183,7 +183,11 @@ export interface ContentTarget {
   publish(data: PromotionData, ctx: GrimoireContext): Promise<PublishResult>;
   getPublishedUrl(result: PublishResult): string;
   unpublish?(contentId: string, ctx: GrimoireContext): Promise<void>;
-  update?(contentId: string, data: Partial<PromotionData>, ctx: GrimoireContext): Promise<PublishResult>;
+  update?(
+    contentId: string,
+    data: Partial<PromotionData>,
+    ctx: GrimoireContext
+  ): Promise<PublishResult>;
   getStatus?(contentId: string, ctx: GrimoireContext): Promise<string>;
 }
 
@@ -273,25 +277,25 @@ export interface GrimoireDefinition {
   description?: string;
   /** Icono (nombre de Lucide) */
   icon?: string;
-  
-  /** 
+
+  /**
    * Es un grimoire primario que provee capacidades al framework.
    * Ejemplos: Blog (provee Content Target), Auth (provee autenticación)
    */
   primary?: boolean;
-  
+
   /**
    * Puede ser desactivado por el usuario.
    * Los grimoires primarios típicamente son opcionales.
    */
   optional?: boolean;
-  
+
   /** Factory que crea el router con contexto inyectado */
   createRouter: GrimoireRouterFactory;
-  
+
   /** Tablas que administra (para introspección) */
   tables?: string[];
-  
+
   /** Hooks de ciclo de vida */
   hooks?: {
     /** Llamado cuando el grimoire se habilita */
@@ -301,7 +305,7 @@ export interface GrimoireDefinition {
     /** Llamado en cada startup (para migraciones) */
     onStartup?: (ctx: GrimoireContext) => Promise<void>;
   };
-  
+
   /** Configuración de admin UI */
   admin?: {
     /** Categoría en el sidebar */
@@ -314,7 +318,7 @@ export interface GrimoireDefinition {
       table?: string;
     }>;
   };
-  
+
   /** Dependencias */
   dependencies?: {
     /** IDs de grimoires requeridos */
@@ -322,10 +326,10 @@ export interface GrimoireDefinition {
     /** Feature flags de core requeridos */
     core?: string[];
   };
-  
+
   /** Mount point (default: /api/{id}) */
   mountPath?: string;
-  
+
   /**
    * OpenAPI specification for auto-generated documentation.
    * When provided, endpoints will be documented at /api/docs/openapi.json
@@ -361,10 +365,13 @@ export interface GrimoireOpenApiPath {
   /** Request body schema */
   body?: ZodTypeAny;
   /** Response schemas by status code */
-  responses: Record<number, {
-    description: string;
-    schema: ZodTypeAny;
-  }>;
+  responses: Record<
+    number,
+    {
+      description: string;
+      schema: ZodTypeAny;
+    }
+  >;
   /** Whether authentication is required */
   requireAuth?: boolean;
   /** Rate limiting configuration */
@@ -396,19 +403,22 @@ export interface GrimoireOpenApiSpec {
   /** Endpoint definitions */
   paths: GrimoireOpenApiPath[];
   /** Webhook definitions */
-  webhooks?: Record<string, {
-    post: {
-      summary: string;
-      description?: string;
-      requestBody: {
-        content: {
-          "application/json": {
-            schema: ZodTypeAny;
+  webhooks?: Record<
+    string,
+    {
+      post: {
+        summary: string;
+        description?: string;
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: ZodTypeAny;
+            };
           };
         };
       };
-    };
-  }>;
+    }
+  >;
 }
 
 /**
@@ -465,21 +475,14 @@ export class GrimoireError extends Error {
  */
 export const GrimoireErrors = {
   notFound: (resource: string, id?: string) =>
-    new GrimoireError(
-      `${resource} not found${id ? `: ${id}` : ""}`,
-      "NOT_FOUND",
-      404
-    ),
-  
-  unauthorized: (message = "Unauthorized") =>
-    new GrimoireError(message, "UNAUTHORIZED", 401),
-  
-  forbidden: (message = "Forbidden") =>
-    new GrimoireError(message, "FORBIDDEN", 403),
-  
+    new GrimoireError(`${resource} not found${id ? `: ${id}` : ""}`, "NOT_FOUND", 404),
+
+  unauthorized: (message = "Unauthorized") => new GrimoireError(message, "UNAUTHORIZED", 401),
+
+  forbidden: (message = "Forbidden") => new GrimoireError(message, "FORBIDDEN", 403),
+
   validation: (message: string, details?: Record<string, unknown>) =>
     new GrimoireError(message, "VALIDATION_ERROR", 400, details),
-  
-  conflict: (message: string) =>
-    new GrimoireError(message, "CONFLICT", 409),
+
+  conflict: (message: string) => new GrimoireError(message, "CONFLICT", 409),
 } as const;

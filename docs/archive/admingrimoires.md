@@ -2,7 +2,7 @@
 
 > **Versión**: 1.0  
 > **Estado**: Draft / Decisión Arquitectónica  
-> **Filosofía**: Django Admin con superpoderes de Svelte  
+> **Filosofía**: Django Admin con superpoderes de Svelte
 
 ---
 
@@ -12,14 +12,14 @@ Gremius no es un SaaS de usuario final. Es un **Backend-as-a-Service con panel d
 
 ### 1.1 Analogía: Django Admin → Gremius Admin
 
-| Django Admin | Gremius Admin |
-|-------------|---------------|
-| `ModelAdmin` registration | `defineGrimoire({ admin: {...} })` |
-| `list_display`, `list_filter` | DataExplorer genérico (`type: "grid"`) |
-| `change_form` con `inlines` | Custom Svelte view para relaciones complejas |
-| `readonly_fields` | DataExplorer `readonly` mode |
-| `actions` (bulk delete, export) | DataExplorer `bulkActions` / `rowActions` |
-| Dashboard con métricas | Custom view (justificada) |
+| Django Admin                    | Gremius Admin                                |
+| ------------------------------- | -------------------------------------------- |
+| `ModelAdmin` registration       | `defineGrimoire({ admin: {...} })`           |
+| `list_display`, `list_filter`   | DataExplorer genérico (`type: "grid"`)       |
+| `change_form` con `inlines`     | Custom Svelte view para relaciones complejas |
+| `readonly_fields`               | DataExplorer `readonly` mode                 |
+| `actions` (bulk delete, export) | DataExplorer `bulkActions` / `rowActions`    |
+| Dashboard con métricas          | Custom view (justificada)                    |
 
 **La ventaja Svelte**: Reactividad fina, transiciones sin recarga, componentes UI reutilizables. Pero la **filosofía permanece**: convención sobre configuración, solo custom cuando el dominio lo exige.
 
@@ -85,12 +85,12 @@ GRIMOIRE_VIEW_REGISTRY = {
   // CRM: solo el pipeline Kanban es custom
   "crm-deal-pipeline": () => import("$views/crm/DealPipelineView.svelte"),
   "crm-dashboard": () => import("$views/crm/CrmDashboard.svelte"),
-  
+
   // Conta: solo journal form (partida doble) y reports
   "conta-journal-form": () => import("$views/conta/JournalForm.svelte"),
   "conta-reports": () => import("$views/conta/ReportsView.svelte"),
   "conta-disbursement-form": () => import("$views/conta/DisbursementForm.svelte"),
-  
+
   // Agile: idealmente NADA en admin. Si es necesario, intakes como grid custom.
 };
 ```
@@ -109,23 +109,23 @@ El CRM es el mejor ejemplo de la filosofía. Sus custom views son legítimas: un
 
 #### 4.1.1 Qué mantener como custom
 
-| Componente | Justificación |
-|-----------|--------------|
-| `CrmDashboard.svelte` | Métricas, gráficas, KPIs. No es un grid. |
-| `DealPipelineView.svelte` | Kanban con stages dinámicos. Drag-and-drop entre columnas. |
-| `ActivityTimeline.svelte` | Inline polimórfico (call/email/meeting/task). |
-| `DealForm.svelte` (parcial) | Campos condicionales por pipeline stage. |
+| Componente                  | Justificación                                              |
+| --------------------------- | ---------------------------------------------------------- |
+| `CrmDashboard.svelte`       | Métricas, gráficas, KPIs. No es un grid.                   |
+| `DealPipelineView.svelte`   | Kanban con stages dinámicos. Drag-and-drop entre columnas. |
+| `ActivityTimeline.svelte`   | Inline polimórfico (call/email/meeting/task).              |
+| `DealForm.svelte` (parcial) | Campos condicionales por pipeline stage.                   |
 
 #### 4.1.2 Qué migrar a DataExplorer
 
-| Componente actual | Reemplazo |
-|------------------|-----------|
-| `CompanyList.svelte` | DataExplorer `type: "grid"`, table: `crm_companies` |
-| `CompanyForm.svelte` | AutoFormModal del DataExplorer |
-| `ContactList.svelte` | DataExplorer `type: "grid"`, table: `crm_contacts` |
-| `ContactForm.svelte` | AutoFormModal del DataExplorer |
+| Componente actual     | Reemplazo                                            |
+| --------------------- | ---------------------------------------------------- |
+| `CompanyList.svelte`  | DataExplorer `type: "grid"`, table: `crm_companies`  |
+| `CompanyForm.svelte`  | AutoFormModal del DataExplorer                       |
+| `ContactList.svelte`  | DataExplorer `type: "grid"`, table: `crm_contacts`   |
+| `ContactForm.svelte`  | AutoFormModal del DataExplorer                       |
 | `ActivityList.svelte` | DataExplorer `type: "grid"`, table: `crm_activities` |
-| `ActivityForm.svelte` | AutoFormModal del DataExplorer |
+| `ActivityForm.svelte` | AutoFormModal del DataExplorer                       |
 
 #### 4.1.3 Mejoras recomendadas
 
@@ -140,22 +140,22 @@ Contabilidad requiere custom views para la lógica de partida doble, pero la may
 
 #### 4.2.1 Qué mantener como custom
 
-| Componente | Justificación |
-|-----------|--------------|
-| `JournalForm.svelte` | Partida doble: líneas de debe/haber que deben cuadrar. Validación de negocio. |
-| `ReportsView.svelte` | Balance, pérdidas y ganancias. Vistas analíticas. |
-| `DisbursementForm.svelte` | Trust accounting con retenciones. |
-| `TemplateForm.svelte` | Journal templates con líneas predefinidas. |
+| Componente                | Justificación                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `JournalForm.svelte`      | Partida doble: líneas de debe/haber que deben cuadrar. Validación de negocio. |
+| `ReportsView.svelte`      | Balance, pérdidas y ganancias. Vistas analíticas.                             |
+| `DisbursementForm.svelte` | Trust accounting con retenciones.                                             |
+| `TemplateForm.svelte`     | Journal templates con líneas predefinidas.                                    |
 
 #### 4.2.2 Qué migrar URGENTEMENTE a DataExplorer
 
-| Componente actual | Reemplazo |
-|------------------|-----------|
-| `AccountList.svelte` | DataExplorer `type: "grid"`, table: `conta_accounts` |
-| `AccountForm.svelte` | AutoFormModal del DataExplorer |
-| `JournalList.svelte` | DataExplorer `type: "grid"`, table: `conta_journals` |
-| `LedgerList.svelte` | DataExplorer `type: "grid"`, table: `conta_ledger_entries`, readonly |
-| `TemplateList.svelte` | DataExplorer `type: "grid"`, table: `conta_journal_templates` |
+| Componente actual     | Reemplazo                                                            |
+| --------------------- | -------------------------------------------------------------------- |
+| `AccountList.svelte`  | DataExplorer `type: "grid"`, table: `conta_accounts`                 |
+| `AccountForm.svelte`  | AutoFormModal del DataExplorer                                       |
+| `JournalList.svelte`  | DataExplorer `type: "grid"`, table: `conta_journals`                 |
+| `LedgerList.svelte`   | DataExplorer `type: "grid"`, table: `conta_ledger_entries`, readonly |
+| `TemplateList.svelte` | DataExplorer `type: "grid"`, table: `conta_journal_templates`        |
 
 #### 4.2.3 Impacto
 
@@ -170,6 +170,7 @@ Agile rompe completamente el contrato. No es un panel de administración — es 
 #### 4.3.1 El problema
 
 El `AgileView.svelte` (730 líneas) mezcla:
+
 - Selector de proyectos
 - Kanban board drag-and-drop
 - Intake inbox con aprobación
@@ -184,14 +185,14 @@ El `AgileView.svelte` (730 líneas) mezcla:
 
 Migrar TODO a DataExplorer + custom views mínimas:
 
-| Vista | Tipo | Notas |
-|-------|------|-------|
-| Projects | DataExplorer grid | Grid estándar. |
-| Issues | DataExplorer grid | Grid por proyecto con filtros. |
-| Cycles | DataExplorer grid | Fechas, estados. |
-| Modules | DataExplorer grid | Nombre, descripción. |
-| Intakes | DataExplorer grid + row actions | Botones "approve/decline" por fila. |
-| Issue Form | AutoFormModal | Custom solo si necesita inline comments. |
+| Vista      | Tipo                            | Notas                                    |
+| ---------- | ------------------------------- | ---------------------------------------- |
+| Projects   | DataExplorer grid               | Grid estándar.                           |
+| Issues     | DataExplorer grid               | Grid por proyecto con filtros.           |
+| Cycles     | DataExplorer grid               | Fechas, estados.                         |
+| Modules    | DataExplorer grid               | Nombre, descripción.                     |
+| Intakes    | DataExplorer grid + row actions | Botones "approve/decline" por fila.      |
+| Issue Form | AutoFormModal                   | Custom solo si necesita inline comments. |
 
 **El Kanban board no vive en el admin.** Se mueve al **realm** como una vista de producto (si el usuario la necesita) o se sirve como una app separada consumiendo la API.
 
@@ -209,12 +210,14 @@ Si el Kanban es absolutamente requerido en el admin:
 #### 4.3.3 APIs: unificar patrones
 
 Actualmente Agile usa llamadas genéricas:
+
 ```ts
 // ❌ Mal (Agile actual)
 const data = await api.get("/agile/projects");
 ```
 
 Debería usar el patrón tipado del CRM:
+
 ```ts
 // ✅ Bien
 const projects = await api.getAgileProjects();
@@ -351,7 +354,7 @@ import type { AgileProject, AgileIssue } from "@gremius/shared";
 export const grimoire = defineGrimoire({
   id: "grimoire-inventory",
   name: "Inventory",
-  
+
   admin: {
     category: "business",
     views: [
@@ -359,13 +362,13 @@ export const grimoire = defineGrimoire({
       { id: "products", type: "grid", title: "Products", table: "inventory_products" },
       { id: "warehouses", type: "grid", title: "Warehouses", table: "inventory_warehouses" },
       { id: "movements", type: "grid", title: "Stock Movements", table: "inventory_movements" },
-      
+
       // Esto requiere custom porque hay validación de stock en tiempo real
-      { 
-        id: "stock-adjustment", 
-        type: "custom", 
+      {
+        id: "stock-adjustment",
+        type: "custom",
         title: "Stock Adjustment",
-        component: "inventory-stock-adjustment" // referencia al registry
+        component: "inventory-stock-adjustment", // referencia al registry
       },
     ],
   },
@@ -378,14 +381,14 @@ export const grimoire = defineGrimoire({
 
 Después de aplicar esta filosofía, los grimoires deberían tener:
 
-| Métrica | Target |
-|---------|--------|
-| % de tablas usando DataExplorer | > 70% |
-| Líneas de código por custom view | < 200 (ideal < 150) |
-| Componentes custom por grimoire | 1-4 (dominios simples: 0) |
-| Reutilización de componentes UI | 100% (Button, Input, Badge, etc.) |
-| Tipos inline en custom views | 0 (todos desde `@gremius/shared`) |
-| Llamadas API con strings sueltos | 0 |
+| Métrica                          | Target                            |
+| -------------------------------- | --------------------------------- |
+| % de tablas usando DataExplorer  | > 70%                             |
+| Líneas de código por custom view | < 200 (ideal < 150)               |
+| Componentes custom por grimoire  | 1-4 (dominios simples: 0)         |
+| Reutilización de componentes UI  | 100% (Button, Input, Badge, etc.) |
+| Tipos inline en custom views     | 0 (todos desde `@gremius/shared`) |
+| Llamadas API con strings sueltos | 0                                 |
 
 ---
 
@@ -398,6 +401,7 @@ Después de aplicar esta filosofía, los grimoires deberían tener:
 **Decisión**: Implementar Hybrid Rendering. El DataExplorer maneja grids/kanbans/calendars declarativos. Solo `type: "custom"` usa componentes Svelte.
 
 **Consecuencias**:
+
 - Menos código Svelte que mantener
 - Consistencia UX en el 70% de las vistas
 - Custom views concentradas donde realmente aportan valor
@@ -409,6 +413,7 @@ Después de aplicar esta filosofía, los grimoires deberían tener:
 **Decisión**: Las experiencias de producto (Kanban, canvas, timelines interactivos) viven en el **realm** o como apps independientes. El admin es para gestión de datos.
 
 **Consecuencias**:
+
 - El admin permanece liviano y rápido
 - Las apps de producto pueden evolucionar sin tocar el admin
 - Separación clara de concerns
@@ -425,4 +430,4 @@ Después de aplicar esta filosofía, los grimoires deberían tener:
 
 ---
 
-*Documento creado tras análisis de los grimoires CRM, Conta y Agile. Aplicar antes de crear nuevos grimoires con custom views.*
+_Documento creado tras análisis de los grimoires CRM, Conta y Agile. Aplicar antes de crear nuevos grimoires con custom views._

@@ -35,9 +35,11 @@
  * ```
  */
 
-import { db } from "../../../apps/api/src/db";
-import { validate, type ValidationSchema } from "./validator";
 import type { PgTable } from "drizzle-orm/pg-core";
+
+import { db } from "../../../apps/api/src/db";
+
+import { validate, type ValidationSchema } from "./validator";
 // import * as schema from "../../../apps/api/src/db/schema";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -352,7 +354,7 @@ export class BatchProcessor {
       }
 
       // Resolver dependencias en datos
-      let resolvedData = { ...data };
+      const resolvedData = { ...data };
       if (dependsOn) {
         for (const depKey of dependsOn) {
           const depResult = this.state.results.get(depKey);

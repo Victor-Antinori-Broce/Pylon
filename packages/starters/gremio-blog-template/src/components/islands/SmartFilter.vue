@@ -54,7 +54,9 @@
 
       <!-- Active filter count + clear -->
       <div v-if="activeFilterCount > 0" class="filter-actions">
-        <span class="filter-count">{{ activeFilterCount }} filter{{ activeFilterCount > 1 ? 's' : '' }} active</span>
+        <span class="filter-count"
+          >{{ activeFilterCount }} filter{{ activeFilterCount > 1 ? "s" : "" }} active</span
+        >
         <button class="clear-btn" @click="clearAll">✕ Clear</button>
       </div>
     </div>
@@ -66,11 +68,7 @@
 
     <!-- Results grid -->
     <div v-else-if="filteredItems.length > 0" class="results-grid">
-      <div
-        v-for="item in filteredItems"
-        :key="item.id"
-        class="result-card"
-      >
+      <div v-for="item in filteredItems" :key="item.id" class="result-card">
         <div class="result-image">
           <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.title" loading="lazy" />
           <div v-else class="result-placeholder">🎮</div>
@@ -121,12 +119,19 @@ const selectedGenres = ref(new Set<string>());
 const selectedPlatforms = ref(new Set<string>());
 const minScore = ref(0);
 
-const API = (import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000") as string;
+const API = (import.meta.env.PUBLIC_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3000") as string;
 
 const allGenres = computed(() => {
   const set = new Set<string>();
   for (const item of allItems.value) {
-    if (item.genre) item.genre.split(",").map(g => g.trim()).filter(Boolean).forEach(g => set.add(g));
+    if (item.genre)
+      item.genre
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean)
+        .forEach((g) => set.add(g));
   }
   return [...set].sort();
 });
@@ -134,7 +139,12 @@ const allGenres = computed(() => {
 const allPlatforms = computed(() => {
   const set = new Set<string>();
   for (const item of allItems.value) {
-    if (item.platform) item.platform.split(",").map(p => p.trim()).filter(Boolean).forEach(p => set.add(p));
+    if (item.platform)
+      item.platform
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .forEach((p) => set.add(p));
   }
   return [...set].sort();
 });
@@ -146,16 +156,16 @@ const activeFilterCount = computed(() => {
 });
 
 const filteredItems = computed(() => {
-  return allItems.value.filter(item => {
+  return allItems.value.filter((item) => {
     // Genre filter
     if (selectedGenres.value.size > 0) {
-      const genres = (item.genre || "").split(",").map(g => g.trim());
-      if (!genres.some(g => selectedGenres.value.has(g))) return false;
+      const genres = (item.genre || "").split(",").map((g) => g.trim());
+      if (!genres.some((g) => selectedGenres.value.has(g))) return false;
     }
     // Platform filter
     if (selectedPlatforms.value.size > 0) {
-      const plats = (item.platform || "").split(",").map(p => p.trim());
-      if (!plats.some(p => selectedPlatforms.value.has(p))) return false;
+      const plats = (item.platform || "").split(",").map((p) => p.trim());
+      if (!plats.some((p) => selectedPlatforms.value.has(p))) return false;
     }
     // Score filter
     if (minScore.value > 0 && (item.rating == null || item.rating < minScore.value)) {
@@ -210,7 +220,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.smart-filter { width: 100%; }
+.smart-filter {
+  width: 100%;
+}
 
 .filter-bar {
   display: flex;
@@ -219,19 +231,23 @@ onMounted(async () => {
   align-items: flex-start;
   padding: 1rem 1.25rem;
   border-radius: 1rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   margin-bottom: 1.5rem;
 }
 
-.filter-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
 
 .filter-label {
   font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .chip-list {
@@ -244,26 +260,28 @@ onMounted(async () => {
   font-size: 0.75rem;
   padding: 0.3em 0.75em;
   border-radius: 9999px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.15s;
 }
 .chip:hover {
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.7);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
 }
 .chip.active {
-  background: rgba(0,229,255,0.15);
-  border-color: rgba(0,229,255,0.3);
-  color: #00E5FF;
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.3);
+  color: #00e5ff;
 }
 
-.score-group { min-width: 160px; }
+.score-group {
+  min-width: 160px;
+}
 .score-slider {
   width: 100%;
-  accent-color: #00E5FF;
+  accent-color: #00e5ff;
   cursor: pointer;
 }
 
@@ -276,19 +294,21 @@ onMounted(async () => {
 }
 .filter-count {
   font-size: 0.75rem;
-  color: rgba(0,229,255,0.7);
+  color: rgba(0, 229, 255, 0.7);
 }
 .clear-btn {
   font-size: 0.75rem;
   padding: 0.3em 0.8em;
   border-radius: 0.5rem;
-  background: rgba(255,42,109,0.1);
-  border: 1px solid rgba(255,42,109,0.2);
-  color: #FF2A6D;
+  background: rgba(255, 42, 109, 0.1);
+  border: 1px solid rgba(255, 42, 109, 0.2);
+  color: #ff2a6d;
   cursor: pointer;
   transition: background 0.15s;
 }
-.clear-btn:hover { background: rgba(255,42,109,0.2); }
+.clear-btn:hover {
+  background: rgba(255, 42, 109, 0.2);
+}
 
 /* Results grid */
 .results-grid {
@@ -300,19 +320,21 @@ onMounted(async () => {
 .result-card {
   border-radius: 0.75rem;
   overflow: hidden;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: transform 0.2s, border-color 0.2s;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
 }
 .result-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(0,229,255,0.15);
+  border-color: rgba(0, 229, 255, 0.15);
 }
 
 .result-image {
   aspect-ratio: 16/9;
   overflow: hidden;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 .result-image img {
   width: 100%;
@@ -328,7 +350,9 @@ onMounted(async () => {
   font-size: 1.5rem;
 }
 
-.result-body { padding: 0.75rem; }
+.result-body {
+  padding: 0.75rem;
+}
 .result-title {
   font-size: 0.85rem;
   font-weight: 600;
@@ -350,22 +374,22 @@ onMounted(async () => {
   border-radius: 4px;
 }
 .meta-tag.genre {
-  background: rgba(224,64,251,0.1);
-  color: #E040FB;
+  background: rgba(224, 64, 251, 0.1);
+  color: #e040fb;
 }
 .meta-tag.platform {
-  background: rgba(0,229,255,0.1);
-  color: #00E5FF;
+  background: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
 }
 .meta-tag.score {
-  background: rgba(118,255,3,0.1);
-  color: #76FF03;
+  background: rgba(118, 255, 3, 0.1);
+  color: #76ff03;
 }
 
 .result-count {
   text-align: center;
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.25);
+  color: rgba(255, 255, 255, 0.25);
   margin-top: 1rem;
 }
 
@@ -378,18 +402,25 @@ onMounted(async () => {
 .grid-skeleton {
   aspect-ratio: 3/4;
   border-radius: 0.75rem;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   animation: shimmer 1.5s ease infinite;
 }
 @keyframes shimmer {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
 }
-.empty-state p { margin-bottom: 0.75rem; }
+.empty-state p {
+  margin-bottom: 0.75rem;
+}
 </style>

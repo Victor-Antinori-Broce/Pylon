@@ -8,22 +8,22 @@ Guía completa para implementar el botón de preview social en tu editor de blog
 
 El componente `SocialPreview` muestra cómo se verá tu post al compartirlo en:
 
-| Plataforma | Preview Incluye |
-|------------|-----------------|
-| **WhatsApp** | Chat con burbuja de preview, validación de imagen |
-| **Telegram** | Chat con link card, info sobre compatibilidad |
-| **Facebook** | Tarjeta de link con imagen, título, descripción |
-| **Twitter/X** | Tweet con card de preview |
-| **LinkedIn** | Post con imagen destacada |
+| Plataforma    | Preview Incluye                                   |
+| ------------- | ------------------------------------------------- |
+| **WhatsApp**  | Chat con burbuja de preview, validación de imagen |
+| **Telegram**  | Chat con link card, info sobre compatibilidad     |
+| **Facebook**  | Tarjeta de link con imagen, título, descripción   |
+| **Twitter/X** | Tweet con card de preview                         |
+| **LinkedIn**  | Post con imagen destacada                         |
 
 ### Features Especiales
 
-| Feature | Descripción |
-|---------|-------------|
-| **Comparación A/B** | Compara dos versiones de OG tags lado a lado |
-| **Exportar Imagen** | Guarda el preview como PNG |
-| **Validación WhatsApp** | Verifica <300KB, dimensiones, formato |
-| **Debug Panel** | Métricas detalladas de SEO |
+| Feature                 | Descripción                                  |
+| ----------------------- | -------------------------------------------- |
+| **Comparación A/B**     | Compara dos versiones de OG tags lado a lado |
+| **Exportar Imagen**     | Guarda el preview como PNG                   |
+| **Validación WhatsApp** | Verifica <300KB, dimensiones, formato        |
+| **Debug Panel**         | Métricas detalladas de SEO                   |
 
 ---
 
@@ -41,18 +41,18 @@ packages/admin/src/lib/components/blog/SocialPreviewExample.svelte
 
 ```svelte
 <script>
-  import SocialPreview from '$lib/components/blog/SocialPreview.svelte';
-  
+  import SocialPreview from "$lib/components/blog/SocialPreview.svelte";
+
   let post = {
-    title: 'Mi Post',
-    slug: 'mi-post',
-    excerpt: 'Descripción del post...',
-    featuredImage: { url: 'https://...' }
+    title: "Mi Post",
+    slug: "mi-post",
+    excerpt: "Descripción del post...",
+    featuredImage: { url: "https://..." },
   };
-  
+
   let seoData = $state(null);
   let showPreview = $state(false);
-  
+
   async function loadPreview() {
     const res = await fetch(`/api/blog/seo/${post.slug}?preview=true`);
     const data = await res.json();
@@ -61,12 +61,10 @@ packages/admin/src/lib/components/blog/SocialPreviewExample.svelte
   }
 </script>
 
-<button on:click={loadPreview}>
-  👁️ Ver Preview Social
-</button>
+<button on:click={loadPreview}> 👁️ Ver Preview Social </button>
 
 {#if showPreview}
-  <SocialPreview 
+  <SocialPreview
     {seoData}
     postTitle={post.title}
     postUrl={`https://misitio.com/blog/${post.slug}`}
@@ -81,12 +79,12 @@ packages/admin/src/lib/components/blog/SocialPreviewExample.svelte
 
 ### Props
 
-| Prop | Tipo | Requerido | Descripción |
-|------|------|-----------|-------------|
-| `seoData` | `object` | ✅ | Datos del endpoint `/api/blog/seo/:slug` |
-| `postTitle` | `string` | ❌ | Título fallback |
-| `postUrl` | `string` | ❌ | URL para mostrar |
-| `postSlug` | `string` | ❌ | Slug para refrescar datos |
+| Prop        | Tipo     | Requerido | Descripción                              |
+| ----------- | -------- | --------- | ---------------------------------------- |
+| `seoData`   | `object` | ✅        | Datos del endpoint `/api/blog/seo/:slug` |
+| `postTitle` | `string` | ❌        | Título fallback                          |
+| `postUrl`   | `string` | ❌        | URL para mostrar                         |
+| `postSlug`  | `string` | ❌        | Slug para refrescar datos                |
 
 ### Estructura de seoData
 
@@ -143,8 +141,8 @@ El componente tiene 4 tabs por defecto. Para ocultar alguna:
 <!-- Versión simplificada solo WhatsApp y Facebook -->
 <script>
   const tabs = [
-    { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
-    { id: 'facebook', label: 'Facebook', icon: Facebook },
+    { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+    { id: "facebook", label: "Facebook", icon: Facebook },
   ];
 </script>
 ```
@@ -154,11 +152,13 @@ El componente tiene 4 tabs por defecto. Para ocultar alguna:
 ## 🔌 Endpoints API Relacionados
 
 ### Obtener datos SEO
+
 ```bash
 GET /api/blog/seo/:slug?preview=true&siteName=Mi%20Blog&baseUrl=https://ejemplo.com
 ```
 
 ### Validar imagen para WhatsApp
+
 ```bash
 POST /api/blog/validate-image
 {
@@ -171,6 +171,7 @@ POST /api/blog/validate-image
 ```
 
 ### Refrescar caché de Facebook
+
 ```bash
 POST /api/blog/:slug/refresh-og-cache?baseUrl=https://ejemplo.com
 ```
@@ -182,18 +183,20 @@ POST /api/blog/:slug/refresh-og-cache?baseUrl=https://ejemplo.com
 ### Telegram
 
 ```svelte
-<SocialPreview seoData={seoData} />
+<SocialPreview {seoData} />
 <!-- Selecciona tab "Telegram" -->
 ```
 
 **Preview de Telegram incluye:**
+
 - Chat estilo Telegram con header
 - Link preview con imagen
 - Panel informativo sobre diferencias con WhatsApp
 
 **Nota:** Telegram es más permisivo que WhatsApp:
+
 - ✅ Acepta WebP sin problemas
-- ✅ No tiene límite estricto de 300KB  
+- ✅ No tiene límite estricto de 300KB
 - ✅ Soporta imágenes de alta resolución
 - ⚠️ Se recomienda seguir estándares WhatsApp para máxima compatibilidad
 
@@ -201,7 +204,7 @@ POST /api/blog/:slug/refresh-og-cache?baseUrl=https://ejemplo.com
 
 ```svelte
 <!-- Validación visual de WhatsApp -->
-<SocialPreview seoData={seoData} />
+<SocialPreview {seoData} />
 
 <!-- Muestra:
   - Chat de WhatsApp con preview realista
@@ -293,7 +296,7 @@ Haz clic en el icono `⚙️` para ver:
 <script>
   // Actualizar preview automáticamente al escribir
   let debounceTimer;
-  
+
   function handleInput() {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -302,10 +305,7 @@ Haz clic en el icono `⚙️` para ver:
   }
 </script>
 
-<input 
-  bind:value={post.title} 
-  on:input={handleInput}
-/>
+<input bind:value={post.title} on:input={handleInput} />
 ```
 
 ### 2. Validación Antes de Publicar
@@ -314,21 +314,20 @@ Haz clic en el icono `⚙️` para ver:
 <script>
   async function publishPost() {
     // Primero validar SEO
-    const validation = await fetch('/api/blog/validate-seo', {
-      method: 'POST',
+    const validation = await fetch("/api/blog/validate-seo", {
+      method: "POST",
       body: JSON.stringify({
         title: post.title,
         metaDescription: post.excerpt,
-        imageUrl: post.featuredImage?.url
-      })
-    }).then(r => r.json());
-    
+        imageUrl: post.featuredImage?.url,
+      }),
+    }).then((r) => r.json());
+
     if (!validation.valid) {
-      alert('Arregla los problemas de SEO antes de publicar:\n' + 
-            validation.warnings.join('\n'));
+      alert("Arregla los problemas de SEO antes de publicar:\n" + validation.warnings.join("\n"));
       return;
     }
-    
+
     // Publicar...
   }
 </script>
@@ -343,26 +342,27 @@ Compara dos versiones diferentes de OG tags:
   const variantA = {
     title: "Título con Emoji 🚀",
     openGraph: { title: "...", image: { url: "img-a.jpg" } },
-    whatsAppValidation: { isValid: true, warnings: [] }
+    whatsAppValidation: { isValid: true, warnings: [] },
   };
-  
+
   const variantB = {
     title: "Título Descriptivo",
     openGraph: { title: "...", image: { url: "img-b.jpg" } },
-    whatsAppValidation: { isValid: false, warnings: ["Imagen > 300KB"] }
+    whatsAppValidation: { isValid: false, warnings: ["Imagen > 300KB"] },
   };
 </script>
 
-<SocialPreview 
+<SocialPreview
   comparisonMode={true}
-  variantA={variantA}
-  variantB={variantB}
+  {variantA}
+  {variantB}
   labelA="Versión Emojis"
   labelB="Versión Formal"
 />
 ```
 
 **Muestra:**
+
 - Toggle para cambiar entre A y B
 - Badge con número de issues por variante
 - Ganador destacado en el panel debug
@@ -385,14 +385,14 @@ Guarda el preview actual como PNG:
   async function publishAndRefresh() {
     // 1. Publicar post
     await publishPost();
-    
+
     // 2. Refrescar caché de Facebook
     await fetch(`/api/blog/${post.slug}/refresh-og-cache`, {
-      method: 'POST'
+      method: "POST",
     });
-    
+
     // 3. Mostrar mensaje
-    alert('Post publicado. El caché de Facebook se actualizará en unos minutos.');
+    alert("Post publicado. El caché de Facebook se actualizará en unos minutos.");
   }
 </script>
 ```
@@ -405,28 +405,40 @@ El componente usa clases CSS que puedes sobreescribir:
 
 ```css
 /* Contenedor principal */
-.social-preview-container { }
+.social-preview-container {
+}
 
 /* Header con gradiente */
-.preview-header { }
+.preview-header {
+}
 
 /* Tabs de navegación */
-.preview-tabs { }
-.tab { }
-.tab.active { }
+.preview-tabs {
+}
+.tab {
+}
+.tab.active {
+}
 
 /* Preview específicos */
-.whatsapp-preview { }
-.facebook-preview { }
-.twitter-preview { }
-.linkedin-preview { }
+.whatsapp-preview {
+}
+.facebook-preview {
+}
+.twitter-preview {
+}
+.linkedin-preview {
+}
 
 /* Panel de validación */
-.validation-panel { }
-.validation-panel.valid { }
+.validation-panel {
+}
+.validation-panel.valid {
+}
 
 /* Panel de debug */
-.debug-panel { }
+.debug-panel {
+}
 ```
 
 ---

@@ -5,7 +5,8 @@
    * Interfaz tipo "arrastrar y soltar" para crear campos calculados.
    * Soporta: campos, operadores, funciones, valores constantes.
    */
-  import { Plus, Trash2, GripVertical, Calculator, Sigma, Hash, Type, Calendar, ChevronDown, AlertCircle, Check } from "lucide-svelte";
+  import { Trash2, GripVertical, Calculator, Sigma, Hash, Type, Calendar, ChevronDown, AlertCircle, Check } from "lucide-svelte";
+
   import { FORMULA_FUNCTIONS, FORMULA_OPERATORS } from "./index.ts";
   
   // Props
@@ -15,7 +16,7 @@
     onChange?: (formula: string) => void;
   }
   
-  let { availableFields, value = "", onChange }: Props = $props();
+  const { availableFields, value = "", onChange }: Props = $props();
   
   // Estado
   let formulaTokens = $state<Array<{ type: "field" | "operator" | "function" | "value" | "group"; value: string; id: string }>>([]);
@@ -146,7 +147,7 @@
     // Solo permitir operaciones matemáticas básicas
     const sanitized = expr.replace(/[^0-9+\-*/%^().&=<>!'\s]/g, "");
     try {
-      // eslint-disable-next-line no-new-func
+       
       return new Function("return " + sanitized)();
     } catch {
       return null;

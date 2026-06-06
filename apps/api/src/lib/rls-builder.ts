@@ -15,9 +15,4 @@ export {
   createRLSFilter,
 } from "@gremius/shared";
 
-export type {
-  RLSType,
-  RLSRule,
-  PolicyJson,
-  RLSUser,
-} from "@gremius/shared";
+export type { RLSType, RLSRule, PolicyJson, RLSUser } from "@gremius/shared";

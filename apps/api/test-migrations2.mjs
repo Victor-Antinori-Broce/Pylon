@@ -1,6 +1,7 @@
-import { newDb, DataType } from "pg-mem";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
+
+import { newDb, DataType } from "pg-mem";
 
 const pgMem = newDb();
 pgMem.public.registerFunction({
@@ -43,7 +44,8 @@ function extractStatements(sql) {
 }
 
 function runMigrations(dir) {
-  let allOk = 0, allFail = 0;
+  let allOk = 0,
+    allFail = 0;
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".sql"))
     .sort();
@@ -52,7 +54,8 @@ function runMigrations(dir) {
     const sql = readFileSync(join(dir, file), "utf-8");
     const stmts = extractStatements(sql);
 
-    let ok = 0, fail = 0;
+    let ok = 0,
+      fail = 0;
     for (const stmt of stmts) {
       try {
         pgMem.public.none(stmt + ";");
@@ -60,7 +63,11 @@ function runMigrations(dir) {
       } catch (e) {
         fail++;
         const msg = e.message;
-        if (!msg.includes("already exists") && !msg.includes("does not exist") && !msg.includes("cannot find column")) {
+        if (
+          !msg.includes("already exists") &&
+          !msg.includes("does not exist") &&
+          !msg.includes("cannot find column")
+        ) {
           console.log("FAIL", file + ":", msg.substring(0, 100));
         }
       }
@@ -85,5 +92,8 @@ const tables = pgMem.public.query(
 );
 console.log(
   "\nTables:",
-  tables.rows.map((r) => r.table_name).sort().join(", ")
+  tables.rows
+    .map((r) => r.table_name)
+    .sort()
+    .join(", ")
 );

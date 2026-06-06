@@ -1,6 +1,6 @@
 /**
  * Media Grimoire Configuration Schema
- * 
+ *
  * Define y valida la configuración del Media Library.
  */
 
@@ -60,11 +60,7 @@ export const mediaFeaturesSchema = z.object({
   imageOptimization: z.boolean().default(true),
   signedUrls: z.boolean().default(true),
   maxFileSize: z.number().min(1).max(100).default(10), // MB
-  allowedTypes: z.array(z.string()).default([
-    "image/*",
-    "video/*",
-    "application/pdf",
-  ]),
+  allowedTypes: z.array(z.string()).default(["image/*", "video/*", "application/pdf"]),
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -117,11 +113,11 @@ export function validateMediaConfig(
   config: unknown
 ): { valid: true; data: MediaGrimoireConfig } | { valid: false; error: string } {
   const result = mediaGrimoireConfigSchema.safeParse(config);
-  
+
   if (result.success) {
     return { valid: true, data: result.data };
   } else {
-    const errors = result.error.errors.map(e => `${e.path.join(".")}: ${e.message}`);
+    const errors = result.error.errors.map((e) => `${e.path.join(".")}: ${e.message}`);
     return { valid: false, error: errors.join(", ") };
   }
 }
@@ -134,14 +130,20 @@ export const storageProviders = [
   {
     id: "minio" as const,
     label: "MinIO (Self-hosted S3)",
-    description: "Self-hosted S3-compatible storage. Good for local development and on-premise deployments.",
+    description:
+      "Self-hosted S3-compatible storage. Good for local development and on-premise deployments.",
     icon: "Server",
     fields: [
       { key: "endpoint", label: "Endpoint URL", type: "url", placeholder: "http://localhost:9000" },
       { key: "bucket", label: "Bucket Name", type: "text", placeholder: "gremius-media" },
       { key: "accessKey", label: "Access Key", type: "text", placeholder: "minioadmin" },
       { key: "secretKey", label: "Secret Key", type: "password", placeholder: "••••••••" },
-      { key: "publicUrl", label: "Public URL (optional)", type: "url", placeholder: "http://localhost:9000/gremius-media" },
+      {
+        key: "publicUrl",
+        label: "Public URL (optional)",
+        type: "url",
+        placeholder: "http://localhost:9000/gremius-media",
+      },
       { key: "useSSL", label: "Use SSL", type: "checkbox" },
     ],
   },
@@ -154,8 +156,18 @@ export const storageProviders = [
       { key: "region", label: "Region", type: "text", placeholder: "us-east-1" },
       { key: "bucket", label: "Bucket Name", type: "text", placeholder: "my-bucket" },
       { key: "accessKeyId", label: "Access Key ID", type: "text", placeholder: "AKIA..." },
-      { key: "secretAccessKey", label: "Secret Access Key", type: "password", placeholder: "••••••••" },
-      { key: "publicUrl", label: "Custom Domain (optional)", type: "url", placeholder: "https://cdn.example.com" },
+      {
+        key: "secretAccessKey",
+        label: "Secret Access Key",
+        type: "password",
+        placeholder: "••••••••",
+      },
+      {
+        key: "publicUrl",
+        label: "Custom Domain (optional)",
+        type: "url",
+        placeholder: "https://cdn.example.com",
+      },
     ],
   },
   {
@@ -165,7 +177,12 @@ export const storageProviders = [
     icon: "HardDrive",
     fields: [
       { key: "path", label: "Storage Path", type: "text", placeholder: "./uploads" },
-      { key: "publicUrl", label: "Public URL", type: "url", placeholder: "http://localhost:3001/uploads" },
+      {
+        key: "publicUrl",
+        label: "Public URL",
+        type: "url",
+        placeholder: "http://localhost:3001/uploads",
+      },
     ],
   },
   {
@@ -177,8 +194,18 @@ export const storageProviders = [
       { key: "accountId", label: "Account ID", type: "text", placeholder: "abc123..." },
       { key: "bucket", label: "Bucket Name", type: "text", placeholder: "my-bucket" },
       { key: "accessKeyId", label: "Access Key ID", type: "text", placeholder: "..." },
-      { key: "secretAccessKey", label: "Secret Access Key", type: "password", placeholder: "••••••••" },
-      { key: "publicUrl", label: "Public URL (optional)", type: "url", placeholder: "https://pub-...r2.dev" },
+      {
+        key: "secretAccessKey",
+        label: "Secret Access Key",
+        type: "password",
+        placeholder: "••••••••",
+      },
+      {
+        key: "publicUrl",
+        label: "Public URL (optional)",
+        type: "url",
+        placeholder: "https://pub-...r2.dev",
+      },
     ],
   },
 ];

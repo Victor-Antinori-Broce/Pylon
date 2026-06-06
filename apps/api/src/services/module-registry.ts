@@ -22,8 +22,9 @@
  *     Games, Streamers, Platforms, Tags, Collections (when Realm Esports active)
  */
 
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
 
 export type GrimoireCategory = "core" | "grimoire-core" | "optional" | "realm";
 
@@ -68,22 +69,38 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
     tables: ["media", "media_folders"],
     dependsOn: [],
     referencedBy: [
-      { grimoire: "grimoire-blog", table: "blog_posts", column: "cover_image_id", label: "Blog post cover images" },
+      {
+        grimoire: "grimoire-blog",
+        table: "blog_posts",
+        column: "cover_image_id",
+        label: "Blog post cover images",
+      },
     ],
   },
   // DATASETS - Core grimoire, enabled by default, positioned first in admin
   {
     key: "grimoire-datasets",
     name: "DataSets",
-    description: "Dynamic data collections with automatic REST API, validation, and RLS. The foundation of Gremius content management.",
+    description:
+      "Dynamic data collections with automatic REST API, validation, and RLS. The foundation of Gremius content management.",
     icon: "🗃️",
     color: "#3B82F6",
     category: "core",
     tables: ["data_sets", "data_entries"],
     dependsOn: [],
     referencedBy: [
-      { grimoire: "grimoire-blog", table: "blog_posts", column: "dataset_id", label: "Blog posts using datasets" },
-      { grimoire: "grimoire-crm", table: "crm_deals", column: "dataset_id", label: "CRM deals using datasets" },
+      {
+        grimoire: "grimoire-blog",
+        table: "blog_posts",
+        column: "dataset_id",
+        label: "Blog posts using datasets",
+      },
+      {
+        grimoire: "grimoire-crm",
+        table: "crm_deals",
+        column: "dataset_id",
+        label: "CRM deals using datasets",
+      },
     ],
   },
   // NOTE: Webhooks merged into Actions Engine (Nivel 1). Not a standalone grimoire.
@@ -91,7 +108,8 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-blocks",
     name: "Page Builder",
-    description: "Lego-style block system for dynamic page layouts (Hero, Grid, Filter, etc.) with drag & drop, templates, and scheduling.",
+    description:
+      "Lego-style block system for dynamic page layouts (Hero, Grid, Filter, etc.) with drag & drop, templates, and scheduling.",
     icon: "🧱",
     color: "#3B82F6",
     category: "grimoire-core",
@@ -105,7 +123,8 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-academy-lms",
     name: "Gremius Academy LMS",
-    description: "Learning Management System with courses, modules, quizzes, learning paths, progress tracking, groups, and satisfaction surveys.",
+    description:
+      "Learning Management System with courses, modules, quizzes, learning paths, progress tracking, groups, and satisfaction surveys.",
     icon: "🎓",
     color: "#6366F1",
     category: "optional",
@@ -134,7 +153,7 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
       "feedback",
       "encuestas_satisfaccion",
       "certificados",
-      "actividad_log"
+      "actividad_log",
     ],
     dependsOn: [],
     referencedBy: [],
@@ -142,7 +161,8 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-dms",
     name: "Document Management",
-    description: "Versioned document storage with hierarchical categories, semantic versioning, approval workflows, and comprehensive audit trail. Optimized for manuals and corporate documentation.",
+    description:
+      "Versioned document storage with hierarchical categories, semantic versioning, approval workflows, and comprehensive audit trail. Optimized for manuals and corporate documentation.",
     icon: "📄",
     color: "#FF9100",
     category: "optional",
@@ -161,7 +181,8 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-booking",
     name: "Booking Engine",
-    description: "Room reservations with conflict detection, amenities management, approval workflows, and check-in/out tracking.",
+    description:
+      "Room reservations with conflict detection, amenities management, approval workflows, and check-in/out tracking.",
     icon: "📅",
     color: "#00BFA5",
     category: "optional",
@@ -172,18 +193,27 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-directory",
     name: "Employee Directory",
-    description: "Employee profiles, departments, positions, and organizational hierarchy with org charts, reporting chains, and document management.",
+    description:
+      "Employee profiles, departments, positions, and organizational hierarchy with org charts, reporting chains, and document management.",
     icon: "👥",
     color: "#448AFF",
     category: "optional",
-    tables: ["organizations", "departments", "positions", "employees", "employee_documents", "org_chart_cache"],
+    tables: [
+      "organizations",
+      "departments",
+      "positions",
+      "employees",
+      "employee_documents",
+      "org_chart_cache",
+    ],
     dependsOn: [],
     referencedBy: [],
   },
   {
     key: "grimoire-crm",
     name: "Gremius CRM",
-    description: "Contacts, deals pipeline, and activity log built on Data Sets with automation hooks.",
+    description:
+      "Contacts, deals pipeline, and activity log built on Data Sets with automation hooks.",
     icon: "💼",
     color: "#E91E63",
     category: "optional",
@@ -194,7 +224,8 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-blog",
     name: "Blog & Content Publishing",
-    description: "Complete CMS publishing with editorial workflow, SEO, slugs, scheduling. Includes former 'Promote' functionality.",
+    description:
+      "Complete CMS publishing with editorial workflow, SEO, slugs, scheduling. Includes former 'Promote' functionality.",
     icon: "📝",
     color: "#76FF03",
     category: "grimoire-core",
@@ -205,7 +236,8 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "ai-memories",
     name: "AI Memories",
-    description: "Vector-based semantic memory storage with pgvector. Supports OpenAI embeddings, document chunking, and similarity search for RAG applications.",
+    description:
+      "Vector-based semantic memory storage with pgvector. Supports OpenAI embeddings, document chunking, and similarity search for RAG applications.",
     icon: "🧠",
     color: "#9C27B0",
     category: "optional",
@@ -221,17 +253,41 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   {
     key: "grimoire-games",
     name: "Games Catalog",
-    description: "Complete game library with IGDB integration: games, platforms, tags, and collections.",
+    description:
+      "Complete game library with IGDB integration: games, platforms, tags, and collections.",
     icon: "🎮",
     color: "#00E5FF",
     category: "realm",
     realmId: "gremius-cms-realm",
-    tables: ["games", "platforms", "tags", "game_collections", "game_collection_entries", "games_to_platforms", "games_to_tags"],
+    tables: [
+      "games",
+      "platforms",
+      "tags",
+      "game_collections",
+      "game_collection_entries",
+      "games_to_platforms",
+      "games_to_tags",
+    ],
     dependsOn: [],
     referencedBy: [
-      { grimoire: "blog", table: "blog_posts_to_games", column: "game_id", label: "Blog posts referencing games" },
-      { grimoire: "grimoire-streamers", table: "games_to_streamers", column: "game_id", label: "Streamers linked to games" },
-      { grimoire: "grimoire-esports", table: "tournaments", column: "game_id", label: "Tournaments using games" },
+      {
+        grimoire: "blog",
+        table: "blog_posts_to_games",
+        column: "game_id",
+        label: "Blog posts referencing games",
+      },
+      {
+        grimoire: "grimoire-streamers",
+        table: "games_to_streamers",
+        column: "game_id",
+        label: "Streamers linked to games",
+      },
+      {
+        grimoire: "grimoire-esports",
+        table: "tournaments",
+        column: "game_id",
+        label: "Tournaments using games",
+      },
     ],
   },
   {
@@ -242,7 +298,14 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
     color: "#FFD600",
     category: "realm",
     realmId: "gremius-cms-realm",
-    tables: ["players", "teams", "players_to_teams", "tournaments", "tournament_participants", "matches"],
+    tables: [
+      "players",
+      "teams",
+      "players_to_teams",
+      "tournaments",
+      "tournament_participants",
+      "matches",
+    ],
     dependsOn: ["grimoire-games"],
     referencedBy: [],
   },

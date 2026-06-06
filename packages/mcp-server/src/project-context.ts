@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * PROJECT CONTEXT RESOURCE - Full Project State for AI Agents
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Provides AI agents with complete project understanding including:
  * - Active grimoires and their capabilities
  * - Available endpoints and schemas
@@ -12,12 +12,10 @@
  */
 
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+
 import type { McpServerDependencies } from "./index";
 
-export function registerProjectContext(
-  server: McpServer,
-  deps: McpServerDependencies
-) {
+export function registerProjectContext(server: McpServer, deps: McpServerDependencies) {
   const { db, schema, grimoireRegistry } = deps;
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -30,13 +28,13 @@ export function registerProjectContext(
     {
       title: "Gremius Project Context",
       description: "Complete project structure and capabilities for AI understanding",
-      mimeType: "application/json"
+      mimeType: "application/json",
     },
     async (uri) => {
       try {
         // Get all datasets
         const datasets = await db.select().from(schema.dataSets);
-        
+
         // Get active grimoires
         const grimoires = Object.values(grimoireRegistry || {}).map((g: any) => ({
           id: g.id,
@@ -57,7 +55,7 @@ export function registerProjectContext(
             version: "0.8.0-beta",
             environment: process.env.NODE_ENV || "development",
           },
-          
+
           architecture: {
             type: "GremiusCMS",
             engine: "@gremius/engine",
@@ -66,12 +64,12 @@ export function registerProjectContext(
               { name: "Engine", level: 1, description: "Auth, DB, Cache, Queue - always active" },
               { name: "Core", level: 2, description: "Datasets, Media, Webhooks - toggleable" },
               { name: "Grimoires", level: 3, description: "Business modules - dynamically loaded" },
-            ]
+            ],
           },
 
           grimoires: {
             total: grimoires.length,
-            active: grimoires.map(g => ({
+            active: grimoires.map((g) => ({
               id: g.id,
               name: g.name,
               version: g.version,
@@ -143,24 +141,32 @@ export const grimoire = defineGrimoire({
   }
 });
             `.trim(),
-          }
+          },
         };
 
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify(context, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(context, null, 2),
+            },
+          ],
         };
       } catch (error: any) {
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify({
-              error: "Failed to load project context",
-              message: error.message
-            }, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(
+                {
+                  error: "Failed to load project context",
+                  message: error.message,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       }
     }
@@ -178,15 +184,15 @@ export const grimoire = defineGrimoire({
         return {
           resources: datasets.map((ds: any) => ({
             uri: `gremius://dataset/${ds.id}/schema`,
-            name: `Schema: ${ds.name}`
-          }))
+            name: `Schema: ${ds.name}`,
+          })),
         };
-      }
+      },
     }),
     {
       title: "Dataset Schema",
       description: "Detailed schema for a specific dataset",
-      mimeType: "application/json"
+      mimeType: "application/json",
     },
     async (uri, { id }) => {
       try {
@@ -223,21 +229,25 @@ export const grimoire = defineGrimoire({
             `GET /api/datasets/${dataset.slug}/entries`,
             `GET /api/datasets/${dataset.slug}/entries?limit=10`,
             `POST /api/datasets/${dataset.slug}/entries`,
-          ]
+          ],
         };
 
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify(schemaInfo, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(schemaInfo, null, 2),
+            },
+          ],
         };
       } catch (error: any) {
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify({ error: error.message }, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify({ error: error.message }, null, 2),
+            },
+          ],
         };
       }
     }
@@ -253,15 +263,15 @@ export const grimoire = defineGrimoire({
       list: async () => {
         const grimoires = Object.values(grimoireRegistry || {}).map((g: any) => ({
           uri: `gremius://grimoire/${g.id}/capabilities`,
-          name: g.name
+          name: g.name,
         }));
         return { resources: grimoires };
-      }
+      },
     }),
     {
       title: "Grimoire Capabilities",
       description: "Available endpoints and operations for a grimoire",
-      mimeType: "application/json"
+      mimeType: "application/json",
     },
     async (uri, { id }) => {
       try {
@@ -281,13 +291,14 @@ export const grimoire = defineGrimoire({
             description: grimoire.description,
             mountPath: grimoire.mountPath || `/api/${grimoire.id.replace(/^grimoire-/, "")}`,
           },
-          endpoints: grimoire.openApi?.paths?.map((p: any) => ({
-            method: p.method.toUpperCase(),
-            path: p.path,
-            summary: p.summary,
-            tags: p.tags,
-            requireAuth: p.requireAuth !== false,
-          })) || [],
+          endpoints:
+            grimoire.openApi?.paths?.map((p: any) => ({
+              method: p.method.toUpperCase(),
+              path: p.path,
+              summary: p.summary,
+              tags: p.tags,
+              requireAuth: p.requireAuth !== false,
+            })) || [],
           schemas: Object.keys(grimoire.openApi?.schemas || {}),
           tables: grimoire.tables || [],
           hooks: Object.keys(grimoire.hooks || {}),
@@ -295,17 +306,21 @@ export const grimoire = defineGrimoire({
         };
 
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify(capabilities, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(capabilities, null, 2),
+            },
+          ],
         };
       } catch (error: any) {
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify({ error: error.message }, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify({ error: error.message }, null, 2),
+            },
+          ],
         };
       }
     }
@@ -321,7 +336,7 @@ export const grimoire = defineGrimoire({
     {
       title: "All API Operations",
       description: "Complete list of available API operations across all grimoires",
-      mimeType: "application/json"
+      mimeType: "application/json",
     },
     async (uri) => {
       try {
@@ -334,7 +349,9 @@ export const grimoire = defineGrimoire({
 
           for (const path of grimoire.openApi.paths) {
             operations.push({
-              operationId: path.operationId || `${grimoire.id}_${path.method}_${path.path.replace(/\//g, "_")}`,
+              operationId:
+                path.operationId ||
+                `${grimoire.id}_${path.method}_${path.path.replace(/\//g, "_")}`,
               grimoire: grimoire.id,
               grimoireName: grimoire.name,
               method: path.method.toUpperCase(),
@@ -349,23 +366,30 @@ export const grimoire = defineGrimoire({
         }
 
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify({
-              totalOperations: operations.length,
-              operations: operations.sort((a, b) => 
-                a.grimoire.localeCompare(b.grimoire) || 
-                a.path.localeCompare(b.path)
-              )
-            }, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify(
+                {
+                  totalOperations: operations.length,
+                  operations: operations.sort(
+                    (a, b) => a.grimoire.localeCompare(b.grimoire) || a.path.localeCompare(b.path)
+                  ),
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       } catch (error: any) {
         return {
-          contents: [{
-            uri: uri.href,
-            text: JSON.stringify({ error: error.message }, null, 2)
-          }]
+          contents: [
+            {
+              uri: uri.href,
+              text: JSON.stringify({ error: error.message }, null, 2),
+            },
+          ],
         };
       }
     }
@@ -381,7 +405,7 @@ export const grimoire = defineGrimoire({
     {
       title: "Development Guide",
       description: "Guide for AI agents working with Gremius",
-      mimeType: "text/markdown"
+      mimeType: "text/markdown",
     },
     async (uri) => {
       const guide = `# Gremius Development Guide for AI Agents
@@ -493,10 +517,12 @@ ctx.events.emit("myfeature:created", { id: newItem.id });
 `;
 
       return {
-        contents: [{
-          uri: uri.href,
-          text: guide
-        }]
+        contents: [
+          {
+            uri: uri.href,
+            text: guide,
+          },
+        ],
       };
     }
   );

@@ -3,6 +3,7 @@
    * BlockPicker.svelte — Grid of available blocks to add
    */
   import { X, Sparkles, FileText, Images, Map, Tv, Code2, AlertTriangle, Minus, Clapperboard, SlidersHorizontal, Columns, Table2 } from "lucide-svelte";
+
   import { BLOCK_REGISTRY, type BlockType } from "../../../types/blocks";
 
   interface Props {
@@ -10,7 +11,7 @@
     onClose?: () => void;
   }
   
-  let { onAdd, onClose }: Props = $props();
+  const { onAdd, onClose }: Props = $props();
 
   const iconMap: Record<string, typeof Sparkles> = {
     Sparkles, FileText, Images, Map, Tv, Code2, AlertTriangle, Minus,

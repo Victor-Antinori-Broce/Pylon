@@ -3,6 +3,7 @@
 ## Checklist de Activación
 
 ### Paso 1: Migración de Base de Datos ✅
+
 ```bash
 # Aplicar migración de Drizzle (columna owner_id)
 cd apps/api
@@ -10,20 +11,23 @@ bun drizzle-kit migrate
 ```
 
 **Verificación:**
+
 ```sql
-SELECT column_name, data_type 
-FROM information_schema.columns 
+SELECT column_name, data_type
+FROM information_schema.columns
 WHERE table_name = 'data_entries' AND column_name = 'owner_id';
 -- Debe retornar: owner_id | text
 ```
 
 ### Paso 2: Aplicar Políticas RLS
+
 ```bash
 # Ejecutar script de aplicación de políticas
 bun run scripts/apply-rls.ts
 ```
 
 **Salida esperada:**
+
 ```
 🛡️  Aplicando Políticas RLS Nativas de PostgreSQL...
 
@@ -112,19 +116,24 @@ SELECT set_config('app.current_user_id', '', false);
 ## Solución de Problemas
 
 ### Error: "policy already exists"
+
 **Solución:** El script maneja esto automáticamente (modo idempotente). Ignorar.
 
 ### Error: "permission denied for table data_entries"
+
 **Causa:** El usuario de PostgreSQL no tiene permisos para crear políticas.
 **Solución:** Ejecutar como superusuario o usuario con `CREATE POLICY` privilege.
 
 ### Error: "column owner_id does not exist"
+
 **Causa:** Migración no aplicada.
 **Solución:** Ejecutar `bun drizzle-kit migrate` primero.
 
 ### Los entries retornan vacíos cuando no deberían
+
 **Causa:** El contexto RLS está establecido pero no hay coincidencias.
 **Debug:**
+
 ```sql
 -- Ver qué user_id está activo
 SELECT current_setting('app.current_user_id', true);
@@ -152,7 +161,9 @@ DROP POLICY IF EXISTS data_entries_public_read ON data_entries;
 ## Monitoreo
 
 ### Logs de Seguridad
+
 En desarrollo, el middleware loguea:
+
 ```
 [RLS] Iniciando transacción para usuario: user-xxx
 [RLS] Transacción completada: user-xxx
@@ -160,6 +171,7 @@ En desarrollo, el middleware loguea:
 ```
 
 ### Métricas Recomendadas
+
 - Latencia p99 de endpoints con RLS
 - Tasa de errores 403 (acceso denegado por RLS)
 - Número de queries rechazadas por políticas RLS

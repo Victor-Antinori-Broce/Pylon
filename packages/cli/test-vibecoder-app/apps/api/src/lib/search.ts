@@ -8,12 +8,12 @@
  * búsqueda semántica usando embeddings y PGVector.
  */
 
-import { db } from "../db";
-import { sql, eq, and, or, ilike, desc, asc, inArray, type SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { Hono } from "hono";
-import type { Context } from "hono";
-import type { AppVariables } from "../types/hono";
+
+import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS

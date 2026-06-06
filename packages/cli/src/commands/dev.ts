@@ -2,10 +2,11 @@
  * DEV Command - Start development server
  */
 
-import chalk from "chalk";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+
+import chalk from "chalk";
 
 interface DevOptions {
   port?: string;
@@ -18,7 +19,7 @@ export async function devCommand(options: DevOptions) {
   console.log(chalk.blue("\n🚀 Starting Gremius development server...\n"));
 
   const projectRoot = process.cwd();
-  
+
   // Check if we're in a Gremius project
   if (!existsSync(join(projectRoot, "apps", "api"))) {
     console.error(chalk.red("✖ Not in a Gremius project directory"));
@@ -34,7 +35,7 @@ export async function devCommand(options: DevOptions) {
 
   if (options.apiOnly) {
     console.log(chalk.gray("Starting API server only...\n"));
-    
+
     const api = spawn("pnpm", ["--filter", "api", "dev"], {
       cwd: projectRoot,
       stdio: "inherit",
@@ -50,7 +51,7 @@ export async function devCommand(options: DevOptions) {
 
   if (options.adminOnly) {
     console.log(chalk.gray("Starting Admin UI only...\n"));
-    
+
     const admin = spawn("pnpm", ["--filter", "admin", "dev"], {
       cwd: projectRoot,
       stdio: "inherit",

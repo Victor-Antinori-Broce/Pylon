@@ -8,6 +8,7 @@
   import DataExplorer from "$lib/components/DataExplorer.svelte";
   import { calculatedHelpers } from "$lib/data-explorer/fieldRegistry";
   import { Edit2, Eye, Trash2, FileText, Megaphone } from "lucide-svelte";
+
   import { goto } from "$app/navigation";
   
   // Configuración de columnas con field types

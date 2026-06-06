@@ -1,6 +1,6 @@
 /**
  * View Components Index
- * 
+ *
  * Data display view components.
  */
 

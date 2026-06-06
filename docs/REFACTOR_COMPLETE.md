@@ -16,49 +16,59 @@ Se creó un sistema completo de contratos para grimoires autocontenidos:
 
 ```typescript
 // Interfaces de dependencias
-- GrimoireDatabase    // Acceso a Drizzle
-- GrimoireCache       // Caché (Redis/Valkey)
-- GrimoireEvents      // Sistema de eventos
-- GrimoireRealtime    // WebSockets
-- GrimoireAuth        // Autenticación
-- GrimoireStorage     // S3/MinIO
-- GrimoireContext     // Contexto completo inyectado
-
-// Helpers
-- defineGrimoire()    // Factory para definir grimoires
-- createGrimoireRouter()  // Factory para crear routers
-- GrimoireError       // Clase de error estandarizada
+-GrimoireDatabase - // Acceso a Drizzle
+  GrimoireCache - // Caché (Redis/Valkey)
+  GrimoireEvents - // Sistema de eventos
+  GrimoireRealtime - // WebSockets
+  GrimoireAuth - // Autenticación
+  GrimoireStorage - // S3/MinIO
+  GrimoireContext - // Contexto completo inyectado
+  // Helpers
+  defineGrimoire() - // Factory para definir grimoires
+  createGrimoireRouter() - // Factory para crear routers
+  GrimoireError; // Clase de error estandarizada
 ```
 
 ### 2. Grimoire Blog Migrado
 
 **Antes:**
+
 ```typescript
 // packages/grimoires/grimoire-blog/index.ts
 export { blogRoutes } from "../../../apps/api/src/routes/blog";
 ```
 
 **Después:**
+
 ```typescript
 // packages/grimoires/grimoire-blog/src/index.ts
 export const grimoire = defineGrimoire({
   id: "blog",
   name: "Blog Posts",
   version: "1.0.0",
-  createRouter: createBlogRouter,  // Recibe contexto inyectado
+  createRouter: createBlogRouter, // Recibe contexto inyectado
   tables: ["blog_posts", "blog_posts_to_tags", "blog_posts_to_games"],
   hooks: {
-    onEnable: async (ctx) => { /* ... */ },
-    onDisable: async (ctx) => { /* ... */ },
-    onStartup: async (ctx) => { /* ... */ },
+    onEnable: async (ctx) => {
+      /* ... */
+    },
+    onDisable: async (ctx) => {
+      /* ... */
+    },
+    onStartup: async (ctx) => {
+      /* ... */
+    },
   },
-  admin: { /* ... */ },
+  admin: {
+    /* ... */
+  },
   dependencies: { grimoires: ["media-library"] },
   mountPath: "/api/blog",
 });
 ```
 
 **Estructura:**
+
 ```
 packages/grimoires/grimoire-blog/
 ├── index.ts           ← Entry point (re-exports)
@@ -89,13 +99,14 @@ packages/grimoires/grimoire-formulas/
 
 Ahora soporta **tres modos** de carga:
 
-| Modo | Descripción | Detectado por |
-|------|-------------|---------------|
-| **Modern** | Inyección de dependencias | Exporta `grimoire: GrimoireDefinition` |
-| **Legacy Router** | Router Hono directo | Exporta router como valor |
-| **Legacy Init** | Solo inicialización | Exporta función `init*` |
+| Modo              | Descripción               | Detectado por                          |
+| ----------------- | ------------------------- | -------------------------------------- |
+| **Modern**        | Inyección de dependencias | Exporta `grimoire: GrimoireDefinition` |
+| **Legacy Router** | Router Hono directo       | Exporta router como valor              |
+| **Legacy Init**   | Solo inicialización       | Exporta función `init*`                |
 
 **Función de creación de contexto:**
+
 ```typescript
 function createGrimoireContext(): GrimoireContext {
   return {
@@ -112,11 +123,12 @@ function createGrimoireContext(): GrimoireContext {
 ```
 
 **Carga moderna:**
+
 ```typescript
 if (isGrimoireDefinition(grimoireExport)) {
-  const router = grimoire.createRouter(context);  // DI aquí
+  const router = grimoire.createRouter(context); // DI aquí
   app.route(grimoire.mountPath || mountPath, router);
-  
+
   if (grimoire.hooks?.onStartup) {
     await grimoire.hooks.onStartup(context);
   }
@@ -128,11 +140,13 @@ if (isGrimoireDefinition(grimoireExport)) {
 ## Beneficios Logrados
 
 ### 1. Desacoplamiento Completo
+
 - ✅ Grimoires NO importan de `apps/api/src/`
 - ✅ Solo dependen de `@gremius/shared` (contratos estables)
 - ✅ Rutas relativas frágiles eliminadas (`../../../apps/api/...`)
 
 ### 2. Testabilidad Mejorada
+
 ```typescript
 // Ahora se puede testear así:
 const mockContext: GrimoireContext = {
@@ -146,11 +160,13 @@ const router = createBlogRouter(mockContext);
 ```
 
 ### 3. Backward Compatibility
+
 - ✅ Grimoires legacy siguen funcionando sin cambios
 - ✅ Module loader detecta automáticamente el modo
 - ✅ No se rompieron grimoires existentes
 
 ### 4. Developer Experience
+
 - Type safety completo con `GrimoireContext`
 - Autocompletado de dependencias
 - Errores en tiempo de compilación si falta algo
@@ -162,6 +178,7 @@ const router = createBlogRouter(mockContext);
 **Nota importante:** Los schemas de tablas siguen viviendo en `apps/api/src/db/schema.ts` porque Drizzle ORM requiere todas las tablas en un solo lugar para generar migraciones.
 
 Los grimoires re-exportan desde allí:
+
 ```typescript
 // packages/grimoires/grimoire-blog/src/schema.ts
 export { blogPosts, blogPostsToTags, blogPostsToGames } from "../../../../apps/api/src/db/schema";
@@ -174,12 +191,14 @@ export { blogPosts, blogPostsToTags, blogPostsToGames } from "../../../../apps/a
 ## Verificación
 
 ### Build Exitoso
+
 ```bash
 cd packages/shared && npm run build    ✅
 cd apps/api && pnpm run build          ✅
 ```
 
 ### Sin Errores de Tipo
+
 ```bash
 ✅ TypeScript compila sin errores
 ✅ Todos los imports resueltos
@@ -198,12 +217,12 @@ import { defineGrimoire, createGrimoireRouter } from "@gremius/shared";
 
 const createMineRouter = createGrimoireRouter((router, ctx) => {
   // ctx tiene: db, cache, events, realtime, auth, storage, logger, config
-  
+
   router.get("/", async (c) => {
     const data = await ctx.db.instance.select().from(myTable);
     return c.json(data);
   });
-  
+
   router.post("/", ctx.auth.requireAuth, async (c) => {
     // Solo usuarios autenticados
     const user = c.get("user");
@@ -232,12 +251,14 @@ export const grimoire = defineGrimoire({
 // apps/api/gremius.config.ts
 const GRIMOIRES = [
   // ... existentes
-  "mine",  // ← Nuevo grimoire
+  "mine", // ← Nuevo grimoire
 ];
 ```
 
 ### Listo
+
 El module loader automáticamente:
+
 1. Detecta que es un grimoire moderno (tiene `grimoire` export)
 2. Crea el contexto con todas las dependencias
 3. Llama a `createRouter(context)`
@@ -249,6 +270,7 @@ El module loader automáticamente:
 ## Archivos Modificados/Creados
 
 ### Nuevos
+
 - `packages/shared/src/grimoire-api.ts`
 - `packages/grimoires/grimoire-blog/src/routes.ts`
 - `packages/grimoires/grimoire-blog/src/index.ts`
@@ -258,6 +280,7 @@ El module loader automáticamente:
 - `docs/PROPOSED_ARCHITECTURE_IMPROVEMENTS.md`
 
 ### Modificados
+
 - `packages/shared/src/index.ts` ← Exports de grimoire-api
 - `packages/shared/src/utils.ts` ← PaginatedResponse
 - `packages/shared/src/types.ts` ← Sin duplicados
@@ -281,6 +304,7 @@ El module loader automáticamente:
 ✅ **El punto 1 ha sido exitosamente mejorado.**
 
 Los grimoires `blog` y `formulas` ahora son:
+
 - Autocontenidos
 - Testeables aisladamente
 - Sin dependencias cruzadas a `apps/api/src/`

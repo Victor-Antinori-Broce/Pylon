@@ -3,12 +3,8 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": [
-      "ESNext"
-    ],
-    "types": [
-      "@types/bun"
-    ],
+    "lib": ["ESNext"],
+    "types": ["@types/bun"],
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -26,24 +22,11 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@gremius/shared": [
-        "../../packages/shared/dist"
-      ],
-      "@gremius/shared/*": [
-        "../../packages/shared/dist/*"
-      ]
+      "@/*": ["./src/*"],
+      "@gremius/shared": ["../../packages/shared/dist"],
+      "@gremius/shared/*": ["../../packages/shared/dist/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/types/**/*.d.ts",
-    "gremius.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts", "gremius.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -1,14 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
+
+  import GameStatsWidget from "./components/widgets/GameStatsWidget.svelte";
+  import RecentActivityWidget from "./components/widgets/RecentActivityWidget.svelte";
+  import WebhookStatusWidget from "./components/widgets/WebhookStatusWidget.svelte";
   import { checkSession } from "./lib/auth.svelte";
-  import { loadTheme } from "./lib/theme.svelte";
-  import { componentRegistry } from "./lib/registry.svelte";
   import ProtectedRoutes from "./lib/ProtectedRoutes.svelte";
+  import { componentRegistry } from "./lib/registry.svelte";
+  import { loadTheme } from "./lib/theme.svelte";
   
   // Importar widgets para registro
-  import GameStatsWidget from "./components/widgets/GameStatsWidget.svelte";
-  import WebhookStatusWidget from "./components/widgets/WebhookStatusWidget.svelte";
-  import RecentActivityWidget from "./components/widgets/RecentActivityWidget.svelte";
   
   onMount(async () => {
     // 1. Cargar tema primero

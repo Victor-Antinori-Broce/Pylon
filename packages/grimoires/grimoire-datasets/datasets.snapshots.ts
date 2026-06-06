@@ -14,8 +14,9 @@
  * - Auditoría completa
  */
 
-import { z } from "zod";
 import type { GrimoireContext } from "@gremius/shared";
+import { z } from "zod";
+
 import type { DataSet, DataEntry } from "./datasets.schema";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -140,7 +141,7 @@ export async function generateSnapshot(
   if (config.fields.length > 0) {
     for (const field of config.fields) {
       const relatedId = (entry.data as any)[field.source];
-      
+
       if (!relatedId) {
         snapshot.data[field.as || field.source] = null;
         continue;
@@ -148,7 +149,7 @@ export async function generateSnapshot(
 
       // Determinar la tabla relacionada desde el schema
       const relatedData = await fetchRelatedData(ctx, relatedId, field);
-      
+
       if (relatedData) {
         // Filtrar solo los campos solicitados
         const snapshotData: Record<string, any> = {};
@@ -200,10 +201,10 @@ export async function saveSnapshot(
 
   // Construir historial de snapshots
   const existingSnapshots: SnapshotData[] = (entry.data as any)._snapshots || [];
-  
+
   // Agregar nuevo snapshot al inicio (más reciente primero)
   const newSnapshots = [snapshot, ...existingSnapshots];
-  
+
   // Aplicar retención si está configurada
   if (config.retention && config.retention > 0) {
     while (newSnapshots.length > config.retention) {
@@ -405,7 +406,7 @@ export async function createManualSnapshot(
  */
 export function detectSnapshotConfig(dataset: DataSet): SnapshotConfig | null {
   const schema = dataset.schema as any;
-  
+
   if (!schema?.snapshot?.enabled) {
     return null;
   }
@@ -422,7 +423,7 @@ export async function autoSnapshotOnCreate(
   dataset: DataSet
 ): Promise<void> {
   const config = detectSnapshotConfig(dataset);
-  
+
   if (!config || !shouldSnapshot(config, "create")) {
     return;
   }
@@ -438,7 +439,7 @@ export async function autoSnapshotOnUpdate(
   oldEntry?: DataEntry
 ): Promise<void> {
   const config = detectSnapshotConfig(dataset);
-  
+
   if (!config || !shouldSnapshot(config, "update")) {
     return;
   }
@@ -446,7 +447,10 @@ export async function autoSnapshotOnUpdate(
   // Verificar si cambió algún campo que requiere snapshot
   const fieldsToWatch = config.fields.map((f) => f.source);
   const hasChanged = fieldsToWatch.some((field) => {
-    return JSON.stringify((entry.data as any)[field]) !== JSON.stringify((oldEntry?.data as any)?.[field]);
+    return (
+      JSON.stringify((entry.data as any)[field]) !==
+      JSON.stringify((oldEntry?.data as any)?.[field])
+    );
   });
 
   if (!hasChanged) {
@@ -471,13 +475,13 @@ async function fetchRelatedData(
   // Inferir tabla relacionada desde el nombre del campo
   // Ej: weapon_id -> weapons, characterId -> characters
   const tableName = inferTableName(field.source);
-  
+
   try {
     // Usar raw query para obtener datos de tabla dinámica
     const result = await db.instance.execute(
       sql`SELECT * FROM ${sql.identifier(tableName)} WHERE id = ${relatedId} LIMIT 1`
     );
-    
+
     return result.rows[0] || null;
   } catch (error) {
     ctx.logger.warn(`Failed to fetch related data from ${tableName}:`, error as any);
@@ -489,17 +493,14 @@ function inferTableName(fieldName: string): string {
   // Convertir field name a posible nombre de tabla
   // weapon_id -> weapons
   // characterId -> characters
-  
-  let base = fieldName
-    .replace(/_id$/, "")
-    .replace(/Id$/, "")
-    .toLowerCase();
-  
+
+  let base = fieldName.replace(/_id$/, "").replace(/Id$/, "").toLowerCase();
+
   // Pluralizar
   if (!base.endsWith("s")) {
     base += "s";
   }
-  
+
   return base;
 }
 
@@ -533,7 +534,7 @@ export function diffBuilds(
   build2: SnapshotData
 ): { item: string; oldValue: any; newValue: any; change: "buff" | "nerf" | "neutral" }[] {
   const diff = compareSnapshots(build1, build2);
-  
+
   return diff
     .filter((d) => d.changed)
     .map((d) => ({
@@ -544,18 +545,14 @@ export function diffBuilds(
     }));
 }
 
-function detectChangeType(
-  field: string,
-  oldVal: any,
-  newVal: any
-): "buff" | "nerf" | "neutral" {
+function detectChangeType(field: string, oldVal: any, newVal: any): "buff" | "nerf" | "neutral" {
   // Para campos numéricos relacionados con stats
   const buffFields = ["dps", "life", "mana", "armor", "evasion", "resistances", "damage"];
   const nerfFields = ["cost", "requirements"];
-  
+
   const isBuffField = buffFields.some((f) => field.includes(f));
   const isNerfField = nerfFields.some((f) => field.includes(f));
-  
+
   if (typeof oldVal === "number" && typeof newVal === "number") {
     if (isBuffField) {
       return newVal > oldVal ? "buff" : "nerf";
@@ -564,8 +561,6 @@ function detectChangeType(
       return newVal < oldVal ? "buff" : "nerf";
     }
   }
-  
+
   return "neutral";
 }
-
-

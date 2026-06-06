@@ -1,8 +1,9 @@
 <script lang="ts">
   import PageBuilder from "$lib/components/builder/PageBuilder.svelte";
-  import { Save, ArrowLeft, Eye } from "lucide-svelte";
-  import { goto } from "$app/navigation";
   import type { PageBlock } from "$types/blocks";
+  import { Save, ArrowLeft, Eye } from "lucide-svelte";
+
+  import { goto } from "$app/navigation";
 
   let pageTitle = $state("New Page");
   let pageSlug = $state("");

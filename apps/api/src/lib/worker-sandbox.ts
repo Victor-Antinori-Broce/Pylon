@@ -13,8 +13,8 @@
  * in a restricted context and communicates results via `postMessage`.
  */
 
-import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -86,17 +86,21 @@ export async function executeSandbox(input: SandboxInput): Promise<SandboxResult
       if (settled) return;
       settled = true;
       // Cleanup temp file (fire-and-forget)
-      Bun.file(tmpFile).exists().then((exists) => {
-        if (exists) {
-          import("node:fs/promises").then(({ unlink }) => unlink(tmpFile).catch(() => {}));
-        }
-      });
+      Bun.file(tmpFile)
+        .exists()
+        .then((exists) => {
+          if (exists) {
+            import("node:fs/promises").then(({ unlink }) => unlink(tmpFile).catch(() => {}));
+          }
+        });
       resolve(result);
     };
 
     // Timeout handler
     const timer = setTimeout(() => {
-      try { worker.terminate(); } catch {}
+      try {
+        worker.terminate();
+      } catch {}
       settle({
         success: false,
         result: null,
@@ -130,7 +134,9 @@ export async function executeSandbox(input: SandboxInput): Promise<SandboxResult
           });
         }
 
-        try { worker.terminate(); } catch {}
+        try {
+          worker.terminate();
+        } catch {}
       };
 
       worker.onerror = (err: ErrorEvent) => {
@@ -145,9 +151,10 @@ export async function executeSandbox(input: SandboxInput): Promise<SandboxResult
           memoryUsedBytes: 0,
           exitReason: "error",
         });
-        try { worker.terminate(); } catch {}
+        try {
+          worker.terminate();
+        } catch {}
       };
-
     } catch (spawnError: any) {
       clearTimeout(timer);
       settle({

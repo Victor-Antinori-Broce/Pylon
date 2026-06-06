@@ -1,12 +1,13 @@
 // @ts-nocheck
 /**
  * Academy LMS - Excel Service
- * 
+ *
  * Servicio para exportación de datos a Excel.
  * Usa exceljs para generar archivos xlsx.
  */
 
 import { Buffer } from "buffer";
+
 import type ExcelJSType from "exceljs";
 
 // ExcelJS is lazy-loaded to avoid issues when the optional dependency is not installed

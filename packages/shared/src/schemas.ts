@@ -2,10 +2,10 @@
  * ============================================================================
  * EL PUENTE ZOD - Esquemas de Validación Compartidos
  * ============================================================================
- * 
- * Única fuente de verdad para validación de datos entre Backend (Hono) 
- * y Frontend (SvelteKit). 
- * 
+ *
+ * Única fuente de verdad para validación de datos entre Backend (Hono)
+ * y Frontend (SvelteKit).
+ *
  * Cualquier cambio en la estructura de datos debe reflejarse aquí.
  */
 
@@ -32,11 +32,7 @@ export const FieldTypeSchema = z.enum([
 
 export type FieldType = z.infer<typeof FieldTypeSchema>;
 
-export const RelationTypeSchema = z.enum([
-  "one-to-one",
-  "one-to-many",
-  "many-to-many",
-]);
+export const RelationTypeSchema = z.enum(["one-to-one", "one-to-many", "many-to-many"]);
 
 export type RelationType = z.infer<typeof RelationTypeSchema>;
 
@@ -74,11 +70,11 @@ export type SelectOption = z.infer<typeof SelectOptionSchema>;
 
 /**
  * Esquema Zod para la definición de un campo individual.
- * 
+ *
  * CRÍTICO: Este esquema valida que cada campo tenga:
  * - id único
  * - key (nombre máquina)
- * - label (nombre visible)  
+ * - label (nombre visible)
  * - type (uno de los FieldTypes permitidos)
  * - Validaciones opcionales (required, unique, regex, min/max)
  */
@@ -124,13 +120,15 @@ export const DatasetPolicySchema = z.object({
   readAccess: z.enum(["admin", "public", "authenticated"]),
   writeAccess: z.enum(["admin", "authenticated"]),
   enableRLS: z.boolean().default(false),
-  rlsRules: z.array(
-    z.object({
-      field: z.string(),
-      operator: z.enum(["eq", "neq", "contains", "gt", "lt"]),
-      value: z.string(),
-    })
-  ).optional(),
+  rlsRules: z
+    .array(
+      z.object({
+        field: z.string(),
+        operator: z.enum(["eq", "neq", "contains", "gt", "lt"]),
+        value: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export type DatasetPolicy = z.infer<typeof DatasetPolicySchema>;
@@ -148,12 +146,12 @@ export type DatasetWorkflow = z.infer<typeof DatasetWorkflowSchema>;
 
 /**
  * Esquema Zod para la definición completa de un Dataset.
- * 
+ *
  * CRÍTICO: Este esquema garantiza que:
  * 1. El dataset tiene un nombre y slug válidos
  * 2. Contiene un array de fields (NO un objeto plano)
  * 3. Cada field cumple con FieldDefinitionSchema
- * 
+ *
  * Uso en Backend: Valida el payload POST/PATCH con @hono/zod-validator
  * Uso en Frontend: Importa el tipo inferido con z.infer<typeof DatasetDefinitionSchema>
  */
@@ -206,11 +204,13 @@ export const CreateDatasetPayloadSchema = DatasetDefinitionSchema.omit({
   updatedAt: true,
 }).extend({
   // Campos opcionales para creación
-  displayConfig: z.object({
-    titleField: z.string().optional(),
-    sortField: z.string().optional(),
-    sortDirection: z.enum(["asc", "desc"]).optional(),
-  }).optional(),
+  displayConfig: z
+    .object({
+      titleField: z.string().optional(),
+      sortField: z.string().optional(),
+      sortDirection: z.enum(["asc", "desc"]).optional(),
+    })
+    .optional(),
 });
 
 export type CreateDatasetPayload = z.infer<typeof CreateDatasetPayloadSchema>;
@@ -218,17 +218,21 @@ export type CreateDatasetPayload = z.infer<typeof CreateDatasetPayloadSchema>;
 /**
  * Esquema para actualizar un Dataset (todos los campos opcionales)
  */
-export const UpdateDatasetPayloadSchema = DatasetDefinitionSchema.partial().omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  displayConfig: z.object({
-    titleField: z.string().optional(),
-    sortField: z.string().optional(),
-    sortDirection: z.enum(["asc", "desc"]).optional(),
-  }).optional(),
-});
+export const UpdateDatasetPayloadSchema = DatasetDefinitionSchema.partial()
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    displayConfig: z
+      .object({
+        titleField: z.string().optional(),
+        sortField: z.string().optional(),
+        sortDirection: z.enum(["asc", "desc"]).optional(),
+      })
+      .optional(),
+  });
 
 export type UpdateDatasetPayload = z.infer<typeof UpdateDatasetPayloadSchema>;
 
@@ -248,9 +252,9 @@ export function validateDatasetDefinition(data: unknown): DatasetDefinition {
  * Valida de forma segura sin lanzar excepciones.
  * Retorna { success: true, data } o { success: false, error }
  */
-export function safeValidateDataset(data: unknown):
-  | { success: true; data: DatasetDefinition }
-  | { success: false; error: z.ZodError } {
+export function safeValidateDataset(
+  data: unknown
+): { success: true; data: DatasetDefinition } | { success: false; error: z.ZodError } {
   const result = DatasetDefinitionSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };

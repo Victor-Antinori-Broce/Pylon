@@ -1,12 +1,12 @@
-
 /**
  * Modules (Grimoires) Tests
- * 
+ *
  * Tests for module registry, loading, and lifecycle management.
  * These tests don't require a database.
  */
 
 import { describe, it, expect } from "bun:test";
+
 import {
   GRIMOIRE_REGISTRY,
   GRIMOIRE_KEYS,
@@ -83,9 +83,7 @@ describe("Grimoire Registry", () => {
 
   describe("Dependencies", () => {
     it("should track dependencies when present", () => {
-      const grimoireWithDeps = GRIMOIRE_REGISTRY.find(
-        (g) => g.dependsOn.length > 0
-      );
+      const grimoireWithDeps = GRIMOIRE_REGISTRY.find((g) => g.dependsOn.length > 0);
 
       if (grimoireWithDeps) {
         expect(grimoireWithDeps.dependsOn.length).toBeGreaterThan(0);
@@ -101,9 +99,7 @@ describe("Grimoire Registry", () => {
     });
 
     it("should track references when present", () => {
-      const grimoireWithRefs = GRIMOIRE_REGISTRY.find(
-        (g) => g.referencedBy.length > 0
-      );
+      const grimoireWithRefs = GRIMOIRE_REGISTRY.find((g) => g.referencedBy.length > 0);
 
       if (grimoireWithRefs) {
         expect(grimoireWithRefs.referencedBy.length).toBeGreaterThan(0);

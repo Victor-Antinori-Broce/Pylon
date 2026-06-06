@@ -23,36 +23,36 @@ import { cacheGet, cacheSet, isValkeyAvailable, getValkeyClient } from "./valkey
  * @param queryFn Async function that hits Postgres and returns data
  */
 export async function cachedQuery<T>(
-    key: string,
-    ttl: number,
-    queryFn: () => Promise<T>
+  key: string,
+  ttl: number,
+  queryFn: () => Promise<T>
 ): Promise<T> {
-    try {
-        const available = await isValkeyAvailable();
-        if (available) {
-            const cached = await cacheGet(key);
-            if (cached) {
-                return JSON.parse(cached) as T;
-            }
-        }
-    } catch {
-        // Valkey down — fall through
+  try {
+    const available = await isValkeyAvailable();
+    if (available) {
+      const cached = await cacheGet(key);
+      if (cached) {
+        return JSON.parse(cached) as T;
+      }
     }
+  } catch {
+    // Valkey down — fall through
+  }
 
-    // Cache miss or Valkey unavailable → query Postgres
-    const result = await queryFn();
+  // Cache miss or Valkey unavailable → query Postgres
+  const result = await queryFn();
 
-    // Store in Valkey (fire-and-forget, don't block response)
-    try {
-        const available = await isValkeyAvailable();
-        if (available) {
-            await cacheSet(key, JSON.stringify(result), ttl);
-        }
-    } catch {
-        // Valkey write failed — non-critical
+  // Store in Valkey (fire-and-forget, don't block response)
+  try {
+    const available = await isValkeyAvailable();
+    if (available) {
+      await cacheSet(key, JSON.stringify(result), ttl);
     }
+  } catch {
+    // Valkey write failed — non-critical
+  }
 
-    return result;
+  return result;
 }
 
 // ── Cache Invalidation ─────────────────────────────────────────
@@ -64,29 +64,29 @@ export async function cachedQuery<T>(
  * @param patterns  Key patterns (e.g. "blog:*", "collections:*")
  */
 export async function invalidateCache(...patterns: string[]): Promise<void> {
-    try {
-        const available = await isValkeyAvailable();
-        if (!available) return;
+  try {
+    const available = await isValkeyAvailable();
+    if (!available) return;
 
-        const client = await getValkeyClient();
+    const client = await getValkeyClient();
 
-        for (const pattern of patterns) {
-            // Use SCAN to find matching keys (safe for production, non-blocking)
-            const keys: string[] = [];
-            // @ts-ignore - scanIterator types are complex in redis client
-            const iterator = client.scanIterator({ MATCH: pattern, COUNT: 100 }) as AsyncIterable<string>;
-            for await (const key of iterator) {
-                keys.push(key);
-            }
+    for (const pattern of patterns) {
+      // Use SCAN to find matching keys (safe for production, non-blocking)
+      const keys: string[] = [];
+      // @ts-ignore - scanIterator types are complex in redis client
+      const iterator = client.scanIterator({ MATCH: pattern, COUNT: 100 }) as AsyncIterable<string>;
+      for await (const key of iterator) {
+        keys.push(key);
+      }
 
-            if (keys.length > 0) {
-                // Delete keys one by one to avoid type issues with spread
-                for (const key of keys) {
-                    await client.del(key);
-                }
-            }
+      if (keys.length > 0) {
+        // Delete keys one by one to avoid type issues with spread
+        for (const key of keys) {
+          await client.del(key);
         }
-    } catch {
-        // Cache invalidation is non-critical
+      }
     }
+  } catch {
+    // Cache invalidation is non-critical
+  }
 }

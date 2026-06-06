@@ -2,10 +2,10 @@
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
   import { calculatedHelpers } from "$lib/data-explorer/fieldRegistry";
 
-  let { value, row, config }: FieldComponentProps = $props();
+  const { value, row, config }: FieldComponentProps = $props();
   
   // Evaluar el cálculo si viene como función
-  let calculatedValue = $derived.by(() => {
+  const calculatedValue = $derived.by(() => {
     if (config.options?.calculate && typeof config.options.calculate === "function") {
       try {
         return config.options.calculate(row);
@@ -18,7 +18,7 @@
   });
   
   // Formatear según el tipo
-  let displayValue = $derived.by(() => {
+  const displayValue = $derived.by(() => {
     const val = calculatedValue();
     if (val === null || val === undefined) return "—";
     
@@ -38,7 +38,7 @@
     }
   });
   
-  let isBadge = $derived(
+  const isBadge = $derived(
     config.options?.format === "badge" || config.format === "badge"
   );
 </script>

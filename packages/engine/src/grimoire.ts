@@ -40,16 +40,26 @@
  * ```
  */
 
-import type { Hono, Context as HonoContext } from "hono";
+import type { GrimoireContext } from "@gremius/shared";
 import type { Table } from "drizzle-orm";
+import {
+  getTableName,
+  InferSelectModel,
+  InferInsertModel,
+  eq,
+  and,
+  desc,
+  asc,
+  sql,
+  count,
+} from "drizzle-orm";
+import type { MySqlTable } from "drizzle-orm/mysql-core";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
-import type { MySqlTable } from "drizzle-orm/mysql-core";
-import { getTableName, InferSelectModel, InferInsertModel } from "drizzle-orm";
-import { eq, and, desc, asc, sql, count } from "drizzle-orm";
+import type { Hono, Context as HonoContext } from "hono";
+
 import type { ActionDefinition } from "./actions";
 import { defineAction } from "./actions";
-import type { GrimoireContext } from "@gremius/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES: Grimoire Definition
@@ -78,12 +88,15 @@ export type InferGrimoireInsert<T extends DrizzleModel> = InferInsertModel<T>;
  */
 export interface MCPToolSchema {
   type: "object";
-  properties: Record<string, {
-    type: string;
-    description?: string;
-    default?: unknown;
-    enum?: unknown[];
-  }>;
+  properties: Record<
+    string,
+    {
+      type: string;
+      description?: string;
+      default?: unknown;
+      enum?: unknown[];
+    }
+  >;
   required?: string[];
 }
 
@@ -194,9 +207,10 @@ function extractModelColumns(model: DrizzleModel): Array<{
   }> = [];
 
   // Access Drizzle's internal column storage
-  const modelColumns = (model as any)[Symbol.for("drizzle:Columns")] ?? 
-                       (model as any).columns ?? 
-                       Object.entries(model).filter(([k]) => k !== "config");
+  const modelColumns =
+    (model as any)[Symbol.for("drizzle:Columns")] ??
+    (model as any).columns ??
+    Object.entries(model).filter(([k]) => k !== "config");
 
   if (typeof modelColumns === "object" && modelColumns !== null) {
     for (const [key, columnDef] of Object.entries(modelColumns)) {
@@ -236,7 +250,11 @@ function inferMCPSchemaFromModel(
       jsonType = "boolean";
     } else if (col.type.includes("json") || col.type.includes("array")) {
       jsonType = "object";
-    } else if (col.type.includes("real") || col.type.includes("float") || col.type.includes("double")) {
+    } else if (
+      col.type.includes("real") ||
+      col.type.includes("float") ||
+      col.type.includes("double")
+    ) {
       jsonType = "number";
     }
 
@@ -392,11 +410,7 @@ function registerAutoRoutes(
 /**
  * Create a route handler for a specific operation
  */
-function createRouteHandler(
-  route: GeneratedRoute,
-  model: DrizzleModel,
-  db: any
-) {
+function createRouteHandler(route: GeneratedRoute, model: DrizzleModel, db: any) {
   return async (c: HonoContext) => {
     try {
       switch (route.operation) {
@@ -431,7 +445,11 @@ function createRouteHandler(
 
         case "read": {
           const id = c.req.param("id");
-          const [result] = await db.select().from(model).where(eq(sql.raw("id"), id)).limit(1);
+          const [result] = await db
+            .select()
+            .from(model)
+            .where(eq(sql.raw("id"), id))
+            .limit(1);
           if (!result) return c.json({ error: "Not found" }, 404);
           return c.json(result);
         }
@@ -551,11 +569,7 @@ function registerMCPTools(
 /**
  * Create an MCP tool with proper handler
  */
-function createMCPTool(
-  meta: GeneratedTool,
-  model: DrizzleModel,
-  db: any
-): MCPTool {
+function createMCPTool(meta: GeneratedTool, model: DrizzleModel, db: any): MCPTool {
   return {
     name: meta.name,
     description: meta.description,
@@ -582,7 +596,9 @@ function createMCPTool(
             }
 
             if (orderBy) {
-              query = query.orderBy(order === "desc" ? desc(sql.raw(orderBy)) : asc(sql.raw(orderBy)));
+              query = query.orderBy(
+                order === "desc" ? desc(sql.raw(orderBy)) : asc(sql.raw(orderBy))
+              );
             }
 
             const results = await query;
@@ -591,7 +607,11 @@ function createMCPTool(
               content: [
                 {
                   type: "text",
-                  text: JSON.stringify({ table: meta.tableName, count: results.length, results }, null, 2),
+                  text: JSON.stringify(
+                    { table: meta.tableName, count: results.length, results },
+                    null,
+                    2
+                  ),
                 },
               ],
             };
@@ -756,11 +776,7 @@ export function listGrimoires(): Grimoire[] {
 /**
  * Initialize all registered grimoires
  */
-export function initializeGrimoires(
-  ctx: GrimoireContext,
-  hono: Hono,
-  mcpServer?: any
-): void {
+export function initializeGrimoires(ctx: GrimoireContext, hono: Hono, mcpServer?: any): void {
   for (const grimoire of grimoireRegistry.values()) {
     grimoire.initialize(ctx, hono, mcpServer);
   }

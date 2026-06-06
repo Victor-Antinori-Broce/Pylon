@@ -58,21 +58,22 @@ const agentToken = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgl
 // 2. Validación con hash SHA-256
 const authResult = await authenticateAgent(token, {
   requireScopes: ["mcp:connect"],
-  audit: { action: "mcp:connect", resource: "mcp:session" }
+  audit: { action: "mcp:connect", resource: "mcp:session" },
 });
 
 // 3. Contexto de agente enriquecido
 interface AgentAuthContext {
-  identityId: string;        // "agent_xxx"
-  name: string;              // "DevBot"
+  identityId: string; // "agent_xxx"
+  name: string; // "DevBot"
   type: "claude-desktop" | "service" | "internal" | "webhook";
-  scopes: string[];          // ["read:issues", "write:intake"]
+  scopes: string[]; // ["read:issues", "write:intake"]
   metadata: Record<string, unknown>;
   authenticatedAt: Date;
 }
 ```
 
 **Implementado:**
+
 - ✅ **Agent Identities** - Tablas `agent_identities`, `agent_api_keys` con NHI
 - ✅ **Token NHI** - Formato `grm_agent_{tipo}_{hash}` con 43 chars de entropy
 - ✅ **RBAC Middleware** - `requireScopes()`, `requireScope()`, `requireAnyScope()`
@@ -91,8 +92,8 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
   return async (c: Context, next: Next) => {
     const agent: AgentAuthContext | undefined = c.get("agent");
     if (!agent) return error 401;
-    const hasPermission = requireAll 
-      ? hasAllScopes(agent, scopes) 
+    const hasPermission = requireAll
+      ? hasAllScopes(agent, scopes)
       : hasAnyScope(agent, scopes);
     if (!hasPermission) return error 403 with required/granted scopes;
     await next();
@@ -122,9 +123,9 @@ export interface VectorSearchExtension {
   enabled: boolean;
   fields: string[];
   embeddingModel?: string;
-  autoIndex?: boolean;      // Index automático al crear entries
+  autoIndex?: boolean; // Index automático al crear entries
   chunkSize?: number;
-  chunkOverlap?: number;    // Para documentos largos
+  chunkOverlap?: number; // Para documentos largos
 }
 
 // Uso en dataset:
@@ -134,13 +135,14 @@ const dataset = {
     vectorSearch: {
       enabled: true,
       fields: ["question", "answer"],
-      autoIndex: true         // 🎯 Embeddings automáticos
-    }
-  }
+      autoIndex: true, // 🎯 Embeddings automáticos
+    },
+  },
 };
 ```
 
 **Implementado:**
+
 - ✅ **Vector Search Core** - Migrado desde `ai-memories` grimoire a `packages/core/vector-search/`
 - ✅ **Tablas de Vector** - `vector_index`, `vector_chunks` con pgvector
 - ✅ **Auto-Indexing** - Configurable por dataset (`autoIndex: true`)
@@ -208,7 +210,7 @@ const dataset = {
 
 // 1. Define acciones con triggers tipados
 const myAction = defineAction({
-  trigger: "http.post:/webhook/stripe",  // HTTP
+  trigger: "http.post:/webhook/stripe", // HTTP
   // trigger: "event:payment.received",  // Evento
   // trigger: "agent.tool:process_payment", // MCP Tool
   run: async (ctx: ActionContext<StripeEvent>) => {
@@ -216,18 +218,19 @@ const myAction = defineAction({
     const { payload, db } = ctx;
     await db.insert(payments).values(payload.data);
     return { success: true };
-  }
+  },
 });
 
 // 2. Adapters para cada tipo de trigger
 interface ActionAdapters {
-  hono: HonoAdapter;       // Para triggers HTTP
-  bullmq: BullMQAdapter;   // Para triggers de eventos
-  mcp: MCPAdapter;         // Para triggers de agentes
+  hono: HonoAdapter; // Para triggers HTTP
+  bullmq: BullMQAdapter; // Para triggers de eventos
+  mcp: MCPAdapter; // Para triggers de agentes
 }
 ```
 
 **Implementado:**
+
 - ✅ **`defineAction`** - Factory completa con tipos genéricos
 - ✅ **HTTP Triggers** - `http.get:/path`, `http.post:/path`, etc.
 - ✅ **Event Triggers** - `event:name` con BullMQ
@@ -285,14 +288,14 @@ Demasiadas features diluyen la propuesta de valor. La recomendación de simplifi
 
 ## 📊 Resumen Comparativo
 
-| Componente | Estado Anterior | Nuevo Estado | Cambio | Gap Restante |
-|------------|-----------------|--------------|--------|--------------|
-| Auth Universal | 95% | **98%** | +3% | Telemetry completo ✅ |
-| Data Models AI-Ready | 85% | **90%** | +5% | Agent Playground ✅ |
-| Admin Panel | 50% | **70%** | +20% | Playground implementado 🆕 |
-| Actions | 80% | **90%** | +10% | Telemetry + Cron ✅ |
-| Batteries Curated | 50% | **60%** | +10% | Telemetry, Logging ✅ |
-| **PROMEDIO** | **72%** | **82%** | **+10%** | **Producción ready** |
+| Componente           | Estado Anterior | Nuevo Estado | Cambio   | Gap Restante               |
+| -------------------- | --------------- | ------------ | -------- | -------------------------- |
+| Auth Universal       | 95%             | **98%**      | +3%      | Telemetry completo ✅      |
+| Data Models AI-Ready | 85%             | **90%**      | +5%      | Agent Playground ✅        |
+| Admin Panel          | 50%             | **70%**      | +20%     | Playground implementado 🆕 |
+| Actions              | 80%             | **90%**      | +10%     | Telemetry + Cron ✅        |
+| Batteries Curated    | 50%             | **60%**      | +10%     | Telemetry, Logging ✅      |
+| **PROMEDIO**         | **72%**         | **82%**      | **+10%** | **Producción ready**       |
 
 **ESFUERZO TOTAL ESTIMADO:** 1-2 meses para 95%+ (principalmente Admin UI polish)
 
@@ -347,14 +350,14 @@ Demasiadas features diluyen la propuesta de valor. La recomendación de simplifi
 
 ## 🚀 Próximos Pasos Sugeridos (Priorizados)
 
-| Prioridad | Tarea | Impacto | Esfuerzo |
-|-----------|-------|---------|----------|
-| P1 | Visualización de embeddings (t-SNE/UMAP) | Alto | Medio |
-| P2 | Documentación de MCP + Vector Search | Alto | Bajo |
-| P3 | Unificación DataSets vs Grimoires | Medio | Alto |
-| P4 | Simplificación "Batteries Included" | Medio | Medio |
-| P5 | Action Builder visual | Bajo | Alto |
+| Prioridad | Tarea                                    | Impacto | Esfuerzo |
+| --------- | ---------------------------------------- | ------- | -------- |
+| P1        | Visualización de embeddings (t-SNE/UMAP) | Alto    | Medio    |
+| P2        | Documentación de MCP + Vector Search     | Alto    | Bajo     |
+| P3        | Unificación DataSets vs Grimoires        | Medio   | Alto     |
+| P4        | Simplificación "Batteries Included"      | Medio   | Medio    |
+| P5        | Action Builder visual                    | Bajo    | Alto     |
 
 ---
 
-*Documento actualizado - GremiusCMS v0.8.0-beta*
+_Documento actualizado - GremiusCMS v0.8.0-beta_

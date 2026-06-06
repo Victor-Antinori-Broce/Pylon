@@ -21,23 +21,25 @@
  * Reference: https://spec.modelcontextprotocol.io/specification/2024-11-05/
  */
 
-import { Hono } from "hono";
 import { createHash } from "crypto";
+
+import { listMCPTools, executeMCPTool } from "@gremius/engine";
 import { eq, and } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { dataSets, dataEntries, apiKeys } from "../db/schema";
-import { emailQueue } from "../lib/queue";
-import { encodeTOON } from "../lib/toon";
-import { GRIMOIRE_REGISTRY } from "../services/module-registry";
 import { logger } from "../lib/logger";
+import { emailQueue } from "../lib/queue";
 import {
     buildDrizzleWhere,
     type PolicyJson,
 } from "../lib/rls-builder";
+import { encodeTOON } from "../lib/toon";
 import { authenticateAgent, hasScope } from "../services/agent-auth";
+import { GRIMOIRE_REGISTRY } from "../services/module-registry";
 
 // ── Nivel 1 Actions Engine ──
-import { listMCPTools, executeMCPTool } from "@gremius/engine";
 
 // ═══════════════════════════════════════════════════════════════
 // Types

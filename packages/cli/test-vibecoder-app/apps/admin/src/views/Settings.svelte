@@ -1,14 +1,14 @@
 <script lang="ts">
+  import ThemeSelector from "$lib/components/ThemeSelector.svelte";
   import { 
     Settings, Key, Plus, Trash2, Copy, CheckCircle2, ShieldAlert, Palette, Cpu,
-    Bot, RefreshCw, X, AlertCircle, Check, Shield, Database, Server, Link2, Globe, TestTube,
+    Bot, RefreshCw, X, AlertCircle, Check, Database, Server, Link2, Globe, TestTube,
     LibraryBig
   } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import ThemeSelector from "$lib/components/ThemeSelector.svelte";
 
-  const API_URL = import.meta.env.VITE_API_URL ?? "";
+  
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
   // State - Read tab from URL parameter
   let activeTab = $state("general");
@@ -1050,7 +1050,7 @@
             <code class="text-gremius-cyan block">"gremius-cms": {'{'}</code>
             <code class="text-gremius-cyan block ml-4">"command": "node",</code>
             <code class="text-gremius-cyan block ml-4">"args": ["packages/mcp-server/dist/index.js"],</code>
-            <code class="text-gremius-cyan block">{'}'}</code>
+            <code class="text-gremius-cyan block">}</code>
           </div>
           <div class="mt-3 flex gap-2">
             <button class="btn-ghost text-xs" onclick={() => alert("Generate an API Key from the API Keys tab to authenticate external processes.")}>

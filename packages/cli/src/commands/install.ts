@@ -1,10 +1,12 @@
-import chalk from 'chalk';
-import fs from 'fs/promises';
-import path from 'path';
-import { execa } from 'execa';
-import ora from 'ora';
-import { findProjectRoot } from '../utils/project.js';
-import postgres from 'postgres';
+import fs from "fs/promises";
+import path from "path";
+
+import chalk from "chalk";
+import { execa } from "execa";
+import ora from "ora";
+import postgres from "postgres";
+
+import { findProjectRoot } from "../utils/project.js";
 
 interface InstallOptions {
   dev?: boolean;
@@ -12,7 +14,7 @@ interface InstallOptions {
   _installChain?: Set<string>;
 }
 
-type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
+type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
 
 /**
  * Detect package manager used in the project.
@@ -20,10 +22,10 @@ type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
  */
 async function detectPackageManager(projectRoot: string): Promise<PackageManager> {
   const checks: Array<{ file: string; pm: PackageManager }> = [
-    { file: 'bun.lockb', pm: 'bun' },
-    { file: 'bun.lock', pm: 'bun' },
-    { file: 'pnpm-lock.yaml', pm: 'pnpm' },
-    { file: 'yarn.lock', pm: 'yarn' },
+    { file: "bun.lockb", pm: "bun" },
+    { file: "bun.lock", pm: "bun" },
+    { file: "pnpm-lock.yaml", pm: "pnpm" },
+    { file: "yarn.lock", pm: "yarn" },
   ];
 
   for (const { file, pm } of checks) {
@@ -34,7 +36,7 @@ async function detectPackageManager(projectRoot: string): Promise<PackageManager
       // Continue
     }
   }
-  return 'npm';
+  return "npm";
 }
 
 /**
@@ -42,21 +44,18 @@ async function detectPackageManager(projectRoot: string): Promise<PackageManager
  * Handles scoped packages: @scope/name → node_modules/@scope/name
  */
 function resolvePackagePath(projectRoot: string, pkgName: string): string {
-  return path.join(projectRoot, 'node_modules', pkgName);
+  return path.join(projectRoot, "node_modules", pkgName);
 }
 
 /**
  * Read DATABASE_URL from .env file
  */
 async function getDatabaseUrl(projectRoot: string): Promise<string | null> {
-  const envPaths = [
-    path.join(projectRoot, 'apps', 'api', '.env'),
-    path.join(projectRoot, '.env'),
-  ];
+  const envPaths = [path.join(projectRoot, "apps", "api", ".env"), path.join(projectRoot, ".env")];
 
   for (const envPath of envPaths) {
     try {
-      const content = await fs.readFile(envPath, 'utf-8');
+      const content = await fs.readFile(envPath, "utf-8");
       const match = content.match(/DATABASE_URL=(.+)/);
       if (match) return match[1].trim();
     } catch {
@@ -72,16 +71,16 @@ async function getDatabaseUrl(projectRoot: string): Promise<string | null> {
  */
 async function readGrimoireManifest(pkgPath: string): Promise<any | null> {
   try {
-    const grimoireJsonPath = path.join(pkgPath, 'grimoire.json');
-    const content = await fs.readFile(grimoireJsonPath, 'utf-8');
+    const grimoireJsonPath = path.join(pkgPath, "grimoire.json");
+    const content = await fs.readFile(grimoireJsonPath, "utf-8");
     return JSON.parse(content);
   } catch {
     // Fallback: package.json with gremius field
     try {
-      const pkgJsonPath = path.join(pkgPath, 'package.json');
-      const content = await fs.readFile(pkgJsonPath, 'utf-8');
+      const pkgJsonPath = path.join(pkgPath, "package.json");
+      const content = await fs.readFile(pkgJsonPath, "utf-8");
       const pkg = JSON.parse(content);
-      if (pkg.gremius?.type === 'grimoire') {
+      if (pkg.gremius?.type === "grimoire") {
         return {
           id: pkg.gremius.id || pkg.name,
           name: pkg.gremius.name || pkg.name,
@@ -106,12 +105,10 @@ async function runMigrations(migrationsDir: string, dbUrl: string): Promise<numb
   try {
     client = postgres(dbUrl, { max: 1 });
     const files = await fs.readdir(migrationsDir);
-    const sqlFiles = files
-      .filter(f => f.endsWith('.sql'))
-      .sort();
+    const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
 
     for (const file of sqlFiles) {
-      const sql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
+      const sql = await fs.readFile(path.join(migrationsDir, file), "utf-8");
       await client.unsafe(sql);
     }
 
@@ -170,7 +167,7 @@ async function updateGremiusConfig(
   grimoireId: string,
   _grimoireName: string
 ): Promise<boolean> {
-  const configPath = path.join(projectRoot, 'apps', 'api', 'gremius.config.ts');
+  const configPath = path.join(projectRoot, "apps", "api", "gremius.config.ts");
   try {
     await fs.access(configPath);
   } catch {
@@ -179,7 +176,7 @@ async function updateGremiusConfig(
   }
 
   try {
-    let content = await fs.readFile(configPath, 'utf-8');
+    let content = await fs.readFile(configPath, "utf-8");
 
     // Check if already present
     if (content.includes(`"${grimoireId}"`) || content.includes(`'${grimoireId}'`)) {
@@ -191,7 +188,7 @@ async function updateGremiusConfig(
     const match = content.match(arrayRegex);
     if (!match) return false;
 
-    const indent = '  ';
+    const indent = "  ";
     const newEntry = `{ id: "${grimoireId}", enabled: true },`;
 
     // Insert before the closing ]
@@ -199,7 +196,7 @@ async function updateGremiusConfig(
     const updatedArray = `${match[1]}${beforeClose}${indent}${newEntry}\n${match[3]}`;
     content = content.replace(arrayRegex, updatedArray);
 
-    await fs.writeFile(configPath, content, 'utf-8');
+    await fs.writeFile(configPath, content, "utf-8");
     return true;
   } catch {
     return false;
@@ -234,7 +231,7 @@ export async function installCommand(
   console.log(chalk.blue(`🔮 Installing grimoire: ${grimoireName}`));
 
   // 1. Validate project
-  const spinner = ora('Detecting project...').start();
+  const spinner = ora("Detecting project...").start();
   const projectRoot = await findProjectRoot();
   spinner.succeed(`Project root: ${projectRoot}`);
 
@@ -245,17 +242,18 @@ export async function installCommand(
   // 3. Install package
   const installSpinner = ora(`Installing ${grimoireName} via ${pm}...`).start();
   try {
-    const installArgs = pm === 'pnpm'
-      ? ['add', grimoireName]
-      : pm === 'yarn'
-        ? ['add', grimoireName]
-        : pm === 'bun'
-          ? ['add', grimoireName]
-          : ['install', grimoireName];
+    const installArgs =
+      pm === "pnpm"
+        ? ["add", grimoireName]
+        : pm === "yarn"
+          ? ["add", grimoireName]
+          : pm === "bun"
+            ? ["add", grimoireName]
+            : ["install", grimoireName];
 
-    if (options.dev) installArgs.push('--save-dev');
+    if (options.dev) installArgs.push("--save-dev");
 
-    await execa(pm, installArgs, { cwd: projectRoot, stdio: 'pipe' });
+    await execa(pm, installArgs, { cwd: projectRoot, stdio: "pipe" });
     installSpinner.succeed(`${grimoireName} installed`);
   } catch (err: any) {
     installSpinner.fail(`Failed to install ${grimoireName}: ${err.message}`);
@@ -268,7 +266,7 @@ export async function installCommand(
 
   if (!manifest) {
     console.log(chalk.yellow(`⚠️  No grimoire.json found in ${grimoireName}`));
-    console.log(chalk.gray('   The package was installed but may not be a valid grimoire.'));
+    console.log(chalk.gray("   The package was installed but may not be a valid grimoire."));
     return;
   }
 
@@ -277,21 +275,21 @@ export async function installCommand(
   // 5. Install grimoire dependencies recursively
   const deps: string[] = manifest.dependencies?.grimoires || [];
   if (deps.length > 0) {
-    console.log(chalk.blue(`  📎 Grimoire dependencies: ${deps.join(', ')}`));
+    console.log(chalk.blue(`  📎 Grimoire dependencies: ${deps.join(", ")}`));
     for (const dep of deps) {
       await installCommand(dep, { ...options, _installChain: installChain });
     }
   }
 
   // 6. Run migrations
-  const migrationsDir = path.join(pkgPath, 'migrations');
+  const migrationsDir = path.join(pkgPath, "migrations");
   try {
     await fs.access(migrationsDir);
     const dbUrl = await getDatabaseUrl(projectRoot);
     if (!dbUrl) {
-      console.log(chalk.yellow('  ⚠️  DATABASE_URL not found. Skipping migrations.'));
+      console.log(chalk.yellow("  ⚠️  DATABASE_URL not found. Skipping migrations."));
     } else {
-      const migrationSpinner = ora('Running migrations...').start();
+      const migrationSpinner = ora("Running migrations...").start();
       try {
         const count = await runMigrations(migrationsDir, dbUrl);
         migrationSpinner.succeed(`${count} migration(s) applied`);
@@ -302,44 +300,46 @@ export async function installCommand(
     }
   } catch {
     // No migrations directory
-    console.log(chalk.gray('  ⏩ No migrations to run'));
+    console.log(chalk.gray("  ⏩ No migrations to run"));
   }
 
   // 7. Register in database
   const dbUrl = await getDatabaseUrl(projectRoot);
   if (dbUrl) {
-    const regSpinner = ora('Registering grimoire...').start();
+    const regSpinner = ora("Registering grimoire...").start();
     try {
       await registerGrimoireInDb(
         dbUrl,
         manifest.id || grimoireName,
         manifest.name || grimoireName,
-        manifest.version || '0.0.0',
+        manifest.version || "0.0.0",
         grimoireName,
         manifest
       );
-      regSpinner.succeed('Registered in installed_grimoires');
+      regSpinner.succeed("Registered in installed_grimoires");
     } catch (err: any) {
       regSpinner.fail(`Registration failed: ${err.message}`);
     }
   } else {
-    console.log(chalk.yellow('  ⚠️  DATABASE_URL not found. Skipping DB registration.'));
+    console.log(chalk.yellow("  ⚠️  DATABASE_URL not found. Skipping DB registration."));
   }
 
   // 8. Update gremius.config.ts
-  const configSpinner = ora('Updating gremius.config.ts...').start();
+  const configSpinner = ora("Updating gremius.config.ts...").start();
   const configUpdated = await updateGremiusConfig(
     projectRoot,
     manifest.id || grimoireName,
     manifest.name || grimoireName
   );
   if (configUpdated) {
-    configSpinner.succeed('Added to gremius.config.ts (enabled)');
+    configSpinner.succeed("Added to gremius.config.ts (enabled)");
   } else {
-    configSpinner.info('Skipped config update (already present or not found)');
+    configSpinner.info("Skipped config update (already present or not found)");
   }
 
   // 9. Done
-  console.log(chalk.green(`\n🎉 Grimoire ${manifest.name || grimoireName} installed successfully!`));
+  console.log(
+    chalk.green(`\n🎉 Grimoire ${manifest.name || grimoireName} installed successfully!`)
+  );
   console.log(chalk.gray(`   Restart your Gremius API to activate: gremius start`));
 }

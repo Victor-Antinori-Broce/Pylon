@@ -1,14 +1,15 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { onMount } from 'svelte';
-  import { ArrowLeft, Save, Bot, Play, Trash2, Key } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
-  import Card from '$lib/components/ui/Card.svelte';
   import ChatInterface from '$lib/components/agents/ChatInterface.svelte';
   import Timeline from '$lib/components/agents/Timeline.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import Card from '$lib/components/ui/Card.svelte';
   import { getAgent, updateAgent, sendPlaygroundMessage } from '$lib/services/agents';
-  import type { Agent, AgentTraceStep } from '$lib/types/agents';
   import type { PlaygroundMessage } from '$lib/services/agents';
+  import type { Agent, AgentTraceStep } from '$lib/types/agents';
+  import { ArrowLeft, Save, Bot, Play, Trash2 } from 'lucide-svelte';
+  import { onMount } from 'svelte';
+
+  import { page } from '$app/stores';
   
   const agentId = $page.params.id;
   

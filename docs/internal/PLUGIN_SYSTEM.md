@@ -73,6 +73,7 @@ El sistema busca grimoires en este orden:
 ## 🏰 Realms como Starters
 
 Los realms son plantillas completas que incluyen:
+
 - Configuración predefinida
 - Grimoires recomendados
 - Estilos/CSS base
@@ -109,11 +110,7 @@ packages/realms/realm-esports/
   "description": "Gaming platform with tournaments",
   "version": "2.0.0",
   "type": "realm",
-  "grimoires": [
-    "grimoire-games",
-    "grimoire-streamers",
-    "grimoire-tournaments"
-  ],
+  "grimoires": ["grimoire-games", "grimoire-streamers", "grimoire-tournaments"],
   "optional_grimoires": ["grimoire-crm"],
   "config": {
     "theme": {
@@ -210,35 +207,35 @@ export const grimoire = defineGrimoire({
   name: "My Feature",
   version: "1.0.0",
   icon: "Star",
-  
+
   createRouter: (ctx) => {
     const router = new Hono();
-    
+
     // Use injected dependencies
     router.get("/", async (c) => {
       const data = await ctx.db.instance.select().from(myTable);
       return c.json(data);
     });
-    
+
     router.post("/", ctx.auth.requireAuth, async (c) => {
       const body = await c.req.json();
-      
+
       // Emit event
       ctx.events.emit("myfeature:created", body);
-      
+
       // Cache result
       await ctx.cache.set(`myfeature:${body.id}`, body, 300);
-      
+
       return c.json({ success: true });
     });
-    
+
     return router;
   },
-  
+
   hooks: {
     onStartup: async (ctx) => {
       ctx.logger.info("MyFeature started!");
-      
+
       // Check if table exists
       const exists = await ctx.db.tableExists("my_data");
       if (!exists) {
@@ -250,13 +247,13 @@ export const grimoire = defineGrimoire({
     },
     onDisable: async (ctx) => {
       ctx.logger.info("MyFeature disabled!");
-    }
+    },
   },
-  
+
   dependencies: {
-    grimoires: ["grimoire-media"],  // Requires media grimoire
-    core: ["webhooks"]              // Requires webhooks feature
-  }
+    grimoires: ["grimoire-media"], // Requires media grimoire
+    core: ["webhooks"], // Requires webhooks feature
+  },
 });
 ```
 

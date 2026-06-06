@@ -10,16 +10,13 @@
    * - Gestión de versiones
    * - Audit trail
    */
-  import { onMount } from "svelte";
   import { 
-    FileText, FolderTree, GitBranch, Activity, 
-    Plus, Search, Filter, MoreVertical, Eye, Edit2, 
-    Trash2, CheckCircle, Clock, XCircle, AlertCircle,
-    ChevronRight, ChevronDown, Folder, FolderOpen,
-    Upload, Download, History, Users, Tag,
-    ArrowUpRight, FileStack, LayoutDashboard,
-    ClipboardCheck, Archive, Settings, X
+    FileText, FolderTree, GitBranch, 
+    Plus, Search, MoreVertical, Eye, Edit2, CheckCircle, Clock, XCircle, AlertCircle,
+    ChevronRight, ChevronDown, Folder, Tag, FileStack,
+    ClipboardCheck, Archive, X
   } from "lucide-svelte";
+  import { onMount } from "svelte";
   
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   
@@ -27,9 +24,9 @@
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════
   
-  let activeTab = $state("documents"); // documents, categories, versions, audit, stats
+  const activeTab = $state("documents"); // documents, categories, versions, audit, stats
   let loading = $state(true);
-  let error = $state<string | null>(null);
+  const error = $state<string | null>(null);
   
   // Categorías
   let categories = $state<any[]>([]);
@@ -38,7 +35,7 @@
   
   // Documentos
   let documents = $state<any[]>([]);
-  let selectedDocument = $state<any>(null);
+  const selectedDocument = $state<any>(null);
   let searchQuery = $state("");
   let statusFilter = $state<string>("");
   let typeFilter = $state<string>("");
@@ -49,16 +46,16 @@
   // Pagination
   let currentPage = $state(1);
   let totalPages = $state(1);
-  let pageSize = $state(25);
+  const pageSize = $state(25);
   
   // Modals
   let showCreateModal = $state(false);
-  let showVersionModal = $state(false);
+  const showVersionModal = $state(false);
   let showCategoryModal = $state(false);
-  let showUploadModal = $state(false);
+  const showUploadModal = $state(false);
 
   // Form state
-  let saving = $state(false);
+  const saving = $state(false);
   let newDocTitle = $state("");
   let newDocDescription = $state("");
   let newDocType = $state("manual");

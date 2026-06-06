@@ -1,9 +1,10 @@
 /**
  * Gremio CMS — Streamers Module Schema
- * 
+ *
  * Drizzle ORM schema for streamers and game associations.
  */
 
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -16,7 +17,6 @@ import {
   index,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 // Note: currentGameId references games.id from grimoire-games.
 // We avoid cross-grimoire imports; FK is enforced at application level.
 
@@ -24,11 +24,7 @@ import { relations } from "drizzle-orm";
 // Enums
 // ═══════════════════════════════════════════════
 
-export const streamerPlatformEnum = pgEnum("streamers_platform", [
-  "twitch",
-  "youtube",
-  "kick",
-]);
+export const streamerPlatformEnum = pgEnum("streamers_platform", ["twitch", "youtube", "kick"]);
 
 // ═══════════════════════════════════════════════
 // Streamers Table

@@ -4,39 +4,31 @@
    * 
    * Shows real-time stats from core grimoires with professional empty states
    */
-  import { onMount } from "svelte";
   import { 
     LayoutDashboard, 
-    TrendingUp, 
     Users, 
     Activity,
     Zap,
-    BookOpen,
     PenTool,
     Image,
-    UserPlus,
     Database,
     FileText,
-    FolderKanban,
     Layers,
     Blocks,
-    Settings,
     Sparkles,
-    BarChart3,
     Inbox,
-    AlertCircle,
     Plus,
     ArrowRight,
     Clock,
-    Calendar,
     ChevronRight
   } from "lucide-svelte";
+  import { onMount } from "svelte";
   import type { ComponentType, SvelteComponent } from "svelte";
-  import WidgetSlot from "../lib/WidgetSlot.svelte";
+
   import { componentRegistry } from "../lib/registry.svelte";
-  import { goto } from "$app/navigation";
+  import WidgetSlot from "../lib/WidgetSlot.svelte";
   
-  const API_URL = import.meta.env.VITE_API_URL ?? "";
+const API_URL = import.meta.env.VITE_API_URL ?? "";
   
   // Icon component type (lucide icons)
   type IconComponent = ComponentType<SvelteComponent<{ class?: string }>>;

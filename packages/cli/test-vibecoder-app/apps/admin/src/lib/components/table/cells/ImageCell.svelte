@@ -19,7 +19,7 @@
     fallback?: "icon" | "initials" | "none";
   }
   
-  let {
+  const {
     src,
     alt = "",
     size = "md",

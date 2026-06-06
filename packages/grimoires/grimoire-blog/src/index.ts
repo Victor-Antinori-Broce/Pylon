@@ -34,17 +34,15 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import type {
-  GrimoireDefinition,
-  GrimoireContext,
-} from "@gremius/shared";
+import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 
 // GrimoireHooks removed from @gremius/shared — inline the type
 type GrimoireHooks = Record<string, (...args: any[]) => void | Promise<void>>;
 
-import { createBlogRouter } from "./routes";
 import { sql } from "drizzle-orm";
+
+import { createBlogRouter } from "./routes";
 
 // Re-export schema
 export {
@@ -57,11 +55,7 @@ export {
 } from "./schema";
 
 // Tables array for grimoire definition
-const tables = [
-  "blog_posts",
-  "blog_posts_to_tags",
-  "blog_posts_to_games",
-];
+const tables = ["blog_posts", "blog_posts_to_tags", "blog_posts_to_games"];
 
 export type {
   BlogPost,
@@ -215,7 +209,9 @@ const hooks: GrimoireHooks = {
         ctx.logger.info("[Blog] ✓ Tables verified");
       }
     } catch (err) {
-      ctx.logger.error("[Blog] Failed to verify tables", { error: err instanceof Error ? err.message : String(err) });
+      ctx.logger.error("[Blog] Failed to verify tables", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   },
 
@@ -250,8 +246,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
   id: "grimoire-blog",
   name: "Blog Posts",
   version: "2.0.0",
-  description:
-    "Publishing platform with rich text editor, scheduling, tags, and SEO overrides.",
+  description: "Publishing platform with rich text editor, scheduling, tags, and SEO overrides.",
 
   // Icon
   icon: "FileText",
@@ -265,7 +260,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
   // Admin configuration
   admin: {
     category: "core",
-    views: adminConfig.views.map(v => ({
+    views: adminConfig.views.map((v) => ({
       id: v.slug,
       type: "custom" as const,
       title: v.label,

@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { Search, Filter, Megaphone, X } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { Table2, Search, Filter, Megaphone, X, FileText } from "lucide-svelte";
+
   import { api } from "$lib/api";
 
   interface Game {
@@ -23,15 +24,15 @@
   let loading = $state(true);
   let search = $state("");
   let blogEnabled = $state(false);
-  let currentDatasetId = $state("games"); // This should come from route params
-  
+  const currentDatasetId = $state("games"); // This should come from route params
+
   // Promote modal state
   let showPromoteModal = $state(false);
   let selectedEntry = $state<DatasetEntry | null>(null);
   let promoteLoading = $state(false);
   let promoteError = $state("");
   let promoteSuccess = $state("");
-  
+
   // Promote form data
   let titleTemplate = $state("");
   let slugPrefix = $state("");
@@ -39,10 +40,11 @@
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
-  let filteredGames = $derived(
-    games.filter(g => 
-      g.title?.toLowerCase().includes(search.toLowerCase()) ||
-      g.genre?.toLowerCase().includes(search.toLowerCase())
+  const filteredGames = $derived(
+    games.filter(
+      (g) =>
+        g.title?.toLowerCase().includes(search.toLowerCase()) ||
+        g.genre?.toLowerCase().includes(search.toLowerCase())
     )
   );
 
@@ -53,8 +55,8 @@
       if (res.ok) {
         const data = await res.json();
         const docs = data.docs || [];
-        blogEnabled = docs.some((m: any) => 
-          (m.key === "blog" || m.key === "grimoire-blog") && m.enabled
+        blogEnabled = docs.some(
+          (m: any) => (m.key === "blog" || m.key === "grimoire-blog") && m.enabled
         );
       }
     } catch {
@@ -74,7 +76,7 @@
 
   function openPromoteModal(entry: DatasetEntry) {
     selectedEntry = entry;
-    titleTemplate = `Analysis: ${entry.title || entry.name || 'Entry'}`;
+    titleTemplate = `Analysis: ${entry.title || entry.name || "Entry"}`;
     slugPrefix = currentDatasetId;
     autoPublish = false;
     promoteError = "";
@@ -91,7 +93,7 @@
 
   async function handlePromote() {
     if (!selectedEntry) return;
-    
+
     promoteLoading = true;
     promoteError = "";
     promoteSuccess = "";
@@ -165,7 +167,9 @@
 
   {#if loading}
     <div class="flex justify-center py-20">
-      <div class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+      <div
+        class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+      ></div>
     </div>
   {:else}
     <div class="card overflow-hidden">
@@ -206,7 +210,7 @@
               </td>
               {#if blogEnabled}
                 <td class="px-4 py-3">
-                  <button 
+                  <button
                     class="p-1.5 rounded-lg hover:bg-gremius-cyan/10 text-gremius-subtle hover:text-gremius-cyan transition-colors"
                     title="Promote to Content"
                     onclick={() => openPromoteModal(game)}
@@ -226,7 +230,9 @@
 <!-- Promote to Content Modal -->
 {#if showPromoteModal && selectedEntry}
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-gremius-card border border-gremius-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto">
+    <div
+      class="bg-gremius-card border border-gremius-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto"
+    >
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-gremius-border">
         <div class="flex items-center gap-3">
@@ -238,7 +244,7 @@
             <p class="text-xs text-gremius-text-dim">Convert dataset entry to blog post</p>
           </div>
         </div>
-        <button 
+        <button
           class="p-2 rounded-lg hover:bg-gremius-surface text-gremius-subtle"
           onclick={closePromoteModal}
         >
@@ -251,7 +257,9 @@
         <!-- Source preview -->
         <div class="rounded-lg bg-gremius-surface/50 border border-gremius-border p-4">
           <p class="text-xs text-gremius-subtle mb-2">Source Entry</p>
-          <p class="text-sm font-medium text-gremius-text">{selectedEntry.title || selectedEntry.name || 'Untitled'}</p>
+          <p class="text-sm font-medium text-gremius-text">
+            {selectedEntry.title || selectedEntry.name || "Untitled"}
+          </p>
           <p class="text-xs text-gremius-text-dim mt-1">ID: {selectedEntry.id}</p>
         </div>
 
@@ -268,14 +276,12 @@
               class="w-full px-3 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-sm focus:outline-none focus:border-gremius-cyan"
             />
             <p class="text-xs text-gremius-subtle mt-1">
-              Use {'{field}'} for dynamic values (e.g., {'{title}'}, {'{genre}'})
+              Use {"{field}"} for dynamic values (e.g., {"{title}"}, {"{genre}"})
             </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-1.5">
-              Slug Prefix
-            </label>
+            <label class="block text-sm font-medium text-gremius-text mb-1.5"> Slug Prefix </label>
             <input
               type="text"
               bind:value={slugPrefix}
@@ -283,7 +289,7 @@
               class="w-full px-3 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-sm focus:outline-none focus:border-gremius-cyan"
             />
             <p class="text-xs text-gremius-subtle mt-1">
-              Result: /blog/{slugPrefix || 'entry'}/entry-slug
+              Result: /blog/{slugPrefix || "entry"}/entry-slug
             </p>
           </div>
 
@@ -313,20 +319,18 @@
 
       <!-- Footer -->
       <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gremius-border">
-        <button 
-          class="btn-secondary"
-          onclick={closePromoteModal}
-          disabled={promoteLoading}
-        >
+        <button class="btn-secondary" onclick={closePromoteModal} disabled={promoteLoading}>
           Cancel
         </button>
-        <button 
+        <button
           class="btn-primary flex items-center gap-2"
           onclick={handlePromote}
           disabled={promoteLoading}
         >
           {#if promoteLoading}
-            <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <div
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+            ></div>
             Creating...
           {:else}
             <Megaphone class="w-4 h-4" />

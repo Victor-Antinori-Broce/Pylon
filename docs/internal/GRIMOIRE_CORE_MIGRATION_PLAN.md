@@ -14,6 +14,7 @@
 ## 📊 Análisis por Grimoire
 
 ### 1. AI Memories
+
 ```
 Tipo: Capability Transversal
 Recomendación: MOVER AL CORE
@@ -22,6 +23,7 @@ Razón: Vector search debe estar disponible para CUALQUIER dataset
 
 **Uso actual**: Almacenamiento vectorial independiente  
 **Uso deseado**: Extensión de dataset:
+
 ```typescript
 // Config de dataset
 {
@@ -39,22 +41,24 @@ Razón: Vector search debe estar disponible para CUALQUIER dataset
 ---
 
 ### 2. Formulas & KPIs ✅
+
 ```
-Tipo: Capability Transversal  
+Tipo: Capability Transversal
 Recomendación: MOVER AL CORE
 Razón: Campos calculados son necesarios en cualquier dataset
 ```
 
 **Uso actual**: Tablas separadas de fórmulas  
 **Uso deseado**: Virtual fields en schema:
+
 ```typescript
 {
   name: "orders",
   fields: [
     { name: "price", type: "number" },
     { name: "quantity", type: "number" },
-    { 
-      name: "total", 
+    {
+      name: "total",
       type: "formula",
       expression: "price * quantity * (1 - discount)"
     }
@@ -65,6 +69,7 @@ Razón: Campos calculados son necesarios en cualquier dataset
 ---
 
 ### 3. Tags ✅
+
 ```
 Tipo: Capability Transversal
 Recomendación: MOVER AL CORE
@@ -73,6 +78,7 @@ Razón: Cualquier entidad puede necesitar tags
 
 **Uso actual**: Grimoire standalone  
 **Uso deseado**: Field type "tags":
+
 ```typescript
 {
   name: "posts",
@@ -86,6 +92,7 @@ Razón: Cualquier entidad puede necesitar tags
 ---
 
 ### 4. Promote ✅
+
 ```
 Tipo: Capability Transversal (Bridge BaaS ↔ CMS)
 Recomendación: MOVER AL CORE
@@ -94,6 +101,7 @@ Razón: Cualquier dataset puede querer publicarse como contenido
 
 **Uso actual**: Endpoint separado `/api/promote`  
 **Uso deseado**: Extensión de dataset:
+
 ```typescript
 {
   name: "products",
@@ -111,6 +119,7 @@ Razón: Cualquier dataset puede querer publicarse como contenido
 ---
 
 ### 5. CRM ❌
+
 ```
 Tipo: Dominio Vertical Completo
 Recomendación: MANTENER COMO MODULE
@@ -124,6 +133,7 @@ Features: Kanban, deal tracking, activity log
 ---
 
 ### 6. Booking ❌
+
 ```
 Tipo: Dominio Vertical Completo
 Recomendación: MANTENER COMO MODULE
@@ -137,6 +147,7 @@ Features: Availability tracking, conflict detection
 ---
 
 ### 7. Blog ❌
+
 ```
 Tipo: Dominio Vertical
 Recomendación: MANTENER COMO MODULE / O REFACTORIZAR
@@ -145,6 +156,7 @@ Razón: Es contenido editorial, pero quizás redundante con "Promote"
 
 **Observación**: Blog = Dataset "posts" + Promote publishing + Tags  
 **Alternativa**: Eliminar Blog como grimoire, usar en su lugar:
+
 - Dataset "posts" (creado por usuario)
 - Core Tags
 - Core Promote
@@ -153,6 +165,7 @@ Razón: Es contenido editorial, pero quizás redundante con "Promote"
 ---
 
 ### 8. Academy LMS ❌
+
 ```
 Tipo: Dominio Vertical Complejo
 Recomendación: MANTENER COMO MODULE
@@ -166,6 +179,7 @@ Features: Progreso, certificación, videos, quizzes
 ---
 
 ### 9. Games + Platforms ❌
+
 ```
 Tipo: Específico de Gaming
 Recomendación: AGRUPAR EN "GAMING STARTER" O ELIMINAR
@@ -180,6 +194,7 @@ Recomendación: Convertir en **Starter Template** no en Grimoire core
 ---
 
 ### 10. Collections ❌
+
 ```
 Tipo: Feature Específica
 Recomendación: MOVER AL CORE como "Collection Groups"
@@ -188,12 +203,13 @@ Razón: Cualquier dataset puede querer agrupar/coleccionar items
 
 **Uso actual**: Solo para games  
 **Uso deseado**: Relación "collection" disponible en cualquier dataset:
+
 ```typescript
 {
   name: "products",
   fields: [
-    { 
-      name: "collection", 
+    {
+      name: "collection",
       type: "relation",
       relation: { type: "many-to-many", target: "collections" }
     }
@@ -204,6 +220,7 @@ Razón: Cualquier dataset puede querer agrupar/coleccionar items
 ---
 
 ### 11. Esports Suite (Matches, Players, Teams, Tournaments, Streamers) ❌
+
 ```
 Tipo: Específico de Esports/Gaming
 Recomendación: MANTENER COMO MODULE "Esports" o ELIMINAR
@@ -215,6 +232,7 @@ Recomendación: Agrupar todo en un **Grimoire "Esports"** unificado
 ---
 
 ### 12. DMS (Document Management) ❌
+
 ```
 Tipo: Dominio Vertical
 Recomendación: MANTENER COMO MODULE
@@ -226,6 +244,7 @@ Razón: Gestión documental con versiones, permisos, etc.
 ---
 
 ### 13. Blocks ⚠️
+
 ```
 Tipo: Componente de UI/UX
 Recomendación: MOVER AL CORE
@@ -240,13 +259,13 @@ Parte del Page Builder - debería ser core
 
 ### Fase 1: Core Capabilities (Alta Prioridad)
 
-| Grimoire | Acción | Archivos a Mover |
-|----------|--------|------------------|
+| Grimoire    | Acción                           | Archivos a Mover                            |
+| ----------- | -------------------------------- | ------------------------------------------- |
 | AI Memories | → `packages/core/vector-search/` | `schema.ts`, `routes.ts`, extensión dataset |
-| Formulas | → `packages/core/formulas/` | Motor de fórmulas, virtual fields |
-| Tags | → `packages/core/taxonomy/` | Taxonomía universal, field type "tags" |
-| Promote | → `packages/core/publishing/` | Extensión "publish" en datasets |
-| Collections | → `packages/core/collections/` | Relación "collection" universal |
+| Formulas    | → `packages/core/formulas/`      | Motor de fórmulas, virtual fields           |
+| Tags        | → `packages/core/taxonomy/`      | Taxonomía universal, field type "tags"      |
+| Promote     | → `packages/core/publishing/`    | Extensión "publish" en datasets             |
+| Collections | → `packages/core/collections/`   | Relación "collection" universal             |
 
 ### Fase 2: Refactorizar a Extensión de Dataset
 
@@ -262,21 +281,21 @@ interface DatasetExtensions {
 
 // En el admin, aparecen como toggles:
 // [x] Enable Vector Search
-// [x] Enable Formulas  
+// [x] Enable Formulas
 // [x] Enable Publishing
 ```
 
 ### Fase 3: Consolidar Modules Verticales
 
-| Modules Actuales | Consolidar En |
-|------------------|---------------|
-| Games + Platforms + Collections | `modules/gaming/` o ELIMINAR |
-| Matches + Players + Teams + Tournaments + Streamers | `modules/esports/` |
-| Blog | ELIMINAR (reemplazado por Dataset + Promote) |
-| CRM | `modules/crm/` (mantener) |
-| Booking | `modules/booking/` (mantener) |
-| Academy | `modules/academy/` (mantener) |
-| DMS | `modules/documents/` (mantener) |
+| Modules Actuales                                    | Consolidar En                                |
+| --------------------------------------------------- | -------------------------------------------- |
+| Games + Platforms + Collections                     | `modules/gaming/` o ELIMINAR                 |
+| Matches + Players + Teams + Tournaments + Streamers | `modules/esports/`                           |
+| Blog                                                | ELIMINAR (reemplazado por Dataset + Promote) |
+| CRM                                                 | `modules/crm/` (mantener)                    |
+| Booking                                             | `modules/booking/` (mantener)                |
+| Academy                                             | `modules/academy/` (mantener)                |
+| DMS                                                 | `modules/documents/` (mantener)              |
 
 ### Fase 4: Renombrar
 
@@ -324,6 +343,7 @@ apps/
 ## 🔄 Cambios en la API
 
 ### Antes
+
 ```bash
 # Vector search en grimoire separado
 POST /api/ai-memories/search
@@ -338,6 +358,7 @@ GET /api/tags
 ```
 
 ### Después (Core)
+
 ```bash
 # Vector search en cualquier dataset
 POST /api/datasets/posts/search?vector=typescript
@@ -354,22 +375,26 @@ GET /api/datasets/posts?tags=javascript,typescript
 ## ✅ Checklist de Migración
 
 ### Paso 1: Preparar Core Extensions
+
 - [ ] Crear `packages/core/extensions/` con sistema de plugins
 - [ ] Migrar AI Memories → VectorSearchExtension
-- [ ] Migrar Formulas → FormulaExtension  
+- [ ] Migrar Formulas → FormulaExtension
 - [ ] Migrar Tags → TaxonomyExtension
 - [ ] Migrar Promote → PublishingExtension
 
 ### Paso 2: Actualizar Dataset Schema
+
 - [ ] Agregar campo `extensions` al schema de datasets
 - [ ] UI en admin para configurar extensiones
 
 ### Paso 3: Refactorizar Grimoires
+
 - [ ] Mover Academy, CRM, Booking a `modules/`
 - [ ] Consolidar Gaming/Esports
 - [ ] Eliminar Blog (reemplazar con starter)
 
 ### Paso 4: Actualizar Documentación
+
 - [ ] Renombrar "Grimoires" → "Modules" en docs
 - [ ] Documentar "Extensions" como capabilities core
 
@@ -377,12 +402,12 @@ GET /api/datasets/posts?tags=javascript,typescript
 
 ## 🎯 Beneficios de esta Arquitectura
 
-| Antes (Grimoires) | Después (Core + Modules) |
-|-------------------|--------------------------|
-| "Instalar AI Memories" | Toggle: `[x] Enable vector search` en dataset |
-| Múltiples APIs separadas | API unificada `/api/datasets/:id/*` |
-| Curva de aprendizaje alta | Conceptos claros: Core (transversal) vs Modules (vertical) |
-| Acoplamiento grimoire-dataset | Extensions declarativo por dataset |
+| Antes (Grimoires)             | Después (Core + Modules)                                   |
+| ----------------------------- | ---------------------------------------------------------- |
+| "Instalar AI Memories"        | Toggle: `[x] Enable vector search` en dataset              |
+| Múltiples APIs separadas      | API unificada `/api/datasets/:id/*`                        |
+| Curva de aprendizaje alta     | Conceptos claros: Core (transversal) vs Modules (vertical) |
+| Acoplamiento grimoire-dataset | Extensions declarativo por dataset                         |
 
 ---
 

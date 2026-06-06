@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Video, Loader2, AlertCircle, Check, ExternalLink } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { Video, Loader2, AlertCircle, Check, ExternalLink } from "lucide-svelte";
 
   interface YouTubeInfo {
     videoId: string;
@@ -17,7 +17,7 @@
     required?: boolean;
   }
 
-  let { value = "", onChange, label = "Video de YouTube", required = false }: Props = $props();
+  const { value = "", onChange, label = "Video de YouTube", required = false }: Props = $props();
 
   let loading = $state(false);
   let error = $state<string | null>(null);

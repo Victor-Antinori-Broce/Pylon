@@ -1,14 +1,15 @@
 <script lang="ts">
   /**
    * WidgetSlot.svelte
-   * 
+   *
    * Renderiza widgets registrados en un slot específico.
    * Usa svelte:component para montar componentes dinámicamente.
    */
-  import { componentRegistry, type RegistryWidget } from "./registry.svelte";
+  import { fade } from "svelte/transition";
+
   import DynamicComponent from "./DynamicComponent.svelte";
-  import { fade, slide } from "svelte/transition";
-  
+  import { componentRegistry, type RegistryWidget } from "./registry.svelte";
+
   interface Props {
     /** Nombre del slot (ej: "dashboard:top", "sidebar:bottom") */
     name: string;
@@ -19,28 +20,28 @@
     /** Wrapper para cada widget */
     wrapper?: "none" | "card" | "border";
   }
-  
-  let { 
-    name, 
-    class: className = "", 
+
+  const {
+    name,
+    class: className = "",
     animated = true,
     wrapper = "none",
-    empty
+    empty,
   }: Props & { empty?: () => any } = $props();
-  
+
   // Obtener widgets reactivamente
   let widgets = $state<RegistryWidget[]>([]);
-  
+
   // Actualizar widgets cuando cambien
   $effect(() => {
     widgets = componentRegistry.getWidgets(name);
   });
-  
+
   // Configuración de wrappers
   const wrapperClasses = {
     none: "",
     card: "bg-gremius-card border border-gremius-border rounded-xl p-4",
-    border: "border-b border-gremius-border last:border-b-0 py-4"
+    border: "border-b border-gremius-border last:border-b-0 py-4",
   };
 </script>
 
@@ -53,23 +54,17 @@
   {:else}
     {#each widgets as widget (widget.id)}
       {@const Component = widget.component}
-      <div 
+      <div
         class="widget-slot__item {wrapperClasses[wrapper]}"
         data-widget-id={widget.id}
         data-widget-module={widget.module}
       >
         {#if animated}
           <div transition:fade={{ duration: 200 }}>
-            <DynamicComponent 
-              component={Component} 
-              props={widget.props}
-            />
+            <DynamicComponent component={Component} props={widget.props} />
           </div>
         {:else}
-          <DynamicComponent 
-            component={Component} 
-            props={widget.props}
-          />
+          <DynamicComponent component={Component} props={widget.props} />
         {/if}
       </div>
     {/each}
@@ -82,20 +77,20 @@
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .widget-slot__item {
     position: relative;
   }
-  
+
   /* Variantes específicas de slots */
   .widget-slot--dashboard-top {
     margin-bottom: 1.5rem;
   }
-  
+
   .widget-slot--dashboard-bottom {
     margin-top: 1.5rem;
   }
-  
+
   .widget-slot--sidebar-bottom {
     margin-top: auto;
   }

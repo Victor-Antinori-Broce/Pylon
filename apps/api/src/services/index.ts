@@ -15,11 +15,6 @@ export {
   type TwitchStreamData,
   type TwitchUserData,
 } from "./twitch";
-export {
-  searchTrailers,
-  getLatestVideos,
-  isYouTubeConfigured,
-  type YouTubeVideo,
-} from "./youtube";
+export { searchTrailers, getLatestVideos, isYouTubeConfigured, type YouTubeVideo } from "./youtube";
 // @ts-ignore - Path alias resolution handled by tsconfig
 export { uploadFile, deleteFile, fileExists, getFile } from "../lib/storage";

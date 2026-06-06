@@ -1,6 +1,6 @@
 /**
  * Action Handlers Registry
- * 
+ *
  * Central registry for all action type handlers.
  */
 

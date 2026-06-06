@@ -12,6 +12,8 @@
  *   - currencies are first-class citizens on every ledger line
  */
 
+import { createId } from "@paralleldrive/cuid2";
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -23,8 +25,6 @@ import {
   pgEnum,
   index,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createId } from "@paralleldrive/cuid2";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Enums
@@ -38,11 +38,7 @@ export const accountTypeEnum = pgEnum("conta_account_type", [
   "expense",
 ]);
 
-export const entryStatusEnum = pgEnum("conta_entry_status", [
-  "draft",
-  "posted",
-  "reversed",
-]);
+export const entryStatusEnum = pgEnum("conta_entry_status", ["draft", "posted", "reversed"]);
 
 export const counterpartyTypeEnum = pgEnum("conta_counterparty_type", [
   "client",
@@ -51,11 +47,7 @@ export const counterpartyTypeEnum = pgEnum("conta_counterparty_type", [
   "other",
 ]);
 
-export const matterStatusEnum = pgEnum("conta_matter_status", [
-  "open",
-  "closed",
-  "on_hold",
-]);
+export const matterStatusEnum = pgEnum("conta_matter_status", ["open", "closed", "on_hold"]);
 
 export const disbursementStatusEnum = pgEnum("conta_disbursement_status", [
   "pending",
@@ -99,10 +91,7 @@ export const counterparties = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [
-    index("idx_conta_cp_type").on(t.type),
-    index("idx_conta_cp_tax").on(t.taxId),
-  ]
+  (t) => [index("idx_conta_cp_type").on(t.type), index("idx_conta_cp_tax").on(t.taxId)]
 );
 
 export const counterpartiesRelations = relations(counterparties, ({ many }) => ({

@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * DataExplorer - Componente Genérico de Exploración de Datos
-   * 
+   *
    * Características:
    * - Soporta field types extensibles
    * - Campos calculados (frontend y backend)
@@ -10,32 +10,30 @@
    * - Ordenamiento
    * - Paginación
    * - Edición inline
-   * 
+   *
    * Props:
    * - table: string - Nombre de la tabla
    * - config: TableConfig - Configuración de columnas y fields
    * - data: any[] - Datos (opcional, puede cargar de API)
    * - apiEndpoint: string - Endpoint para cargar datos
    */
-  
-  import { onMount } from "svelte";
-  import { 
-    Search, 
-    Filter, 
-    ChevronLeft, 
+
+  import {
+    Search,
+    Filter,
+    ChevronLeft,
     ChevronRight,
     Loader2,
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    MoreHorizontal,
     Download,
-    Plus,
-    Trash2,
     Edit2,
     Check,
-    X
+    X,
   } from "lucide-svelte";
+  import { onMount } from "svelte";
+
   import { api } from "$lib/api";
   import { fieldRegistry, type FieldConfig } from "$lib/data-explorer/fieldRegistry";
   import "$lib/data-explorer/registerFields";
@@ -43,7 +41,7 @@
   // ═══════════════════════════════════════════════════════════════════════════════
   // TYPES
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   interface TableConfig {
     table: string;
     label?: string;
@@ -55,7 +53,7 @@
     bulkActions?: BulkAction[];
     rowActions?: RowAction[];
   }
-  
+
   interface ColumnConfig {
     field: string;
     label: string;
@@ -64,7 +62,7 @@
     sortable?: boolean;
     hidden?: boolean;
   }
-  
+
   interface BulkAction {
     id: string;
     label: string;
@@ -72,14 +70,14 @@
     variant?: "default" | "danger";
     handler: (ids: string[]) => Promise<void>;
   }
-  
+
   interface RowAction {
     id: string;
     label: string;
     icon?: any;
     handler: (row: any) => void;
   }
-  
+
   interface PaginationInfo {
     page: number;
     pageSize: number;
@@ -90,7 +88,7 @@
   // ═══════════════════════════════════════════════════════════════════════════════
   // PROPS
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   interface Props {
     table: string;
     config?: Partial<TableConfig>;
@@ -99,48 +97,48 @@
     defaultFilter?: Record<string, any>;
     onRowClick?: (row: any) => void;
   }
-  
-  let { 
-    table, 
-    config = {}, 
+
+  const {
+    table,
+    config = {},
     data: initialData,
     apiEndpoint,
     defaultFilter = {},
-    onRowClick
+    onRowClick,
   }: Props = $props();
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   let rows = $state<any[]>(initialData || []);
   let loading = $state(!initialData);
   let error = $state("");
-  
+
   // Búsqueda y filtros
   let searchQuery = $state("");
   let activeFilters = $state<Record<string, any>>({ ...defaultFilter });
   let showFilterPanel = $state(false);
-  
+
   // Ordenamiento
   let sortField = $state<string | null>(null);
   let sortDirection = $state<"asc" | "desc">("asc");
-  
+
   // Paginación
-  let pagination = $state<PaginationInfo>({
+  const pagination = $state<PaginationInfo>({
     page: 1,
     pageSize: typeof config.pagination === "object" ? config.pagination.pageSize : 20,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
   });
-  
+
   // Selección
   let selectedRows = $state<Set<string>>(new Set());
   let editingRow = $state<string | null>(null);
   let editingData = $state<any>(null);
-  
+
   // Configuración completa con defaults
-  let fullConfig = $derived<TableConfig>({
+  const fullConfig = $derived<TableConfig>({
     table,
     label: config.label || table,
     columns: config.columns || [],
@@ -149,13 +147,13 @@
     sortable: config.sortable !== false,
     pagination: config.pagination !== false,
     bulkActions: config.bulkActions || [],
-    rowActions: config.rowActions || []
+    rowActions: config.rowActions || [],
   });
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // LIFECYCLE
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   onMount(() => {
     if (!initialData && apiEndpoint) {
       loadData();
@@ -165,41 +163,41 @@
   // ═══════════════════════════════════════════════════════════════════════════════
   // DATA LOADING
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   async function loadData() {
     if (!apiEndpoint) return;
-    
+
     loading = true;
     error = "";
-    
+
     try {
       const params = new URLSearchParams();
-      
+
       // Search
       if (searchQuery) {
         params.append("search", searchQuery);
       }
-      
+
       // Filters
       Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
           params.append(`filter[${key}]`, String(value));
         }
       });
-      
+
       // Sort
       if (sortField) {
         params.append("sort", `${sortDirection === "desc" ? "-" : ""}${sortField}`);
       }
-      
+
       // Pagination
       if (fullConfig.pagination) {
         params.append("page", String(pagination.page));
         params.append("limit", String(pagination.pageSize));
       }
-      
+
       const response: any = await api.get(`${apiEndpoint}?${params}`);
-      
+
       if (response.docs || Array.isArray(response)) {
         rows = response.docs || response;
         pagination.total = response.totalDocs || rows.length;
@@ -214,7 +212,7 @@
       loading = false;
     }
   }
-  
+
   // Recargar cuando cambian filtros/búsqueda/ordenamiento
   $effect(() => {
     if (!initialData && apiEndpoint) {
@@ -225,28 +223,28 @@
   // ═══════════════════════════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   function handleSort(field: string) {
     if (!fullConfig.sortable) return;
-    
+
     if (sortField === field) {
       sortDirection = sortDirection === "asc" ? "desc" : "asc";
     } else {
       sortField = field;
       sortDirection = "asc";
     }
-    
+
     pagination.page = 1;
   }
-  
+
   function toggleSelectAll() {
     if (selectedRows.size === rows.length) {
       selectedRows.clear();
     } else {
-      selectedRows = new Set(rows.map(r => r.id));
+      selectedRows = new Set(rows.map((r) => r.id));
     }
   }
-  
+
   function toggleSelectRow(id: string) {
     const newSet = new Set(selectedRows);
     if (newSet.has(id)) {
@@ -256,48 +254,48 @@
     }
     selectedRows = newSet;
   }
-  
+
   function startEdit(row: any) {
     editingRow = row.id;
     editingData = { ...row };
   }
-  
+
   function cancelEdit() {
     editingRow = null;
     editingData = null;
   }
-  
+
   async function saveEdit() {
     // Aquí se implementaría el guardado vía API
     // Por ahora solo actualizamos localmente
-    const index = rows.findIndex(r => r.id === editingRow);
+    const index = rows.findIndex((r) => r.id === editingRow);
     if (index !== -1) {
       rows[index] = { ...editingData };
     }
     editingRow = null;
     editingData = null;
   }
-  
+
   function handleBulkAction(action: BulkAction) {
     action.handler(Array.from(selectedRows));
   }
-  
+
   function exportCSV() {
     const headers = fullConfig.columns
-      .filter(c => !c.hidden)
-      .map(c => c.label)
+      .filter((c) => !c.hidden)
+      .map((c) => c.label)
       .join(",");
-    
-    const csvRows = rows.map(row => 
+
+    const csvRows = rows.map((row) =>
       fullConfig.columns
-        .filter(c => !c.hidden)
-        .map(c => {
+        .filter((c) => !c.hidden)
+        .map((c) => {
           const val = row[c.field];
           return val === null || val === undefined ? "" : `"${String(val).replace(/"/g, '""')}"`;
         })
         .join(",")
     );
-    
+
     const csv = [headers, ...csvRows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -311,12 +309,12 @@
   // ═══════════════════════════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════════════════════════
-  
+
   function getFieldComponent(fieldConfig?: FieldConfig) {
     if (!fieldConfig) return fieldRegistry.get("text");
     return fieldRegistry.get(fieldConfig.type) || fieldRegistry.get("text");
   }
-  
+
   function formatValue(value: any, fieldConfig?: FieldConfig): string {
     if (value === null || value === undefined) return "—";
     if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -353,15 +351,17 @@
           {/each}
         </div>
       {/if}
-      
+
       <button class="btn-secondary-sm" onclick={exportCSV} title="Export CSV">
         <Download class="w-4 h-4" />
       </button>
-      
+
       {#if fullConfig.filterableFields?.length}
-        <button 
-          class="btn-secondary-sm {Object.keys(activeFilters).length > 0 ? 'bg-gremius-cyan/10 text-gremius-cyan' : ''}"
-          onclick={() => showFilterPanel = !showFilterPanel}
+        <button
+          class="btn-secondary-sm {Object.keys(activeFilters).length > 0
+            ? 'bg-gremius-cyan/10 text-gremius-cyan'
+            : ''}"
+          onclick={() => (showFilterPanel = !showFilterPanel)}
         >
           <Filter class="w-4 h-4" />
           Filter
@@ -390,9 +390,9 @@
     <div class="card p-4 border-gremius-cyan/20">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-medium text-gremius-text">Filters</h3>
-        <button 
+        <button
           class="text-sm text-gremius-subtle hover:text-gremius-text"
-          onclick={() => activeFilters = {}}
+          onclick={() => (activeFilters = {})}
         >
           Clear all
         </button>
@@ -408,7 +408,7 @@
               oninput={(e) => {
                 activeFilters = {
                   ...activeFilters,
-                  [field]: e.currentTarget.value || undefined
+                  [field]: e.currentTarget.value || undefined,
                 };
               }}
             />
@@ -441,9 +441,12 @@
             </th>
             {#each fullConfig.columns as column}
               {#if !column.hidden}
-                <th class="text-left px-4 py-3 font-medium text-gremius-text-dim" style={column.width ? `width: ${column.width}` : ""}>
+                <th
+                  class="text-left px-4 py-3 font-medium text-gremius-text-dim"
+                  style={column.width ? `width: ${column.width}` : ""}
+                >
                   {#if column.sortable !== false && fullConfig.sortable}
-                    <button 
+                    <button
                       class="flex items-center gap-1 hover:text-gremius-text"
                       onclick={() => handleSort(column.field)}
                     >
@@ -481,7 +484,7 @@
               <td colspan={fullConfig.columns.length + 2} class="px-4 py-16 text-center">
                 <p class="text-gremius-text-dim">No records found</p>
                 {#if searchQuery || Object.keys(activeFilters).length > 0}
-                  <button 
+                  <button
                     class="text-sm text-gremius-cyan hover:underline mt-2"
                     onclick={() => {
                       searchQuery = "";
@@ -496,7 +499,13 @@
           {:else}
             {#each rows as row (row.id)}
               {@const isEditing = editingRow === row.id}
-              <tr class="border-b border-gremius-border/50 hover:bg-gremius-surface/30 {selectedRows.has(row.id) ? 'bg-gremius-cyan/5' : ''}">
+              <tr
+                class="border-b border-gremius-border/50 hover:bg-gremius-surface/30 {selectedRows.has(
+                  row.id
+                )
+                  ? 'bg-gremius-cyan/5'
+                  : ''}"
+              >
                 <td class="px-4 py-3">
                   <input
                     type="checkbox"
@@ -524,7 +533,7 @@
                         <svelte:component
                           this={FieldComponent}
                           value={row[column.field]}
-                          row={row}
+                          {row}
                           config={column.fieldConfig || { type: "text" }}
                           mode="view"
                         />
@@ -536,13 +545,13 @@
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-1">
                       {#if isEditing}
-                        <button 
+                        <button
                           class="p-1.5 rounded hover:bg-gremius-green/10 text-gremius-green"
                           onclick={saveEdit}
                         >
                           <Check class="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           class="p-1.5 rounded hover:bg-gremius-subtle/10 text-gremius-subtle"
                           onclick={cancelEdit}
                         >
@@ -550,7 +559,7 @@
                         </button>
                       {:else}
                         {#each fullConfig.rowActions as action}
-                          <button 
+                          <button
                             class="p-1.5 rounded hover:bg-gremius-cyan/10 text-gremius-subtle hover:text-gremius-cyan"
                             onclick={() => action.handler(row)}
                             title={action.label}
@@ -562,7 +571,7 @@
                             {/if}
                           </button>
                         {/each}
-                        <button 
+                        <button
                           class="p-1.5 rounded hover:bg-gremius-cyan/10 text-gremius-subtle hover:text-gremius-cyan"
                           onclick={() => startEdit(row)}
                           title="Edit"
@@ -585,8 +594,8 @@
   {#if fullConfig.pagination && pagination.totalPages > 1}
     <div class="flex items-center justify-between">
       <p class="text-sm text-gremius-subtle">
-        Showing {(pagination.page - 1) * pagination.pageSize + 1} to 
-        {Math.min(pagination.page * pagination.pageSize, pagination.total)} of 
+        Showing {(pagination.page - 1) * pagination.pageSize + 1} to
+        {Math.min(pagination.page * pagination.pageSize, pagination.total)} of
         {pagination.total} results
       </p>
       <div class="flex items-center gap-2">

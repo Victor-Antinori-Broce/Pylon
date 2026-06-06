@@ -10,7 +10,7 @@
           <!-- Close button -->
           <button class="cert-close" @click="close" aria-label="Cerrar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
 
@@ -25,8 +25,18 @@
             <!-- Content -->
             <div class="cert-body">
               <div class="cert-emblem">
-                <svg class="emblem-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg
+                  class="emblem-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </div>
 
@@ -36,11 +46,9 @@
 
               <p class="cert-affirm">Certifica que</p>
 
-              <h3 class="cert-name">{{ userName || 'Participante' }}</h3>
+              <h3 class="cert-name">{{ userName || "Participante" }}</h3>
 
-              <p class="cert-detail">
-                Ha completado satisfactoriamente el curso
-              </p>
+              <p class="cert-detail">Ha completado satisfactoriamente el curso</p>
 
               <h4 class="cert-course">{{ courseName }}</h4>
 
@@ -94,7 +102,7 @@ const formattedDate = computed(() => {
 
 function confettiStyle(i: number) {
   const hue = (i * 37) % 360;
-  const left = ((i * 17) % 100);
+  const left = (i * 17) % 100;
   const delay = (i * 0.15) % 2;
   const duration = 1.5 + (i % 3) * 0.5;
   const size = 4 + (i % 4) * 2;
@@ -173,10 +181,34 @@ function confettiStyle(i: number) {
   border-style: solid;
   border-width: 0;
 }
-.cert-tl { top: 0.5rem; left: 0.5rem; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 0.5rem; }
-.cert-tr { top: 0.5rem; right: 0.5rem; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 0.5rem; }
-.cert-bl { bottom: 0.5rem; left: 0.5rem; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 0.5rem; }
-.cert-br { bottom: 0.5rem; right: 0.5rem; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 0.5rem; }
+.cert-tl {
+  top: 0.5rem;
+  left: 0.5rem;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: 0.5rem;
+}
+.cert-tr {
+  top: 0.5rem;
+  right: 0.5rem;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  border-top-right-radius: 0.5rem;
+}
+.cert-bl {
+  bottom: 0.5rem;
+  left: 0.5rem;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-left-radius: 0.5rem;
+}
+.cert-br {
+  bottom: 0.5rem;
+  right: 0.5rem;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+  border-bottom-right-radius: 0.5rem;
+}
 
 /* ── Body ── */
 .cert-body {
@@ -199,12 +231,16 @@ function confettiStyle(i: number) {
 }
 
 @keyframes emblem-glow {
-  from { filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.3)); }
-  to { filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.6)); }
+  from {
+    filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.3));
+  }
+  to {
+    filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.6));
+  }
 }
 
 .cert-label {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -214,7 +250,7 @@ function confettiStyle(i: number) {
 }
 
 .cert-institution {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 2rem;
   font-weight: 800;
   background: linear-gradient(135deg, #a5b4fc, #c4b5fd, #e0e7ff);
@@ -224,14 +260,14 @@ function confettiStyle(i: number) {
 }
 
 .cert-affirm {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.4);
   margin-bottom: 0.5rem;
 }
 
 .cert-name {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: #f1f5f9;
@@ -242,14 +278,14 @@ function confettiStyle(i: number) {
 }
 
 .cert-detail {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.45);
   margin-bottom: 0.35rem;
 }
 
 .cert-course {
-  font-family: 'Source Serif 4', 'Georgia', serif;
+  font-family: "Source Serif 4", "Georgia", serif;
   font-size: 1.1rem;
   font-weight: 600;
   color: #a5b4fc;
@@ -266,14 +302,14 @@ function confettiStyle(i: number) {
   border-radius: 9999px;
   background: rgba(99, 102, 241, 0.15);
   border: 1px solid rgba(99, 102, 241, 0.25);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.75rem;
   font-weight: 600;
   color: #a5b4fc;
 }
 
 .cert-date {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.3);
 }

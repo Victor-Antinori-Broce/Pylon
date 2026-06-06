@@ -271,10 +271,25 @@
                 "name": { "type": "string", "description": "Field key, e.g. 'title'" },
                 "type": {
                   "type": "string",
-                  "enum": ["text", "number", "boolean", "date", "richtext", "json", "reference", "email", "url", "select"],
+                  "enum": [
+                    "text",
+                    "number",
+                    "boolean",
+                    "date",
+                    "richtext",
+                    "json",
+                    "reference",
+                    "email",
+                    "url",
+                    "select"
+                  ],
                   "description": "Field data type."
                 },
-                "required": { "type": "boolean", "default": false, "description": "Whether the field is mandatory." },
+                "required": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether the field is mandatory."
+                },
                 "options": {
                   "type": "array",
                   "items": { "type": "string" },
@@ -301,7 +316,12 @@
             "name": "project-tasks",
             "fields": [
               { "name": "title", "type": "text", "required": true },
-              { "name": "priority", "type": "select", "required": true, "options": ["low", "medium", "high"] },
+              {
+                "name": "priority",
+                "type": "select",
+                "required": true,
+                "options": ["low", "medium", "high"]
+              },
               { "name": "dueDate", "type": "date", "required": false }
             ],
             "enableRls": true
@@ -382,10 +402,20 @@
             "description": "Action-specific configuration.",
             "properties": {
               "url": { "type": "string", "description": "For webhook_out: target URL." },
-              "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"], "description": "HTTP method for webhooks." },
+              "method": {
+                "type": "string",
+                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+                "description": "HTTP method for webhooks."
+              },
               "template": { "type": "string", "description": "Email or message template ID." },
-              "code": { "type": "string", "description": "JavaScript/TypeScript code to run in the worker sandbox." },
-              "queueName": { "type": "string", "description": "Queue to dispatch to for async execution." }
+              "code": {
+                "type": "string",
+                "description": "JavaScript/TypeScript code to run in the worker sandbox."
+              },
+              "queueName": {
+                "type": "string",
+                "description": "Queue to dispatch to for async execution."
+              }
             }
           }
         },
@@ -539,16 +569,17 @@
         "Inserting into a dataset or native table",
         "Creating entries without knowing the dataset UUID"
       ],
-      "whenNotToUse": [
-        "The collection does not exist yet",
-        "Bulk inserts — use batch API instead"
-      ],
+      "whenNotToUse": ["The collection does not exist yet", "Bulk inserts — use batch API instead"],
       "inputSchema": {
         "type": "object",
         "properties": {
           "collection": { "type": "string" },
           "data": { "type": "object" },
-          "status": { "type": "string", "enum": ["draft", "published", "archived"], "default": "published" }
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived"],
+            "default": "published"
+          }
         },
         "required": ["collection", "data"],
         "additionalProperties": false
@@ -557,19 +588,19 @@
         {
           "userSays": "Create a blog post titled Hello World",
           "toolCall": "gremius_create_record",
-          "parameters": { "collection": "blog-posts", "data": { "title": "Hello World" }, "status": "published" }
+          "parameters": {
+            "collection": "blog-posts",
+            "data": { "title": "Hello World" },
+            "status": "published"
+          }
         }
       ]
     },
     {
       "name": "gremius_update_record",
       "description": "Update a record in any collection — dataset or native table.",
-      "whenToUse": [
-        "Patching fields on an existing record"
-      ],
-      "whenNotToUse": [
-        "You don't know the record ID — query first"
-      ],
+      "whenToUse": ["Patching fields on an existing record"],
+      "whenNotToUse": ["You don't know the record ID — query first"],
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -584,16 +615,18 @@
         {
           "userSays": "Update blog post abc-123 title to Updated",
           "toolCall": "gremius_update_record",
-          "parameters": { "collection": "blog-posts", "id": "abc-123", "data": { "title": "Updated" } }
+          "parameters": {
+            "collection": "blog-posts",
+            "id": "abc-123",
+            "data": { "title": "Updated" }
+          }
         }
       ]
     },
     {
       "name": "gremius_delete_record",
       "description": "Delete a record from any collection — dataset or native table.",
-      "whenToUse": [
-        "Removing a specific record by ID"
-      ],
+      "whenToUse": ["Removing a specific record by ID"],
       "whenNotToUse": [
         "You are not sure which record — query and confirm first",
         "You want soft delete — update status to archived instead"
@@ -622,9 +655,7 @@
         "Discovering the fields of a collection before generating code",
         "Inspecting a grimoire's native table structure"
       ],
-      "whenNotToUse": [
-        "You only need record counts — query with limit=0 instead"
-      ],
+      "whenNotToUse": ["You only need record counts — query with limit=0 instead"],
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -649,9 +680,7 @@
         "Diagnosing why a tool call failed",
         "Monitoring system health before batch operations"
       ],
-      "whenNotToUse": [
-        "You just want data — this is operational metadata"
-      ],
+      "whenNotToUse": ["You just want data — this is operational metadata"],
       "inputSchema": {
         "type": "object",
         "properties": {}

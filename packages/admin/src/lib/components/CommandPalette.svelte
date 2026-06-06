@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import {
     Search,
     FilePlus,
@@ -11,14 +10,13 @@
     Gamepad2,
     GraduationCap,
     Settings,
-    Book,
-    Castle,
-    Zap,
-    Bot,
     LayoutDashboard,
   } from "lucide-svelte";
   import { fade, scale } from "svelte/transition";
+
   import { cn } from "$lib/utils";
+
+  import { goto } from "$app/navigation";
 
   interface NavItem {
     path: string;
@@ -37,7 +35,7 @@
     action: () => void;
   }
 
-  let {
+  const {
     navItems = [],
     bottomNavItems = [],
   }: {
@@ -141,7 +139,7 @@
   ];
 
   // Build full command list from props + static items
-  let allItems = $derived<CommandItem[]>([
+  const allItems = $derived<CommandItem[]>([
     ...actionItems,
     ...recentItems,
     ...navItems.map((item) => ({
@@ -160,12 +158,10 @@
     })),
   ]);
 
-  let filteredItems = $derived<CommandItem[]>(
+  const filteredItems = $derived<CommandItem[]>(
     query.trim() === ""
       ? allItems
-      : allItems.filter((item) =>
-          item.label.toLowerCase().includes(query.toLowerCase())
-        )
+      : allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
   );
 
   // Reset selection when query changes
@@ -202,8 +198,7 @@
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       selectedIndex =
-        (selectedIndex - 1 + Math.max(filteredItems.length, 1)) %
-        Math.max(filteredItems.length, 1);
+        (selectedIndex - 1 + Math.max(filteredItems.length, 1)) % Math.max(filteredItems.length, 1);
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (filteredItems[selectedIndex]) {
@@ -317,12 +312,18 @@
       >
         <div class="flex items-center gap-3 text-[10px] text-gremius-subtle">
           <span class="flex items-center gap-1">
-            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono">↑</kbd>
-            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono">↓</kbd>
+            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono"
+              >↑</kbd
+            >
+            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono"
+              >↓</kbd
+            >
             <span>to navigate</span>
           </span>
           <span class="flex items-center gap-1">
-            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono">↵</kbd>
+            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono"
+              >↵</kbd
+            >
             <span>to select</span>
           </span>
         </div>

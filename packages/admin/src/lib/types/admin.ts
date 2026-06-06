@@ -6,28 +6,28 @@
 export interface AdminConfig {
   /** Display name in admin */
   name: string;
-  
+
   /** Singular name for buttons (e.g., "Add Product") */
   singularName?: string;
-  
+
   /** Icon name from Lucide */
   icon?: string;
-  
+
   /** Order in sidebar (lower = first) */
   order?: number;
-  
+
   /** Category in sidebar */
   category?: "core" | "content" | "data" | "esports";
-  
+
   /** Main views for this grimoire */
   views: AdminView[];
-  
+
   /** Custom form configurations */
   forms?: Record<string, FormConfig>;
-  
+
   /** Override default API endpoint */
   apiEndpoint?: string;
-  
+
   /** Custom Svelte components (optional) */
   components?: {
     /** Override the entire view */
@@ -41,12 +41,12 @@ export interface AdminConfig {
   };
 }
 
-export type AdminView = 
-  | GridView 
-  | KanbanView 
-  | CalendarView 
-  | DashboardView 
-  | FormView 
+export type AdminView =
+  | GridView
+  | KanbanView
+  | CalendarView
+  | DashboardView
+  | FormView
   | CustomView;
 
 interface BaseView {
@@ -181,22 +181,22 @@ export interface DashboardWidget {
   title: string;
   /** Position in grid */
   position?: { x: number; y: number; w: number; h: number };
-  
+
   // For stat widget
   table?: string;
   aggregation?: "count" | "sum" | "avg" | "min" | "max";
   field?: string;
   filter?: Record<string, any>;
-  
+
   // For chart widget
   chartType?: "line" | "bar" | "pie" | "doughnut";
   xAxis?: string;
   yAxis?: string;
-  
+
   // For list widget
   columns?: string[];
   limit?: number;
-  
+
   // For custom widget
   component?: string;
 }
@@ -217,14 +217,14 @@ export interface FieldGroup {
 export interface FormField {
   name: string;
   label?: string;
-  type?: 
-    | "text" 
-    | "textarea" 
-    | "number" 
-    | "date" 
-    | "datetime" 
-    | "boolean" 
-    | "select" 
+  type?:
+    | "text"
+    | "textarea"
+    | "number"
+    | "date"
+    | "datetime"
+    | "boolean"
+    | "select"
     | "multiselect"
     | "relation"
     | "image"
@@ -235,17 +235,17 @@ export interface FormField {
   required?: boolean;
   placeholder?: string;
   helpText?: string;
-  
+
   // For selects
   options?: { value: string; label: string }[];
-  
+
   // For relations
   relation?: {
     table: string;
     displayField: string;
     valueField?: string;
   };
-  
+
   // Validation
   validation?: {
     min?: number;
@@ -254,7 +254,7 @@ export interface FormField {
     email?: boolean;
     url?: boolean;
   };
-  
+
   // Conditional display
   showIf?: { field: string; equals: any };
 }

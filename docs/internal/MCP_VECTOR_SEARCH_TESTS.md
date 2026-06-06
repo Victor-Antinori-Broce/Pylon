@@ -27,25 +27,26 @@ tests/
 
 ### End-to-End Tests
 
-| Scenario | Description |
-|----------|-------------|
-| **Semantic FAQ Search** | Claude asks natural questions, MCP routes, vector search returns results |
-| **Vector Index Status** | Claude checks dataset vector search configuration |
-| **Add & Search Knowledge** | Claude creates entry, auto-indexed, then searches |
-| **Error Handling** | Invalid dataset ID, empty queries, missing auth |
-| **Security** | Token validation, scope verification, session isolation |
+| Scenario                   | Description                                                              |
+| -------------------------- | ------------------------------------------------------------------------ |
+| **Semantic FAQ Search**    | Claude asks natural questions, MCP routes, vector search returns results |
+| **Vector Index Status**    | Claude checks dataset vector search configuration                        |
+| **Add & Search Knowledge** | Claude creates entry, auto-indexed, then searches                        |
+| **Error Handling**         | Invalid dataset ID, empty queries, missing auth                          |
+| **Security**               | Token validation, scope verification, session isolation                  |
 
 ### Unit Tests
 
-| Module | Tests |
-|--------|-------|
-| **Vector Search** | Extension config, query options, chunking, vector operations |
-| **MCP Server** | JSON-RPC validation, tool definitions, response formatting |
-| **Agent Auth** | Token format, scope validation, wildcard scopes, identity types |
+| Module            | Tests                                                           |
+| ----------------- | --------------------------------------------------------------- |
+| **Vector Search** | Extension config, query options, chunking, vector operations    |
+| **MCP Server**    | JSON-RPC validation, tool definitions, response formatting      |
+| **Agent Auth**    | Token format, scope validation, wildcard scopes, identity types |
 
 ## 🚀 Running Tests
 
 ### Prerequisites
+
 ```bash
 # Environment variables
 export DATABASE_URL="postgresql://..."
@@ -54,11 +55,12 @@ export TEST_MCP_TOKEN="grm_agent_..."  # From seed script
 ```
 
 ### Run All Tests
+
 ```bash
 # E2E tests
 pnpm run test:e2e:mcp
 
-# Unit tests  
+# Unit tests
 pnpm run test:unit
 
 # Unit tests with coverage
@@ -70,6 +72,7 @@ pnpm run test:unit:watch
 ```
 
 ### Setup Before Tests
+
 ```bash
 # 1. Start infrastructure
 docker compose up -d postgres
@@ -92,6 +95,7 @@ The seed script (`apps/api/scripts/seed-mcp-test.ts`) creates:
 ## 📊 Test Scenarios Details
 
 ### Scenario 1: Semantic FAQ Search
+
 ```
 Claude: "How do I change my password?"
    ↓
@@ -103,6 +107,7 @@ Claude receives relevant answer
 ```
 
 ### Scenario 2: Vector Index Status Check
+
 ```
 Claude: "What fields are indexed?"
    ↓
@@ -112,6 +117,7 @@ Returns: { vectorSearch: { enabled: true, fields: [...] } }
 ```
 
 ### Scenario 3: Add Knowledge
+
 ```
 Claude: Create new FAQ entry
    ↓
@@ -125,6 +131,7 @@ Found in search results
 ```
 
 ### Scenario 4: Error Handling
+
 ```
 - Invalid dataset ID → 404
 - Empty query → 400 validation error
@@ -134,17 +141,18 @@ Found in search results
 
 ## 🔐 Security Test Cases
 
-| Case | Expected |
-|------|----------|
-| No Authorization header | 401 |
-| Invalid token format | 401 |
-| Expired token | 401 |
-| Valid token, missing scope | 403 |
-| Cross-session access | 403 |
+| Case                       | Expected |
+| -------------------------- | -------- |
+| No Authorization header    | 401      |
+| Invalid token format       | 401      |
+| Expired token              | 401      |
+| Valid token, missing scope | 403      |
+| Cross-session access       | 403      |
 
 ## 🛠️ Configuration
 
 ### Playwright (E2E)
+
 ```typescript
 // tests/e2e/playwright.e2e.config.ts
 {
@@ -155,6 +163,7 @@ Found in search results
 ```
 
 ### Vitest (Unit)
+
 ```typescript
 // tests/unit/vitest.config.ts
 {
@@ -194,22 +203,26 @@ Found in search results
 ## 🐛 Troubleshooting
 
 ### "Database connection refused"
+
 ```bash
 docker compose up -d postgres
 ```
 
 ### "API not running"
+
 ```bash
 cd apps/api && bun run dev
 ```
 
 ### "Token invalid"
+
 ```bash
 # Re-run seed to generate new token
 pnpm run seed:mcp
 ```
 
 ### "Port already in use"
+
 ```bash
 # Kill existing processes
 npx kill-port 3001

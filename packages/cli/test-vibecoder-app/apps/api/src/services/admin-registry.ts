@@ -9,9 +9,10 @@
  * 5. Exposes unified registry at /api/admin/registry
  */
 
-import { readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+
 import { scanPackages, GremiusManifest } from "./scanner";
 import { introspectTable, type IntrospectedColumn } from "./schema-introspector";
 
@@ -131,7 +132,7 @@ async function scanRealms(): Promise<RealmInfo[]> {
   try {
     const entries = await readdir(realmsDir, { withFileTypes: true });
     const realmDirs = entries.filter(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (e: { isDirectory: () => boolean; name: string }) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
     );
 
@@ -499,7 +500,7 @@ interface GrimoireTableConfig {
  */
 async function detectTables(
   grimoire: GremiusManifest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _grimoirePath: string
 ): Promise<AdminTableConfig[]> {
   // Priority 1: Tables defined in grimoire.json
@@ -527,7 +528,7 @@ async function detectTables(
         const tableConfig = t as GrimoireTableConfig;
         const name = tableConfig.name || tableConfig.table || "";
         configs.push({
-          name: name,
+          name,
           label: tableConfig.label || humanize(name),
           icon: tableConfig.icon || getTableIcon(name),
           description: tableConfig.description,

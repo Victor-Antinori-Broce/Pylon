@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Archive, Database, Trash2, RotateCcw, AlertTriangle } from "lucide-svelte";
   import type { UninstalledGrimoire } from "$lib/states/modules.svelte";
+  import { Archive, Database, Trash2, RotateCcw } from "lucide-svelte";
   
   interface Props {
     grimoire: UninstalledGrimoire;
@@ -10,7 +10,7 @@
     deleting?: boolean;
   }
   
-  let { 
+  const { 
     grimoire, 
     onRecover, 
     onDelete,

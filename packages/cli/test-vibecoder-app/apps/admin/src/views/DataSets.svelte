@@ -5,13 +5,13 @@
    * Vista de gestión de Datasets - CONECTADA A API REAL
    * Svelte 5 compatible (no @tanstack/svelte-table)
    */
-  import { onMount } from "svelte";
-  import { Zap, Plus, X, Loader2, Pencil, Trash2 } from "lucide-svelte";
-  import { slide } from "svelte/transition";
   import { datasetStore } from "$lib/states/datasets.svelte";
+  import { Zap, Plus, X, Loader2, Pencil, Trash2 } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { slide } from "svelte/transition";
 
   // ─── Estado Local ───
-  let showBuilder = $state(false);
+  const showBuilder = $state(false);
 
   // ─── Cargar datasets al montar ───
   onMount(() => {

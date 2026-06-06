@@ -17,24 +17,26 @@
  * DELETE /api/modules/:key         — delete grimoire and its data
  */
 
-import { Hono } from "hono";
+import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+
 import { eq, sql as drizzleSql } from "drizzle-orm";
+import { Hono } from "hono";
+
+import { staticConfig as gremiusConfig } from "../../gremius.config";
 import { db } from "../db";
 import { modules, siteSettings } from "../db/schema";
-import { scanPackages } from "../services/scanner";
 import {
   CORE_MODULES,
   CORE_MODULE_KEYS,
   checkCanDisable,
   getCoreModules,
   getOptionalModules,
-  getRealmGrimoires as getHardcodedRealmGrimoires,
   getGrimoireCoreGrimoires,
 } from "../services/module-registry";
-import { staticConfig as gremiusConfig } from "../../gremius.config";
-import { readdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { scanPackages } from "../services/scanner";
+
 
 /**
  * Check if a grimoire has data in the database
@@ -853,7 +855,7 @@ modulesRoutes.delete("/:key", async (c) => {
   }
   
   // If purge, also drop the actual tables
-  let droppedTables: string[] = [];
+  const droppedTables: string[] = [];
   if (purge) {
     for (const table of dataInfo.tables) {
       try {

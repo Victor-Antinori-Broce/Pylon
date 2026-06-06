@@ -15,7 +15,7 @@
     children: import('svelte').Snippet;
   }
   
-  let {
+  const {
     variant = 'default',
     size = 'sm',
     class: className = '',

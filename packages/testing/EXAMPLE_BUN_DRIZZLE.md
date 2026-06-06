@@ -15,10 +15,8 @@ const sandbox = await createTestSandbox({
   grimoires: ["grimoire-blog"],
   database: "postgres", // Uses real PostgreSQL with transactions
   fixtures: {
-    users: [
-      { id: "admin-1", email: "admin@test.com", role: "admin" }
-    ]
-  }
+    users: [{ id: "admin-1", email: "admin@test.com", role: "admin" }],
+  },
 });
 
 beforeAll(() => sandbox.setup());
@@ -27,21 +25,19 @@ afterEach(() => sandbox.reset());
 
 describe("grimoire-blog", () => {
   it("creates post with Drizzle ORM", async () => {
-    const response = await sandbox.http
-      .asUser("admin-1")
-      .post("/api/blog/posts", {
-        title: "Test Post",
-        content: "Content"
-      });
+    const response = await sandbox.http.asUser("admin-1").post("/api/blog/posts", {
+      title: "Test Post",
+      content: "Content",
+    });
 
     expect(response.status).toBe(201);
-    
+
     // Real Drizzle query
     const posts = await sandbox.context.db.instance
       .select()
       .from(postsTable)
       .where(eq(postsTable.title, "Test Post"));
-    
+
     expect(posts).toHaveLength(1);
     expect(posts[0].slug).toBe("test-post");
   });
@@ -62,7 +58,7 @@ import { postsTable } from "./schema";
 // Create in-memory PostgreSQL
 const { db, cleanup, transaction } = await createDrizzleTestDb({
   strategy: "memory",
-  schema: { postsTable }
+  schema: { postsTable },
 });
 
 // Each test runs in isolated transaction
@@ -73,15 +69,12 @@ it("creates post", async () => {
       .insert(postsTable)
       .values({ title: "Test", content: "Content" })
       .returning();
-    
+
     expect(post.title).toBe("Test");
-    
+
     // Query it back
-    const found = await tx
-      .select()
-      .from(postsTable)
-      .where(eq(postsTable.id, post.id));
-    
+    const found = await tx.select().from(postsTable).where(eq(postsTable.id, post.id));
+
     expect(found).toHaveLength(1);
   });
 });
@@ -100,35 +93,32 @@ import { createDrizzleTestDb } from "@gremius/testing/drizzle";
 const { db, transaction } = await createDrizzleTestDb({
   strategy: "postgres",
   connectionString: process.env.TEST_DATABASE_URL,
-  schema: { postsTable, usersTable }
+  schema: { postsTable, usersTable },
 });
 
 // Each test in transaction that rolls back
 it("creates post with relations", async () => {
   await transaction(async (tx) => {
     // User
-    const [user] = await tx
-      .insert(usersTable)
-      .values({ email: "test@test.com" })
-      .returning();
-    
+    const [user] = await tx.insert(usersTable).values({ email: "test@test.com" }).returning();
+
     // Post with relation
     const [post] = await tx
       .insert(postsTable)
       .values({
         title: "Test",
-        authorId: user.id  // Real foreign key
+        authorId: user.id, // Real foreign key
       })
       .returning();
-    
+
     // Query with relations (Drizzle syntax)
     const result = await tx.query.postsTable.findFirst({
       where: eq(postsTable.id, post.id),
       with: {
-        author: true  // Auto-joined
-      }
+        author: true, // Auto-joined
+      },
     });
-    
+
     expect(result?.author.email).toBe("test@test.com");
   });
   // Transaction rolls back automatically
@@ -152,9 +142,9 @@ app.get("/api/posts", async (c) => {
 it("returns posts", async () => {
   const req = new Request("http://localhost/api/posts");
   const res = await app.fetch(req);
-  
+
   expect(res.status).toBe(200);
-  
+
   const json = await res.json();
   expect(json.data).toBeArray();
 });
@@ -162,7 +152,7 @@ it("returns posts", async () => {
 // Or use the sandbox HTTP client
 it("returns posts (via sandbox)", async () => {
   const response = await sandbox.http.get("/api/blog/posts");
-  
+
   expect(response.status).toBe(200);
   expect(response.body.data).toBeArray();
 });
@@ -179,9 +169,9 @@ import PostEditor from "./PostEditor.svelte";
 
 it("renders post editor", () => {
   const { getByText } = render(PostEditor, {
-    props: { post: { title: "Test" } }
+    props: { post: { title: "Test" } },
   });
-  
+
   expect(getByText("Test")).toBeTruthy();
 });
 ```
@@ -200,8 +190,8 @@ const sandbox = await createTestSandbox({
   grimoires: ["grimoire-blog"],
   database: "postgres", // Real PostgreSQL with transactions
   fixtures: {
-    admin: { id: "1", email: "admin@test.com", role: "admin" }
-  }
+    admin: { id: "1", email: "admin@test.com", role: "admin" },
+  },
 });
 
 beforeAll(() => sandbox.setup());
@@ -210,21 +200,19 @@ afterAll(() => sandbox.teardown());
 describe("Blog API", () => {
   it("creates via Hono, stores via Drizzle", async () => {
     // Hono HTTP call
-    const res = await sandbox.http
-      .asUser(sandbox.fixtures.admin)
-      .post("/api/blog/posts", {
-        title: "Hello Bun!",
-        content: "Testing with Bun + Drizzle + Hono"
-      });
-    
+    const res = await sandbox.http.asUser(sandbox.fixtures.admin).post("/api/blog/posts", {
+      title: "Hello Bun!",
+      content: "Testing with Bun + Drizzle + Hono",
+    });
+
     expect(res.status).toBe(201);
-    
+
     // Verify with real Drizzle query
     const posts = await sandbox.context.db.instance
       .select()
       .from(postsTable)
       .where(eq(postsTable.title, "Hello Bun!"));
-    
+
     expect(posts[0].content).toBe("Testing with Bun + Drizzle + Hono");
   });
 });
@@ -234,11 +222,11 @@ describe("Blog API", () => {
 
 ## Performance Comparison
 
-| Strategy | Speed | Isolation | Setup |
-|----------|-------|-----------|-------|
-| `pg-mem` | 🟢 Fastest | ⚠️ Snapshot | None |
-| `postgres` (transactions) | 🟡 Fast | ✅ Full | PostgreSQL |
-| Full Docker | 🔴 Slow | ✅ Full | Docker |
+| Strategy                  | Speed      | Isolation   | Setup      |
+| ------------------------- | ---------- | ----------- | ---------- |
+| `pg-mem`                  | 🟢 Fastest | ⚠️ Snapshot | None       |
+| `postgres` (transactions) | 🟡 Fast    | ✅ Full     | PostgreSQL |
+| Full Docker               | 🔴 Slow    | ✅ Full     | Docker     |
 
 ## Recommended Setup
 

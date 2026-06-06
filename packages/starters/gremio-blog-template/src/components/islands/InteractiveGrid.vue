@@ -18,15 +18,19 @@
       <div class="grid-toolbar">
         <span class="grid-count">{{ filteredRows.length }} rows</span>
         <div class="search-box">
-          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+          <svg
+            class="search-icon"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
           </svg>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search..."
-            class="search-input"
-          />
+          <input v-model="searchQuery" type="text" placeholder="Search..." class="search-input" />
         </div>
       </div>
     </div>
@@ -45,7 +49,7 @@
             >
               <span class="th-label">{{ col.label }}</span>
               <span v-if="sortKey === col.key" class="sort-arrow">
-                {{ sortDir === 'asc' ? '↑' : '↓' }}
+                {{ sortDir === "asc" ? "↑" : "↓" }}
               </span>
             </th>
           </tr>
@@ -60,11 +64,7 @@
                   <span class="group-count">{{ group.rows.length }} items</span>
                 </td>
               </tr>
-              <tr
-                v-for="(row, ri) in group.rows"
-                :key="row._id || ri"
-                class="grid-row"
-              >
+              <tr v-for="(row, ri) in group.rows" :key="row._id || ri" class="grid-row">
                 <td v-for="col in visibleFields" :key="col.key" class="grid-td">
                   <CellRenderer :value="row[col.key]" :field="col" />
                 </td>
@@ -75,11 +75,7 @@
           <!-- Flat rendering (with optional virtualization) -->
           <template v-else>
             <tr v-if="useVirtualization" :style="{ height: topPad + 'px' }" />
-            <tr
-              v-for="(row, ri) in displayRows"
-              :key="row._id || ri"
-              class="grid-row"
-            >
+            <tr v-for="(row, ri) in displayRows" :key="row._id || ri" class="grid-row">
               <td v-for="col in visibleFields" :key="col.key" class="grid-td">
                 <CellRenderer :value="row[col.key]" :field="col" />
               </td>
@@ -89,9 +85,7 @@
 
           <!-- Empty state -->
           <tr v-if="filteredRows.length === 0">
-            <td :colspan="visibleFields.length" class="empty-td">
-              No data found.
-            </td>
+            <td :colspan="visibleFields.length" class="empty-td">No data found.</td>
           </tr>
         </tbody>
       </table>
@@ -116,7 +110,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  readOnly: false
+  readOnly: false,
 });
 
 // ── State ──
@@ -138,7 +132,9 @@ const visibleFields = computed(() => {
       .map((key: string) => fields.find((f: any) => f.key === key))
       .filter(Boolean);
   }
-  return fields.filter((f: any) => !f.hidden).sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
+  return fields
+    .filter((f: any) => !f.hidden)
+    .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
 });
 
 // ── Computed: filtered + sorted rows ──
@@ -149,8 +145,8 @@ const filteredRows = computed(() => {
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase();
     result = result.filter((row: any) =>
-      Object.values(row).some((val: any) =>
-        val !== null && val !== undefined && String(val).toLowerCase().includes(q)
+      Object.values(row).some(
+        (val: any) => val !== null && val !== undefined && String(val).toLowerCase().includes(q)
       )
     );
   }
@@ -174,7 +170,10 @@ const filteredRows = computed(() => {
 });
 
 // ── Grouping ──
-interface Group { label: string; rows: any[] }
+interface Group {
+  label: string;
+  rows: any[];
+}
 
 const groups = computed((): Group[] => {
   if (!props.enableGrouping || !props.groupByField) return [];
@@ -191,9 +190,8 @@ const groups = computed((): Group[] => {
 });
 
 // ── Virtualization ──
-const useVirtualization = computed(() =>
-  filteredRows.value.length > VIRTUALIZATION_THRESHOLD &&
-  !props.enableGrouping
+const useVirtualization = computed(
+  () => filteredRows.value.length > VIRTUALIZATION_THRESHOLD && !props.enableGrouping
 );
 
 const visibleRange = computed(() => {
@@ -214,9 +212,7 @@ const topPad = computed(() =>
 );
 
 const bottomPad = computed(() =>
-  useVirtualization.value
-    ? (filteredRows.value.length - visibleRange.value.end) * ROW_HEIGHT
-    : 0
+  useVirtualization.value ? (filteredRows.value.length - visibleRange.value.end) * ROW_HEIGHT : 0
 );
 
 function onScroll() {
@@ -264,9 +260,13 @@ const CellRenderer = defineComponent({
 
       // Boolean
       if (type === "boolean") {
-        return h("span", {
-          class: val ? "cell-badge cell-badge-green" : "cell-badge cell-badge-dim"
-        }, val ? "Yes" : "No");
+        return h(
+          "span",
+          {
+            class: val ? "cell-badge cell-badge-green" : "cell-badge cell-badge-dim",
+          },
+          val ? "Yes" : "No"
+        );
       }
 
       // Image
@@ -283,20 +283,28 @@ const CellRenderer = defineComponent({
 
       // URL
       if (type === "url") {
-        return h("a", {
-          href: val,
-          target: "_blank",
-          rel: "noopener",
-          class: "cell-link",
-        }, truncate(String(val), 40));
+        return h(
+          "a",
+          {
+            href: val,
+            target: "_blank",
+            rel: "noopener",
+            class: "cell-link",
+          },
+          truncate(String(val), 40)
+        );
       }
 
       // Email
       if (type === "email") {
-        return h("a", {
-          href: `mailto:${val}`,
-          class: "cell-link",
-        }, String(val));
+        return h(
+          "a",
+          {
+            href: `mailto:${val}`,
+            class: "cell-link",
+          },
+          String(val)
+        );
       }
 
       // Select (render as badge)
@@ -312,7 +320,9 @@ const CellRenderer = defineComponent({
       // Date
       if (type === "date") {
         try {
-          return h("span", { class: "cell-date" },
+          return h(
+            "span",
+            { class: "cell-date" },
             new Date(val).toLocaleDateString("en-US", {
               year: "numeric",
               month: "short",
@@ -327,9 +337,13 @@ const CellRenderer = defineComponent({
       // Relation
       if (type === "relation") {
         if (Array.isArray(val)) {
-          return h("div", { class: "cell-relations" },
+          return h(
+            "div",
+            { class: "cell-relations" },
             val.map((item: any) =>
-              h("span", { class: "cell-badge cell-badge-relation" },
+              h(
+                "span",
+                { class: "cell-badge cell-badge-relation" },
                 item.title || item.name || item.id || String(item)
               )
             )
@@ -341,7 +355,9 @@ const CellRenderer = defineComponent({
 
       // JSON
       if (type === "json") {
-        return h("code", { class: "cell-json" },
+        return h(
+          "code",
+          { class: "cell-json" },
           typeof val === "string" ? val : JSON.stringify(val)
         );
       }
@@ -372,7 +388,7 @@ function formatNumber(n: any): string {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 1rem;
   overflow: hidden;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 /* ── Header ── */
@@ -429,9 +445,13 @@ function formatNumber(n: any): string {
   color: rgba(255, 255, 255, 0.8);
   width: 180px;
   outline: none;
-  transition: border-color 0.2s, width 0.2s;
+  transition:
+    border-color 0.2s,
+    width 0.2s;
 }
-.search-input::placeholder { color: rgba(255, 255, 255, 0.2); }
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
 .search-input:focus {
   border-color: rgba(0, 229, 255, 0.3);
   width: 220px;
@@ -470,14 +490,20 @@ function formatNumber(n: any): string {
   white-space: nowrap;
   transition: color 0.15s;
 }
-.grid-th:hover { color: rgba(255, 255, 255, 0.6); }
-.grid-th.sort-active { color: #00E5FF; }
+.grid-th:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+.grid-th.sort-active {
+  color: #00e5ff;
+}
 
-.th-label { margin-right: 4px; }
+.th-label {
+  margin-right: 4px;
+}
 
 .sort-arrow {
   font-size: 0.6rem;
-  color: #00E5FF;
+  color: #00e5ff;
 }
 
 /* ── Body rows ── */
@@ -509,7 +535,7 @@ function formatNumber(n: any): string {
 .group-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #00E5FF;
+  color: #00e5ff;
   margin-right: 8px;
 }
 
@@ -546,18 +572,18 @@ function formatNumber(n: any): string {
 }
 
 .cell-link {
-  color: #00E5FF;
+  color: #00e5ff;
   text-decoration: none;
   font-size: 0.75rem;
   transition: color 0.15s;
 }
 .cell-link:hover {
-  color: #62EFFF;
+  color: #62efff;
   text-decoration: underline;
 }
 
 .cell-json {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.65rem;
   padding: 2px 6px;
   border-radius: 4px;
@@ -582,7 +608,7 @@ function formatNumber(n: any): string {
 
 .cell-badge-green {
   background: rgba(0, 200, 83, 0.1);
-  color: #69F0AE;
+  color: #69f0ae;
   border: 1px solid rgba(0, 200, 83, 0.15);
 }
 
@@ -594,13 +620,13 @@ function formatNumber(n: any): string {
 
 .cell-badge-accent {
   background: rgba(0, 229, 255, 0.08);
-  color: #00E5FF;
+  color: #00e5ff;
   border: 1px solid rgba(0, 229, 255, 0.12);
 }
 
 .cell-badge-relation {
   background: rgba(224, 64, 251, 0.08);
-  color: #E040FB;
+  color: #e040fb;
   border: 1px solid rgba(224, 64, 251, 0.12);
   margin-right: 4px;
 }
@@ -621,8 +647,16 @@ function formatNumber(n: any): string {
 
 /* ── Mobile ── */
 @media (max-width: 640px) {
-  .grid-header { flex-direction: column; gap: 0.5rem; align-items: stretch; }
-  .search-input { width: 100%; }
-  .search-input:focus { width: 100%; }
+  .grid-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .search-input {
+    width: 100%;
+  }
+  .search-input:focus {
+    width: 100%;
+  }
 }
 </style>

@@ -188,6 +188,7 @@ POST /api/conta/disbursements
 ```
 
 Esto crea automáticamente el asiento:
+
 - **Dr** Disbursements Receivable (Activo)
 - **Cr** Bank Operating (Activo)
 
@@ -198,6 +199,7 @@ POST /api/conta/disbursements/:id/bill
 ```
 
 Esto genera el asiento de facturación:
+
 - **Dr** A/R Clients (Activo)
 - **Cr** Disbursements Receivable (Activo)
 
@@ -227,11 +229,11 @@ Respuesta:
 
 ## 📈 Reportes Financieros
 
-| Endpoint | Descripción |
-|----------|-------------|
-| `GET /api/conta/reports/trial-balance` | Balance de comprobación |
-| `GET /api/conta/reports/balance-sheet?asOf=2025-01-31` | Balance general |
-| `GET /api/conta/reports/profit-loss?dateFrom=...&dateTo=...` | Estado de resultados |
+| Endpoint                                                     | Descripción             |
+| ------------------------------------------------------------ | ----------------------- |
+| `GET /api/conta/reports/trial-balance`                       | Balance de comprobación |
+| `GET /api/conta/reports/balance-sheet?asOf=2025-01-31`       | Balance general         |
+| `GET /api/conta/reports/profit-loss?dateFrom=...&dateTo=...` | Estado de resultados    |
 
 ## 🛡️ Validación Automática
 
@@ -256,32 +258,39 @@ POST /api/conta/journals/validate
 ## 🚀 API Endpoints
 
 ### Setup
+
 - `POST /seed` — Crear plan de cuentas y monedas por defecto
 
 ### Currencies
+
 - `GET /currencies`
 - `POST /currencies`
 
 ### Accounts
+
 - `GET /accounts?type=asset&isTrust=true`
 - `POST /accounts`
 - `PATCH /accounts/:id`
 - `DELETE /accounts/:id`
 
 ### Counterparties
+
 - `GET /counterparties`
 - `POST /counterparties`
 
 ### Matters
+
 - `GET /matters?clientId=...`
 - `POST /matters`
 
 ### Templates
+
 - `GET /templates`
 - `POST /templates`
 - `POST /templates/:id/apply`
 
 ### Journals
+
 - `GET /journals`
 - `POST /journals/validate`
 - `POST /journals`
@@ -290,16 +299,19 @@ POST /api/conta/journals/validate
 - `POST /journals/:id/reverse`
 
 ### T-Account & Trust
+
 - `GET /t-account/:accountId`
 - `GET /trust-balances?accountId=...&matterId=...`
 
 ### Disbursements
+
 - `GET /disbursements`
 - `POST /disbursements`
 - `POST /disbursements/:id/bill`
 - `POST /disbursements/:id/pay`
 
 ### Reports
+
 - `GET /reports/trial-balance`
 - `GET /reports/balance-sheet`
 - `GET /reports/profit-loss`

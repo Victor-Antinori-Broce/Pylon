@@ -12,7 +12,7 @@
     placeholder?: string;
   }
   
-  let { value = "", onChange, placeholder = "Type '/' for commands..." }: Props = $props();
+  const { value = "", onChange, placeholder = "Type '/' for commands..." }: Props = $props();
   
   let textarea: HTMLTextAreaElement;
   let localValue = $state(value);
@@ -41,7 +41,7 @@
     { id: "image", label: "Image", icon: Image, shortcut: "![alt](url)", description: "Insert an image" },
   ];
   
-  let filteredCommands = $derived(
+  const filteredCommands = $derived(
     commands.filter(cmd => 
       cmd.label.toLowerCase().includes(slashQuery.toLowerCase()) ||
       cmd.id.toLowerCase().includes(slashQuery.toLowerCase())
@@ -89,7 +89,7 @@
     const beforeCommand = localValue.slice(0, currentLineStart);
     const afterCommand = localValue.slice(cursorPosition);
     
-    let insertion = command.shortcut;
+    const insertion = command.shortcut;
     let newCursorPos = beforeCommand.length + insertion.length;
     
     // For code block, place cursor in the middle

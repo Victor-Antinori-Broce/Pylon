@@ -21,8 +21,7 @@ function renderChildren(children: any[]): string {
         const inner = renderChildren(child.children || []);
         return `<a href="${url}" class="text-gremius-cyan underline hover:text-gremius-pink transition-colors">${inner}</a>`;
       }
-      if (child.type === "paragraph")
-        return `<p>${renderChildren(child.children || [])}</p>`;
+      if (child.type === "paragraph") return `<p>${renderChildren(child.children || [])}</p>`;
       if (child.type === "heading") {
         const tag = child.tag || "h2";
         return `<${tag} class="font-display text-gremius-heading">${renderChildren(child.children || [])}</${tag}>`;
@@ -31,8 +30,7 @@ function renderChildren(children: any[]): string {
         const tag = child.listType === "number" ? "ol" : "ul";
         return `<${tag}>${renderChildren(child.children || [])}</${tag}>`;
       }
-      if (child.type === "listitem")
-        return `<li>${renderChildren(child.children || [])}</li>`;
+      if (child.type === "listitem") return `<li>${renderChildren(child.children || [])}</li>`;
       if (child.type === "quote")
         return `<blockquote class="border-l-2 border-gremius-cyan pl-4 italic text-gremius-muted">${renderChildren(child.children || [])}</blockquote>`;
 

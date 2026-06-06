@@ -12,6 +12,7 @@ npx gremius@latest init my-app --template blog
 ```
 
 **What happens:**
+
 - Creates `my-app/` with Docker Compose, `.env`, and `realm.json`
 - Template: `grimoire-auth` + `grimoire-blog` + `grimoire-media`
 
@@ -24,20 +25,24 @@ cd my-app
 ## Minute 2–5: Start Services
 
 **Windows:**
+
 ```cmd
 init.bat
 ```
 
 **Mac/Linux:**
+
 ```bash
 ./init.sh
 ```
 
 **What happens:**
+
 - PostgreSQL + Valkey + MinIO + Gremius API + Admin spin up
 - First build takes ~3 minutes; subsequent starts are <30s
 
 **Verify:**
+
 ```bash
 gremius status
 # ✅ API: http://localhost:3000
@@ -58,6 +63,7 @@ npx gremius auth add google \
 ```
 
 Restart the API container:
+
 ```bash
 docker compose restart gremius_api
 ```
@@ -67,12 +73,14 @@ docker compose restart gremius_api
 ## Minute 7–10: Create Data (Two Ways)
 
 ### Way A — Via Admin UI
+
 1. Open http://localhost:3001
 2. Sign in with any email (first user = admin)
 3. Go to **Blog Posts** → **New Post**
 4. Write title, content, tags, SEO meta
 
 ### Way B — Via API / MCP
+
 ```bash
 # Create a post
 curl -X POST http://localhost:3000/api/items/blog-posts \
@@ -125,6 +133,7 @@ export default function BlogPage() {
 ```
 
 **Done.** You now have:
+
 - ✅ Auth (email + optional OAuth)
 - ✅ Database (PostgreSQL with RLS)
 - ✅ Admin panel (http://localhost:3001)
@@ -152,14 +161,14 @@ gremius mcp connect
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Port 3000 already in use | Edit `.env` → change `API_PORT=3002` |
-| Database connection failed | Wait 10s for Postgres to start, then restart API |
-| Auth redirect fails | Check `BETTER_AUTH_URL` matches your localhost port |
-| Generated SDK has wrong types | Re-run `gremius generate-sdk` after schema changes |
+| Problem                       | Solution                                            |
+| ----------------------------- | --------------------------------------------------- |
+| Port 3000 already in use      | Edit `.env` → change `API_PORT=3002`                |
+| Database connection failed    | Wait 10s for Postgres to start, then restart API    |
+| Auth redirect fails           | Check `BETTER_AUTH_URL` matches your localhost port |
+| Generated SDK has wrong types | Re-run `gremius generate-sdk` after schema changes  |
 
 ---
 
-**Video walkthrough:** [youtube.com/gremius/15-min-backend](https://youtube.com) *(placeholder)*  
-**Community:** [discord.gg/gremius](https://discord.gg) *(placeholder)*
+**Video walkthrough:** [youtube.com/gremius/15-min-backend](https://youtube.com) _(placeholder)_  
+**Community:** [discord.gg/gremius](https://discord.gg) _(placeholder)_

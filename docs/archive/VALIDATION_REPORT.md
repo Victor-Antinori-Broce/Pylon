@@ -9,12 +9,12 @@
 
 ### Errores de TypeScript
 
-| Archivo | Errores | Status |
-|---------|---------|--------|
-| `lib/rate-limiter.ts` | 0 | ✅ Sin errores |
-| `lib/search.ts` | 0 | ✅ Sin errores |
-| `lib/observability.ts` | 0 | ✅ Sin errores |
-| `lib/critical-features.ts` | 0 | ✅ Sin errores |
+| Archivo                    | Errores | Status         |
+| -------------------------- | ------- | -------------- |
+| `lib/rate-limiter.ts`      | 0       | ✅ Sin errores |
+| `lib/search.ts`            | 0       | ✅ Sin errores |
+| `lib/observability.ts`     | 0       | ✅ Sin errores |
+| `lib/critical-features.ts` | 0       | ✅ Sin errores |
 
 **Nota:** Errores detectados en otros archivos (`academy-lms.schema.ts`, `migrate-to-actions.ts`, etc.) son pre-existentes y no relacionados con esta implementación.
 
@@ -25,12 +25,14 @@
 ### 1. Rate Limiter
 
 **Verificado:**
+
 - ✅ Configuraciones definidas correctamente
 - ✅ `checkRateLimit` no lanza errores
 - ✅ `rateLimit` middleware no lanza errores
 - ✅ Headers `X-RateLimit-*` presentes
 
 **Endpoints protegidos:**
+
 ```
 /api/*                    → 300 req/min (global)
 /api/auth/login           → 5 req/5min
@@ -42,11 +44,13 @@
 ### 2. Search Engine
 
 **Verificado:**
+
 - ✅ Interfaz `SearchResult` correctamente tipada
 - ✅ Funciones de búsqueda sin errores
 - ✅ Routes montadas correctamente
 
 **Endpoints disponibles:**
+
 ```
 POST   /api/search              → Búsqueda híbrida
 GET    /api/search/suggestions  → Autocomplete
@@ -58,11 +62,13 @@ POST   /api/search/init         → Setup inicial
 ### 3. Observability
 
 **Verificado:**
+
 - ✅ Stats reales (no mockups)
 - ✅ Homepage retorna datos correctos
 - ✅ Health check funcional
 
 **Endpoints:**
+
 ```
 GET /                    → Homepage con stats reales
 GET /api/health          → Health check completo
@@ -77,26 +83,27 @@ GET /api/admin/metrics   → Métricas time-series (auth)
 
 ### Sin Errores 500 Potenciales
 
-| Validación | Resultado |
-|------------|-----------|
-| Todos los imports resueltos | ✅ OK |
-| No hay variables undefined | ✅ OK |
-| Manejo de errores con try/catch | ✅ OK |
-| Tipos correctos en funciones | ✅ OK |
+| Validación                      | Resultado |
+| ------------------------------- | --------- |
+| Todos los imports resueltos     | ✅ OK     |
+| No hay variables undefined      | ✅ OK     |
+| Manejo de errores con try/catch | ✅ OK     |
+| Tipos correctos en funciones    | ✅ OK     |
 
 ### Sin Errores 400 Potenciales
 
-| Validación | Resultado |
-|------------|-----------|
-| Validación de query params | ✅ OK |
-| Validación de body JSON | ✅ OK |
-| Mensajes de error claros | ✅ OK |
+| Validación                 | Resultado |
+| -------------------------- | --------- |
+| Validación de query params | ✅ OK     |
+| Validación de body JSON    | ✅ OK     |
+| Mensajes de error claros   | ✅ OK     |
 
 ---
 
 ## 📊 Estructura de Respuestas
 
 ### Homepage (GET /)
+
 ```json
 {
   "message": "GremiusCMS API",
@@ -116,6 +123,7 @@ GET /api/admin/metrics   → Métricas time-series (auth)
 ```
 
 ### Rate Limit Headers
+
 ```
 X-RateLimit-Limit: 300
 X-RateLimit-Remaining: 299
@@ -123,14 +131,17 @@ X-RateLimit-Reset: 1712345678
 ```
 
 ### Search Response (POST /api/search)
+
 ```json
 {
-  "results": [{
-    "id": "...",
-    "title": "...",
-    "score": 0.95,
-    "highlights": ["..."]
-  }],
+  "results": [
+    {
+      "id": "...",
+      "title": "...",
+      "score": 0.95,
+      "highlights": ["..."]
+    }
+  ],
   "total": 15
 }
 ```
@@ -140,7 +151,9 @@ X-RateLimit-Reset: 1712345678
 ## ⚠️ Notas Importantes
 
 ### Error Pre-existente en Proyecto
+
 El archivo `packages/grimoires/grimoire-academy-lms/academy-lms.schema.ts` tiene un error:
+
 ```
 TypeError: undefined is not an object (evaluating 'table.userId')
 ```
@@ -148,7 +161,9 @@ TypeError: undefined is not an object (evaluating 'table.userId')
 Este error **no está relacionado** con la implementación de características críticas. Es un problema pre-existente en el schema de academy-lms.
 
 ### Solución Temporal
+
 Para ejecutar tests sin este error, se puede:
+
 1. Corregir el schema de academy-lms
 2. O aislar los tests de ese schema
 
@@ -158,10 +173,10 @@ Para ejecutar tests sin este error, se puede:
 
 **Todas las características implementadas están libres de errores 500/400:**
 
-| Característica | Status |
-|----------------|--------|
-| Rate Limiting | ✅ Validado |
-| Search Engine | ✅ Validado |
-| Observability | ✅ Validado |
+| Característica | Status      |
+| -------------- | ----------- |
+| Rate Limiting  | ✅ Validado |
+| Search Engine  | ✅ Validado |
+| Observability  | ✅ Validado |
 
 **Las implementaciones son seguras para producción.**

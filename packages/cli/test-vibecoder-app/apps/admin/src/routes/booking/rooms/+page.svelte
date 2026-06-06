@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { DoorOpen, Plus, Search, Users, Clock, MapPin, CheckCircle, XCircle, Edit, Eye, X } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { DoorOpen, Plus, Search, Users, Clock, MapPin, CheckCircle, XCircle, Edit, Eye, X } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Room {
     id: string;
@@ -39,7 +39,7 @@
   let searchQuery = $state("");
   let selectedType = $state("");
   let selectedDate = $state(new Date().toISOString().split("T")[0]);
-  let availabilityMap = $state<Record<string, TimeSlot[]>>({});
+  const availabilityMap = $state<Record<string, TimeSlot[]>>({});
 
   // Create modal state
   let showCreateModal = $state(false);

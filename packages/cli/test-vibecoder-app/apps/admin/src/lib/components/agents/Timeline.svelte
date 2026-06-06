@@ -4,9 +4,9 @@
   Diferencia: Pensamiento, Llamada a Tool, Respuesta de Tool
 -->
 <script lang="ts">
+  import Badge from '$lib/components/ui/Badge.svelte';
   import { cn } from '$lib/utils';
   import { Brain, Wrench, MessageSquare, AlertCircle, ChevronRight, ChevronDown } from 'lucide-svelte';
-  import Badge from '$lib/components/ui/Badge.svelte';
   
   interface Step {
     id: string;
@@ -29,7 +29,7 @@
     class?: string;
   }
   
-  let { steps, class: className = '' }: Props = $props();
+  const { steps, class: className = '' }: Props = $props();
   
   let expandedSteps = $state<Set<string>>(new Set());
   

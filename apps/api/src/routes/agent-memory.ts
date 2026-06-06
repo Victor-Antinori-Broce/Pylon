@@ -1,7 +1,7 @@
 /**
  * @file agent-memory.ts
  * @description Agent Memory API Routes (Fase 4)
- * 
+ *
  * Endpoints para que los agentes gestionen su propia memoria cognitiva:
  * - GET /api/agent/memory - Listar memorias del agente
  * - POST /api/agent/memory - Crear nueva memoria
@@ -9,21 +9,22 @@
  * - PUT /api/agent/memory/:id - Actualizar memoria
  * - DELETE /api/agent/memory/:id - Eliminar memoria
  * - POST /api/agent/memory/search - Búsqueda semántica (si pgvector disponible)
- * 
+ *
  * @author Gremius Security Team
  * @version 1.0.0
  */
 
+import { eq, and, desc, sql, lt, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
 import { Hono } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { agentMemory } from "@/db/schema";
-import { eq, and, desc, sql, lt, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { logger } from "@/lib/logger";
 // @ts-ignore - Path alias @/ not resolved by tsc
-import { agentAuthWithRBAC, requireScope, requireScopes } from "@/middleware/agent-rbac";
+import { agentAuthWithRBAC, requireScope } from "@/middleware/agent-rbac";
 // @ts-ignore - Path alias @/ not resolved by tsc
 import type { AgentAuthContext } from "@/services/agent-auth";
 // @ts-ignore - Path alias @/ not resolved by tsc
@@ -35,10 +36,13 @@ const agentMemoryRouter = new Hono<{ Variables: AppVariables }>();
 // MIDDLEWARE: Todos los endpoints requieren autenticación de agente
 // ═══════════════════════════════════════════════════════════════════════════
 
-agentMemoryRouter.use("*", agentAuthWithRBAC({
-  scopes: ["memory:read"],
-  optional: false,
-}));
+agentMemoryRouter.use(
+  "*",
+  agentAuthWithRBAC({
+    scopes: ["memory:read"],
+    optional: false,
+  })
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -49,7 +53,14 @@ interface MemoryCreateRequest {
   content: Record<string, unknown>;
   summary?: string;
   memoryType?: "short_term" | "long_term" | "episodic" | "semantic";
-  category?: "general" | "conversation" | "task" | "insight" | "preference" | "context" | "knowledge";
+  category?:
+    | "general"
+    | "conversation"
+    | "task"
+    | "insight"
+    | "preference"
+    | "context"
+    | "knowledge";
   importance?: number;
   confidence?: number;
   source?: "agent" | "user" | "system" | "inference" | "external";
@@ -93,7 +104,7 @@ function enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boole
  * Construye filtros de búsqueda para memorias
  */
 function buildMemoryFilters(agentId: string, filters: MemorySearchRequest) {
-  const conditions: (any)[] = [eq(agentMemory.agentId, agentId)];
+  const conditions: any[] = [eq(agentMemory.agentId, agentId)];
 
   if (filters.memoryType) {
     conditions.push(eq(agentMemory.memoryType, filters.memoryType as any));
@@ -107,9 +118,9 @@ function buildMemoryFilters(agentId: string, filters: MemorySearchRequest) {
     // Buscar memorias que tengan ALGUNO de los tags (OR)
     // Usar formato de array PostgreSQL manualmente
     // @ts-ignore - tagArray is used for SQL generation
-    const tagArray = filters.tags.map((t: string) => `"${t.replace(/"/g, '\\"')}"`).join(',');
+    const tagArray = filters.tags.map((t: string) => `"${t.replace(/"/g, '\\"')}"`).join(",");
     conditions.push(
-      sql`${agentMemory.tags} ?| ARRAY[${sql.raw(filters.tags.map((_: string, i: number) => `$${i + 1}`).join(','))}]`
+      sql`${agentMemory.tags} ?| ARRAY[${sql.raw(filters.tags.map((_: string, i: number) => `$${i + 1}`).join(","))}]`
     );
   }
 
@@ -120,12 +131,7 @@ function buildMemoryFilters(agentId: string, filters: MemorySearchRequest) {
   if (filters.validOnly) {
     // Memoria válida: validFrom <= NOW() AND (validUntil IS NULL OR validUntil > NOW())
     conditions.push(lte(agentMemory.validFrom, sql`NOW()`));
-    conditions.push(
-      or(
-        isNull(agentMemory.validUntil),
-        gt(agentMemory.validUntil, sql`NOW()`)
-      )!
-    );
+    conditions.push(or(isNull(agentMemory.validUntil), gt(agentMemory.validUntil, sql`NOW()`))!);
   }
 
   return and(...conditions);
@@ -138,7 +144,7 @@ function buildMemoryFilters(agentId: string, filters: MemorySearchRequest) {
 /**
  * GET /api/agent/memory
  * Listar memorias del agente autenticado
- * 
+ *
  * Query params:
  * - type: short_term | long_term | episodic | semantic
  * - category: general | conversation | task | insight | preference | context | knowledge
@@ -153,7 +159,7 @@ agentMemoryRouter.get("/", async (c) => {
 
   try {
     const query = c.req.query();
-    
+
     const filters: MemorySearchRequest = {
       memoryType: query.type,
       category: query.category,
@@ -198,20 +204,23 @@ agentMemoryRouter.get("/", async (c) => {
       .from(agentMemory)
       .where(whereClause);
 
-    logger.debug({
-      agentId: agent.agentId,
-      requestId,
-      count: memories.length,
-      total,
-    }, "Agent memory listed");
+    logger.debug(
+      {
+        agentId: agent.agentId,
+        requestId,
+        count: memories.length,
+        total,
+      },
+      "Agent memory listed"
+    );
 
     // Actualizar last_accessed para estas memorias (fire and forget)
     if (memories.length > 0) {
-      const memoryIds = memories.map((m: typeof memories[0]) => m.id);
+      const memoryIds = memories.map((m: (typeof memories)[0]) => m.id);
       db.update(agentMemory)
-        .set({ 
+        .set({
           accessCount: sql`${agentMemory.accessCount} + 1`,
-          lastAccessedAt: new Date()
+          lastAccessedAt: new Date(),
         })
         .where(inArray(agentMemory.id, memoryIds))
         .execute()
@@ -228,109 +237,132 @@ agentMemoryRouter.get("/", async (c) => {
         hasMore: (filters.offset || 0) + memories.length < Number(total),
       },
     });
-
   } catch (error) {
     logger.error({ error, agentId: agent.agentId, requestId }, "Failed to list agent memories");
-    return c.json({
-      success: false,
-      error: "Failed to retrieve memories",
-      code: "MEMORY_LIST_ERROR",
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to retrieve memories",
+        code: "MEMORY_LIST_ERROR",
+      },
+      500
+    );
   }
 });
 
 /**
  * POST /api/agent/memory
  * Crear nueva memoria
- * 
+ *
  * Requiere scope: memory:write
  */
-agentMemoryRouter.post("/", requireScope("memory:write", "crear memoria", "sistema de memoria"), async (c) => {
-  const agent = c.get("agent")!;
-  const requestId = c.get("requestId");
+agentMemoryRouter.post(
+  "/",
+  requireScope("memory:write", "crear memoria", "sistema de memoria"),
+  async (c) => {
+    const agent = c.get("agent")!;
+    const requestId = c.get("requestId");
 
-  try {
-    const body: MemoryCreateRequest = await c.req.json();
+    try {
+      const body: MemoryCreateRequest = await c.req.json();
 
-    // Validaciones
-    if (!body.content || typeof body.content !== "object") {
-      return c.json({
-        success: false,
-        error: "Content is required and must be an object",
-        code: "INVALID_CONTENT",
-      }, 400);
+      // Validaciones
+      if (!body.content || typeof body.content !== "object") {
+        return c.json(
+          {
+            success: false,
+            error: "Content is required and must be an object",
+            code: "INVALID_CONTENT",
+          },
+          400
+        );
+      }
+
+      if (body.importance !== undefined && (body.importance < 0 || body.importance > 100)) {
+        return c.json(
+          {
+            success: false,
+            error: "Importance must be between 0 and 100",
+            code: "INVALID_IMPORTANCE",
+          },
+          400
+        );
+      }
+
+      if (body.confidence !== undefined && (body.confidence < 0 || body.confidence > 100)) {
+        return c.json(
+          {
+            success: false,
+            error: "Confidence must be between 0 and 100",
+            code: "INVALID_CONFIDENCE",
+          },
+          400
+        );
+      }
+
+      // Crear memoria
+      const [memory] = await db
+        .insert(agentMemory)
+        .values({
+          agentId: agent.agentId,
+          key: body.key,
+          content: body.content,
+          summary: body.summary,
+          memoryType: body.memoryType || "short_term",
+          category: body.category || "general",
+          importance: body.importance ?? 50,
+          confidence: body.confidence ?? 80,
+          source: body.source || "agent",
+          validUntil: body.validUntil ? new Date(body.validUntil) : null,
+          relatedMemoryIds: body.relatedMemoryIds || [],
+          tags: body.tags || [],
+        })
+        .returning();
+
+      logger.info(
+        {
+          agentId: agent.agentId,
+          memoryId: memory.id,
+          requestId,
+          memoryType: memory.memoryType,
+          category: memory.category,
+        },
+        "Agent memory created"
+      );
+
+      return c.json(
+        {
+          success: true,
+          data: {
+            id: memory.id,
+            key: memory.key,
+            memoryType: memory.memoryType,
+            category: memory.category,
+            summary: memory.summary,
+            importance: memory.importance,
+            confidence: memory.confidence,
+            source: memory.source,
+            tags: memory.tags,
+            validFrom: memory.validFrom,
+            validUntil: memory.validUntil,
+            createdAt: memory.createdAt,
+          },
+        },
+        201
+      );
+    } catch (error) {
+      logger.error({ error, agentId: agent.agentId, requestId }, "Failed to create agent memory");
+      return c.json(
+        {
+          success: false,
+          error: "Failed to create memory",
+          code: "MEMORY_CREATE_ERROR",
+        },
+        500
+      );
     }
-
-    if (body.importance !== undefined && (body.importance < 0 || body.importance > 100)) {
-      return c.json({
-        success: false,
-        error: "Importance must be between 0 and 100",
-        code: "INVALID_IMPORTANCE",
-      }, 400);
-    }
-
-    if (body.confidence !== undefined && (body.confidence < 0 || body.confidence > 100)) {
-      return c.json({
-        success: false,
-        error: "Confidence must be between 0 and 100",
-        code: "INVALID_CONFIDENCE",
-      }, 400);
-    }
-
-    // Crear memoria
-    const [memory] = await db
-      .insert(agentMemory)
-      .values({
-        agentId: agent.agentId,
-        key: body.key,
-        content: body.content,
-        summary: body.summary,
-        memoryType: body.memoryType || "short_term",
-        category: body.category || "general",
-        importance: body.importance ?? 50,
-        confidence: body.confidence ?? 80,
-        source: body.source || "agent",
-        validUntil: body.validUntil ? new Date(body.validUntil) : null,
-        relatedMemoryIds: body.relatedMemoryIds || [],
-        tags: body.tags || [],
-      })
-      .returning();
-
-    logger.info({
-      agentId: agent.agentId,
-      memoryId: memory.id,
-      requestId,
-      memoryType: memory.memoryType,
-      category: memory.category,
-    }, "Agent memory created");
-
-    return c.json({
-      success: true,
-      data: {
-        id: memory.id,
-        key: memory.key,
-        memoryType: memory.memoryType,
-        category: memory.category,
-        summary: memory.summary,
-        importance: memory.importance,
-        confidence: memory.confidence,
-        source: memory.source,
-        tags: memory.tags,
-        validFrom: memory.validFrom,
-        validUntil: memory.validUntil,
-        createdAt: memory.createdAt,
-      },
-    }, 201);
-
-  } catch (error) {
-    logger.error({ error, agentId: agent.agentId, requestId }, "Failed to create agent memory");
-    return c.json({
-      success: false,
-      error: "Failed to create memory",
-      code: "MEMORY_CREATE_ERROR",
-    }, 500);
   }
-});
+);
 
 /**
  * GET /api/agent/memory/:id
@@ -345,50 +377,56 @@ agentMemoryRouter.get("/:id", async (c) => {
     const [memory] = await db
       .select()
       .from(agentMemory)
-      .where(
-        and(
-          eq(agentMemory.id, memoryId),
-          eq(agentMemory.agentId, agent.agentId)
-        )
-      )
+      .where(and(eq(agentMemory.id, memoryId), eq(agentMemory.agentId, agent.agentId)))
       .limit(1);
 
     if (!memory) {
-      return c.json({
-        success: false,
-        error: "Memory not found",
-        code: "MEMORY_NOT_FOUND",
-      }, 404);
+      return c.json(
+        {
+          success: false,
+          error: "Memory not found",
+          code: "MEMORY_NOT_FOUND",
+        },
+        404
+      );
     }
 
     // Actualizar contador de acceso (fire and forget)
     db.update(agentMemory)
-      .set({ 
+      .set({
         accessCount: sql`${agentMemory.accessCount} + 1`,
-        lastAccessedAt: new Date()
+        lastAccessedAt: new Date(),
       })
       .where(eq(agentMemory.id, memoryId))
       .execute()
       .catch(() => {});
 
-    logger.debug({
-      agentId: agent.agentId,
-      memoryId,
-      requestId,
-    }, "Agent memory retrieved");
+    logger.debug(
+      {
+        agentId: agent.agentId,
+        memoryId,
+        requestId,
+      },
+      "Agent memory retrieved"
+    );
 
     return c.json({
       success: true,
       data: memory,
     });
-
   } catch (error) {
-    logger.error({ error, agentId: agent.agentId, memoryId, requestId }, "Failed to get agent memory");
-    return c.json({
-      success: false,
-      error: "Failed to retrieve memory",
-      code: "MEMORY_GET_ERROR",
-    }, 500);
+    logger.error(
+      { error, agentId: agent.agentId, memoryId, requestId },
+      "Failed to get agent memory"
+    );
+    return c.json(
+      {
+        success: false,
+        error: "Failed to retrieve memory",
+        code: "MEMORY_GET_ERROR",
+      },
+      500
+    );
   }
 });
 
@@ -405,27 +443,25 @@ agentMemoryRouter.get("/key/:key", async (c) => {
     const [memory] = await db
       .select()
       .from(agentMemory)
-      .where(
-        and(
-          eq(agentMemory.agentId, agent.agentId),
-          eq(agentMemory.key, key)
-        )
-      )
+      .where(and(eq(agentMemory.agentId, agent.agentId), eq(agentMemory.key, key)))
       .limit(1);
 
     if (!memory) {
-      return c.json({
-        success: false,
-        error: "Memory not found",
-        code: "MEMORY_NOT_FOUND",
-      }, 404);
+      return c.json(
+        {
+          success: false,
+          error: "Memory not found",
+          code: "MEMORY_NOT_FOUND",
+        },
+        404
+      );
     }
 
     // Actualizar contador de acceso
     db.update(agentMemory)
-      .set({ 
+      .set({
         accessCount: sql`${agentMemory.accessCount} + 1`,
-        lastAccessedAt: new Date()
+        lastAccessedAt: new Date(),
       })
       .where(eq(agentMemory.id, memory.id))
       .execute()
@@ -435,185 +471,238 @@ agentMemoryRouter.get("/key/:key", async (c) => {
       success: true,
       data: memory,
     });
-
   } catch (error) {
     logger.error({ error, agentId: agent.agentId, key, requestId }, "Failed to get memory by key");
-    return c.json({
-      success: false,
-      error: "Failed to retrieve memory",
-      code: "MEMORY_GET_ERROR",
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to retrieve memory",
+        code: "MEMORY_GET_ERROR",
+      },
+      500
+    );
   }
 });
 
 /**
  * PUT /api/agent/memory/:id
  * Actualizar memoria
- * 
+ *
  * Requiere scope: memory:write
  */
-agentMemoryRouter.put("/:id", requireScope("memory:write", "actualizar memoria", "sistema de memoria"), async (c) => {
-  const agent = c.get("agent")!;
-  const requestId = c.get("requestId");
-  const memoryId = c.req.param("id");
+agentMemoryRouter.put(
+  "/:id",
+  requireScope("memory:write", "actualizar memoria", "sistema de memoria"),
+  async (c) => {
+    const agent = c.get("agent")!;
+    const requestId = c.get("requestId");
+    const memoryId = c.req.param("id");
 
-  try {
-    // Verificar que la memoria existe y pertenece al agente
-    const [existing] = await db
-      .select({ id: agentMemory.id, agentId: agentMemory.agentId })
-      .from(agentMemory)
-      .where(eq(agentMemory.id, memoryId))
-      .limit(1);
+    try {
+      // Verificar que la memoria existe y pertenece al agente
+      const [existing] = await db
+        .select({ id: agentMemory.id, agentId: agentMemory.agentId })
+        .from(agentMemory)
+        .where(eq(agentMemory.id, memoryId))
+        .limit(1);
 
-    if (!existing) {
+      if (!existing) {
+        return c.json(
+          {
+            success: false,
+            error: "Memory not found",
+            code: "MEMORY_NOT_FOUND",
+          },
+          404
+        );
+      }
+
+      if (!enforceOwnership(agent, existing.agentId)) {
+        logger.warn(
+          {
+            agentId: agent.agentId,
+            targetMemoryId: memoryId,
+            memoryOwner: existing.agentId,
+            requestId,
+          },
+          "Agent tried to update memory belonging to another agent"
+        );
+
+        return c.json(
+          {
+            success: false,
+            error: "You can only update your own memories",
+            code: "MEMORY_ACCESS_DENIED",
+          },
+          403
+        );
+      }
+
+      const body: MemoryUpdateRequest = await c.req.json();
+
+      // Validaciones
+      if (body.importance !== undefined && (body.importance < 0 || body.importance > 100)) {
+        return c.json(
+          {
+            success: false,
+            error: "Importance must be between 0 and 100",
+            code: "INVALID_IMPORTANCE",
+          },
+          400
+        );
+      }
+
+      if (body.confidence !== undefined && (body.confidence < 0 || body.confidence > 100)) {
+        return c.json(
+          {
+            success: false,
+            error: "Confidence must be between 0 and 100",
+            code: "INVALID_CONFIDENCE",
+          },
+          400
+        );
+      }
+
+      // Actualizar
+      const [updated] = await db
+        .update(agentMemory)
+        .set({
+          content: body.content !== undefined ? body.content : undefined,
+          summary: body.summary !== undefined ? body.summary : undefined,
+          importance: body.importance !== undefined ? body.importance : undefined,
+          confidence: body.confidence !== undefined ? body.confidence : undefined,
+          validUntil:
+            body.validUntil !== undefined
+              ? body.validUntil
+                ? new Date(body.validUntil)
+                : null
+              : undefined,
+          tags: body.tags !== undefined ? body.tags : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(agentMemory.id, memoryId))
+        .returning();
+
+      logger.info(
+        {
+          agentId: agent.agentId,
+          memoryId,
+          requestId,
+        },
+        "Agent memory updated"
+      );
+
       return c.json({
-        success: false,
-        error: "Memory not found",
-        code: "MEMORY_NOT_FOUND",
-      }, 404);
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      logger.error(
+        { error, agentId: agent.agentId, memoryId, requestId },
+        "Failed to update agent memory"
+      );
+      return c.json(
+        {
+          success: false,
+          error: "Failed to update memory",
+          code: "MEMORY_UPDATE_ERROR",
+        },
+        500
+      );
     }
-
-    if (!enforceOwnership(agent, existing.agentId)) {
-      logger.warn({
-        agentId: agent.agentId,
-        targetMemoryId: memoryId,
-        memoryOwner: existing.agentId,
-        requestId,
-      }, "Agent tried to update memory belonging to another agent");
-
-      return c.json({
-        success: false,
-        error: "You can only update your own memories",
-        code: "MEMORY_ACCESS_DENIED",
-      }, 403);
-    }
-
-    const body: MemoryUpdateRequest = await c.req.json();
-
-    // Validaciones
-    if (body.importance !== undefined && (body.importance < 0 || body.importance > 100)) {
-      return c.json({
-        success: false,
-        error: "Importance must be between 0 and 100",
-        code: "INVALID_IMPORTANCE",
-      }, 400);
-    }
-
-    if (body.confidence !== undefined && (body.confidence < 0 || body.confidence > 100)) {
-      return c.json({
-        success: false,
-        error: "Confidence must be between 0 and 100",
-        code: "INVALID_CONFIDENCE",
-      }, 400);
-    }
-
-    // Actualizar
-    const [updated] = await db
-      .update(agentMemory)
-      .set({
-        content: body.content !== undefined ? body.content : undefined,
-        summary: body.summary !== undefined ? body.summary : undefined,
-        importance: body.importance !== undefined ? body.importance : undefined,
-        confidence: body.confidence !== undefined ? body.confidence : undefined,
-        validUntil: body.validUntil !== undefined 
-          ? (body.validUntil ? new Date(body.validUntil) : null)
-          : undefined,
-        tags: body.tags !== undefined ? body.tags : undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(agentMemory.id, memoryId))
-      .returning();
-
-    logger.info({
-      agentId: agent.agentId,
-      memoryId,
-      requestId,
-    }, "Agent memory updated");
-
-    return c.json({
-      success: true,
-      data: updated,
-    });
-
-  } catch (error) {
-    logger.error({ error, agentId: agent.agentId, memoryId, requestId }, "Failed to update agent memory");
-    return c.json({
-      success: false,
-      error: "Failed to update memory",
-      code: "MEMORY_UPDATE_ERROR",
-    }, 500);
   }
-});
+);
 
 /**
  * DELETE /api/agent/memory/:id
  * Eliminar memoria
- * 
+ *
  * Requiere scope: memory:delete
  */
-agentMemoryRouter.delete("/:id", requireScope("memory:delete", "eliminar memoria", "sistema de memoria"), async (c) => {
-  const agent = c.get("agent")!;
-  const requestId = c.get("requestId");
-  const memoryId = c.req.param("id");
+agentMemoryRouter.delete(
+  "/:id",
+  requireScope("memory:delete", "eliminar memoria", "sistema de memoria"),
+  async (c) => {
+    const agent = c.get("agent")!;
+    const requestId = c.get("requestId");
+    const memoryId = c.req.param("id");
 
-  try {
-    // Verificar que la memoria existe y pertenece al agente
-    const [existing] = await db
-      .select({ id: agentMemory.id, agentId: agentMemory.agentId })
-      .from(agentMemory)
-      .where(eq(agentMemory.id, memoryId))
-      .limit(1);
+    try {
+      // Verificar que la memoria existe y pertenece al agente
+      const [existing] = await db
+        .select({ id: agentMemory.id, agentId: agentMemory.agentId })
+        .from(agentMemory)
+        .where(eq(agentMemory.id, memoryId))
+        .limit(1);
 
-    if (!existing) {
+      if (!existing) {
+        return c.json(
+          {
+            success: false,
+            error: "Memory not found",
+            code: "MEMORY_NOT_FOUND",
+          },
+          404
+        );
+      }
+
+      if (!enforceOwnership(agent, existing.agentId)) {
+        logger.warn(
+          {
+            agentId: agent.agentId,
+            targetMemoryId: memoryId,
+            memoryOwner: existing.agentId,
+            requestId,
+          },
+          "Agent tried to delete memory belonging to another agent"
+        );
+
+        return c.json(
+          {
+            success: false,
+            error: "You can only delete your own memories",
+            code: "MEMORY_ACCESS_DENIED",
+          },
+          403
+        );
+      }
+
+      await db.delete(agentMemory).where(eq(agentMemory.id, memoryId));
+
+      logger.info(
+        {
+          agentId: agent.agentId,
+          memoryId,
+          requestId,
+        },
+        "Agent memory deleted"
+      );
+
       return c.json({
-        success: false,
-        error: "Memory not found",
-        code: "MEMORY_NOT_FOUND",
-      }, 404);
+        success: true,
+        message: "Memory deleted successfully",
+      });
+    } catch (error) {
+      logger.error(
+        { error, agentId: agent.agentId, memoryId, requestId },
+        "Failed to delete agent memory"
+      );
+      return c.json(
+        {
+          success: false,
+          error: "Failed to delete memory",
+          code: "MEMORY_DELETE_ERROR",
+        },
+        500
+      );
     }
-
-    if (!enforceOwnership(agent, existing.agentId)) {
-      logger.warn({
-        agentId: agent.agentId,
-        targetMemoryId: memoryId,
-        memoryOwner: existing.agentId,
-        requestId,
-      }, "Agent tried to delete memory belonging to another agent");
-
-      return c.json({
-        success: false,
-        error: "You can only delete your own memories",
-        code: "MEMORY_ACCESS_DENIED",
-      }, 403);
-    }
-
-    await db.delete(agentMemory).where(eq(agentMemory.id, memoryId));
-
-    logger.info({
-      agentId: agent.agentId,
-      memoryId,
-      requestId,
-    }, "Agent memory deleted");
-
-    return c.json({
-      success: true,
-      message: "Memory deleted successfully",
-    });
-
-  } catch (error) {
-    logger.error({ error, agentId: agent.agentId, memoryId, requestId }, "Failed to delete agent memory");
-    return c.json({
-      success: false,
-      error: "Failed to delete memory",
-      code: "MEMORY_DELETE_ERROR",
-    }, 500);
   }
-});
+);
 
 /**
  * POST /api/agent/memory/search
  * Búsqueda avanzada de memorias
- * 
+ *
  * Nota: La búsqueda semántica por embedding requiere pgvector
  */
 agentMemoryRouter.post("/search", async (c) => {
@@ -663,7 +752,7 @@ agentMemoryRouter.post("/search", async (c) => {
     let results = memories;
     if (body.query) {
       const queryLower = body.query.toLowerCase();
-      results = memories.filter((m: typeof memories[0]) => {
+      results = memories.filter((m: (typeof memories)[0]) => {
         const summaryMatch = m.summary?.toLowerCase().includes(queryLower);
         const contentMatch = JSON.stringify(m.content).toLowerCase().includes(queryLower);
         const keyMatch = m.key?.toLowerCase().includes(queryLower);
@@ -671,12 +760,15 @@ agentMemoryRouter.post("/search", async (c) => {
       });
     }
 
-    logger.debug({
-      agentId: agent.agentId,
-      requestId,
-      query: body.query,
-      resultsCount: results.length,
-    }, "Agent memory search completed");
+    logger.debug(
+      {
+        agentId: agent.agentId,
+        requestId,
+        query: body.query,
+        resultsCount: results.length,
+      },
+      "Agent memory search completed"
+    );
 
     return c.json({
       success: true,
@@ -695,78 +787,89 @@ agentMemoryRouter.post("/search", async (c) => {
         total: results.length,
       },
     });
-
   } catch (error) {
     logger.error({ error, agentId: agent.agentId, requestId }, "Failed to search agent memories");
-    return c.json({
-      success: false,
-      error: "Failed to search memories",
-      code: "MEMORY_SEARCH_ERROR",
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to search memories",
+        code: "MEMORY_SEARCH_ERROR",
+      },
+      500
+    );
   }
 });
 
 /**
  * POST /api/agent/memory/cleanup
  * Limpiar memorias antiguas de corto plazo
- * 
+ *
  * Requiere scope: memory:admin
  */
-agentMemoryRouter.post("/cleanup", requireScope("memory:admin", "limpiar memorias", "sistema de memoria"), async (c) => {
-  const agent = c.get("agent")!;
-  const requestId = c.get("requestId");
+agentMemoryRouter.post(
+  "/cleanup",
+  requireScope("memory:admin", "limpiar memorias", "sistema de memoria"),
+  async (c) => {
+    const agent = c.get("agent")!;
+    const requestId = c.get("requestId");
 
-  try {
-    const body = await c.req.json().catch(() => ({}));
-    const maxAgeHours = body.maxAgeHours || 24;
-    const minImportance = body.minImportance || 10;
+    try {
+      const body = await c.req.json().catch(() => ({}));
+      const maxAgeHours = body.maxAgeHours || 24;
+      const minImportance = body.minImportance || 10;
 
-    // Eliminar memorias de corto plazo antiguas con baja importancia
-    const result = await db
-      .delete(agentMemory)
-      .where(
-        and(
-          eq(agentMemory.agentId, agent.agentId),
-          eq(agentMemory.memoryType, "short_term"),
-          lte(agentMemory.importance, minImportance),
-          lt(agentMemory.createdAt, sql`NOW() - INTERVAL '1 hour' * ${maxAgeHours}`),
-          or(
-            isNull(agentMemory.validUntil),
-            lt(agentMemory.validUntil, sql`NOW()`)
-          )!
+      // Eliminar memorias de corto plazo antiguas con baja importancia
+      const result = await db
+        .delete(agentMemory)
+        .where(
+          and(
+            eq(agentMemory.agentId, agent.agentId),
+            eq(agentMemory.memoryType, "short_term"),
+            lte(agentMemory.importance, minImportance),
+            lt(agentMemory.createdAt, sql`NOW() - INTERVAL '1 hour' * ${maxAgeHours}`),
+            or(isNull(agentMemory.validUntil), lt(agentMemory.validUntil, sql`NOW()`))!
+          )
         )
-      )
-      .returning({ id: agentMemory.id });
+        .returning({ id: agentMemory.id });
 
-    logger.info({
-      agentId: agent.agentId,
-      requestId,
-      deletedCount: result.length,
-      maxAgeHours,
-      minImportance,
-    }, "Agent memory cleanup completed");
-
-    return c.json({
-      success: true,
-      data: {
-        deletedCount: result.length,
-        criteria: {
+      logger.info(
+        {
+          agentId: agent.agentId,
+          requestId,
+          deletedCount: result.length,
           maxAgeHours,
           minImportance,
-          memoryType: "short_term",
         },
-      },
-    });
+        "Agent memory cleanup completed"
+      );
 
-  } catch (error) {
-    logger.error({ error, agentId: agent.agentId, requestId }, "Failed to cleanup agent memories");
-    return c.json({
-      success: false,
-      error: "Failed to cleanup memories",
-      code: "MEMORY_CLEANUP_ERROR",
-    }, 500);
+      return c.json({
+        success: true,
+        data: {
+          deletedCount: result.length,
+          criteria: {
+            maxAgeHours,
+            minImportance,
+            memoryType: "short_term",
+          },
+        },
+      });
+    } catch (error) {
+      logger.error(
+        { error, agentId: agent.agentId, requestId },
+        "Failed to cleanup agent memories"
+      );
+      return c.json(
+        {
+          success: false,
+          error: "Failed to cleanup memories",
+          code: "MEMORY_CLEANUP_ERROR",
+        },
+        500
+      );
+    }
   }
-});
+);
 
 /**
  * GET /api/agent/memory/stats
@@ -820,10 +923,13 @@ agentMemoryRouter.get("/stats", async (c) => {
       .orderBy(desc(agentMemory.accessCount))
       .limit(1);
 
-    logger.debug({
-      agentId: agent.agentId,
-      requestId,
-    }, "Agent memory stats retrieved");
+    logger.debug(
+      {
+        agentId: agent.agentId,
+        requestId,
+      },
+      "Agent memory stats retrieved"
+    );
 
     return c.json({
       success: true,
@@ -835,14 +941,16 @@ agentMemoryRouter.get("/stats", async (c) => {
         mostAccessed: mostAccessed || null,
       },
     });
-
   } catch (error) {
     logger.error({ error, agentId: agent.agentId, requestId }, "Failed to get agent memory stats");
-    return c.json({
-      success: false,
-      error: "Failed to get memory stats",
-      code: "MEMORY_STATS_ERROR",
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to get memory stats",
+        code: "MEMORY_STATS_ERROR",
+      },
+      500
+    );
   }
 });
 

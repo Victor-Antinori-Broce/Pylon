@@ -51,8 +51,12 @@
         "label": "Example Items",
         "icon": "box",
         "description": "Sample table for the example grimoire",
-        "searchableFields": ["title"],
-        "filterableFields": ["status"]
+        "searchableFields": [
+          "title"
+        ],
+        "filterableFields": [
+          "status"
+        ]
       }
     ]
   }

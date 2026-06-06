@@ -1,6 +1,6 @@
 /**
  * Media Library Admin Configuration
- * 
+ *
  * Configures the admin panel for Media Library.
  */
 

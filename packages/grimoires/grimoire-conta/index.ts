@@ -1,10 +1,11 @@
+import { readFileSync } from "fs";
+import { readdir } from "fs/promises";
+import { join } from "path";
+
 import type { GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
-import { Hono } from "hono";
 import { sql } from "drizzle-orm";
-import { join } from "path";
-import { readdir } from "fs/promises";
-import { readFileSync } from "fs";
+import { Hono } from "hono";
 
 /**
  * Parsea un archivo SQL en statements individuales.
@@ -14,7 +15,6 @@ function parseSQLStatements(sql: string): string[] {
   const statements: string[] = [];
   let current = "";
   let inDollarQuote = false;
-
 
   for (let i = 0; i < sql.length; i++) {
     const char = sql[i];
@@ -151,7 +151,13 @@ export const grimoire = defineGrimoire({
 
         if (!allExist) {
           ctx.logger.info("[Conta] Tables missing. Running migrations...");
-          const migrationsDir = join(process.cwd(), "packages", "grimoires", "grimoire-conta", "migrations");
+          const migrationsDir = join(
+            process.cwd(),
+            "packages",
+            "grimoires",
+            "grimoire-conta",
+            "migrations"
+          );
           try {
             const files = await readdir(migrationsDir);
             const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
@@ -167,14 +173,17 @@ export const grimoire = defineGrimoire({
                   // Ignore "already exists" errors for idempotent migrations
                   const ignoreCodes = ["42P07", "42710", "23505", "42P16"];
                   const ignoreMsgs = ["already exists", "duplicate"];
-                  const shouldIgnore = ignoreCodes.includes(stmtErr.code) ||
-                    ignoreMsgs.some(m => stmtErr.message?.toLowerCase().includes(m));
+                  const shouldIgnore =
+                    ignoreCodes.includes(stmtErr.code) ||
+                    ignoreMsgs.some((m) => stmtErr.message?.toLowerCase().includes(m));
                   if (!shouldIgnore) {
                     throw stmtErr;
                   }
                 }
               }
-              ctx.logger.info(`[Conta] Executed migration: ${file} (${statements.length} statements)`);
+              ctx.logger.info(
+                `[Conta] Executed migration: ${file} (${statements.length} statements)`
+              );
             }
             ctx.logger.info("[Conta] ✓ Migrations completed");
           } catch (migErr: any) {

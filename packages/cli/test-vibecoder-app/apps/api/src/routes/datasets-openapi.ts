@@ -9,8 +9,8 @@
  * Los esquemas se registran manualmente para compatibilidad.
  */
 
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 
 // Extender Zod con métodos OpenAPI
 extendZodWithOpenApi(z);

@@ -1,6 +1,6 @@
 /**
  * Page Builder Components Index
- * 
+ *
  * Visual layout builder components.
  */
 

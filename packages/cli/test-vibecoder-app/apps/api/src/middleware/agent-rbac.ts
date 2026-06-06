@@ -15,13 +15,13 @@
  * @version 1.0.0
  */
 
+import { logger } from "@/lib/logger";
+import type { AgentAuthContext } from "@/services/agent-auth";
+import { hasScope, hasAllScopes, hasAnyScope } from "@/services/agent-auth";
 import type { MiddlewareHandler, Context, Next } from "hono";
 // @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
-import type { AgentAuthContext } from "@/services/agent-auth";
 // @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
-import { hasScope, hasAllScopes, hasAnyScope } from "@/services/agent-auth";
 // @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
-import { logger } from "@/lib/logger";
 
 /**
  * Opciones de configuración para el middleware RBAC
@@ -180,7 +180,7 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
     logger.debug({
       agentId: agent.agentId,
       path: c.req.path,
-      scopes: scopes,
+      scopes,
       requestId
     }, "RBAC: Permission granted");
 

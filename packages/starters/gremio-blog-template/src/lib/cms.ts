@@ -16,7 +16,8 @@ import type {
   PaginatedResponse,
 } from "@gremius/shared";
 
-const API_URL = import.meta.env.PUBLIC_API_URL || import.meta.env.PUBLIC_CMS_URL || "http://localhost:3001";
+const API_URL =
+  import.meta.env.PUBLIC_API_URL || import.meta.env.PUBLIC_CMS_URL || "http://localhost:3001";
 
 // ─── Generic Fetch ────────────────────────────────────────────
 
@@ -55,10 +56,7 @@ async function fetchCollection<T>(
   return res.json();
 }
 
-async function fetchBySlug<T>(
-  collection: string,
-  slug: string
-): Promise<T | null> {
+async function fetchBySlug<T>(collection: string, slug: string): Promise<T | null> {
   const url = `${API_URL}/api/${collection}/slug/${slug}`;
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -68,10 +66,7 @@ async function fetchBySlug<T>(
   return res.json();
 }
 
-async function fetchById<T>(
-  collection: string,
-  id: string
-): Promise<T | null> {
+async function fetchById<T>(collection: string, id: string): Promise<T | null> {
   const url = `${API_URL}/api/${collection}/${id}`;
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -109,8 +104,7 @@ export const cms = {
   },
 
   dataSets: {
-    list: (opts?: FetchOptions) =>
-      fetchCollection<DataSet>("data-sets", opts),
+    list: (opts?: FetchOptions) => fetchCollection<DataSet>("data-sets", opts),
     getBySlug: (slug: string) => fetchBySlug<DataSet>("data-sets", slug),
     getById: (id: string) => fetchById<DataSet>("data-sets", id),
   },
@@ -120,7 +114,10 @@ export const cms = {
   },
 
   dataEntries: {
-    listByDataSet: async (dataSetId: string, limit = 500): Promise<PaginatedResponse<DataEntry>> => {
+    listByDataSet: async (
+      dataSetId: string,
+      limit = 500
+    ): Promise<PaginatedResponse<DataEntry>> => {
       const url = `${API_URL}/api/data-sets/${dataSetId}/entries?limit=${limit}`;
       const res = await fetch(url, {
         headers: { "Content-Type": "application/json" },
@@ -131,8 +128,7 @@ export const cms = {
   },
 
   streamers: {
-    list: (opts?: FetchOptions) =>
-      fetchCollection<Streamer>("streamers", opts),
+    list: (opts?: FetchOptions) => fetchCollection<Streamer>("streamers", opts),
   },
 
   settings: async () => {

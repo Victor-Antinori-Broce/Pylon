@@ -18,7 +18,8 @@
    * - apiEndpoint: string - Endpoint para cargar datos
    */
   
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
+  import { fieldRegistry, type FieldConfig } from "$lib/data-explorer/fieldRegistry";
   import { 
     Search, 
     Filter, 
@@ -28,16 +29,12 @@
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    MoreHorizontal,
     Download,
-    Plus,
-    Trash2,
     Edit2,
     Check,
     X
   } from "lucide-svelte";
-  import { api } from "$lib/api";
-  import { fieldRegistry, type FieldConfig } from "$lib/data-explorer/fieldRegistry";
+  import { onMount } from "svelte";
   import "$lib/data-explorer/registerFields";
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -100,7 +97,7 @@
     onRowClick?: (row: any) => void;
   }
   
-  let { 
+  const { 
     table, 
     config = {}, 
     data: initialData,
@@ -127,7 +124,7 @@
   let sortDirection = $state<"asc" | "desc">("asc");
   
   // Paginación
-  let pagination = $state<PaginationInfo>({
+  const pagination = $state<PaginationInfo>({
     page: 1,
     pageSize: typeof config.pagination === "object" ? config.pagination.pageSize : 20,
     total: 0,
@@ -140,7 +137,7 @@
   let editingData = $state<any>(null);
   
   // Configuración completa con defaults
-  let fullConfig = $derived<TableConfig>({
+  const fullConfig = $derived<TableConfig>({
     table,
     label: config.label || table,
     columns: config.columns || [],

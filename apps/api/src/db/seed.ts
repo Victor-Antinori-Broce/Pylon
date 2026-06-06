@@ -4,12 +4,15 @@
  * Run: bun run src/db/seed.ts
  */
 
-import { auth } from "../lib/auth";
-import { db } from "./index";
-import { authUsers as user } from "./schema";
+import { randomBytes } from "crypto";
+
 import { eq } from "drizzle-orm";
 
-import { randomBytes } from "crypto";
+import { auth } from "../lib/auth";
+
+import { authUsers as user } from "./schema";
+
+import { db } from "./index";
 
 const ADMIN_EMAIL = "admin@gremius.gg";
 const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD || randomBytes(16).toString("hex");
@@ -20,11 +23,7 @@ async function seed() {
   let userId = "";
 
   // Check if admin already exists
-  const existing = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, ADMIN_EMAIL))
-    .limit(1);
+  const existing = await db.select().from(user).where(eq(user.email, ADMIN_EMAIL)).limit(1);
 
   if (existing.length) {
     console.log(`  ⚠ Admin exists: ${existing[0].email}. Recreating to ensure password match...`);
@@ -43,17 +42,14 @@ async function seed() {
       asResponse: false,
     });
 
-    if (!result || !('user' in result) || !result.user?.id) {
+    if (!result || !("user" in result) || !result.user?.id) {
       console.error("  ✗ Failed to create admin user");
       process.exit(1);
     }
     userId = result.user.id;
 
     // Upgrade role to admin
-    await db
-      .update(user)
-      .set({ role: "admin" })
-      .where(eq(user.id, result.user.id));
+    await db.update(user).set({ role: "admin" }).where(eq(user.id, result.user.id));
 
     console.log(`  ✓ Created admin: ${ADMIN_EMAIL}`);
     console.log(`    Password: ${ADMIN_PASSWORD}`);
@@ -78,9 +74,9 @@ async function seed() {
 
   console.log("🌱 Seeding content...");
 
-  // Import schema tables dynamically to avoid top-level issues if needed, 
+  // Import schema tables dynamically to avoid top-level issues if needed,
   // but we already imported user. Let's import the rest.
-  const { games, blogPosts, platforms, tags, siteSettings } = await import("./schema") as any;
+  const { games, blogPosts, platforms, tags, siteSettings } = (await import("./schema")) as any;
 
   // 1. Platforms
   const platformData = [
@@ -91,7 +87,10 @@ async function seed() {
   ];
 
   for (const p of platformData) {
-    await db.insert(platforms as any).values(p).onConflictDoNothing();
+    await db
+      .insert(platforms as any)
+      .values(p)
+      .onConflictDoNothing();
   }
   console.log("  ✓ Platforms seeded");
 
@@ -106,7 +105,10 @@ async function seed() {
   ];
 
   for (const t of tagData) {
-    await db.insert(tags as any).values(t as any).onConflictDoNothing();
+    await db
+      .insert(tags as any)
+      .values(t as any)
+      .onConflictDoNothing();
   }
   console.log("  ✓ Tags seeded");
 
@@ -118,7 +120,8 @@ async function seed() {
       status: "published",
       metacriticScore: 96,
       developer: "FromSoftware",
-      excerpt: "THE NEW FANTASY ACTION RPG. Rise, Tarnished, and be guided by grace to brandish the power of the Elden Ring and become an Elden Lord in the Lands Between.",
+      excerpt:
+        "THE NEW FANTASY ACTION RPG. Rise, Tarnished, and be guided by grace to brandish the power of the Elden Ring and become an Elden Lord in the Lands Between.",
     },
     {
       title: "Baldur's Gate 3",
@@ -126,7 +129,8 @@ async function seed() {
       status: "published",
       metacriticScore: 96,
       developer: "Larian Studios",
-      excerpt: "Gather your party and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power.",
+      excerpt:
+        "Gather your party and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power.",
     },
     {
       title: "Cyberpunk 2077",
@@ -134,12 +138,16 @@ async function seed() {
       status: "published",
       metacriticScore: 86,
       developer: "CD Projekt Red",
-      excerpt: "Cyberpunk 2077 is an open-world, action-adventure RPG set in the megalopolis of Night City, where you play as a cyberpunk mercenary wrapped up in a do-or-die fight for survival.",
-    }
+      excerpt:
+        "Cyberpunk 2077 is an open-world, action-adventure RPG set in the megalopolis of Night City, where you play as a cyberpunk mercenary wrapped up in a do-or-die fight for survival.",
+    },
   ];
 
   for (const g of gameData) {
-    await db.insert(games as any).values(g as any).onConflictDoNothing();
+    await db
+      .insert(games as any)
+      .values(g as any)
+      .onConflictDoNothing();
   }
   console.log("  ✓ Games seeded");
 
@@ -152,24 +160,30 @@ async function seed() {
       excerpt: "Introducing GremiusCMS — the high-performance gaming CMS.",
       publishedAt: new Date(),
       authorId: userId,
-    }
+    },
   ];
 
   for (const p of postData) {
-    await db.insert(blogPosts as any).values(p as any).onConflictDoNothing();
+    await db
+      .insert(blogPosts as any)
+      .values(p as any)
+      .onConflictDoNothing();
   }
   console.log("  ✓ Blog Posts seeded");
 
   // 5. Settings
-  await db.insert(siteSettings).values({
-    siteName: "GremiusCMS",
-    activeTheme: "gremio-cms",
-    mainNav: [
-      { label: "Home", url: "/" },
-      { label: "Games", url: "/games" },
-      { label: "Blog", url: "/blog" }
-    ]
-  }).onConflictDoNothing();
+  await db
+    .insert(siteSettings)
+    .values({
+      siteName: "GremiusCMS",
+      activeTheme: "gremio-cms",
+      mainNav: [
+        { label: "Home", url: "/" },
+        { label: "Games", url: "/games" },
+        { label: "Blog", url: "/blog" },
+      ],
+    })
+    .onConflictDoNothing();
 
   console.log("🌱 Seed complete.");
   process.exit(0);

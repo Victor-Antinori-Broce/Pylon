@@ -1,17 +1,18 @@
 /**
  * @file agents-v1.ts
  * @description API v1 routes for Agents (frontend compatibility)
- * 
+ *
  * Routes:
  * - GET /api/v1/agents -> delegates to agents router
  * - GET /api/v1/traces -> list all traces
  * - GET /api/v1/identities -> alias for agents list
  */
 
+import { desc, eq, sql, and } from "drizzle-orm";
 import { Hono } from "hono";
+
 import { db } from "../db";
 import { agentIdentities, agentApiKeys, agentTraces, agentTraceSteps } from "../db/schema";
-import { desc, eq, sql, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middleware/auth";
 import type { AppVariables } from "../types/hono";
@@ -291,17 +292,13 @@ agentsV1Router.get("/traces/:id", async (c) => {
     const id = c.req.param("id");
     const expand = c.req.query("expand");
 
-    const [trace] = await db
-      .select()
-      .from(agentTraces)
-      .where(eq(agentTraces.id, id))
-      .limit(1);
+    const [trace] = await db.select().from(agentTraces).where(eq(agentTraces.id, id)).limit(1);
 
     if (!trace) {
       return c.json({ error: "Trace not found" }, 404);
     }
 
-    let result: any = { ...trace };
+    const result: any = { ...trace };
 
     // Include steps if requested
     if (expand === "steps") {
@@ -617,7 +614,7 @@ async function processWithAgent(
 
   if (lowerMsg.includes("capacidades") || lowerMsg.includes("qué puedes hacer")) {
     const capabilities = agent.capabilities as string[] | undefined;
-    return capabilities?.length 
+    return capabilities?.length
       ? `Mis capacidades incluyen: ${capabilities.join(", ")}.`
       : "Tengo capacidades generales de asistencia.";
   }

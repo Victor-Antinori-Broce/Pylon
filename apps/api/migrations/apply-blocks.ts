@@ -12,8 +12,7 @@
 import postgres from "postgres";
 
 const connectionString =
-  process.env.DATABASE_URL ||
-  "postgres://gremius:gremius_dev_2025@localhost:5432/gremiuscms";
+  process.env.DATABASE_URL || "postgres://gremius:gremius_dev_2025@localhost:5432/gremiuscms";
 
 const sql = postgres(connectionString);
 

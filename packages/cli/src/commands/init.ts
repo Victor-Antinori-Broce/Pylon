@@ -1,18 +1,19 @@
-import fs from 'fs-extra';
-import path from 'path';
-import chalk from 'chalk';
-import ora, { type Ora } from 'ora';
-import inquirer from 'inquirer';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { execSync } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import chalk from "chalk";
+import fs from "fs-extra";
+import inquirer from "inquirer";
+import ora, { type Ora } from "ora";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Resolve package root (dist/commands/ -> dist/ -> package root)
-const PACKAGE_ROOT = path.resolve(__dirname, '../..');
+const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 function getTemplatePath(templateName: string): string {
-  return path.join(PACKAGE_ROOT, 'templates', templateName);
+  return path.join(PACKAGE_ROOT, "templates", templateName);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -54,7 +55,7 @@ const TEMPLATES: Record<string, TemplateConfig> = {
 
 export interface InitOptions {
   template?: string;
-  mode?: 'vibecoder' | 'developer';
+  mode?: "vibecoder" | "developer";
   database?: string;
   autoStart?: boolean;
   start?: boolean;
@@ -70,23 +71,23 @@ export async function initCommand(name: string | undefined, options: InitOptions
 
   try {
     // ── Determine mode ──
-    const mode = options.mode || 'vibecoder';
+    const mode = options.mode || "vibecoder";
 
     // ── Ask for project name if not provided ──
     let projectName = name;
     if (!projectName) {
       const answers = await inquirer.prompt([
         {
-          type: 'input',
-          name: 'name',
-          message: mode === 'vibecoder' ? 'Project name:' : 'Project name (monorepo):',
-          default: 'my-gremius-app',
+          type: "input",
+          name: "name",
+          message: mode === "vibecoder" ? "Project name:" : "Project name (monorepo):",
+          default: "my-gremius-app",
         },
       ]);
       projectName = answers.name;
     }
 
-    const projectPath = path.resolve(process.cwd(), projectName || 'my-gremius-app');
+    const projectPath = path.resolve(process.cwd(), projectName || "my-gremius-app");
 
     // ── Check if directory exists ──
     if (await fs.pathExists(projectPath)) {
@@ -95,37 +96,53 @@ export async function initCommand(name: string | undefined, options: InitOptions
     }
 
     // ── Determine template ──
-    let template = options.template || 'default';
+    let template = options.template || "default";
     if (!TEMPLATES[template]) {
       spinner.warn(chalk.yellow(`Unknown template "${template}". Using default.`));
-      template = 'default';
+      template = "default";
     }
 
     const templateConfig = TEMPLATES[template];
 
-    console.log(chalk.cyan(`\n🚀 GremiusCMS v0.8 — ${mode === 'vibecoder' ? 'Vibecoder' : 'Developer'} Mode\n`));
+    console.log(
+      chalk.cyan(
+        `\n🚀 GremiusCMS v0.8 — ${mode === "vibecoder" ? "Vibecoder" : "Developer"} Mode\n`
+      )
+    );
     console.log(chalk.gray(`Template: ${templateConfig.name} — ${templateConfig.description}\n`));
 
-    spinner.start('Creating project...');
+    spinner.start("Creating project...");
     await fs.ensureDir(projectPath);
 
-    if (mode === 'vibecoder') {
-      await createVibecoderProject(projectPath, projectName || 'my-gremius-app', template, templateConfig, spinner, options.headless);
+    if (mode === "vibecoder") {
+      await createVibecoderProject(
+        projectPath,
+        projectName || "my-gremius-app",
+        template,
+        templateConfig,
+        spinner,
+        options.headless
+      );
     } else {
-      await createDeveloperProject(projectPath, projectName || 'my-gremius-app', template, templateConfig, spinner);
+      await createDeveloperProject(
+        projectPath,
+        projectName || "my-gremius-app",
+        template,
+        templateConfig,
+        spinner
+      );
     }
 
     spinner.succeed(chalk.green(`✅ Project "${projectName}" created successfully!`));
 
     // ── Post-creation output ──
-    if (mode === 'vibecoder') {
-      printVibecoderOutput(projectPath, projectName || 'my-gremius-app', options);
+    if (mode === "vibecoder") {
+      printVibecoderOutput(projectPath, projectName || "my-gremius-app", options);
     } else {
-      printDeveloperOutput(projectPath, projectName || 'my-gremius-app');
+      printDeveloperOutput(projectPath, projectName || "my-gremius-app");
     }
-
   } catch (error) {
-    spinner.fail(chalk.red('Failed to initialize project'));
+    spinner.fail(chalk.red("Failed to initialize project"));
     console.error(error);
     process.exit(1);
   }
@@ -150,23 +167,23 @@ async function createVibecoderProject(
     : false;
 
   if (isDestInsideMonorepo) {
-    spinner.warn('Cannot create a vibecoder project inside the Gremius monorepo directory.');
-    console.log(chalk.yellow('\n💡 Choose a destination outside the monorepo:'));
+    spinner.warn("Cannot create a vibecoder project inside the Gremius monorepo directory.");
+    console.log(chalk.yellow("\n💡 Choose a destination outside the monorepo:"));
     console.log(chalk.white(`  cd .. && npx gremius init ${projectName} --mode vibecoder`));
-    console.log(chalk.yellow('\nOr use the monorepo directly:'));
-    console.log(chalk.white('  docker compose up -d --build'));
-    console.log(chalk.white('  pnpm dev:start:simple'));
-    throw new Error('Cannot create vibecoder project inside the Gremius monorepo');
+    console.log(chalk.yellow("\nOr use the monorepo directly:"));
+    console.log(chalk.white("  docker compose up -d --build"));
+    console.log(chalk.white("  pnpm dev:start:simple"));
+    throw new Error("Cannot create vibecoder project inside the Gremius monorepo");
   }
 
-  spinner.text = 'Generating vibecoder project...';
+  spinner.text = "Generating vibecoder project...";
 
   // Copy template-specific files if they exist (before generating docker-compose)
   const templateDir = getTemplatePath(template);
-  const hasSeedSql = await fs.pathExists(path.join(templateDir, 'seed.sql'));
+  const hasSeedSql = await fs.pathExists(path.join(templateDir, "seed.sql"));
 
   if (await fs.pathExists(templateDir)) {
-    const templateFiles = ['realm.json', 'seed.sql', 'seed.ts'];
+    const templateFiles = ["realm.json", "seed.sql", "seed.ts"];
     for (const file of templateFiles) {
       const src = path.join(templateDir, file);
       if (await fs.pathExists(src)) {
@@ -177,11 +194,11 @@ async function createVibecoderProject(
 
   // Generate self-contained docker-compose and env
   const dc = generateVibecoderDockerCompose(projectName, hasSeedSql, headless);
-  await fs.writeFile(path.join(projectPath, 'docker-compose.yml'), dc);
-  await fs.writeFile(path.join(projectPath, '.env'), generateVibecoderEnv(projectName, headless));
+  await fs.writeFile(path.join(projectPath, "docker-compose.yml"), dc);
+  await fs.writeFile(path.join(projectPath, ".env"), generateVibecoderEnv(projectName, headless));
 
   // Write realm.json if template didn't provide one
-  const realmPath = path.join(projectPath, 'realm.json');
+  const realmPath = path.join(projectPath, "realm.json");
   if (!(await fs.pathExists(realmPath))) {
     const realmData = {
       name: templateConfig.name,
@@ -193,17 +210,17 @@ async function createVibecoderProject(
   }
 
   // Write railway.json for easy Railway deployment
-  await fs.writeFile(
-    path.join(projectPath, 'railway.json'),
-    generateRailwayJson()
-  );
+  await fs.writeFile(path.join(projectPath, "railway.json"), generateRailwayJson());
 
   // Write README
-  await fs.writeFile(path.join(projectPath, 'README.md'), generateVibecoderReadme(projectName, template));
+  await fs.writeFile(
+    path.join(projectPath, "README.md"),
+    generateVibecoderReadme(projectName, template)
+  );
 
   // Write init scripts (auto-detect pre-built images vs build from source)
   await fs.writeFile(
-    path.join(projectPath, 'init.sh'),
+    path.join(projectPath, "init.sh"),
     `#!/bin/bash
 set -e
 
@@ -244,7 +261,7 @@ echo "💡 Next time, just run: ./start.sh"
     { mode: 0o755 }
   );
   await fs.writeFile(
-    path.join(projectPath, 'init.bat'),
+    path.join(projectPath, "init.bat"),
     `@echo off
 setlocal EnableDelayedExpansion
 
@@ -294,21 +311,24 @@ echo 💡 Next time, just run: start.bat
 
   // Write a simple start script (assumes source already cloned)
   await fs.writeFile(
-    path.join(projectPath, 'start.sh'),
+    path.join(projectPath, "start.sh"),
     `#!/bin/bash\ncd "$(dirname "$0")"\ndocker compose up -d --build\n`,
     { mode: 0o755 }
   );
   await fs.writeFile(
-    path.join(projectPath, 'start.bat'),
+    path.join(projectPath, "start.bat"),
     `@echo off\ncd /d "%~dp0"\ndocker compose up -d --build\n`,
     { mode: 0o755 }
   );
 
   // Initialize git
   try {
-    execSync('git init', { cwd: projectPath, stdio: 'ignore' });
-    execSync('git add .', { cwd: projectPath, stdio: 'ignore' });
-    execSync('git commit -m "Initial commit from Gremius CLI"', { cwd: projectPath, stdio: 'ignore' });
+    execSync("git init", { cwd: projectPath, stdio: "ignore" });
+    execSync("git add .", { cwd: projectPath, stdio: "ignore" });
+    execSync('git commit -m "Initial commit from Gremius CLI"', {
+      cwd: projectPath,
+      stdio: "ignore",
+    });
   } catch {
     // Git might not be installed
   }
@@ -317,64 +337,72 @@ echo 💡 Next time, just run: start.bat
 function printVibecoderOutput(projectPath: string, projectName: string, options: InitOptions) {
   const isHeadless = options.headless;
 
-  console.log(chalk.cyan('\n📁 Project structure:'));
+  console.log(chalk.cyan("\n📁 Project structure:"));
   console.log(`  ${projectName}/`);
-  console.log('  ├── docker-compose.yml    # All services');
-  console.log('  ├── .env                  # Configuration');
-  console.log('  ├── realm.json            # Active modules');
-  console.log('  ├── start.sh / start.bat  # Quick start scripts');
-  console.log('  └── README.md');
+  console.log("  ├── docker-compose.yml    # All services");
+  console.log("  ├── .env                  # Configuration");
+  console.log("  ├── realm.json            # Active modules");
+  console.log("  ├── start.sh / start.bat  # Quick start scripts");
+  console.log("  └── README.md");
 
   if (isHeadless) {
-    console.log(chalk.gray('\n  👻 Headless mode — no admin panel'));
+    console.log(chalk.gray("\n  👻 Headless mode — no admin panel"));
   }
 
   // Auto-start if requested
   const shouldStart = options.autoStart || options.start;
   if (shouldStart) {
-    console.log(chalk.cyan('\n🐳 Starting services...'));
-    const startSpinner = ora('Running docker compose up -d --build...').start();
+    console.log(chalk.cyan("\n🐳 Starting services..."));
+    const startSpinner = ora("Running docker compose up -d --build...").start();
     try {
-      execSync('docker compose up -d --build', { cwd: projectPath, stdio: 'pipe' });
-      startSpinner.succeed(chalk.green('All services started!'));
+      execSync("docker compose up -d --build", { cwd: projectPath, stdio: "pipe" });
+      startSpinner.succeed(chalk.green("All services started!"));
 
-      console.log(chalk.yellow('\n⏳ Waiting for first build to complete (~60-120s)...'));
-      console.log(chalk.dim('   The API container builds from source on first run.'));
+      console.log(chalk.yellow("\n⏳ Waiting for first build to complete (~60-120s)..."));
+      console.log(chalk.dim("   The API container builds from source on first run."));
 
-      console.log(chalk.cyan('\n═══════════════════════════════════════════════════════════'));
-      console.log(chalk.green.bold('  🚀 Your backend is starting up!'));
-      console.log(chalk.cyan('═══════════════════════════════════════════════════════════'));
-      console.log('');
+      console.log(chalk.cyan("\n═══════════════════════════════════════════════════════════"));
+      console.log(chalk.green.bold("  🚀 Your backend is starting up!"));
+      console.log(chalk.cyan("═══════════════════════════════════════════════════════════"));
+      console.log("");
       if (!isHeadless) {
-        console.log(chalk.white('  Admin Panel:  ') + chalk.blue.underline('http://localhost:3001'));
+        console.log(
+          chalk.white("  Admin Panel:  ") + chalk.blue.underline("http://localhost:3001")
+        );
       }
-      console.log(chalk.white('  API Docs:     ') + chalk.blue.underline('http://localhost:3000/api/swagger'));
-      console.log(chalk.white('  MCP Endpoint: ') + chalk.blue.underline('http://localhost:3000/api/mcp'));
-      console.log(chalk.white('  MinIO Console:') + chalk.blue.underline('http://localhost:9001'));
-      console.log('');
-      console.log(chalk.yellow('  💡 Connect Cursor/Claude to the MCP endpoint above'));
-      console.log(chalk.yellow('     and let AI configure your backend for you.'));
-      console.log('');
+      console.log(
+        chalk.white("  API Docs:     ") + chalk.blue.underline("http://localhost:3000/api/swagger")
+      );
+      console.log(
+        chalk.white("  MCP Endpoint: ") + chalk.blue.underline("http://localhost:3000/api/mcp")
+      );
+      console.log(chalk.white("  MinIO Console:") + chalk.blue.underline("http://localhost:9001"));
+      console.log("");
+      console.log(chalk.yellow("  💡 Connect Cursor/Claude to the MCP endpoint above"));
+      console.log(chalk.yellow("     and let AI configure your backend for you."));
+      console.log("");
     } catch (e: any) {
-      startSpinner.fail(chalk.yellow('Docker Compose failed — is Docker running?'));
-      console.log(chalk.dim('  Start manually: cd ' + projectName + ' && docker compose up -d --build\n'));
+      startSpinner.fail(chalk.yellow("Docker Compose failed — is Docker running?"));
+      console.log(
+        chalk.dim("  Start manually: cd " + projectName + " && docker compose up -d --build\n")
+      );
     }
   } else {
-    console.log(chalk.cyan('\n🚀 Next steps:'));
+    console.log(chalk.cyan("\n🚀 Next steps:"));
     console.log(chalk.white(`  cd ${projectName}`));
-    console.log(chalk.white('  ./init.sh        (Linux/Mac)'));
-    console.log(chalk.white('  init.bat         (Windows)'));
-    console.log('');
-    console.log(chalk.cyan('  Then open:'));
+    console.log(chalk.white("  ./init.sh        (Linux/Mac)"));
+    console.log(chalk.white("  init.bat         (Windows)"));
+    console.log("");
+    console.log(chalk.cyan("  Then open:"));
     if (!isHeadless) {
-      console.log(chalk.white('  Admin:  http://localhost:3001'));
+      console.log(chalk.white("  Admin:  http://localhost:3001"));
     }
-    console.log(chalk.white('  API:    http://localhost:3000/api/swagger'));
-    console.log(chalk.white('  MCP:    http://localhost:3000/api/mcp'));
+    console.log(chalk.white("  API:    http://localhost:3000/api/swagger"));
+    console.log(chalk.white("  MCP:    http://localhost:3000/api/mcp"));
   }
 
-  console.log(chalk.cyan('\n📚 Documentation:'));
-  console.log(chalk.blue('  https://docs.gremius.gg/vibecoder\n'));
+  console.log(chalk.cyan("\n📚 Documentation:"));
+  console.log(chalk.blue("  https://docs.gremius.gg/vibecoder\n"));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -388,50 +416,50 @@ async function createDeveloperProject(
   templateConfig: TemplateConfig,
   spinner: Ora
 ) {
-  spinner.text = 'Creating developer project structure...';
+  spinner.text = "Creating developer project structure...";
 
   // Create directory structure
-  await fs.ensureDir(path.join(projectPath, 'grimoires'));
-  await fs.ensureDir(path.join(projectPath, 'schemas'));
-  await fs.ensureDir(path.join(projectPath, 'migrations'));
-  await fs.ensureDir(path.join(projectPath, 'hooks'));
-  await fs.ensureDir(path.join(projectPath, '.github', 'workflows'));
+  await fs.ensureDir(path.join(projectPath, "grimoires"));
+  await fs.ensureDir(path.join(projectPath, "schemas"));
+  await fs.ensureDir(path.join(projectPath, "migrations"));
+  await fs.ensureDir(path.join(projectPath, "hooks"));
+  await fs.ensureDir(path.join(projectPath, ".github", "workflows"));
 
   // Docker Compose
   const dockerComposeContent = generateDeveloperDockerCompose();
-  await fs.writeFile(path.join(projectPath, 'docker-compose.yml'), dockerComposeContent);
+  await fs.writeFile(path.join(projectPath, "docker-compose.yml"), dockerComposeContent);
 
   // Environment files
   const envContent = generateDeveloperEnvFile();
-  await fs.writeFile(path.join(projectPath, '.env.example'), envContent);
-  await fs.writeFile(path.join(projectPath, '.env'), envContent);
+  await fs.writeFile(path.join(projectPath, ".env.example"), envContent);
+  await fs.writeFile(path.join(projectPath, ".env"), envContent);
 
   // Schema file
   const schemaContent = generateDeveloperSchemaFile();
-  await fs.writeFile(path.join(projectPath, 'schemas', 'index.ts'), schemaContent);
+  await fs.writeFile(path.join(projectPath, "schemas", "index.ts"), schemaContent);
 
   // Config file
   const configContent = generateDeveloperConfigFile(templateConfig.grimoires);
-  await fs.writeFile(path.join(projectPath, 'gremius.config.ts'), configContent);
+  await fs.writeFile(path.join(projectPath, "gremius.config.ts"), configContent);
 
   // README
   const readmeContent = generateDeveloperReadme(projectName);
-  await fs.writeFile(path.join(projectPath, 'README.md'), readmeContent);
+  await fs.writeFile(path.join(projectPath, "README.md"), readmeContent);
 
   // Git ignore
   await fs.writeFile(
-    path.join(projectPath, '.gitignore'),
-    'node_modules\n.env\n.env.local\ndata/\ndist/\n*.log\n.DS_Store\n'
+    path.join(projectPath, ".gitignore"),
+    "node_modules\n.env\n.env.local\ndata/\ndist/\n*.log\n.DS_Store\n"
   );
 
   // Package.json
   const packageJson = generateDeveloperPackageJson(projectName);
-  await fs.writeFile(path.join(projectPath, 'package.json'), JSON.stringify(packageJson, null, 2));
+  await fs.writeFile(path.join(projectPath, "package.json"), JSON.stringify(packageJson, null, 2));
 
   // GitHub Actions
   const workflowContent = generateGitHubWorkflow();
   await fs.writeFile(
-    path.join(projectPath, '.github', 'workflows', 'gremius-deploy.yml'),
+    path.join(projectPath, ".github", "workflows", "gremius-deploy.yml"),
     workflowContent
   );
 
@@ -440,47 +468,47 @@ async function createDeveloperProject(
     name: templateConfig.name,
     template,
     grimoires: templateConfig.grimoires,
-    mode: 'developer',
+    mode: "developer",
     createdAt: new Date().toISOString(),
   };
-  await fs.writeFile(path.join(projectPath, 'realm.json'), JSON.stringify(realmData, null, 2));
+  await fs.writeFile(path.join(projectPath, "realm.json"), JSON.stringify(realmData, null, 2));
 
   // Write railway.json for easy Railway deployment
-  await fs.writeFile(
-    path.join(projectPath, 'railway.json'),
-    generateRailwayJson()
-  );
+  await fs.writeFile(path.join(projectPath, "railway.json"), generateRailwayJson());
 
   // Git init
   try {
-    execSync('git init', { cwd: projectPath, stdio: 'ignore' });
-    execSync('git add .', { cwd: projectPath, stdio: 'ignore' });
-    execSync('git commit -m "Initial commit from Gremius CLI"', { cwd: projectPath, stdio: 'ignore' });
+    execSync("git init", { cwd: projectPath, stdio: "ignore" });
+    execSync("git add .", { cwd: projectPath, stdio: "ignore" });
+    execSync('git commit -m "Initial commit from Gremius CLI"', {
+      cwd: projectPath,
+      stdio: "ignore",
+    });
   } catch {
     // Git might not be installed
   }
 }
 
 function printDeveloperOutput(_projectPath: string, projectName: string) {
-  console.log(chalk.cyan('\n📁 Project structure:'));
+  console.log(chalk.cyan("\n📁 Project structure:"));
   console.log(`  ${projectName}/`);
-  console.log('  ├── docker-compose.yml    # Infrastructure services');
-  console.log('  ├── gremius.config.ts     # Backend configuration');
-  console.log('  ├── schemas/              # Database schemas');
-  console.log('  ├── grimoires/            # Custom modules');
-  console.log('  ├── migrations/           # Database migrations');
-  console.log('  ├── hooks/                # Event hooks');
-  console.log('  └── .github/workflows/    # CI/CD');
+  console.log("  ├── docker-compose.yml    # Infrastructure services");
+  console.log("  ├── gremius.config.ts     # Backend configuration");
+  console.log("  ├── schemas/              # Database schemas");
+  console.log("  ├── grimoires/            # Custom modules");
+  console.log("  ├── migrations/           # Database migrations");
+  console.log("  ├── hooks/                # Event hooks");
+  console.log("  └── .github/workflows/    # CI/CD");
 
-  console.log(chalk.cyan('\n🛠️ Next steps:'));
+  console.log(chalk.cyan("\n🛠️ Next steps:"));
   console.log(chalk.white(`  cd ${projectName}`));
-  console.log(chalk.white('  docker compose up -d          # Start Postgres, Valkey, MinIO'));
-  console.log(chalk.white('  pnpm install                  # Install dependencies'));
-  console.log(chalk.white('  pnpm dev:start:simple         # Start API + Admin with hot-reload'));
-  console.log('');
-  console.log(chalk.cyan('  Then open:'));
-  console.log(chalk.white('  Admin:  http://localhost:3001'));
-  console.log(chalk.white('  API:    http://localhost:3000'));
+  console.log(chalk.white("  docker compose up -d          # Start Postgres, Valkey, MinIO"));
+  console.log(chalk.white("  pnpm install                  # Install dependencies"));
+  console.log(chalk.white("  pnpm dev:start:simple         # Start API + Admin with hot-reload"));
+  console.log("");
+  console.log(chalk.cyan("  Then open:"));
+  console.log(chalk.white("  Admin:  http://localhost:3001"));
+  console.log(chalk.white("  API:    http://localhost:3000"));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -490,8 +518,8 @@ function printDeveloperOutput(_projectPath: string, projectName: string) {
 function findMonorepoRoot(): string | null {
   let current = process.cwd();
   while (current !== path.parse(current).root) {
-    const dockerCompose = path.join(current, 'docker-compose.yml');
-    const pnpmWorkspace = path.join(current, 'pnpm-workspace.yaml');
+    const dockerCompose = path.join(current, "docker-compose.yml");
+    const pnpmWorkspace = path.join(current, "pnpm-workspace.yaml");
     if (fs.existsSync(dockerCompose) && fs.existsSync(pnpmWorkspace)) {
       return current;
     }
@@ -510,8 +538,14 @@ function findMonorepoRoot(): string | null {
 // GENERATORS — Vibecoder
 // ═══════════════════════════════════════════════════════════════════════════
 
-function generateVibecoderDockerCompose(_projectName: string, hasSeedSql: boolean = false, headless: boolean = false): string {
-  const adminService = headless ? '' : `
+function generateVibecoderDockerCompose(
+  _projectName: string,
+  hasSeedSql: boolean = false,
+  headless: boolean = false
+): string {
+  const adminService = headless
+    ? ""
+    : `
   # ═══════════════════════════════════════════════════════════════════════
   # Admin Panel — Dual mode: pre-built image OR build from source
   # ═══════════════════════════════════════════════════════════════════════
@@ -557,7 +591,7 @@ services:
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-gremiuspassword}
       POSTGRES_DB: \${POSTGRES_DB:-gremius}
     volumes:
-      - gremius_postgres:/var/lib/postgresql/data${hasSeedSql ? '\n      - ./seed.sql:/docker-entrypoint-initdb.d/99_seed.sql:ro' : ''}
+      - gremius_postgres:/var/lib/postgresql/data${hasSeedSql ? "\n      - ./seed.sql:/docker-entrypoint-initdb.d/99_seed.sql:ro" : ""}
     ports:
       - "\${DB_PORT:-5432}:5432"
     healthcheck:
@@ -637,7 +671,7 @@ services:
       - ENABLE_SWAGGER=true
       - ENABLE_MCP=true
       - RATE_LIMIT_ENABLED=true
-      - HEADLESS=${headless ? 'true' : 'false'}
+      - HEADLESS=${headless ? "true" : "false"}
     ports:
       - "\${API_PORT:-3000}:3000"
     networks:
@@ -681,7 +715,7 @@ S3_PUBLIC_URL=http://localhost:9000
 
 ENABLE_SWAGGER=true
 ENABLE_MCP=true
-HEADLESS=${headless ? 'true' : 'false'}
+HEADLESS=${headless ? "true" : "false"}
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Auth Providers (managed via CLI: gremius auth add <provider>)
@@ -927,7 +961,7 @@ export default {
   name: 'My Gremius App',
 
   grimoires: [
-${grimoires.map(g => `    '${g}',`).join('\n')}
+${grimoires.map((g) => `    '${g}',`).join("\n")}
   ],
 
   auth: {
@@ -996,26 +1030,26 @@ pnpm dev:start:simple
 
 function generateDeveloperPackageJson(projectName: string): object {
   return {
-    name: projectName.toLowerCase().replace(/\s+/g, '-'),
-    version: '0.1.0',
+    name: projectName.toLowerCase().replace(/\s+/g, "-"),
+    version: "0.1.0",
     private: true,
-    type: 'module',
+    type: "module",
     scripts: {
-      start: 'gremius start',
-      dev: 'gremius start --admin --mcp',
-      stop: 'gremius stop',
-      logs: 'gremius logs -f',
-      deploy: 'gremius deploy',
-      'db:migrate': 'gremius db migrate',
-      'db:generate': 'gremius db generate'
+      start: "gremius start",
+      dev: "gremius start --admin --mcp",
+      stop: "gremius stop",
+      logs: "gremius logs -f",
+      deploy: "gremius deploy",
+      "db:migrate": "gremius db migrate",
+      "db:generate": "gremius db generate",
     },
     dependencies: {
-      '@gremius/cli': '^0.1.0'
+      "@gremius/cli": "^0.1.0",
     },
     devDependencies: {
-      '@gremius/sdk': '^1.0.0',
-      typescript: '^5.7.0'
-    }
+      "@gremius/sdk": "^1.0.0",
+      typescript: "^5.7.0",
+    },
   };
 }
 

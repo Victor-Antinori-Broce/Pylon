@@ -1,7 +1,9 @@
 # CRM Builder - Arquitectura Configurable
 
 ## Visión
+
 Transformar grimoire-crm en un motor de CRM configurable donde:
+
 - "Deals" pueden ser Casos Legales, Propiedades, Proyectos, Oportunidades...
 - Cada negocio define sus propios pipelines, reglas y formularios
 - Time tracking automático entre etapas
@@ -17,59 +19,59 @@ Transformar grimoire-crm en un motor de CRM configurable donde:
 export const crmEntityConfigs = pgTable("crm_entity_configs", {
   id: text("id").primaryKey().$defaultFn(createId),
   grimoireId: text("grimoire_id").notNull(), // A qué instancia pertenece
-  
+
   // Configuración semántica
   entityName: text("entity_name").notNull(), // "case", "matter", "deal", "property"
   singularLabel: text("singular_label").notNull(), // "Case", "Propiedad", "Oportunidad"
   pluralLabel: text("plural_label").notNull(), // "Cases", "Propiedades"
-  
+
   // Campos base requeridos
   requiresContact: boolean("requires_contact").default(true),
   requiresCompany: boolean("requires_company").default(true),
   allowsValue: boolean("allows_value").default(true), // Tiene valor monetario?
   allowsTimeTracking: boolean("allows_time_tracking").default(true),
-  
+
   // Custom fields schema (JSON Schema-like)
   fieldSchema: jsonb("field_schema").default([]),
-  
+
   // Etapas del pipeline para esta entidad
   pipelineId: text("pipeline_id").references(() => crmPipelines.id),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Ejemplo de fieldSchema para Legal:
 [
-  { 
-    key: "caseNumber", 
-    type: "text", 
-    label: "Case Number", 
+  {
+    key: "caseNumber",
+    type: "text",
+    label: "Case Number",
     required: true,
-    unique: true 
+    unique: true,
   },
-  { 
-    key: "practiceArea", 
-    type: "select", 
+  {
+    key: "practiceArea",
+    type: "select",
     label: "Practice Area",
     options: ["Family", "Corporate", "Criminal", "Personal Injury"],
-    required: true 
+    required: true,
   },
-  { 
-    key: "courtDate", 
-    type: "datetime", 
+  {
+    key: "courtDate",
+    type: "datetime",
     label: "Court Date",
     calendarSync: true, // ← Genera evento de calendario
-    reminderDays: [7, 1] // ← Recordatorios automáticos
+    reminderDays: [7, 1], // ← Recordatorios automáticos
   },
-  { 
-    key: "retainerAgreement", 
-    type: "file", 
+  {
+    key: "retainerAgreement",
+    type: "file",
     label: "Retainer Agreement",
     required: true,
-    stageValidation: "retained" // ← Obligatorio para mover a stage "Retained"
-  }
-]
+    stageValidation: "retained", // ← Obligatorio para mover a stage "Retained"
+  },
+];
 ```
 
 ---
@@ -83,11 +85,11 @@ export const crmPipelineStages = pgTable("crm_pipeline_stages", {
   pipelineId: text("pipeline_id").notNull(),
   name: text("name").notNull(), // "Discovery", "Under Contract", "Discovery"
   order: integer("order").notNull(),
-  
+
   // Time tracking automático
   trackTimeInStage: boolean("track_time_in_stage").default(true),
   estimatedDays: integer("estimated_days"), // SLA: "Debería estar aquí X días"
-  
+
   // Validaciones para entrar a esta etapa
   entryRequirements: jsonb("entry_requirements").default({
     // Campos que deben estar completos
@@ -95,23 +97,21 @@ export const crmPipelineStages = pgTable("crm_pipeline_stages", {
     // Documentos obligatorios
     requiredDocuments: ["retainer_agreement", "conflicts_check"],
     // Campos custom específicos
-    customValidations: [
-      { field: "retainerAmount", operator: ">", value: 0 }
-    ]
+    customValidations: [{ field: "retainerAmount", operator: ">", value: 0 }],
   }),
-  
+
   // Acciones automáticas al entrar
   onEnterActions: jsonb("on_enter_actions").default([
     { type: "create_calendar_event", template: "Court Date: {courtDate}" },
     { type: "send_email", template: "stage_change_notification" },
-    { type: "create_task", title: "Review case files" }
+    { type: "create_task", title: "Review case files" },
   ]),
-  
+
   // Acciones al salir
   onExitActions: jsonb("on_exit_actions").default([
-    { type: "log_time", description: "Time in {stageName}" }
+    { type: "log_time", description: "Time in {stageName}" },
   ]),
-  
+
   color: text("color").default("#6366f1"),
   probability: integer("probability").default(0),
   createdAt: timestamp("created_at").defaultNow(),
@@ -129,20 +129,20 @@ export const crmStageTransitions = pgTable("crm_stage_transitions", {
   dealId: text("deal_id").notNull(),
   fromStageId: text("from_stage_id"),
   toStageId: text("to_stage_id").notNull(),
-  
+
   // Timing
   enteredAt: timestamp("entered_at").notNull(),
   exitedAt: timestamp("exited_at"), // NULL si está actualmente aquí
   durationMinutes: integer("duration_minutes"), // Calculado automático
-  
+
   // Metadata
   movedBy: text("moved_by"), // Quién movió el deal
   moveReason: text("move_reason"), // Opcional: por qué se movió
-  
+
   // SLA tracking
   wasOnTime: boolean("was_on_time"), // Comparado contra stage.estimatedDays
   slaBreach: boolean("sla_breach").default(false),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -161,30 +161,30 @@ export const crmStageTransitions = pgTable("crm_stage_transitions", {
 export const crmDocuments = pgTable("crm_documents", {
   id: text("id").primaryKey().$defaultFn(createId),
   dealId: text("deal_id").notNull(),
-  
+
   // Document metadata
   name: text("name").notNull(),
   fileUrl: text("file_url").notNull(),
   fileType: text("file_type"), // pdf, doc, etc
   fileSize: integer("file_size"),
-  
+
   // Categorización
   documentType: text("document_type"), // "contract", "pleading", "evidence", "retainer"
   category: text("category"), // Agrupación lógica
-  
+
   // Stage requirements
   requiredForStageId: text("required_for_stage_id"), // Si es obligatorio para X etapa
   isRequired: boolean("is_required").default(false),
   wasRequired: boolean("was_required").default(false), // Se cumplió el requisito?
-  
+
   // Version control
   version: integer("version").default(1),
   previousVersionId: text("previous_version_id"),
-  
+
   // Access control
   isPrivileged: boolean("is_privileged").default(false), // Attorney-client privilege
   confidential: boolean("confidential").default(false),
-  
+
   uploadedBy: text("uploaded_by"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
@@ -204,17 +204,17 @@ export const crmDocuments = pgTable("crm_documents", {
 export const crmIntakeForms = pgTable("crm_intake_forms", {
   id: text("id").primaryKey().$defaultFn(createId),
   grimoireId: text("grimoire_id").notNull(),
-  
+
   name: text("name").notNull(), // "Family Law Intake", "Property Inquiry"
   entityConfigId: text("entity_config_id").notNull(), // Qué tipo de entidad crea
-  
+
   // Schema del formulario (compatible con Gremius Forms)
   formSchema: jsonb("form_schema").notNull(), // Fields, validations, conditional logic
-  
+
   // Configuración
   isPublic: boolean("is_public").default(false), // Form público web?
   publicSlug: text("public_slug"), // URL: /forms/family-law-intake
-  
+
   // Qué pasa al submit
   onSubmitActions: jsonb("on_submit_actions").default([
     { type: "create_contact", mapping: { "email": "contact.email" } },
@@ -223,14 +223,14 @@ export const crmIntakeForms = pgTable("crm_intake_forms", {
     { type: "send_email", to: "{assignedTo}", template: "new_intake_notification" },
     { type: "webhook", url: "https://..." }
   ]),
-  
+
   // Integración con Datasets si se necesita
   datasetMapping: jsonb("dataset_mapping").default({
     // "Mapear respuestas a un Dataset para reporting avanzado"
     targetDataset: "intake_responses_2024",
     fieldMappings: { "income": "customFields.annualIncome" }
   }),
-  
+
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -269,6 +269,7 @@ export const crmIntakeForms = pgTable("crm_intake_forms", {
 ```
 
 **Integración con Gremius Forms:**
+
 - Reutilizar el motor de forms existente
 - Los intake forms pueden vincularse a un Dataset para reporting
 - Usar el mismo sistema de validaciones condicionales
@@ -281,55 +282,55 @@ export const crmIntakeForms = pgTable("crm_intake_forms", {
 // crm_calendar_events - Eventos vinculados a deals/contacts
 export const crmCalendarEvents = pgTable("crm_calendar_events", {
   id: text("id").primaryKey().$defaultFn(createId),
-  
+
   // Vinculación
   dealId: text("deal_id"), // Opcional: vinculado a un case/deal
   contactId: text("contact_id"), // Opcional: vinculado a contact
   activityId: text("activity_id"), // Opcional: vinculado a activity
-  
+
   // Event details
   title: text("title").notNull(),
   description: text("description"),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
   allDay: boolean("all_day").default(false),
-  
+
   // Location (para court hearings, depositions)
   location: text("location"),
   isVirtual: boolean("is_virtual").default(false),
   meetingUrl: text("meeting_url"),
-  
+
   // Categoría y tipo
   eventType: text("event_type"), // "court_hearing", "deposition", "client_meeting", "deadline"
   category: text("category"), // "critical", "important", "routine"
-  
+
   // Reminders
   reminders: jsonb("reminders").default([
     { type: "email", minutesBefore: 1440 }, // 1 día antes
-    { type: "notification", minutesBefore: 60 } // 1 hora antes
+    { type: "notification", minutesBefore: 60 }, // 1 hora antes
   ]),
-  
+
   // Attendees
   attendees: jsonb("attendees").default([]), // [{ contactId, email, status }]
-  
+
   // Auto-generated from field
   autoGenerated: boolean("auto_generated").default(false),
   sourceField: text("source_field"), // "courtDate", "depositionDate"
-  
+
   // Status
   status: text("status").default("confirmed"), // confirmed, tentative, cancelled
   completed: boolean("completed").default(false),
-  
+
   // iCal/Sync
   externalCalId: text("external_cal_id"), // Google/Outlook event ID
   icalUid: text("ical_uid"),
-  
+
   createdBy: text("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Vista de calendario: 
+// Vista de calendario:
 // - Mostrar eventos de crm_calendar_events
 // - Mostrar activities con dueDate
 // - Mostrar deadlines calculados
@@ -380,6 +381,7 @@ GET   /api/crm/deals/:id/missing-documents
 ## 8. UI Components Necesarios
 
 ### Admin Views:
+
 1. **EntityConfigBuilder** - Configurar "qué es un Deal" para este negocio
 2. **PipelineStageBuilder** - Drag-drop stages + configurar validaciones
 3. **IntakeFormBuilder** - Form builder con conditional logic
@@ -388,6 +390,7 @@ GET   /api/crm/deals/:id/missing-documents
 6. **TimeAnalyticsDashboard** - Reportes de cycle time, SLA breaches
 
 ### Kanban mejorado:
+
 - Mostrar "tiempo en etapa" en cada card
 - Alertas visuales si excede SLA
 - Botón "Ver documentos faltantes" antes de mover
@@ -436,69 +439,84 @@ const legalConfig = {
     pluralLabel: "Cases",
     fieldSchema: [
       { key: "caseNumber", type: "text", label: "Case #", required: true, unique: true },
-      { key: "practiceArea", type: "select", label: "Practice Area", 
-        options: ["Family", "Corporate", "Criminal", "PI"], required: true },
-      { key: "courtDate", type: "datetime", label: "Court Date", 
-        calendarSync: true, reminderDays: [7, 1] },
+      {
+        key: "practiceArea",
+        type: "select",
+        label: "Practice Area",
+        options: ["Family", "Corporate", "Criminal", "PI"],
+        required: true,
+      },
+      {
+        key: "courtDate",
+        type: "datetime",
+        label: "Court Date",
+        calendarSync: true,
+        reminderDays: [7, 1],
+      },
       { key: "retainerAmount", type: "currency", label: "Retainer", required: true },
       { key: "judgeName", type: "text", label: "Judge" },
-      { key: "opposingCounsel", type: "contact", label: "Opposing Counsel" }
-    ]
+      { key: "opposingCounsel", type: "contact", label: "Opposing Counsel" },
+    ],
   },
-  
+
   pipeline: {
     name: "Legal Case Pipeline",
     stages: [
-      { 
-        name: "Intake", 
+      {
+        name: "Intake",
         entryRequirements: { requiredFields: [] },
-        onEnter: [{ type: "send_email", template: "intake_received" }]
+        onEnter: [{ type: "send_email", template: "intake_received" }],
       },
-      { 
-        name: "Conflicts Check", 
+      {
+        name: "Conflicts Check",
         estimatedDays: 2,
-        entryRequirements: { 
+        entryRequirements: {
           requiredFields: ["caseNumber"],
-          requiredDocuments: ["conflicts_check_form"]
-        }
+          requiredDocuments: ["conflicts_check_form"],
+        },
       },
-      { 
-        name: "Retained", 
+      {
+        name: "Retained",
         estimatedDays: 1,
-        entryRequirements: { 
+        entryRequirements: {
           requiredFields: ["retainerAmount"],
-          requiredDocuments: ["retainer_agreement", "fee_agreement"]
+          requiredDocuments: ["retainer_agreement", "fee_agreement"],
         },
         onEnter: [
           { type: "create_calendar_event", template: "Case opened: {caseNumber}" },
-          { type: "create_task", title: "Open case file" }
-        ]
+          { type: "create_task", title: "Open case file" },
+        ],
       },
       { name: "Discovery", estimatedDays: 90 },
       { name: "Settlement/Trail", estimatedDays: 30 },
-      { 
-        name: "Closed", 
+      {
+        name: "Closed",
         onEnter: [
           { type: "log_time", description: "Total case duration" },
-          { type: "create_task", title: "Archive case files" }
-        ]
-      }
-    ]
+          { type: "create_task", title: "Archive case files" },
+        ],
+      },
+    ],
   },
-  
+
   intakeForm: {
     name: "Legal Intake Form",
     fields: [
       { id: "legal_issue", type: "textarea", label: "Describe your legal issue", required: true },
-      { id: "urgency", type: "select", label: "Urgency", options: ["Immediate", "This week", "This month"] },
-      { id: "documents", type: "file", label: "Relevant documents", multiple: true }
+      {
+        id: "urgency",
+        type: "select",
+        label: "Urgency",
+        options: ["Immediate", "This week", "This month"],
+      },
+      { id: "documents", type: "file", label: "Relevant documents", multiple: true },
     ],
     onSubmit: [
       { type: "create_contact" },
       { type: "create_deal", stage: "Intake" },
-      { type: "send_email", to: "intake@firm.com" }
-    ]
-  }
+      { type: "send_email", to: "intake@firm.com" },
+    ],
+  },
 };
 ```
 
@@ -506,16 +524,16 @@ const legalConfig = {
 
 ## Resumen de Esfuerzo
 
-| Feature | Complejidad | Tiempo Est. |
-|---------|-------------|-------------|
-| Entity Configs | Media | 3-4 días |
-| Stage Validations | Media | 2-3 días |
-| Time Tracking | Baja | 2 días |
-| Document Requirements | Media | 3 días |
-| Intake Forms (Gremius) | Baja | 2 días (reusa Forms) |
-| Calendario | Media-Alta | 5-7 días |
-| Analytics/Reportes | Media | 3-4 días |
-| UI Components | Alta | 7-10 días |
-| **TOTAL** | | **3-4 semanas** |
+| Feature                | Complejidad | Tiempo Est.          |
+| ---------------------- | ----------- | -------------------- |
+| Entity Configs         | Media       | 3-4 días             |
+| Stage Validations      | Media       | 2-3 días             |
+| Time Tracking          | Baja        | 2 días               |
+| Document Requirements  | Media       | 3 días               |
+| Intake Forms (Gremius) | Baja        | 2 días (reusa Forms) |
+| Calendario             | Media-Alta  | 5-7 días             |
+| Analytics/Reportes     | Media       | 3-4 días             |
+| UI Components          | Alta        | 7-10 días            |
+| **TOTAL**              |             | **3-4 semanas**      |
 
 Esta arquitectura convierte el CRM en un **motor de automatización de workflows** configurable, no solo un tracker de deals.

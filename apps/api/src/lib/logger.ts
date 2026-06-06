@@ -1,6 +1,6 @@
 /**
  * GremiusCMS - Structured Logging
- * 
+ *
  * Pino-based logger with context support for tracing requests
  * and structured log output for production monitoring.
  *
@@ -49,37 +49,38 @@ export function createRequestLogger(requestId: string, userId?: string) {
 // Performance logger
 export function createPerformanceLogger(operation: string) {
   const startTime = Date.now();
-  
+
   return {
     finish: (metadata?: Record<string, unknown>) => {
       const duration = Date.now() - startTime;
-      logger.info({
-        operation,
-        duration,
-        type: "performance",
-        ...metadata,
-      }, `${operation} completed in ${duration}ms`);
+      logger.info(
+        {
+          operation,
+          duration,
+          type: "performance",
+          ...metadata,
+        },
+        `${operation} completed in ${duration}ms`
+      );
     },
     error: (error: Error, metadata?: Record<string, unknown>) => {
       const duration = Date.now() - startTime;
-      logger.error({
-        operation,
-        duration,
-        error: error.message,
-        type: "performance-error",
-        ...metadata,
-      }, `${operation} failed after ${duration}ms`);
+      logger.error(
+        {
+          operation,
+          duration,
+          error: error.message,
+          type: "performance-error",
+          ...metadata,
+        },
+        `${operation} failed after ${duration}ms`
+      );
     },
   };
 }
 
 // Database query logger
-export function logQuery(
-  sql: string,
-  params: unknown[],
-  duration: number,
-  error?: Error
-) {
+export function logQuery(sql: string, params: unknown[], duration: number, error?: Error) {
   const logData = {
     type: "query",
     sql: sql.substring(0, 200),
@@ -107,11 +108,14 @@ export function logSecurity(
     metadata?: Record<string, unknown>;
   }
 ) {
-  logger.warn({
-    type: "security",
-    event,
-    ...details,
-  }, `Security: ${event}`);
+  logger.warn(
+    {
+      type: "security",
+      event,
+      ...details,
+    },
+    `Security: ${event}`
+  );
 }
 
 export default logger;

@@ -9,25 +9,25 @@
 
 **Todas las fases del plan original están COMPLETADAS.** El refactor del admin a Hybrid Rendering se completó exitosamente.
 
-| Fase | Estado | Notas |
-|------|--------|-------|
-| Fase 0: Infra Hybrid Rendering | ✅ **COMPLETADA** | `GrimoirePage` respeta `admin.views` desde `grimoire.json` |
-| Fase 1: CRM — De Monolito a Hybrid | ✅ **COMPLETADA** | De ~11 componentes a 2 custom views justificadas |
-| Fase 2: Conta — Reducción de 60% | ✅ **COMPLETADA** | De ~10 componentes a 4 custom views justificadas |
-| Fase 3: Agile — Decisión de Producto | ✅ **COMPLETADA** | Eliminado del admin. Puro DataExplorer (5 grids) |
-| Fase 4: API Client Tipado | ✅ **COMPLETADA** | `crm.ts`, `conta.ts`, `agile.ts` creados y funcionando |
-| Fase 5: Settings General + Cleanup | ✅ **COMPLETADA** | Settings persiste vía PATCH, huérfanos eliminados |
+| Fase                                 | Estado            | Notas                                                      |
+| ------------------------------------ | ----------------- | ---------------------------------------------------------- |
+| Fase 0: Infra Hybrid Rendering       | ✅ **COMPLETADA** | `GrimoirePage` respeta `admin.views` desde `grimoire.json` |
+| Fase 1: CRM — De Monolito a Hybrid   | ✅ **COMPLETADA** | De ~11 componentes a 2 custom views justificadas           |
+| Fase 2: Conta — Reducción de 60%     | ✅ **COMPLETADA** | De ~10 componentes a 4 custom views justificadas           |
+| Fase 3: Agile — Decisión de Producto | ✅ **COMPLETADA** | Eliminado del admin. Puro DataExplorer (5 grids)           |
+| Fase 4: API Client Tipado            | ✅ **COMPLETADA** | `crm.ts`, `conta.ts`, `agile.ts` creados y funcionando     |
+| Fase 5: Settings General + Cleanup   | ✅ **COMPLETADA** | Settings persiste vía PATCH, huérfanos eliminados          |
 
 **Métricas de Éxito (Actual):**
 
-| Métrica | Antes | Target | Después |
-|---------|-------|--------|---------|
-| % tablas en DataExplorer | ~30% | > 70% | **~75%** ✅ |
-| Custom views CRM | ~11 | 3-5 | **2** ✅ |
-| Custom views Conta | ~10 | 3-4 | **4** ✅ |
-| Custom views Agile | 1 monolito (702 líneas) | 0-2 | **0** ✅ |
-| Llamadas API con strings | > 0 | 0 | **0** ✅ |
-| Tipos inline en views | > 0 | 0 | **~5** ⚠️ (Settings.svelte) |
+| Métrica                  | Antes                   | Target | Después                     |
+| ------------------------ | ----------------------- | ------ | --------------------------- |
+| % tablas en DataExplorer | ~30%                    | > 70%  | **~75%** ✅                 |
+| Custom views CRM         | ~11                     | 3-5    | **2** ✅                    |
+| Custom views Conta       | ~10                     | 3-4    | **4** ✅                    |
+| Custom views Agile       | 1 monolito (702 líneas) | 0-2    | **0** ✅                    |
+| Llamadas API con strings | > 0                     | 0      | **0** ✅                    |
+| Tipos inline en views    | > 0                     | 0      | **~5** ⚠️ (Settings.svelte) |
 
 ---
 
@@ -58,6 +58,7 @@
 - **Inline relations**: Mostrar contacts relacionados al editar un Company (Django-style inlines)
 
 **Archivos a modificar:**
+
 - `packages/admin/src/lib/components/admin/DataExplorer.svelte`
 - `packages/admin/src/lib/components/admin/AutoFormModal.svelte`
 
@@ -68,6 +69,7 @@
 **Objetivo**: Llegar a 60% de cobertura.
 
 **Plan:**
+
 ```
 Semana 1: Tests críticos
   - Auth flow completo (login, registro, permisos)
@@ -85,6 +87,7 @@ Semana 3: Tests E2E
 ```
 
 **Archivos prioritarios:**
+
 - `apps/api/src/middleware/transactional-rls.ts`
 - `apps/api/src/routes/items.ts`
 - `apps/api/src/routes/datasets.ts`
@@ -115,13 +118,13 @@ Semana 3: Tests E2E
 
 ## Riesgos y Mitigaciones (Actualizado)
 
-| Riesgo | Estado | Mitigación |
-|--------|--------|-----------|
-| DataExplorer no cubre un caso edge | ⚠️ Vigente | Mantener vista custom como fallback; iterar sobre DataExplorer |
-| Usuarios acostumbrados al layout monolito | ✅ Resuelto | Transición completada sin incidentes |
-| Kanban de Agile no compatible | ✅ Resuelto | Agile eliminado del admin; vive en realm si es necesario |
-| Breaking change en rutas | ✅ Resuelto | Rutas legacy siguen funcionando; sidebar apunta a `/g/{id}` |
+| Riesgo                                    | Estado      | Mitigación                                                     |
+| ----------------------------------------- | ----------- | -------------------------------------------------------------- |
+| DataExplorer no cubre un caso edge        | ⚠️ Vigente  | Mantener vista custom como fallback; iterar sobre DataExplorer |
+| Usuarios acostumbrados al layout monolito | ✅ Resuelto | Transición completada sin incidentes                           |
+| Kanban de Agile no compatible             | ✅ Resuelto | Agile eliminado del admin; vive en realm si es necesario       |
+| Breaking change en rutas                  | ✅ Resuelto | Rutas legacy siguen funcionando; sidebar apunta a `/g/{id}`    |
 
 ---
 
-*Plan creado para GremiusCMS v0.8.0-beta. Refactor completado 2026-04-22. Documento actualizado 2026-04-26.*
+_Plan creado para GremiusCMS v0.8.0-beta. Refactor completado 2026-04-22. Documento actualizado 2026-04-26._

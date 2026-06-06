@@ -78,7 +78,7 @@ async function twitchFetch<T>(endpoint: string): Promise<T> {
   const response = await fetch(`https://api.twitch.tv/helix${endpoint}`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       "Client-Id": process.env.TWITCH_CLIENT_ID!,
     },
   });

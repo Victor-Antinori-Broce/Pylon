@@ -10,7 +10,6 @@
    * Also supports Core Engines (like media-library) that have custom views
    * but are not listed in the grimoire registry.
    */
-  import { onMount } from "svelte";
   import DataExplorer from "$lib/components/admin/DataExplorer.svelte";
   import { 
     getGrimoireConfig, 
@@ -19,10 +18,11 @@
     generateDefaultConfig,
     hasCustomView 
   } from "$lib/grimoire-loader";
-  import type { Component } from "svelte";
   import type { AdminConfig } from "$lib/types/admin";
+  import type { Component } from "svelte";
+  import { onMount } from "svelte";
 
-  let { grimoireId }: { grimoireId: string } = $props();
+  const { grimoireId }: { grimoireId: string } = $props();
 
   let CustomView: Component | null = $state(null);
   let config = $state<AdminConfig | undefined>(undefined);

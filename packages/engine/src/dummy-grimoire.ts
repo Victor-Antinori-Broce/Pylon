@@ -11,8 +11,6 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { defineGrimoire, InferGrimoireSelect, InferGrimoireInsert, createGrimoireAction } from "./grimoire";
-import { defineAction } from "./actions";
 import type { GrimoireContext } from "@gremius/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -21,6 +19,17 @@ import type { GrimoireContext } from "@gremius/shared";
 
 // Simulamos un modelo Drizzle usando pgTable
 import { pgTable, uuid, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core";
+
+import {
+  defineGrimoire,
+  InferGrimoireSelect,
+  InferGrimoireInsert,
+  createGrimoireAction,
+  registerGrimoire,
+  getGrimoire,
+  listGrimoires,
+  initializeGrimoires,
+} from "./grimoire";
 
 // Modelo: agile_issues
 export const agileIssues = pgTable("agile_issues", {
@@ -70,7 +79,7 @@ const testIssueSelect: IssueSelect = {
 
 const testIssueInsert: IssueInsert = {
   title: "New Issue", // required (notNull, no default)
-  status: "open",     // optional (has default)
+  status: "open", // optional (has default)
   // id, createdAt, updatedAt son opcionales (tienen default)
 };
 
@@ -106,7 +115,7 @@ const agileGrimoire = defineGrimoire({
       run: async ({ payload, db }) => {
         // ✅ payload debe estar tipado
         const sprintId: string = payload.sprintId;
-        
+
         return {
           success: true,
           data: { sprintId, closedAt: new Date().toISOString() },
@@ -123,19 +132,27 @@ const grimoireRoutes = agileGrimoire.routes;
 const grimoireTools = agileGrimoire.tools;
 
 // Verificar rutas generadas
-const listRoute = agileGrimoire.routes.find(r => r.operation === "list" && r.tableName === "agile_issues");
+const listRoute = agileGrimoire.routes.find(
+  (r) => r.operation === "list" && r.tableName === "agile_issues"
+);
 // ✅ listRoute.path === "/api/agile/agile_issues"
 // ✅ listRoute.method === "get"
 
-const createRoute = agileGrimoire.routes.find(r => r.operation === "create" && r.tableName === "agile_issues");
+const createRoute = agileGrimoire.routes.find(
+  (r) => r.operation === "create" && r.tableName === "agile_issues"
+);
 // ✅ createRoute.path === "/api/agile/agile_issues"
 // ✅ createRoute.method === "post"
 
 // Verificar tools MCP generadas
-const readTool = agileGrimoire.tools.find(t => t.operation === "read" && t.tableName === "agile_issues");
+const readTool = agileGrimoire.tools.find(
+  (t) => t.operation === "read" && t.tableName === "agile_issues"
+);
 // ✅ readTool.name === "agile_read_agile_issues"
 
-const createTool = agileGrimoire.tools.find(t => t.operation === "create" && t.tableName === "agile_issues");
+const createTool = agileGrimoire.tools.find(
+  (t) => t.operation === "create" && t.tableName === "agile_issues"
+);
 // ✅ createTool.name === "agile_create_agile_issues"
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -153,7 +170,7 @@ const createTool = agileGrimoire.tools.find(t => t.operation === "create" && t.t
 const expectedOperations = ["list", "create", "read", "update", "delete"] as const;
 for (const op of expectedOperations) {
   const route = agileGrimoire.routes.find(
-    r => r.operation === op && r.tableName === "agile_issues"
+    (r) => r.operation === op && r.tableName === "agile_issues"
   );
   if (!route) {
     console.error(`Missing route for operation: ${op}`);
@@ -167,7 +184,7 @@ for (const op of expectedOperations) {
 const expectedTools = ["read", "create"] as const;
 for (const op of expectedTools) {
   const tool = agileGrimoire.tools.find(
-    t => t.operation === op && t.tableName === "agile_issues"
+    (t) => t.operation === op && t.tableName === "agile_issues"
   );
   if (!tool) {
     console.error(`Missing tool for operation: ${op}`);
@@ -232,19 +249,19 @@ const actionWithFullContext = defineGrimoire({
       run: async (ctx) => {
         // ✅ Contexto debe tener todas las propiedades base
         const { payload, db, grimoire, logger, queue, cache, http } = ctx;
-        
+
         // HTTP context debe existir para triggers http
         const hono = http?.hono;
         const headers = http?.headers;
         http?.status(201);
         http?.header("X-Custom", "value");
-        
+
         // No debe tener event o agent context
         // @ts-expect-error - event no debe existir en http trigger
         const jobId = ctx.event?.jobId;
         // @ts-expect-error - agent no debe existir en http trigger
         const agentId = ctx.agent?.agentId;
-        
+
         return { success: true, data: { received: true } };
       },
     },
@@ -254,8 +271,6 @@ const actionWithFullContext = defineGrimoire({
 // ═══════════════════════════════════════════════════════════════════════════════
 // TEST 7: Registro global de grimoires
 // ═══════════════════════════════════════════════════════════════════════════════
-
-import { registerGrimoire, getGrimoire, listGrimoires, initializeGrimoires } from "./grimoire";
 
 // Registrar grimoire
 registerGrimoire(agileGrimoire);
@@ -326,20 +341,20 @@ const mixedGrimoire = defineGrimoire({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Operación LIST
-const listOp = mixedGrimoire.routes.find(r => r.operation === "list");
+const listOp = mixedGrimoire.routes.find((r) => r.operation === "list");
 if (listOp) {
   const method: "get" = listOp.method; // Debe ser GET
-  const path: string = listOp.path;    // Debe ser /api/mixed/agile_issues
+  const path: string = listOp.path; // Debe ser /api/mixed/agile_issues
 }
 
 // Operación CREATE
-const createOp = mixedGrimoire.routes.find(r => r.operation === "create");
+const createOp = mixedGrimoire.routes.find((r) => r.operation === "create");
 if (createOp) {
   const method: "post" = createOp.method; // Debe ser POST
 }
 
 // Operación READ (by id)
-const readOp = mixedGrimoire.routes.find(r => r.operation === "read");
+const readOp = mixedGrimoire.routes.find((r) => r.operation === "read");
 if (readOp) {
   const path: string = readOp.path; // Debe incluir /:id
   const hasIdParam: boolean = path.includes(":id");

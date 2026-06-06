@@ -7,15 +7,15 @@
  * This enables the `npx create-gremius` pattern that vibe-coders expect.
  */
 
-import { initCommand } from '../dist/commands/init.js';
+import { initCommand } from "../dist/commands/init.js";
 
 const projectName = process.argv[2];
-const templateFlag = process.argv.find(arg => arg.startsWith('--template='));
-const template = templateFlag ? templateFlag.split('=')[1] : 'default';
+const templateFlag = process.argv.find((arg) => arg.startsWith("--template="));
+const template = templateFlag ? templateFlag.split("=")[1] : "default";
 
 initCommand(projectName, {
-    template,
-    mode: 'vibecoder',
-    database: 'postgres',
-    autoStart: true,
+  template,
+  mode: "vibecoder",
+  database: "postgres",
+  autoStart: true,
 });

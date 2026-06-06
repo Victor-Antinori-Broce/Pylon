@@ -6,8 +6,10 @@
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
-import { db } from "../db";
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
+
 import { isDatabaseAvailable } from "./setup";
 
 let dbAvailable = false;

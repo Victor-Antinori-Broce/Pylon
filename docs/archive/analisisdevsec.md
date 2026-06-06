@@ -46,11 +46,12 @@ const token = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQC
 // Validación segura
 const authResult = await authenticateAgent(token, {
   requireScopes: ["mcp:connect"],
-  audit: { action: "mcp:connect", resource: "mcp:session" }
+  audit: { action: "mcp:connect", resource: "mcp:session" },
 });
 ```
 
 **Implementado:**
+
 - ✅ **NHI Token Format** - `grm_agent_{tipo}_{hash}` con validación SHA-256
 - ✅ **Dual Auth** - Soporta legacy API keys (`gremius_sk_*`) + NHI tokens
 - ✅ **Zero-Trust** - Cada request valida token
@@ -77,13 +78,14 @@ export function hasScope(agent: AgentAuthContext, scope: string): boolean {
 }
 
 // Uso en rutas
-app.get("/api/agent/memory", 
+app.get("/api/agent/memory",
   agentAuthWithRBAC({ scopes: ["memory:read"] }),  // ✅ Requiere scope
   async (c) => { ... }
 );
 ```
 
 **Implementado:**
+
 - ✅ **Scope Validation** - `memory:read`, `memory:write`, `memory:delete`, `memory:admin`
 - ✅ **Wildcard Scopes** - `read:*` matcha cualquier `read:resource`
 - ✅ **AND/OR Logic** - `requireAll: true` (default) vs `requireAll: false`
@@ -97,28 +99,35 @@ app.get("/api/agent/memory",
 // apps/api/src/index.ts
 
 // Global rate limit
-app.use("*", rateLimiter({
-  windowMs: 60000,
-  limit: 100,
-  keyGenerator: (c) => {
-    const authHeader = c.req.header("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      return authHeader.substring(7); // Token-based limiting
-    }
-    return c.req.header("x-forwarded-for") || "unknown";
-  },
-  skip: (c) => rateLimitConfig.skipPaths.includes(c.req.path)
-}));
+app.use(
+  "*",
+  rateLimiter({
+    windowMs: 60000,
+    limit: 100,
+    keyGenerator: (c) => {
+      const authHeader = c.req.header("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        return authHeader.substring(7); // Token-based limiting
+      }
+      return c.req.header("x-forwarded-for") || "unknown";
+    },
+    skip: (c) => rateLimitConfig.skipPaths.includes(c.req.path),
+  })
+);
 
 // Stricter rate limit for auth endpoints
-app.use("/api/auth/sign-in/*", rateLimiter({
-  windowMs: 60000,
-  limit: 5,  // Solo 5 intentos por minuto
-  keyGenerator: (c) => c.req.header("x-forwarded-for") || "unknown"
-}));
+app.use(
+  "/api/auth/sign-in/*",
+  rateLimiter({
+    windowMs: 60000,
+    limit: 5, // Solo 5 intentos por minuto
+    keyGenerator: (c) => c.req.header("x-forwarded-for") || "unknown",
+  })
+);
 ```
 
 **Implementado:**
+
 - ✅ **Rate Limit por Agente** - Configurable en `agent_identities.rateLimit`
 - ✅ **120 req/min default** - Para agentes tipo `claude-desktop`
 - ✅ **Global Rate Limit** - Middleware aplicado en todas las rutas
@@ -150,9 +159,7 @@ import { pino } from "pino";
 
 export const logger = pino({
   level: config.LOG_LEVEL,
-  transport: config.NODE_ENV === "development" 
-    ? { target: "pino-pretty" }
-    : undefined,
+  transport: config.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined,
 });
 
 // Request tracing
@@ -162,6 +169,7 @@ export function createRequestLogger(requestId: string, userId?: string) {
 ```
 
 **Implementado:**
+
 - ✅ **Pino Logger** - Structured logging en todo el API
 - ✅ **Request Tracing** - Cada request tiene UUID único
 - ✅ **Security Event Logging** - Eventos de auth logueados
@@ -191,8 +199,9 @@ platformsRoutes.post("/", async (c) => {
 #### CORS: Permisivo por default
 
 ```typescript
-ALLOWED_ORIGINS: z.string()
-  .default("http://localhost:3000,http://localhost:3001,http://localhost:3002,...")
+ALLOWED_ORIGINS: z.string().default(
+  "http://localhost:3000,http://localhost:3001,http://localhost:3002,..."
+);
 ```
 
 **Estado:** Sin cambios - aceptable para desarrollo.
@@ -217,19 +226,19 @@ ALLOWED_ORIGINS: z.string()
 
 ### 📊 Tabla de Guardrails (Actualizada)
 
-| Guardrail | Estado | Prioridad | Notas |
-|-----------|--------|-----------|-------|
-| **Validación obligatoria** | 🟡 Opt-in | Alta | Mejorado, no universal |
-| **Rate limiting por ruta** | 🟢 Implementado | Media | ✅ Global + Auth específico |
-| **N+1 Query detection** | 🔴 No existe | Alta | Pendiente |
-| **SQL Injection scan** | 🟡 Básico (Drizzle) | Alta | ORM protege, falta linter |
-| **Permisos por default** | 🟢 Admin-only | Baja | ✅ RLS funciona |
-| **RBAC Scopes** | 🟢 Implementado | Alta | ✅ Wildcards funcionan |
-| **Agent NHI** | 🟢 Implementado | Alta | ✅ Tokens con hash SHA-256 |
-| **Secret scanning** | 🔴 No existe | Baja | Pendiente |
-| **CSP/Security headers** | 🟡 Básicos | Media | ✅ secureHeaders() en Hono |
-| **Structured Logging** | 🟢 Implementado | Alta | ✅ Pino con request tracing 🆕 |
-| **Agent Telemetry** | 🟢 Implementado | Alta | ✅ Tracing completo 🆕 |
+| Guardrail                  | Estado              | Prioridad | Notas                          |
+| -------------------------- | ------------------- | --------- | ------------------------------ |
+| **Validación obligatoria** | 🟡 Opt-in           | Alta      | Mejorado, no universal         |
+| **Rate limiting por ruta** | 🟢 Implementado     | Media     | ✅ Global + Auth específico    |
+| **N+1 Query detection**    | 🔴 No existe        | Alta      | Pendiente                      |
+| **SQL Injection scan**     | 🟡 Básico (Drizzle) | Alta      | ORM protege, falta linter      |
+| **Permisos por default**   | 🟢 Admin-only       | Baja      | ✅ RLS funciona                |
+| **RBAC Scopes**            | 🟢 Implementado     | Alta      | ✅ Wildcards funcionan         |
+| **Agent NHI**              | 🟢 Implementado     | Alta      | ✅ Tokens con hash SHA-256     |
+| **Secret scanning**        | 🔴 No existe        | Baja      | Pendiente                      |
+| **CSP/Security headers**   | 🟡 Básicos          | Media     | ✅ secureHeaders() en Hono     |
+| **Structured Logging**     | 🟢 Implementado     | Alta      | ✅ Pino con request tracing 🆕 |
+| **Agent Telemetry**        | 🟢 Implementado     | Alta      | ✅ Tracing completo 🆕         |
 
 ---
 
@@ -240,16 +249,16 @@ ALLOWED_ORIGINS: z.string()
 ```typescript
 // ✅ AGENT IDENTITY - Estructura completa
 interface AgentIdentity {
-  id: string;                    // "agent_xxx"
-  name: string;                  // "DevBot"
+  id: string; // "agent_xxx"
+  name: string; // "DevBot"
   type: "claude-desktop" | "service" | "internal" | "webhook";
   description?: string;
   avatarUrl?: string;
-  capabilities: string[];        // ["read", "write"]
-  systemPrompt?: string;         // Prompt del agente
-  allowedTools: string[];        // Tools MCP permitidas
+  capabilities: string[]; // ["read", "write"]
+  systemPrompt?: string; // Prompt del agente
+  allowedTools: string[]; // Tools MCP permitidas
   isActive: boolean;
-  createdBy: string;             // userId
+  createdBy: string; // userId
   createdAt: Date;
   updatedAt: Date;
 }
@@ -258,10 +267,10 @@ interface AgentIdentity {
 interface AgentApiKey {
   id: string;
   identityId: string;
-  tokenHash: string;             // SHA-256 del token
-  tokenPrefix: string;           // "grm_age..." (8 chars)
-  scopes: string[];              // ["read:issues", "write:intake"]
-  rateLimit: number;             // 120 req/min
+  tokenHash: string; // SHA-256 del token
+  tokenPrefix: string; // "grm_age..." (8 chars)
+  scopes: string[]; // ["read:issues", "write:intake"]
+  rateLimit: number; // 120 req/min
   expiresAt?: Date;
   lastUsedAt?: Date;
   lastUsedIp?: string;
@@ -280,11 +289,11 @@ export function agentAuthWithRBAC(options: RBACOptions & { optional?: boolean })
     // 1. Extraer token
     const authHeader = c.req.header("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-    
+
     // 2. Validar NHI
     const result = await authenticateAgent(token);
     if (!result.success) return error 401;
-    
+
     // 3. Verificar scopes
     if (!hasScope(result.context, requiredScope)) {
       return c.json({
@@ -294,7 +303,7 @@ export function agentAuthWithRBAC(options: RBACOptions & { optional?: boolean })
         grantedScopes: result.context.scopes
       }, 403);
     }
-    
+
     c.set("agent", result.context);
     await next();
   };
@@ -321,14 +330,15 @@ export const drizzleTelemetryProvider = {
   },
 
   async updateStep(stepId: string, data: Partial<TelemetryStepData>): Promise<void> {
-    await db.update(agentTraceSteps)
+    await db
+      .update(agentTraceSteps)
       .set({
         toolOutput: data.toolOutput,
         durationMs: data.durationMs,
         errorMessage: data.errorMessage,
       })
       .where(eq(agentTraceSteps.id, stepId));
-  }
+  },
 };
 ```
 
@@ -338,38 +348,38 @@ export const drizzleTelemetryProvider = {
 
 ### Corto plazo (1-2 meses)
 
-| Prioridad | Tarea | Estado |
-|-----------|-------|--------|
-| ✅ Listo | Sistema NHI con tokens hash | IMPLEMENTADO |
-| ✅ Listo | RBAC con scopes y wildcards | IMPLEMENTADO |
-| ✅ Listo | Rate limiting por agente | IMPLEMENTADO |
-| ✅ Listo | Structured logging | IMPLEMENTADO 🆕 |
-| ✅ Listo | Agent Telemetry | IMPLEMENTADO 🆕 |
-| 🔄 Pendiente | Validación universal Zod | Parcial |
-| 🔄 Pendiente | ESLint Plugin específico | Pendiente |
+| Prioridad    | Tarea                       | Estado          |
+| ------------ | --------------------------- | --------------- |
+| ✅ Listo     | Sistema NHI con tokens hash | IMPLEMENTADO    |
+| ✅ Listo     | RBAC con scopes y wildcards | IMPLEMENTADO    |
+| ✅ Listo     | Rate limiting por agente    | IMPLEMENTADO    |
+| ✅ Listo     | Structured logging          | IMPLEMENTADO 🆕 |
+| ✅ Listo     | Agent Telemetry             | IMPLEMENTADO 🆕 |
+| 🔄 Pendiente | Validación universal Zod    | Parcial         |
+| 🔄 Pendiente | ESLint Plugin específico    | Pendiente       |
 
 ### Mediano plazo (3-6 meses)
 
-| Prioridad | Tarea | Estado |
-|-----------|-------|--------|
+| Prioridad    | Tarea                          | Estado    |
+| ------------ | ------------------------------ | --------- |
 | 🔄 Pendiente | Runtime warnings en desarrollo | Pendiente |
-| 🔄 Pendiente | N+1 query detection | Pendiente |
-| 🔄 Pendiente | SQL injection linter | Pendiente |
-| 🔄 Pendiente | Secret scanning | Pendiente |
+| 🔄 Pendiente | N+1 query detection            | Pendiente |
+| 🔄 Pendiente | SQL injection linter           | Pendiente |
+| 🔄 Pendiente | Secret scanning                | Pendiente |
 
 ---
 
 ## 5️⃣ Comparativa con Análisis Anterior
 
-| Componente | Estado Anterior | Nuevo Estado | Cambio |
-|------------|-----------------|--------------|--------|
-| Auth Universal | 95% | **98%** | +3% - Telemetry agregado |
-| Rate Limiting | 75% | **90%** | +15% - Auth endpoints protegidos 🆕 |
-| Validaciones | 50% | **70%** | +20% - Mejor cobertura 🆕 |
-| Permisos/RLS | 90% | **95%** | +5% - Mejoras menores |
-| Backend Guardrails | 20% | **35%** | +15% - ESLint + Logging 🆕 |
-| Observabilidad | N/A | **90%** | NUEVO - Telemetry completo 🆕 |
-| **PROMEDIO** | **66%** | **80%** | **+14%** |
+| Componente         | Estado Anterior | Nuevo Estado | Cambio                              |
+| ------------------ | --------------- | ------------ | ----------------------------------- |
+| Auth Universal     | 95%             | **98%**      | +3% - Telemetry agregado            |
+| Rate Limiting      | 75%             | **90%**      | +15% - Auth endpoints protegidos 🆕 |
+| Validaciones       | 50%             | **70%**      | +20% - Mejor cobertura 🆕           |
+| Permisos/RLS       | 90%             | **95%**      | +5% - Mejoras menores               |
+| Backend Guardrails | 20%             | **35%**      | +15% - ESLint + Logging 🆕          |
+| Observabilidad     | N/A             | **90%**      | NUEVO - Telemetry completo 🆕       |
+| **PROMEDIO**       | **66%**         | **80%**      | **+14%**                            |
 
 ---
 
@@ -408,6 +418,7 @@ export const drizzleTelemetryProvider = {
 **Prioridad 1 (Completado):** ✅ Sistema de autenticación y telemetry - LISTO
 
 **Prioridad 2:** Implementar ESLint plugin para:
+
 - Validación obligatoria en POST/PUT/PATCH
 - Detección de SQL crudo sin sanitización
 - Warnings para rutas sin rate limiting explícito
@@ -416,4 +427,4 @@ export const drizzleTelemetryProvider = {
 
 ---
 
-*Análisis actualizado - GremiusCMS v0.8.0-beta*
+_Análisis actualizado - GremiusCMS v0.8.0-beta_

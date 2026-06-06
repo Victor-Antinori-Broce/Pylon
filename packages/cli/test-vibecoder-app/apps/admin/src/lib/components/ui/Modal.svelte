@@ -3,8 +3,8 @@
   Ventana modal con backdrop y animaciones
 -->
 <script lang="ts">
-  import { X } from 'lucide-svelte';
   import { cn } from '$lib/utils';
+  import { X } from 'lucide-svelte';
   import { fade, scale } from 'svelte/transition';
   
   interface Props {

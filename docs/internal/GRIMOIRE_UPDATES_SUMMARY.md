@@ -8,7 +8,9 @@
 ## ✅ Grimoires Actualizados
 
 ### 1. grimoire-academy-lms
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: `core-media-library` → `grimoire-media`
 - ✅ Schema: Campos de media migrados de URLs a media_ids
   - `cursos.portada` → `cursos.mediaId`
@@ -26,9 +28,11 @@
 ---
 
 ### 2. grimoire-blocks
+
 **Cambios principales:**
+
 - ✅ `blocks.schema.ts`: Agregado `focalPoint` a HeroBlockContent
-- ✅ `blocks.routes.ts`: 
+- ✅ `blocks.routes.ts`:
   - Nuevo helper `buildTransformUrl()`
   - Render endpoint ahora devuelve `mediaUrls` con presets
   - Hero blocks: hero, large, medium, small con focal point
@@ -49,7 +53,9 @@
 ---
 
 ### 3. grimoire-blog
+
 **Cambios principales:**
+
 - ✅ Schema: Unificado manejo de imágenes
   - `ogImageUrl` (text) → `ogImageId` (uuid)
   - Agregado `featuredImageFocalPoint` (jsonb)
@@ -66,7 +72,9 @@
 ---
 
 ### 4. grimoire-directory
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Agregada dependencia `grimoire-media`
 - ✅ `directory.routes.ts`: Agregados helpers:
   - `getLogoUrl()` → `/api/media/preset/{id}/small`
@@ -84,8 +92,10 @@
 ---
 
 ### 5. grimoire-games
+
 **Cambios principales:**
-- ✅ `grimoire.json`: 
+
+- ✅ `grimoire.json`:
   - Agregada dependencia `grimoire-media`
   - Versión actualizada: 2.0.0 → 2.1.0
   - Nueva sección `media` con configuración de transforms
@@ -107,6 +117,7 @@
   - URLs transformadas para platform icons
 
 **Transform URLs generadas:**
+
 ```typescript
 // Cover Art:
 {
@@ -132,7 +143,9 @@
 ---
 
 ### 6. grimoire-datasets
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Agregada dependencia `grimoire-media`
 - ✅ `datasets.routes.ts`:
   - Agregado query param `includeThumbnailUrl`
@@ -141,11 +154,13 @@
 - ✅ Endpoint usado: `/api/media/preset/{thumbnailId}/thumbnail`
 
 **Ejemplo de uso:**
+
 ```bash
 GET /api/datasets/123/entries?includeThumbnailUrl=true
 ```
 
 Response:
+
 ```json
 {
   "thumbnailId": "uuid-here",
@@ -156,7 +171,9 @@ Response:
 ---
 
 ### 7. grimoire-streamers
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Agregadas dependencias `grimoire-games` y `grimoire-media`
 - ✅ `streamers.schema.ts`:
   - `thumbnailUrl: text()` → `thumbnailId: uuid()`
@@ -166,6 +183,7 @@ Response:
   - Actualizado create streamer para usar `thumbnailId`
 
 **Transform endpoints para rendering:**
+
 - Avatars: `/api/media/preset/{avatarId}/thumbnail`
 - Thumbnails: `/api/media/preset/{thumbnailId}/small`
 
@@ -175,15 +193,15 @@ Response:
 
 ## 📊 Estadísticas de Cambios
 
-| Grimoire | Archivos Modificados | Cambios Principales |
-|----------|---------------------|---------------------|
-| academy-lms | 6 | Dependencias, schema, servicios, routes |
-| blocks | 4 | Focal point, responsive images, docs |
-| blog | 7 | Schema unificado, SEO helpers, migración |
-| directory | 2 | Dependencias, URL helpers en routes |
-| games | 5 | Dependencias, schema, media helpers |
-| datasets | 2 | Dependencias, thumbnail URLs |
-| streamers | 3 | Dependencias, schema unificado |
+| Grimoire    | Archivos Modificados | Cambios Principales                      |
+| ----------- | -------------------- | ---------------------------------------- |
+| academy-lms | 6                    | Dependencias, schema, servicios, routes  |
+| blocks      | 4                    | Focal point, responsive images, docs     |
+| blog        | 7                    | Schema unificado, SEO helpers, migración |
+| directory   | 2                    | Dependencias, URL helpers en routes      |
+| games       | 5                    | Dependencias, schema, media helpers      |
+| datasets    | 2                    | Dependencias, thumbnail URLs             |
+| streamers   | 3                    | Dependencias, schema unificado           |
 
 **Total: 29 archivos modificados**
 
@@ -192,17 +210,21 @@ Response:
 ## 🎯 Patrones Implementados
 
 ### 1. Media ID References
+
 Todos los grimoires ahora usan `mediaId` (UUID) en vez de URLs:
+
 ```typescript
 // Antes:
-portada: text("portada_url")  // URL completa
+portada: text("portada_url"); // URL completa
 
 // Después:
-mediaId: uuid("media_id")     // Referencia a grimoire-media
+mediaId: uuid("media_id"); // Referencia a grimoire-media
 ```
 
 ### 2. Transform URL Helpers
+
 Cada grimoire tiene helpers para generar URLs:
+
 ```typescript
 function getMediaUrl(mediaId: string, preset: string) {
   return `/api/media/preset/${mediaId}/${preset}`;
@@ -210,17 +232,20 @@ function getMediaUrl(mediaId: string, preset: string) {
 ```
 
 ### 3. Focal Point Support
+
 Hero/cover images soportan focal point:
+
 ```typescript
 // URL con focal point
 `/api/media/transform/${id}?w=800&h=600&fit=cover&fp=${x},${y}`
-
 // Preset con focal point
-`/api/media/preset/${id}/hero?fp=${x},${y}`
+`/api/media/preset/${id}/hero?fp=${x},${y}`;
 ```
 
 ### 4. Backward Compatibility
+
 Donde aplica, se preservan IDs originales:
+
 ```typescript
 // Response incluye ambos
 {
@@ -252,13 +277,14 @@ Donde aplica, se preservan IDs originales:
 
 **Estado:** ✅ Todos los grimoires de prioridad alta están actualizados y consistentes con grimoire-media.
 
-
 ---
 
 ## 🟡 GRIMOIRES PRIORIDAD MEDIA/BAJA - Actualizados
 
 ### 8. grimoire-booking
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Dependencia actualizada `core-media-library` → `grimoire-media`
 - ✅ `booking.routes.ts`: Agregados helpers:
   - `getMediaTransformUrl(mediaId, preset)` - Genera URLs de transformación
@@ -270,6 +296,7 @@ Donde aplica, se preservan IDs originales:
   - `GET /my-bookings` - Incluye `roomCoverImageUrl` (thumbnail)
 
 **Presets usados:**
+
 - Room covers: `medium` (800x600)
 - Gallery images: `small` (400x300)
 - Booking thumbnails: `thumbnail` (150x150)
@@ -277,7 +304,9 @@ Donde aplica, se preservan IDs originales:
 ---
 
 ### 9. grimoire-agile
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Versión 1.1.0 → 1.2.0, agregada dependencia `grimoire-media`
 - ✅ `schema.ts`: Agregado campo `coverImageId` (uuid) a `agile_projects`
 - ✅ `agile.routes.ts`: Agregado helper `buildCoverImageUrls()`
@@ -287,6 +316,7 @@ Donde aplica, se preservan IDs originales:
   - `POST /projects` - Acepta `coverImageId` en request body
 
 **Transform URLs:**
+
 ```typescript
 {
   original: `/api/media/${coverImageId}`,
@@ -298,7 +328,9 @@ Donde aplica, se preservan IDs originales:
 ---
 
 ### 10. grimoire-crm
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Agregada dependencia `grimoire-media`
 - ✅ `crm.schema.ts`: Migración de campos:
   - `crmCompanies.logo` (text) → `crmCompanies.logoId` (uuid)
@@ -309,6 +341,7 @@ Donde aplica, se preservan IDs originales:
 - ✅ Migración: `migrations/0002_media_integration.sql`
 
 **Transform endpoints:**
+
 - Company logos: `/api/media/preset/{id}/small` (400x300)
 - Contact avatars: `/api/media/preset/{id}/thumbnail` (150x150)
 
@@ -321,12 +354,14 @@ Donde aplica, se preservan IDs originales:
 ---
 
 ### 11. grimoire-esports
+
 **Cambios principales:**
+
 - ✅ `grimoire.json`: Agregada dependencia `grimoire-media`
 - ✅ `schema.ts`: Migración de campos:
   - `players.avatarUrl` (text) → `players.avatarId` (uuid)
   - `teams.logoUrl` (text) → `teams.logoId` (uuid)
-- ✅ `routes/players.routes.ts`: 
+- ✅ `routes/players.routes.ts`:
   - Helper `getAvatarUrl()` → `/api/media/preset/{id}/thumbnail`
   - Endpoints actualizados para aceptar `avatarId` y retornar `avatarUrl`
 - ✅ `routes/teams.routes.ts`:
@@ -334,6 +369,7 @@ Donde aplica, se preservan IDs originales:
   - Endpoints actualizados para aceptar `logoId` y retornar `logoUrl`
 
 **Transform endpoints:**
+
 - Player avatars: `/api/media/preset/{id}/thumbnail` (150x150)
 - Team logos: `/api/media/preset/{id}/small` (400x300)
 
@@ -343,15 +379,16 @@ Donde aplica, se preservan IDs originales:
 
 ### Total de Grimoires Actualizados: 11
 
-| Prioridad | Cantidad | Grimoires |
-|-----------|----------|-----------|
-| 🔴 Alta | 7 | academy-lms, blocks, blog, directory, games, datasets, streamers |
-| 🟡 Media | 1 | booking |
-| 🟢 Baja | 3 | agile, crm, esports |
+| Prioridad | Cantidad | Grimoires                                                        |
+| --------- | -------- | ---------------------------------------------------------------- |
+| 🔴 Alta   | 7        | academy-lms, blocks, blog, directory, games, datasets, streamers |
+| 🟡 Media  | 1        | booking                                                          |
+| 🟢 Baja   | 3        | agile, crm, esports                                              |
 
 ### Total de Archivos Modificados: 40+
 
 ### Patrones Consistentes Aplicados:
+
 - ✅ Todos usan `grimoire-media` (sin nombres antiguos)
 - ✅ Todos declaran dependencia explícita
 - ✅ Campos de media son UUIDs que referencian media.id
@@ -388,4 +425,3 @@ Las siguientes migraciones deben ejecutarse:
 /api/media/focal-point/:id        # POST/GET focal point
 /api/media/cache/:id              # DELETE cache
 ```
-

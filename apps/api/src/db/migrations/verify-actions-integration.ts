@@ -12,9 +12,8 @@
  *   5. Event dispatch
  */
 
-import { db } from "../index";
-import { actions, actionExecutions } from "../schema";
 import { eq, desc } from "drizzle-orm";
+
 import {
   listActions,
   getAction,
@@ -24,6 +23,8 @@ import {
   executeActionById,
   dispatchEvent,
 } from "../../lib/actions";
+import { db } from "../index";
+import { actions, actionExecutions } from "../schema";
 
 const TEST_ACTION_SLUG = "test-verification-action";
 
@@ -37,10 +38,12 @@ interface TestResult {
 async function cleanupTestData(): Promise<void> {
   try {
     // Delete test action if exists
-    const [existing] = await db.select().from(actions)
+    const [existing] = await db
+      .select()
+      .from(actions)
       .where(eq(actions.slug, TEST_ACTION_SLUG))
       .limit(1);
-    
+
     if (existing) {
       await db.delete(actions).where(eq(actions.id, existing.id));
       console.log("  Cleaned up previous test data");
@@ -59,7 +62,12 @@ async function testDatabaseConnection(): Promise<TestResult> {
     }
     throw new Error("Unexpected result from database");
   } catch (err: any) {
-    return { name: "Database Connection", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Database Connection",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -72,20 +80,25 @@ async function testSchemaExists(): Promise<TestResult> {
       WHERE table_schema = 'public' 
       AND table_name IN ('actions', 'action_executions')
     `);
-    
+
     const tableNames = tables.rows.map((r: any) => r.table_name);
-    
+
     if (tableNames.includes("actions") && tableNames.includes("action_executions")) {
       return { name: "Schema Exists", passed: true, durationMs: Date.now() - start };
     }
-    
+
     const missing = [];
     if (!tableNames.includes("actions")) missing.push("actions");
     if (!tableNames.includes("action_executions")) missing.push("action_executions");
-    
+
     throw new Error(`Missing tables: ${missing.join(", ")}`);
   } catch (err: any) {
-    return { name: "Schema Exists", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Schema Exists",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -103,13 +116,18 @@ async function testCreateAction(): Promise<TestResult> {
         timeoutMs: 5000,
       },
     });
-    
+
     if (action.id && action.slug === TEST_ACTION_SLUG) {
       return { name: "Create Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Action created but returned unexpected data");
   } catch (err: any) {
-    return { name: "Create Action", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Create Action",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -117,56 +135,75 @@ async function testListActions(): Promise<TestResult> {
   const start = Date.now();
   try {
     const actionList = await listActions({ limit: 10 });
-    
+
     if (Array.isArray(actionList) && actionList.length > 0) {
-      const testAction = actionList.find(a => a.slug === TEST_ACTION_SLUG);
+      const testAction = actionList.find((a) => a.slug === TEST_ACTION_SLUG);
       if (testAction) {
         return { name: "List Actions", passed: true, durationMs: Date.now() - start };
       }
     }
     throw new Error("Test action not found in list");
   } catch (err: any) {
-    return { name: "List Actions", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "List Actions",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
 async function testGetAction(): Promise<TestResult> {
   const start = Date.now();
   try {
-    const [action] = await db.select().from(actions)
+    const [action] = await db
+      .select()
+      .from(actions)
       .where(eq(actions.slug, TEST_ACTION_SLUG))
       .limit(1);
-    
+
     if (!action) throw new Error("Test action not found");
-    
+
     const fetched = await getAction(action.id);
-    
+
     if (fetched && fetched.id === action.id) {
       return { name: "Get Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Fetched action doesn't match");
   } catch (err: any) {
-    return { name: "Get Action", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Get Action",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
 async function testExecuteCodeAction(): Promise<TestResult> {
   const start = Date.now();
   try {
-    const [action] = await db.select().from(actions)
+    const [action] = await db
+      .select()
+      .from(actions)
       .where(eq(actions.slug, TEST_ACTION_SLUG))
       .limit(1);
-    
+
     if (!action) throw new Error("Test action not found");
-    
+
     const result = await executeActionById(action.id, { trigger: "manual" });
-    
+
     if (result.success && (result.result as any)?.test === true) {
       return { name: "Execute Code Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error(`Execution failed: ${result.error || "unknown error"}`);
   } catch (err: any) {
-    return { name: "Execute Code Action", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Execute Code Action",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -185,7 +222,7 @@ async function testCreateWebhookAction(): Promise<TestResult> {
         headers: { "X-Test": "true" },
       },
     });
-    
+
     if (action.id && action.type === "webhook_out") {
       // Cleanup
       await db.delete(actions).where(eq(actions.id, action.id));
@@ -193,73 +230,94 @@ async function testCreateWebhookAction(): Promise<TestResult> {
     }
     throw new Error("Webhook action created but returned unexpected data");
   } catch (err: any) {
-    return { name: "Create Webhook Action", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Create Webhook Action",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
 async function testUpdateAction(): Promise<TestResult> {
   const start = Date.now();
   try {
-    const [action] = await db.select().from(actions)
+    const [action] = await db
+      .select()
+      .from(actions)
       .where(eq(actions.slug, TEST_ACTION_SLUG))
       .limit(1);
-    
+
     if (!action) throw new Error("Test action not found");
-    
+
     const updated = await updateAction(action.id, {
       description: "Updated description",
     });
-    
+
     if (updated && updated.description === "Updated description") {
       return { name: "Update Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Update didn't apply correctly");
   } catch (err: any) {
-    return { name: "Update Action", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Update Action",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
 async function testExecutionLogging(): Promise<TestResult> {
   const start = Date.now();
   try {
-    const [action] = await db.select().from(actions)
+    const [action] = await db
+      .select()
+      .from(actions)
       .where(eq(actions.slug, TEST_ACTION_SLUG))
       .limit(1);
-    
+
     if (!action) throw new Error("Test action not found");
-    
+
     // Get executions
-    const executions = await db.select().from(actionExecutions)
+    const executions = await db
+      .select()
+      .from(actionExecutions)
       .where(eq(actionExecutions.actionId, action.id))
       .orderBy(desc(actionExecutions.createdAt))
       .limit(1);
-    
+
     if (executions.length > 0 && executions[0].status === "success") {
       return { name: "Execution Logging", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Execution not logged or incorrect status");
   } catch (err: any) {
-    return { name: "Execution Logging", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Execution Logging",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
 async function testDeleteAction(): Promise<TestResult> {
   const start = Date.now();
   try {
-    const [action] = await db.select().from(actions)
+    const [action] = await db
+      .select()
+      .from(actions)
       .where(eq(actions.slug, TEST_ACTION_SLUG))
       .limit(1);
-    
+
     if (!action) throw new Error("Test action not found");
-    
+
     const deleted = await deleteAction(action.id);
-    
+
     if (deleted) {
       // Verify it's gone
-      const [check] = await db.select().from(actions)
-        .where(eq(actions.id, action.id))
-        .limit(1);
-      
+      const [check] = await db.select().from(actions).where(eq(actions.id, action.id)).limit(1);
+
       if (!check) {
         return { name: "Delete Action", passed: true, durationMs: Date.now() - start };
       }
@@ -267,7 +325,12 @@ async function testDeleteAction(): Promise<TestResult> {
     }
     throw new Error("Delete returned false");
   } catch (err: any) {
-    return { name: "Delete Action", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Delete Action",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -285,22 +348,27 @@ async function testEventDispatch(): Promise<TestResult> {
         code: "export default async function(ctx) { return { event: ctx.event }; }",
       },
     });
-    
+
     // Dispatch event
-    await dispatchEvent("entry:created", { 
+    await dispatchEvent("entry:created", {
       datasetId: "test-dataset",
-      entry: { id: "test-123", title: "Test Entry" }
+      entry: { id: "test-123", title: "Test Entry" },
     });
-    
+
     // Give it a moment to process
-    await new Promise(r => setTimeout(r, 500));
-    
+    await new Promise((r) => setTimeout(r, 500));
+
     // Cleanup
     await db.delete(actions).where(eq(actions.id, action.id));
-    
+
     return { name: "Event Dispatch", passed: true, durationMs: Date.now() - start };
   } catch (err: any) {
-    return { name: "Event Dispatch", passed: false, error: err.message, durationMs: Date.now() - start };
+    return {
+      name: "Event Dispatch",
+      passed: false,
+      error: err.message,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -308,14 +376,14 @@ async function runAllTests(): Promise<void> {
   console.log("═══════════════════════════════════════════════════════════");
   console.log("  Actions Integration Verification");
   console.log("═══════════════════════════════════════════════════════════\n");
-  
+
   // Cleanup first
   console.log("Cleaning up previous test data...");
   await cleanupTestData();
   console.log("");
-  
+
   const tests: TestResult[] = [];
-  
+
   // Run tests
   tests.push(await testDatabaseConnection());
   tests.push(await testSchemaExists());
@@ -328,36 +396,36 @@ async function runAllTests(): Promise<void> {
   tests.push(await testCreateWebhookAction());
   tests.push(await testEventDispatch());
   tests.push(await testDeleteAction());
-  
+
   // Results
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log("  Test Results");
   console.log("═══════════════════════════════════════════════════════════\n");
-  
+
   let passed = 0;
   let failed = 0;
   let totalDuration = 0;
-  
+
   for (const test of tests) {
     const icon = test.passed ? "✅" : "❌";
     const status = test.passed ? "PASS" : "FAIL";
     console.log(`${icon} ${test.name.padEnd(25)} ${status} (${test.durationMs}ms)`);
-    
+
     if (!test.passed && test.error) {
       console.log(`   Error: ${test.error}`);
     }
-    
+
     if (test.passed) passed++;
     else failed++;
-    
+
     totalDuration += test.durationMs;
   }
-  
+
   console.log("\n───────────────────────────────────────────────────────────");
   console.log(`Total: ${tests.length} | Passed: ${passed} | Failed: ${failed}`);
   console.log(`Duration: ${totalDuration}ms`);
   console.log("═══════════════════════════════════════════════════════════\n");
-  
+
   if (failed === 0) {
     console.log("✨ All tests passed! Actions integration is working correctly.\n");
     process.exit(0);

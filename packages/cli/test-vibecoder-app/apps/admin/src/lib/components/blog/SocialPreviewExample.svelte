@@ -8,9 +8,9 @@
   - Botón de toggle para mostrar/ocultar el preview
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import SocialPreview from './SocialPreview.svelte';
   import { Eye, EyeOff, Loader2 } from 'lucide-svelte';
+
+  import SocialPreview from './SocialPreview.svelte';
 
   // Props del post
   interface Props {
@@ -23,7 +23,7 @@
     siteUrl?: string;
   }
 
-  let {
+  const {
     postId = '',
     postSlug = '',
     postTitle = 'Sin título',

@@ -6,6 +6,7 @@
  */
 
 import { createHmac } from "crypto";
+
 import type { Action, ActionContext, ActionResult } from "../types";
 
 interface WebhookOutConfig {

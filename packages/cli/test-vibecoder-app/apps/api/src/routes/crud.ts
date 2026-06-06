@@ -1,5 +1,6 @@
-import { Hono } from "hono";
 import { eq, desc } from "drizzle-orm"; // sql removed - unused
+import { Hono } from "hono";
+
 // @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "../db";
 // @ts-ignore - Path alias @/ not resolved by tsc

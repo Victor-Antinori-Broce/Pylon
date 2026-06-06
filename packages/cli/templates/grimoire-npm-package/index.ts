@@ -8,6 +8,7 @@
 import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 import { Hono } from "hono";
+
 import { createExampleRouter } from "./routes.js";
 
 // Re-export schema for schema-merger
@@ -32,9 +33,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
 
   admin: {
     category: "content",
-    views: [
-      { id: "examples", type: "grid", title: "Examples", table: "examples" },
-    ],
+    views: [{ id: "examples", type: "grid", title: "Examples", table: "examples" }],
   },
 
   dependencies: {

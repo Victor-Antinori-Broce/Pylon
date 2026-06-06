@@ -1,6 +1,6 @@
 /**
  * Dataset Components Index
- * 
+ *
  * Dataset and schema management components.
  */
 

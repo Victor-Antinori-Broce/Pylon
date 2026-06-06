@@ -31,31 +31,27 @@ export const TOON_MIME = "application/vnd.toon";
  * Objects use dot notation: user.email:test@example.com
  * Null/undefined are omitted.
  */
-function flattenToLines(
-    data: unknown,
-    prefix = "",
-    lines: string[] = []
-): string[] {
-    if (data === null || data === undefined) return lines;
+function flattenToLines(data: unknown, prefix = "", lines: string[] = []): string[] {
+  if (data === null || data === undefined) return lines;
 
-    if (Array.isArray(data)) {
-        for (let i = 0; i < data.length; i++) {
-            flattenToLines(data[i], `${prefix}[${i}]`, lines);
-        }
-        return lines;
+  if (Array.isArray(data)) {
+    for (let i = 0; i < data.length; i++) {
+      flattenToLines(data[i], `${prefix}[${i}]`, lines);
     }
-
-    if (typeof data === "object" && data !== null) {
-        for (const [key, value] of Object.entries(data)) {
-            const path = prefix ? `${prefix}.${key}` : key;
-            flattenToLines(value, path, lines);
-        }
-        return lines;
-    }
-
-    // Primitive value
-    lines.push(`${prefix}:${String(data)}`);
     return lines;
+  }
+
+  if (typeof data === "object" && data !== null) {
+    for (const [key, value] of Object.entries(data)) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      flattenToLines(value, path, lines);
+    }
+    return lines;
+  }
+
+  // Primitive value
+  lines.push(`${prefix}:${String(data)}`);
+  return lines;
 }
 
 /**
@@ -65,35 +61,32 @@ function flattenToLines(
  * - Adds a ~type hint at the top when possible
  */
 export function encodeTOON(data: unknown): string {
-    if (data === null || data === undefined) return "";
+  if (data === null || data === undefined) return "";
 
-    // Unwrap common API envelope: { data: [...] } or { data: {...} }
-    const payload =
-        typeof data === "object" &&
-            data !== null &&
-            "data" in data &&
-            Object.keys(data).length <= 3
-            ? (data as Record<string, unknown>).data
-            : data;
+  // Unwrap common API envelope: { data: [...] } or { data: {...} }
+  const payload =
+    typeof data === "object" && data !== null && "data" in data && Object.keys(data).length <= 3
+      ? (data as Record<string, unknown>).data
+      : data;
 
-    // Handle array of records
-    if (Array.isArray(payload)) {
-        const parts: string[] = [];
-        for (const item of payload) {
-            const lines = flattenToLines(item);
-            parts.push(lines.join("\n"));
-        }
-        return parts.join("\n---\n") + "\n";
+  // Handle array of records
+  if (Array.isArray(payload)) {
+    const parts: string[] = [];
+    for (const item of payload) {
+      const lines = flattenToLines(item);
+      parts.push(lines.join("\n"));
     }
+    return parts.join("\n---\n") + "\n";
+  }
 
-    // Single object
-    if (typeof payload === "object" && payload !== null) {
-        const lines = flattenToLines(payload);
-        return lines.join("\n") + "\n";
-    }
+  // Single object
+  if (typeof payload === "object" && payload !== null) {
+    const lines = flattenToLines(payload);
+    return lines.join("\n") + "\n";
+  }
 
-    // Primitive
-    return String(payload) + "\n";
+  // Primitive
+  return String(payload) + "\n";
 }
 
 // ── Hono Middleware ────────────────────────────────────────────
@@ -107,42 +100,41 @@ export function encodeTOON(data: unknown): string {
  * as usual.
  */
 export function toonMiddleware(): MiddlewareHandler {
-    return async (c, next) => {
-        // Check if client wants TOON
-        const acceptHeader = c.req.header("accept") || "";
-        const formatParam = c.req.query("format");
-        const wantsToon =
-            acceptHeader.includes(TOON_MIME) || formatParam === "toon";
+  return async (c, next) => {
+    // Check if client wants TOON
+    const acceptHeader = c.req.header("accept") || "";
+    const formatParam = c.req.query("format");
+    const wantsToon = acceptHeader.includes(TOON_MIME) || formatParam === "toon";
 
-        if (!wantsToon) {
-            // Standard request — pass through unchanged
-            return next();
-        }
+    if (!wantsToon) {
+      // Standard request — pass through unchanged
+      return next();
+    }
 
-        // Execute the handler normally
-        await next();
+    // Execute the handler normally
+    await next();
 
-        // Only transform JSON responses
-        const contentType = c.res.headers.get("content-type") || "";
-        if (!contentType.includes("application/json")) return;
+    // Only transform JSON responses
+    const contentType = c.res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) return;
 
-        try {
-            // Clone and read the original JSON body
-            const original = await c.res.json();
+    try {
+      // Clone and read the original JSON body
+      const original = await c.res.json();
 
-            // Encode as TOON
-            const toonBody = encodeTOON(original);
+      // Encode as TOON
+      const toonBody = encodeTOON(original);
 
-            // Replace the response
-            c.res = new Response(toonBody, {
-                status: c.res.status,
-                headers: {
-                    "Content-Type": TOON_MIME,
-                    "X-Gremius-Format": "toon",
-                },
-            });
-        } catch {
-            // If JSON parsing fails, leave the response unchanged
-        }
-    };
+      // Replace the response
+      c.res = new Response(toonBody, {
+        status: c.res.status,
+        headers: {
+          "Content-Type": TOON_MIME,
+          "X-Gremius-Format": "toon",
+        },
+      });
+    } catch {
+      // If JSON parsing fails, leave the response unchanged
+    }
+  };
 }

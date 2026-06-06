@@ -9,8 +9,9 @@
  */
 
 import { getValkeyClient } from "./valkey";
+
 import type { Context, Next } from "hono";
-import type { AppVariables } from "../types/hono";
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN
@@ -241,7 +242,9 @@ export function globalRateLimit() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { Hono } from "hono";
+
 import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
 
 export const rateLimitRoutes = new Hono<{ Variables: AppVariables }>();
 

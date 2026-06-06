@@ -6,12 +6,13 @@
 
 import { describe, it, expect } from "bun:test";
 import { Hono } from "hono";
+
+import { observabilityRoutes } from "../lib/observability";
+import { rateLimit, checkRateLimit, RATE_LIMIT_CONFIGS } from "../lib/rate-limiter";
+import { searchRoutes } from "../lib/search";
 import type { AppVariables } from "../types/hono";
 
 // Importar los módulos a probar
-import { rateLimit, checkRateLimit, RATE_LIMIT_CONFIGS } from "../lib/rate-limiter";
-import { searchRoutes } from "../lib/search";
-import { observabilityRoutes } from "../lib/observability";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP
@@ -38,7 +39,7 @@ describe("🔒 Rate Limiter - Sin errores 500/400", () => {
   it("rate limit configs están bien definidos", () => {
     expect(RATE_LIMIT_CONFIGS).toBeDefined();
     expect(Object.keys(RATE_LIMIT_CONFIGS).length).toBeGreaterThan(0);
-    
+
     // Verificar que cada config tiene los campos requeridos
     for (const [_path, config] of Object.entries(RATE_LIMIT_CONFIGS)) {
       expect(config.limit).toBeGreaterThan(0);
@@ -53,7 +54,7 @@ describe("🔒 Rate Limiter - Sin errores 500/400", () => {
     });
 
     const result = await checkRateLimit(mockContext, { limit: 10, window: 60 });
-    
+
     expect(result).toBeDefined();
     expect(typeof result.allowed).toBe("boolean");
     expect(typeof result.remaining).toBe("number");
@@ -66,13 +67,15 @@ describe("🔒 Rate Limiter - Sin errores 500/400", () => {
     const mockContext = createMockContext("/api/test", {
       "x-forwarded-for": "192.168.1.2",
     });
-    
+
     let nextCalled = false;
-    const next = async () => { nextCalled = true; };
+    const next = async () => {
+      nextCalled = true;
+    };
 
     // No debería lanzar error
     await middleware(mockContext, next);
-    
+
     // El middleware debería llamar next o retornar response
     expect(nextCalled || mockContext.res).toBeDefined();
   });
@@ -92,7 +95,7 @@ describe("🔍 Search - Sin errores 500/400", () => {
   it("configuraciones de búsqueda son válidas", () => {
     // Validar que los tipos de búsqueda son válidos
     const validTypes = ["fulltext", "vector", "hybrid"];
-    
+
     for (const type of validTypes) {
       expect(validTypes).toContain(type);
     }
@@ -112,10 +115,10 @@ describe("📊 Observability - Sin errores 500/400", () => {
   it("homepage response tiene estructura correcta", async () => {
     // Simular request al homepage
     const res = await app.request("/");
-    
+
     // No debería ser 500
     expect(res.status).not.toBe(500);
-    
+
     // Si es 200, verificar estructura
     if (res.status === 200) {
       const body = await res.json();
@@ -139,10 +142,10 @@ describe("🔗 Integración - Todo funciona junto", () => {
 
     for (const endpoint of endpoints) {
       const res = await app.request(endpoint.path, { method: endpoint.method });
-      
+
       // No debería ser 500
       expect(res.status).not.toBe(500);
-      
+
       // Log para debugging
       if (res.status === 500) {
         console.error(`❌ Error 500 en ${endpoint.method} ${endpoint.path}`);
@@ -154,11 +157,11 @@ describe("🔗 Integración - Todo funciona junto", () => {
 
   it("rate limit headers están presentes", async () => {
     const res = await app.request("/api/search/suggestions?q=test");
-    
+
     // Verificar headers de rate limiting
     const limit = res.headers.get("X-RateLimit-Limit");
     const remaining = res.headers.get("X-RateLimit-Remaining");
-    
+
     // Si hay rate limiting, los headers deben estar presentes
     if (limit) {
       expect(Number(limit)).toBeGreaterThan(0);

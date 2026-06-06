@@ -9,17 +9,19 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { db } from "../db";
+
 import { sql } from "drizzle-orm";
+
+import { db } from "../db";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface RealmSeedConfig {
-  sql?: string;       // relative path to seed sql file (default: "seed.sql")
-  datasets?: string;  // relative path to seed datasets json
-  runOnce?: boolean;  // if true (default), seed only runs once per realm
+  sql?: string; // relative path to seed sql file (default: "seed.sql")
+  datasets?: string; // relative path to seed datasets json
+  runOnce?: boolean; // if true (default), seed only runs once per realm
 }
 
 interface RealmManifest {
@@ -37,12 +39,14 @@ const SEED_TRACKER_TABLE = "realm_seed_tracker";
 
 async function ensureSeedTrackerTable(): Promise<void> {
   try {
-    await db.execute(sql.raw(`
+    await db.execute(
+      sql.raw(`
       CREATE TABLE IF NOT EXISTS ${SEED_TRACKER_TABLE} (
         realm_id TEXT PRIMARY KEY,
         seeded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
-    `));
+    `)
+    );
   } catch {
     // Table may already exist
   }
@@ -50,10 +54,12 @@ async function ensureSeedTrackerTable(): Promise<void> {
 
 async function isRealmSeeded(realmId: string): Promise<boolean> {
   try {
-    const result = await db.execute(sql.raw(`
+    const result = await db.execute(
+      sql.raw(`
       SELECT seeded_at FROM ${SEED_TRACKER_TABLE}
       WHERE realm_id = '${realmId}'
-    `));
+    `)
+    );
     const rows = result.rows as Array<{ seeded_at: string }>;
     return rows.length > 0 && rows[0].seeded_at != null;
   } catch {
@@ -63,11 +69,13 @@ async function isRealmSeeded(realmId: string): Promise<boolean> {
 
 async function markRealmSeeded(realmId: string): Promise<void> {
   await ensureSeedTrackerTable();
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     INSERT INTO ${SEED_TRACKER_TABLE} (realm_id)
     VALUES ('${realmId}')
     ON CONFLICT (realm_id) DO UPDATE SET seeded_at = NOW()
-  `));
+  `)
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -184,8 +192,10 @@ export async function realmHasSeed(realmId: string): Promise<boolean> {
  */
 export async function resetRealmSeed(realmId: string): Promise<void> {
   await ensureSeedTrackerTable();
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     DELETE FROM ${SEED_TRACKER_TABLE} WHERE realm_id = '${realmId}'
-  `));
+  `)
+  );
   console.log(`[Realm] Seed tracking reset for ${realmId}`);
 }

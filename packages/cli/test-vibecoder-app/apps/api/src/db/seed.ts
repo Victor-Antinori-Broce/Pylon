@@ -5,10 +5,13 @@
  * Run: bun run src/db/seed.ts
  */
 
-import { auth } from "../lib/auth";
-import { db } from "./index";
-import { authUsers as user } from "./schema";
 import { eq } from "drizzle-orm";
+
+import { auth } from "../lib/auth";
+
+import { authUsers as user } from "./schema";
+
+import { db } from "./index";
 
 const ADMIN_EMAIL = "admin@gremius.gg";
 const ADMIN_PASSWORD = "gremius123";

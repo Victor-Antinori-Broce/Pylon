@@ -9,13 +9,13 @@
 
 ### Archivos Verificados
 
-| Archivo | Errores TS | Errores 500 | Errores 400 | Status |
-|---------|-----------|-------------|-------------|--------|
-| `lib/rate-limiter.ts` | 0 | 0 | 0 | ✅ OK |
-| `lib/search.ts` | 0 | 0 | 0 | ✅ OK |
-| `lib/observability.ts` | 0 | 0 | 0 | ✅ OK |
-| `lib/critical-features.ts` | 0 | 0 | 0 | ✅ OK |
-| `academy-lms.schema.ts` | 0 | 0 | 0 | ✅ OK |
+| Archivo                    | Errores TS | Errores 500 | Errores 400 | Status |
+| -------------------------- | ---------- | ----------- | ----------- | ------ |
+| `lib/rate-limiter.ts`      | 0          | 0           | 0           | ✅ OK  |
+| `lib/search.ts`            | 0          | 0           | 0           | ✅ OK  |
+| `lib/observability.ts`     | 0          | 0           | 0           | ✅ OK  |
+| `lib/critical-features.ts` | 0          | 0           | 0           | ✅ OK  |
+| `academy-lms.schema.ts`    | 0          | 0           | 0           | ✅ OK  |
 
 ---
 
@@ -29,6 +29,7 @@
 ```
 
 **Tests que pasaron:**
+
 - ✅ Rate limit configs están bien definidos
 - ✅ Search routes están montadas sin error
 - ✅ Configuraciones de búsqueda son válidas
@@ -38,6 +39,7 @@
 - ✅ Rate limit headers están presentes
 
 **Tests con timeout (infraestructura):**
+
 - ⏱️ checkRateLimit no lanza error 500
 - ⏱️ rateLimit middleware no lanza error
 
@@ -53,6 +55,7 @@
 ```
 
 **Causa de fallos:**
+
 - Todos los fallos son por **timeout** (5s) esperando conexión a Valkey
 - Un test falla porque el homepage no tiene `stats` (la DB no está disponible)
 - **Ningún fallo es por error de código 500/400**
@@ -62,14 +65,17 @@
 ## 🔧 Errores Corregidos en Academy LMS
 
 ### Problema Original
+
 ```
 TypeError: undefined is not an object (evaluating 'table.userId')
 ```
 
 ### Solución Aplicada
+
 Se comentaron temporalmente los índices `uniqueIndex` en las tablas de academy-lms que causaban conflictos con Drizzle ORM. Estos índices pueden ser recreados manualmente en la base de datos si son necesarios.
 
 **Tablas afectadas:**
+
 - `grupo_usuarios` (índice pk)
 - `grupo_supervisores` (índice pk)
 - `progreso_cursos` (índice uniqueUserCurso)
@@ -85,26 +91,26 @@ Se comentaron temporalmente los índices `uniqueIndex` en las tablas de academy-
 
 ### Código Validado
 
-| Aspecto | Estado |
-|---------|--------|
-| Todos los imports resueltos | ✅ OK |
-| Tipos TypeScript correctos | ✅ OK |
-| Manejo de errores con try/catch | ✅ OK |
-| Validación de inputs | ✅ OK |
-| Headers de rate limiting | ✅ OK |
-| Respuestas HTTP apropiadas | ✅ OK |
+| Aspecto                         | Estado |
+| ------------------------------- | ------ |
+| Todos los imports resueltos     | ✅ OK  |
+| Tipos TypeScript correctos      | ✅ OK  |
+| Manejo de errores con try/catch | ✅ OK  |
+| Validación de inputs            | ✅ OK  |
+| Headers de rate limiting        | ✅ OK  |
+| Respuestas HTTP apropiadas      | ✅ OK  |
 
 ### Endpoints Verificados
 
-| Endpoint | Error 500 | Error 400 |
-|----------|-----------|-----------|
-| `GET /` | ❌ No | ❌ No |
-| `GET /api/health` | ❌ No | ❌ No |
-| `POST /api/search` | ❌ No | ❌ No |
-| `GET /api/search/suggestions` | ❌ No | ❌ No |
-| `GET /api/admin/stats` | ❌ No | ❌ No |
-| `GET /api/admin/activity` | ❌ No | ❌ No |
-| `GET /api/admin/rate-limits` | ❌ No | ❌ No |
+| Endpoint                      | Error 500 | Error 400 |
+| ----------------------------- | --------- | --------- |
+| `GET /`                       | ❌ No     | ❌ No     |
+| `GET /api/health`             | ❌ No     | ❌ No     |
+| `POST /api/search`            | ❌ No     | ❌ No     |
+| `GET /api/search/suggestions` | ❌ No     | ❌ No     |
+| `GET /api/admin/stats`        | ❌ No     | ❌ No     |
+| `GET /api/admin/activity`     | ❌ No     | ❌ No     |
+| `GET /api/admin/rate-limits`  | ❌ No     | ❌ No     |
 
 ---
 

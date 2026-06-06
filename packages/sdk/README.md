@@ -31,19 +31,19 @@ pnpm add @gremius/sdk
 ## Quick Start
 
 ```typescript
-import { GremiusClient } from '@gremius/sdk';
+import { GremiusClient } from "@gremius/sdk";
 
 const gremius = new GremiusClient({
-  url: 'https://api.yourgame.com',
-  apiKey: 'grm_agent_your_agent_token'
+  url: "https://api.yourgame.com",
+  apiKey: "grm_agent_your_agent_token",
 });
 
 // Explorer API — primary way to interact with data
-const games = await gremius.from('games').list();
-const game = await gremius.from('games').get('uuid-123');
-const newGame = await gremius.from('games').create({ title: 'New Game' });
-await gremius.from('games').update(newGame.id, { status: 'published' });
-await gremius.from('games').delete(newGame.id);
+const games = await gremius.from("games").list();
+const game = await gremius.from("games").get("uuid-123");
+const newGame = await gremius.from("games").create({ title: "New Game" });
+await gremius.from("games").update(newGame.id, { status: "published" });
+await gremius.from("games").delete(newGame.id);
 ```
 
 ## Usage
@@ -51,12 +51,12 @@ await gremius.from('games').delete(newGame.id);
 ### Initialize Client
 
 ```typescript
-import { GremiusClient } from '@gremius/sdk';
+import { GremiusClient } from "@gremius/sdk";
 
 const gremius = new GremiusClient({
-  url: 'https://api.yourgame.com',
+  url: "https://api.yourgame.com",
   // Optional: Agent NHI token for authentication
-  apiKey: process.env.GREMIUS_API_KEY
+  apiKey: process.env.GREMIUS_API_KEY,
 });
 ```
 
@@ -67,56 +67,56 @@ The `.from(table)` method returns a `TableRef` with full CRUD capabilities:
 #### List with pagination, sorting, and filtering
 
 ```typescript
-const games = await gremius.from('games').list();
-console.log(games.data);           // Array of records
-console.log(games.pagination);     // { page, limit, total, totalPages, hasNextPage, hasPrevPage }
+const games = await gremius.from("games").list();
+console.log(games.data); // Array of records
+console.log(games.pagination); // { page, limit, total, totalPages, hasNextPage, hasPrevPage }
 
 // With options
-const filtered = await gremius.from('games').list({
+const filtered = await gremius.from("games").list({
   limit: 10,
   page: 1,
-  sort: 'title',
-  dir: 'asc',
-  filter_field: 'status',
-  filter_op: 'equals',
-  filter_value: 'published'
+  sort: "title",
+  dir: "asc",
+  filter_field: "status",
+  filter_op: "equals",
+  filter_value: "published",
 });
 ```
 
 #### Get by ID
 
 ```typescript
-const game = await gremius.from('games').get('uuid-123');
+const game = await gremius.from("games").get("uuid-123");
 ```
 
 #### Create
 
 ```typescript
-const newGame = await gremius.from('games').create({
-  title: 'Elden Ring',
-  slug: 'elden-ring',
-  platforms: ['ps5', 'pc']
+const newGame = await gremius.from("games").create({
+  title: "Elden Ring",
+  slug: "elden-ring",
+  platforms: ["ps5", "pc"],
 });
 ```
 
 #### Update
 
 ```typescript
-await gremius.from('games').update('uuid-123', {
-  status: 'published'
+await gremius.from("games").update("uuid-123", {
+  status: "published",
 });
 ```
 
 #### Delete
 
 ```typescript
-await gremius.from('games').delete('uuid-123');
+await gremius.from("games").delete("uuid-123");
 ```
 
 #### Dropdown options (for foreign keys)
 
 ```typescript
-const platforms = await gremius.from('platforms').options();
+const platforms = await gremius.from("platforms").options();
 // [{ value: 'uuid-1', label: 'PlayStation 5' }, ...]
 ```
 
@@ -127,13 +127,13 @@ interface Game {
   id: string;
   title: string;
   slug: string;
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   platforms: string[];
   createdAt: string;
 }
 
 // Type-safe table reference
-const games = gremius.from<Game>('games');
+const games = gremius.from<Game>("games");
 const allGames = await games.list();
 // allGames.data is typed as Game[]
 ```
@@ -142,7 +142,7 @@ const allGames = await games.list();
 
 ```typescript
 // Get column types, editability, and relations for a table
-const schema = await gremius.schema('games');
+const schema = await gremius.schema("games");
 console.log(schema.columns);
 // [{ name: 'title', type: 'text', editable: true, nullable: false }, ...]
 
@@ -158,7 +158,7 @@ const tables = await gremius.tables();
 const modules = await gremius.modules.list();
 
 // Toggle a grimoire on/off
-await gremius.modules.toggle('academy');
+await gremius.modules.toggle("academy");
 
 // Get only enabled modules
 const enabled = await gremius.modules.enabled();
@@ -170,27 +170,27 @@ TOON reduces token usage by ~60% compared to JSON:
 
 ```typescript
 const agent = new GremiusClient({
-  url: 'https://api.yourgame.com',
-  apiKey: 'grm_agent_xxx',
-  format: 'toon'
+  url: "https://api.yourgame.com",
+  apiKey: "grm_agent_xxx",
+  format: "toon",
 });
 
-const toonData = await agent.from('games').list();
+const toonData = await agent.from("games").list();
 // Returns parsed TOON data (same structure, optimized wire format)
 ```
 
 ### Error Handling
 
 ```typescript
-import { GremiusClient, GremiusError } from '@gremius/sdk';
+import { GremiusClient, GremiusError } from "@gremius/sdk";
 
 try {
-  const games = await gremius.from('games').list();
+  const games = await gremius.from("games").list();
 } catch (error) {
   if (error instanceof GremiusError) {
     console.error(`HTTP ${error.statusCode}:`, error.message);
   } else {
-    console.error('Network or unknown error:', error);
+    console.error("Network or unknown error:", error);
   }
 }
 ```
@@ -198,25 +198,25 @@ try {
 ### Real-time Subscriptions
 
 ```typescript
-import { createRealtime } from '@gremius/sdk/realtime';
+import { createRealtime } from "@gremius/sdk/realtime";
 
-const rt = createRealtime('https://api.yourgame.com');
+const rt = createRealtime("https://api.yourgame.com");
 
 rt.onStateChange((state) => {
-  console.log('Connection:', state); // 'connecting' | 'connected' | 'reconnecting' | 'disconnected'
+  console.log("Connection:", state); // 'connecting' | 'connected' | 'reconnecting' | 'disconnected'
 });
 
 await rt.connect();
 
 // Subscribe to dataset changes
-const unsub = rt.subscribeToDataset('games-dataset-id', (event) => {
-  console.log('Change:', event.event, event.entry);
+const unsub = rt.subscribeToDataset("games-dataset-id", (event) => {
+  console.log("Change:", event.event, event.entry);
 });
 
 // Presence (who's online)
-rt.joinRoom('editor:doc-123');
-rt.onPresence('editor:doc-123', (users) => {
-  console.log('Online users:', users);
+rt.joinRoom("editor:doc-123");
+rt.onPresence("editor:doc-123", (users) => {
+  console.log("Online users:", users);
 });
 
 // Cleanup
@@ -228,7 +228,7 @@ rt.disconnect();
 
 ```typescript
 const healthy = await gremius.ping();
-console.log('API is', healthy ? 'up' : 'down');
+console.log("API is", healthy ? "up" : "down");
 ```
 
 ## Edge Runtime Support
@@ -241,24 +241,24 @@ export default {
   async fetch(request: Request, env: Env) {
     const gremius = new GremiusClient({
       url: env.GREMIUS_URL,
-      apiKey: env.GREMIUS_API_KEY
+      apiKey: env.GREMIUS_API_KEY,
     });
 
-    const games = await gremius.from('games').list();
+    const games = await gremius.from("games").list();
     return Response.json(games);
-  }
+  },
 };
 
 // Vercel Edge
-export const config = { runtime: 'edge' };
+export const config = { runtime: "edge" };
 
 export default async function handler(req: Request) {
   const gremius = new GremiusClient({
     url: process.env.GREMIUS_URL!,
-    apiKey: process.env.GREMIUS_API_KEY
+    apiKey: process.env.GREMIUS_API_KEY,
   });
 
-  const games = await gremius.from('games').list();
+  const games = await gremius.from("games").list();
   return new Response(JSON.stringify(games));
 }
 ```
@@ -272,7 +272,7 @@ interface GremiusClientConfig {
   /** Agent NHI token for authentication (optional) */
   apiKey?: string;
   /** Response format: 'json' (default) or 'toon' */
-  format?: 'json' | 'toon';
+  format?: "json" | "toon";
 }
 ```
 
@@ -310,14 +310,14 @@ Health check — returns `true` if the API is reachable.
 
 Primary CRUD interface. Returned by `.from(table)`.
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `list` | `(options?: ListOptions) => Promise<ListResponse<T>>` | List with pagination, sort, filter |
-| `get` | `(id: string) => Promise<T>` | Get single record by ID |
-| `create` | `(data: Partial<T>) => Promise<T>` | Create new record |
-| `update` | `(id: string, data: Partial<T>) => Promise<T>` | Update existing record |
-| `delete` | `(id: string) => Promise<void>` | Delete record |
-| `options` | `() => Promise<OptionItem[]>` | Get dropdown options for FKs |
+| Method    | Signature                                             | Description                        |
+| --------- | ----------------------------------------------------- | ---------------------------------- |
+| `list`    | `(options?: ListOptions) => Promise<ListResponse<T>>` | List with pagination, sort, filter |
+| `get`     | `(id: string) => Promise<T>`                          | Get single record by ID            |
+| `create`  | `(data: Partial<T>) => Promise<T>`                    | Create new record                  |
+| `update`  | `(id: string, data: Partial<T>) => Promise<T>`        | Update existing record             |
+| `delete`  | `(id: string) => Promise<void>`                       | Delete record                      |
+| `options` | `() => Promise<OptionItem[]>`                         | Get dropdown options for FKs       |
 
 ### GremiusError
 
@@ -378,15 +378,15 @@ const games = await gremius.from('games').list();
 
 ```typescript
 // +page.ts
-import { GremiusClient } from '@gremius/sdk';
+import { GremiusClient } from "@gremius/sdk";
 
 const gremius = new GremiusClient({
   url: import.meta.env.VITE_GREMIUS_URL,
-  apiKey: import.meta.env.VITE_GREMIUS_API_KEY
+  apiKey: import.meta.env.VITE_GREMIUS_API_KEY,
 });
 
 export async function load() {
-  const games = await gremius.from('games').list();
+  const games = await gremius.from("games").list();
   return { games };
 }
 ```

@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { Plus, MoreHorizontal } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { GripVertical, Plus, MoreHorizontal } from "lucide-svelte";
+
   import type { KanbanView } from "$lib/types/admin";
 
   interface Props {
@@ -8,21 +9,21 @@
     apiEndpoint?: string;
   }
 
-  let { view, apiEndpoint }: Props = $props();
+  const { view, apiEndpoint }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
-  let endpoint = $derived(apiEndpoint || `/api/explorer/${view.table}`);
+  const endpoint = $derived(apiEndpoint || `/api/explorer/${view.table}`);
 
   let data = $state<any[]>([]);
   let loading = $state(true);
   let dragItem = $state<any | null>(null);
   let dragOverColumn = $state<string | null>(null);
-  
+
   // Validation state
   let hasValidGroupBy = $state(true);
 
   // Discover unique values for the groupBy field
-  let stages = $derived.by<string[]>(() => {
+  const stages = $derived.by<string[]>(() => {
     const unique = new Set<string>();
     for (const item of data) {
       const val = item[view.groupBy];
@@ -33,7 +34,7 @@
   });
 
   // Group data by stage
-  let grouped = $derived.by<Record<string, any[]>>(() => {
+  const grouped = $derived.by<Record<string, any[]>>(() => {
     const groups: Record<string, any[]> = {};
     for (const stage of stages) {
       groups[stage] = [];
@@ -47,7 +48,7 @@
   });
 
   // Card display fields
-  let cardFields = $derived(view.cardFields || []);
+  const cardFields = $derived(view.cardFields || []);
 
   // ── FK Display for groupBy relations ──
   let groupByDisplayMap = $state<Record<string, string>>({});
@@ -57,27 +58,48 @@
   }
 
   const FK_TABLE_MAP: Record<string, string> = {
-    game_id: "games", gameId: "games",
-    platform_id: "platforms", platformId: "platforms",
-    tag_id: "tags", tagId: "tags",
-    streamer_id: "streamers", streamerId: "streamers",
-    collection_id: "collections", collectionId: "collections",
-    user_id: "auth_users", userId: "auth_users",
-    author_id: "auth_users", authorId: "auth_users",
-    assigned_to_id: "auth_users", assignedToId: "auth_users",
-    contact_id: "contacts", contactId: "contacts",
-    company_id: "companies", companyId: "companies",
-    project_id: "projects", projectId: "projects",
-    state_id: "states", stateId: "states",
-    status_id: "statuses", statusId: "statuses",
-    dataset_id: "datasets", datasetId: "datasets",
-    cover_art_id: "media", coverArtId: "media",
-    featured_image_id: "media", featuredImageId: "media",
-    avatar_id: "media", avatarId: "media",
-    icon_id: "media", iconId: "media",
-    thumbnail_id: "media", thumbnailId: "media",
-    uploaded_by_id: "auth_users", uploadedById: "auth_users",
-    created_by_id: "auth_users", createdById: "auth_users",
+    game_id: "games",
+    gameId: "games",
+    platform_id: "platforms",
+    platformId: "platforms",
+    tag_id: "tags",
+    tagId: "tags",
+    streamer_id: "streamers",
+    streamerId: "streamers",
+    collection_id: "collections",
+    collectionId: "collections",
+    user_id: "auth_users",
+    userId: "auth_users",
+    author_id: "auth_users",
+    authorId: "auth_users",
+    assigned_to_id: "auth_users",
+    assignedToId: "auth_users",
+    contact_id: "contacts",
+    contactId: "contacts",
+    company_id: "companies",
+    companyId: "companies",
+    project_id: "projects",
+    projectId: "projects",
+    state_id: "states",
+    stateId: "states",
+    status_id: "statuses",
+    statusId: "statuses",
+    dataset_id: "datasets",
+    datasetId: "datasets",
+    cover_art_id: "media",
+    coverArtId: "media",
+    featured_image_id: "media",
+    featuredImageId: "media",
+    avatar_id: "media",
+    avatarId: "media",
+    icon_id: "media",
+    iconId: "media",
+    thumbnail_id: "media",
+    thumbnailId: "media",
+    uploaded_by_id: "auth_users",
+    uploadedById: "auth_users",
+    created_by_id: "auth_users",
+    createdById: "auth_users",
   };
 
   function getRelatedTable(colName: string): string | undefined {
@@ -107,10 +129,10 @@
 
         // Validate that at least one item has the groupBy field (or the dataset is empty)
         if (data.length > 0) {
-           const sampleHasField = data.some(item => view.groupBy in item);
-           if (!sampleHasField) {
-             hasValidGroupBy = false;
-           }
+          const sampleHasField = data.some((item) => view.groupBy in item);
+          if (!sampleHasField) {
+            hasValidGroupBy = false;
+          }
         }
 
         // Load FK display values if groupBy is a relation
@@ -118,7 +140,9 @@
           const relTable = getRelatedTable(view.groupBy);
           if (relTable) {
             try {
-              const optRes = await fetch(`${API_URL}/api/explorer/${relTable}/options`, { credentials: "include" });
+              const optRes = await fetch(`${API_URL}/api/explorer/${relTable}/options`, {
+                credentials: "include",
+              });
               if (optRes.ok) {
                 const optData = await optRes.json();
                 const map: Record<string, string> = {};
@@ -179,7 +203,7 @@
     } catch (e) {
       console.error("Failed to update stage", e);
       // Revert on failure
-      const item = data.find(d => d.id === itemId);
+      const item = data.find((d) => d.id === itemId);
       if (item) item[view.groupBy] = oldStage;
       data = [...data];
     }
@@ -229,15 +253,21 @@
 
   {#if loading}
     <div class="flex items-center justify-center h-64">
-      <div class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+      <div
+        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+      ></div>
     </div>
   {:else if !hasValidGroupBy}
-    <div class="flex items-center justify-center h-64 bg-gremius-bg/50 border border-gremius-border border-dashed rounded-xl">
+    <div
+      class="flex items-center justify-center h-64 bg-gremius-bg/50 border border-gremius-border border-dashed rounded-xl"
+    >
       <div class="text-center max-w-md p-6">
         <div class="text-4xl mb-4">⚠️</div>
         <h3 class="text-lg font-semibold text-gremius-text mb-2">Incompatible Kanban View</h3>
         <p class="text-sm text-gremius-subtle mb-4">
-          This Kanban view is configured to group cards by <code class="bg-gremius-bg px-1.5 py-0.5 rounded text-gremius-cyan">'{view.groupBy}'</code>, but the current dataset does not contain this field.
+          This Kanban view is configured to group cards by <code
+            class="bg-gremius-bg px-1.5 py-0.5 rounded text-gremius-cyan">'{view.groupBy}'</code
+          >, but the current dataset does not contain this field.
         </p>
         <p class="text-xs text-gremius-text-dim">
           Please update the grimoire config to use a valid field, or switch to Grid view.
@@ -250,15 +280,25 @@
         {@const items = grouped[stage] || []}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-          class="flex-shrink-0 w-72 flex flex-col rounded-xl border-2 bg-gremius-bg transition-colors {dragOverColumn === stage ? 'border-gremius-cyan/50 bg-gremius-cyan/5' : getStageColor(stage, i)}"
+          class="flex-shrink-0 w-72 flex flex-col rounded-xl border-2 bg-gremius-bg transition-colors {dragOverColumn ===
+          stage
+            ? 'border-gremius-cyan/50 bg-gremius-cyan/5'
+            : getStageColor(stage, i)}"
           ondragover={(e) => handleDragOver(e, stage)}
           ondragleave={handleDragLeave}
           ondrop={() => handleDrop(stage)}
         >
           <!-- Column Header -->
-          <div class="flex items-center justify-between px-3 py-2.5 border-b border-gremius-border/50">
+          <div
+            class="flex items-center justify-between px-3 py-2.5 border-b border-gremius-border/50"
+          >
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full {getStageHeaderColor(stage, i)}">
+              <span
+                class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full {getStageHeaderColor(
+                  stage,
+                  i
+                )}"
+              >
                 {resolveGroupDisplay(stage)}
               </span>
               <span class="text-xs text-gremius-subtle">{items.length}</span>
@@ -299,7 +339,9 @@
                   {#if item[field] !== undefined && item[field] !== null}
                     <div class="flex items-center justify-between text-xs mb-1">
                       <span class="text-gremius-subtle capitalize">{field.replace(/_/g, " ")}</span>
-                      <span class="text-gremius-text-dim font-medium">{formatCardValue(item[field])}</span>
+                      <span class="text-gremius-text-dim font-medium"
+                        >{formatCardValue(item[field])}</span
+                      >
                     </div>
                   {/if}
                 {/each}

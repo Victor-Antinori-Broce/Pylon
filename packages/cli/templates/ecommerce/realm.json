@@ -2,11 +2,7 @@
   "name": "E-Commerce",
   "description": "Online store with products, orders, and inventory",
   "template": "ecommerce",
-  "grimoires": [
-    "grimoire-auth",
-    "grimoire-datasets",
-    "grimoire-media"
-  ],
+  "grimoires": ["grimoire-auth", "grimoire-datasets", "grimoire-media"],
   "datasets": [
     {
       "name": "products",
@@ -38,7 +34,11 @@
       "displayName": "Orders",
       "schema": {
         "customerEmail": { "type": "string", "required": true },
-        "status": { "type": "enum", "options": ["pending", "processing", "shipped", "delivered", "cancelled"], "default": "pending" },
+        "status": {
+          "type": "enum",
+          "options": ["pending", "processing", "shipped", "delivered", "cancelled"],
+          "default": "pending"
+        },
         "total": { "type": "number", "required": true },
         "currency": { "type": "string", "default": "USD" },
         "items": { "type": "json" }

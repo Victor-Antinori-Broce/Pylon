@@ -4,17 +4,17 @@
 
 Django es el estándar de oro para frameworks modulares "batteries included". Gremius comparte la visión modular pero está en etapas tempranas. Este análisis identifica qué le falta a Gremius para ser un framework modular tan potente como Django.
 
-| Aspecto | Django | Gremius (v0.8.0-beta) |
-|---------|--------|----------------------|
-| **Lenguaje** | Python 3.8+ | TypeScript/Bun |
-| **Madurez** | 18+ años, ultra-estable | Beta, en desarrollo |
-| **Arquitectura** | Apps + Middleware + ORM | Grimoires (similar a apps) |
-| **Admin auto-generado** | ✅ El mejor del mercado | 🔄 En desarrollo |
-| **ORM** | Django ORM (muy maduro) | Drizzle (moderno, type-safe) |
-| **CLI** | manage.py (extremadamente potente) | Comandos básicos bun run |
-| **Testing** | Framework completo integrado | Vitest básico |
-| **Middleware** | 5 fases de procesamiento | Hono middleware (básico) |
-| **Señales/Events** | Sistema robusto de signals | Event bus simple |
+| Aspecto                 | Django                             | Gremius (v0.8.0-beta)        |
+| ----------------------- | ---------------------------------- | ---------------------------- |
+| **Lenguaje**            | Python 3.8+                        | TypeScript/Bun               |
+| **Madurez**             | 18+ años, ultra-estable            | Beta, en desarrollo          |
+| **Arquitectura**        | Apps + Middleware + ORM            | Grimoires (similar a apps)   |
+| **Admin auto-generado** | ✅ El mejor del mercado            | 🔄 En desarrollo             |
+| **ORM**                 | Django ORM (muy maduro)            | Drizzle (moderno, type-safe) |
+| **CLI**                 | manage.py (extremadamente potente) | Comandos básicos bun run     |
+| **Testing**             | Framework completo integrado       | Vitest básico                |
+| **Middleware**          | 5 fases de procesamiento           | Hono middleware (básico)     |
+| **Señales/Events**      | Sistema robusto de signals         | Event bus simple             |
 
 ---
 
@@ -47,6 +47,7 @@ myproject/
 ```
 
 **Características del sistema de apps:**
+
 - Cada app es independiente y reusable
 - Apps pueden instalarse via pip (`pip install django-cms`)
 - Apps registran modelos, URLs, admin, signals automáticamente
@@ -73,6 +74,7 @@ gremius/
 ```
 
 **Características actuales:**
+
 - Grimoires auto-detectados via `grimoire.json`
 - Cada grimoire tiene schema, hooks, config
 - Dependencies entre grimoires
@@ -85,6 +87,7 @@ gremius/
 ### 1. **CLI Potente (manage.py equivalente)**
 
 #### Django
+
 ```bash
 # Django CLI es extremadamente potente
 python manage.py migrate                    # Aplica migrations
@@ -109,6 +112,7 @@ python manage.py cleanup_old_sessions       # Custom command
 ```
 
 #### Gremius (Actual)
+
 ```bash
 # CLI actual muy limitado
 bun run dev                    # Inicia dev server
@@ -169,6 +173,7 @@ bun run migrate               # Corre migrations (básico)
 ### 2. **Admin Panel Auto-generado**
 
 #### Django Admin
+
 ```python
 # blog/admin.py
 from django.contrib import admin
@@ -182,7 +187,7 @@ class PostAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     date_hierarchy = 'publish_date'
     ordering = ['status', '-publish_date']
-    
+
     fieldsets = (
         ('Contenido', {
             'fields': ('title', 'slug', 'content')
@@ -194,6 +199,7 @@ class PostAdmin(admin.ModelAdmin):
 ```
 
 **Características Django Admin:**
+
 - ✅ 100% auto-generado desde models
 - ✅ CRUD completo sin escribir código
 - ✅ Filtros, búsqueda, ordenamiento
@@ -205,6 +211,7 @@ class PostAdmin(admin.ModelAdmin):
 - ✅ Exportar a CSV/Excel nativo
 
 #### Gremius Admin (Actual)
+
 ```svelte
 <!-- packages/admin/src/routes/datasets/[slug]/+page.svelte -->
 <!-- Actualmente básico: -->
@@ -221,26 +228,24 @@ class PostAdmin(admin.ModelAdmin):
 
 export const postAdminConfig = {
   list: {
-    display: ['title', 'author.name', 'status', 'publishDate'],
-    filters: ['status', 'author', 'category'],
-    search: ['title', 'content'],
-    ordering: ['-publishDate', 'title'],
-    actions: ['publish', 'unpublish', 'delete'], // Bulk actions
+    display: ["title", "author.name", "status", "publishDate"],
+    filters: ["status", "author", "category"],
+    search: ["title", "content"],
+    ordering: ["-publishDate", "title"],
+    actions: ["publish", "unpublish", "delete"], // Bulk actions
   },
   form: {
     layout: [
-      { section: 'Contenido', fields: ['title', 'slug', 'content'] },
-      { section: 'Metadata', fields: ['author', 'status', 'tags'] },
+      { section: "Contenido", fields: ["title", "slug", "content"] },
+      { section: "Metadata", fields: ["author", "status", "tags"] },
     ],
-    inlines: [
-      { name: 'comments', fields: ['author', 'content', 'approved'] }
-    ],
+    inlines: [{ name: "comments", fields: ["author", "content", "approved"] }],
     widgets: {
-      content: 'rich-text',
-      tags: 'multi-select',
-      author: 'search-select'
-    }
-  }
+      content: "rich-text",
+      tags: "multi-select",
+      author: "search-select",
+    },
+  },
 };
 
 // Auto-generación en admin panel:
@@ -254,6 +259,7 @@ export const postAdminConfig = {
 ### 3. **Sistema de Signals/Events Robusto**
 
 #### Django Signals
+
 ```python
 # blog/signals.py
 from django.db.models.signals import post_save, pre_delete
@@ -288,6 +294,7 @@ def send_confirmation(sender, order, user, **kwargs):
 ```
 
 **Características:**
+
 - Signals pre/post para modelos (save, delete, init)
 - Signals de request/response
 - Signals de autenticación
@@ -296,14 +303,19 @@ def send_confirmation(sender, order, user, **kwargs):
 - Desconexión de signals para testing
 
 #### Gremius (Actual)
+
 ```typescript
 // packages/core/src/events/
 // Actual: EventBus simple
 
 // hooks.ts en grimoire
 export const hooks = {
-  beforeCreate: async (data) => { /* ... */ },
-  afterCreate: async (data) => { /* ... */ },
+  beforeCreate: async (data) => {
+    /* ... */
+  },
+  afterCreate: async (data) => {
+    /* ... */
+  },
 };
 ```
 
@@ -320,11 +332,11 @@ export const signals = {
   postSave: new Signal<(instance: any, created: boolean) => void>(),
   preDelete: new Signal<(instance: any) => void>(),
   postDelete: new Signal<(instance: any) => void>(),
-  
+
   // Request signals
   requestStarted: new Signal<(request: Request) => void>(),
   requestFinished: new Signal<(request: Request, response: Response) => void>(),
-  
+
   // Auth signals
   userLoggedIn: new Signal<(user: User, request: Request) => void>(),
   userLoggedOut: new Signal<(user: User, request: Request) => void>(),
@@ -332,15 +344,15 @@ export const signals = {
 
 // Uso en grimoire
 // packages/grimoires/grimoire-content/src/signals.ts
-import { signals } from '@gremius/core';
+import { signals } from "@gremius/core";
 
-signals.postSave.connect('posts', async (post, created) => {
-  if (created && post.status === 'published') {
+signals.postSave.connect("posts", async (post, created) => {
+  if (created && post.status === "published") {
     await notifySubscribers(post);
   }
 });
 
-signals.preDelete.connect('posts', async (post) => {
+signals.preDelete.connect("posts", async (post) => {
   if (post.featuredImage) {
     await deleteFile(post.featuredImage);
   }
@@ -366,6 +378,7 @@ orderCompleted.connect(async ({ order, user }) => {
 ### 4. **Middleware Chain Flexible**
 
 #### Django Middleware
+
 ```python
 # myproject/settings.py
 MIDDLEWARE = [
@@ -387,25 +400,26 @@ class RequestTimingMiddleware:
     def __call__(self, request):
         # Code before view
         start_time = time.time()
-        
+
         response = self.get_response(request)
-        
+
         # Code after view
         duration = time.time() - start_time
         response['X-Request-Duration'] = str(duration)
-        
+
         return response
-    
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         # Called before view
         pass
-    
+
     def process_exception(self, request, exception):
         # Called if view raises exception
         logger.error(f"Exception: {exception}")
 ```
 
 **Fases del middleware Django:**
+
 1. `process_request` - Antes de URL routing
 2. `process_view` - Antes de la vista
 3. `process_template_response` - Después de vista (si es template)
@@ -413,6 +427,7 @@ class RequestTimingMiddleware:
 5. `process_exception` - Si hay excepción
 
 #### Gremius (Actual)
+
 ```typescript
 // apps/api/src/index.ts
 // Hono middleware básico
@@ -443,31 +458,31 @@ interface Middleware {
 // Configuración en gremius.config.ts
 export default {
   middleware: [
-    { name: 'security', priority: 100 },
-    { name: 'session', priority: 90 },
-    { name: 'cors', priority: 80 },
-    { name: 'auth', priority: 70 },
-    { name: 'logging', priority: 10 },
-    { name: 'customTiming', priority: 5 },
-  ]
+    { name: "security", priority: 100 },
+    { name: "session", priority: 90 },
+    { name: "cors", priority: 80 },
+    { name: "auth", priority: 70 },
+    { name: "logging", priority: 10 },
+    { name: "customTiming", priority: 5 },
+  ],
 };
 
 // Grimoires pueden registrar middleware
 // packages/grimoires/grimoire-auth/src/middleware.ts
 export const authMiddleware: Middleware = {
   async processRequest(request) {
-    const token = request.headers.get('authorization');
+    const token = request.headers.get("authorization");
     if (token) {
       request.user = await validateToken(token);
     }
     return request;
   },
-  
+
   async processException(request, error) {
     if (error instanceof AuthError) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
-  }
+  },
 };
 ```
 
@@ -476,6 +491,7 @@ export const authMiddleware: Middleware = {
 ### 5. **ORM Avanzado con Abstracciones**
 
 #### Django ORM
+
 ```python
 # QuerySet API extremadamente potente
 # blog/models.py
@@ -504,7 +520,7 @@ posts = Post.objects.filter(
 
 # Raw SQL cuando es necesario
 posts = Post.objects.raw('''
-    SELECT * FROM blog_post 
+    SELECT * FROM blog_post
     WHERE status = %s
 ''', ['published'])
 
@@ -523,6 +539,7 @@ Post.objects.all()    # Todos
 ```
 
 **Características:**
+
 - `select_related` - JOINs automáticos
 - `prefetch_related` - Queries optimizadas para relaciones
 - `annotate` - Aggregaciones en query
@@ -532,6 +549,7 @@ Post.objects.all()    # Todos
 - Transactions automáticas
 
 #### Gremius (Actual)
+
 ```typescript
 // Drizzle es moderno pero más básico
 // Falta:
@@ -543,9 +561,9 @@ Post.objects.all()    # Todos
 // Actual:
 const posts = await db.query.posts.findMany({
   with: {
-    author: true,  // Relación
-    category: true
-  }
+    author: true, // Relación
+    category: true,
+  },
 });
 
 // Aggregaciones requieren SQL manual o helper
@@ -559,32 +577,32 @@ const posts = await db.query.posts.findMany({
 
 class QuerySet<T> {
   constructor(private table: T) {}
-  
+
   filter(conditions: Partial<T>): this {
     // Encadenamiento
     return this;
   }
-  
+
   selectRelated(...relations: string[]): this {
     // JOINs automáticos
     return this;
   }
-  
+
   prefetchRelated(...relations: string[]): this {
     // Queries separadas optimizadas
     return this;
   }
-  
+
   annotate(annotations: Record<string, AggregateFn>): this {
     // COUNT, AVG, SUM, etc.
     return this;
   }
-  
+
   orderBy(...fields: string[]): this {
     // Ordenamiento
     return this;
   }
-  
+
   async execute(): Promise<T[]> {
     // Ejecuta query optimizada
   }
@@ -604,7 +622,7 @@ const posts = await Post.objects
   .execute();
 
 // Manager personalizado
-const PublishedManager = createManager((qb) => 
+const PublishedManager = createManager((qb) =>
   qb.filter({ status: 'published' })
 );
 
@@ -619,6 +637,7 @@ posts.published = PublishedManager(posts);
 ### 6. **Testing Framework Integrado**
 
 #### Django Testing
+
 ```python
 # blog/tests.py
 from django.test import TestCase, Client
@@ -632,11 +651,11 @@ class PostModelTest(TestCase):
             content='Content',
             status='published'
         )
-    
+
     def test_post_creation(self):
         self.assertEqual(self.post.title, 'Test Post')
         self.assertEqual(str(self.post), 'Test Post')
-    
+
     def test_post_absolute_url(self):
         self.assertEqual(
             self.post.get_absolute_url(),
@@ -647,13 +666,13 @@ class PostViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.post = Post.objects.create(...)
-    
+
     def test_post_list_view(self):
         response = self.client.get(reverse('post_list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.post.title)
         self.assertTemplateUsed(response, 'blog/post_list.html')
-    
+
     def test_post_create_view(self):
         response = self.client.post(reverse('post_create'), {
             'title': 'New Post',
@@ -666,7 +685,7 @@ class PostViewTest(TestCase):
 # Fixtures
 class PostFixtureTest(TestCase):
     fixtures = ['posts.json', 'users.json']
-    
+
     def test_with_fixtures(self):
         # Datos cargados automáticamente
         self.assertEqual(Post.objects.count(), 10)
@@ -679,6 +698,7 @@ class PostFixtureTest(TestCase):
 ```
 
 **Características:**
+
 - Test client con cookies/sessions
 - Fixtures automáticas
 - Test DB aislada
@@ -686,6 +706,7 @@ class PostFixtureTest(TestCase):
 - Coverage integrado
 
 #### Gremius (Actual)
+
 ```bash
 # Solo Vitest básico
 bun test
@@ -715,11 +736,11 @@ class PostModelTest extends GremiusTestCase {
       status: 'published'
     });
   }
-  
+
   async testPostCreation() {
     this.assertEqual(this.post.title, 'Test Post');
   }
-  
+
   async testPostUrl() {
     this.assertEqual(
       await this.post.getAbsoluteUrl(),
@@ -734,13 +755,13 @@ class PostAPITest extends GremiusTestCase {
     this.client = new TestClient();
     this.post = await Post.objects.create({...});
   }
-  
+
   async testPostList() {
     const response = await this.client.get('/api/posts');
     this.assertEqual(response.status, 200);
     this.assertContains(response.data, this.post.title);
   }
-  
+
   async testPostCreate() {
     const response = await this.client.post('/api/posts', {
       title: 'New Post',
@@ -771,6 +792,7 @@ export const postFixtures = [
 ### 7. **Forms y Validación Declarativa**
 
 #### Django Forms
+
 ```python
 # blog/forms.py
 from django import forms
@@ -784,18 +806,18 @@ class PostForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'rows': 10}),
             'tags': forms.CheckboxSelectMultiple()
         }
-    
+
     def clean_title(self):
         title = self.cleaned_data['title']
         if 'spam' in title.lower():
             raise forms.ValidationError('No spam allowed')
         return title
-    
+
     def clean(self):
         cleaned_data = super().clean()
         title = cleaned_data.get('title')
         content = cleaned_data.get('content')
-        
+
         if title and content and title in content:
             raise forms.ValidationError('Title cannot be in content')
 
@@ -812,6 +834,7 @@ def post_create(request):
 ```
 
 **Características:**
+
 - Auto-generado desde models
 - Validaciones field-level y form-level
 - Widgets personalizables
@@ -819,12 +842,13 @@ def post_create(request):
 - File upload handling
 
 #### Gremius (Actual)
+
 ```typescript
 // Validaciones con Zod (bueno pero manual)
 const postSchema = z.object({
   title: z.string().min(1),
   content: z.string(),
-  categoryId: z.number()
+  categoryId: z.number(),
 });
 
 // Falta:
@@ -843,7 +867,7 @@ class Form<T> {
   fields: Record<string, Field>;
   data: Partial<T>;
   errors: Record<string, string[]>;
-  
+
   async isValid(): Promise<boolean> {
     // Validación field-level
     for (const [name, field] of Object.entries(this.fields)) {
@@ -851,14 +875,14 @@ class Form<T> {
       const error = await field.validate(value);
       if (error) this.errors[name] = [error];
     }
-    
+
     // Validación form-level
     const formError = await this.clean();
-    if (formError) this.errors['__all__'] = [formError];
-    
+    if (formError) this.errors["__all__"] = [formError];
+
     return Object.keys(this.errors).length === 0;
   }
-  
+
   async clean(): Promise<string | null> {
     // Override en subclases
     return null;
@@ -868,35 +892,35 @@ class Form<T> {
 // Auto-generado desde schema
 // packages/grimoires/grimoire-content/src/forms.ts
 export const PostForm = createFormFromSchema(posts, {
-  fields: ['title', 'content', 'categoryId', 'tagIds'],
+  fields: ["title", "content", "categoryId", "tagIds"],
   widgets: {
-    content: 'rich-text',
-    tagIds: 'multi-select'
+    content: "rich-text",
+    tagIds: "multi-select",
   },
-  
+
   async cleanTitle(value: string) {
-    if (value.toLowerCase().includes('spam')) {
-      throw new ValidationError('No spam allowed');
+    if (value.toLowerCase().includes("spam")) {
+      throw new ValidationError("No spam allowed");
     }
     return value;
   },
-  
+
   async clean() {
     const { title, content } = this.data;
     if (title && content && content.includes(title)) {
-      throw new ValidationError('Content cannot contain title');
+      throw new ValidationError("Content cannot contain title");
     }
-  }
+  },
 });
 
 // Uso en API
-app.post('/api/posts', async (c) => {
+app.post("/api/posts", async (c) => {
   const form = new PostForm(await c.req.json());
-  
+
   if (!(await form.isValid())) {
     return c.json({ errors: form.errors }, 400);
   }
-  
+
   const post = await Post.objects.create(form.data);
   return c.json(post, 201);
 });
@@ -907,6 +931,7 @@ app.post('/api/posts', async (c) => {
 ### 8. **Configuración Flexible y Environments**
 
 #### Django Settings
+
 ```python
 # myproject/settings.py
 import os
@@ -954,12 +979,14 @@ DATABASES['default']['NAME'] = 'myapp_local'
 ```
 
 **Características:**
+
 - Python puro (fácil lógica condicional)
 - Herencia de settings
 - django-environ para variables
 - Local/production/test separados
 
 #### Gremius (Actual)
+
 ```typescript
 // gremius.config.ts
 // Básico, falta herencia de environments
@@ -969,7 +996,7 @@ export default {
     host: process.env.DB_HOST,
     // ...
   },
-  grimoires: ['grimoire-auth', 'grimoire-content']
+  grimoires: ["grimoire-auth", "grimoire-content"],
 };
 ```
 
@@ -987,32 +1014,23 @@ export default {
 // base.ts
 export const baseConfig = {
   database: {
-    adapter: 'postgres',
-    host: env('DB_HOST', 'localhost'),
-    port: env.int('DB_PORT', 5432),
+    adapter: "postgres",
+    host: env("DB_HOST", "localhost"),
+    port: env.int("DB_PORT", 5432),
   },
-  
+
   grimoires: {
     autoDiscover: true,
-    manual: ['grimoire-custom']
+    manual: ["grimoire-custom"],
   },
-  
-  middleware: [
-    'security',
-    'cors',
-    'auth',
-    'logging'
-  ],
-  
-  installedGrimoires: [
-    'grimoire-auth',
-    'grimoire-content',
-    'grimoire-admin'
-  ]
+
+  middleware: ["security", "cors", "auth", "logging"],
+
+  installedGrimoires: ["grimoire-auth", "grimoire-content", "grimoire-admin"],
 };
 
 // production.ts
-import { baseConfig } from './base';
+import { baseConfig } from "./base";
 
 export default {
   ...baseConfig,
@@ -1020,24 +1038,24 @@ export default {
   database: {
     ...baseConfig.database,
     pool: { min: 5, max: 20 },
-    ssl: true
+    ssl: true,
   },
   cache: {
-    provider: 'redis',
-    url: env('REDIS_URL')
-  }
+    provider: "redis",
+    url: env("REDIS_URL"),
+  },
 };
 
 // local.ts
-import { baseConfig } from './base';
+import { baseConfig } from "./base";
 
 export default {
   ...baseConfig,
   debug: true,
   database: {
-    adapter: 'sqlite',
-    path: './db.sqlite3'
-  }
+    adapter: "sqlite",
+    path: "./db.sqlite3",
+  },
 };
 ```
 
@@ -1045,24 +1063,25 @@ export default {
 
 ## 📊 Comparativa de Features de Modularidad
 
-| Feature | Django | Gremius | Prioridad |
-|---------|--------|---------|-----------|
-| **CLI potente** | ✅ manage.py completo | ⚠️ Básico | 🔴 Alta |
-| **Admin auto-generado** | ✅ El mejor | 🔄 En desarrollo | 🔴 Alta |
-| **Signals/Events** | ✅ Robusto | ⚠️ Básico | 🟡 Media |
-| **Middleware chain** | ✅ 5 fases | ⚠️ Básico | 🟡 Media |
-| **ORM avanzado** | ✅ QuerySets | ⚠️ Drizzle base | 🟡 Media |
-| **Testing framework** | ✅ Integrado | ⚠️ Vitest básico | 🟡 Media |
-| **Forms declarativos** | ✅ Auto desde models | ⚠️ Zod manual | 🟢 Baja |
-| **Config environments** | ✅ Python flexible | ⚠️ TS básico | 🟡 Media |
-| **Migrations automáticas** | ✅ makemigrations | ⚠️ Manual | 🔴 Alta |
-| **Fixtures** | ✅ JSON/XML/YAML | ❌ No existe | 🟡 Media |
+| Feature                    | Django                | Gremius          | Prioridad |
+| -------------------------- | --------------------- | ---------------- | --------- |
+| **CLI potente**            | ✅ manage.py completo | ⚠️ Básico        | 🔴 Alta   |
+| **Admin auto-generado**    | ✅ El mejor           | 🔄 En desarrollo | 🔴 Alta   |
+| **Signals/Events**         | ✅ Robusto            | ⚠️ Básico        | 🟡 Media  |
+| **Middleware chain**       | ✅ 5 fases            | ⚠️ Básico        | 🟡 Media  |
+| **ORM avanzado**           | ✅ QuerySets          | ⚠️ Drizzle base  | 🟡 Media  |
+| **Testing framework**      | ✅ Integrado          | ⚠️ Vitest básico | 🟡 Media  |
+| **Forms declarativos**     | ✅ Auto desde models  | ⚠️ Zod manual    | 🟢 Baja   |
+| **Config environments**    | ✅ Python flexible    | ⚠️ TS básico     | 🟡 Media  |
+| **Migrations automáticas** | ✅ makemigrations     | ⚠️ Manual        | 🔴 Alta   |
+| **Fixtures**               | ✅ JSON/XML/YAML      | ❌ No existe     | 🟡 Media  |
 
 ---
 
 ## 🎯 Roadmap para Framework Modular Django-nivel
 
 ### Fase 1: CLI y Tooling (2-3 meses)
+
 - [ ] `gremius-cli` con comandos esenciales
 - [ ] Generador de migrations automático (`gremius makemigrations`)
 - [ ] Shell interactivo (`gremius shell`)
@@ -1071,6 +1090,7 @@ export default {
 - [ ] Inspector de rutas y grimoires
 
 ### Fase 2: Admin Auto-generado (2-3 meses)
+
 - [ ] Configuración de admin por dataset
 - [ ] CRUD completo auto-generado
 - [ ] Filtros, búsqueda, ordenamiento
@@ -1080,6 +1100,7 @@ export default {
 - [ ] Exportar datos
 
 ### Fase 3: Infraestructura Core (2-3 meses)
+
 - [ ] Sistema de signals robusto
 - [ ] Middleware chain con fases
 - [ ] Testing framework integrado
@@ -1087,6 +1108,7 @@ export default {
 - [ ] Database agnostic (SQLite para dev)
 
 ### Fase 4: ORM y Forms (2-3 meses)
+
 - [ ] Abstracción QuerySet sobre Drizzle
 - [ ] select_related / prefetch_related
 - [ ] Aggregations fáciles
@@ -1094,6 +1116,7 @@ export default {
 - [ ] Validaciones cross-field
 
 ### Fase 5: Configuración (1-2 meses)
+
 - [ ] Sistema de environments
 - [ ] Configuración por archivos
 - [ ] Variables con validación
@@ -1106,6 +1129,7 @@ export default {
 ## 💭 Conclusión
 
 ### Django es superior en:
+
 - **Madurez:** 18 años de refinamiento
 - **Ecosistema:** Miles de apps reutilizables
 - **Tooling:** CLI extremadamente potente
@@ -1113,12 +1137,14 @@ export default {
 - **Documentación:** Extensa y traducida
 
 ### Gremius puede superar en:
+
 - **Stack moderno:** Bun > Node > Python en I/O
 - **Type safety:** End-to-end TypeScript
 - **Arquitectura:** Grimoires más flexibles que apps Django
 - **Performance:** Mejor cold start y throughput
 
 **Para ser un framework modular "Django-nivel", Gremius necesita principalmente:**
+
 1. CLI potente (manage.py equivalente)
 2. Admin auto-generado avanzado
 3. Testing framework integrado
@@ -1128,5 +1154,5 @@ export default {
 
 ---
 
-*Documento generado el: 2024-04-12*  
-*Próxima revisión: v0.9.0-beta*
+_Documento generado el: 2024-04-12_  
+_Próxima revisión: v0.9.0-beta_

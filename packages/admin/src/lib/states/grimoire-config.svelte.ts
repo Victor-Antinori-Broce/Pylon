@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * GRIMOIRE CONFIG STORE - Svelte 5 Runes
  * ═══════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Gestiona la configuración de cada grimoire individualmente.
  * Cada grimoire tiene su propia sección de settings accesible desde su UI.
  */
@@ -49,7 +49,11 @@ export interface R2StorageConfig {
   publicUrl?: string;
 }
 
-export type StorageConfig = MinioStorageConfig | S3StorageConfig | LocalStorageConfig | R2StorageConfig;
+export type StorageConfig =
+  | MinioStorageConfig
+  | S3StorageConfig
+  | LocalStorageConfig
+  | R2StorageConfig;
 
 export interface MediaFeaturesConfig {
   thumbnails: boolean;
@@ -143,7 +147,7 @@ export class GrimoireConfigStore {
 
       this.configs[grimoireId] = config;
       this.saveSuccess[grimoireId] = true;
-      
+
       // Clear success after 3 seconds
       setTimeout(() => {
         this.saveSuccess[grimoireId] = false;
@@ -162,7 +166,10 @@ export class GrimoireConfigStore {
   /**
    * Testea la conexión de storage
    */
-  async testStorageConnection(grimoireId: string, storageConfig: StorageConfig): Promise<{ success: boolean; message: string }> {
+  async testStorageConnection(
+    grimoireId: string,
+    storageConfig: StorageConfig
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${API_URL}/api/grimoires/${grimoireId}/config/test-storage`, {
         method: "POST",
@@ -264,7 +271,8 @@ export class GrimoireConfigStore {
 
   getStorageProviderDescription(provider: StorageProvider): string {
     const descriptions: Record<StorageProvider, string> = {
-      minio: "Self-hosted S3-compatible storage. Good for local development and on-premise deployments.",
+      minio:
+        "Self-hosted S3-compatible storage. Good for local development and on-premise deployments.",
       s3: "Amazon Web Services S3. Enterprise-grade cloud storage.",
       local: "Store files on local filesystem. Simple but not scalable. Good for development.",
       r2: "Cloudflare R2. S3-compatible with zero egress fees.",

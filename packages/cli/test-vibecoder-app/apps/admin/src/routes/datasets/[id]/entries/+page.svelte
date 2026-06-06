@@ -1,5 +1,6 @@
 <script lang="ts">
   import DataExplorer from "$lib/components/admin/DataExplorer.svelte";
+
   import { page } from "$app/stores";
 
   // The dataset ID from the URL becomes the grimoireId for DataExplorer.

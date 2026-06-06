@@ -1,17 +1,18 @@
 /**
  * @file data-sources.ts
  * @description Admin routes for managing external data sources
- * 
+ *
  * REST API endpoints for:
  * - Creating/updating/deleting data source connections
  * - Testing connections
  * - Syncing data
  */
 
+import { eq, desc } from "drizzle-orm";
 import { Hono } from "hono";
+
 import { db } from "../db";
 import { dataSources } from "../db/schema";
-import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middleware/auth";
 import type { AppVariables } from "../types/hono";
@@ -66,17 +67,7 @@ dataSourcesRouter.get("/", async (c) => {
 dataSourcesRouter.post("/", async (c) => {
   try {
     const body = await c.req.json();
-    const {
-      name,
-      type,
-      host,
-      port,
-      database,
-      username,
-      password,
-      url,
-      headers,
-    } = body;
+    const { name, type, host, port, database, username, password, url, headers } = body;
 
     if (!name || !type) {
       return c.json({ success: false, error: "Name and type are required" }, 400);
@@ -115,23 +106,26 @@ dataSourcesRouter.post("/", async (c) => {
 
     logger.info({ sourceId: source.id, name, type }, "Data source created");
 
-    return c.json({
-      success: true,
-      data: {
-        id: source.id,
-        name: source.name,
-        type: source.type,
-        host: source.host,
-        port: source.port,
-        database: source.database,
-        username: source.username,
-        url: source.url,
-        headers: source.headers,
-        isActive: source.isActive,
-        lastSyncAt: source.lastSyncAt,
-        createdAt: source.createdAt,
+    return c.json(
+      {
+        success: true,
+        data: {
+          id: source.id,
+          name: source.name,
+          type: source.type,
+          host: source.host,
+          port: source.port,
+          database: source.database,
+          username: source.username,
+          url: source.url,
+          headers: source.headers,
+          isActive: source.isActive,
+          lastSyncAt: source.lastSyncAt,
+          createdAt: source.createdAt,
+        },
       },
-    }, 201);
+      201
+    );
   } catch (error) {
     logger.error({ error }, "Failed to create data source");
     return c.json({ success: false, error: "Failed to create data source" }, 500);
@@ -145,7 +139,16 @@ dataSourcesRouter.post("/", async (c) => {
 dataSourcesRouter.post("/test", async (c) => {
   try {
     const body = await c.req.json();
-    const { type, host, port: _port, database, username: _username, password: _password, url, headers: _headers } = body;
+    const {
+      type,
+      host,
+      port: _port,
+      database,
+      username: _username,
+      password: _password,
+      url,
+      headers: _headers,
+    } = body;
 
     // Simulate connection test
     // In production, this would actually try to connect to the database/API
@@ -177,10 +180,13 @@ dataSourcesRouter.post("/test", async (c) => {
         message: `Successfully connected to ${type} server`,
       });
     } else {
-      return c.json({
-        success: false,
-        message: "Connection failed. Please check your credentials and network settings.",
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          message: "Connection failed. Please check your credentials and network settings.",
+        },
+        400
+      );
     }
   } catch (error) {
     logger.error({ error }, "Failed to test data source connection");
@@ -238,11 +244,7 @@ dataSourcesRouter.put("/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json();
 
-    const [existing] = await db
-      .select()
-      .from(dataSources)
-      .where(eq(dataSources.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(dataSources).where(eq(dataSources.id, id)).limit(1);
 
     if (!existing) {
       return c.json({ success: false, error: "Data source not found" }, 404);
@@ -277,11 +279,7 @@ dataSourcesRouter.delete("/:id", async (c) => {
   try {
     const id = c.req.param("id");
 
-    const [existing] = await db
-      .select()
-      .from(dataSources)
-      .where(eq(dataSources.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(dataSources).where(eq(dataSources.id, id)).limit(1);
 
     if (!existing) {
       return c.json({ success: false, error: "Data source not found" }, 404);
@@ -306,21 +304,14 @@ dataSourcesRouter.post("/:id/sync", async (c) => {
   try {
     const id = c.req.param("id");
 
-    const [source] = await db
-      .select()
-      .from(dataSources)
-      .where(eq(dataSources.id, id))
-      .limit(1);
+    const [source] = await db.select().from(dataSources).where(eq(dataSources.id, id)).limit(1);
 
     if (!source) {
       return c.json({ success: false, error: "Data source not found" }, 404);
     }
 
     // Update last sync time
-    await db
-      .update(dataSources)
-      .set({ lastSyncAt: new Date() })
-      .where(eq(dataSources.id, id));
+    await db.update(dataSources).set({ lastSyncAt: new Date() }).where(eq(dataSources.id, id));
 
     logger.info({ sourceId: id, type: source.type }, "Data source sync triggered");
 

@@ -184,11 +184,13 @@ Dado que los **grimoires son módulos de negocio completos** (como un CRM o un s
 ## 🔧 API Endpoints para esta UI
 
 ### Uninstall (Soft Delete)
+
 ```http
 POST /api/modules/grimoire-games/uninstall
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -207,11 +209,13 @@ POST /api/modules/grimoire-games/uninstall
 ```
 
 ### Listar con Sección Uninstalled
+
 ```http
 GET /api/modules
 ```
 
 **Response (simplificado):**
+
 ```json
 {
   "categories": {
@@ -242,11 +246,13 @@ GET /api/modules
 ```
 
 ### Recover
+
 ```http
 POST /api/modules/grimoire-games/recover
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -261,11 +267,13 @@ POST /api/modules/grimoire-games/recover
 ```
 
 ### Delete Permanente (con purge)
+
 ```http
 DELETE /api/modules/grimoire-games?purge=true&force=true
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -360,14 +368,14 @@ Click en [⬇️ Recover]
 
 ## ✅ Ventajas de este Diseño
 
-| Aspecto | Beneficio |
-|---------|-----------|
-| **Sin miedo al uninstall** | Los usuarios desinstalan sin temor a perder datos |
-| **Recuperación simple** | Un click y todo vuelve exactamente igual |
-| **Limpieza gradual** | Primero desinstalan, deciden después si borrar |
-| **Transparencia** | Ven exactamente qué datos se preservan |
-| **Seguridad** | Delete requiere confirmación explícita y typing challenge |
-| **Auditoría** | Siempre saben qué desinstalaron y cuándo |
+| Aspecto                    | Beneficio                                                 |
+| -------------------------- | --------------------------------------------------------- |
+| **Sin miedo al uninstall** | Los usuarios desinstalan sin temor a perder datos         |
+| **Recuperación simple**    | Un click y todo vuelve exactamente igual                  |
+| **Limpieza gradual**       | Primero desinstalan, deciden después si borrar            |
+| **Transparencia**          | Ven exactamente qué datos se preservan                    |
+| **Seguridad**              | Delete requiere confirmación explícita y typing challenge |
+| **Auditoría**              | Siempre saben qué desinstalaron y cuándo                  |
 
 ---
 

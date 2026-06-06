@@ -5,15 +5,16 @@
  * Los grimoires pueden registrar sus propios componentes adicionales.
  */
 
-import { fieldRegistry } from "./fieldRegistry";
 
 // Importar componentes base
-import TextField from "$lib/components/data-explorer/fields/TextField.svelte";
-import NumberField from "$lib/components/data-explorer/fields/NumberField.svelte";
 import BooleanField from "$lib/components/data-explorer/fields/BooleanField.svelte";
-import StatusBadgeField from "$lib/components/data-explorer/fields/StatusBadgeField.svelte";
-import DateField from "$lib/components/data-explorer/fields/DateField.svelte";
 import CalculatedField from "$lib/components/data-explorer/fields/CalculatedField.svelte";
+import DateField from "$lib/components/data-explorer/fields/DateField.svelte";
+import NumberField from "$lib/components/data-explorer/fields/NumberField.svelte";
+import StatusBadgeField from "$lib/components/data-explorer/fields/StatusBadgeField.svelte";
+import TextField from "$lib/components/data-explorer/fields/TextField.svelte";
+
+import { fieldRegistry } from "./fieldRegistry";
 
 /**
  * Registrar todos los tipos de campo por defecto

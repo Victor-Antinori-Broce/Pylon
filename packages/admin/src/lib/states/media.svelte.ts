@@ -2,9 +2,9 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * ESTADO GLOBAL REACTIVO - Media Library (Svelte 5 Runes)
  * ═══════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Estado global para media files usando el sistema de reactividad de Svelte 5.
- * 
+ *
  * ⚠️ IMPORTANTE: No usar stores antiguos (writable, readable, derived).
  * Svelte 5 Runes proporciona reactividad fina sin boilerplate.
  */
@@ -81,41 +81,40 @@ export class MediaStore {
   // ─── Estado Derivado ───
   totalCount = $derived<number>(this.files.length);
   filteredFiles = $derived<MediaFile[]>(this.getFilteredFiles());
-  
+
   private getFilteredFiles(): MediaFile[] {
     let result = this.files;
-    
+
     // Filter by folder
     if (this.selectedFolder) {
-      result = result.filter(f => f.folderId === this.selectedFolder!.id);
+      result = result.filter((f) => f.folderId === this.selectedFolder!.id);
     } else {
-      result = result.filter(f => !f.folderId);
+      result = result.filter((f) => !f.folderId);
     }
-    
+
     // Filter by search query
     if (this.searchQuery) {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter(f => 
-        f.filename.toLowerCase().includes(q) || 
-        f.originalName.toLowerCase().includes(q)
+      result = result.filter(
+        (f) => f.filename.toLowerCase().includes(q) || f.originalName.toLowerCase().includes(q)
       );
     }
-    
+
     // Filter by type
     if (this.filterType) {
-      result = result.filter(f => f.mimeType.startsWith(`${this.filterType}/`));
+      result = result.filter((f) => f.mimeType.startsWith(`${this.filterType}/`));
     }
-    
+
     return result;
   }
-  
-  imageFiles = $derived<MediaFile[]>(this.files.filter(f => f.mimeType.startsWith("image/")));
-  videoFiles = $derived<MediaFile[]>(this.files.filter(f => f.mimeType.startsWith("video/")));
-  documentFiles = $derived<MediaFile[]>(this.files.filter(f => 
-    f.mimeType.includes("pdf") || 
-    f.mimeType.includes("doc") || 
-    f.mimeType.includes("text")
-  ));
+
+  imageFiles = $derived<MediaFile[]>(this.files.filter((f) => f.mimeType.startsWith("image/")));
+  videoFiles = $derived<MediaFile[]>(this.files.filter((f) => f.mimeType.startsWith("video/")));
+  documentFiles = $derived<MediaFile[]>(
+    this.files.filter(
+      (f) => f.mimeType.includes("pdf") || f.mimeType.includes("doc") || f.mimeType.includes("text")
+    )
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Métodos CRUD - Files
@@ -124,21 +123,21 @@ export class MediaStore {
   async fetchFiles(folderId?: string, search?: string): Promise<void> {
     this.isLoading = true;
     this.error = null;
-    
+
     try {
       const params = new URLSearchParams();
       if (folderId) params.set("folderId", folderId);
       if (search) params.set("search", search);
       params.set("limit", "100");
-      
-      const response = await fetch(`${API_URL}/api/media?${params}`, { 
-        credentials: "include" 
+
+      const response = await fetch(`${API_URL}/api/media?${params}`, {
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       this.files = data.docs || [];
     } catch (err) {
@@ -151,14 +150,14 @@ export class MediaStore {
 
   async fetchFileById(id: string): Promise<MediaFile | null> {
     try {
-      const response = await fetch(`${API_URL}/api/media/${id}`, { 
-        credentials: "include" 
+      const response = await fetch(`${API_URL}/api/media/${id}`, {
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const file: MediaFile = await response.json();
       this.selectedFile = file;
       return file;
@@ -173,7 +172,7 @@ export class MediaStore {
     if (fileArray.length === 0) return false;
 
     this.isUploading = true;
-    this.uploadProgress = fileArray.map(f => ({
+    this.uploadProgress = fileArray.map((f) => ({
       filename: f.name,
       progress: 0,
       status: "pending" as const,
@@ -181,11 +180,11 @@ export class MediaStore {
 
     try {
       const formData = new FormData();
-      fileArray.forEach(file => formData.append("files", file));
-      
+      fileArray.forEach((file) => formData.append("files", file));
+
       const params = new URLSearchParams();
       if (folderId) params.set("folderId", folderId);
-      
+
       const response = await fetch(`${API_URL}/api/media/upload?${params}`, {
         method: "POST",
         credentials: "include",
@@ -198,9 +197,9 @@ export class MediaStore {
       }
 
       const result = await response.json();
-      
+
       // Update progress
-      this.uploadProgress = this.uploadProgress.map(p => ({
+      this.uploadProgress = this.uploadProgress.map((p) => ({
         ...p,
         progress: 100,
         status: "success",
@@ -208,11 +207,11 @@ export class MediaStore {
 
       // Refresh file list
       await this.fetchFiles(folderId);
-      
+
       return result.success;
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Upload failed";
-      this.uploadProgress = this.uploadProgress.map(p => ({
+      this.uploadProgress = this.uploadProgress.map((p) => ({
         ...p,
         status: "error",
         error: this.error || "Upload failed",
@@ -241,7 +240,7 @@ export class MediaStore {
       }
 
       const updated: MediaFile = await response.json();
-      this.files = this.files.map(f => f.id === id ? updated : f);
+      this.files = this.files.map((f) => (f.id === id ? updated : f));
       if (this.selectedFile?.id === id) {
         this.selectedFile = updated;
       }
@@ -254,7 +253,7 @@ export class MediaStore {
 
   async deleteFile(id: string): Promise<boolean> {
     if (!confirm("Are you sure you want to delete this file?")) return false;
-    
+
     try {
       const response = await fetch(`${API_URL}/api/media/${id}`, {
         method: "DELETE",
@@ -265,7 +264,7 @@ export class MediaStore {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      this.files = this.files.filter(f => f.id !== id);
+      this.files = this.files.filter((f) => f.id !== id);
       if (this.selectedFile?.id === id) {
         this.selectedFile = null;
       }
@@ -282,14 +281,14 @@ export class MediaStore {
 
   async fetchFolders(): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/api/media/folders`, { 
-        credentials: "include" 
+      const response = await fetch(`${API_URL}/api/media/folders`, {
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       this.folders = data.docs || [];
     } catch (err) {
@@ -299,14 +298,14 @@ export class MediaStore {
 
   async createFolder(name: string, parentId?: string): Promise<MediaFolder | null> {
     try {
-      const parent = parentId ? this.folders.find(f => f.id === parentId) : null;
-      
+      const parent = parentId ? this.folders.find((f) => f.id === parentId) : null;
+
       const response = await fetch(`${API_URL}/api/media/folders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ 
-          name, 
+        body: JSON.stringify({
+          name,
           parentId,
           parentPath: parent?.path,
         }),

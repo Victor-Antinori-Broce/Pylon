@@ -3,6 +3,7 @@
 ## Resumen de Cambios
 
 DataSets ha sido convertido de "feature del engine" a **Grimoire Core** - un grimoire que:
+
 - ✅ Viene encendido por defecto
 - ✅ Puede ser apagado
 - ✅ Se posiciona primero en el sidebar del admin
@@ -23,6 +24,7 @@ packages/grimoires/grimoire-datasets/
 ```
 
 ### 1. package.json
+
 ```json
 {
   "name": "@gremius/grimoire-datasets",
@@ -38,6 +40,7 @@ packages/grimoires/grimoire-datasets/
 ```
 
 ### 2. grimoire.json (Manifest)
+
 ```json
 {
   "id": "grimoire-datasets",
@@ -56,22 +59,23 @@ packages/grimoires/grimoire-datasets/
 ```
 
 ### 3. index.ts (Entry Point)
+
 ```typescript
 export const grimoire: GrimoireDefinition = {
   id: "grimoire-datasets",
   name: "DataSets",
   mountPath: "/api/datasets",
-  
+
   createRouter: (ctx: GrimoireContext) => {
     return createDatasetsRouter(ctx);
   },
-  
+
   admin: {
     category: "core",
     order: 0, // First in sidebar
     icon: "Database",
   },
-  
+
   hooks: {
     onStartup: async (ctx) => {
       ctx.logger.info("📊 DataSets grimoire initialized");
@@ -81,8 +85,8 @@ export const grimoire: GrimoireDefinition = {
     },
     onDisable: async (ctx) => {
       ctx.logger.info("📊 DataSets disabled");
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -91,7 +95,9 @@ export const grimoire: GrimoireDefinition = {
 ## Archivos Modificados
 
 ### 1. apps/api/gremius.config.ts
+
 **Antes:**
+
 ```typescript
 const config: GremiusConfig = {
   core: {
@@ -105,6 +111,7 @@ const config: GremiusConfig = {
 ```
 
 **Después:**
+
 ```typescript
 const config: GremiusConfig = {
   core: [
@@ -120,7 +127,9 @@ const config: GremiusConfig = {
 ```
 
 ### 2. apps/api/src/services/module-registry.ts
+
 **Agregado:**
+
 ```typescript
 export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
   // DATASETS - Core grimoire, enabled by default, positioned first
@@ -140,7 +149,9 @@ export const GRIMOIRE_REGISTRY: GrimoireDef[] = [
 ```
 
 ### 3. packages/admin/src/lib/components/layout/SidebarLayout.svelte
+
 **Antes:**
+
 ```typescript
 const allNavItems: NavItem[] = [
   { path: "/datasets", label: "Data Sets", icon: Database }, // Hardcoded
@@ -149,6 +160,7 @@ const allNavItems: NavItem[] = [
 ```
 
 **Después:**
+
 ```typescript
 const allNavItems: NavItem[] = [
   // ═══ CORE GRIMOIRES ═══
@@ -163,6 +175,7 @@ const allNavItems: NavItem[] = [
 ## API Endpoints (Auto-generados)
 
 ### DataSets CRUD
+
 ```
 GET    /api/datasets                 # Listar datasets
 POST   /api/datasets                 # Crear dataset
@@ -173,6 +186,7 @@ DELETE /api/datasets/:id             # Eliminar dataset
 ```
 
 ### Entries CRUD
+
 ```
 GET    /api/datasets/:id/entries           # Listar entries
 POST   /api/datasets/:id/entries           # Crear entry(s)
@@ -186,26 +200,31 @@ DELETE /api/datasets/:id/entries/:entryId  # Eliminar entry
 ## Características
 
 ### ✅ Encendido por Defecto
+
 En `gremius.config.ts`:
+
 ```typescript
-core: [
-  { id: "grimoire-datasets", enabled: true, core: true }
-]
+core: [{ id: "grimoire-datasets", enabled: true, core: true }];
 ```
 
 ### ✅ Apagable
+
 El grimoire puede desactivarse:
+
 - Vía admin UI en `/grimoires`
 - Vía API: `PATCH /api/modules/grimoire-datasets { "enabled": false }`
 - Vía config: `{ id: "grimoire-datasets", enabled: false }`
 
 ### ✅ Posición en Sidebar
+
 En el admin Svelte:
+
 - `order: 0` en el grimoire config
 - Aparece primero en la lista de Core Grimoires
 - Icono: Database 🗃️
 
 ### ✅ No Quemado
+
 - Cargado dinámicamente por `module-loader.ts`
 - Rutas montadas vía `grimoire.createRouter()`
 - Configuración leída desde `grimoire.json`
@@ -215,10 +234,12 @@ En el admin Svelte:
 ## Dependencias
 
 ### Tablas
+
 - `data_sets` - Definiciones de colecciones
 - `data_entries` - Registros de datos
 
 ### Core Dependencies
+
 - Auth (requerido)
 - RLS (opcional pero recomendado)
 
@@ -227,14 +248,18 @@ En el admin Svelte:
 ## Migración desde v0.7.0
 
 ### Base de Datos
+
 Las tablas ya existen. No se requieren migraciones.
 
 ### API
+
 Los endpoints son los mismos:
+
 - `/api/datasets` - Sin cambios
 - `/api/datasets/:id/entries` - Sin cambios
 
 ### Admin
+
 El sidebar ahora muestra "DataSets" (antes: "Data Sets") como un item toggleable.
 
 ---
@@ -242,6 +267,7 @@ El sidebar ahora muestra "DataSets" (antes: "Data Sets") como un item toggleable
 ## Estado: ✅ COMPLETO
 
 El grimoire está listo para usar:
+
 1. ✅ Estructura creada
 2. ✅ Configuración actualizada
 3. ✅ Registry actualizado

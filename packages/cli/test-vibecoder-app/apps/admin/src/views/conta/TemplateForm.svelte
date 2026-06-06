@@ -1,19 +1,19 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
-  import Textarea from "$lib/components/ui/Textarea.svelte";
   import Label from "$lib/components/ui/Label.svelte";
-  import { ArrowLeft, Save, Plus, X, Play, Trash2 } from "lucide-svelte";
+  import Textarea from "$lib/components/ui/Textarea.svelte";
+  import { ArrowLeft, Save, Play } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     templateId?: string | null;
     onBack: () => void;
     onSave: () => void;
   }
-  let { templateId = null, onBack, onSave }: Props = $props();
+  const { templateId = null, onBack, onSave }: Props = $props();
 
   let template = $state<any>({ name: "", description: "", templateType: "", rules: [], requiredMetadata: [], isActive: true });
   let loading = $state(false);

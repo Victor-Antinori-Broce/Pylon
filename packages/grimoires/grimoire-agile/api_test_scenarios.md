@@ -15,7 +15,9 @@ export TOKEN="Bearer YOUR_JWT_TOKEN_HERE"
 ## 🧪 PRUEBAS DE PROYECTOS
 
 ### Test 1: Crear Proyecto
+
 **Objetivo:** Verificar creación con estados por defecto
+
 ```bash
 curl -X POST "$BASE_URL/projects" \
   -H "Content-Type: application/json" \
@@ -35,6 +37,7 @@ curl -X POST "$BASE_URL/projects" \
 **Éxito esperado:** `201 Created` con estados default creados
 
 ### Test 2: Listar Proyectos
+
 ```bash
 curl -X GET "$BASE_URL/projects" \
   -H "Authorization: $TOKEN" \
@@ -44,6 +47,7 @@ curl -X GET "$BASE_URL/projects" \
 **Éxito esperado:** `200 OK` con array de proyectos
 
 ### Test 3: Obtener Proyecto Específico
+
 ```bash
 export PROJECT_ID="REEMPLAZAR_CON_UUID_DEL_PROYECTO"
 
@@ -61,6 +65,7 @@ curl -X GET "$BASE_URL/projects/$PROJECT_ID" \
 ## 🧪 PRUEBAS DE ISSUES
 
 ### Test 4: Crear Issue Manual
+
 ```bash
 curl -X POST "$BASE_URL/$PROJECT_ID/issues" \
   -H "Content-Type: application/json" \
@@ -80,6 +85,7 @@ curl -X POST "$BASE_URL/$PROJECT_ID/issues" \
 **Éxito esperado:** `201 Created` con key generada (TEST-1)
 
 ### Test 5: Listar Issues con Join a States
+
 ```bash
 curl -X GET "$BASE_URL/$PROJECT_ID/issues" \
   -H "Authorization: $TOKEN" \
@@ -89,6 +95,7 @@ curl -X GET "$BASE_URL/$PROJECT_ID/issues" \
 **Éxito esperado:** `200 OK` con issues que incluyen datos del estado
 
 ### Test 6: Filtrar Issues por Estado
+
 ```bash
 # Primero obtener un stateId
 export STATE_ID="REEMPLAZAR_CON_UUID_DE_ESTADO"
@@ -101,6 +108,7 @@ curl -X GET "$BASE_URL/$PROJECT_ID/issues?stateId=$STATE_ID" \
 **Éxito esperado:** `200 OK` con issues filtrados
 
 ### Test 7: Buscar Issues por Texto
+
 ```bash
 curl -X GET "$BASE_URL/$PROJECT_ID/issues?search=autenticación" \
   -H "Authorization: $TOKEN" \
@@ -110,6 +118,7 @@ curl -X GET "$BASE_URL/$PROJECT_ID/issues?search=autenticación" \
 **Éxito esperado:** `200 OK` con issues que coinciden
 
 ### Test 8: Obtener Issue por Key
+
 ```bash
 export ISSUE_KEY="TEST-1"
 
@@ -123,6 +132,7 @@ curl -X GET "$BASE_URL/issues/$ISSUE_KEY" \
 **Error esperado:** `404 Not Found` si key no existe
 
 ### Test 9: Actualizar Issue
+
 ```bash
 curl -X PATCH "$BASE_URL/issues/$ISSUE_KEY" \
   -H "Content-Type: application/json" \
@@ -141,6 +151,7 @@ curl -X PATCH "$BASE_URL/issues/$ISSUE_KEY" \
 ## 🧪 PRUEBAS DE INTAKES (CRÍTICO - TRANSACCIÓN)
 
 ### Test 10: Crear Intake (Simulando Agente IA)
+
 ```bash
 curl -X POST "$BASE_URL/$PROJECT_ID/intakes" \
   -H "Content-Type: application/json" \
@@ -165,11 +176,13 @@ curl -X POST "$BASE_URL/$PROJECT_ID/intakes" \
 **Éxito esperado:** `201 Created` con status="pending"
 
 **Guarda el ID del intake:**
+
 ```bash
 export INTAKE_ID="REEMPLAZAR_CON_UUID_DEL_INTAKE"
 ```
 
 ### Test 11: Listar Intakes Pendientes
+
 ```bash
 curl -X GET "$BASE_URL/$PROJECT_ID/intakes?status=pending" \
   -H "Authorization: $TOKEN" \
@@ -179,6 +192,7 @@ curl -X GET "$BASE_URL/$PROJECT_ID/intakes?status=pending" \
 **Éxito esperado:** `200 OK` mostrando intakes en triage
 
 ### Test 12: ✅ APROBAR INTAKE (TRANSACCIÓN ATÓMICA)
+
 **Este es el test más crítico - verifica atomicidad**
 
 ```bash
@@ -193,6 +207,7 @@ curl -X POST "$BASE_URL/intakes/$INTAKE_ID/approve" \
 ```
 
 **Éxito esperado:** `201 Created`
+
 ```json
 {
   "success": true,
@@ -209,6 +224,7 @@ curl -X POST "$BASE_URL/intakes/$INTAKE_ID/approve" \
 ```
 
 **Validación de la transacción:**
+
 1. ✅ Issue creado con key TEST-2
 2. ✅ Intake actualizado a status="accepted"
 3. ✅ createdIssueId vinculado correctamente
@@ -222,6 +238,7 @@ curl -X GET "$BASE_URL/issues/TEST-2" \
 ```
 
 ### Test 13: Intentar Aprobar Intake Ya Procesado (Debe Fallar)
+
 ```bash
 curl -X POST "$BASE_URL/intakes/$INTAKE_ID/approve" \
   -H "Content-Type: application/json" \
@@ -236,6 +253,7 @@ curl -X POST "$BASE_URL/intakes/$INTAKE_ID/approve" \
 **Error esperado:** `404 Not Found` - "Intake not found or already processed"
 
 ### Test 14: Crear y Rechazar Intake
+
 ```bash
 # Crear otro intake
 INTAKE_RESPONSE=$(curl -X POST "$BASE_URL/$PROJECT_ID/intakes" \
@@ -267,6 +285,7 @@ curl -X POST "$BASE_URL/intakes/INTAKE_ID/reject" \
 ## 🧪 PRUEBAS DE CYCLES (SPRINTS)
 
 ### Test 15: Crear Cycle
+
 ```bash
 curl -X POST "$BASE_URL/$PROJECT_ID/cycles" \
   -H "Content-Type: application/json" \
@@ -285,6 +304,7 @@ curl -X POST "$BASE_URL/$PROJECT_ID/cycles" \
 **Éxito esperado:** `201 Created`
 
 ### Test 16: Listar Cycles
+
 ```bash
 curl -X GET "$BASE_URL/$PROJECT_ID/cycles" \
   -H "Authorization: $TOKEN" \
@@ -296,6 +316,7 @@ curl -X GET "$BASE_URL/$PROJECT_ID/cycles" \
 ## 🧪 PRUEBAS DE MODULES (ÉPICAS)
 
 ### Test 17: Crear Module
+
 ```bash
 curl -X POST "$BASE_URL/$PROJECT_ID/modules" \
   -H "Content-Type: application/json" \
@@ -318,6 +339,7 @@ curl -X POST "$BASE_URL/$PROJECT_ID/modules" \
 ## 🧪 PRUEBAS DE COMENTARIOS
 
 ### Test 18: Crear Comentario
+
 ```bash
 curl -X POST "$BASE_URL/issues/$ISSUE_KEY/comments" \
   -H "Content-Type: application/json" \
@@ -332,6 +354,7 @@ curl -X POST "$BASE_URL/issues/$ISSUE_KEY/comments" \
 **Éxito esperado:** `201 Created`
 
 ### Test 19: Listar Comentarios
+
 ```bash
 curl -X GET "$BASE_URL/issues/$ISSUE_KEY/comments" \
   -H "Authorization: $TOKEN" \
@@ -343,6 +366,7 @@ curl -X GET "$BASE_URL/issues/$ISSUE_KEY/comments" \
 ## 🧪 PRUEBAS DE ERROR
 
 ### Test 20: Proyecto Duplicado (Debe Fallar)
+
 ```bash
 curl -X POST "$BASE_URL/projects" \
   -H "Content-Type: application/json" \
@@ -358,6 +382,7 @@ curl -X POST "$BASE_URL/projects" \
 **Error esperado:** `409 Conflict` - "Project identifier already exists"
 
 ### Test 21: Issue sin Nombre (Debe Fallar)
+
 ```bash
 curl -X POST "$BASE_URL/$PROJECT_ID/issues" \
   -H "Content-Type: application/json" \
@@ -372,6 +397,7 @@ curl -X POST "$BASE_URL/$PROJECT_ID/issues" \
 **Error esperado:** `400 Bad Request` - "name is required"
 
 ### Test 22: Intake sin Título (Debe Fallar)
+
 ```bash
 curl -X POST "$BASE_URL/$PROJECT_ID/intakes" \
   -H "Content-Type: application/json" \
@@ -389,30 +415,30 @@ curl -X POST "$BASE_URL/$PROJECT_ID/intakes" \
 
 ## 📊 Resumen de Tests
 
-| # | Endpoint | Método | Caso | Status Esperado |
-|---|----------|--------|------|-----------------|
-| 1 | /projects | POST | Crear proyecto | 201 |
-| 2 | /projects | GET | Listar proyectos | 200 |
-| 3 | /projects/:id | GET | Obtener proyecto | 200 |
-| 4 | /:projectId/issues | POST | Crear issue | 201 |
-| 5 | /:projectId/issues | GET | Listar issues | 200 |
-| 6 | /:projectId/issues | GET | Filtrar por estado | 200 |
-| 7 | /:projectId/issues | GET | Buscar por texto | 200 |
-| 8 | /issues/:key | GET | Obtener issue | 200 |
-| 9 | /issues/:key | PATCH | Actualizar issue | 200 |
-| 10 | /:projectId/intakes | POST | Crear intake | 201 |
-| 11 | /:projectId/intakes | GET | Listar intakes | 200 |
-| 12 | /intakes/:id/approve | POST | **Aprobar (transacción)** | 201 |
-| 13 | /intakes/:id/approve | POST | Aprobar ya procesado | 404 |
-| 14 | /intakes/:id/reject | POST | Rechazar intake | 200 |
-| 15 | /:projectId/cycles | POST | Crear cycle | 201 |
-| 16 | /:projectId/cycles | GET | Listar cycles | 200 |
-| 17 | /:projectId/modules | POST | Crear module | 201 |
-| 18 | /issues/:key/comments | POST | Crear comentario | 201 |
-| 19 | /issues/:key/comments | GET | Listar comentarios | 200 |
-| 20 | /projects | POST | Proyecto duplicado | 409 |
-| 21 | /:projectId/issues | POST | Issue sin nombre | 400 |
-| 22 | /:projectId/intakes | POST | Intake sin título | 400 |
+| #   | Endpoint              | Método | Caso                      | Status Esperado |
+| --- | --------------------- | ------ | ------------------------- | --------------- |
+| 1   | /projects             | POST   | Crear proyecto            | 201             |
+| 2   | /projects             | GET    | Listar proyectos          | 200             |
+| 3   | /projects/:id         | GET    | Obtener proyecto          | 200             |
+| 4   | /:projectId/issues    | POST   | Crear issue               | 201             |
+| 5   | /:projectId/issues    | GET    | Listar issues             | 200             |
+| 6   | /:projectId/issues    | GET    | Filtrar por estado        | 200             |
+| 7   | /:projectId/issues    | GET    | Buscar por texto          | 200             |
+| 8   | /issues/:key          | GET    | Obtener issue             | 200             |
+| 9   | /issues/:key          | PATCH  | Actualizar issue          | 200             |
+| 10  | /:projectId/intakes   | POST   | Crear intake              | 201             |
+| 11  | /:projectId/intakes   | GET    | Listar intakes            | 200             |
+| 12  | /intakes/:id/approve  | POST   | **Aprobar (transacción)** | 201             |
+| 13  | /intakes/:id/approve  | POST   | Aprobar ya procesado      | 404             |
+| 14  | /intakes/:id/reject   | POST   | Rechazar intake           | 200             |
+| 15  | /:projectId/cycles    | POST   | Crear cycle               | 201             |
+| 16  | /:projectId/cycles    | GET    | Listar cycles             | 200             |
+| 17  | /:projectId/modules   | POST   | Crear module              | 201             |
+| 18  | /issues/:key/comments | POST   | Crear comentario          | 201             |
+| 19  | /issues/:key/comments | GET    | Listar comentarios        | 200             |
+| 20  | /projects             | POST   | Proyecto duplicado        | 409             |
+| 21  | /:projectId/issues    | POST   | Issue sin nombre          | 400             |
+| 22  | /:projectId/intakes   | POST   | Intake sin título         | 400             |
 
 **Tests exitosos:** 22/22 ✅
 

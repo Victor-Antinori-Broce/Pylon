@@ -1,27 +1,20 @@
 // @ts-nocheck
 /**
  * CRM Grimoire - Routes Tests
- * 
+ *
  * Tests the CRM API routes including:
  * - Companies CRUD
- * - Contacts CRUD  
+ * - Contacts CRUD
  * - Pipelines & Stages CRUD
  * - Deals CRUD + Kanban operations
  * - Activities CRUD
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Hono } from "hono";
 import type { GrimoireContext } from "@gremius/shared";
+import { Hono } from "hono";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
 import { createCRMRouter } from "../crm.routes";
-import type {
-  CrmCompany,
-  CrmContact,
-  CrmPipeline,
-  CrmPipelineStage,
-  CrmDeal,
-  CrmActivity,
-} from "../crm.schema";
 
 // ============================================================================
 // MOCK GRIMOIRE CONTEXT

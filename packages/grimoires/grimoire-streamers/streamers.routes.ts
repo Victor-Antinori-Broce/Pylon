@@ -1,18 +1,18 @@
-
 /**
  * Gremio CMS — Streamers Module Routes (DI Version)
- * 
+ *
  * REST API for streamer management with Twitch/YouTube/Kick sync.
- * 
+ *
  * MIGRATED: Now uses Dependency Injection via GrimoireContext
- * 
+ *
  * ⚠️ CRITICAL: Route order matters in Hono!
  * Specific routes must be registered BEFORE parameterized routes.
  */
 
-import { Hono } from "hono";
-import { eq, desc, asc, and, sql } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { eq, desc, asc, and, sql } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { streamers, gamesToStreamers } from "./streamers.schema";
 
 /**
@@ -21,7 +21,7 @@ import { streamers, gamesToStreamers } from "./streamers.schema";
 export function createStreamersRouter(ctx: GrimoireContext): Hono {
   const streamersRoutes = new Hono();
   const { db, auth } = ctx;
-  
+
   const dbInstance = db.instance;
   const requireAuth = auth.requireAuth;
 
@@ -48,19 +48,12 @@ export function createStreamersRouter(ctx: GrimoireContext): Hono {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const orderBy =
-      sort.startsWith("-")
-        ? desc(streamers[sort.slice(1) as keyof typeof streamers.$inferSelect] as any)
-        : asc(streamers[sort as keyof typeof streamers.$inferSelect] as any);
+    const orderBy = sort.startsWith("-")
+      ? desc(streamers[sort.slice(1) as keyof typeof streamers.$inferSelect] as any)
+      : asc(streamers[sort as keyof typeof streamers.$inferSelect] as any);
 
     const [docs, countResult] = await Promise.all([
-      dbInstance
-        .select()
-        .from(streamers)
-        .where(where)
-        .orderBy(orderBy)
-        .limit(limit)
-        .offset(offset),
+      dbInstance.select().from(streamers).where(where).orderBy(orderBy).limit(limit).offset(offset),
       dbInstance
         .select({ count: sql<number>`count(*)` })
         .from(streamers)
@@ -146,10 +139,7 @@ export function createStreamersRouter(ctx: GrimoireContext): Hono {
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(streamers.channelId, update.channelId),
-            eq(streamers.platform, update.platform)
-          )
+          and(eq(streamers.channelId, update.channelId), eq(streamers.platform, update.platform))
         )
         .returning();
 
@@ -167,11 +157,7 @@ export function createStreamersRouter(ctx: GrimoireContext): Hono {
   streamersRoutes.get("/:id", async (c) => {
     const { id } = c.req.param();
 
-    const result = await dbInstance
-      .select()
-      .from(streamers)
-      .where(eq(streamers.id, id))
-      .limit(1);
+    const result = await dbInstance.select().from(streamers).where(eq(streamers.id, id)).limit(1);
 
     if (!result.length) return c.json({ error: "Streamer not found" }, 404);
 

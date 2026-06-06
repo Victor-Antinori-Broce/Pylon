@@ -22,10 +22,7 @@ export function generateSlug(text: string): string {
  * Render a template string with data interpolation
  * Simple template: "Hello {name}" + {name: "World"} = "Hello World"
  */
-export function renderTemplate(
-  template: string,
-  data: Record<string, any>
-): string {
+export function renderTemplate(template: string, data: Record<string, any>): string {
   return template.replace(/\{(\w+)\}/g, (match, key) => {
     const value = data[key];
     return value !== undefined ? String(value) : match;
@@ -36,24 +33,13 @@ export function renderTemplate(
  * Generate an excerpt from content
  * Takes first N characters and adds ellipsis if truncated
  */
-export function generateExcerpt(
-  content: Record<string, any>,
-  maxLength: number = 200
-): string {
+export function generateExcerpt(content: Record<string, any>, maxLength: number = 200): string {
   // Try to find text content in various fields
   const textContent =
-    content.description ||
-    content.content ||
-    content.body ||
-    content.text ||
-    content.summary ||
-    "";
+    content.description || content.content || content.body || content.text || content.summary || "";
 
   // If it's a string, use it directly; otherwise stringify
-  const text =
-    typeof textContent === "string"
-      ? textContent
-      : JSON.stringify(textContent);
+  const text = typeof textContent === "string" ? textContent : JSON.stringify(textContent);
 
   // Strip HTML tags if present
   const plainText = text.replace(/<[^>]+>/g, " ");

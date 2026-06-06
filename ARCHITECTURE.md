@@ -1,6 +1,7 @@
 # Arquitectura de GremiusCMS
 
 ## Propósito a Vista de Pájaro (El "Por qué" y el "Cómo")
+
 Este documento explica las decisiones de arquitectura de alto nivel del proyecto, cómo organizamos el código y por qué se toman ciertas decisiones técnicas relativas al manejo de datos dinámicos.
 
 ## Estructura de Carpetas
@@ -27,7 +28,7 @@ Este documento explica las decisiones de arquitectura de alto nivel del proyecto
 
 El ciclo vital de la información dentro del entorno de Gremius funciona en un esquema de tres fases:
 
-1. **Entrada por Hono:** 
+1. **Entrada por Hono:**
    Cualquier petición (HTTP, inserción o lectura de contenido) toca primero nuestros endpoints expuestos mediante **Hono**. Aquí ocurren procesos como validación de cabeceras, manejo de tokens y control de rate limiting.
 2. **Intercepción por el AppRegistry:**
    El controlador no procesa la lógica pesada por sí mismo, sino que delega la definición al `AppRegistry` (el registro dinámico de grimorios y esquemas del sistema de base de datos). El registro identifica rápidamente las definiciones de esquemas, los campos requeridos, relaciones dinámicas y validaciones pertinentes a ese módulo Vertical en específico.
@@ -39,42 +40,49 @@ El ciclo vital de la información dentro del entorno de Gremius funciona en un e
 Gremius expone un servidor MCP en `/api/mcp` que permite la integración con agentes de IA:
 
 ### Protocolo
+
 - **Versión**: 2024-11-05
 - **Transporte**: SSE (Server-Sent Events)
 - **Formato**: JSON-RPC 2.0
 
 ### Endpoints
+
 ```
 GET  /api/mcp       # Conexión SSE para recibir eventos
 POST /api/mcp       # Envío de mensajes JSON-RPC
 ```
 
 ### Tools Disponibles
-| Tool | Descripción |
-|------|-------------|
-| `gremius_query_dataset` | Query registros con filtros opcionales |
-| `gremius_insert_record` | Insertar nuevo registro en dataset |
-| `gremius_dispatch_worker` | Encolar trabajo en BullMQ |
+
+| Tool                      | Descripción                            |
+| ------------------------- | -------------------------------------- |
+| `gremius_query_dataset`   | Query registros con filtros opcionales |
+| `gremius_insert_record`   | Insertar nuevo registro en dataset     |
+| `gremius_dispatch_worker` | Encolar trabajo en BullMQ              |
 
 ### Resources Disponibles
-| Resource | URI |
-|----------|-----|
-| Datasets | `gremius://datasets` |
+
+| Resource  | URI                   |
+| --------- | --------------------- |
+| Datasets  | `gremius://datasets`  |
 | Grimoires | `gremius://grimoires` |
 
 ## Decisiones Clave (ADR - Architecture Decision Records)
 
 ### ADR-001: Persistencia de Modelos Dinámicos
+
 > **Decidimos usar JSONB en data_entries en lugar de crear tablas SQL al vuelo para evitar cuellos de botella en migraciones multi-tenant.**
 
 Mantener un ecosistema dinámico (esencial en un CMS) donde los usuarios pueden cambiar el esquema de los conjuntos de datos sin interactuar activamente con alteraciones `ALTER TABLE` nos permite escalar mucho más rápido, evita bloqueos exclusivos de la base de datos en producción y agiliza las migraciones sin tener una sobrecarga de DDL para cada "Vertical".
 
 ### ADR-002: Row-Level Security Nativo de PostgreSQL
+
 > **Implementamos RLS a nivel de base de datos para garantizar aislamiento de datos incluso ante errores de la aplicación o queries generadas por IA.**
 
 Usando `set_config('app.current_user_id', ...)` inyectamos el contexto de usuario en cada transacción, permitiendo que las políticas RLS de PostgreSQL filtren automáticamente los registros. Esto protege contra fugas de datos incluso si la lógica de la aplicación o un agente MCP generan queries incorrectos.
 
 ### ADR-003: Model Context Protocol para Agentes de IA
+
 > **Exponemos funcionalidades del CMS vía MCP en lugar de APIs ad-hoc para cada agente.**
 
 El protocolo estándar MCP permite que cualquier agente compatible (Claude Desktop, Cursor, etc.) se conecte a Gremius sin integraciones específicas. El servidor MCP reutiliza el mismo código de la API y respeta las mismas políticas de seguridad (RLS, auth).
@@ -85,24 +93,24 @@ El protocolo estándar MCP permite que cualquier agente compatible (Claude Deskt
 
 ```mermaid
 flowchart TD
-    Client((Cliente / UI)) -->|HTTP Request| Hono[Hono API Gateway 
+    Client((Cliente / UI)) -->|HTTP Request| Hono[Hono API Gateway
  apps/api/]
     AI[AI Agent<br/>Claude/Cursor] -->|MCP/SSE| Hono
-    
+
     subgraph Backend Core
-        Hono --> Mid[Middlewares 
+        Hono --> Mid[Middlewares
  Auth / RLS]
         Mid --> Reg{AppRegistry}
         Hono --> MCP[MCP Handler<br/>/api/mcp]
     end
 
     subgraph Ecosistema Modular
-        Reg <-.->|Consulta 
+        Reg <-.->|Consulta
  Definiciones / Esquemas| Vert[packages/grimoires/<br/>Módulos Verticales]
     end
 
     subgraph Base de Datos PostgreSQL
-        Reg -->|Serializa a JSONB| DB[(Tabla unificada 
+        Reg -->|Serializa a JSONB| DB[(Tabla unificada
  data_entries)]
         MCP -->|RLS| DB
     end

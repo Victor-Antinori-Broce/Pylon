@@ -10,20 +10,22 @@
 
 Se han implementado **3 características críticas** para el backend:
 
-| Feature | Prioridad | Status | Archivos |
-|---------|-----------|--------|----------|
-| 🔒 **Rate Limiting** | CRÍTICO | ✅ | `lib/rate-limiter.ts` |
-| 🔍 **Search (Full-Text + Vector)** | ALTA | ✅ | `lib/search.ts` |
-| 📊 **Observabilidad** | ALTA | ✅ | `lib/observability.ts` |
+| Feature                            | Prioridad | Status | Archivos               |
+| ---------------------------------- | --------- | ------ | ---------------------- |
+| 🔒 **Rate Limiting**               | CRÍTICO   | ✅     | `lib/rate-limiter.ts`  |
+| 🔍 **Search (Full-Text + Vector)** | ALTA      | ✅     | `lib/search.ts`        |
+| 📊 **Observabilidad**              | ALTA      | ✅     | `lib/observability.ts` |
 
 ---
 
 ## 🔒 1. Rate Limiting
 
 ### Descripción
+
 Protección contra abuso de API con sliding window usando Valkey (Redis).
 
 ### Características
+
 - **Global**: 300 req/min por defecto en todas las rutas `/api/*`
 - **Auth estricto**: 5 intentos/5min login, 3/hora registro
 - **MCP**: 200 req/min para workloads AI
@@ -31,12 +33,14 @@ Protección contra abuso de API con sliding window usando Valkey (Redis).
 - **Headers**: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
 
 ### Endpoints
+
 ```
 GET  /api/admin/rate-limits      → Ver estadísticas
 DELETE /api/admin/rate-limits/:key → Resetear limit
 ```
 
 ### Uso
+
 ```typescript
 import { rateLimit } from "./lib/rate-limiter";
 
@@ -49,15 +53,18 @@ app.use("/api/sensitive", rateLimit({ limit: 10, window: 60 }));
 ## 🔍 2. Search Engine (PGVector + Full-Text)
 
 ### Descripción
+
 Búsqueda híbrida que combina PostgreSQL full-text con búsqueda semántica vectorial.
 
 ### Características
+
 - **Full-Text**: PostgreSQL tsvector + GIN indexes
 - **Vector**: PGVector con HNSW para similitud (384 dimensiones)
 - **Fuzzy**: pg_trgm para typos
 - **Hybrid**: Score combinado (full-text 60% + vector 40%)
 
 ### Endpoints
+
 ```
 POST   /api/search            → Búsqueda principal
 GET    /api/search/suggestions → Autocomplete
@@ -67,6 +74,7 @@ POST   /api/search/init       → Setup inicial
 ```
 
 ### Uso
+
 ```typescript
 // Búsqueda híbrida (recomendada)
 POST /api/search
@@ -90,6 +98,7 @@ POST /api/search
 ```
 
 ### Migración Requerida
+
 ```bash
 cd apps/api
 bun run db:migrate 0022_critical_features.sql
@@ -100,9 +109,11 @@ bun run db:migrate 0022_critical_features.sql
 ## 📊 3. Observabilidad (Stats Reales)
 
 ### Descripción
+
 Reemplaza todos los mockups del dashboard con datos reales del sistema.
 
 ### Características
+
 - **Database Stats**: datasets, entries, users, content
 - **Performance**: response time, requests/min, error rate
 - **Infra**: DB status, cache status, WebSocket connections
@@ -110,6 +121,7 @@ Reemplaza todos los mockups del dashboard con datos reales del sistema.
 - **Uptime**: server uptime desde el último restart
 
 ### Endpoints
+
 ```
 GET /           → Homepage con stats resumidos (público)
 GET /api/health → Health check completo (público)
@@ -120,6 +132,7 @@ GET /api/admin/realtime  → WebSocket stats (auth)
 ```
 
 ### Homepage Response
+
 ```json
 {
   "message": "GremiusCMS API",
@@ -143,12 +156,14 @@ GET /api/admin/realtime  → WebSocket stats (auth)
 ## 🔧 Integración
 
 ### Paso 1: Importar
+
 ```typescript
 // En apps/api/src/index.ts
 import { registerCriticalFeatures } from "./lib/critical-features";
 ```
 
 ### Paso 2: Registrar
+
 ```typescript
 // Después de crear la app Hono
 const app = new Hono();
@@ -160,6 +175,7 @@ registerCriticalFeatures(app);
 ```
 
 ### Paso 3: Aplicar Migración
+
 ```bash
 cd apps/api
 bun run db:migrate
@@ -170,6 +186,7 @@ bun run db:migrate
 ## 🧪 Tests
 
 ### Ejecutar Tests
+
 ```bash
 # Tests específicos de critical features
 bun test apps/api/src/tests/critical-features.test.ts
@@ -179,6 +196,7 @@ bun test
 ```
 
 ### Coverage
+
 - Rate Limiting: ✅ Límites, bloqueos, headers
 - Search: ✅ Full-text, vector, hybrid, autocomplete
 - Observability: ✅ Stats, health, activity, metrics
@@ -204,11 +222,11 @@ apps/api/src/
 
 ## 🛡️ Seguridad
 
-| Feature | Protección |
-|---------|------------|
-| Rate Limiting | Brute force, DDoS, abuso de recursos |
-| Search | Sanitización de queries SQL injection |
-| Observabilidad | Auth required para datos sensibles |
+| Feature        | Protección                            |
+| -------------- | ------------------------------------- |
+| Rate Limiting  | Brute force, DDoS, abuso de recursos  |
+| Search         | Sanitización de queries SQL injection |
+| Observabilidad | Auth required para datos sensibles    |
 
 ---
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { children, class: className = '' }: { children?: import('svelte').Snippet; class?: string } = $props();
+  const { children, class: className = '' }: { children?: import('svelte').Snippet; class?: string } = $props();
 </script>
 <div class="w-full overflow-auto">
   <table class="w-full caption-bottom text-sm {className}">

@@ -47,21 +47,25 @@ TEST_MCP_TOKEN=grm_agent_xxx npx playwright test
 ## 📋 Test Scenarios
 
 ### Scenario 1: Semantic FAQ Search
+
 - Claude asks natural language questions
 - MCP routes to `gremius_search_entries`
 - Vector search finds semantically similar entries
 - Results returned to Claude
 
 ### Scenario 2: Vector Index Status
+
 - Claude checks dataset configuration
 - Verifies vector search is enabled
 
 ### Scenario 3: Add & Search Knowledge
+
 - Claude creates new FAQ entry via MCP
 - Entry automatically indexed (autoIndex: true)
 - Claude searches and finds new entry
 
 ### Scenario 4: Error Handling
+
 - Invalid dataset ID
 - Empty queries
 - Missing authentication
@@ -74,9 +78,9 @@ TEST_MCP_TOKEN=grm_agent_xxx npx playwright test
 
 ## 📝 Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `API_URL` | Base URL for API | `http://localhost:3001` |
-| `DATABASE_URL` | PostgreSQL connection | - |
-| `TEST_MCP_TOKEN` | Agent token from seed | - |
-| `SKIP_SEED` | Skip seed script | `false` |
+| Variable         | Description           | Default                 |
+| ---------------- | --------------------- | ----------------------- |
+| `API_URL`        | Base URL for API      | `http://localhost:3001` |
+| `DATABASE_URL`   | PostgreSQL connection | -                       |
+| `TEST_MCP_TOKEN` | Agent token from seed | -                       |
+| `SKIP_SEED`      | Skip seed script      | `false`                 |

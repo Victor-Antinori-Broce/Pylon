@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import { goto } from "$app/navigation";
-  import { Search, Clock, Database, LayoutDashboard, FileText, ArrowRight } from "lucide-svelte";
   import { datasetStore } from "$lib/states/datasets.svelte";
+  import { Search, Clock, Database, LayoutDashboard, FileText, ArrowRight } from "lucide-svelte";
+  import { onMount, tick } from "svelte";
+
+  import { goto } from "$app/navigation";
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Types
@@ -34,7 +35,7 @@
     filesystemNavItems: NavItem[];
   }
 
-  let { navItems, bottomNavItems, filesystemNavItems }: Props = $props();
+  const { navItems, bottomNavItems, filesystemNavItems }: Props = $props();
 
   // ═══════════════════════════════════════════════════════════════════════════
   // State
@@ -153,13 +154,13 @@
   // Derived Results
   // ═══════════════════════════════════════════════════════════════════════════
 
-  let allNavigationItems = $derived([
+  const allNavigationItems = $derived([
     ...navItems.map(n => ({ ...n, category: "navigation" as const })),
     ...bottomNavItems.map(n => ({ ...n, category: "navigation" as const })),
     ...filesystemNavItems.map(n => ({ ...n, category: "navigation" as const, icon: n.icon || LayoutDashboard })),
   ]);
 
-  let filteredNavigation = $derived(
+  const filteredNavigation = $derived(
     allNavigationItems
       .map(item => ({
         id: `nav-${item.path}`,
@@ -174,7 +175,7 @@
       .slice(0, 8)
   );
 
-  let filteredDatasets = $derived(
+  const filteredDatasets = $derived(
     datasetStore.datasets
       .map(ds => ({
         id: `ds-${ds.id}`,
@@ -274,7 +275,7 @@
     return null;
   }
 
-  let groupedResults = $derived.by(() => {
+  const groupedResults = $derived.by(() => {
     const q = query.trim();
     if (!q) {
       // Show recent pages when no query
@@ -293,7 +294,7 @@
     };
   });
 
-  let flatResults = $derived(
+  const flatResults = $derived(
     [...groupedResults.navigation, ...groupedResults.datasets, ...groupedResults.entries, ...groupedResults.recent]
   );
 

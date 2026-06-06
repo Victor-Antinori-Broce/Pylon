@@ -6,13 +6,13 @@
 
 ## 🎮 ¿Cuál eres tú?
 
-| 🎮 **Vibecoder** | 🛠️ **Developer** |
-|:---:|:---:|
+|                 🎮 **Vibecoder**                  |                    🛠️ **Developer**                    |
+| :-----------------------------------------------: | :----------------------------------------------------: |
 | Uso Cursor, Bolt, v0 o Replit para construir apps | Sé TypeScript y quiero entender/modificar el framework |
-| No quiero tocar SQL ni migraciones | Quiero crear grimoires propios o modificar el core |
-| Quiero un backend funcional en 5 minutos | Necesito hot-reload, breakpoints y tests |
-| Mi IA (Claude/Cursor) configura todo por MCP | Quiero entender cómo funciona el engine por dentro |
-| **→ Modo Vibecoder** | **→ Modo Developer** |
+|        No quiero tocar SQL ni migraciones         |   Quiero crear grimoires propios o modificar el core   |
+|     Quiero un backend funcional en 5 minutos      |        Necesito hot-reload, breakpoints y tests        |
+|   Mi IA (Claude/Cursor) configura todo por MCP    |   Quiero entender cómo funciona el engine por dentro   |
+|               **→ Modo Vibecoder**                |                  **→ Modo Developer**                  |
 
 ---
 
@@ -21,6 +21,7 @@
 > Backend funcional en **3 comandos**. Sin pnpm. Sin builds. Sin migraciones manuales.
 
 ### Requisitos
+
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado
 - [Git](https://git-scm.com/) instalado
 
@@ -43,21 +44,21 @@ La primera vez clona el código fuente de Gremius y compila (~2-3 minutos).
 
 ### Paso 3: Acceder
 
-| Servicio | URL | Para qué sirve |
-|----------|-----|----------------|
-| **API** | http://localhost:3000 | Tu backend (REST API + MCP) |
-| **Admin** | http://localhost:3001/admin | Panel de gestión |
-| **Docs** | http://localhost:3000/api/swagger | Documentación OpenAPI |
+| Servicio  | URL                               | Para qué sirve              |
+| --------- | --------------------------------- | --------------------------- |
+| **API**   | http://localhost:3000             | Tu backend (REST API + MCP) |
+| **Admin** | http://localhost:3001/admin       | Panel de gestión            |
+| **Docs**  | http://localhost:3000/api/swagger | Documentación OpenAPI       |
 
 ### ✅ Listo
 
 Tu backend está corriendo. Ahora puedes:
 
-| Servicio | URL | Para qué sirve |
-|----------|-----|----------------|
-| **API** | http://localhost:3000 | Tu backend (REST API + MCP) |
-| **Admin** | http://localhost:3001/admin | Panel de gestión |
-| **Docs** | http://localhost:3001/api/docs | Documentación OpenAPI |
+| Servicio  | URL                            | Para qué sirve              |
+| --------- | ------------------------------ | --------------------------- |
+| **API**   | http://localhost:3000          | Tu backend (REST API + MCP) |
+| **Admin** | http://localhost:3001/admin    | Panel de gestión            |
+| **Docs**  | http://localhost:3001/api/docs | Documentación OpenAPI       |
 
 ### Paso 3: Crear tu primer usuario
 
@@ -66,6 +67,7 @@ Ve a http://localhost:3001/admin y sigue el wizard de setup.
 ### ✅ Listo
 
 Tu backend está corriendo. Ahora puedes:
+
 - Conectar **Cursor/Claude** vía MCP: [docs/vibecoder/MCP_SETUP_GUIDE.md](docs/vibecoder/MCP_SETUP_GUIDE.md)
 - Crear datasets desde el admin sin escribir SQL
 - Consumir la API REST desde tu frontend
@@ -93,6 +95,7 @@ docker compose down -v
 > Quieres modificar grimoires, crear features, o contribuir al core. Necesitas el stack completo.
 
 ### Requisitos
+
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [pnpm](https://pnpm.io/installation) (>= 9.0)
 - [Bun](https://bun.sh/) (>= 1.1)
@@ -132,6 +135,7 @@ pnpm dev:start:simple
 ```
 
 **¿Qué hace?**
+
 1. `pnpm install`
 2. `docker compose -f docker-compose.dev.yml up -d` (solo infra: PostgreSQL, MinIO, Valkey)
 3. Espera 20s a que la DB esté lista
@@ -150,6 +154,7 @@ pnpm dev:start
 **Ventaja:** Verifica que PostgreSQL, MinIO y Valkey estén saludables antes de continuar.
 
 **Parámetros:**
+
 ```powershell
 .\scripts\dev-start-full.ps1 -SkipInstall      # Omite pnpm install
 .\scripts\dev-start-full.ps1 -SkipBuild        # Omite build de shared
@@ -183,16 +188,16 @@ pnpm dev
 
 ## 🔄 Diferencias entre modos
 
-| Aspecto | 🎮 Vibecoder | 🛠️ Developer |
-|---------|-------------|--------------|
-| **Inicio** | `npx gremius init my-app` | `npx gremius init my-app --mode developer` |
-| **Comando** | `./init.sh` | `pnpm dev:start:simple` |
-| **Código** | Build desde fuente en Docker | Hot-reload local |
-| **Infra** | Todo en contenedores | Solo DB/Cache en Docker. Apps locales |
-| **Debug** | ⚠️ Requiere entrar al contenedor | ✅ Breakpoints, logs fácil |
-| **Modificar core** | ❌ No | ✅ Sí |
-| **Crear grimoires** | ⚠️ Solo instalar existentes | ✅ Desarrollar nuevos |
-| **Ideal para** | Probar, MVP, side-projects | Contribuir, extender, enterprise |
+| Aspecto             | 🎮 Vibecoder                     | 🛠️ Developer                               |
+| ------------------- | -------------------------------- | ------------------------------------------ |
+| **Inicio**          | `npx gremius init my-app`        | `npx gremius init my-app --mode developer` |
+| **Comando**         | `./init.sh`                      | `pnpm dev:start:simple`                    |
+| **Código**          | Build desde fuente en Docker     | Hot-reload local                           |
+| **Infra**           | Todo en contenedores             | Solo DB/Cache en Docker. Apps locales      |
+| **Debug**           | ⚠️ Requiere entrar al contenedor | ✅ Breakpoints, logs fácil                 |
+| **Modificar core**  | ❌ No                            | ✅ Sí                                      |
+| **Crear grimoires** | ⚠️ Solo instalar existentes      | ✅ Desarrollar nuevos                      |
+| **Ideal para**      | Probar, MVP, side-projects       | Contribuir, extender, enterprise           |
 
 ---
 
@@ -271,13 +276,14 @@ GremiusCMS v0.8.0+ utiliza un sistema de identidades no humanas (**Agents NHI**)
 
 - **Legacy API Keys**: Los tokens `gremius_sk_*` están **deprecados** y dejarán de funcionar el **2026-08-01**.
 - **Migración**: Ejecuta `pnpm auth:migrate` para convertir tus llaves legacy en Agentes.
-- **RBAC granular**: Los agentes usan *scopes* para limitar su acceso:
+- **RBAC granular**: Los agentes usan _scopes_ para limitar su acceso:
   - `admin:*`: Super-usuario (acceso total).
   - `read:*` / `write:*`: Wildcards de acción.
   - `*:dataset`: Acceso total a un recurso específico.
   - `dataset:read`, `media:write`, `mcp:connect`, etc.
 
 Para crear un nuevo agente:
+
 ```bash
 # Usa el playground en el admin o la API:
 POST /api/admin/agents
@@ -320,24 +326,24 @@ GREMIUS_TEST_DB=memory pnpm test  # Tests con pg-mem (sin Docker)
 
 ## 🎯 Próximos pasos
 
-| Si eres... | Ve a... |
-|-----------|---------|
-| 🎮 **Vibecoder** con Cursor/Claude | [docs/vibecoder/MCP_SETUP_GUIDE.md](docs/vibecoder/MCP_SETUP_GUIDE.md) |
-| 🎮 **Vibecoder** que quiere templates | `npx gremius init my-app --template blog` (también: saas, ecommerce) |
-| 🛠️ **Developer** que quiere entender la arquitectura | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| 🛠️ **Developer** que quiere crear grimoires | [docs/internal/GRIMOIRE_ZERO_CONFIG.md](docs/internal/GRIMOIRE_ZERO_CONFIG.md) |
-| 🛠️ **Developer** que quiere el roadmap técnico | [backendbaas.md](backendbaas.md) |
+| Si eres...                                           | Ve a...                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 🎮 **Vibecoder** con Cursor/Claude                   | [docs/vibecoder/MCP_SETUP_GUIDE.md](docs/vibecoder/MCP_SETUP_GUIDE.md)         |
+| 🎮 **Vibecoder** que quiere templates                | `npx gremius init my-app --template blog` (también: saas, ecommerce)           |
+| 🛠️ **Developer** que quiere entender la arquitectura | [ARCHITECTURE.md](ARCHITECTURE.md)                                             |
+| 🛠️ **Developer** que quiere crear grimoires          | [docs/internal/GRIMOIRE_ZERO_CONFIG.md](docs/internal/GRIMOIRE_ZERO_CONFIG.md) |
+| 🛠️ **Developer** que quiere el roadmap técnico       | [backendbaas.md](backendbaas.md)                                               |
 
 ---
 
 ## 💡 Nota para vibecoders
 
 > No necesitas entender qué es `pnpm`, `db:push`, o `drizzle-orm`.
-> 
+>
 > Si tu IA (Cursor/Claude) te pide un backend, dale la URL `http://localhost:3001/api/mcp` y deja que configure todo por ti.
 >
 > Si algo falla, usa **Modo Vibecoder** → `docker compose down -v` → `docker compose up -d`. Eso reinicia todo a cero.
 
 ---
 
-*¿Preguntas? Elige tu camino arriba y sigue los pasos. Si te atoras en modo Vibecoder, pregunta a tu IA. Si te atoras en modo Developer, revisa `ARCHITECTURE.md`.*
+_¿Preguntas? Elige tu camino arriba y sigue los pasos. Si te atoras en modo Vibecoder, pregunta a tu IA. Si te atoras en modo Developer, revisa `ARCHITECTURE.md`._

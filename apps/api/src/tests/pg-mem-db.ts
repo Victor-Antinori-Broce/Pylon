@@ -9,10 +9,12 @@
  *   - apps/api/src/db/migrations/ (manual migrations)
  */
 
-import { drizzle } from "drizzle-orm/node-postgres";
-import { newDb, DataType } from "pg-mem";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
+
+import { drizzle } from "drizzle-orm/node-postgres";
+import { newDb, DataType } from "pg-mem";
+
 import * as coreSchema from "../db/schema-core";
 
 let memDbInstance: ReturnType<typeof drizzle> | null = null;

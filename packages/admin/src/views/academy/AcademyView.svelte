@@ -1,13 +1,32 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
-    GraduationCap, BookOpen, Users, TrendingUp, Star, Plus, Search,
-    ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, X, Eye,
-    Edit2, Trash2, Route, UserCircle, CheckCircle, AlertCircle,
-    Loader2, BarChart3, Layers, ArrowUpRight
+    GraduationCap,
+    BookOpen,
+    Users,
+    TrendingUp,
+    Star,
+    Plus,
+    Search,
+    ChevronLeft,
+    ChevronRight,
+    ChevronFirst,
+    ChevronLast,
+    X,
+    Eye,
+    Edit2,
+    Trash2,
+    Route,
+    UserCircle,
+    CheckCircle,
+    AlertCircle,
+    Loader2,
+    BarChart3,
+    Layers,
   } from "lucide-svelte";
-  import { api } from "$lib/api";
+  import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+
+  import { api } from "$lib/api";
 
   // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -89,7 +108,7 @@
     GESTION: "Gestión",
     TECNICO: "Técnico",
     HERRAMIENTAS: "Herramientas",
-    DESARROLLO: "Desarrollo"
+    DESARROLLO: "Desarrollo",
   };
 
   const tipoCursoColors: Record<string, string> = {
@@ -97,14 +116,14 @@
     GESTION: "bg-purple-500/15 text-purple-400",
     TECNICO: "bg-orange-500/15 text-orange-400",
     HERRAMIENTAS: "bg-green-500/15 text-green-400",
-    DESARROLLO: "bg-pink-500/15 text-pink-400"
+    DESARROLLO: "bg-pink-500/15 text-pink-400",
   };
 
   const tabs = [
     { key: "courses", label: "Courses", icon: BookOpen },
     { key: "paths", label: "Learning Paths", icon: Route },
     { key: "groups", label: "Groups", icon: Users },
-    { key: "assignments", label: "Assignments", icon: Layers }
+    { key: "assignments", label: "Assignments", icon: Layers },
   ] as const;
 
   const pageSize = 10;
@@ -120,7 +139,7 @@
   let grupos = $state<Grupo[]>([]);
   let asignaciones = $state<Asignacion[]>([]);
 
-  let activeTab = $state<typeof tabs[number]["key"]>("courses");
+  let activeTab = $state<(typeof tabs)[number]["key"]>("courses");
 
   // Search / sort / pagination
   let searchQuery = $state("");
@@ -146,25 +165,37 @@
 
   // ─── Derived ────────────────────────────────────────────────────────────
 
-  let filteredCourses = $derived.by(() => {
+  const filteredCourses = $derived.by(() => {
     let list = [...reportes];
     const q = searchQuery.trim().toLowerCase();
     if (q) list = list.filter((r) => r.curso.titulo.toLowerCase().includes(q));
     list.sort((a, b) => {
       let av: any, bv: any;
-      if (sortKey === "titulo") { av = a.curso.titulo; bv = b.curso.titulo; }
-      else { av = a.metricas[sortKey] ?? 0; bv = b.metricas[sortKey] ?? 0; }
-      if (typeof av === "string") return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      if (sortKey === "titulo") {
+        av = a.curso.titulo;
+        bv = b.curso.titulo;
+      } else {
+        av = a.metricas[sortKey] ?? 0;
+        bv = b.metricas[sortKey] ?? 0;
+      }
+      if (typeof av === "string")
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       return sortDir === "asc" ? av - bv : bv - av;
     });
     return list;
   });
 
-  let totalPages = $derived(Math.max(1, Math.ceil(filteredCourses.length / pageSize)));
-  let pagedCourses = $derived(filteredCourses.slice((currentPage - 1) * pageSize, currentPage * pageSize));
+  const totalPages = $derived(Math.max(1, Math.ceil(filteredCourses.length / pageSize)));
+  const pagedCourses = $derived(
+    filteredCourses.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  );
 
-  let allSelected = $derived(pagedCourses.length > 0 && pagedCourses.every((r) => selectedIds.has(r.curso.id)));
-  let someSelected = $derived(pagedCourses.some((r) => selectedIds.has(r.curso.id)) && !allSelected);
+  const allSelected = $derived(
+    pagedCourses.length > 0 && pagedCourses.every((r) => selectedIds.has(r.curso.id))
+  );
+  const someSelected = $derived(
+    pagedCourses.some((r) => selectedIds.has(r.curso.id)) && !allSelected
+  );
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
@@ -179,7 +210,7 @@
       loadReportes(),
       loadPaths(),
       loadGroups(),
-      loadAssignments()
+      loadAssignments(),
     ]);
     loading = false;
   }
@@ -234,13 +265,17 @@
 
   function toggleSort(key: typeof sortKey) {
     if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
-    else { sortKey = key; sortDir = "asc"; }
+    else {
+      sortKey = key;
+      sortDir = "asc";
+    }
     currentPage = 1;
   }
 
   function toggleSelect(id: string) {
     const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     selectedIds = next;
   }
 
@@ -256,10 +291,15 @@
     drawerOpen = true;
     drawerLoading = true;
     drawerStats = null;
-    api.getAcademyCursoEstadisticas(reporte.curso.id)
-      .then((d) => { drawerStats = d.estadisticas ?? null; })
+    api
+      .getAcademyCursoEstadisticas(reporte.curso.id)
+      .then((d) => {
+        drawerStats = d.estadisticas ?? null;
+      })
       .catch(() => toast.error("Failed to load course stats"))
-      .finally(() => { drawerLoading = false; });
+      .finally(() => {
+        drawerLoading = false;
+      });
   }
 
   function closeDrawer() {
@@ -302,8 +342,14 @@
     try {
       await api.createAcademyAsignacionBulk({
         cursoIds: assignCursoIds,
-        userIds: assignUserIds.split(",").map((s) => s.trim()).filter(Boolean),
-        grupoIds: assignGroupIds.split(",").map((s) => s.trim()).filter(Boolean)
+        userIds: assignUserIds
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        grupoIds: assignGroupIds
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
       });
       toast.success("Assignments created");
       showAssignModal = false;
@@ -318,29 +364,49 @@
 
   async function deletePath(id: string) {
     if (!confirm("Delete this learning path?")) return;
-    try { await api.deleteAcademyLearningPath(id); toast.success("Learning path deleted"); await loadPaths(); }
-    catch { toast.error("Failed to delete"); }
+    try {
+      await api.deleteAcademyLearningPath(id);
+      toast.success("Learning path deleted");
+      await loadPaths();
+    } catch {
+      toast.error("Failed to delete");
+    }
   }
 
   async function deleteGroup(id: string) {
     if (!confirm("Delete this group?")) return;
-    try { await api.deleteAcademyGrupo(id); toast.success("Group deleted"); await loadGroups(); }
-    catch { toast.error("Failed to delete"); }
+    try {
+      await api.deleteAcademyGrupo(id);
+      toast.success("Group deleted");
+      await loadGroups();
+    } catch {
+      toast.error("Failed to delete");
+    }
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────
 
-  function fmt(n?: number) { return n == null ? "—" : String(n); }
-  function fmtPct(n?: number) { return n == null ? "—" : `${Math.round(n)}%`; }
+  function fmt(n?: number) {
+    return n == null ? "—" : String(n);
+  }
+  function fmtPct(n?: number) {
+    return n == null ? "—" : `${Math.round(n)}%`;
+  }
   function fmtStar(n?: number) {
     const v = Math.min(5, Math.max(0, Math.round((n ?? 0) * 10) / 10));
-    return "★".repeat(Math.floor(v)) + (v % 1 >= 0.5 ? "½" : "") + "☆".repeat(Math.max(0, 5 - Math.ceil(v)));
+    return (
+      "★".repeat(Math.floor(v)) +
+      (v % 1 >= 0.5 ? "½" : "") +
+      "☆".repeat(Math.max(0, 5 - Math.ceil(v)))
+    );
   }
   function alertIcon(tipo: string) {
     return tipo === "warning" ? AlertCircle : CheckCircle;
   }
   function alertColor(tipo: string) {
-    return tipo === "warning" ? "text-gremius-amber bg-gremius-amber/10" : "text-gremius-green bg-gremius-green/10";
+    return tipo === "warning"
+      ? "text-gremius-amber bg-gremius-amber/10"
+      : "text-gremius-green bg-gremius-green/10";
   }
 </script>
 
@@ -354,7 +420,9 @@
         <GraduationCap class="w-6 h-6 text-gremius-cyan" />
         Academy LMS
       </h2>
-      <p class="text-sm text-gremius-subtle mt-0.5">Course management, assignments &amp; analytics</p>
+      <p class="text-sm text-gremius-subtle mt-0.5">
+        Course management, assignments &amp; analytics
+      </p>
     </div>
     <a href="/academy/courses/new" class="btn-primary inline-flex items-center gap-2">
       <Plus class="w-4 h-4" /> New Course
@@ -402,7 +470,10 @@
         <div class="flex items-center gap-2 mt-1">
           <p class="text-2xl font-bold text-gremius-text">{fmtPct(metricas?.tasaCompletado)}</p>
           <div class="flex-1 h-1.5 bg-gremius-bg rounded-full overflow-hidden">
-            <div class="h-full bg-gremius-green rounded-full" style="width: {metricas?.tasaCompletado ?? 0}%"></div>
+            <div
+              class="h-full bg-gremius-green rounded-full"
+              style="width: {metricas?.tasaCompletado ?? 0}%"
+            ></div>
           </div>
         </div>
       </div>
@@ -413,7 +484,11 @@
       </div>
       <div>
         <p class="text-xs text-gremius-subtle uppercase tracking-wider">Avg Satisfaction</p>
-        <p class="text-2xl font-bold text-gremius-text">{metricas?.totalEncuestas ? ((metricas.totalFeedbacks ?? 0) / (metricas.totalEncuestas || 1)).toFixed(1) : "—"}<span class="text-sm text-gremius-subtle font-normal"> /5</span></p>
+        <p class="text-2xl font-bold text-gremius-text">
+          {metricas?.totalEncuestas
+            ? ((metricas.totalFeedbacks ?? 0) / (metricas.totalEncuestas || 1)).toFixed(1)
+            : "—"}<span class="text-sm text-gremius-subtle font-normal"> /5</span>
+        </p>
       </div>
     </div>
   </div>
@@ -423,8 +498,15 @@
     <div class="flex items-center gap-1">
       {#each tabs as t}
         <button
-          class="px-4 py-2 text-sm font-medium flex items-center gap-1.5 transition-colors border-b-2 {activeTab === t.key ? 'text-gremius-cyan border-gremius-cyan' : 'text-gremius-subtle border-transparent hover:text-gremius-text hover:border-gremius-border'}"
-          onclick={() => { activeTab = t.key; selectedIds = new Set(); currentPage = 1; }}
+          class="px-4 py-2 text-sm font-medium flex items-center gap-1.5 transition-colors border-b-2 {activeTab ===
+          t.key
+            ? 'text-gremius-cyan border-gremius-cyan'
+            : 'text-gremius-subtle border-transparent hover:text-gremius-text hover:border-gremius-border'}"
+          onclick={() => {
+            activeTab = t.key;
+            selectedIds = new Set();
+            currentPage = 1;
+          }}
         >
           <t.icon class="w-4 h-4" />
           {t.label}
@@ -435,7 +517,9 @@
 
   {#if loading}
     <div class="flex justify-center py-20">
-      <div class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+      <div
+        class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+      ></div>
     </div>
   {:else}
     <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -446,22 +530,30 @@
         <!-- Toolbar -->
         <div class="flex items-center gap-3 flex-wrap">
           <div class="relative flex-1 min-w-[200px] max-w-sm">
-            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim" />
+            <Search
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim"
+            />
             <input
               type="text"
               placeholder="Search courses..."
               class="w-full pl-10 pr-4 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-text-dim focus:outline-none focus:border-gremius-cyan/50"
               bind:value={searchQuery}
-              oninput={() => currentPage = 1}
+              oninput={() => (currentPage = 1)}
             />
           </div>
           {#if selectedIds.size > 0}
             <div class="flex items-center gap-2 ml-auto">
               <span class="text-xs text-gremius-subtle">{selectedIds.size} selected</span>
-              <button class="btn-secondary text-xs inline-flex items-center gap-1" onclick={() => openAssignModal()}>
+              <button
+                class="btn-secondary text-xs inline-flex items-center gap-1"
+                onclick={() => openAssignModal()}
+              >
                 <Users class="w-3.5 h-3.5" /> Assign
               </button>
-              <button class="btn-danger text-xs inline-flex items-center gap-1" onclick={() => promptDelete(Array.from(selectedIds))}>
+              <button
+                class="btn-danger text-xs inline-flex items-center gap-1"
+                onclick={() => promptDelete(Array.from(selectedIds))}
+              >
                 <Trash2 class="w-3.5 h-3.5" /> Delete
               </button>
             </div>
@@ -481,28 +573,88 @@
                 <thead class="bg-gremius-bg sticky top-0 z-10">
                   <tr class="border-b border-gremius-border">
                     <th class="px-4 py-3 w-10">
-                      <input type="checkbox" class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan" checked={allSelected} indeterminate={someSelected} onchange={toggleSelectAll} />
+                      <input
+                        type="checkbox"
+                        class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+                        checked={allSelected}
+                        indeterminate={someSelected}
+                        onchange={toggleSelectAll}
+                      />
                     </th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("titulo")}>Title {#if sortKey==="titulo"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("asignaciones")}>Assignments {#if sortKey==="asignaciones"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("completados")}>Completed {#if sortKey==="completados"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("progresoPromedio")}>Avg Progress {#if sortKey==="progresoPromedio"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("tasaFinalizacion")}>Completion {#if sortKey==="tasaFinalizacion"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("totalEncuestas")}>Surveys {#if sortKey==="totalEncuestas"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
-                    <th class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none" onclick={() => toggleSort("satisfaccionPromedio")}>Satisfaction {#if sortKey==="satisfaccionPromedio"}<span class="text-gremius-cyan">{sortDir==="asc"?"▲":"▼"}</span>{/if}</th>
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("titulo")}
+                      >Title {#if sortKey === "titulo"}<span class="text-gremius-cyan"
+                          >{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("asignaciones")}
+                      >Assignments {#if sortKey === "asignaciones"}<span class="text-gremius-cyan"
+                          >{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("completados")}
+                      >Completed {#if sortKey === "completados"}<span class="text-gremius-cyan"
+                          >{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("progresoPromedio")}
+                      >Avg Progress {#if sortKey === "progresoPromedio"}<span
+                          class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("tasaFinalizacion")}
+                      >Completion {#if sortKey === "tasaFinalizacion"}<span
+                          class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("totalEncuestas")}
+                      >Surveys {#if sortKey === "totalEncuestas"}<span class="text-gremius-cyan"
+                          >{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
+                    <th
+                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      onclick={() => toggleSort("satisfaccionPromedio")}
+                      >Satisfaction {#if sortKey === "satisfaccionPromedio"}<span
+                          class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span
+                        >{/if}</th
+                    >
                     <th class="px-4 py-3 font-medium text-gremius-subtle">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each pagedCourses as r}
-                    <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors group">
+                    <tr
+                      class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors group"
+                    >
                       <td class="px-4 py-3">
-                        <input type="checkbox" class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan" checked={selectedIds.has(r.curso.id)} onchange={() => toggleSelect(r.curso.id)} />
+                        <input
+                          type="checkbox"
+                          class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+                          checked={selectedIds.has(r.curso.id)}
+                          onchange={() => toggleSelect(r.curso.id)}
+                        />
                       </td>
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-2">
                           <span class="font-medium text-gremius-text">{r.curso.titulo}</span>
-                          <span class="px-1.5 py-0.5 rounded text-[10px] font-medium {tipoCursoColors[r.curso.tipo] || 'bg-gray-500/15 text-gray-400'}">{tipoCursoLabels[r.curso.tipo] || r.curso.tipo}</span>
+                          <span
+                            class="px-1.5 py-0.5 rounded text-[10px] font-medium {tipoCursoColors[
+                              r.curso.tipo
+                            ] || 'bg-gray-500/15 text-gray-400'}"
+                            >{tipoCursoLabels[r.curso.tipo] || r.curso.tipo}</span
+                          >
                         </div>
                       </td>
                       <td class="px-4 py-3 text-gremius-text">{r.metricas.asignaciones}</td>
@@ -510,19 +662,43 @@
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-2">
                           <div class="w-16 h-1.5 bg-gremius-bg rounded-full overflow-hidden">
-                            <div class="h-full bg-gremius-cyan rounded-full" style="width: {r.metricas.progresoPromedio}%"></div>
+                            <div
+                              class="h-full bg-gremius-cyan rounded-full"
+                              style="width: {r.metricas.progresoPromedio}%"
+                            ></div>
                           </div>
-                          <span class="text-xs text-gremius-subtle">{fmtPct(r.metricas.progresoPromedio)}</span>
+                          <span class="text-xs text-gremius-subtle"
+                            >{fmtPct(r.metricas.progresoPromedio)}</span
+                          >
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-gremius-text">{fmtPct(r.metricas.tasaFinalizacion)}</td>
+                      <td class="px-4 py-3 text-gremius-text"
+                        >{fmtPct(r.metricas.tasaFinalizacion)}</td
+                      >
                       <td class="px-4 py-3 text-gremius-text">{r.metricas.totalEncuestas}</td>
-                      <td class="px-4 py-3 text-gremius-amber text-xs">{fmtStar(r.metricas.satisfaccionPromedio)}</td>
+                      <td class="px-4 py-3 text-gremius-amber text-xs"
+                        >{fmtStar(r.metricas.satisfaccionPromedio)}</td
+                      >
                       <td class="px-4 py-3">
-                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-cyan" title="View stats" onclick={() => openDrawer(r)}><Eye class="w-3.5 h-3.5" /></button>
-                          <a href="/academy/courses/{r.curso.id}/edit" class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text" title="Edit"><Edit2 class="w-3.5 h-3.5" /></a>
-                          <button class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink" title="Delete" onclick={() => promptDelete([r.curso.id])}><Trash2 class="w-3.5 h-3.5" /></button>
+                        <div
+                          class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <button
+                            class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-cyan"
+                            title="View stats"
+                            onclick={() => openDrawer(r)}><Eye class="w-3.5 h-3.5" /></button
+                          >
+                          <a
+                            href="/academy/courses/{r.curso.id}/edit"
+                            class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                            title="Edit"><Edit2 class="w-3.5 h-3.5" /></a
+                          >
+                          <button
+                            class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                            title="Delete"
+                            onclick={() => promptDelete([r.curso.id])}
+                            ><Trash2 class="w-3.5 h-3.5" /></button
+                          >
                         </div>
                       </td>
                     </tr>
@@ -533,14 +709,35 @@
 
             <!-- Pagination -->
             {#if totalPages > 1}
-              <div class="p-3 border-t border-gremius-border bg-gremius-card flex items-center justify-between">
-                <span class="text-xs text-gremius-subtle">{filteredCourses.length} total · Page {currentPage} of {totalPages}</span>
+              <div
+                class="p-3 border-t border-gremius-border bg-gremius-card flex items-center justify-between"
+              >
+                <span class="text-xs text-gremius-subtle"
+                  >{filteredCourses.length} total · Page {currentPage} of {totalPages}</span
+                >
                 <div class="flex items-center gap-2">
-                  <button class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40" disabled={currentPage===1} onclick={() => currentPage = 1}><ChevronFirst class="w-3.5 h-3.5" /></button>
-                  <button class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40" disabled={currentPage===1} onclick={() => currentPage--}><ChevronLeft class="w-3.5 h-3.5" /></button>
+                  <button
+                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    disabled={currentPage === 1}
+                    onclick={() => (currentPage = 1)}><ChevronFirst class="w-3.5 h-3.5" /></button
+                  >
+                  <button
+                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    disabled={currentPage === 1}
+                    onclick={() => currentPage--}><ChevronLeft class="w-3.5 h-3.5" /></button
+                  >
                   <span class="text-xs text-gremius-subtle px-2">{currentPage} / {totalPages}</span>
-                  <button class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40" disabled={currentPage===totalPages} onclick={() => currentPage++}><ChevronRight class="w-3.5 h-3.5" /></button>
-                  <button class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40" disabled={currentPage===totalPages} onclick={() => currentPage = totalPages}><ChevronLast class="w-3.5 h-3.5" /></button>
+                  <button
+                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    disabled={currentPage === totalPages}
+                    onclick={() => currentPage++}><ChevronRight class="w-3.5 h-3.5" /></button
+                  >
+                  <button
+                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    disabled={currentPage === totalPages}
+                    onclick={() => (currentPage = totalPages)}
+                    ><ChevronLast class="w-3.5 h-3.5" /></button
+                  >
                 </div>
               </div>
             {/if}
@@ -548,9 +745,9 @@
         {/if}
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- LEARNING PATHS TAB                                                -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- LEARNING PATHS TAB                                                -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
     {:else if activeTab === "paths"}
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
@@ -569,31 +766,49 @@
                 <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors">
                   <td class="px-4 py-3">
                     <div class="font-medium text-gremius-text">{lp.nombre}</div>
-                    {#if lp.descripcion}<div class="text-xs text-gremius-subtle">{lp.descripcion}</div>{/if}
+                    {#if lp.descripcion}<div class="text-xs text-gremius-subtle">
+                        {lp.descripcion}
+                      </div>{/if}
                   </td>
                   <td class="px-4 py-3 text-gremius-subtle">{lp.categoria || "—"}</td>
                   <td class="px-4 py-3 text-gremius-text">{lp.totalCursos}</td>
                   <td class="px-4 py-3">
-                    <span class="px-2 py-0.5 rounded text-xs font-medium {lp.secuencial ? 'bg-gremius-green/15 text-gremius-green' : 'bg-gremius-text-dim/15 text-gremius-subtle'}">{lp.secuencial ? "Yes" : "No"}</span>
+                    <span
+                      class="px-2 py-0.5 rounded text-xs font-medium {lp.secuencial
+                        ? 'bg-gremius-green/15 text-gremius-green'
+                        : 'bg-gremius-text-dim/15 text-gremius-subtle'}"
+                      >{lp.secuencial ? "Yes" : "No"}</span
+                    >
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-1">
-                      <a href="/academy/learning-paths/{lp.id}/edit" class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"><Edit2 class="w-3.5 h-3.5" /></a>
-                      <button class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink" onclick={() => deletePath(lp.id)}><Trash2 class="w-3.5 h-3.5" /></button>
+                      <a
+                        href="/academy/learning-paths/{lp.id}/edit"
+                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                        ><Edit2 class="w-3.5 h-3.5" /></a
+                      >
+                      <button
+                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                        onclick={() => deletePath(lp.id)}><Trash2 class="w-3.5 h-3.5" /></button
+                      >
                     </div>
                   </td>
                 </tr>
               {:else}
-                <tr><td colspan="5" class="px-4 py-12 text-center text-gremius-text-dim"><Route class="w-8 h-8 mx-auto mb-2" />No learning paths found.</td></tr>
+                <tr
+                  ><td colspan="5" class="px-4 py-12 text-center text-gremius-text-dim"
+                    ><Route class="w-8 h-8 mx-auto mb-2" />No learning paths found.</td
+                  ></tr
+                >
               {/each}
             </tbody>
           </table>
         </div>
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- GROUPS TAB                                                        -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- GROUPS TAB                                                        -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
     {:else if activeTab === "groups"}
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
@@ -611,28 +826,41 @@
                 <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors">
                   <td class="px-4 py-3">
                     <div class="font-medium text-gremius-text">{g.nombre}</div>
-                    {#if g.descripcion}<div class="text-xs text-gremius-subtle">{g.descripcion}</div>{/if}
+                    {#if g.descripcion}<div class="text-xs text-gremius-subtle">
+                        {g.descripcion}
+                      </div>{/if}
                   </td>
                   <td class="px-4 py-3 text-gremius-text">{g.miembros}</td>
                   <td class="px-4 py-3 text-gremius-subtle">{g.supervisorPrincipal || "—"}</td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-1">
-                      <a href="/academy/groups/{g.id}/edit" class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"><Edit2 class="w-3.5 h-3.5" /></a>
-                      <button class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink" onclick={() => deleteGroup(g.id)}><Trash2 class="w-3.5 h-3.5" /></button>
+                      <a
+                        href="/academy/groups/{g.id}/edit"
+                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                        ><Edit2 class="w-3.5 h-3.5" /></a
+                      >
+                      <button
+                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                        onclick={() => deleteGroup(g.id)}><Trash2 class="w-3.5 h-3.5" /></button
+                      >
                     </div>
                   </td>
                 </tr>
               {:else}
-                <tr><td colspan="4" class="px-4 py-12 text-center text-gremius-text-dim"><Users class="w-8 h-8 mx-auto mb-2" />No groups found.</td></tr>
+                <tr
+                  ><td colspan="4" class="px-4 py-12 text-center text-gremius-text-dim"
+                    ><Users class="w-8 h-8 mx-auto mb-2" />No groups found.</td
+                  ></tr
+                >
               {/each}
             </tbody>
           </table>
         </div>
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- ASSIGNMENTS TAB                                                   -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- ASSIGNMENTS TAB                                                   -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
     {:else if activeTab === "assignments"}
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
@@ -651,12 +879,19 @@
                 <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors">
                   <td class="px-4 py-3 font-mono text-xs text-gremius-text">{a.cursoId}</td>
                   <td class="px-4 py-3 font-mono text-xs text-gremius-subtle">{a.userId || "—"}</td>
-                  <td class="px-4 py-3 font-mono text-xs text-gremius-subtle">{a.grupoId || "—"}</td>
+                  <td class="px-4 py-3 font-mono text-xs text-gremius-subtle">{a.grupoId || "—"}</td
+                  >
                   <td class="px-4 py-3 text-gremius-text">{a.metodo || "—"}</td>
-                  <td class="px-4 py-3 text-gremius-subtle">{a.fecha ? new Date(a.fecha).toLocaleDateString("es-ES") : "—"}</td>
+                  <td class="px-4 py-3 text-gremius-subtle"
+                    >{a.fecha ? new Date(a.fecha).toLocaleDateString("es-ES") : "—"}</td
+                  >
                 </tr>
               {:else}
-                <tr><td colspan="5" class="px-4 py-12 text-center text-gremius-text-dim"><Layers class="w-8 h-8 mx-auto mb-2" />No assignments found.</td></tr>
+                <tr
+                  ><td colspan="5" class="px-4 py-12 text-center text-gremius-text-dim"
+                    ><Layers class="w-8 h-8 mx-auto mb-2" />No assignments found.</td
+                  ></tr
+                >
               {/each}
             </tbody>
           </table>
@@ -672,22 +907,38 @@
 {#if drawerOpen}
   <div class="fixed inset-0 z-40 flex justify-end">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick={closeDrawer}></div>
-    <div class="relative w-full max-w-xl bg-gremius-card border-l border-gremius-border h-full flex flex-col shadow-2xl">
+    <div
+      class="relative w-full max-w-xl bg-gremius-card border-l border-gremius-border h-full flex flex-col shadow-2xl"
+    >
       <!-- Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0">
+      <div
+        class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0"
+      >
         <div class="min-w-0">
           <div class="flex items-center gap-2">
             {#if drawerCurso}
-              <span class="px-1.5 py-0.5 rounded text-[10px] font-medium {tipoCursoColors[drawerCurso.curso.tipo] || ''}">{tipoCursoLabels[drawerCurso.curso.tipo] || drawerCurso.curso.tipo}</span>
+              <span
+                class="px-1.5 py-0.5 rounded text-[10px] font-medium {tipoCursoColors[
+                  drawerCurso.curso.tipo
+                ] || ''}">{tipoCursoLabels[drawerCurso.curso.tipo] || drawerCurso.curso.tipo}</span
+              >
             {/if}
           </div>
-          <h2 class="text-lg font-bold text-gremius-text truncate">{drawerCurso?.curso.titulo || "Course"}</h2>
+          <h2 class="text-lg font-bold text-gremius-text truncate">
+            {drawerCurso?.curso.titulo || "Course"}
+          </h2>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button class="btn-secondary text-xs inline-flex items-center gap-1" onclick={() => drawerCurso && openAssignModal([drawerCurso.curso.id])}>
+          <button
+            class="btn-secondary text-xs inline-flex items-center gap-1"
+            onclick={() => drawerCurso && openAssignModal([drawerCurso.curso.id])}
+          >
             <Users class="w-3.5 h-3.5" /> Assign
           </button>
-          <button class="p-2 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text" onclick={closeDrawer}><X class="w-5 h-5" /></button>
+          <button
+            class="p-2 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+            onclick={closeDrawer}><X class="w-5 h-5" /></button
+          >
         </div>
       </div>
 
@@ -695,7 +946,9 @@
       <div class="flex-1 overflow-y-auto p-6 space-y-6">
         {#if drawerLoading}
           <div class="flex items-center justify-center h-40">
-            <div class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+            <div
+              class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+            ></div>
           </div>
         {:else if !drawerStats}
           <div class="text-center text-gremius-subtle py-12">No stats available.</div>
@@ -703,21 +956,13 @@
           {@const s = drawerStats}
           <!-- Stats Grid -->
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {#each [
-              { label: "Assigned", value: s.totalAsignados, icon: Users, color: "text-gremius-cyan" },
-              { label: "Completed", value: s.completados, icon: CheckCircle, color: "text-gremius-green" },
-              { label: "In Progress", value: s.enProgreso, icon: TrendingUp, color: "text-gremius-amber" },
-              { label: "Not Started", value: s.noIniciados, icon: AlertCircle, color: "text-gremius-pink" },
-              { label: "Completion Rate", value: fmtPct(s.tasaFinalizacion), icon: BarChart3, color: "text-gremius-green" },
-              { label: "Avg Progress", value: fmtPct(s.progresoPromedio), icon: TrendingUp, color: "text-gremius-cyan" },
-              { label: "Quiz Passers", value: s.aprobadosQuiz, icon: CheckCircle, color: "text-gremius-green" },
-              { label: "Avg Quiz Score", value: s.puntajePromedioQuiz?.toFixed(1) ?? "—", icon: Star, color: "text-gremius-amber" },
-              { label: "Surveys", value: s.totalEncuestas, icon: Layers, color: "text-gremius-cyan" },
-              { label: "Satisfaction", value: fmtStar(s.satisfaccionPromedio), icon: Star, color: "text-gremius-amber" },
-              { label: "Instructor Rating", value: s.expositorPromedio?.toFixed(1) ?? "—", icon: UserCircle, color: "text-purple-400" },
-            ] as stat}
-              <div class="bg-gremius-bg border border-gremius-border rounded-lg p-3 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-gremius-card flex items-center justify-center shrink-0">
+            {#each [{ label: "Assigned", value: s.totalAsignados, icon: Users, color: "text-gremius-cyan" }, { label: "Completed", value: s.completados, icon: CheckCircle, color: "text-gremius-green" }, { label: "In Progress", value: s.enProgreso, icon: TrendingUp, color: "text-gremius-amber" }, { label: "Not Started", value: s.noIniciados, icon: AlertCircle, color: "text-gremius-pink" }, { label: "Completion Rate", value: fmtPct(s.tasaFinalizacion), icon: BarChart3, color: "text-gremius-green" }, { label: "Avg Progress", value: fmtPct(s.progresoPromedio), icon: TrendingUp, color: "text-gremius-cyan" }, { label: "Quiz Passers", value: s.aprobadosQuiz, icon: CheckCircle, color: "text-gremius-green" }, { label: "Avg Quiz Score", value: s.puntajePromedioQuiz?.toFixed(1) ?? "—", icon: Star, color: "text-gremius-amber" }, { label: "Surveys", value: s.totalEncuestas, icon: Layers, color: "text-gremius-cyan" }, { label: "Satisfaction", value: fmtStar(s.satisfaccionPromedio), icon: Star, color: "text-gremius-amber" }, { label: "Instructor Rating", value: s.expositorPromedio?.toFixed(1) ?? "—", icon: UserCircle, color: "text-purple-400" }] as stat}
+              <div
+                class="bg-gremius-bg border border-gremius-border rounded-lg p-3 flex items-center gap-3"
+              >
+                <div
+                  class="w-8 h-8 rounded-lg bg-gremius-card flex items-center justify-center shrink-0"
+                >
                   <stat.icon class="w-4 h-4 {stat.color}" />
                 </div>
                 <div>
@@ -732,16 +977,15 @@
           <div class="bg-gremius-bg border border-gremius-border rounded-lg p-4">
             <h3 class="text-sm font-semibold text-gremius-text mb-3">Student Distribution</h3>
             <div class="space-y-2">
-              {#each [
-                { label: "Completed", value: s.completados, color: "bg-gremius-green" },
-                { label: "In Progress", value: s.enProgreso, color: "bg-gremius-amber" },
-                { label: "Not Started", value: s.noIniciados, color: "bg-gremius-pink" }
-              ] as bar}
+              {#each [{ label: "Completed", value: s.completados, color: "bg-gremius-green" }, { label: "In Progress", value: s.enProgreso, color: "bg-gremius-amber" }, { label: "Not Started", value: s.noIniciados, color: "bg-gremius-pink" }] as bar}
                 {@const max = Math.max(s.totalAsignados || 1, 1)}
                 <div class="flex items-center gap-3">
                   <span class="w-20 text-xs text-gremius-subtle text-right">{bar.label}</span>
                   <div class="flex-1 h-3 bg-gremius-card rounded-full overflow-hidden">
-                    <div class="h-full {bar.color} rounded-full" style="width: {Math.min(100, ((bar.value || 0) / max) * 100)}%"></div>
+                    <div
+                      class="h-full {bar.color} rounded-full"
+                      style="width: {Math.min(100, ((bar.value || 0) / max) * 100)}%"
+                    ></div>
                   </div>
                   <span class="w-8 text-xs text-gremius-text text-right">{bar.value}</span>
                 </div>
@@ -759,13 +1003,21 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 {#if showDeleteModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick={() => showDeleteModal = false}></div>
-    <div class="relative bg-gremius-card border border-gremius-border rounded-xl p-6 w-full max-w-sm shadow-2xl">
+    <div
+      class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      onclick={() => (showDeleteModal = false)}
+    ></div>
+    <div
+      class="relative bg-gremius-card border border-gremius-border rounded-xl p-6 w-full max-w-sm shadow-2xl"
+    >
       <h3 class="text-lg font-bold text-gremius-text mb-2">Delete Course(s)?</h3>
-      <p class="text-sm text-gremius-subtle mb-4">This will permanently delete {deleteTargetIds.length} course(s). This action cannot be undone.</p>
+      <p class="text-sm text-gremius-subtle mb-4">
+        This will permanently delete {deleteTargetIds.length} course(s). This action cannot be undone.
+      </p>
       <div class="flex items-center justify-end gap-2">
-        <button class="btn-secondary" onclick={() => showDeleteModal = false}>Cancel</button>
-        <button class="btn-danger" onclick={confirmDelete}><Trash2 class="w-4 h-4" /> Delete</button>
+        <button class="btn-secondary" onclick={() => (showDeleteModal = false)}>Cancel</button>
+        <button class="btn-danger" onclick={confirmDelete}><Trash2 class="w-4 h-4" /> Delete</button
+        >
       </div>
     </div>
   </div>
@@ -776,23 +1028,42 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 {#if showAssignModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick={() => showAssignModal = false}></div>
-    <div class="relative bg-gremius-card border border-gremius-border rounded-xl p-6 w-full max-w-md shadow-2xl">
-      <h3 class="text-lg font-bold text-gremius-text mb-1">Assign {assignCursoIds.length} Course(s)</h3>
+    <div
+      class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      onclick={() => (showAssignModal = false)}
+    ></div>
+    <div
+      class="relative bg-gremius-card border border-gremius-border rounded-xl p-6 w-full max-w-md shadow-2xl"
+    >
+      <h3 class="text-lg font-bold text-gremius-text mb-1">
+        Assign {assignCursoIds.length} Course(s)
+      </h3>
       <p class="text-xs text-gremius-subtle mb-4">Enter comma-separated IDs</p>
       <div class="space-y-3">
         <div>
           <label class="block text-xs text-gremius-subtle mb-1">User IDs</label>
-          <input class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50" placeholder="user1, user2..." bind:value={assignUserIds} />
+          <input
+            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50"
+            placeholder="user1, user2..."
+            bind:value={assignUserIds}
+          />
         </div>
         <div>
           <label class="block text-xs text-gremius-subtle mb-1">Group IDs</label>
-          <input class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50" placeholder="group1, group2..." bind:value={assignGroupIds} />
+          <input
+            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50"
+            placeholder="group1, group2..."
+            bind:value={assignGroupIds}
+          />
         </div>
       </div>
       <div class="flex items-center justify-end gap-2 mt-4">
-        <button class="btn-secondary" onclick={() => showAssignModal = false}>Cancel</button>
-        <button class="btn-primary inline-flex items-center gap-2" onclick={submitAssign} disabled={assignLoading}>
+        <button class="btn-secondary" onclick={() => (showAssignModal = false)}>Cancel</button>
+        <button
+          class="btn-primary inline-flex items-center gap-2"
+          onclick={submitAssign}
+          disabled={assignLoading}
+        >
           {#if assignLoading}<Loader2 class="w-4 h-4 animate-spin" />{/if}
           <Users class="w-4 h-4" /> Assign
         </button>
@@ -802,8 +1073,16 @@
 {/if}
 
 <style>
-  .card { @apply bg-gremius-card border border-gremius-border rounded-xl; }
-  .btn-primary { @apply px-4 py-2 bg-gremius-cyan text-black rounded-lg font-medium hover:bg-gremius-cyan-hover transition-colors disabled:opacity-50; }
-  .btn-secondary { @apply px-3 py-1.5 bg-gremius-surface border border-gremius-border rounded-lg text-gremius-text hover:border-gremius-cyan/50 transition-colors; }
-  .btn-danger { @apply px-3 py-1.5 bg-gremius-pink/15 text-gremius-pink border border-gremius-pink/30 rounded-lg font-medium hover:bg-gremius-pink/25 transition-colors; }
+  .card {
+    @apply bg-gremius-card border border-gremius-border rounded-xl;
+  }
+  .btn-primary {
+    @apply px-4 py-2 bg-gremius-cyan text-black rounded-lg font-medium hover:bg-gremius-cyan-hover transition-colors disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply px-3 py-1.5 bg-gremius-surface border border-gremius-border rounded-lg text-gremius-text hover:border-gremius-cyan/50 transition-colors;
+  }
+  .btn-danger {
+    @apply px-3 py-1.5 bg-gremius-pink/15 text-gremius-pink border border-gremius-pink/30 rounded-lg font-medium hover:bg-gremius-pink/25 transition-colors;
+  }
 </style>

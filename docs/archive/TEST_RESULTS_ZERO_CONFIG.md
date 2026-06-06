@@ -9,16 +9,16 @@
 
 ### Backend Tests (Bun)
 
-| Suite | Tests | Status | Duración |
-|-------|-------|--------|----------|
-| Admin Registry Service | 10/10 | ✅ Pass | 503ms |
-| Admin Registry HTTP API | 4/4 | ✅ Pass | 134ms |
+| Suite                   | Tests | Status  | Duración |
+| ----------------------- | ----- | ------- | -------- |
+| Admin Registry Service  | 10/10 | ✅ Pass | 503ms    |
+| Admin Registry HTTP API | 4/4   | ✅ Pass | 134ms    |
 
 ### Frontend Tests (Vitest)
 
-| Suite | Tests | Status | Duración |
-|-------|-------|--------|----------|
-| Grimoire Loader | 13/13 | ✅ Pass | 43ms |
+| Suite           | Tests | Status  | Duración |
+| --------------- | ----- | ------- | -------- |
+| Grimoire Loader | 13/13 | ✅ Pass | 43ms     |
 
 **Total: 27 tests passed**
 
@@ -42,6 +42,7 @@
 ```
 
 **Validaciones:**
+
 - ✅ El registro se construye sin errores
 - ✅ Todos los grimoires tienen campos requeridos (id, name, category, views)
 - ✅ Detecta tablas desde grimoire.json automáticamente
@@ -58,6 +59,7 @@
 ```
 
 **Validaciones:**
+
 - ✅ Endpoint `/api/admin/registry` responde
 - ✅ Endpoint `/api/admin/registry/:id` responde
 - ✅ Autenticación requerida (401 para requests sin auth)
@@ -82,6 +84,7 @@
 ```
 
 **Validaciones:**
+
 - ✅ Cache funciona correctamente
 - ✅ Detección de vistas custom (legacy)
 - ✅ Resolución de iconos
@@ -95,19 +98,21 @@
 
 ### TypeScript Compilation
 
-| Paquete | Errores | Status |
-|---------|---------|--------|
-| `apps/api` | 0 (nuevos) | ✅ Los archivos nuevos no introducen errores |
-| `packages/admin` | 0 | ✅ Compila sin errores |
+| Paquete          | Errores    | Status                                       |
+| ---------------- | ---------- | -------------------------------------------- |
+| `apps/api`       | 0 (nuevos) | ✅ Los archivos nuevos no introducen errores |
+| `packages/admin` | 0          | ✅ Compila sin errores                       |
 
 ### Archivos Verificados
 
 #### Backend
+
 - ✅ `apps/api/src/services/admin-registry.ts` — Compila sin errores
 - ✅ `apps/api/src/routes/admin-registry.ts` — Compila sin errores
 - ✅ `apps/api/src/index.ts` — Rutas registradas correctamente
 
-#### Frontend  
+#### Frontend
+
 - ✅ `packages/admin/src/lib/grimoire-loader.ts` — 0 errores TypeScript
 - ✅ `packages/admin/src/lib/grimoire-views.ts` — 0 errores TypeScript
 - ✅ `packages/admin/src/lib/components/admin/GrimoirePage.svelte` — 0 errores
@@ -152,6 +157,7 @@ packages/admin/src/tests/
 ## 🐛 Bugs Encontrados y Corregidos
 
 ### Bug #1: Función humanize no reemplazaba guiones
+
 **Archivo:** `packages/admin/src/lib/grimoire-loader.ts`  
 **Problema:** `"my-grimoire"` → `"My-grimoire"` (debería ser `"My grimoire"`)  
 **Fix:** Agregar `-` a la regex de reemplazo: `.replace(/[-_]/g, " ")`
@@ -162,22 +168,23 @@ packages/admin/src/tests/
 
 ## 🎯 Cobertura de Features
 
-| Feature | Tests | Status |
-|---------|-------|--------|
-| Auto-scan de grimoires | ✅ | Service + HTTP |
-| Detección de tablas | ✅ | Service + Unit |
-| Config de views (grid/kanban/calendar) | ✅ | Unit tests |
-| Detección de vistas custom | ✅ | Unit + Integration |
-| Fallback a DataExplorer | ✅ | Unit tests |
-| Cache del registry | ✅ | Unit tests |
-| Icon resolution | ✅ | Unit tests |
-| Error handling | ✅ | HTTP tests |
+| Feature                                | Tests | Status             |
+| -------------------------------------- | ----- | ------------------ |
+| Auto-scan de grimoires                 | ✅    | Service + HTTP     |
+| Detección de tablas                    | ✅    | Service + Unit     |
+| Config de views (grid/kanban/calendar) | ✅    | Unit tests         |
+| Detección de vistas custom             | ✅    | Unit + Integration |
+| Fallback a DataExplorer                | ✅    | Unit tests         |
+| Cache del registry                     | ✅    | Unit tests         |
+| Icon resolution                        | ✅    | Unit tests         |
+| Error handling                         | ✅    | HTTP tests         |
 
 ---
 
 ## 🚀 Próximos Tests Recomendados
 
 ### Tests de Integración E2E
+
 - [ ] Navegación a grimoire con DataExplorer
 - [ ] Navegación a grimoire con vista custom
 - [ ] Cambio entre vistas (grid ↔ kanban)
@@ -185,11 +192,13 @@ packages/admin/src/tests/
 - [ ] Filtros y búsqueda
 
 ### Tests de Performance
+
 - [ ] Tiempo de carga del registry (>100 grimoires)
 - [ ] Cache hit/miss ratio
 - [ ] Re-render de DataExplorer con muchos datos
 
 ### Tests de Regresión
+
 - [ ] Grimoires sin grimoire.json (degradación graceful)
 - [ ] Tablas sin schema en DB
 - [ ] Network failure (fallback funciona)

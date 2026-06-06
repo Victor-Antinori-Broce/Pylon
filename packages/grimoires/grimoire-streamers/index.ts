@@ -1,20 +1,21 @@
 /**
  * @gremius/grimoire-streamers — Streamer Management (Modern)
- * 
+ *
  * Streamer management with Twitch/YouTube/Kick sync:
  * - Streamers (profiles, platform integration)
  * - Game associations (what they play)
  * - Live status tracking
- * 
+ *
  * Layer: Grimoire Core (Nivel 3 — loaded via module-loader)
  * Mount: /api/streamers
- * 
+ *
  * @version 1.0.0
  */
 
 import type { GrimoireDefinition, GrimoireContext } from "@gremius/shared";
 import { defineGrimoire } from "@gremius/shared";
 import { Hono } from "hono";
+
 import { createStreamersRouter } from "./streamers.routes";
 
 // Re-export schema for schema-merger
@@ -24,10 +25,7 @@ export * from "./streamers.schema";
 // Tables
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const tables = [
-  "streamers",
-  "games_to_streamers",
-];
+const tables = ["streamers", "games_to_streamers"];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Router Factory
@@ -57,9 +55,7 @@ export const grimoire: GrimoireDefinition = defineGrimoire({
 
   admin: {
     category: "esports",
-    views: [
-      { id: "streamers", type: "grid", title: "Streamers", table: "streamers" },
-    ],
+    views: [{ id: "streamers", type: "grid", title: "Streamers", table: "streamers" }],
   },
 
   dependencies: {

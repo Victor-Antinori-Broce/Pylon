@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { Building2, Users, ChevronDown, ChevronRight, Search, User, Briefcase, Mail, Phone, MapPin, Plus, X, Loader2 } from "lucide-svelte";
   import { api } from "$lib/api";
+  import { Building2, Users, ChevronDown, ChevronRight, Search, User, Mail, Plus, X, Loader2 } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   interface Employee {
     id: string;

@@ -151,9 +151,9 @@ async function seedMcpTest() {
       }
       
       const [newKey] = await db.insert(agentApiKeys).values({
-        agentId: agentId,
-        keyHash: keyHash,
-        keyPrefix: keyPrefix,
+        agentId,
+        keyHash,
+        keyPrefix,
         expiresAt: null
       }).returning();
       

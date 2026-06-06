@@ -11,6 +11,7 @@
  */
 
 import { Queue, Worker, type Processor, type ConnectionOptions, type Job } from "bullmq";
+
 import { valkeyConnection, isValkeyAvailable, VALKEY_URL } from "./valkey";
 
 const connection: ConnectionOptions = valkeyConnection;

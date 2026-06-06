@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { api } from "$lib/api";
-  import { toast } from "svelte-sonner";
+  import Badge from "$lib/components/ui/Badge.svelte";
   import Button from "$lib/components/ui/Button.svelte";
   import Input from "$lib/components/ui/Input.svelte";
-  import Textarea from "$lib/components/ui/Textarea.svelte";
   import Label from "$lib/components/ui/Label.svelte";
-  import Badge from "$lib/components/ui/Badge.svelte";
+  import Textarea from "$lib/components/ui/Textarea.svelte";
   import { Save, Plus, X, CheckCircle, ArrowLeft } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     journalId?: string | null;
@@ -24,9 +24,9 @@
   let saving = $state(false);
   let error = $state<string | null>(null);
 
-  let totalDebit = $derived(journal.lines.reduce((s: number, l: any) => s + (Number(l.debit) || 0), 0));
-  let totalCredit = $derived(journal.lines.reduce((s: number, l: any) => s + (Number(l.credit) || 0), 0));
-  let isBalanced = $derived(Math.abs(totalDebit - totalCredit) < 0.001 && journal.lines.length >= 2);
+  const totalDebit = $derived(journal.lines.reduce((s: number, l: any) => s + (Number(l.debit) || 0), 0));
+  const totalCredit = $derived(journal.lines.reduce((s: number, l: any) => s + (Number(l.credit) || 0), 0));
+  const isBalanced = $derived(Math.abs(totalDebit - totalCredit) < 0.001 && journal.lines.length >= 2);
 
   async function load() {
     loading = true;

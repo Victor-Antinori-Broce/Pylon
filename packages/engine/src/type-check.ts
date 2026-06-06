@@ -11,9 +11,6 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { defineGrimoire, InferGrimoireSelect, InferGrimoireInsert } from "./grimoire";
-import { defineAction } from "./actions";
-import { Hono } from "hono";
 import type { GrimoireContext } from "@gremius/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -22,6 +19,10 @@ import type { GrimoireContext } from "@gremius/shared";
 
 // Simulamos lo que exportaría Drizzle para verificar compatibilidad de tipos
 import { pgTable, uuid, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { Hono } from "hono";
+
+import { defineAction } from "./actions";
+import { defineGrimoire, InferGrimoireSelect, InferGrimoireInsert } from "./grimoire";
 
 // Tabla dummy para testing
 export const dummyTasks = pgTable("dummy_tasks", {
@@ -71,7 +72,7 @@ type TaskInsert = InferGrimoireInsert<typeof dummyTasks>;
 
 // ✅ Verificar que TaskInsert tiene opcionales los campos con default
 const _taskInsertCheck: TaskInsert = {
-  title: "New Task",  // required (notNull, no default)
+  title: "New Task", // required (notNull, no default)
   // id, status, createdAt, updatedAt son opcionales (tienen default)
 };
 
@@ -120,34 +121,33 @@ try {
 
   // Verificar rutas generadas
   const listRoute = testGrimoire.routes.find(
-    r => r.operation === "list" && r.tableName === "dummy_tasks"
+    (r) => r.operation === "list" && r.tableName === "dummy_tasks"
   );
-  
+
   if (listRoute) {
     const _method: "get" = listRoute.method;
     const _path: string = listRoute.path;
     const _table: string = listRoute.tableName;
     const _desc: string = listRoute.description;
-    
+
     // La ruta debe ser /api/test/dummy_tasks
     console.log("✅ List route:", listRoute);
   }
 
   // Verificar tools generadas
   const readTool = testGrimoire.tools.find(
-    t => t.operation === "read" && t.tableName === "dummy_tasks"
+    (t) => t.operation === "read" && t.tableName === "dummy_tasks"
   );
-  
+
   if (readTool) {
     const _name: string = readTool.name;
     const _table: string = readTool.tableName;
     const _op: "read" = readTool.operation;
     const _desc: string = readTool.description;
-    
+
     // El tool debe ser test_read_dummy_tasks
     console.log("✅ Read tool:", readTool);
   }
-
 } catch (e) {
   console.error("Error during type check:", e);
 }
@@ -173,10 +173,10 @@ const typedAction = defineAction<CustomPayload, CustomResult>({
   run: async (ctx) => {
     // ✅ ctx.payload debe estar tipado como CustomPayload
     const { taskId, action } = ctx.payload;
-    
+
     // ✅ ctx.db debe existir
     const db = ctx.db;
-    
+
     return {
       success: true,
       taskId,
@@ -209,20 +209,20 @@ const contextCheckAction = defineAction({
     const logger = ctx.logger;
     const queue = ctx.queue;
     const cache = ctx.cache;
-    
+
     // Propiedades HTTP (solo para triggers http)
     const http = ctx.http;
     const hono = http?.hono;
     const headers = http?.headers;
     http?.status(200);
     http?.header("X-Test", "value");
-    
+
     // @ts-expect-error - event no debe existir en http trigger
     const event = ctx.event;
-    
+
     // @ts-expect-error - agent no debe existir en http trigger
     const agent = ctx.agent;
-    
+
     return { success: true };
   },
 });
@@ -244,7 +244,7 @@ const mockCtx = {
     set: async () => {},
     invalidate: async () => {},
   },
-  auth: { requireAuth: async () => ({} as any) },
+  auth: { requireAuth: async () => ({}) as any },
   logger: console,
 } as GrimoireContext;
 

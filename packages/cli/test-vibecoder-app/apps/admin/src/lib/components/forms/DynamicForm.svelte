@@ -4,8 +4,10 @@
    * Reads FieldDefinition[], generates validation, renders form
    */
   import { Save, Loader2, Upload, X, ImageIcon } from "lucide-svelte";
-  import RelationshipField from "./RelationshipField.svelte";
+
   import type { FieldDefinition } from "../../../types/datasets";
+
+  import RelationshipField from "./RelationshipField.svelte";
 
   // ─── Props ──────────────────────────────────────────
   interface Props {
@@ -16,7 +18,7 @@
     onCancel?: () => void;
   }
   
-  let { 
+  const { 
     fields, 
     initialData = {}, 
     submitLabel = "Save Entry",
@@ -28,7 +30,7 @@
   let formData = $state<Record<string, any>>({});
   let fieldErrors = $state<Record<string, string>>({});
   let submitting = $state(false);
-  let uploadingStates = $state<Record<string, boolean>>({});
+  const uploadingStates = $state<Record<string, boolean>>({});
   
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
@@ -59,7 +61,7 @@
   });
 
   // ─── Computed ───────────────────────────────────────
-  let visibleFields = $derived([...fields].sort((a, b) => a.order - b.order));
+  const visibleFields = $derived([...fields].sort((a, b) => a.order - b.order));
 
   // ─── Field setters ──────────────────────────────────
   function setField(key: string, value: any) {

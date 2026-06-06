@@ -21,7 +21,7 @@
     trend?: "up" | "down" | "neutral";
   }
   
-  let {
+  const {
     value = 0,
     max = 100,
     showPercentage = true,

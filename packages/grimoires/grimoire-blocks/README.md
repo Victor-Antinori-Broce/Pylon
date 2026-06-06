@@ -57,6 +57,7 @@ GET /api/page-builder/render/home
 ```
 
 Response:
+
 ```json
 {
   "page": {
@@ -84,8 +85,9 @@ Response:
 ```
 
 **Responsive Images**: The render endpoint automatically includes `mediaUrls` with transform URLs for:
+
 - **Hero blocks**: hero, large, medium, small presets
-- **Image blocks**: thumbnail, small, medium, large presets  
+- **Image blocks**: thumbnail, small, medium, large presets
 - **Cards**: thumbnail, small, medium for each card image
 - **Quote blocks**: thumbnail for author image
 
@@ -95,39 +97,39 @@ These URLs use grimoire-media's transform presets for optimized responsive image
 
 ### Pages
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/page-builder/pages` | List pages |
-| GET | `/api/page-builder/pages/:id` | Get page with blocks |
-| POST | `/api/page-builder/pages` | Create page |
-| PATCH | `/api/page-builder/pages/:id` | Update page |
-| DELETE | `/api/page-builder/pages/:id` | Delete page |
-| POST | `/api/page-builder/pages/:id/clone` | Clone page |
+| Method | Endpoint                            | Description          |
+| ------ | ----------------------------------- | -------------------- |
+| GET    | `/api/page-builder/pages`           | List pages           |
+| GET    | `/api/page-builder/pages/:id`       | Get page with blocks |
+| POST   | `/api/page-builder/pages`           | Create page          |
+| PATCH  | `/api/page-builder/pages/:id`       | Update page          |
+| DELETE | `/api/page-builder/pages/:id`       | Delete page          |
+| POST   | `/api/page-builder/pages/:id/clone` | Clone page           |
 
 ### Blocks
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/page-builder/pages/:pageId/blocks` | Add block |
-| PATCH | `/api/page-builder/blocks/:id` | Update block |
-| DELETE | `/api/page-builder/blocks/:id` | Delete block |
-| POST | `/api/page-builder/pages/:pageId/blocks/reorder` | Reorder blocks |
-| POST | `/api/page-builder/blocks/:id/duplicate` | Duplicate block |
+| Method | Endpoint                                         | Description     |
+| ------ | ------------------------------------------------ | --------------- |
+| POST   | `/api/page-builder/pages/:pageId/blocks`         | Add block       |
+| PATCH  | `/api/page-builder/blocks/:id`                   | Update block    |
+| DELETE | `/api/page-builder/blocks/:id`                   | Delete block    |
+| POST   | `/api/page-builder/pages/:pageId/blocks/reorder` | Reorder blocks  |
+| POST   | `/api/page-builder/blocks/:id/duplicate`         | Duplicate block |
 
 ### Templates
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/page-builder/templates` | List templates |
-| POST | `/api/page-builder/templates` | Create template |
-| POST | `/api/page-builder/templates/:id/use` | Increment usage count |
+| Method | Endpoint                              | Description           |
+| ------ | ------------------------------------- | --------------------- |
+| GET    | `/api/page-builder/templates`         | List templates        |
+| POST   | `/api/page-builder/templates`         | Create template       |
+| POST   | `/api/page-builder/templates/:id/use` | Increment usage count |
 
 ### Utilities
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/page-builder/block-types` | Get block type schemas |
-| GET | `/api/page-builder/render/:slug` | Render public page |
+| Method | Endpoint                         | Description            |
+| ------ | -------------------------------- | ---------------------- |
+| GET    | `/api/page-builder/block-types`  | Get block type schemas |
+| GET    | `/api/page-builder/render/:slug` | Render public page     |
 
 ## Block Types
 
@@ -205,7 +207,9 @@ Multi-column container for nested content.
       {
         "id": "item-1",
         "columnSpan": 6,
-        "content": { /* nested block content */ }
+        "content": {
+          /* nested block content */
+        }
       }
     ]
   }
@@ -378,6 +382,7 @@ Available layouts:
 ## Caching
 
 Pages are cached for 60-300 seconds depending on endpoint:
+
 - List pages: 60s
 - Single page: 120s
 - Render endpoint: 300s
@@ -392,13 +397,13 @@ This grimoire integrates with `grimoire-media` to provide responsive images and 
 
 When rendering pages, media URLs are automatically generated using these presets:
 
-| Preset | Dimensions | Usage |
-|--------|------------|-------|
-| `thumbnail` | 150x150 | Avatars, icons, author images |
-| `small` | 400x300 | Mobile, previews |
-| `medium` | 800x600 | Tablets, main content |
-| `large` | 1200x800 | Desktop, featured images |
-| `hero` | 1920x1080 | Hero backgrounds, banners |
+| Preset      | Dimensions | Usage                         |
+| ----------- | ---------- | ----------------------------- |
+| `thumbnail` | 150x150    | Avatars, icons, author images |
+| `small`     | 400x300    | Mobile, previews              |
+| `medium`    | 800x600    | Tablets, main content         |
+| `large`     | 1200x800   | Desktop, featured images      |
+| `hero`      | 1920x1080  | Hero backgrounds, banners     |
 
 ### Focal Point for Smart Cropping
 
@@ -431,13 +436,13 @@ The focal point is passed to the transform URL as `?fp=x,y` for smart cropping.
 
 ```html
 <!-- Hero with responsive srcset -->
-<img 
+<img
   src="/api/media/preset/{id}/hero"
   srcset="
-    /api/media/preset/{id}/small 400w,
-    /api/media/preset/{id}/medium 800w,
-    /api/media/preset/{id}/large 1200w,
-    /api/media/preset/{id}/hero 1920w
+    /api/media/preset/{id}/small   400w,
+    /api/media/preset/{id}/medium  800w,
+    /api/media/preset/{id}/large  1200w,
+    /api/media/preset/{id}/hero   1920w
   "
   sizes="100vw"
   alt="Hero background"

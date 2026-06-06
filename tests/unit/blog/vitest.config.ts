@@ -10,14 +10,14 @@ export default defineConfig({
     include: ["tests/unit/blog/**/*.test.ts"],
     coverage: {
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "tests/"]
-    }
+      exclude: ["node_modules/", "tests/"],
+    },
   },
   resolve: {
     alias: {
       "@admin": path.resolve(__dirname, "../../../packages/admin/src"),
       "@api": path.resolve(__dirname, "../../../apps/api/src"),
-      "@grimoires": path.resolve(__dirname, "../../../packages/grimoires")
-    }
-  }
+      "@grimoires": path.resolve(__dirname, "../../../packages/grimoires"),
+    },
+  },
 });

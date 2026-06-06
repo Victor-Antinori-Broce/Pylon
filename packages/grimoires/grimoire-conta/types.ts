@@ -6,6 +6,7 @@
  */
 
 import type { PgDatabase } from "drizzle-orm/pg-core";
+
 import * as schema from "./conta.schema";
 
 /**
@@ -17,6 +18,4 @@ export type ContaDb = PgDatabase<any, typeof schema, any>;
 /**
  * Condiciones dinámicas para queries con Drizzle AND
  */
-export type Condition = Parameters<ContaDb["select"]>[0] extends infer R
-  ? R
-  : never;
+export type Condition = Parameters<ContaDb["select"]>[0] extends infer R ? R : never;

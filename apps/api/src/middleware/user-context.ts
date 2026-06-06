@@ -13,8 +13,9 @@
  *   - If user has no role → userRoleIds = []
  */
 
-import { createMiddleware } from "hono/factory";
 import { sql } from "drizzle-orm";
+import { createMiddleware } from "hono/factory";
+
 import { db } from "../db";
 
 export const enrichUserContext = createMiddleware(async (c, next) => {

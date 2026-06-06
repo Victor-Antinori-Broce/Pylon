@@ -21,18 +21,19 @@
  * }
  */
 
-import { Hono } from "hono";
 import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+
+import { generateReact } from "../../../../packages/codegen/src/generators/react";
+import { generateSvelte } from "../../../../packages/codegen/src/generators/svelte";
+import { generateVue } from "../../../../packages/codegen/src/generators/vue";
 import { db, mergedSchema } from "../db";
 import { dataSets } from "../db/schema-core";
+import { logger } from "../lib/logger";
 import { introspectTable } from "../services/schema-introspector";
 import type { AppVariables } from "../types/hono";
-import { logger } from "../lib/logger";
 
 // Import generators (will be resolved at runtime via Bun)
-import { generateReact } from "../../../../packages/codegen/src/generators/react";
-import { generateVue } from "../../../../packages/codegen/src/generators/vue";
-import { generateSvelte } from "../../../../packages/codegen/src/generators/svelte";
 
 export const codegenRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -102,7 +103,9 @@ async function resolveCollection(collectionSlug: string): Promise<CollectionInfo
   }
 
   // 2. Try native table from mergedSchema
-  const tableKey = Object.keys(mergedSchema).find((k) => k.toLowerCase() === collectionSlug.toLowerCase());
+  const tableKey = Object.keys(mergedSchema).find(
+    (k) => k.toLowerCase() === collectionSlug.toLowerCase()
+  );
   const table = tableKey ? (mergedSchema as any)[tableKey] : null;
 
   if (table && isDrizzleTable(table)) {

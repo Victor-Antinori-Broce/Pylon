@@ -9,14 +9,16 @@
  * These routes are for authenticated system management.
  */
 
-import { Hono } from "hono";
 import { join } from "node:path";
-import { eq, sql as drizzleSql } from "drizzle-orm";
+
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
+
 import { db } from "../db";
 import { siteSettings, modules } from "../db/schema";
-import { scanPackages, scanPackages as scanRealms } from "../services/scanner";
-import { CORE_MODULES, CORE_MODULE_KEYS } from "../services/module-registry";
 import { protectRoute } from "../middleware/auth-guard";
+import { CORE_MODULES, CORE_MODULE_KEYS } from "../services/module-registry";
+import { scanPackages, scanPackages as scanRealms } from "../services/scanner";
 
 export const systemRoutes = new Hono();
 
@@ -328,7 +330,7 @@ systemRoutes.patch("/active-theme", protectRoute, async (c) => {
   }
 
   // Activate the theme
-  let [settings] = await db.select().from(siteSettings).limit(1);
+  const [settings] = await db.select().from(siteSettings).limit(1);
 
   if (settings) {
     await db.update(siteSettings).set({ activeTheme: themeId }).where(eq(siteSettings.id, settings.id));
@@ -353,7 +355,7 @@ systemRoutes.patch("/active-theme", protectRoute, async (c) => {
 // ── DELETE /active-theme — Deactivate current realm (disable all realm grimoires) ──
 systemRoutes.delete("/active-theme", protectRoute, async (c) => {
   // Get current active realm
-  let [settings] = await db.select().from(siteSettings).limit(1);
+  const [settings] = await db.select().from(siteSettings).limit(1);
   const currentRealmId = settings?.activeTheme || null;
 
   if (!currentRealmId) {
@@ -410,7 +412,7 @@ systemRoutes.post("/realm-state", protectRoute, async (c) => {
   }
 
   // Get current active realm
-  let [settings] = await db.select().from(siteSettings).limit(1);
+  const [settings] = await db.select().from(siteSettings).limit(1);
   const currentActiveRealm = settings?.activeTheme || null;
 
   if (action === "deactivate") {
@@ -521,7 +523,7 @@ systemRoutes.post("/realm-state", protectRoute, async (c) => {
       if (!existing.enabled || existing.realmId !== realmId) {
         await db.update(modules).set({ 
           enabled: true,
-          realmId: realmId,
+          realmId,
         }).where(eq(modules.key, grimoireId));
         activatedModules.push(grimoireId);
       }
@@ -533,7 +535,7 @@ systemRoutes.post("/realm-state", protectRoute, async (c) => {
         icon: grimoire?.icon || registryDef?.icon || "📦",
         category: "realm",
         enabled: true,
-        realmId: realmId,
+        realmId,
         settings: {},
         sidebarBadge: "Active by Realm",
       });
@@ -673,7 +675,7 @@ systemRoutes.get("/active-theme-config", async (c) => {
     }
 
     // Try to read a theme.json with color/logo overrides
-    let themeConfig: Record<string, any> = {
+    const themeConfig: Record<string, any> = {
       id: theme.id,
       name: theme.name,
     };

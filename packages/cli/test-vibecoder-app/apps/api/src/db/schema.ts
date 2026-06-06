@@ -6,6 +6,7 @@
  * Pure Drizzle + PostgreSQL schema for the gaming CMS.
  */
 
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -22,7 +23,6 @@ import {
   index,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 
 // ─── Block Type (shared with admin + web) ─────────────────────
 interface PageBlock {

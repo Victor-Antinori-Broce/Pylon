@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { ChevronLeft, ChevronRight } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { ChevronLeft, ChevronRight, Plus } from "lucide-svelte";
+
   import type { CalendarView as CalendarViewType } from "$lib/types/admin";
 
   interface Props {
@@ -8,7 +9,7 @@
     apiEndpoint?: string;
   }
 
-  let { view, apiEndpoint }: Props = $props();
+  const { view, apiEndpoint }: Props = $props();
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
   const endpoint = apiEndpoint || `/api/explorer/${view.table}`;
@@ -17,18 +18,28 @@
   let loading = $state(true);
   let currentMonth = $state(new Date().getMonth());
   let currentYear = $state(new Date().getFullYear());
-  
+
   // Validation state
   let hasValidDateField = $state(true);
 
   const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   // Calendar grid computation
-  let calendarDays = $derived.by(() => {
+  const calendarDays = $derived.by(() => {
     const firstDay = new Date(currentYear, currentMonth, 1);
     const lastDay = new Date(currentYear, currentMonth + 1, 0);
     const startPad = firstDay.getDay();
@@ -57,12 +68,13 @@
   });
 
   // Group events by date
-  let eventsByDate = $derived.by<Record<string, any[]>>(() => {
+  const eventsByDate = $derived.by<Record<string, any[]>>(() => {
     const map: Record<string, any[]> = {};
     for (const item of data) {
       const raw = item[view.dateField];
       if (!raw) continue;
-      const dateStr = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
+      const dateStr =
+        typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
       if (!map[dateStr]) map[dateStr] = [];
       map[dateStr].push(item);
     }
@@ -81,13 +93,13 @@
       if (res.ok) {
         const result = await res.json();
         data = result.data || result.docs || result;
-        
+
         // Validate that at least one item has the required dateField
         if (data.length > 0) {
-           const sampleHasField = data.some(item => view.dateField in item);
-           if (!sampleHasField) {
-             hasValidDateField = false;
-           }
+          const sampleHasField = data.some((item) => view.dateField in item);
+          if (!sampleHasField) {
+            hasValidDateField = false;
+          }
         }
       }
     } catch (e) {
@@ -143,7 +155,8 @@
         <ChevronLeft class="w-4 h-4 text-gremius-text-dim" />
       </button>
       <span class="text-sm font-medium text-gremius-text min-w-[140px] text-center">
-        {MONTHS[currentMonth]} {currentYear}
+        {MONTHS[currentMonth]}
+        {currentYear}
       </span>
       <button class="p-2 rounded hover:bg-gremius-border/30" onclick={nextMonth}>
         <ChevronRight class="w-4 h-4 text-gremius-text-dim" />
@@ -153,15 +166,21 @@
 
   {#if loading}
     <div class="flex items-center justify-center h-64">
-      <div class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"></div>
+      <div
+        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+      ></div>
     </div>
   {:else if !hasValidDateField}
-    <div class="flex items-center justify-center h-64 bg-gremius-bg/50 border border-gremius-border border-dashed rounded-xl">
+    <div
+      class="flex items-center justify-center h-64 bg-gremius-bg/50 border border-gremius-border border-dashed rounded-xl"
+    >
       <div class="text-center max-w-md p-6">
         <div class="text-4xl mb-4">⚠️</div>
         <h3 class="text-lg font-semibold text-gremius-text mb-2">Incompatible Calendar View</h3>
         <p class="text-sm text-gremius-subtle mb-4">
-          This Calendar view is configured to map events by <code class="bg-gremius-bg px-1.5 py-0.5 rounded text-gremius-cyan">'{view.dateField}'</code>, but the underlying table does not contain this field.
+          This Calendar view is configured to map events by <code
+            class="bg-gremius-bg px-1.5 py-0.5 rounded text-gremius-cyan">'{view.dateField}'</code
+          >, but the underlying table does not contain this field.
         </p>
         <p class="text-xs text-gremius-text-dim">
           Please update the grimoire config to use a valid date field, or switch to Grid view.
@@ -173,7 +192,9 @@
       <!-- Day Headers -->
       <div class="grid grid-cols-7 border-b border-gremius-border">
         {#each DAYS as day}
-          <div class="p-2 text-center text-xs font-semibold uppercase tracking-wider text-gremius-subtle bg-gremius-bg">
+          <div
+            class="p-2 text-center text-xs font-semibold uppercase tracking-wider text-gremius-subtle bg-gremius-bg"
+          >
             {day}
           </div>
         {/each}
@@ -183,11 +204,18 @@
       <div class="grid grid-cols-7">
         {#each calendarDays as cell, i}
           <div
-            class="min-h-[100px] p-1.5 border-b border-r border-gremius-border/50 {cell.date === null ? 'bg-gremius-bg/50' : 'hover:bg-gremius-border/10'} {cell.isToday ? 'bg-gremius-cyan/5' : ''}"
+            class="min-h-[100px] p-1.5 border-b border-r border-gremius-border/50 {cell.date ===
+            null
+              ? 'bg-gremius-bg/50'
+              : 'hover:bg-gremius-border/10'} {cell.isToday ? 'bg-gremius-cyan/5' : ''}"
           >
             {#if cell.date !== null}
               <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-medium {cell.isToday ? 'bg-gremius-cyan text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-gremius-text-dim px-1'}">
+                <span
+                  class="text-xs font-medium {cell.isToday
+                    ? 'bg-gremius-cyan text-white w-6 h-6 rounded-full flex items-center justify-center'
+                    : 'text-gremius-text-dim px-1'}"
+                >
                   {cell.date}
                 </span>
               </div>

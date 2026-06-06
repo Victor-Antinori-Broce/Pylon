@@ -4,9 +4,16 @@
  */
 
 // @ts-ignore - Path alias $lib may not be resolved by tsc
-import type { Agent, AgentTrace, AgentTraceStep, AgentIdentity, CreateAgentInput, UpdateAgentInput } from '$lib/types/agents';
+import type {
+  Agent,
+  AgentTrace,
+  AgentTraceStep,
+  AgentIdentity,
+  CreateAgentInput,
+  UpdateAgentInput,
+} from "$lib/types/agents";
 
-const API_BASE = '/api/v1';
+const API_BASE = "/api/v1";
 
 // ============== Agents ==============
 
@@ -22,24 +29,26 @@ export async function getAgent(id: string): Promise<Agent> {
   return res.json();
 }
 
-export async function createAgent(data: CreateAgentInput): Promise<{ agent: Agent; token: string }> {
+export async function createAgent(
+  data: CreateAgentInput
+): Promise<{ agent: Agent; token: string }> {
   const res = await fetch(`${API_BASE}/agents`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || 'Error creating agent');
+    throw new Error(error.message || "Error creating agent");
   }
   return res.json();
 }
 
 export async function updateAgent(id: string, data: UpdateAgentInput): Promise<Agent> {
   const res = await fetch(`${API_BASE}/agents/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -47,14 +56,14 @@ export async function updateAgent(id: string, data: UpdateAgentInput): Promise<A
 
 export async function deleteAgent(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/agents/${id}`, {
-    method: 'DELETE'
+    method: "DELETE",
   });
   if (!res.ok) throw new Error(await res.text());
 }
 
 export async function regenerateToken(agentId: string): Promise<{ token: string }> {
   const res = await fetch(`${API_BASE}/agents/${agentId}/token`, {
-    method: 'POST'
+    method: "POST",
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -69,13 +78,15 @@ interface ListTracesOptions {
   offset?: number;
 }
 
-export async function listTraces(options: ListTracesOptions = {}): Promise<{ traces: AgentTrace[]; total: number }> {
+export async function listTraces(
+  options: ListTracesOptions = {}
+): Promise<{ traces: AgentTrace[]; total: number }> {
   const params = new URLSearchParams();
-  if (options.agentId) params.set('agentId', options.agentId);
-  if (options.sessionId) params.set('sessionId', options.sessionId);
-  if (options.limit) params.set('limit', String(options.limit));
-  if (options.offset) params.set('offset', String(options.offset));
-  
+  if (options.agentId) params.set("agentId", options.agentId);
+  if (options.sessionId) params.set("sessionId", options.sessionId);
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.offset) params.set("offset", String(options.offset));
+
   const res = await fetch(`${API_BASE}/traces?${params}`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -96,7 +107,7 @@ export async function listTraceSteps(traceId: string): Promise<AgentTraceStep[]>
 // ============== Playground ==============
 
 export interface PlaygroundMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -116,13 +127,13 @@ export async function sendPlaygroundMessage(
   messages: PlaygroundMessage[]
 ): Promise<PlaygroundResponse> {
   const res = await fetch(`${API_BASE}/agents/${agentId}/playground`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages })
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || 'Error in playground');
+    throw new Error(error.message || "Error in playground");
   }
   return res.json();
 }
@@ -141,21 +152,28 @@ export async function getIdentity(id: string): Promise<AgentIdentity> {
   return res.json();
 }
 
-export async function createIdentity(data: { name: string; systemPrompt: string; description?: string }): Promise<AgentIdentity> {
+export async function createIdentity(data: {
+  name: string;
+  systemPrompt: string;
+  description?: string;
+}): Promise<AgentIdentity> {
   const res = await fetch(`${API_BASE}/identities`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-export async function updateIdentity(id: string, data: Partial<{ name: string; systemPrompt: string; description?: string }>): Promise<AgentIdentity> {
+export async function updateIdentity(
+  id: string,
+  data: Partial<{ name: string; systemPrompt: string; description?: string }>
+): Promise<AgentIdentity> {
   const res = await fetch(`${API_BASE}/identities/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -163,7 +181,7 @@ export async function updateIdentity(id: string, data: Partial<{ name: string; s
 
 export async function deleteIdentity(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/identities/${id}`, {
-    method: 'DELETE'
+    method: "DELETE",
   });
   if (!res.ok) throw new Error(await res.text());
 }

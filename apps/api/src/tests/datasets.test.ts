@@ -1,19 +1,17 @@
 /**
  * Datasets Module Tests
- * 
+ *
  * Tests for dataset CRUD operations, entries management,
  * and dynamic schema validation.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { dataSets, dataEntries } from "../db/schema";
-import { eq } from "drizzle-orm";
-import { 
-  isDatabaseAvailable, 
-  clearTestData,
-  generateTestId 
-} from "./setup";
+
+import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
@@ -66,11 +64,7 @@ describe("Datasets Module", () => {
     it("should fetch dataset by ID", async () => {
       if (!dbAvailable) return;
 
-      const [result] = await db
-        .select()
-        .from(dataSets)
-        .where(eq(dataSets.id, datasetId))
-        .limit(1);
+      const [result] = await db.select().from(dataSets).where(eq(dataSets.id, datasetId)).limit(1);
 
       expect(result).toBeDefined();
       expect(result.id).toBe(datasetId);
@@ -112,11 +106,7 @@ describe("Datasets Module", () => {
 
       await db.delete(dataSets).where(eq(dataSets.id, datasetId));
 
-      const [result] = await db
-        .select()
-        .from(dataSets)
-        .where(eq(dataSets.id, datasetId))
-        .limit(1);
+      const [result] = await db.select().from(dataSets).where(eq(dataSets.id, datasetId)).limit(1);
 
       expect(result).toBeUndefined();
     });
@@ -135,9 +125,7 @@ describe("Datasets Module", () => {
         .values({
           name: `Entry Test Dataset ${generateTestId()}`,
           slug: `entry-test-${generateTestId()}`,
-          schema: [
-            { fieldName: "title", fieldType: "text", required: true },
-          ],
+          schema: [{ fieldName: "title", fieldType: "text", required: true }],
         })
         .returning();
 
@@ -289,12 +277,15 @@ describe("Datasets Module", () => {
         .returning();
 
       const promises = Array.from({ length: 5 }, (_, i) =>
-        db.insert(dataEntries).values({
-          dataSetId: dataset.id,
-          title: `Concurrent Entry ${i}`,
-          data: { index: i },
-          status: "published",
-        }).returning()
+        db
+          .insert(dataEntries)
+          .values({
+            dataSetId: dataset.id,
+            title: `Concurrent Entry ${i}`,
+            data: { index: i },
+            status: "published",
+          })
+          .returning()
       );
 
       const results = await Promise.all(promises);

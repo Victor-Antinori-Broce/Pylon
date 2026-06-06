@@ -2,12 +2,7 @@
   "name": "Blog",
   "description": "Content-focused blog with posts, tags, and media",
   "template": "blog",
-  "grimoires": [
-    "grimoire-auth",
-    "grimoire-datasets",
-    "grimoire-media",
-    "grimoire-blog"
-  ],
+  "grimoires": ["grimoire-auth", "grimoire-datasets", "grimoire-media", "grimoire-blog"],
   "datasets": [
     {
       "name": "posts",

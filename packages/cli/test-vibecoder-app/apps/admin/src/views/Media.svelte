@@ -8,7 +8,8 @@
    * - Upload: Subida de archivos
    * - Settings: Configuración de storage
    */
-  import { onMount } from "svelte";
+  import { grimoireConfigStore } from "$lib/states/grimoire-config.svelte";
+  import { mediaStore } from "$lib/states/media.svelte";
   import { 
     Image, 
     Plus, 
@@ -29,9 +30,8 @@
     Cloud,
     RefreshCw
   } from "lucide-svelte";
+  import { onMount } from "svelte";
   import { slide, fade } from "svelte/transition";
-  import { mediaStore } from "$lib/states/media.svelte";
-  import { grimoireConfigStore } from "$lib/states/grimoire-config.svelte";
   // Inline storage providers config (avoiding import from unbuilt package)
   const storageProviders = [
     {

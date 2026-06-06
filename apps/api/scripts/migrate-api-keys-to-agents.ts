@@ -1,24 +1,25 @@
 /**
  * Migration Script: Legacy API Keys to Agent NHI
- * 
- * This script migrates all entries from the 'api_keys' table to the new 
- * 'agent_identities' system. 
- * 
+ *
+ * This script migrates all entries from the 'api_keys' table to the new
+ * 'agent_identities' system.
+ *
  * It creates a new Agent for each legacy key and generates a new token.
  * Legacy keys are NOT deleted and will continue to work until the sunset date.
  */
 
+import { like } from "drizzle-orm";
+
 import { db } from "../src/db";
 import { apiKeys, agentIdentities, agentApiKeys } from "../src/db/schema";
 import { generateAgentApiKey } from "../src/services/agent-auth";
-import { like } from "drizzle-orm";
 
 async function migrate() {
   console.log("\n🚀 Starting migration of legacy API keys to Agents...");
   console.log("=======================================================");
 
   const legacyKeys = await db.select().from(apiKeys);
-  
+
   if (legacyKeys.length === 0) {
     console.log("No legacy API keys found. Nothing to migrate.");
     return;
@@ -48,13 +49,16 @@ async function migrate() {
     try {
       // 1. Create Agent Identity
       // Legacy API keys were essentially site-wide admins
-      const [agent] = await db.insert(agentIdentities).values({
-        name: `${key.name} (Migrated)`,
-        description: `Migrated from legacy API key ID: ${key.id} (Hint: ${key.hint})`,
-        type: "migrated-legacy",
-        scopes: ["admin", "dataset:*", "media:*", "actions:*"], // Robust default scopes
-        isActive: true,
-      }).returning();
+      const [agent] = await db
+        .insert(agentIdentities)
+        .values({
+          name: `${key.name} (Migrated)`,
+          description: `Migrated from legacy API key ID: ${key.id} (Hint: ${key.hint})`,
+          type: "migrated-legacy",
+          scopes: ["admin", "dataset:*", "media:*", "actions:*"], // Robust default scopes
+          isActive: true,
+        })
+        .returning();
 
       // 2. Generate NEW Agent Token
       const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey("migrated");
@@ -82,11 +86,11 @@ async function migrate() {
   console.log(`   Migrated: ${migratedCount}`);
   console.log(`   Skipped:  ${skippedCount}`);
   console.log("=======================================================\n");
-  
+
   process.exit(0);
 }
 
-migrate().catch(err => {
+migrate().catch((err) => {
   console.error("❌ Critical migration error:", err);
   process.exit(1);
 });

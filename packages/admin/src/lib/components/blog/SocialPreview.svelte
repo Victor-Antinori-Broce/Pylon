@@ -25,11 +25,10 @@
   />
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { 
-    MessageCircle, 
-    Facebook, 
-    Twitter, 
+  import {
+    MessageCircle,
+    Facebook,
+    Twitter,
     Linkedin,
     Send,
     AlertCircle,
@@ -37,11 +36,8 @@
     Image as ImageIcon,
     RefreshCw,
     ExternalLink,
-    Download,
-    GitCompare,
-    X,
-    Camera
-  } from 'lucide-svelte';
+    Camera,
+  } from "lucide-svelte";
 
   // Types
   interface SEOData {
@@ -90,7 +86,7 @@
     postUrl?: string;
     /** Slug del post para refrescar */
     postSlug?: string;
-    
+
     // Modo comparación A/B
     /** Activar modo comparación A/B */
     comparisonMode?: boolean;
@@ -104,54 +100,55 @@
     labelB?: string;
   }
 
-  let { 
-    seoData = null, 
-    postTitle = 'Sin título', 
-    postUrl = 'https://ejemplo.com/blog/post',
-    postSlug = '',
+  let {
+    seoData = null,
+    postTitle = "Sin título",
+    postUrl = "https://ejemplo.com/blog/post",
+    postSlug = "",
     comparisonMode = false,
     variantA = null,
     variantB = null,
-    labelA = 'Versión A',
-    labelB = 'Versión B'
+    labelA = "Versión A",
+    labelB = "Versión B",
   }: Props = $props();
 
   // Estado
-  type TabType = 'whatsapp' | 'telegram' | 'facebook' | 'twitter' | 'linkedin';
-  let activeTab = $state<TabType>('whatsapp');
+  type TabType = "whatsapp" | "telegram" | "facebook" | "twitter" | "linkedin";
+  let activeTab = $state<TabType>("whatsapp");
   let isRefreshing = $state(false);
   let showDebug = $state(false);
   let copied = $state(false);
   let isExporting = $state(false);
-  let comparisonView = $state<'split' | 'overlay'>('split');
-  let activeVariant = $state<'A' | 'B'>('A');
-  
+  const comparisonView = $state<"split" | "overlay">("split");
+  let activeVariant = $state<"A" | "B">("A");
+
   // Refs para exportación
   let previewContainer: HTMLDivElement;
 
   // Derived values - manejar modo normal vs comparación
-  const currentData = $derived(comparisonMode 
-    ? (activeVariant === 'A' ? variantA : variantB)
-    : seoData
+  const currentData = $derived(
+    comparisonMode ? (activeVariant === "A" ? variantA : variantB) : seoData
   );
-  
+
   const ogTitle = $derived(currentData?.openGraph?.title || postTitle);
-  const ogDescription = $derived(currentData?.openGraph?.description || currentData?.metaDescription || '');
-  const ogImage = $derived(currentData?.openGraph?.image?.url || '');
-  const ogSiteName = $derived(currentData?.openGraph?.siteName || 'Mi Sitio');
+  const ogDescription = $derived(
+    currentData?.openGraph?.description || currentData?.metaDescription || ""
+  );
+  const ogImage = $derived(currentData?.openGraph?.image?.url || "");
+  const ogSiteName = $derived(currentData?.openGraph?.siteName || "Mi Sitio");
   const canonicalUrl = $derived(currentData?.canonicalUrl || postUrl);
   const domain = $derived.by(() => {
     try {
-      return new URL(canonicalUrl).hostname.replace(/^www\./, '');
+      return new URL(canonicalUrl).hostname.replace(/^www\./, "");
     } catch {
-      return 'ejemplo.com';
+      return "ejemplo.com";
     }
   });
-  
+
   // WhatsApp validation status
   const whatsAppStatus = $derived(currentData?.whatsAppValidation);
   const hasWhatsAppIssues = $derived(whatsAppStatus && !whatsAppStatus.isValid);
-  
+
   // Contar issues por variante
   const issuesA = $derived(variantA?.whatsAppValidation?.warnings?.length || 0);
   const issuesB = $derived(variantB?.whatsAppValidation?.warnings?.length || 0);
@@ -159,7 +156,7 @@
   // Formatear URL para mostrar (truncar si es muy larga)
   function formatUrl(url: string, maxLength: number = 40): string {
     if (url.length <= maxLength) return url;
-    return url.substring(0, maxLength - 3) + '...';
+    return url.substring(0, maxLength - 3) + "...";
   }
 
   // Copiar URL al portapapeles
@@ -167,16 +164,16 @@
     try {
       await navigator.clipboard.writeText(canonicalUrl);
       copied = true;
-      setTimeout(() => copied = false, 2000);
+      setTimeout(() => (copied = false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error("Failed to copy:", err);
     }
   }
 
   // Refrescar datos SEO
   async function refreshPreview() {
     if (!postSlug) return;
-    
+
     isRefreshing = true;
     try {
       const response = await fetch(`/api/blog/seo/${postSlug}?preview=true&t=${Date.now()}`);
@@ -185,7 +182,7 @@
         seoData = data.seo;
       }
     } catch (err) {
-      console.error('Failed to refresh preview:', err);
+      console.error("Failed to refresh preview:", err);
     } finally {
       isRefreshing = false;
     }
@@ -196,29 +193,29 @@
     isExporting = true;
     try {
       // Usar html2canvas si está disponible
-      const html2canvas = (await import('html2canvas' as any)).default;
-      
+      const html2canvas = (await import("html2canvas" as any)).default;
+
       if (previewContainer) {
         const canvas = await html2canvas(previewContainer, {
-          backgroundColor: '#f3f4f6',
+          backgroundColor: "#f3f4f6",
           scale: 2,
           useCORS: true,
           allowTaint: true,
-          logging: false
+          logging: false,
         });
-        
+
         // Descargar
-        const link = document.createElement('a');
-        const timestamp = new Date().toISOString().split('T')[0];
+        const link = document.createElement("a");
+        const timestamp = new Date().toISOString().split("T")[0];
         const platform = activeTab;
-        const variant = comparisonMode ? `-${activeVariant}` : '';
+        const variant = comparisonMode ? `-${activeVariant}` : "";
         link.download = `social-preview-${platform}${variant}-${timestamp}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL("image/png");
         link.click();
       }
     } catch (err) {
-      console.error('Failed to export image:', err);
-      alert('Error al exportar. Asegúrate de tener html2canvas instalado: npm install html2canvas');
+      console.error("Failed to export image:", err);
+      alert("Error al exportar. Asegúrate de tener html2canvas instalado: npm install html2canvas");
     } finally {
       isExporting = false;
     }
@@ -226,15 +223,24 @@
 
   // Abrir herramientas externas
   function openFacebookDebugger() {
-    window.open(`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(canonicalUrl)}`, '_blank');
+    window.open(
+      `https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(canonicalUrl)}`,
+      "_blank"
+    );
   }
 
   function openTwitterValidator() {
-    window.open(`https://cards-dev.twitter.com/validator?url=${encodeURIComponent(canonicalUrl)}`, '_blank');
+    window.open(
+      `https://cards-dev.twitter.com/validator?url=${encodeURIComponent(canonicalUrl)}`,
+      "_blank"
+    );
   }
 
   function openLinkedInInspector() {
-    window.open(`https://www.linkedin.com/post-inspector/inspect/${encodeURIComponent(canonicalUrl)}`, '_blank');
+    window.open(
+      `https://www.linkedin.com/post-inspector/inspect/${encodeURIComponent(canonicalUrl)}`,
+      "_blank"
+    );
   }
 </script>
 
@@ -251,15 +257,15 @@
         {/if}
       </span>
     </div>
-    
+
     <div class="preview-actions">
       <!-- Botón de comparación A/B -->
       {#if comparisonMode}
         <div class="variant-toggle">
-          <button 
+          <button
             class="variant-btn"
-            class:active={activeVariant === 'A'}
-            onclick={() => activeVariant = 'A'}
+            class:active={activeVariant === "A"}
+            onclick={() => (activeVariant = "A")}
           >
             {labelA}
             {#if issuesA > 0}
@@ -268,10 +274,10 @@
               <span class="variant-badge success">✓</span>
             {/if}
           </button>
-          <button 
+          <button
             class="variant-btn"
-            class:active={activeVariant === 'B'}
-            onclick={() => activeVariant = 'B'}
+            class:active={activeVariant === "B"}
+            onclick={() => (activeVariant = "B")}
           >
             {labelB}
             {#if issuesB > 0}
@@ -282,9 +288,9 @@
           </button>
         </div>
       {/if}
-      
+
       <!-- Exportar imagen -->
-      <button 
+      <button
         class="action-btn"
         onclick={exportAsImage}
         disabled={isExporting}
@@ -296,43 +302,39 @@
           <Camera size={16} />
         {/if}
       </button>
-      
+
       {#if postSlug}
-        <button 
+        <button
           class="action-btn"
           onclick={refreshPreview}
           disabled={isRefreshing}
           title="Refrescar preview"
         >
-          <RefreshCw size={16} class={isRefreshing ? 'spin' : ''} />
+          <RefreshCw size={16} class={isRefreshing ? "spin" : ""} />
         </button>
       {/if}
-      
-      <button 
+
+      <button
         class="action-btn"
-        onclick={() => showDebug = !showDebug}
+        onclick={() => (showDebug = !showDebug)}
         class:active={showDebug}
         title="Ver diagnóstico"
       >
         <AlertCircle size={16} />
       </button>
-      
-      <button 
-        class="action-btn copy-btn"
-        onclick={copyUrl}
-        title="Copiar URL"
-      >
-        {copied ? '✓' : 'Copy'}
+
+      <button class="action-btn copy-btn" onclick={copyUrl} title="Copiar URL">
+        {copied ? "✓" : "Copy"}
       </button>
     </div>
   </div>
 
   <!-- Tabs -->
   <div class="preview-tabs">
-    <button 
+    <button
       class="tab"
-      class:active={activeTab === 'whatsapp'}
-      onclick={() => activeTab = 'whatsapp'}
+      class:active={activeTab === "whatsapp"}
+      onclick={() => (activeTab = "whatsapp")}
     >
       <MessageCircle size={16} />
       <span>WhatsApp</span>
@@ -340,38 +342,38 @@
         <span class="tab-warning">!</span>
       {/if}
     </button>
-    
-    <button 
+
+    <button
       class="tab"
-      class:active={activeTab === 'telegram'}
-      onclick={() => activeTab = 'telegram'}
+      class:active={activeTab === "telegram"}
+      onclick={() => (activeTab = "telegram")}
     >
       <Send size={16} />
       <span>Telegram</span>
     </button>
-    
-    <button 
+
+    <button
       class="tab"
-      class:active={activeTab === 'facebook'}
-      onclick={() => activeTab = 'facebook'}
+      class:active={activeTab === "facebook"}
+      onclick={() => (activeTab = "facebook")}
     >
       <Facebook size={16} />
       <span>Facebook</span>
     </button>
-    
-    <button 
+
+    <button
       class="tab"
-      class:active={activeTab === 'twitter'}
-      onclick={() => activeTab = 'twitter'}
+      class:active={activeTab === "twitter"}
+      onclick={() => (activeTab = "twitter")}
     >
       <Twitter size={16} />
       <span>X / Twitter</span>
     </button>
-    
-    <button 
+
+    <button
       class="tab"
-      class:active={activeTab === 'linkedin'}
-      onclick={() => activeTab = 'linkedin'}
+      class:active={activeTab === "linkedin"}
+      onclick={() => (activeTab = "linkedin")}
     >
       <Linkedin size={16} />
       <span>LinkedIn</span>
@@ -381,7 +383,7 @@
   <!-- Content -->
   <div class="preview-content">
     <!-- WhatsApp Preview -->
-    {#if activeTab === 'whatsapp'}
+    {#if activeTab === "whatsapp"}
       <div class="whatsapp-preview">
         <div class="whatsapp-chat">
           <div class="whatsapp-header">
@@ -393,19 +395,19 @@
               <div class="whatsapp-status">en línea</div>
             </div>
           </div>
-          
+
           <div class="whatsapp-messages">
             <div class="whatsapp-bubble whatsapp-green">
               <div class="whatsapp-link-preview">
                 {#if ogImage}
                   <div class="whatsapp-image-container">
-                    <img 
-                      src={ogImage} 
-                      alt={currentData?.openGraph?.image?.alt || ''}
+                    <img
+                      src={ogImage}
+                      alt={currentData?.openGraph?.image?.alt || ""}
                       class="whatsapp-image"
                       crossorigin="anonymous"
                       onerror={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).style.display = "none";
                       }}
                     />
                   </div>
@@ -415,7 +417,7 @@
                     <span>Sin imagen</span>
                   </div>
                 {/if}
-                
+
                 <div class="whatsapp-text-content">
                   <div class="whatsapp-site">{ogSiteName}</div>
                   <div class="whatsapp-title">{ogTitle}</div>
@@ -423,15 +425,15 @@
                   <div class="whatsapp-domain">{domain}</div>
                 </div>
               </div>
-              
+
               <div class="whatsapp-time">
-                {new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                {new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
                 <span class="whatsapp-checks">✓✓</span>
               </div>
             </div>
           </div>
         </div>
-        
+
         {#if whatsAppStatus}
           <div class="validation-panel" class:valid={whatsAppStatus.isValid}>
             <div class="validation-header">
@@ -443,26 +445,26 @@
                 <span>Problemas detectados</span>
               {/if}
             </div>
-            
+
             <div class="validation-checks">
               <div class="check-item" class:pass={whatsAppStatus.checks.format}>
-                <span class="check-icon">{whatsAppStatus.checks.format ? '✓' : '✗'}</span>
+                <span class="check-icon">{whatsAppStatus.checks.format ? "✓" : "✗"}</span>
                 <span>Formato (JPG/PNG)</span>
               </div>
               <div class="check-item" class:pass={whatsAppStatus.checks.fileSize}>
-                <span class="check-icon">{whatsAppStatus.checks.fileSize ? '✓' : '✗'}</span>
+                <span class="check-icon">{whatsAppStatus.checks.fileSize ? "✓" : "✗"}</span>
                 <span>Tamaño &lt; 300KB</span>
               </div>
               <div class="check-item" class:pass={whatsAppStatus.checks.dimensions}>
-                <span class="check-icon">{whatsAppStatus.checks.dimensions ? '✓' : '✗'}</span>
+                <span class="check-icon">{whatsAppStatus.checks.dimensions ? "✓" : "✗"}</span>
                 <span>Dimensiones</span>
               </div>
               <div class="check-item" class:pass={whatsAppStatus.checks.isAbsoluteUrl}>
-                <span class="check-icon">{whatsAppStatus.checks.isAbsoluteUrl ? '✓' : '✗'}</span>
+                <span class="check-icon">{whatsAppStatus.checks.isAbsoluteUrl ? "✓" : "✗"}</span>
                 <span>URL absoluta</span>
               </div>
             </div>
-            
+
             {#if whatsAppStatus.warnings.length > 0}
               <div class="validation-warnings">
                 {#each whatsAppStatus.warnings as warning}
@@ -470,7 +472,7 @@
                 {/each}
               </div>
             {/if}
-            
+
             {#if whatsAppStatus.recommendations.length > 0}
               <div class="validation-recommendations">
                 <strong>Recomendaciones:</strong>
@@ -487,7 +489,7 @@
     {/if}
 
     <!-- Telegram Preview -->
-    {#if activeTab === 'telegram'}
+    {#if activeTab === "telegram"}
       <div class="telegram-preview">
         <div class="telegram-chat">
           <div class="telegram-header">
@@ -498,39 +500,39 @@
             </div>
             <div class="telegram-menu">⋮</div>
           </div>
-          
+
           <div class="telegram-messages">
             <div class="telegram-bubble">
               <div class="telegram-link-card">
                 {#if ogImage}
                   <div class="telegram-image-container">
-                    <img 
-                      src={ogImage} 
+                    <img
+                      src={ogImage}
                       alt=""
                       class="telegram-image"
                       crossorigin="anonymous"
                       onerror={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).style.display = "none";
                       }}
                     />
                   </div>
                 {/if}
-                
+
                 <div class="telegram-content">
                   <div class="telegram-title">{ogTitle}</div>
                   <div class="telegram-desc">{ogDescription}</div>
                   <div class="telegram-url">{domain}</div>
                 </div>
               </div>
-              
+
               <div class="telegram-time">
-                {new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                {new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
                 <span class="telegram-checks">✓✓</span>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="telegram-info-panel">
           <h4>ℹ️ Sobre Telegram</h4>
           <p>
@@ -543,26 +545,26 @@
             <li>✓ Soporta imágenes de alta resolución</li>
           </ul>
           <p class="telegram-note">
-            Sin embargo, se recomienda seguir los mismos estándares que WhatsApp
-            para asegurar compatibilidad cross-platform.
+            Sin embargo, se recomienda seguir los mismos estándares que WhatsApp para asegurar
+            compatibilidad cross-platform.
           </p>
         </div>
       </div>
     {/if}
 
     <!-- Facebook Preview -->
-    {#if activeTab === 'facebook'}
+    {#if activeTab === "facebook"}
       <div class="facebook-preview">
         <div class="facebook-card">
           {#if ogImage}
             <div class="facebook-image-container">
-              <img 
-                src={ogImage} 
-                alt={currentData?.openGraph?.image?.alt || ''}
+              <img
+                src={ogImage}
+                alt={currentData?.openGraph?.image?.alt || ""}
                 class="facebook-image"
                 crossorigin="anonymous"
                 onerror={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).style.display = "none";
                 }}
               />
             </div>
@@ -571,14 +573,14 @@
               <ImageIcon size={48} />
             </div>
           {/if}
-          
+
           <div class="facebook-content">
             <div class="facebook-domain">{domain.toUpperCase()}</div>
             <div class="facebook-title">{ogTitle}</div>
             <div class="facebook-desc">{ogDescription}</div>
           </div>
         </div>
-        
+
         <div class="external-tools">
           <button class="tool-link" onclick={openFacebookDebugger}>
             <ExternalLink size={14} />
@@ -589,7 +591,7 @@
     {/if}
 
     <!-- Twitter/X Preview -->
-    {#if activeTab === 'twitter'}
+    {#if activeTab === "twitter"}
       <div class="twitter-preview">
         <div class="twitter-card">
           <div class="twitter-header">
@@ -601,26 +603,24 @@
               <div class="twitter-handle">@usuario</div>
             </div>
           </div>
-          
-          <div class="twitter-text">
-            Mirá este artículo interesante 👇
-          </div>
-          
+
+          <div class="twitter-text">Mirá este artículo interesante 👇</div>
+
           <div class="twitter-link-card">
             {#if currentData?.twitterCard?.image || ogImage}
               <div class="twitter-image-container">
-                <img 
-                  src={currentData?.twitterCard?.image || ogImage} 
+                <img
+                  src={currentData?.twitterCard?.image || ogImage}
                   alt=""
                   class="twitter-image"
                   crossorigin="anonymous"
                   onerror={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).style.display = "none";
                   }}
                 />
               </div>
             {/if}
-            
+
             <div class="twitter-link-content">
               <div class="twitter-link-title">
                 {currentData?.twitterCard?.title || ogTitle}
@@ -634,7 +634,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="twitter-actions">
             <span class="twitter-action">💬 0</span>
             <span class="twitter-action">🔄 0</span>
@@ -642,7 +642,7 @@
             <span class="twitter-action">📤</span>
           </div>
         </div>
-        
+
         <div class="external-tools">
           <button class="tool-link" onclick={openTwitterValidator}>
             <ExternalLink size={14} />
@@ -653,23 +653,23 @@
     {/if}
 
     <!-- LinkedIn Preview -->
-    {#if activeTab === 'linkedin'}
+    {#if activeTab === "linkedin"}
       <div class="linkedin-preview">
         <div class="linkedin-card">
           {#if ogImage}
             <div class="linkedin-image-container">
-              <img 
-                src={ogImage} 
+              <img
+                src={ogImage}
                 alt=""
                 class="linkedin-image"
                 crossorigin="anonymous"
                 onerror={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).style.display = "none";
                 }}
               />
             </div>
           {/if}
-          
+
           <div class="linkedin-content">
             <div class="linkedin-title">{ogTitle}</div>
             <div class="linkedin-desc">{ogDescription}</div>
@@ -680,7 +680,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="external-tools">
           <button class="tool-link" onclick={openLinkedInInspector}>
             <ExternalLink size={14} />
@@ -697,10 +697,10 @@
       <div class="debug-title">
         Diagnóstico Técnico
         {#if comparisonMode}
-          <span class="debug-variant">({activeVariant === 'A' ? labelA : labelB})</span>
+          <span class="debug-variant">({activeVariant === "A" ? labelA : labelB})</span>
         {/if}
       </div>
-      
+
       <div class="debug-grid">
         <div class="debug-section">
           <div class="debug-label">Título SEO:</div>
@@ -708,61 +708,65 @@
             {currentData.title?.length || 0}/60 caracteres
           </div>
         </div>
-        
+
         <div class="debug-section">
           <div class="debug-label">Descripción:</div>
           <div class="debug-value" class:ok={(currentData.metaDescription?.length || 0) <= 160}>
             {currentData.metaDescription?.length || 0}/160 caracteres
           </div>
         </div>
-        
+
         <div class="debug-section">
           <div class="debug-label">OG Title:</div>
           <div class="debug-value" class:ok={(currentData.openGraph?.title?.length || 0) <= 88}>
             {currentData.openGraph?.title?.length || 0}/88 caracteres
           </div>
         </div>
-        
+
         <div class="debug-section">
           <div class="debug-label">OG Desc:</div>
-          <div class="debug-value" class:ok={(currentData.openGraph?.description?.length || 0) <= 200}>
+          <div
+            class="debug-value"
+            class:ok={(currentData.openGraph?.description?.length || 0) <= 200}
+          >
             {currentData.openGraph?.description?.length || 0}/200 caracteres
           </div>
         </div>
-        
+
         <div class="debug-section">
           <div class="debug-label">OG Image:</div>
           <div class="debug-value" class:ok={!!ogImage}>
-            {ogImage ? '✓ Presente' : '✗ Ausente'}
+            {ogImage ? "✓ Presente" : "✗ Ausente"}
           </div>
         </div>
-        
+
         {#if currentData.openGraph?.image}
           <div class="debug-section">
             <div class="debug-label">Dimensiones:</div>
             <div class="debug-value" class:ok={currentData.openGraph.image.width === 1200}>
-              {currentData.openGraph.image.width || '?'} x {currentData.openGraph.image.height || '?'} px
+              {currentData.openGraph.image.width || "?"} x {currentData.openGraph.image.height ||
+                "?"} px
             </div>
           </div>
         {/if}
-        
+
         <div class="debug-section">
           <div class="debug-label">URL:</div>
           <div class="debug-value truncate" title={canonicalUrl}>
             {formatUrl(canonicalUrl, 50)}
           </div>
         </div>
-        
+
         {#if currentData.whatsAppValidation}
           <div class="debug-section">
             <div class="debug-label">WhatsApp:</div>
             <div class="debug-value" class:ok={currentData.whatsAppValidation.isValid}>
-              {currentData.whatsAppValidation.isValid ? '✓ Compatible' : '✗ Con problemas'}
+              {currentData.whatsAppValidation.isValid ? "✓ Compatible" : "✗ Con problemas"}
             </div>
           </div>
         {/if}
       </div>
-      
+
       {#if comparisonMode && variantA && variantB}
         <div class="comparison-summary">
           <div class="comparison-title">📊 Resumen Comparación</div>
@@ -804,7 +808,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   /* Header */
@@ -924,8 +928,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Tabs */
@@ -1642,7 +1650,7 @@
     padding: 16px;
     background: #1f2937;
     color: #e5e7eb;
-    font-family: 'Monaco', 'Menlo', monospace;
+    font-family: "Monaco", "Menlo", monospace;
     font-size: 12px;
   }
 

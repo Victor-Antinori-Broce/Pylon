@@ -28,12 +28,7 @@
       "crm_deals",
       "crm_activities"
     ],
-    "enums": [
-      "crm_contact_status",
-      "crm_deal_status",
-      "crm_activity_type",
-      "crm_priority"
-    ]
+    "enums": ["crm_contact_status", "crm_deal_status", "crm_activity_type", "crm_priority"]
   },
   "features": [
     "contacts-management",

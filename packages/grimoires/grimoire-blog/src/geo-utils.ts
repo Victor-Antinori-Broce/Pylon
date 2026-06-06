@@ -1,15 +1,15 @@
 /**
  * GEO (Generative Engine Optimization) Utilities
- * 
+ *
  * Funciones para optimizar contenido para motores de IA y generar
  * rich snippets estructurados (Schema.org).
- * 
+ *
  * Incluye:
  * - Generación de JSON-LD (FAQPage, Article, BlogPosting)
  * - Validación de BLUF (Bottom Line Up Front)
  * - Sanitización de HTML para FAQs
  * - Extracción de tabla de contenidos (TOC)
- * 
+ *
  * ═══════════════════════════════════════════════════════════════════════════
  * REFERENCIAS:
  * ═══════════════════════════════════════════════════════════════════════════
@@ -50,12 +50,14 @@ export interface ArticleSchema {
   headline: string;
   description: string;
   url?: string;
-  image?: string | {
-    "@type": "ImageObject";
-    url: string;
-    width?: number;
-    height?: number;
-  };
+  image?:
+    | string
+    | {
+        "@type": "ImageObject";
+        url: string;
+        width?: number;
+        height?: number;
+      };
   datePublished: string;
   dateModified?: string;
   author?: {
@@ -108,21 +110,21 @@ export interface ValidationResult {
 
 /**
  * Generate FAQPage Schema.org JSON-LD from FAQ items
- * 
+ *
  * Esta función transforma el array de FAQs de la base de datos
  * en el formato estructurado requerido por Schema.org para
  * rich snippets en Google.
- * 
+ *
  * @param faqs - Array de FAQs desde la base de datos
  * @param baseUrl - URL base del sitio (para enlaces internos)
  * @returns Objeto JSON-LD listo para inyectar en <head>
- * 
+ *
  * @example
  * const faqs = [
  *   { q: "¿Qué es SEO?", a: "Es la optimización..." },
  *   { q: "¿Por qué es importante?", a: "Porque..." }
  * ];
- * 
+ *
  * const schema = generateFAQPageSchema(faqs);
  * // Inyectar en HTML: <script type="application/ld+json">
  */
@@ -146,7 +148,7 @@ export function generateFAQPageSchema(
       if (stripHtml) {
         answer = stripHtmlTags(answer);
       }
-      
+
       // Truncar respuesta si es muy larga (Google recomienda respuestas concisas)
       if (answer.length > maxAnswerLength) {
         answer = answer.substring(0, maxAnswerLength).trim() + "...";
@@ -166,10 +168,10 @@ export function generateFAQPageSchema(
 
 /**
  * Generate Article/BlogPosting Schema.org JSON-LD
- * 
+ *
  * @param data - Datos del artículo
  * @returns Schema JSON-LD completo
- * 
+ *
  * @example
  * const schema = generateArticleSchema({
  *   title: "Guía SEO 2024",
@@ -204,7 +206,7 @@ export function generateArticleSchema(data: {
     datePublished: new Date(data.publishedAt).toISOString(),
     abstract: data.bluf, // BLUF como abstract para IA
   };
-  
+
   // URL opcional
   if (data.url) {
     schema.url = data.url;
@@ -271,20 +273,20 @@ export function generateArticleSchema(data: {
 
 /**
  * Validar BLUF (Bottom Line Up Front)
- * 
+ *
  * El BLUF es un resumen conciso diseñado para:
  * 1. Ser extraído por IA como respuesta directa
  * 2. Cumplir con límites de longitud de snippets
- * 
+ *
  * Reglas de validación:
  * - Máximo 50 palabras (ideal: 30-40)
  * - Debe contener la respuesta principal
  * - No debe repetir el título
  * - Debe ser auto-contenido
- * 
+ *
  * @param bluf - Texto BLUF a validar
  * @returns Resultado de validación con métricas
- * 
+ *
  * @example
  * const result = validateBLUF(
  *   "El SEO en 2024 requiere contenido de calidad, " +
@@ -313,7 +315,7 @@ export function validateBLUF(bluf: string | null | undefined): ValidationResult 
 
   // Calcular métricas
   const cleanText = bluf.trim();
-  const words = cleanText.split(/\s+/).filter(w => w.length > 0);
+  const words = cleanText.split(/\s+/).filter((w) => w.length > 0);
   const wordCount = words.length;
   const charCount = cleanText.length;
   const readingTime = Math.ceil(wordCount / 200); // 200 WPM promedio
@@ -324,29 +326,29 @@ export function validateBLUF(bluf: string | null | undefined): ValidationResult 
   if (wordCount > 50) {
     result.errors.push(
       `BLUF excede el límite de 50 palabras (actual: ${wordCount}). ` +
-      "Las IAs truncan respuestas largas."
+        "Las IAs truncan respuestas largas."
     );
     result.isValid = false;
   } else if (wordCount > 40) {
     result.warnings.push(
       `BLUF tiene ${wordCount} palabras. ` +
-      "Considera reducir a 30-40 palabras para mejor extracción por IA."
+        "Considera reducir a 30-40 palabras para mejor extracción por IA."
     );
   }
 
   // Validar longitud mínima
   if (wordCount < 10) {
     result.warnings.push(
-      `BLUF tiene solo ${wordCount} palabras. ` +
-      "Podría ser insuficiente para contexto."
+      `BLUF tiene solo ${wordCount} palabras. ` + "Podría ser insuficiente para contexto."
     );
   }
 
   // Validar que no sea solo mayúsculas (spam indicator)
-  const upperCaseRatio = cleanText.replace(/[^a-zA-Z]/g, '').length > 0
-    ? cleanText.replace(/[^A-Z]/g, '').length / cleanText.replace(/[^a-zA-Z]/g, '').length
-    : 0;
-  
+  const upperCaseRatio =
+    cleanText.replace(/[^a-zA-Z]/g, "").length > 0
+      ? cleanText.replace(/[^A-Z]/g, "").length / cleanText.replace(/[^a-zA-Z]/g, "").length
+      : 0;
+
   if (upperCaseRatio > 0.7) {
     result.warnings.push("Evita usar MAYÚSCULAS excesivas en el BLUF");
   }
@@ -366,7 +368,7 @@ export function validateBLUF(bluf: string | null | undefined): ValidationResult 
 
 /**
  * Sugerir mejora para BLUF basado en el contenido
- * 
+ *
  * @param content - Contenido completo del artículo
  * @param maxWords - Máximo de palabras (default: 50)
  * @returns BLUF sugerido extraído del primer párrafo
@@ -374,29 +376,29 @@ export function validateBLUF(bluf: string | null | undefined): ValidationResult 
 export function suggestBLUF(content: string, maxWords: number = 50): string {
   // Extraer primer párrafo significativo
   const paragraphs = content
-    .replace(/<[^>]+>/g, ' ') // Limpiar HTML
+    .replace(/<[^>]+>/g, " ") // Limpiar HTML
     .split(/\n\s*\n/)
-    .map(p => p.trim())
-    .filter(p => p.length > 50); // Ignorar párrafos muy cortos
+    .map((p) => p.trim())
+    .filter((p) => p.length > 50); // Ignorar párrafos muy cortos
 
   if (paragraphs.length === 0) return "";
 
   const firstParagraph = paragraphs[0];
   const words = firstParagraph.split(/\s+/);
-  
+
   if (words.length <= maxWords) {
     return firstParagraph;
   }
 
   // Truncar a límite de palabras, terminando en frase completa
-  const truncated = words.slice(0, maxWords).join(' ');
-  const lastPeriod = truncated.lastIndexOf('.');
-  
+  const truncated = words.slice(0, maxWords).join(" ");
+  const lastPeriod = truncated.lastIndexOf(".");
+
   if (lastPeriod > truncated.length * 0.7) {
     return truncated.substring(0, lastPeriod + 1);
   }
 
-  return truncated + '...';
+  return truncated + "...";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -405,50 +407,73 @@ export function suggestBLUF(content: string, maxWords: number = 50): string {
 
 /**
  * Etiquetas HTML permitidas para FAQs y contenido
- * 
+ *
  * Lista blanca de etiquetas seguras que permiten estructura
  * sin riesgo de XSS.
  */
 export const ALLOWED_HTML_TAGS = [
   // Estructura de texto
-  'p', 'br', 'hr',
+  "p",
+  "br",
+  "hr",
   // Formato inline
-  'strong', 'b', 'em', 'i', 'u', 'mark', 'small', 'del', 'ins',
+  "strong",
+  "b",
+  "em",
+  "i",
+  "u",
+  "mark",
+  "small",
+  "del",
+  "ins",
   // Enlaces (se validan separadamente)
-  'a',
+  "a",
   // Listas
-  'ul', 'ol', 'li',
+  "ul",
+  "ol",
+  "li",
   // Tablas (para comparaciones)
-  'table', 'thead', 'tbody', 'tr', 'th', 'td', 'caption',
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
+  "caption",
   // Encabezados (limitados)
-  'h3', 'h4',
+  "h3",
+  "h4",
   // Otros
-  'blockquote', 'code', 'pre', 'sup', 'sub',
+  "blockquote",
+  "code",
+  "pre",
+  "sup",
+  "sub",
 ] as const;
 
 /**
  * Atributos HTML permitidos por etiqueta
  */
 export const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
-  'a': ['href', 'title', 'rel'],
-  'img': ['src', 'alt', 'width', 'height'],
-  'th': ['scope', 'colspan', 'rowspan'],
-  'td': ['colspan', 'rowspan'],
-  '*': ['class'], // Clases permitidas en todas las etiquetas
+  a: ["href", "title", "rel"],
+  img: ["src", "alt", "width", "height"],
+  th: ["scope", "colspan", "rowspan"],
+  td: ["colspan", "rowspan"],
+  "*": ["class"], // Clases permitidas en todas las etiquetas
 };
 
 /**
  * URLs permitidas en href (prevenir javascript:)
  */
-const ALLOWED_URL_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:'];
+const ALLOWED_URL_SCHEMES = ["http:", "https:", "mailto:", "tel:"];
 
 /**
  * Sanitizar HTML permitiendo solo etiquetas seguras
- * 
+ *
  * @param html - HTML a sanitizar
  * @param allowedTags - Lista de etiquetas permitidas (default: ALLOWED_HTML_TAGS)
  * @returns HTML sanitizado
- * 
+ *
  * @example
  * const dirty = '<p>Texto</p><script>alert("xss")</script>';
  * const clean = sanitizeHTML(dirty);
@@ -468,13 +493,13 @@ export function sanitizeHTML(
   }
 
   // Crear un DOM parser (funciona en browser, para Node usar jsdom o similar)
-  if (typeof DOMParser === 'undefined') {
+  if (typeof DOMParser === "undefined") {
     // Fallback simple para Node.js
     return stripHtmlTags(html);
   }
 
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(html, "text/html");
 
   function sanitizeNode(node: Node): Node | null {
     // Text nodes se mantienen
@@ -489,7 +514,7 @@ export function sanitizeHTML(
 
       // Si la etiqueta no está permitida, solo mantener contenido de texto
       if (!allowedTags.includes(tagName)) {
-        const text = document.createTextNode(element.textContent || '');
+        const text = document.createTextNode(element.textContent || "");
         return text;
       }
 
@@ -497,24 +522,24 @@ export function sanitizeHTML(
       const cleanElement = document.createElement(tagName);
 
       // Copiar atributos permitidos
-      const allowedAttrs = ALLOWED_ATTRIBUTES[tagName] || ALLOWED_ATTRIBUTES['*'] || [];
-      
-      Array.from(element.attributes).forEach(attr => {
+      const allowedAttrs = ALLOWED_ATTRIBUTES[tagName] || ALLOWED_ATTRIBUTES["*"] || [];
+
+      Array.from(element.attributes).forEach((attr) => {
         const attrName = attr.name.toLowerCase();
-        
+
         if (allowedAttrs.includes(attrName)) {
-          let attrValue = attr.value;
+          const attrValue = attr.value;
 
           // Validar URLs en href/src
-          if (attrName === 'href' || attrName === 'src') {
+          if (attrName === "href" || attrName === "src") {
             try {
-              const url = new URL(attrValue, 'http://example.com');
+              const url = new URL(attrValue, "http://example.com");
               if (!ALLOWED_URL_SCHEMES.includes(url.protocol)) {
                 return; // Skip atributo con URL inválida
               }
               // Agregar rel="nofollow" a enlaces externos
-              if (attrName === 'href' && tagName === 'a') {
-                cleanElement.setAttribute('rel', 'nofollow noopener');
+              if (attrName === "href" && tagName === "a") {
+                cleanElement.setAttribute("rel", "nofollow noopener");
               }
             } catch {
               return; // Skip atributo con URL malformada
@@ -526,7 +551,7 @@ export function sanitizeHTML(
       });
 
       // Recursivamente sanitizar hijos
-      Array.from(element.childNodes).forEach(child => {
+      Array.from(element.childNodes).forEach((child) => {
         const cleanChild = sanitizeNode(child);
         if (cleanChild) {
           cleanElement.appendChild(cleanChild);
@@ -540,8 +565,8 @@ export function sanitizeHTML(
   }
 
   // Sanitizar body
-  const cleanBody = document.createElement('div');
-  Array.from(doc.body.childNodes).forEach(child => {
+  const cleanBody = document.createElement("div");
+  Array.from(doc.body.childNodes).forEach((child) => {
     const cleanChild = sanitizeNode(child);
     if (cleanChild) {
       cleanBody.appendChild(cleanChild);
@@ -554,30 +579,30 @@ export function sanitizeHTML(
 /**
  * Versión simple de sanitización para Node.js (sin DOM)
  * Elimina todas las etiquetas HTML
- * 
+ *
  * @param html - HTML a limpiar
  * @returns Texto plano
  */
 export function stripHtmlTags(html: string): string {
-  if (!html) return '';
-  
+  if (!html) return "";
+
   return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
 /**
  * Sanitizar específicamente para FAQs (más restrictivo)
- * 
+ *
  * @param text - Texto a sanitizar
  * @returns HTML limpio para FAQ
  */
 export function sanitizeFAQText(text: string): string {
   // Permitir solo formato básico en FAQs
-  const allowedFAQTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'a', 'code'];
+  const allowedFAQTags = ["p", "br", "strong", "b", "em", "i", "a", "code"];
   return sanitizeHTML(text, { allowedTags: allowedFAQTags });
 }
 
@@ -587,7 +612,7 @@ export function sanitizeFAQText(text: string): string {
 
 /**
  * Extraer tabla de contenidos desde contenido Lexical o HTML
- * 
+ *
  * @param content - Contenido (Lexical JSON o HTML)
  * @returns Array de items de TOC
  */
@@ -597,9 +622,9 @@ export function extractTOC(content: any): TOCItem[] {
   if (!content) return toc;
 
   // Si es Lexical format
-  if (typeof content === 'object' && content.root) {
+  if (typeof content === "object" && content.root) {
     extractLexicalHeadings(content.root, toc);
-  } else if (typeof content === 'string') {
+  } else if (typeof content === "string") {
     // Si es HTML
     extractHTMLHeadings(content, toc);
   }
@@ -611,8 +636,8 @@ function extractLexicalHeadings(node: any, toc: TOCItem[]): void {
   if (!node) return;
 
   // Heading nodes en Lexical
-  if (node.type === 'heading' && node.tag) {
-    const level = parseInt(node.tag.replace('h', ''));
+  if (node.type === "heading" && node.tag) {
+    const level = parseInt(node.tag.replace("h", ""));
     const text = extractTextFromLexicalNode(node);
     if (text && level >= 2 && level <= 4) {
       toc.push({
@@ -647,24 +672,24 @@ function extractHTMLHeadings(html: string, toc: TOCItem[]): void {
 }
 
 function extractTextFromLexicalNode(node: any): string {
-  if (!node) return '';
-  
+  if (!node) return "";
+
   if (node.text) return node.text;
-  
+
   if (node.children && Array.isArray(node.children)) {
-    return node.children.map(extractTextFromLexicalNode).join('');
+    return node.children.map(extractTextFromLexicalNode).join("");
   }
-  
-  return '';
+
+  return "";
 }
 
 function slugify(text: string): string {
   return text
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
     .substring(0, 50);
 }
 
@@ -674,20 +699,20 @@ function slugify(text: string): string {
 
 /**
  * Construir payload de API optimizado para frontend
- * 
+ *
  * Esta función organiza todos los datos del post en la estructura
  * óptima para consumo por Astro, React, Vue, etc.
- * 
+ *
  * @param post - Post desde la base de datos
  * @param options - Opciones de configuración
  * @returns Payload estructurado
- * 
+ *
  * @example
  * const payload = buildAPIPayload(post, {
  *   baseUrl: "https://misitio.com",
  *   siteName: "Mi Blog"
  * });
- * 
+ *
  * // En frontend:
  * <title>{payload.seo.title}</title>
  * <meta name="description" content={payload.seo.description} />
@@ -757,46 +782,42 @@ export function buildAPIPayload(
   };
 } {
   const { baseUrl, siteName, stripHtmlFromBluf = true } = options;
-  
+
   // Construir URL canónica
-  const canonicalUrl = `${baseUrl.replace(/\/$/, '')}/blog/${post.slug}`;
-  
+  const canonicalUrl = `${baseUrl.replace(/\/$/, "")}/blog/${post.slug}`;
+
   // Preparar BLUF
-  let bluf: string = post.blufText || post.excerpt || '';
+  let bluf: string = post.blufText || post.excerpt || "";
   if (stripHtmlFromBluf) {
     bluf = stripHtmlTags(bluf);
   }
   // Asegurar que nunca sea null
-  bluf = bluf || '';
-  
+  bluf = bluf || "";
+
   // Contar palabras del contenido
-  const contentText = typeof post.content === 'string' 
-    ? post.content 
-    : JSON.stringify(post.content);
-  const wordCount = contentText.split(/\s+/).filter(w => w.length > 0).length;
-  
+  const contentText =
+    typeof post.content === "string" ? post.content : JSON.stringify(post.content);
+  const wordCount = contentText.split(/\s+/).filter((w) => w.length > 0).length;
+
   // Generar FAQ schema
-  const faqSchema = post.faqData && post.faqData.length > 0
-    ? generateFAQPageSchema(post.faqData)
-    : undefined;
-  
+  const faqSchema =
+    post.faqData && post.faqData.length > 0 ? generateFAQPageSchema(post.faqData) : undefined;
+
   return {
     id: post.id,
     slug: post.slug,
     status: post.status,
-    publishedAt: post.publishedAt 
-      ? new Date(post.publishedAt).toISOString() 
-      : undefined,
+    publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined,
     updatedAt: new Date(post.updatedAt || Date.now()).toISOString(),
     author: post.author,
-    
+
     seo: {
       title: post.metaTitle || `${post.title} | ${siteName}`,
-      description: post.metaDescription || post.excerpt || '',
+      description: post.metaDescription || post.excerpt || "",
       canonicalUrl,
-      ogImage: post.ogImageId 
+      ogImage: post.ogImageId
         ? getOGImageUrl(post.ogImageId, post.featuredImageFocalPoint || undefined, baseUrl)
-        : post.featuredImageId 
+        : post.featuredImageId
           ? getOGImageUrl(post.featuredImageId, post.featuredImageFocalPoint || undefined, baseUrl)
           : undefined,
       ogImageWidth: 1200,
@@ -804,7 +825,7 @@ export function buildAPIPayload(
       featuredImageId: post.featuredImageId ?? undefined,
       featuredImageFocalPoint: post.featuredImageFocalPoint ?? undefined,
     },
-    
+
     geo_ai: {
       bluf,
       schema_faq: faqSchema,
@@ -812,7 +833,7 @@ export function buildAPIPayload(
       reading_time: post.readingTime || Math.ceil(wordCount / 200),
       word_count: wordCount,
     },
-    
+
     content: {
       body: post.content,
       excerpt: post.excerpt ?? undefined,
@@ -829,21 +850,21 @@ export default {
   // JSON-LD Generators
   generateFAQPageSchema,
   generateArticleSchema,
-  
+
   // BLUF Utilities
   validateBLUF,
   suggestBLUF,
-  
+
   // HTML Sanitization
   sanitizeHTML,
   stripHtmlTags,
   sanitizeFAQText,
   ALLOWED_HTML_TAGS,
   ALLOWED_ATTRIBUTES,
-  
+
   // TOC
   extractTOC,
-  
+
   // API Builder
   buildAPIPayload,
 };

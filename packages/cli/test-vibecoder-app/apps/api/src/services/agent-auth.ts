@@ -10,18 +10,21 @@
  * - Auditoría de uso
  */
 
+import { createHash, randomBytes } from "crypto";
+
+import { eq, and, sql } from "drizzle-orm";
+
 import { db } from "../db";
 import { agentIdentities, agentApiKeys } from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import { createHash, randomBytes } from "crypto";
+import { 
+  generateAgentApiKey as generateTypedAgentApiKey
+} from "../utils/id-generator";
+
 import { 
   logAuthSuccess, 
   logAuthFailure, 
   logRateLimited
 } from "./agent-audit";
-import { 
-  generateAgentApiKey as generateTypedAgentApiKey
-} from "../utils/id-generator";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -468,8 +471,8 @@ export async function listAgents() {
 // MIDDLEWARE FACTORY
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { MiddlewareHandler } from "hono";
-import type { Context, Next } from "hono";
+import type { MiddlewareHandler , Context, Next } from "hono";
+
 
 /**
  * Extiende el contexto de Hono con agente

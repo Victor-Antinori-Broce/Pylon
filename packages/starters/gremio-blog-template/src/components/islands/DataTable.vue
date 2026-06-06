@@ -55,7 +55,9 @@ const filtered = computed(() => {
   for (const [key, val] of Object.entries(colFilters.value)) {
     if (!val) continue;
     result = result.filter((e) =>
-      String(e.data[key] ?? "").toLowerCase().includes(val.toLowerCase())
+      String(e.data[key] ?? "")
+        .toLowerCase()
+        .includes(val.toLowerCase())
     );
   }
   if (sortField.value) {
@@ -63,9 +65,9 @@ const filtered = computed(() => {
     result.sort((a, b) => {
       const av = a.data[f] ?? "";
       const bv = b.data[f] ?? "";
-      const an = Number(av), bn = Number(bv);
-      if (!isNaN(an) && !isNaN(bn))
-        return sortDir.value === "asc" ? an - bn : bn - an;
+      const an = Number(av),
+        bn = Number(bv);
+      if (!isNaN(an) && !isNaN(bn)) return sortDir.value === "asc" ? an - bn : bn - an;
       return sortDir.value === "asc"
         ? String(av).localeCompare(String(bv))
         : String(bv).localeCompare(String(av));
@@ -76,7 +78,10 @@ const filtered = computed(() => {
 
 function getSelectOptions(f: SchemaField): string[] {
   if (!f.options) return [];
-  return f.options.split(",").map((s) => s.trim()).filter(Boolean);
+  return f.options
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function cell(val: unknown, type: string): string {
@@ -97,8 +102,18 @@ function cell(val: unknown, type: string): string {
           :placeholder="`Search ${dataSetName}...`"
           class="w-full rounded-md border border-gremius-border bg-gremius-surface px-4 py-2.5 pl-10 text-sm text-gremius-text placeholder-gremius-muted outline-none transition-colors focus:border-gremius-cyan"
         />
-        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gremius-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <svg
+          class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gremius-muted"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
       </div>
       <span class="text-sm text-gremius-muted">
@@ -111,7 +126,11 @@ function cell(val: unknown, type: string): string {
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-gremius-border bg-gremius-surface">
-            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gremius-muted">#</th>
+            <th
+              class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gremius-muted"
+            >
+              #
+            </th>
             <th
               v-for="f in schema"
               :key="f.fieldName"
@@ -120,7 +139,9 @@ function cell(val: unknown, type: string): string {
             >
               <span class="flex items-center gap-1.5">
                 {{ f.fieldName }}
-                <span v-if="sortField === fieldSlug(f)" class="text-gremius-cyan">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+                <span v-if="sortField === fieldSlug(f)" class="text-gremius-cyan">{{
+                  sortDir === "asc" ? "↑" : "↓"
+                }}</span>
               </span>
             </th>
           </tr>
@@ -167,7 +188,7 @@ function cell(val: unknown, type: string): string {
                 v-else-if="f.fieldType === 'boolean'"
                 :class="entry.data[fieldSlug(f)] ? 'text-gremius-green' : 'text-gremius-muted'"
               >
-                {{ entry.data[fieldSlug(f)] ? '✓' : '✗' }}
+                {{ entry.data[fieldSlug(f)] ? "✓" : "✗" }}
               </span>
               <span v-else class="text-gremius-text">
                 {{ cell(entry.data[fieldSlug(f)], f.fieldType) }}

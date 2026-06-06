@@ -5,11 +5,10 @@
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
+
 import { app } from "../index";
-import {
-  isDatabaseAvailable,
-  generateTestId,
-} from "./setup";
+
+import { isDatabaseAvailable, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
@@ -62,7 +61,7 @@ describe("Grimoire Games HTTP", () => {
       expect([200, 404]).toContain(res.status);
 
       if (res.status === 200) {
-        const body = await res.json() as any;
+        const body = (await res.json()) as any;
         expect(Array.isArray(body.docs) || Array.isArray(body)).toBe(true);
       }
     });
@@ -108,9 +107,7 @@ describe("Grimoire Games HTTP", () => {
     it("GET /api/games/:id/platforms → game platforms or 404", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(
-        req(`/api/games/${generateTestId()}/platforms`, {}, cookie)
-      );
+      const res = await app.request(req(`/api/games/${generateTestId()}/platforms`, {}, cookie));
       expect([200, 404]).toContain(res.status);
     });
   });

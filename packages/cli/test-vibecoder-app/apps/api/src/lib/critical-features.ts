@@ -11,10 +11,12 @@
  */
 
 import type { Hono } from "hono";
+
 import type { AppVariables } from "../types/hono";
+
+import { observabilityRoutes } from "./observability";
 import { globalRateLimit, rateLimit, rateLimitRoutes } from "./rate-limiter";
 import { searchRoutes } from "./search";
-import { observabilityRoutes } from "./observability";
 
 /**
  * Registra todas las rutas críticas en la app Hono

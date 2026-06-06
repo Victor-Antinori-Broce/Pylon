@@ -43,6 +43,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import type { PgTable, PgColumn } from "drizzle-orm/pg-core";
+
 import { db } from "../../../apps/api/src/db";
 import * as schema from "../../../apps/api/src/db/schema";
 
@@ -227,7 +228,6 @@ function initializeRelations(): void {
     targetColumn: "id",
     targetTable: schema.dataSets,
   });
-
 }
 
 // Inicializar relaciones al importar
@@ -261,10 +261,7 @@ function isFieldAllowed(field: string): boolean {
  * { status: "active", id: { $gt: 100 } }
  * → and(eq(table.status, "active"), gt(table.id, 100))
  */
-function parseWhereClause(
-  table: PgTable,
-  where: Record<string, any>
-): SQL | undefined {
+function parseWhereClause(table: PgTable, where: Record<string, any>): SQL | undefined {
   const conditions: SQL[] = [];
 
   for (const [key, value] of Object.entries(where)) {
@@ -297,11 +294,7 @@ function parseWhereClause(
   return and(...conditions) as SQL;
 }
 
-function buildOperatorCondition(
-  column: PgColumn,
-  operator: string,
-  value: any
-): SQL | undefined {
+function buildOperatorCondition(column: PgColumn, operator: string, value: any): SQL | undefined {
   switch (operator) {
     case "$eq":
       return eq(column, value);
@@ -346,10 +339,7 @@ function buildOperatorCondition(
  *
  * Esto evita N+1 y es más eficiente que múltiples JOINs para relaciones 1:N.
  */
-async function executeWithExpansions<T>(
-  options: QueryOptions,
-  baseQuery: any
-): Promise<T[]> {
+async function executeWithExpansions<T>(options: QueryOptions, baseQuery: any): Promise<T[]> {
   const { table, expand = [] } = options;
   const tableName = getTableName(table);
 
@@ -426,10 +416,7 @@ async function loadRelation(
     const fkColumn = getColumn(relation.table, relation.fkColumn);
     if (!fkColumn) return result;
 
-    const rows = await db
-      .select()
-      .from(relation.table)
-      .where(inArray(fkColumn, parentIds));
+    const rows = await db.select().from(relation.table).where(inArray(fkColumn, parentIds));
 
     // Agrupar por parentId
     for (const row of rows) {
@@ -462,9 +449,7 @@ async function loadRelation(
  * });
  * ```
  */
-export async function parseQuery<T = any>(
-  options: QueryOptions
-): Promise<QueryResult<T>> {
+export async function parseQuery<T = any>(options: QueryOptions): Promise<QueryResult<T>> {
   const { table, where, limit = 50, offset = 0, orderBy } = options;
 
   // Construir query base

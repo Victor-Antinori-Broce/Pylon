@@ -1,14 +1,16 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
+  import type { DatasetDefinition } from "@gremius/shared";
+  import { ArrowLeft, Loader2, AlertCircle } from "lucide-svelte";
   import { onMount } from "svelte";
+
   import SchemaBuilder from "$lib/components/datasets/SchemaBuilder.svelte";
   import { datasetStore } from "$lib/states/datasets.svelte";
-  import { ArrowLeft, Loader2, AlertCircle } from "lucide-svelte";
-  import type { DatasetDefinition } from "@gremius/shared";
+
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
   const datasetId = $derived($page.params.id);
-  
+
   let loading = $state(true);
   let error = $state<string | null>(null);
   let saving = $state(false);
@@ -25,7 +27,7 @@
   async function loadDataset() {
     loading = true;
     error = null;
-    
+
     try {
       const data = await datasetStore.fetchDatasetById(datasetId);
       if (data) {
@@ -43,7 +45,7 @@
   async function handleSave(datasetSchema: DatasetDefinition) {
     saving = true;
     error = null;
-    
+
     try {
       const updated = await datasetStore.updateDataset(datasetId, {
         name: datasetSchema.name,
@@ -55,7 +57,7 @@
         policyJson: datasetSchema.policyJson,
         workflowJson: datasetSchema.workflowJson,
       } as any);
-      
+
       if (updated) {
         goto("/datasets");
       } else {
@@ -80,8 +82,8 @@
 <div class="space-y-6 animate-fade-in pb-20">
   <!-- Header -->
   <div class="flex items-center gap-4">
-    <button 
-      class="btn-icon p-2 hover:bg-gremius-surface rounded-lg transition-colors text-gremius-subtle" 
+    <button
+      class="btn-icon p-2 hover:bg-gremius-surface rounded-lg transition-colors text-gremius-subtle"
       onclick={goBack}
     >
       <ArrowLeft class="w-5 h-5" />
@@ -104,7 +106,9 @@
 
   <!-- Error Message -->
   {#if error}
-    <div class="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-3">
+    <div
+      class="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-3"
+    >
       <AlertCircle class="w-5 h-5" />
       {error}
     </div>
@@ -120,17 +124,15 @@
     <div class="card p-12 text-center">
       <div class="text-4xl mb-3">😕</div>
       <p class="text-gremius-text-dim">Dataset not found</p>
-      <button onclick={goBack} class="btn-primary mt-4">
-        Back to Datasets
-      </button>
+      <button onclick={goBack} class="btn-primary mt-4"> Back to Datasets </button>
     </div>
   {:else}
     <div class="card p-6 border-gremius-cyan/20">
-      <SchemaBuilder 
+      <SchemaBuilder
         definition={dataset}
         {allDatasets}
-        onSave={handleSave} 
-        onCancel={handleCancel} 
+        onSave={handleSave}
+        onCancel={handleCancel}
       />
     </div>
   {/if}
@@ -141,11 +143,11 @@
     @apply px-4 py-2 bg-gremius-cyan text-black rounded-lg font-medium 
            hover:bg-gremius-cyan-hover transition-colors;
   }
-  
+
   .btn-icon {
     @apply p-2 rounded-lg transition-colors;
   }
-  
+
   .card {
     @apply bg-gremius-card border border-gremius-border rounded-xl;
   }

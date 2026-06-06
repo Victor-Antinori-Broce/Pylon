@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { Save, Check, AlertCircle, ChevronDown } from "lucide-svelte";
   import { autosaveStore } from "$lib/states/autosave.svelte";
+  import { Save, Check, AlertCircle, ChevronDown } from "lucide-svelte";
+
   import VersionHistory from "./VersionHistory.svelte";
 
   let showDropdown = $state(false);

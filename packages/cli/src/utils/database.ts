@@ -1,9 +1,10 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import path from 'path';
+import path from "path";
+
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 export async function loadDatabase() {
-  const configPath = path.resolve('gremius.config.ts');
+  const configPath = path.resolve("gremius.config.ts");
   let config: any = {};
 
   try {
@@ -16,7 +17,7 @@ export async function loadDatabase() {
   const connectionString =
     config.database?.connectionString ||
     process.env.DATABASE_URL ||
-    'postgres://postgres:postgres@localhost:5432/gremius';
+    "postgres://postgres:postgres@localhost:5432/gremius";
 
   const client = postgres(connectionString, { max: 1 });
   const db = drizzle(client);

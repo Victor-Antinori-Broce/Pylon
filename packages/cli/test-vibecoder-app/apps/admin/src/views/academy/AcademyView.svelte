@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { api } from "$lib/api";
   import { 
     Plus, 
     ChevronRight, 
@@ -11,7 +11,7 @@
     Award,
     Route
   } from "lucide-svelte";
-  import { api } from "$lib/api";
+  import { onMount } from "svelte";
 
   interface Stats {
     totalCursos: number;

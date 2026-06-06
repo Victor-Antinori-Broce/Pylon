@@ -1,12 +1,12 @@
 // @ts-ignore
-import sharp, { type Sharp, type OutputInfo } from 'sharp';
+import sharp, { type Sharp, type OutputInfo } from "sharp";
 
 export interface TransformOptions {
   width?: number;
   height?: number;
-  fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
-  position?: 'center' | 'top' | 'right' | 'bottom' | 'left' | 'entropy' | 'attention';
-  format?: 'jpeg' | 'png' | 'webp' | 'avif' | 'gif' | 'auto';
+  fit?: "cover" | "contain" | "fill" | "inside" | "outside";
+  position?: "center" | "top" | "right" | "bottom" | "left" | "entropy" | "attention";
+  format?: "jpeg" | "png" | "webp" | "avif" | "gif" | "auto";
   quality?: number;
   progressive?: boolean;
   focalPoint?: { x: number; y: number }; // 0-1
@@ -48,7 +48,7 @@ export class ImageTransformer {
     }
 
     // Apply format conversion
-    if (options.format && options.format !== 'auto') {
+    if (options.format && options.format !== "auto") {
       pipeline = this.applyFormat(pipeline, options);
     }
 
@@ -59,7 +59,7 @@ export class ImageTransformer {
     return {
       buffer,
       info: info as unknown as OutputInfo,
-      format: info.format || 'unknown',
+      format: info.format || "unknown",
     };
   }
 
@@ -73,7 +73,7 @@ export class ImageTransformer {
     };
 
     // Handle focal point for smart cropping
-    if (options.focalPoint && options.fit === 'cover') {
+    if (options.focalPoint && options.fit === "cover") {
       const cropRegion = this.calculateFocalCrop(
         this.originalMetadata!.width!,
         this.originalMetadata!.height!,
@@ -83,7 +83,7 @@ export class ImageTransformer {
       );
 
       pipeline = pipeline.extract(cropRegion);
-      resizeOptions.fit = 'fill';
+      resizeOptions.fit = "fill";
       delete resizeOptions.position;
     }
 
@@ -125,19 +125,19 @@ export class ImageTransformer {
     const quality = options.quality ?? 80;
 
     switch (format) {
-      case 'jpeg':
+      case "jpeg":
         return pipeline.jpeg({
           quality,
           progressive: options.progressive ?? true,
           mozjpeg: true,
         });
-      case 'png':
+      case "png":
         return pipeline.png({ progressive: options.progressive ?? true });
-      case 'webp':
+      case "webp":
         return pipeline.webp({ quality, effort: 4 });
-      case 'avif':
+      case "avif":
         return pipeline.avif({ quality, effort: 4 });
-      case 'gif':
+      case "gif":
         return pipeline.gif();
       default:
         return pipeline;
@@ -167,9 +167,11 @@ export class ImageTransformer {
     if (options.format) parts.push(options.format);
     if (options.quality) parts.push(`q${options.quality}`);
     if (options.focalPoint) {
-      parts.push(`fp${Math.round(options.focalPoint.x * 100)}_${Math.round(options.focalPoint.y * 100)}`);
+      parts.push(
+        `fp${Math.round(options.focalPoint.x * 100)}_${Math.round(options.focalPoint.y * 100)}`
+      );
     }
-    return parts.join('_') || 'original';
+    return parts.join("_") || "original";
   }
 }
 
@@ -177,9 +179,16 @@ export class ImageTransformer {
  * Default transform presets
  */
 export const transformPresets: Record<string, TransformOptions> = {
-  thumbnail: { width: 150, height: 150, fit: 'cover', format: 'webp', quality: 80 },
-  small: { width: 400, height: 300, fit: 'inside', format: 'webp', quality: 85 },
-  medium: { width: 800, height: 600, fit: 'inside', format: 'webp', quality: 85 },
-  large: { width: 1200, height: 800, fit: 'inside', format: 'webp', quality: 90 },
-  hero: { width: 1920, height: 1080, fit: 'cover', position: 'attention', format: 'webp', quality: 90 },
+  thumbnail: { width: 150, height: 150, fit: "cover", format: "webp", quality: 80 },
+  small: { width: 400, height: 300, fit: "inside", format: "webp", quality: 85 },
+  medium: { width: 800, height: 600, fit: "inside", format: "webp", quality: 85 },
+  large: { width: 1200, height: 800, fit: "inside", format: "webp", quality: 90 },
+  hero: {
+    width: 1920,
+    height: 1080,
+    fit: "cover",
+    position: "attention",
+    format: "webp",
+    quality: 90,
+  },
 };

@@ -9,7 +9,14 @@
     "build": "pnpm exec tsc",
     "dev": "pnpm exec tsc --watch"
   },
-  "keywords": ["gremius", "grimoire", "agile", "kanban", "scrum", "project-management"],
+  "keywords": [
+    "gremius",
+    "grimoire",
+    "agile",
+    "kanban",
+    "scrum",
+    "project-management"
+  ],
   "author": "Gremius Team",
   "license": "MIT",
   "devDependencies": {

@@ -18,7 +18,7 @@
     onMount?: () => void;
   }
   
-  let { component, props = {}, class: className = "", onMount }: Props = $props();
+  const { component, props = {}, class: className = "", onMount }: Props = $props();
   
   // Referencia al componente instanciado
   let componentRef: any = $state(null);

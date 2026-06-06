@@ -1,16 +1,16 @@
 /**
  * Grimoire View Registry — Legacy Override System
- * 
+ *
  * ⚠️ DEPRECATION WARNING: This file is gradually being replaced by auto-detection.
- * 
+ *
  * NEW APPROACH (Zero Config):
  * - Create file at: packages/admin/src/views/{grimoire}/{PascalCase}View.svelte
  * - The system auto-detects it via /api/admin/registry endpoint
- * 
+ *
  * This file now serves as:
  * 1. OVERRIDE registry for complex views that need special handling
  * 2. BACKWARD COMPATIBILITY for existing custom views
- * 
+ *
  * Examples of when to use this registry:
  * - Views that need special import paths
  * - Views with circular dependencies
@@ -26,11 +26,9 @@ import type { Component } from "svelte";
 export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Component }>> = {
   // Complex views with special requirements
 
-
-  
   // Games uses a special layout
   games: () => import("$views/games/GamesView.svelte"),
-  
+
   // NOTE: Other grimoires will use auto-detection
   // Just create: packages/admin/src/views/{grimoire}/{Grimoire}View.svelte
 };

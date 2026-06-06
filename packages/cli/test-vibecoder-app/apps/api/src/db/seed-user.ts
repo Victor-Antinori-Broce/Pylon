@@ -1,8 +1,11 @@
 // @ts-nocheck
-import { auth } from "../lib/auth";
-import { db } from "./index";
-import { authUsers as user } from "./schema";
 import { eq } from "drizzle-orm";
+
+import { auth } from "../lib/auth";
+
+import { authUsers as user } from "./schema";
+
+import { db } from "./index";
 
 async function addVantinori() {
     const email = "vantinori@fpacifico.com";

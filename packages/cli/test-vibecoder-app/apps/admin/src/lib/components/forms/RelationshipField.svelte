@@ -4,8 +4,9 @@
    * Fetches related records from API, supports 1:1, 1:N, M:N
    */
   import { Search, ChevronDown, Check, X } from "lucide-svelte";
-  import type { RelationType, RelationTarget } from "../../../types/datasets";
   import { onMount, onDestroy } from "svelte";
+
+  import type { RelationType, RelationTarget } from "../../../types/datasets";
 
   // ─── Types ──────────────────────────────────────────
   interface RelatedItem {
@@ -30,7 +31,7 @@
     onChange?: (value: string | string[] | null) => void;
   }
   
-  let {
+  const {
     value,
     target,
     targetDatasetId,
@@ -54,17 +55,17 @@
   let multiInputRef: HTMLInputElement;
 
   // ─── Computed ───────────────────────────────────────
-  let selectedIds = $derived.by<string[]>(() => {
+  const selectedIds = $derived.by<string[]>(() => {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
   });
 
-  let selectedItem = $derived.by<RelatedItem | null>(() => {
+  const selectedItem = $derived.by<RelatedItem | null>(() => {
     if (!value || Array.isArray(value)) return null;
     return items.find((i) => i.id === value) || null;
   });
 
-  let filteredItems = $derived.by(() => {
+  const filteredItems = $derived.by(() => {
     if (!searchQuery) return items;
     const q = searchQuery.toLowerCase();
     return items.filter(

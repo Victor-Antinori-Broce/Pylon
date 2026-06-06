@@ -35,7 +35,7 @@ export default {
       animation: {
         "pulse-neon": "pulse-neon 2s ease-in-out infinite",
         "slide-up": "slide-up 0.3s ease-out",
-        "enter": "enter 0.5s ease-out both",
+        enter: "enter 0.5s ease-out both",
       },
       keyframes: {
         "pulse-neon": {
@@ -46,7 +46,7 @@ export default {
           "0%": { transform: "translateY(10px)", opacity: 0 },
           "100%": { transform: "translateY(0)", opacity: 1 },
         },
-        "enter": {
+        enter: {
           "0%": { transform: "translateY(8px)", opacity: 0 },
           "100%": { transform: "translateY(0)", opacity: 1 },
         },

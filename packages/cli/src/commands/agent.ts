@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  * AGENT COMMANDS - AI-Friendly CLI Operations
  * ═══════════════════════════════════════════════════════════════════════════════
- * 
+ *
  * Commands for AI agents to:
  * - Generate grimoires from descriptions
  * - Validate code
@@ -11,9 +11,10 @@
  */
 
 // import { Command } from "commander"; // Not used directly
-import chalk from "chalk";
 import fs from "node:fs/promises";
 import path from "node:path";
+
+import chalk from "chalk";
 import { execa } from "execa";
 import ora from "ora";
 
@@ -31,18 +32,18 @@ export async function createGrimoire(
   }
 ) {
   const spinner = ora(`Generating grimoire "${name}"...`).start();
-  
+
   try {
     const outputDir = options.output || `packages/grimoires/grimoire-${name}`;
-    
+
     // Validate name
     if (!/^[a-z][a-z0-9-]*$/.test(name)) {
       throw new Error("Grimoire name must be kebab-case (e.g., 'inventory-management')");
     }
-    
+
     // Generate files
     const pascalName = toPascalCase(name);
-    
+
     const files = [
       {
         path: path.join(outputDir, "index.ts"),
@@ -61,27 +62,26 @@ export async function createGrimoire(
         content: generatePackageJson(name),
       },
     ];
-    
+
     // Create directory
     await fs.mkdir(outputDir, { recursive: true });
-    
+
     // Write files
     for (const file of files) {
       await fs.mkdir(path.dirname(file.path), { recursive: true });
       await fs.writeFile(file.path, file.content);
     }
-    
+
     spinner.succeed(`Grimoire "${name}" generated at ${outputDir}/`);
-    
+
     console.log(chalk.blue("\n📁 Generated files:"));
-    files.forEach(f => console.log(`  - ${path.relative(process.cwd(), f.path)}`));
-    
+    files.forEach((f) => console.log(`  - ${path.relative(process.cwd(), f.path)}`));
+
     console.log(chalk.green("\n🚀 Next steps:"));
     console.log(`  1. cd ${outputDir}`);
     console.log(`  2. Review and customize the generated code`);
     console.log(`  3. gremius plugin install ${name} --source local`);
     console.log(`  4. gremius dev`);
-    
   } catch (error: any) {
     spinner.fail(`Failed to generate grimoire: ${error.message}`);
     process.exit(1);
@@ -92,18 +92,16 @@ export async function createGrimoire(
 // VALIDATE - Check code before commit
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function validateCode(
-  options: {
-    grimoire?: string;
-    typecheck?: boolean;
-    lint?: boolean;
-    security?: boolean;
-    fix?: boolean;
-  }
-) {
+export async function validateCode(options: {
+  grimoire?: string;
+  typecheck?: boolean;
+  lint?: boolean;
+  security?: boolean;
+  fix?: boolean;
+}) {
   const spinner = ora("Validating code...").start();
   const issues: Array<{ type: string; file?: string; message: string }> = [];
-  
+
   try {
     // Type check
     if (options.typecheck !== false) {
@@ -114,7 +112,7 @@ export async function validateCode(
         issues.push({ type: "typescript", message: "Type errors found" });
       }
     }
-    
+
     // Lint
     if (options.lint !== false) {
       spinner.text = "Running ESLint...";
@@ -125,7 +123,7 @@ export async function validateCode(
         issues.push({ type: "lint", message: "Lint errors found" });
       }
     }
-    
+
     // Security check
     if (options.security) {
       spinner.text = "Running security checks...";
@@ -133,30 +131,29 @@ export async function validateCode(
       const securityIssues = await runSecurityChecks(options.grimoire);
       issues.push(...securityIssues);
     }
-    
+
     // Grimoire-specific validation
     if (options.grimoire) {
       spinner.text = `Validating grimoire "${options.grimoire}"...`;
       const grimoireIssues = await validateGrimoire(options.grimoire);
       issues.push(...grimoireIssues);
     }
-    
+
     spinner.stop();
-    
+
     if (issues.length === 0) {
       console.log(chalk.green("✅ All checks passed!"));
     } else {
       console.log(chalk.yellow(`\n⚠️  Found ${issues.length} issues:\n`));
-      
+
       const grouped = groupBy(issues, "type");
       for (const [type, items] of Object.entries(grouped)) {
         console.log(chalk.blue(`${type.toUpperCase()}:`));
-        items.forEach(i => console.log(`  - ${i.message}${i.file ? ` (${i.file})` : ""}`));
+        items.forEach((i) => console.log(`  - ${i.message}${i.file ? ` (${i.file})` : ""}`));
       }
-      
+
       process.exit(1);
     }
-    
   } catch (error: any) {
     spinner.fail(`Validation failed: ${error.message}`);
     process.exit(1);
@@ -169,7 +166,7 @@ export async function validateCode(
 
 export async function debugMcp(options: { token?: string; url?: string }) {
   console.log(chalk.blue("🔍 Debugging MCP connection...\n"));
-  
+
   const checks = [
     {
       name: "Environment variables",
@@ -177,7 +174,7 @@ export async function debugMcp(options: { token?: string; url?: string }) {
         const token = options.token || process.env.GREMUS_MCP_TOKEN;
         const url = options.url || process.env.GREMUS_API_URL || "http://localhost:3001";
         return { ok: !!token, token: token?.slice(0, 20) + "...", url };
-      }
+      },
     },
     {
       name: "API connectivity",
@@ -189,7 +186,7 @@ export async function debugMcp(options: { token?: string; url?: string }) {
         } catch (err: any) {
           return { ok: false, error: err.message };
         }
-      }
+      },
     },
     {
       name: "Grimoire registry",
@@ -197,15 +194,15 @@ export async function debugMcp(options: { token?: string; url?: string }) {
         try {
           const url = options.url || process.env.GREMUS_API_URL || "http://localhost:3001";
           const response = await fetch(`${url}/api/docs/grimoires`);
-          const data = await response.json() as any;
+          const data = (await response.json()) as any;
           return { ok: response.ok, grimoires: data.total };
         } catch (err: any) {
           return { ok: false, error: err.message };
         }
-      }
-    }
+      },
+    },
   ];
-  
+
   for (const check of checks) {
     const spinner = ora(check.name).start();
     try {
@@ -213,7 +210,7 @@ export async function debugMcp(options: { token?: string; url?: string }) {
       if (result.ok) {
         spinner.succeed(`${check.name}: ${JSON.stringify(result)}`);
       } else {
-        spinner.fail(`${check.name}: ${'error' in result ? result.error : "Failed"}`);
+        spinner.fail(`${check.name}: ${"error" in result ? result.error : "Failed"}`);
       }
     } catch (err: any) {
       spinner.fail(`${check.name}: ${err.message}`);
@@ -227,10 +224,10 @@ export async function debugMcp(options: { token?: string; url?: string }) {
 
 export async function initAgent(options: { editor?: string; force?: boolean }) {
   const spinner = ora("Initializing agent configuration...").start();
-  
+
   try {
     const editor = options.editor || detectEditor();
-    
+
     if (editor === "cursor") {
       await initCursorConfig(options.force);
     } else if (editor === "claude") {
@@ -238,9 +235,8 @@ export async function initAgent(options: { editor?: string; force?: boolean }) {
     } else {
       await initGenericConfig();
     }
-    
+
     spinner.succeed(`Initialized for ${editor}`);
-    
   } catch (error: any) {
     spinner.fail(`Initialization failed: ${error.message}`);
     process.exit(1);
@@ -251,37 +247,35 @@ export async function initAgent(options: { editor?: string; force?: boolean }) {
 // GENERATE SDK - Client SDK from OpenAPI
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function generateSdk(
-  options: {
-    grimoire?: string;
-    language: "typescript" | "python" | "go" | "java" | "php";
-    output: string;
-  }
-) {
+export async function generateSdk(options: {
+  grimoire?: string;
+  language: "typescript" | "python" | "go" | "java" | "php";
+  output: string;
+}) {
   const spinner = ora("Generating SDK...").start();
-  
+
   try {
     const apiUrl = process.env.GREMUS_API_URL || "http://localhost:3001";
     let specUrl: string;
-    
+
     if (options.grimoire) {
       specUrl = `${apiUrl}/api/docs/${options.grimoire}/openapi.json`;
     } else {
       specUrl = `${apiUrl}/api/docs/openapi.json`;
     }
-    
+
     // Fetch spec
     spinner.text = "Fetching OpenAPI spec...";
     const response = await fetch(specUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch spec: ${response.statusText}`);
     }
-    
+
     const spec = await response.json();
-    
+
     // Generate SDK (using openapi-generator or similar)
     spinner.text = `Generating ${options.language} SDK...`;
-    
+
     const generatorMap: Record<string, string> = {
       typescript: "typescript-fetch",
       python: "python",
@@ -289,30 +283,39 @@ export async function generateSdk(
       java: "java",
       php: "php",
     };
-    
+
     const generator = generatorMap[options.language];
-    
+
     // Save spec to temp file
     const tempSpecPath = path.join(process.cwd(), ".temp-openapi.json");
     await fs.writeFile(tempSpecPath, JSON.stringify(spec, null, 2));
-    
+
     // Run generator
     try {
-      await execa("npx", [
-        "@openapitools/openapi-generator-cli",
-        "generate",
-        "-i", tempSpecPath,
-        "-g", generator,
-        "-o", options.output,
-        "--skip-validate-spec",
-      ], { cwd: process.cwd() });
+      await execa(
+        "npx",
+        [
+          "@openapitools/openapi-generator-cli",
+          "generate",
+          "-i",
+          tempSpecPath,
+          "-g",
+          generator,
+          "-o",
+          options.output,
+          "--skip-validate-spec",
+        ],
+        { cwd: process.cwd() }
+      );
     } finally {
       // Cleanup
-      try { await fs.unlink(tempSpecPath); } catch {}
+      try {
+        await fs.unlink(tempSpecPath);
+      } catch {}
     }
-    
+
     spinner.succeed(`SDK generated at ${options.output}/`);
-    
+
     console.log(chalk.blue("\n📦 Installation:"));
     if (options.language === "typescript") {
       console.log(`  cd ${options.output}`);
@@ -322,7 +325,6 @@ export async function generateSdk(
       console.log(`  cd ${options.output}`);
       console.log("  pip install -e .");
     }
-    
   } catch (error: any) {
     spinner.fail(`SDK generation failed: ${error.message}`);
     process.exit(1);
@@ -336,7 +338,7 @@ export async function generateSdk(
 function toPascalCase(str: string): string {
   return str
     .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
-    .replace(/^[a-z]/, l => l.toUpperCase());
+    .replace(/^[a-z]/, (l) => l.toUpperCase());
 }
 
 function generateIndexFile(
@@ -347,7 +349,7 @@ function generateIndexFile(
   // const hasCrud = options.features?.includes("crud");
   // const hasRelations = options.features?.includes("relations");
   const hasWebhooks = options.features?.includes("webhooks");
-  
+
   return `/**
  * @gremius/grimoire-${name}
  * 
@@ -551,43 +553,51 @@ export type Update${pascalName} = z.infer<typeof Update${pascalName}Schema>;
 }
 
 function generateGrimoireJson(name: string, options: { description?: string }): string {
-  return JSON.stringify({
-    id: `grimoire-${name}`,
-    name: toPascalCase(name),
-    description: options.description || `${toPascalCase(name)} module`,
-    version: "1.0.0",
-    type: "grimoire",
-    icon: "Box",
-    tables: [name.toLowerCase()],
-    mount: {
-      path: `/api/${name}`
+  return JSON.stringify(
+    {
+      id: `grimoire-${name}`,
+      name: toPascalCase(name),
+      description: options.description || `${toPascalCase(name)} module`,
+      version: "1.0.0",
+      type: "grimoire",
+      icon: "Box",
+      tables: [name.toLowerCase()],
+      mount: {
+        path: `/api/${name}`,
+      },
+      admin: {
+        category: "content",
+        defaultView: "grid",
+      },
     },
-    admin: {
-      category: "content",
-      defaultView: "grid"
-    }
-  }, null, 2);
+    null,
+    2
+  );
 }
 
 function generatePackageJson(name: string): string {
-  return JSON.stringify({
-    name: `@gremius/grimoire-${name}`,
-    version: "1.0.0",
-    description: `Gremius grimoire for ${name}`,
-    type: "module",
-    main: "index.ts",
-    types: "index.ts",
-    gremius: {
-      type: "grimoire",
-      id: `grimoire-${name}`,
-      minVersion: "0.8.0"
+  return JSON.stringify(
+    {
+      name: `@gremius/grimoire-${name}`,
+      version: "1.0.0",
+      description: `Gremius grimoire for ${name}`,
+      type: "module",
+      main: "index.ts",
+      types: "index.ts",
+      gremius: {
+        type: "grimoire",
+        id: `grimoire-${name}`,
+        minVersion: "0.8.0",
+      },
+      peerDependencies: {
+        "@gremius/engine": "^0.8.0",
+        "@gremius/shared": "^0.8.0",
+      },
+      keywords: ["gremius", "grimoire"],
     },
-    peerDependencies: {
-      "@gremius/engine": "^0.8.0",
-      "@gremius/shared": "^0.8.0"
-    },
-    keywords: ["gremius", "grimoire"]
-  }, null, 2);
+    null,
+    2
+  );
 }
 
 async function runSecurityChecks(_grimoire?: string): Promise<any[]> {
@@ -609,12 +619,12 @@ function detectEditor(): string {
 
 async function initCursorConfig(force?: boolean) {
   const cursorRulesPath = path.join(process.cwd(), ".cursorrules");
-  
-  if (!force && await fileExists(cursorRulesPath)) {
+
+  if (!force && (await fileExists(cursorRulesPath))) {
     console.log(chalk.yellow("⚠️  .cursorrules already exists. Use --force to overwrite."));
     return;
   }
-  
+
   const content = `# Gremius Project - Cursor Rules
 
 ## Architecture
@@ -658,21 +668,24 @@ export const grimoire = defineGrimoire({
 - gremius_introspect_schema - Schema inspection
 - gremius_validate_code - Code validation
 `;
-  
+
   await fs.writeFile(cursorRulesPath, content);
   console.log(chalk.green("✅ Created .cursorrules"));
 }
 
 async function initClaudeConfig(force?: boolean) {
   const claudeMdPath = path.join(process.cwd(), "CLAUDE.md");
-  
-  if (!force && await fileExists(claudeMdPath)) {
+
+  if (!force && (await fileExists(claudeMdPath))) {
     console.log(chalk.yellow("⚠️  CLAUDE.md already exists. Use --force to overwrite."));
     return;
   }
-  
+
   // Similar content to cursorrules but formatted for Claude
-  await fs.writeFile(claudeMdPath, "# Gremius Project Context\n\nSee .cursorrules for detailed patterns.");
+  await fs.writeFile(
+    claudeMdPath,
+    "# Gremius Project Context\n\nSee .cursorrules for detailed patterns."
+  );
   console.log(chalk.green("✅ Created CLAUDE.md"));
 }
 
@@ -691,12 +704,15 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-  return array.reduce((acc, item) => {
-    const group = String(item[key]);
-    acc[group] = acc[group] || [];
-    acc[group].push(item);
-    return acc;
-  }, {} as Record<string, T[]>);
+  return array.reduce(
+    (acc, item) => {
+      const group = String(item[key]);
+      acc[group] = acc[group] || [];
+      acc[group].push(item);
+      return acc;
+    },
+    {} as Record<string, T[]>
+  );
 }
 
 export default {

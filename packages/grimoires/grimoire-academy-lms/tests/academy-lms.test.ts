@@ -1,23 +1,19 @@
 // @ts-nocheck
 /**
  * Academy LMS - Test Suite Completo
- * 
+ *
  * Pruebas unitarias y de integración para todos los servicios y endpoints.
  */
 
-import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { z } from "zod";
+import { describe, it, expect } from "bun:test";
 
 // ============================================
 // PRUEBAS DE SERVICIO PDF
 // ============================================
 
 describe("📄 PDF Service", async () => {
-  const {
-    generarCertificadoPDF,
-    validarCodigoCertificado,
-    extraerInfoCodigo,
-  } = await import("../services/pdf.service");
+  const { generarCertificadoPDF, validarCodigoCertificado, extraerInfoCodigo } =
+    await import("../services/pdf.service");
 
   describe("generarCertificadoPDF", () => {
     it("debe generar un certificado PDF válido", async () => {
@@ -127,11 +123,8 @@ describe("📄 PDF Service", async () => {
 // ============================================
 
 describe("📊 Excel Service", async () => {
-  const {
-    generarExcelAsignaciones,
-    generarExcelProgreso,
-    generarExcelEncuestas,
-  } = await import("../services/excel.service");
+  const { generarExcelAsignaciones, generarExcelProgreso, generarExcelEncuestas } =
+    await import("../services/excel.service");
 
   describe("generarExcelAsignaciones", () => {
     it("debe generar archivo Excel de asignaciones", async () => {
@@ -544,13 +537,13 @@ describe("🔄 Flujos de Integración", () => {
   describe("Flujo: Curso con Video de YouTube", () => {
     it("debe procesar URL de YouTube y crear tema", async () => {
       const { extraerInfoYoutube } = await import("../services/media.service");
-      
+
       const urlYoutube = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
       const info = extraerInfoYoutube(urlYoutube);
-      
+
       expect(info.valido).toBe(true);
       expect(info.embedUrl).toContain("embed");
-      
+
       // Los datos se usarían para crear un tema:
       // tema.videoYoutube = info.embedUrl
       // tema.thumbnailUrl = info.thumbnailUrl
@@ -558,14 +551,14 @@ describe("🔄 Flujos de Integración", () => {
 
     it("debe soportar múltiples formatos de URL de YouTube", async () => {
       const { extraerInfoYoutube } = await import("../services/media.service");
-      
+
       const urls = [
         "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         "https://youtu.be/dQw4w9WgXcQ",
         "https://www.youtube.com/embed/dQw4w9WgXcQ",
         "https://www.youtube.com/watch?v=dQw4w9WgXcQ&start=30",
       ];
-      
+
       for (const url of urls) {
         const info = extraerInfoYoutube(url);
         expect(info.valido).toBe(true);
@@ -577,18 +570,18 @@ describe("🔄 Flujos de Integración", () => {
   describe("Flujo: Sincronización y Exportación", () => {
     it("debe sincronizar usuarios y exportar progreso", async () => {
       const { parsearCSV, validarUsuariosExternos } = await import("../services/user-sync.service");
-      
+
       const csv = `idExterno,email,nombre
 EMP001,user1@test.com,User One
 EMP002,user2@test.com,User Two`;
-      
+
       const usuarios = parsearCSV(csv);
       const { validos } = validarUsuariosExternos(usuarios);
-      
+
       expect(validos.length).toBe(2);
-      
+
       const { generarExcelProgreso } = await import("../services/excel.service");
-      
+
       const progresoData = validos.map((u, i) => ({
         usuario: u.nombre,
         email: u.email,
@@ -600,7 +593,7 @@ EMP002,user2@test.com,User Two`;
         progresoPercent: i === 0 ? 100 : 40,
         estado: (i === 0 ? "Completado" : "En Progreso") as const,
       }));
-      
+
       const excel = await generarExcelProgreso(progresoData);
       expect(excel.length).toBeGreaterThan(100);
     });
@@ -608,14 +601,11 @@ EMP002,user2@test.com,User Two`;
 
   describe("Flujo: Certificado Completo", () => {
     it("debe generar certificado con código válido", async () => {
-      const { 
-        generarCertificadoPDF, 
-        validarCodigoCertificado,
-        extraerInfoCodigo 
-      } = await import("../services/pdf.service");
-      
+      const { generarCertificadoPDF, validarCodigoCertificado, extraerInfoCodigo } =
+        await import("../services/pdf.service");
+
       const codigo = "CERT-ABC12345-XYZ67890-TEST123";
-      
+
       const pdf = await generarCertificadoPDF({
         nombreUsuario: "Test User",
         nombreCurso: "Test Course",
@@ -623,10 +613,10 @@ EMP002,user2@test.com,User Two`;
         duracionHoras: 10,
         codigo,
       });
-      
+
       expect(pdf).toBeDefined();
       expect(validarCodigoCertificado(codigo)).toBe(true);
-      
+
       const info = extraerInfoCodigo(codigo);
       expect(info).not.toBeNull();
       expect(info?.cursoId).toBe("ABC12345");

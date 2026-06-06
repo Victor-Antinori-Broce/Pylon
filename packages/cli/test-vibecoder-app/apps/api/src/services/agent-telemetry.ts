@@ -7,10 +7,11 @@
  * con sintaxis correcta para agentTraceSteps.
  */
 
+import { setTelemetryProvider, type TelemetryStepData } from "@gremius/engine"; // Ruta relativa al workspace
 import { eq } from "drizzle-orm";
+
 import { db } from "../db";
 import { agentTraceSteps } from "../db/schema";
-import { setTelemetryProvider, type TelemetryStepData } from "@gremius/engine"; // Ruta relativa al workspace
 
 /**
  * Drizzle-based telemetry provider

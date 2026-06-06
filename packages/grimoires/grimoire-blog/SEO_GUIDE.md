@@ -17,6 +17,7 @@ Guía completa de implementación SEO para el módulo de blog de Gremius CMS.
 ## ✅ Características Implementadas
 
 ### 1. Meta Tags Básicos (Google/Bing)
+
 - ✅ `<title>` optimizado (50-60 caracteres)
 - ✅ `<meta name="description">` optimizado (150-160 caracteres)
 - ✅ `<meta name="robots">` (index/follow configurables)
@@ -24,6 +25,7 @@ Guía completa de implementación SEO para el módulo de blog de Gremius CMS.
 - ✅ `<link rel="canonical">`
 
 ### 2. Open Graph (Facebook, LinkedIn, WhatsApp)
+
 - ✅ `og:title` - Título para compartir
 - ✅ `og:description` - Descripción para compartir
 - ✅ `og:url` - URL canónica
@@ -39,6 +41,7 @@ Guía completa de implementación SEO para el módulo de blog de Gremius CMS.
 - ✅ `og:article:tag` - Tags
 
 ### 3. Twitter Cards (Twitter/X)
+
 - ✅ `twitter:card` - Tipo de card (summary_large_image)
 - ✅ `twitter:site` - Handle del sitio
 - ✅ `twitter:creator` - Handle del autor
@@ -48,6 +51,7 @@ Guía completa de implementación SEO para el módulo de blog de Gremius CMS.
 - ✅ `twitter:image:alt` - Texto alternativo
 
 ### 4. JSON-LD Schema.org (Rich Snippets)
+
 - ✅ **BlogPosting** - Tipo principal para posts
 - ✅ **Article** - Alternativa para artículos
 - ✅ **NewsArticle** - Para noticias time-sensitive
@@ -57,6 +61,7 @@ Guía completa de implementación SEO para el módulo de blog de Gremius CMS.
 - ✅ **Organization** - Para el publisher
 
 ### 5. Validaciones SEO
+
 - ✅ Longitud del título (50-60 caracteres)
 - ✅ Longitud de descripción (150-160 caracteres)
 - ✅ Palabra clave en título
@@ -69,6 +74,7 @@ Guía completa de implementación SEO para el módulo de blog de Gremius CMS.
 ## 🔌 Endpoints API
 
 ### GET `/api/blog/seo/:slug`
+
 Obtiene todos los metadatos SEO para un post publicado.
 
 ```bash
@@ -83,6 +89,7 @@ GET /api/blog/seo/mi-post-ejemplo?preview=true
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -161,6 +168,7 @@ GET /api/blog/seo/mi-post-ejemplo?preview=true
 ```
 
 ### POST `/api/blog/validate-seo`
+
 Valida metadatos SEO sin guardar (útil para previews en el editor).
 
 ```bash
@@ -176,6 +184,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "valid": false,
@@ -197,9 +206,7 @@ Content-Type: application/json
       "isOptimal": false
     }
   },
-  "warnings": [
-    "Title is too short (15 chars). Minimum recommended: 30"
-  ],
+  "warnings": ["Title is too short (15 chars). Minimum recommended: 30"],
   "suggestions": [
     "Ajusta el título a 55-60 caracteres",
     "Ajusta la descripción a 155-160 caracteres"
@@ -217,23 +224,23 @@ Content-Type: application/json
 <!-- +page.svelte -->
 <script>
   export let data;
-  
+
   const { seo } = data;
 </script>
 
 <svelte:head>
   <!-- Title -->
   <title>{seo.title}</title>
-  
+
   <!-- Meta Description -->
   <meta name="description" content={seo.metaDescription} />
-  
+
   <!-- Robots -->
   <meta name="robots" content={seo.robots} />
-  
+
   <!-- Canonical -->
   <link rel="canonical" href={seo.canonicalUrl} />
-  
+
   <!-- Open Graph -->
   <meta property="og:title" content={seo.openGraph.title} />
   <meta property="og:description" content={seo.openGraph.description} />
@@ -247,7 +254,7 @@ Content-Type: application/json
     <meta property="og:image:height" content={seo.openGraph.image.height} />
     <meta property="og:image:alt" content={seo.openGraph.image.alt} />
   {/if}
-  
+
   <!-- Twitter Card -->
   <meta name="twitter:card" content={seo.twitterCard.card} />
   <meta name="twitter:title" content={seo.twitterCard.title} />
@@ -255,7 +262,7 @@ Content-Type: application/json
   {#if seo.twitterCard.image}
     <meta name="twitter:image" content={seo.twitterCard.image} />
   {/if}
-  
+
   <!-- JSON-LD -->
   {#each seo.jsonLd as schema}
     <script type="application/ld+json">
@@ -306,7 +313,7 @@ El campo `seo_overrides` es un JSONB que permite personalizar completamente el S
   "noindex": false,
   "nofollow": false,
   "keywords": "tag1, tag2, tag3, keyword",
-  
+
   "og": {
     "title": "Título para Facebook",
     "description": "Descripción para redes sociales",
@@ -314,19 +321,19 @@ El campo `seo_overrides` es un JSONB que permite personalizar completamente el S
     "imageAlt": "Descripción de la imagen",
     "type": "article"
   },
-  
+
   "twitter": {
     "title": "Título para Twitter",
     "description": "Descripción para Twitter",
     "image": "https://ejemplo.com/imagen-twitter.jpg",
     "card": "summary_large_image"
   },
-  
+
   "schema": {
     "type": "NewsArticle",
     "articleSection": "Tecnología"
   },
-  
+
   "hreflang": [
     { "lang": "en", "url": "https://example.com/en/my-post" },
     { "lang": "es", "url": "https://ejemplo.com/es/mi-post" }
@@ -338,14 +345,14 @@ El campo `seo_overrides` es un JSONB que permite personalizar completamente el S
 
 Si no se especifican overrides, el sistema genera automáticamente:
 
-| Campo | Fuente | Longitud |
-|-------|--------|----------|
-| Título SEO | `Post Title | Site Name` | 50-60 chars |
-| Descripción | `excerpt` o contenido | 150-160 chars |
-| OG Title | Título del post | ≤88 chars |
-| OG Description | Descripción SEO | ≤200 chars |
-| Twitter Title | Título del post | ≤70 chars |
-| Imagen | `featuredImage` o default | - |
+| Campo          | Fuente                    | Longitud      |
+| -------------- | ------------------------- | ------------- | ----------- |
+| Título SEO     | `Post Title               | Site Name`    | 50-60 chars |
+| Descripción    | `excerpt` o contenido     | 150-160 chars |
+| OG Title       | Título del post           | ≤88 chars     |
+| OG Description | Descripción SEO           | ≤200 chars    |
+| Twitter Title  | Título del post           | ≤70 chars     |
+| Imagen         | `featuredImage` o default | -             |
 
 ---
 
@@ -353,13 +360,13 @@ Si no se especifican overrides, el sistema genera automáticamente:
 
 ### Límites de Longitud
 
-| Elemento | Mínimo | Óptimo | Máximo |
-|----------|--------|--------|--------|
-| Título SEO | 30 | 55-60 | 60 |
-| Descripción | 50 | 155-160 | 160 |
-| OG Title | - | - | 88 |
-| OG Description | - | - | 200 |
-| Twitter Title | - | - | 70 |
+| Elemento       | Mínimo | Óptimo  | Máximo |
+| -------------- | ------ | ------- | ------ |
+| Título SEO     | 30     | 55-60   | 60     |
+| Descripción    | 50     | 155-160 | 160    |
+| OG Title       | -      | -       | 88     |
+| OG Description | -      | -       | 200    |
+| Twitter Title  | -      | -       | 70     |
 
 ### Warnings Comunes
 
@@ -372,15 +379,15 @@ Si no se especifican overrides, el sistema genera automáticamente:
 
 ### Puntuación SEO (0-100)
 
-| Factor | Peso |
-|--------|------|
-| Sin warnings | Base |
-| Título óptimo | +5 |
-| Descripción óptima | +5 |
-| Imagen destacada | +10 |
-| Autor definido | +5 |
-| Keywords/tags | +5 |
-| Cada warning | -5 |
+| Factor             | Peso |
+| ------------------ | ---- |
+| Sin warnings       | Base |
+| Título óptimo      | +5   |
+| Descripción óptima | +5   |
+| Imagen destacada   | +10  |
+| Autor definido     | +5   |
+| Keywords/tags      | +5   |
+| Cada warning       | -5   |
 
 ---
 
@@ -392,19 +399,19 @@ Si no se especifican overrides, el sistema genera automáticamente:
 // +page.ts
 export async function load({ params, fetch }) {
   const slug = params.slug;
-  
+
   // Obtener SEO
   const seoRes = await fetch(`/api/blog/seo/${slug}?siteName=Mi%20Blog`);
   const seoData = await seoRes.json();
-  
+
   // Obtener post completo
   const postRes = await fetch(`/api/blog/slug/${slug}`);
   const post = await postRes.json();
-  
+
   return {
     seo: seoData.seo,
     html: seoData.html,
-    post
+    post,
   };
 }
 ```
@@ -417,48 +424,44 @@ export async function load({ params, fetch }) {
   let description = "";
   let focusKeyword = "";
   let validation = null;
-  
+
   async function validateSEO() {
-    const res = await fetch('/api/blog/validate-seo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/blog/validate-seo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
         metaDescription: description,
         focusKeyword,
-        content: editorContent
-      })
+        content: editorContent,
+      }),
     });
     validation = await res.json();
   }
 </script>
 
 <div class="seo-editor">
-  <input 
-    bind:value={title} 
-    maxlength="60"
-    placeholder="Título SEO (50-60 caracteres)" 
-  />
-  
+  <input bind:value={title} maxlength="60" placeholder="Título SEO (50-60 caracteres)" />
+
   <span class="char-count" class:warning={title.length > 60}>
     {title.length}/60
   </span>
-  
-  <textarea 
-    bind:value={description} 
+
+  <textarea
+    bind:value={description}
     maxlength="160"
-    placeholder="Descripción (150-160 caracteres)" 
+    placeholder="Descripción (150-160 caracteres)"
   />
-  
+
   <span class="char-count" class:warning={description.length > 160}>
     {description.length}/160
   </span>
-  
+
   {#if validation}
     <div class="seo-score">
-      Puntuación: {validation.valid ? '✅' : '⚠️'}
+      Puntuación: {validation.valid ? "✅" : "⚠️"}
     </div>
-    
+
     {#if validation.warnings.length > 0}
       <ul class="warnings">
         {#each validation.warnings as warning}
@@ -467,7 +470,7 @@ export async function load({ params, fetch }) {
       </ul>
     {/if}
   {/if}
-  
+
   <button on:click={validateSEO}>Validar SEO</button>
 </div>
 ```
@@ -584,13 +587,13 @@ const siteConfig: SiteSEOConfig = {
   publisher: {
     name: "Mi Empresa",
     logo: "https://ejemplo.com/logo.png",
-    url: "https://ejemplo.com"
+    url: "https://ejemplo.com",
   },
   socialProfiles: {
     twitter: "https://twitter.com/miblog",
     facebook: "https://facebook.com/miblog",
-    linkedin: "https://linkedin.com/company/miblog"
-  }
+    linkedin: "https://linkedin.com/company/miblog",
+  },
 };
 ```
 
@@ -609,6 +612,7 @@ const siteConfig: SiteSEOConfig = {
 ## 🆘 Soporte
 
 Para reportar problemas o solicitar features:
+
 - Crear un issue en el repositorio
 - Contactar al equipo de desarrollo
 

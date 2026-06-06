@@ -19,10 +19,11 @@
  * NOTE: schema-all.ts (static) is kept for drizzle-kit code generation.
  */
 
-import * as coreSchema from "../db/schema";
-import { staticConfig as gremiusConfig } from "../../gremius.config";
-import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+import { staticConfig as gremiusConfig } from "../../gremius.config";
+import * as coreSchema from "../db/schema";
 
 /**
  * Grimoires that handle their own migrations (SQL files)

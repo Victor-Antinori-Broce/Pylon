@@ -1,17 +1,18 @@
 /**
  * Gremius CRM - API Routes (Hono)
- * 
+ *
  * Complete CRM API with:
  * - Companies CRUD
- * - Contacts CRUD  
+ * - Contacts CRUD
  * - Pipelines & Stages CRUD
  * - Deals CRUD + Kanban operations
  * - Activities CRUD
  */
 
-import { Hono } from "hono";
-import { eq, and, desc, asc, sql } from "drizzle-orm";
 import type { GrimoireContext } from "@gremius/shared";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { Hono } from "hono";
+
 import {
   crmCompanies,
   crmContacts,
@@ -77,9 +78,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         db.instance
           .select({ count: sql<number>`count(*)` })
           .from(crmCompanies)
-          .where(
-            orgId ? eq(crmCompanies.organizationId, orgId) : undefined
-          ),
+          .where(orgId ? eq(crmCompanies.organizationId, orgId) : undefined),
       ]);
 
       // Transform logo IDs to URLs
@@ -134,13 +133,16 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         .returning();
 
       logger.info("[CRM] Company created", { companyId: company.id });
-      return c.json({
-        success: true,
-        data: {
-          ...company,
-          logoUrl: company.logoId ? `/api/media/preset/${company.logoId}/small` : null,
-        }
-      }, 201);
+      return c.json(
+        {
+          success: true,
+          data: {
+            ...company,
+            logoUrl: company.logoId ? `/api/media/preset/${company.logoId}/small` : null,
+          },
+        },
+        201
+      );
     } catch (error) {
       logger.error("[CRM] Error creating company:", { error });
       return c.json({ success: false, error: "Failed to create company" }, 500);
@@ -211,9 +213,20 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       };
 
       const fields = [
-        "name", "domain", "industry", "size", "website", "linkedin",
-        "address", "city", "country", "phone", "description", "logoId",
-        "annualRevenue", "metadata"
+        "name",
+        "domain",
+        "industry",
+        "size",
+        "website",
+        "linkedin",
+        "address",
+        "city",
+        "country",
+        "phone",
+        "description",
+        "logoId",
+        "annualRevenue",
+        "metadata",
       ];
 
       for (const field of fields) {
@@ -237,7 +250,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         data: {
           ...company,
           logoUrl: company.logoId ? `/api/media/preset/${company.logoId}/small` : null,
-        }
+        },
       });
     } catch (error) {
       logger.error("[CRM] Error updating company:", { error });
@@ -253,9 +266,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const companyId = c.req.param("id");
 
-      await db.instance
-        .delete(crmCompanies)
-        .where(eq(crmCompanies.id, companyId));
+      await db.instance.delete(crmCompanies).where(eq(crmCompanies.id, companyId));
 
       logger.info("[CRM] Company deleted", { companyId });
       return c.json({ success: true });
@@ -371,13 +382,16 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         .returning();
 
       logger.info("[CRM] Contact created", { contactId: contact.id });
-      return c.json({
-        success: true,
-        data: {
-          ...contact,
-          avatarUrl: contact.avatarId ? `/api/media/preset/${contact.avatarId}/thumbnail` : null,
-        }
-      }, 201);
+      return c.json(
+        {
+          success: true,
+          data: {
+            ...contact,
+            avatarUrl: contact.avatarId ? `/api/media/preset/${contact.avatarId}/thumbnail` : null,
+          },
+        },
+        201
+      );
     } catch (error) {
       logger.error("[CRM] Error creating contact:", { error });
       return c.json({ success: false, error: "Failed to create contact" }, 500);
@@ -452,10 +466,29 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       };
 
       const fields = [
-        "firstName", "lastName", "email", "phone", "mobile", "jobTitle",
-        "department", "avatarId", "status", "source", "score", "companyId",
-        "assignedTo", "linkedin", "twitter", "address", "city", "country",
-        "notes", "tags", "customFields", "metadata", "lastContactedAt"
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "mobile",
+        "jobTitle",
+        "department",
+        "avatarId",
+        "status",
+        "source",
+        "score",
+        "companyId",
+        "assignedTo",
+        "linkedin",
+        "twitter",
+        "address",
+        "city",
+        "country",
+        "notes",
+        "tags",
+        "customFields",
+        "metadata",
+        "lastContactedAt",
       ];
 
       for (const field of fields) {
@@ -479,7 +512,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         data: {
           ...contact,
           avatarUrl: contact.avatarId ? `/api/media/preset/${contact.avatarId}/thumbnail` : null,
-        }
+        },
       });
     } catch (error) {
       logger.error("[CRM] Error updating contact:", { error });
@@ -495,9 +528,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const contactId = c.req.param("id");
 
-      await db.instance
-        .delete(crmContacts)
-        .where(eq(crmContacts.id, contactId));
+      await db.instance.delete(crmContacts).where(eq(crmContacts.id, contactId));
 
       logger.info("[CRM] Contact deleted", { contactId });
       return c.json({ success: true });
@@ -518,15 +549,15 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
   crmRoutes.get("/pipelines", async (c) => {
     try {
       const orgId = c.req.query("organizationId");
-      
+
       let query = db.instance.select().from(crmPipelines);
-      
+
       if (orgId) {
         query = query.where(eq(crmPipelines.organizationId, orgId));
       }
-      
+
       const pipelines = await query.orderBy(desc(crmPipelines.isDefault), asc(crmPipelines.name));
-      
+
       return c.json({ success: true, data: pipelines });
     } catch (error) {
       logger.error("[CRM] Error fetching pipelines:", { error });
@@ -541,7 +572,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
   crmRoutes.post("/pipelines", async (c) => {
     try {
       const body = await c.req.json();
-      
+
       // Create pipeline
       const [pipeline] = await db.instance
         .insert(crmPipelines)
@@ -555,7 +586,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
           organizationId: body.organizationId,
         })
         .returning();
-      
+
       // Create default stages if requested
       if (body.createDefaultStages !== false) {
         const defaultStages = [
@@ -566,15 +597,15 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
           { name: "Closed Won", color: "#10b981", order: 4, probability: 100 },
           { name: "Closed Lost", color: "#ef4444", order: 5, probability: 0 },
         ];
-        
+
         await db.instance.insert(crmPipelineStages).values(
-          defaultStages.map(stage => ({
+          defaultStages.map((stage) => ({
             ...stage,
             pipelineId: pipeline.id,
           }))
         );
       }
-      
+
       logger.info("[CRM] Pipeline created", { pipelineId: pipeline.id });
       return c.json({ success: true, data: pipeline }, 201);
     } catch (error) {
@@ -590,22 +621,22 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
   crmRoutes.get("/pipelines/:id", async (c) => {
     try {
       const pipelineId = c.req.param("id");
-      
+
       const [pipeline] = await db.instance
         .select()
         .from(crmPipelines)
         .where(eq(crmPipelines.id, pipelineId));
-      
+
       if (!pipeline) {
         return c.json({ success: false, error: "Pipeline not found" }, 404);
       }
-      
+
       const stages = await db.instance
         .select()
         .from(crmPipelineStages)
         .where(eq(crmPipelineStages.pipelineId, pipelineId))
         .orderBy(asc(crmPipelineStages.order));
-      
+
       return c.json({
         success: true,
         data: { ...pipeline, stages },
@@ -624,27 +655,27 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const pipelineId = c.req.param("id");
       const body = await c.req.json();
-      
+
       const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       };
-      
+
       if (body.name !== undefined) updateData.name = body.name;
       if (body.description !== undefined) updateData.description = body.description;
       if (body.currency !== undefined) updateData.currency = body.currency;
       if (body.isDefault !== undefined) updateData.isDefault = body.isDefault;
       if (body.metadata !== undefined) updateData.metadata = body.metadata;
-      
+
       const [pipeline] = await db.instance
         .update(crmPipelines)
         .set(updateData)
         .where(eq(crmPipelines.id, pipelineId))
         .returning();
-      
+
       if (!pipeline) {
         return c.json({ success: false, error: "Pipeline not found" }, 404);
       }
-      
+
       return c.json({ success: true, data: pipeline });
     } catch (error) {
       logger.error("[CRM] Error updating pipeline:", { error });
@@ -659,11 +690,9 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
   crmRoutes.delete("/pipelines/:id", async (c) => {
     try {
       const pipelineId = c.req.param("id");
-      
-      await db.instance
-        .delete(crmPipelines)
-        .where(eq(crmPipelines.id, pipelineId));
-      
+
+      await db.instance.delete(crmPipelines).where(eq(crmPipelines.id, pipelineId));
+
       logger.info("[CRM] Pipeline deleted", { pipelineId });
       return c.json({ success: true });
     } catch (error) {
@@ -684,26 +713,26 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const pipelineId = c.req.param("id");
       const body = await c.req.json();
-      
+
       // Get max order
       const [maxOrder] = await db.instance
         .select({ maxOrder: sql<number>`coalesce(max(${crmPipelineStages.order}), -1)` })
         .from(crmPipelineStages)
         .where(eq(crmPipelineStages.pipelineId, pipelineId));
-      
+
       const [stage] = await db.instance
         .insert(crmPipelineStages)
         .values({
           pipelineId,
           name: body.name,
           color: body.color || "#3b82f6",
-          order: body.order ?? (maxOrder.maxOrder + 1),
+          order: body.order ?? maxOrder.maxOrder + 1,
           probability: body.probability ?? 0,
           wipLimit: body.wipLimit,
           metadata: body.metadata || {},
         })
         .returning();
-      
+
       logger.info("[CRM] Stage created", { stageId: stage.id, pipelineId });
       return c.json({ success: true, data: stage }, 201);
     } catch (error) {
@@ -720,28 +749,28 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const stageId = c.req.param("id");
       const body = await c.req.json();
-      
+
       const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       };
-      
+
       if (body.name !== undefined) updateData.name = body.name;
       if (body.color !== undefined) updateData.color = body.color;
       if (body.order !== undefined) updateData.order = body.order;
       if (body.probability !== undefined) updateData.probability = body.probability;
       if (body.wipLimit !== undefined) updateData.wipLimit = body.wipLimit;
       if (body.metadata !== undefined) updateData.metadata = body.metadata;
-      
+
       const [stage] = await db.instance
         .update(crmPipelineStages)
         .set(updateData)
         .where(eq(crmPipelineStages.id, stageId))
         .returning();
-      
+
       if (!stage) {
         return c.json({ success: false, error: "Stage not found" }, 404);
       }
-      
+
       return c.json({ success: true, data: stage });
     } catch (error) {
       logger.error("[CRM] Error updating stage:", { error });
@@ -756,25 +785,26 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
   crmRoutes.delete("/stages/:id", async (c) => {
     try {
       const stageId = c.req.param("id");
-      
+
       // Check if stage has deals
       const [dealsCount] = await db.instance
         .select({ count: sql<number>`count(*)` })
         .from(crmDeals)
         .where(eq(crmDeals.stageId, stageId));
-      
+
       if (dealsCount.count > 0) {
-        return c.json({
-          success: false,
-          error: "Cannot delete stage with deals. Move deals first.",
-          dealsCount: dealsCount.count,
-        }, 400);
+        return c.json(
+          {
+            success: false,
+            error: "Cannot delete stage with deals. Move deals first.",
+            dealsCount: dealsCount.count,
+          },
+          400
+        );
       }
-      
-      await db.instance
-        .delete(crmPipelineStages)
-        .where(eq(crmPipelineStages.id, stageId));
-      
+
+      await db.instance.delete(crmPipelineStages).where(eq(crmPipelineStages.id, stageId));
+
       logger.info("[CRM] Stage deleted", { stageId });
       return c.json({ success: true });
     } catch (error) {
@@ -820,9 +850,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       }
 
       if (search) {
-        query = query.where(
-          sql`${crmDeals.title} ILIKE ${`%${search}%`}`
-        );
+        query = query.where(sql`${crmDeals.title} ILIKE ${`%${search}%`}`);
       }
 
       const [deals, countResult] = await Promise.all([
@@ -907,10 +935,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const dealId = c.req.param("id");
 
-      const [deal] = await db.instance
-        .select()
-        .from(crmDeals)
-        .where(eq(crmDeals.id, dealId));
+      const [deal] = await db.instance.select().from(crmDeals).where(eq(crmDeals.id, dealId));
 
       if (!deal) {
         return c.json({ success: false, error: "Deal not found" }, 404);
@@ -919,16 +944,32 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       // Get related data
       const [contact, company, stage, pipeline] = await Promise.all([
         deal.contactId
-          ? db.instance.select().from(crmContacts).where(eq(crmContacts.id, deal.contactId)).then((r: (typeof crmContacts.$inferSelect)[]) => r[0] || null)
+          ? db.instance
+              .select()
+              .from(crmContacts)
+              .where(eq(crmContacts.id, deal.contactId))
+              .then((r: (typeof crmContacts.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
         deal.companyId
-          ? db.instance.select().from(crmCompanies).where(eq(crmCompanies.id, deal.companyId)).then((r: (typeof crmCompanies.$inferSelect)[]) => r[0] || null)
+          ? db.instance
+              .select()
+              .from(crmCompanies)
+              .where(eq(crmCompanies.id, deal.companyId))
+              .then((r: (typeof crmCompanies.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
         deal.stageId
-          ? db.instance.select().from(crmPipelineStages).where(eq(crmPipelineStages.id, deal.stageId)).then((r: (typeof crmPipelineStages.$inferSelect)[]) => r[0] || null)
+          ? db.instance
+              .select()
+              .from(crmPipelineStages)
+              .where(eq(crmPipelineStages.id, deal.stageId))
+              .then((r: (typeof crmPipelineStages.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
         deal.pipelineId
-          ? db.instance.select().from(crmPipelines).where(eq(crmPipelines.id, deal.pipelineId)).then((r: (typeof crmPipelines.$inferSelect)[]) => r[0] || null)
+          ? db.instance
+              .select()
+              .from(crmPipelines)
+              .where(eq(crmPipelines.id, deal.pipelineId))
+              .then((r: (typeof crmPipelines.$inferSelect)[]) => r[0] || null)
           : Promise.resolve(null),
       ]);
 
@@ -956,10 +997,24 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       };
 
       const fields = [
-        "title", "description", "value", "currency", "status",
-        "pipelineId", "stageId", "probability", "contactId", "companyId",
-        "assignedTo", "expectedCloseDate", "actualCloseDate", "source",
-        "campaign", "tags", "customFields", "metadata"
+        "title",
+        "description",
+        "value",
+        "currency",
+        "status",
+        "pipelineId",
+        "stageId",
+        "probability",
+        "contactId",
+        "companyId",
+        "assignedTo",
+        "expectedCloseDate",
+        "actualCloseDate",
+        "source",
+        "campaign",
+        "tags",
+        "customFields",
+        "metadata",
       ];
 
       for (const field of fields) {
@@ -997,9 +1052,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const dealId = c.req.param("id");
 
-      await db.instance
-        .delete(crmDeals)
-        .where(eq(crmDeals.id, dealId));
+      await db.instance.delete(crmDeals).where(eq(crmDeals.id, dealId));
 
       logger.info("[CRM] Deal deleted", { dealId });
       return c.json({ success: true });
@@ -1039,10 +1092,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       const deals = await db.instance
         .select()
         .from(crmDeals)
-        .where(and(
-          eq(crmDeals.pipelineId, pipelineId),
-          eq(crmDeals.status, "open")
-        ))
+        .where(and(eq(crmDeals.pipelineId, pipelineId), eq(crmDeals.status, "open")))
         .orderBy(asc(crmDeals.createdAt));
 
       // Group deals by stage
@@ -1264,9 +1314,18 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       };
 
       const fields = [
-        "type", "subject", "description", "contactId", "companyId",
-        "dealId", "assignedTo", "dueDate", "durationMinutes",
-        "outcome", "notes", "metadata"
+        "type",
+        "subject",
+        "description",
+        "contactId",
+        "companyId",
+        "dealId",
+        "assignedTo",
+        "dueDate",
+        "durationMinutes",
+        "outcome",
+        "notes",
+        "metadata",
       ];
 
       for (const field of fields) {
@@ -1335,9 +1394,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     try {
       const activityId = c.req.param("id");
 
-      await db.instance
-        .delete(crmActivities)
-        .where(eq(crmActivities.id, activityId));
+      await db.instance.delete(crmActivities).where(eq(crmActivities.id, activityId));
 
       logger.info("[CRM] Activity deleted", { activityId });
       return c.json({ success: true });
@@ -1371,47 +1428,54 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       ];
       if (orgId) overdueConditions.push(eq(crmActivities.organizationId, orgId));
 
-      const [
-        contactsCount,
-        companiesCount,
-        dealsStats,
-        activitiesCount,
-        openActivitiesCount,
-      ] = await Promise.all([
-        db.instance
-          .select({ count: sql<number>`count(*)` })
-          .from(crmContacts)
-          .where(buildOrgWhere(crmContacts))
-          .then((r: { count: number }[]) => r[0]?.count ?? 0),
-        db.instance
-          .select({ count: sql<number>`count(*)` })
-          .from(crmCompanies)
-          .where(buildOrgWhere(crmCompanies))
-          .then((r: { count: number }[]) => r[0]?.count ?? 0),
-        db.instance
-          .select({
-            total: sql<number>`count(*)`,
-            open: sql<number>`count(*) FILTER (WHERE ${crmDeals.status} = 'open')`,
-            won: sql<number>`count(*) FILTER (WHERE ${crmDeals.status} = 'won')`,
-            lost: sql<number>`count(*) FILTER (WHERE ${crmDeals.status} = 'lost')`,
-            totalValue: sql<number>`coalesce(sum(${crmDeals.value}), 0)`,
-            openValue: sql<number>`coalesce(sum(${crmDeals.value}) FILTER (WHERE ${crmDeals.status} = 'open'), 0)`,
-            wonValue: sql<number>`coalesce(sum(${crmDeals.value}) FILTER (WHERE ${crmDeals.status} = 'won'), 0)`,
-          })
-          .from(crmDeals)
-          .where(buildOrgWhere(crmDeals))
-          .then((r: { total: number; open: number; won: number; lost: number; totalValue: number; openValue: number; wonValue: number }[]) => r[0]),
-        db.instance
-          .select({ count: sql<number>`count(*)` })
-          .from(crmActivities)
-          .where(buildOrgWhere(crmActivities))
-          .then((r: { count: number }[]) => r[0]?.count ?? 0),
-        db.instance
-          .select({ count: sql<number>`count(*)` })
-          .from(crmActivities)
-          .where(overdueConditions.length > 1 ? and(...overdueConditions) : undefined)
-          .then((r: { count: number }[]) => r[0]?.count ?? 0),
-      ]);
+      const [contactsCount, companiesCount, dealsStats, activitiesCount, openActivitiesCount] =
+        await Promise.all([
+          db.instance
+            .select({ count: sql<number>`count(*)` })
+            .from(crmContacts)
+            .where(buildOrgWhere(crmContacts))
+            .then((r: { count: number }[]) => r[0]?.count ?? 0),
+          db.instance
+            .select({ count: sql<number>`count(*)` })
+            .from(crmCompanies)
+            .where(buildOrgWhere(crmCompanies))
+            .then((r: { count: number }[]) => r[0]?.count ?? 0),
+          db.instance
+            .select({
+              total: sql<number>`count(*)`,
+              open: sql<number>`count(*) FILTER (WHERE ${crmDeals.status} = 'open')`,
+              won: sql<number>`count(*) FILTER (WHERE ${crmDeals.status} = 'won')`,
+              lost: sql<number>`count(*) FILTER (WHERE ${crmDeals.status} = 'lost')`,
+              totalValue: sql<number>`coalesce(sum(${crmDeals.value}), 0)`,
+              openValue: sql<number>`coalesce(sum(${crmDeals.value}) FILTER (WHERE ${crmDeals.status} = 'open'), 0)`,
+              wonValue: sql<number>`coalesce(sum(${crmDeals.value}) FILTER (WHERE ${crmDeals.status} = 'won'), 0)`,
+            })
+            .from(crmDeals)
+            .where(buildOrgWhere(crmDeals))
+            .then(
+              (
+                r: {
+                  total: number;
+                  open: number;
+                  won: number;
+                  lost: number;
+                  totalValue: number;
+                  openValue: number;
+                  wonValue: number;
+                }[]
+              ) => r[0]
+            ),
+          db.instance
+            .select({ count: sql<number>`count(*)` })
+            .from(crmActivities)
+            .where(buildOrgWhere(crmActivities))
+            .then((r: { count: number }[]) => r[0]?.count ?? 0),
+          db.instance
+            .select({ count: sql<number>`count(*)` })
+            .from(crmActivities)
+            .where(overdueConditions.length > 1 ? and(...overdueConditions) : undefined)
+            .then((r: { count: number }[]) => r[0]?.count ?? 0),
+        ]);
 
       return c.json({
         success: true,
@@ -1521,9 +1585,11 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       if (body.requiresContact !== undefined) updateData.requiresContact = body.requiresContact;
       if (body.requiresCompany !== undefined) updateData.requiresCompany = body.requiresCompany;
       if (body.allowsValue !== undefined) updateData.allowsValue = body.allowsValue;
-      if (body.allowsTimeTracking !== undefined) updateData.allowsTimeTracking = body.allowsTimeTracking;
+      if (body.allowsTimeTracking !== undefined)
+        updateData.allowsTimeTracking = body.allowsTimeTracking;
       if (body.fieldSchema !== undefined) updateData.fieldSchema = body.fieldSchema;
-      if (body.defaultPipelineId !== undefined) updateData.defaultPipelineId = body.defaultPipelineId;
+      if (body.defaultPipelineId !== undefined)
+        updateData.defaultPipelineId = body.defaultPipelineId;
       if (body.isActive !== undefined) updateData.isActive = body.isActive;
       if (body.isDefault !== undefined) updateData.isDefault = body.isDefault;
       if (body.metadata !== undefined) updateData.metadata = body.metadata;
@@ -1567,10 +1633,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     };
 
     // Get deal with custom fields
-    const [deal] = await tx
-      .select()
-      .from(crmDeals)
-      .where(eq(crmDeals.id, dealId));
+    const [deal] = await tx.select().from(crmDeals).where(eq(crmDeals.id, dealId));
 
     if (!deal) {
       result.canMove = false;
@@ -1597,7 +1660,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
     if (requirements.requiredFields?.length) {
       for (const fieldKey of requirements.requiredFields) {
         const value = customFields[fieldKey];
-        if (value === undefined || value === null || value === '') {
+        if (value === undefined || value === null || value === "") {
           result.missingFields.push({
             key: fieldKey,
             label: fieldKey, // Could be enhanced to get from schema
@@ -1615,26 +1678,26 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         let passes = false;
 
         switch (validation.operator) {
-          case '==':
+          case "==":
             passes = value === validation.value;
             break;
-          case '!=':
+          case "!=":
             passes = value !== validation.value;
             break;
-          case '>':
+          case ">":
             passes = Number(value) > Number(validation.value);
             break;
-          case '<':
+          case "<":
             passes = Number(value) < Number(validation.value);
             break;
-          case '>=':
+          case ">=":
             passes = Number(value) >= Number(validation.value);
             break;
-          case '<=':
+          case "<=":
             passes = Number(value) <= Number(validation.value);
             break;
-          case 'exists':
-            passes = value !== undefined && value !== null && value !== '';
+          case "exists":
+            passes = value !== undefined && value !== null && value !== "";
             break;
         }
 
@@ -1728,19 +1791,19 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       // Format duration for human readability
       const formattedTimeline = (timeline.rows || []).map((row: Record<string, unknown>) => {
         const duration = row.duration_minutes as number;
-        let durationText = 'In progress';
-        
+        let durationText = "In progress";
+
         if (duration !== null && duration !== undefined) {
           const days = Math.floor(duration / (24 * 60));
           const hours = Math.floor((duration % (24 * 60)) / 60);
           const mins = duration % 60;
-          
+
           const parts = [];
           if (days > 0) parts.push(`${days}d`);
           if (hours > 0) parts.push(`${hours}h`);
           if (mins > 0) parts.push(`${mins}m`);
-          
-          durationText = parts.join(' ') || '< 1m';
+
+          durationText = parts.join(" ") || "< 1m";
         }
 
         return {
@@ -1797,7 +1860,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       // Format durations for readability
       const formattedData = (result.rows || []).map((row: Record<string, unknown>) => {
         const formatDuration = (mins: number) => {
-          if (!mins) return '-';
+          if (!mins) return "-";
           const days = Math.floor(mins / (24 * 60));
           if (days > 0) return `${days}d ${Math.floor((mins % (24 * 60)) / 60)}h`;
           const hours = Math.floor(mins / 60);
@@ -1836,7 +1899,8 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
 
       if (body.trackTimeInStage !== undefined) updateData.trackTimeInStage = body.trackTimeInStage;
       if (body.estimatedDays !== undefined) updateData.estimatedDays = body.estimatedDays;
-      if (body.entryRequirements !== undefined) updateData.entryRequirements = body.entryRequirements;
+      if (body.entryRequirements !== undefined)
+        updateData.entryRequirements = body.entryRequirements;
       if (body.onEnterActions !== undefined) updateData.onEnterActions = body.onEnterActions;
       if (body.onExitActions !== undefined) updateData.onExitActions = body.onExitActions;
 
@@ -1963,10 +2027,7 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       }
 
       // Get current deal
-      const [deal] = await db.instance
-        .select()
-        .from(crmDeals)
-        .where(eq(crmDeals.id, dealId));
+      const [deal] = await db.instance.select().from(crmDeals).where(eq(crmDeals.id, dealId));
 
       if (!deal) {
         return c.json({ success: false, error: "Deal not found" }, 404);
@@ -1981,11 +2042,14 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
       if (!skipValidation) {
         const validation = await validateStageTransition(dealId, targetStageId, db.instance);
         if (!validation.canMove) {
-          return c.json({ 
-            success: false, 
-            error: "Validation failed", 
-            details: validation 
-          }, 400);
+          return c.json(
+            {
+              success: false,
+              error: "Validation failed",
+              details: validation,
+            },
+            400
+          );
         }
       }
 
@@ -2035,17 +2099,17 @@ export function createCRMRouter(ctx: GrimoireContext): Hono {
         .where(eq(crmDeals.id, dealId))
         .returning();
 
-      logger.info("[CRM] Deal moved", { 
-        dealId, 
-        fromStage: deal.stageId, 
+      logger.info("[CRM] Deal moved", {
+        dealId,
+        fromStage: deal.stageId,
         toStage: targetStageId,
-        transitionId: newTransition.id
+        transitionId: newTransition.id,
       });
 
-      return c.json({ 
-        success: true, 
+      return c.json({
+        success: true,
         data: updatedDeal,
-        transition: newTransition
+        transition: newTransition,
       });
     } catch (error) {
       logger.error("[CRM] Error moving deal:", { error });

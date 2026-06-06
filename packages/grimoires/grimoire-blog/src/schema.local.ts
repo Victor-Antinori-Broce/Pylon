@@ -1,12 +1,22 @@
 /**
  * Grimoire Blog — Local Database Schema
- * 
+ *
  * Schema definitions for blog tables.
  * These mirror the tables defined in migrations/0000_initial.sql
  */
 
-import { pgTable, uuid, varchar, text, timestamp, jsonb, integer, pgEnum, primaryKey } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  timestamp,
+  jsonb,
+  integer,
+  pgEnum,
+  primaryKey,
+} from "drizzle-orm/pg-core";
 
 // Blog status enum values
 export const blogStatusValues = ["draft", "published", "scheduled", "archived"] as const;
@@ -53,12 +63,14 @@ export interface ArticleSchema {
   headline: string;
   description: string;
   url?: string;
-  image?: string | {
-    "@type": "ImageObject";
-    url: string;
-    width?: number;
-    height?: number;
-  };
+  image?:
+    | string
+    | {
+        "@type": "ImageObject";
+        url: string;
+        width?: number;
+        height?: number;
+      };
   datePublished: string;
   dateModified?: string;
   author?: {
@@ -115,7 +127,7 @@ export interface FocalPoint {
 
 /**
  * Blog posts table - SEO & GEO Optimized
- * 
+ *
  * Fields for Generative Engine Optimization (GEO):
  * - blufText: Bottom Line Up Front for AI snippets
  * - faqData: Structured FAQ data for rich snippets
@@ -127,66 +139,66 @@ export const blogPosts = pgTable("blog_posts", {
   slug: varchar("slug", { length: 500 }).notNull().unique(),
   content: jsonb("content"), // Lexical rich text JSON (block-based editor)
   excerpt: text("excerpt"),
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // GEO (Generative Engine Optimization) Fields
   // ═══════════════════════════════════════════════════════════════════════════
-  
-  /** 
+
+  /**
    * Bottom Line Up Front (BLUF) - AI-optimized summary
    * Max 50 words, designed for AI snippet extraction
    */
   blufText: text("bluf_text"),
-  
-  /** 
+
+  /**
    * FAQ data as JSONB array
    * Format: [{ "q": "Question", "a": "Answer", "order": 1 }]
    * Used for FAQPage Schema.org markup
    */
   faqData: jsonb("faq_data"),
-  
-  /** 
+
+  /**
    * URL to source dataset or raw data
    * For articles based on data/research
    */
   datasetUrl: text("dataset_url"),
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SEO Fields (explicit for validation/indexing)
   // ═══════════════════════════════════════════════════════════════════════════
-  
+
   /** Meta title - max 60 chars (overrides auto-generated) */
   metaTitle: varchar("meta_title", { length: 70 }),
-  
+
   /** Meta description - max 160 chars */
   metaDescription: varchar("meta_description", { length: 170 }),
-  
-  /** 
+
+  /**
    * OG Image ID - reference to media item for social sharing
    * Uses grimoire-media transform endpoints for optimized OG images
    */
   ogImageId: uuid("og_image_id"),
-  
+
   /**
    * Featured image focal point for smart cropping
    * Format: { x: 0.5, y: 0.5 } (0-1 normalized coordinates)
    * Used with transform endpoints for optimal cropping
    */
   featuredImageFocalPoint: jsonb("featured_image_focal_point"),
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Standard Fields
   // ═══════════════════════════════════════════════════════════════════════════
-  
+
   status: blogStatusEnum("status").default("draft").notNull(),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   authorId: text("author_id").notNull(),
   featuredImageId: uuid("featured_image_id"),
   readingTime: integer("reading_time"),
-  
+
   /** Legacy SEO overrides (JSONB for flexibility) */
   seoOverrides: jsonb("seo_overrides"),
-  
+
   /** Content blocks (for block-based editor) */
   blocks: jsonb("blocks"),
 
@@ -200,22 +212,30 @@ export const blogPosts = pgTable("blog_posts", {
 /**
  * Blog posts to tags junction table
  */
-export const blogPostsToTags = pgTable("blog_posts_to_tags", {
-  postId: uuid("post_id").notNull().references(() => blogPosts.id, { onDelete: "cascade" }),
-  tagId: uuid("tag_id").notNull(),
-}, (t) => [
-  primaryKey({ columns: [t.postId, t.tagId] }),
-]);
+export const blogPostsToTags = pgTable(
+  "blog_posts_to_tags",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.tagId] })]
+);
 
 /**
  * Blog posts to games junction table
  */
-export const blogPostsToGames = pgTable("blog_posts_to_games", {
-  postId: uuid("post_id").notNull().references(() => blogPosts.id, { onDelete: "cascade" }),
-  gameId: uuid("game_id").notNull(),
-}, (t) => [
-  primaryKey({ columns: [t.postId, t.gameId] }),
-]);
+export const blogPostsToGames = pgTable(
+  "blog_posts_to_games",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: "cascade" }),
+    gameId: uuid("game_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.gameId] })]
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // RELATIONS
@@ -297,7 +317,7 @@ export type BlogPostToGame = typeof blogPostsToGames.$inferSelect;
 
 // Additional types
 export interface BlogPostSource {
-  type: 'dataset' | 'grimoire';
+  type: "dataset" | "grimoire";
   datasetId?: string;
   entryId?: string;
   grimoireId?: string;
@@ -319,18 +339,18 @@ export interface BlogPostWithRelations {
   slug: string;
   content?: any;
   excerpt?: string | null;
-  
+
   // GEO Fields
   blufText?: string | null;
   faqData?: FAQItem[];
   datasetUrl?: string | null;
-  
+
   // SEO Fields
   metaTitle?: string | null;
   metaDescription?: string | null;
   ogImageId?: string | null;
   featuredImageFocalPoint?: { x: number; y: number } | null;
-  
+
   status: string;
   publishedAt?: Date | null;
   authorId: string;
@@ -384,7 +404,7 @@ export interface BlogPostAPIPayload {
     name: string;
     image?: string;
   };
-  
+
   /** SEO metadata - for <head> tags */
   seo: {
     title: string;
@@ -398,7 +418,7 @@ export interface BlogPostAPIPayload {
     keywords?: string;
     robots?: string;
   };
-  
+
   /** GEO/AI metadata - for AI snippets and rich results */
   geo_ai: {
     /** Bottom Line Up Front - max 50 words */
@@ -423,7 +443,7 @@ export interface BlogPostAPIPayload {
     /** Word count */
     word_count?: number;
   };
-  
+
   /** Content - structured blocks */
   content: {
     /** Main content body (Lexical JSON or HTML) */

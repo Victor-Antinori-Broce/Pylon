@@ -3,6 +3,7 @@
 ## v0.5.0 — The Modular Architecture Era (Current)
 
 ### Architecture
+
 - **Runtime:** Bun
 - **Backend:** Hono (REST API) + Drizzle ORM + PostgreSQL
 - **Modularity:** Config-driven Auto-Discovery system (`realm.json`) + Realm-bundled grimoires
@@ -55,6 +56,7 @@ Realm Esports:
 ```
 
 ### Major Features
+
 - ✅ **Lego Page Builder**: 14+ dynamic blocks (Hero, Grid, Filter, etc.)
 - ✅ **Webhooks Engine**: Event-driven HTTP callbacks with BullMQ
 - ✅ **Promote to Content**: Transform BaaS data into CMS content
@@ -67,24 +69,25 @@ Realm Esports:
 - ✅ **Formulas**: Dynamic KPI and mathematical formula engine
 
 ### What's New from v0.4
-| Component | Before (v0.4) | After (v0.5) |
-|-----------|--------------|--------------|
-| Grimoire System | Single source (src/modules) | Dual source (core + realm) |
-| Grimoire Categories | core/optional | core/optional/realm |
-| Realm Grimoires | Manual config | Auto-loaded from realm.json |
-| Gaming Realm | gremius-gaming | Realm Esports |
-| API /grimoires | Flat list | Categorized with metadata |
+
+| Component           | Before (v0.4)               | After (v0.5)                |
+| ------------------- | --------------------------- | --------------------------- |
+| Grimoire System     | Single source (src/modules) | Dual source (core + realm)  |
+| Grimoire Categories | core/optional               | core/optional/realm         |
+| Realm Grimoires     | Manual config               | Auto-loaded from realm.json |
+| Gaming Realm        | gremius-gaming              | Realm Esports               |
+| API /grimoires      | Flat list                   | Categorized with metadata   |
 
 ### Grimoires System ✅
 
 La Jerarquía Mágica de Gremius organiza funcionalidades en 4 categorías:
 
-| Category | Description | Count |
-|----------|-------------|-------|
-| **Core** | Infrastructure switchable (media-library, webhooks, connectors) | 3 |
-| **Grimoire-Core** | Official BaaS superpowers (promote, blocks, formulas) | 3 |
-| **Optional** | Enterprise/vertical features (academy, crm, blog, etc.) | 6 |
-| **Realm** | Bundled with active realm (games, teams, tournaments, etc.) | 9 |
+| Category          | Description                                                     | Count |
+| ----------------- | --------------------------------------------------------------- | ----- |
+| **Core**          | Infrastructure switchable (media-library, webhooks, connectors) | 3     |
+| **Grimoire-Core** | Official BaaS superpowers (promote, blocks, formulas)           | 3     |
+| **Optional**      | Enterprise/vertical features (academy, crm, blog, etc.)         | 6     |
+| **Realm**         | Bundled with active realm (games, teams, tournaments, etc.)     | 9     |
 
 **Total: 21 grimoires registered, 19 physical implementations**
 
@@ -127,12 +130,14 @@ Realm Esports (packages/grimoires/)
 #### Sidebar Navigation
 
 Todos los grimoires activados aparecen automáticamente en el sidebar:
+
 - **Core**: Data Sets, Media Library, Page Builder, Promote to Content, KPIs
 - **Optional**: Academy, Documents, Booking, Directory, Blog Posts, Gremius CRM
 - **Realm Esports**: Games, Streamers, Platforms, Tags, Collections, Teams, Players, Matches, Tournaments
 - **System**: Data Explorer, Webhooks
 
 ### API Endpoints (Selection)
+
 ```
 GET  /api/health
 POST /api/auth/login
@@ -166,13 +171,13 @@ GET  /api/... ?format=toon
 
 GremiusCMS utiliza **pgvector** para funcionalidades de IA (embeddings, búsqueda semántica).
 
-| Aspecto | Estado | Detalle |
-|---------|--------|---------|
-| **Docker Compose** | ✅ Configurado | Usa imagen `pgvector/pgvector:pg16` |
-| **Extensión SQL** | ✅ Auto-instalada | `init-extensions.sql` crea la extensión |
-| **Schema de IA** | ✅ Implementado | Tablas `ai_memories`, `ai_memory_chunks` con `vector(1536)` |
-| **Health Check** | ✅ Endpoint disponible | `GET /api/health/pgvector` |
-| **Verificación Startup** | ✅ Script de inicio | Detecta pgvector antes de migrar |
+| Aspecto                  | Estado                 | Detalle                                                     |
+| ------------------------ | ---------------------- | ----------------------------------------------------------- |
+| **Docker Compose**       | ✅ Configurado         | Usa imagen `pgvector/pgvector:pg16`                         |
+| **Extensión SQL**        | ✅ Auto-instalada      | `init-extensions.sql` crea la extensión                     |
+| **Schema de IA**         | ✅ Implementado        | Tablas `ai_memories`, `ai_memory_chunks` con `vector(1536)` |
+| **Health Check**         | ✅ Endpoint disponible | `GET /api/health/pgvector`                                  |
+| **Verificación Startup** | ✅ Script de inicio    | Detecta pgvector antes de migrar                            |
 
 #### ⚠️ Primer Encendido - ¡Importante!
 
@@ -186,6 +191,7 @@ docker compose up
 ```
 
 **El nuevo script de inicio detecta esto y muestra:**
+
 ```
 ❌ CRITICAL ERROR: pgvector is NOT installed!
 
@@ -197,6 +203,7 @@ Solutions:
 ```
 
 #### Verificación
+
 ```bash
 # Health check
 curl http://localhost:3000/api/health/pgvector
@@ -209,27 +216,28 @@ curl http://localhost:3000/api/health/pgvector
 
 ### Admin UI Migration (Vue 3 → Svelte 5) — COMPLETE ✅
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **Core Infrastructure** | ✅ Complete | Router, Auth stores, Theme system |
-| **Layout Components** | ✅ Complete | SidebarLayout, Navigation |
-| **DataTable** | ✅ Complete | TanStack Svelte Table with sorting/filtering/pagination |
-| **Cell Renderers** | ✅ Complete | ImageCell, RelationCell, ScoreCell |
-| **StatusBadge** | ✅ Complete | All variants (success, error, warning, info) |
-| **SchemaBuilder** | ✅ Complete | Drag-and-drop field designer with 3 tabs (Fields/Security/Workflow) |
-| **DynamicForm** | ✅ Complete | Runtime form generator from schema |
-| **RelationshipField** | ✅ Complete | Combobox/MultiSelect for relations (1:1, 1:N, M:N) |
-| **KanbanView** | ✅ Complete | Board view with drag-and-drop |
-| **MdxEditor** | ✅ Complete | Split-screen MDX editor with CodeMirror 6 + Mermaid |
-| **EditorView** | ✅ Complete | Content editor with SEO panel |
-| **SEOAnalyzer** | ✅ Complete | SEO score, char counters, social preview |
-| **PageBuilder** | ✅ Complete | Visual block layout editor with 12+ block types |
-| **BlockPicker** | ✅ Complete | Block selection grid |
-| **BlockEditor** | ✅ Complete | Per-block settings panel |
-| **Views** | ✅ Complete | Dashboard, Webhooks, DataSets, DataSetEntries, DataGrid, Editor, Builder |
-| **Widgets** | ✅ Complete | GameStats, WebhookStatus, RecentActivity |
+| Component               | Status      | Notes                                                                    |
+| ----------------------- | ----------- | ------------------------------------------------------------------------ |
+| **Core Infrastructure** | ✅ Complete | Router, Auth stores, Theme system                                        |
+| **Layout Components**   | ✅ Complete | SidebarLayout, Navigation                                                |
+| **DataTable**           | ✅ Complete | TanStack Svelte Table with sorting/filtering/pagination                  |
+| **Cell Renderers**      | ✅ Complete | ImageCell, RelationCell, ScoreCell                                       |
+| **StatusBadge**         | ✅ Complete | All variants (success, error, warning, info)                             |
+| **SchemaBuilder**       | ✅ Complete | Drag-and-drop field designer with 3 tabs (Fields/Security/Workflow)      |
+| **DynamicForm**         | ✅ Complete | Runtime form generator from schema                                       |
+| **RelationshipField**   | ✅ Complete | Combobox/MultiSelect for relations (1:1, 1:N, M:N)                       |
+| **KanbanView**          | ✅ Complete | Board view with drag-and-drop                                            |
+| **MdxEditor**           | ✅ Complete | Split-screen MDX editor with CodeMirror 6 + Mermaid                      |
+| **EditorView**          | ✅ Complete | Content editor with SEO panel                                            |
+| **SEOAnalyzer**         | ✅ Complete | SEO score, char counters, social preview                                 |
+| **PageBuilder**         | ✅ Complete | Visual block layout editor with 12+ block types                          |
+| **BlockPicker**         | ✅ Complete | Block selection grid                                                     |
+| **BlockEditor**         | ✅ Complete | Per-block settings panel                                                 |
+| **Views**               | ✅ Complete | Dashboard, Webhooks, DataSets, DataSetEntries, DataGrid, Editor, Builder |
+| **Widgets**             | ✅ Complete | GameStats, WebhookStatus, RecentActivity                                 |
 
 **Technical Decisions:**
+
 - Using **Svelte 5 compatibility mode** (not full runes) for lucide-svelte compatibility
 - Custom SPA router (svelte-routing incompatible with Svelte 5)
 - TanStack Svelte Table for data grids
@@ -240,26 +248,29 @@ curl http://localhost:3000/api/health/pgvector
 **Bundle Size:** JS: ~2.1MB (includes Mermaid), CSS: 53KB
 
 ### Migration Stats
+
 - **Vue Components:** 48 original
 - **Svelte Components:** 35 migrated + 10 new
 - **Lines of Code:** ~15,000+ TypeScript/Svelte
-- **Dependencies Added:** codemirror, @codemirror/*, mermaid, @tanstack/svelte-table
+- **Dependencies Added:** codemirror, @codemirror/\*, mermaid, @tanstack/svelte-table
 
 ### Testing Status
 
 #### Frontend Tests (Vitest) ✅
+
 ```
 Test Files: 2 passed (2)
      Tests: 20 passed (20)
   Duration: 6.25s
 ```
 
-| Test File | Tests | Status |
-|-----------|-------|--------|
-| `api.test.ts` | 10 | ✅ All passing |
-| `datasets.svelte.test.ts` | 10 | ✅ All passing |
+| Test File                 | Tests | Status         |
+| ------------------------- | ----- | -------------- |
+| `api.test.ts`             | 10    | ✅ All passing |
+| `datasets.svelte.test.ts` | 10    | ✅ All passing |
 
 **Coverage Areas:**
+
 - API client with token management
 - HTTP methods (GET, POST, auth headers)
 - FormData handling (no Content-Type override)
@@ -269,16 +280,19 @@ Test Files: 2 passed (2)
 **Note:** Legacy Vue directories (registries/, router/, stores/) and test-setup.ts removed as part of Svelte 5 migration cleanup.
 
 #### Backend Tests (Bun Test) ⚠️
+
 ```
 Test Files: 2 files
      Tests: 6 total (1 pass, 5 fail)
 ```
 
 **Status:** Tests configured but require PostgreSQL database connection
+
 - `datasets.test.ts`: 5 tests (needs DB)
 - `realtime.test.ts`: 1 test (needs WebSocket server)
 
 **Note:** Backend tests are integration tests requiring:
+
 - PostgreSQL running on port 5433
 - Database `gremiuscms` with proper credentials
 - Valkey/Redis for caching layer
@@ -289,16 +303,17 @@ Run with: `cd apps/api && DATABASE_URL=postgres://... bun test`
 
 All TypeScript errors resolved (60 → 0):
 
-| File | Errors Fixed | Solution |
-|------|--------------|----------|
-| `datasets-openapi.ts` | 15 | `as any` assertions on route handlers |
-| `connectors.routes.ts` | 8 | `Record<string, unknown>` casting |
-| `transactional-rls.ts` | 12 | Transaction type assertions |
-| `cache.ts` | 10 | Redis client type casting |
-| `media.ts` | 5 | Buffer type assertion |
-| `datasets.test.ts` | 10 | Proper type annotations |
+| File                   | Errors Fixed | Solution                              |
+| ---------------------- | ------------ | ------------------------------------- |
+| `datasets-openapi.ts`  | 15           | `as any` assertions on route handlers |
+| `connectors.routes.ts` | 8            | `Record<string, unknown>` casting     |
+| `transactional-rls.ts` | 12           | Transaction type assertions           |
+| `cache.ts`             | 10           | Redis client type casting             |
+| `media.ts`             | 5            | Buffer type assertion                 |
+| `datasets.test.ts`     | 10           | Proper type annotations               |
 
 ### Architecture & Design ✅
+
 - [x] Structured logging system (Pino)
 - [x] Centralized configuration (Zod validated)
 - [x] Rate limiting middleware (hono-rate-limiter)
@@ -309,6 +324,7 @@ All TypeScript errors resolved (60 → 0):
 - [x] Performance monitoring
 
 ### Code Quality & Technical Debt ✅
+
 - [x] ESLint + Prettier configured
 - [x] Pre-commit hooks (Husky + lint-staged)
 - [x] CI/CD pipeline (GitHub Actions)
@@ -318,6 +334,7 @@ All TypeScript errors resolved (60 → 0):
 - [x] Architecture improvements documented
 
 ### Testing Expansion ✅
+
 - [x] Grimoire registry tests (39 passing)
 - [x] Auth module tests (10 passing)
 - [x] Datasets module tests (12 passing)
@@ -330,6 +347,7 @@ All TypeScript errors resolved (60 → 0):
 - [x] Graceful handling of missing database
 
 ### TODO
+
 - [ ] Production Caddy/Traefik reverse proxy
 - [ ] Rate limiting middleware
 - [ ] Dashboard analytics integration

@@ -7,9 +7,7 @@
   "author": "GremiusCMS Team",
   "industry": "enterprise",
   "keywords": ["corporate", "enterprise", "business", "professional"],
-  "grimoires": [
-    "grimoire-crm"
-  ],
+  "grimoires": ["grimoire-crm"],
   "optional_grimoires": [],
   "config": {
     "theme": {
