@@ -165,13 +165,13 @@ api.deletePost(id);
 | `/settings`   | `Settings.svelte` | `GET /api/settings`   | ✅ OK  |
 | Update        | Form              | `PATCH /api/settings` | ✅ OK  |
 
-### 12. Grimoires
+### 12. Kons
 
-| Ruta Frontend | Vista/Componente   | Descripción        | Estado      |
-| ------------- | ------------------ | ------------------ | ----------- |
-| `/grimoires`  | `Grimoires.svelte` | Lista de grimoires | ✅ OK       |
-| `/builder`    | `PageBuilder`      | Page Builder       | ⚠️ Scaffold |
-| `/promote`    | PromoteView        | Promote to Content | ✅ OK       |
+| Ruta Frontend | Vista/Componente | Descripción        | Estado      |
+| ------------- | ---------------- | ------------------ | ----------- |
+| `/kons`       | `Kons.svelte`    | Lista de kons      | ✅ OK       |
+| `/builder`    | `PageBuilder`    | Page Builder       | ⚠️ Scaffold |
+| `/promote`    | PromoteView      | Promote to Content | ✅ OK       |
 
 ---
 

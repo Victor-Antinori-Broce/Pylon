@@ -16,13 +16,37 @@ import type {
   DatasetDefinition,
   CreateDatasetPayload,
   UpdateDatasetPayload,
-} from "@gremius/shared";
+} from "@kitsuden/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuración de API
 // ═══════════════════════════════════════════════════════════════════════════
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
+
+/**
+ * Traduce una fila de la API a `DatasetDefinition`.
+ *
+ * ── UN MISMO ARRAY CON DOS NOMBRES ─────────────────────────────────────────
+ *
+ * En la base y en la API, las columnas de un dataset viven en **`schema`**.
+ * En `DatasetDefinition` de `@kitsuden/shared` —que es lo que este estado
+ * declara— se llaman **`fields`**. Nadie traducía entre los dos, así que la
+ * lista leía `dataset.fields` de una fila que solo traía `schema` y **todos
+ * los datasets salían con «0 fields»**, incluidos los que tienen veinte
+ * columnas y miles de filas. TypeScript no lo veía: la respuesta entraba
+ * como `any` y el tipo decía una cosa mientras el dato traía otra.
+ *
+ * La traducción se hace aquí, en el borde, para que a partir de este punto
+ * el tipo declarado sea verdad.
+ */
+function aDefinicion(fila: Record<string, unknown>): DatasetDefinition {
+  const columnas = fila.schema ?? fila.fields;
+  return {
+    ...(fila as unknown as DatasetDefinition),
+    fields: Array.isArray(columnas) ? columnas : [],
+  } as DatasetDefinition;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Clase DatasetStore - Estado Reactivo Global
@@ -75,7 +99,7 @@ export class DatasetStore {
 
       const data = await response.json();
       // La API retorna { docs: DatasetDefinition[], totalDocs: number }
-      this.datasets = data.docs || [];
+      this.datasets = (data.docs || []).map(aDefinicion);
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to fetch datasets";
       console.error("[DatasetStore] fetchDatasets error:", err);
@@ -98,7 +122,7 @@ export class DatasetStore {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const dataset: DatasetDefinition = await response.json();
+      const dataset = aDefinicion(await response.json());
       this.selectedDataset = dataset;
       return dataset;
     } catch (err) {
@@ -131,7 +155,7 @@ export class DatasetStore {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      const newDataset: DatasetDefinition = await response.json();
+      const newDataset = aDefinicion(await response.json());
       // Mutación reactiva: agrega al array
       this.datasets = [...this.datasets, newDataset];
       return newDataset;
@@ -167,7 +191,7 @@ export class DatasetStore {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      const updatedDataset: DatasetDefinition = await response.json();
+      const updatedDataset = aDefinicion(await response.json());
 
       // Actualiza en el array local
       this.datasets = this.datasets.map((ds) => (ds.id === id ? updatedDataset : ds));

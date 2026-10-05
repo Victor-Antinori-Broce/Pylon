@@ -4,14 +4,14 @@ import { eq } from "drizzle-orm";
 import type { McpServerDependencies } from "./index";
 
 export function registerResources(server: McpServer, deps: McpServerDependencies) {
-  const { db, schema, grimoireRegistry } = deps;
+  const { db, schema, konRegistry } = deps;
 
   // 1. List all datasets
   server.registerResource(
     "datasets",
-    "gremius://datasets",
+    "kitsuden://datasets",
     {
-      title: "Gremius Datasets",
+      title: "Kitsuden Datasets",
       description: "List of all active dynamic datasets in the CMS",
       mimeType: "application/json",
     },
@@ -39,12 +39,12 @@ export function registerResources(server: McpServer, deps: McpServerDependencies
   // 2. Individual dataset schema via template
   server.registerResource(
     "dataset-schema",
-    new ResourceTemplate("gremius://dataset/{id}", {
+    new ResourceTemplate("kitsuden://dataset/{id}", {
       list: async () => {
         const allDatasets = await db.select().from(schema.dataSets);
         return {
           resources: allDatasets.map((ds: any) => ({
-            uri: `gremius://dataset/${ds.id}`,
+            uri: `kitsuden://dataset/${ds.id}`,
             name: `Dataset Schema: ${ds.name}`,
           })),
         };
@@ -77,13 +77,13 @@ export function registerResources(server: McpServer, deps: McpServerDependencies
     }
   );
 
-  // 3. List active grimoires (from registry)
+  // 3. List active kons (from registry)
   server.registerResource(
-    "grimoires",
-    "gremius://grimoires",
+    "kons",
+    "kitsuden://kons",
     {
-      title: "Active Grimoires",
-      description: "List of active core and realm grimoire modules",
+      title: "Active Kons",
+      description: "List of active core and grimoire kon modules",
       mimeType: "application/json",
     },
     async (uri) => {
@@ -91,7 +91,7 @@ export function registerResources(server: McpServer, deps: McpServerDependencies
         contents: [
           {
             uri: uri.href,
-            text: JSON.stringify(grimoireRegistry, null, 2),
+            text: JSON.stringify(konRegistry, null, 2),
           },
         ],
       };

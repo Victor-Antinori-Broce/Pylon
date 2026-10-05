@@ -16,7 +16,7 @@
     onCopy?: () => void;
   }
 
-  const { token, tokenPrefix = "grm_agent_", onCopy }: Props = $props();
+  const { token, tokenPrefix = "kitsuden_agent_", onCopy }: Props = $props();
 
   let showToken = $state(false);
   let copied = $state(false);

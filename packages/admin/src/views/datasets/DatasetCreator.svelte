@@ -8,7 +8,7 @@
    * - Relaciones
    * - Vistas del DataExplorer
    */
-  import type { CreateDatasetPayload, FieldDefinition } from "@gremius/shared";
+  import type { CreateDatasetPayload, FieldDefinition } from "@kitsuden/shared";
   import {
     Plus,
     Settings,
@@ -172,11 +172,11 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
-        <Plus class="w-6 h-6 text-gremius-cyan" />
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
+        <Plus class="w-6 h-6 text-kitsuden-accent" />
         Create Dataset
       </h1>
-      <p class="text-gremius-subtle mt-1">Define your data structure with fields and KPIs</p>
+      <p class="text-kitsuden-subtle mt-1">Define your data structure with fields and KPIs</p>
     </div>
     <div class="flex items-center gap-2">
       {#if step > 1}
@@ -211,17 +211,17 @@
       <button
         class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all {step ===
         s.id
-          ? 'bg-gremius-cyan text-black'
+          ? 'bg-kitsuden-accent text-black'
           : step > s.id
-            ? 'bg-gremius-cyan/20 text-gremius-cyan'
-            : 'bg-gremius-surface text-gremius-subtle'}"
+            ? 'bg-kitsuden-accent/20 text-kitsuden-accent'
+            : 'bg-kitsuden-surface text-kitsuden-subtle'}"
         onclick={() => (step = s.id)}
       >
         <svelte:component this={s.icon} class="w-4 h-4" />
         {s.label}
       </button>
       {#if index < steps.length - 1}
-        <ChevronRight class="w-4 h-4 text-gremius-subtle" />
+        <ChevronRight class="w-4 h-4 text-kitsuden-subtle" />
       {/if}
     {/each}
   </div>
@@ -229,7 +229,7 @@
   <!-- Error Message -->
   {#if datasetStore.error}
     <div
-      class="bg-gremius-pink/10 border border-gremius-pink/30 text-gremius-pink px-4 py-3 rounded-lg mb-4"
+      class="bg-kitsuden-accent-2/10 border border-kitsuden-accent-2/30 text-kitsuden-accent-2 px-4 py-3 rounded-lg mb-4"
     >
       <p class="font-medium">Error</p>
       <p class="text-sm">{datasetStore.error}</p>
@@ -237,52 +237,57 @@
   {/if}
 
   <!-- Content -->
-  <div class="bg-gremius-card border border-gremius-border rounded-xl p-6">
+  <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl p-6">
     {#if step === 1}
       <!-- Step 1: Basic Info -->
       <div class="space-y-6 max-w-xl">
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-2">
-            Dataset Label <span class="text-gremius-pink">*</span>
+          <label for="datasetlabel" class="block text-sm font-medium text-kitsuden-text mb-2">
+            Dataset Label <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
+            id="datasetlabel"
             type="text"
             bind:value={datasetLabel}
             placeholder="e.g., Sales Orders"
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text focus:outline-none focus:border-gremius-cyan"
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-2">
-            Dataset Name <span class="text-gremius-pink">*</span>
+          <label for="datasetname" class="block text-sm font-medium text-kitsuden-text mb-2">
+            Dataset Name <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
+            id="datasetname"
             type="text"
             bind:value={datasetName}
             placeholder="e.g., sales_orders"
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text font-mono focus:outline-none focus:border-gremius-cyan"
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text font-mono focus:outline-none focus:border-kitsuden-accent"
           />
-          <p class="mt-1 text-xs text-gremius-subtle">
+          <p class="mt-1 text-xs text-kitsuden-subtle">
             Used in API endpoints. Auto-generated from label.
           </p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-2"> Description </label>
+          <label for="description" class="block text-sm font-medium text-kitsuden-text mb-2">
+            Description
+          </label>
           <textarea
+            id="description"
             bind:value={description}
             placeholder="What data does this dataset contain?"
             rows="3"
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text focus:outline-none focus:border-gremius-cyan"
-          />
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
+          ></textarea>
         </div>
       </div>
     {:else if step === 2}
       <!-- Step 2: Fields -->
       <div class="space-y-6">
         <div class="flex items-center justify-between">
-          <h3 class="font-medium text-gremius-text">
+          <h3 class="font-medium text-kitsuden-text">
             Native Fields ({fields.length})
           </h3>
           <button
@@ -295,11 +300,11 @@
         </div>
 
         {#if fields.length === 0}
-          <div class="text-center py-12 border-2 border-dashed border-gremius-border rounded-xl">
-            <Table2 class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
-            <p class="text-gremius-text-dim">No fields yet</p>
+          <div class="text-center py-12 border-2 border-dashed border-kitsuden-border rounded-xl">
+            <Table2 class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
+            <p class="text-kitsuden-text-dim">No fields yet</p>
             <button
-              class="text-gremius-cyan hover:underline mt-2"
+              class="text-kitsuden-accent hover:underline mt-2"
               onclick={() => (showAddField = true)}
             >
               Add your first field
@@ -309,7 +314,7 @@
           <div class="space-y-3">
             {#each fields as field, index}
               <div
-                class="flex items-center gap-4 p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border"
+                class="flex items-center gap-4 p-4 bg-kitsuden-surface/50 rounded-lg border border-kitsuden-border"
               >
                 <div class="flex-1">
                   {#if editingField?.id === field.id}
@@ -318,7 +323,7 @@
                         type="text"
                         bind:value={field.label}
                         placeholder="Field Label"
-                        class="flex-1 px-3 py-1.5 bg-gremius-bg border border-gremius-border rounded text-sm"
+                        class="flex-1 px-3 py-1.5 bg-kitsuden-bg border border-kitsuden-border rounded text-sm"
                         onblur={() => {
                           if (!field.name) {
                             field.name = field.label.toLowerCase().replace(/[^a-z0-9]+/g, "_");
@@ -329,18 +334,18 @@
                         type="text"
                         bind:value={field.name}
                         placeholder="name"
-                        class="w-32 px-3 py-1.5 bg-gremius-bg border border-gremius-border rounded text-sm font-mono"
+                        class="w-32 px-3 py-1.5 bg-kitsuden-bg border border-kitsuden-border rounded text-sm font-mono"
                       />
                       <select
                         bind:value={field.type}
-                        class="px-3 py-1.5 bg-gremius-bg border border-gremius-border rounded text-sm"
+                        class="px-3 py-1.5 bg-kitsuden-bg border border-kitsuden-border rounded text-sm"
                       >
                         {#each nativeFieldTypes as type}
                           <option value={type.id}>{type.label}</option>
                         {/each}
                       </select>
                       <button
-                        class="p-1.5 text-gremius-green hover:bg-gremius-green/10 rounded"
+                        class="p-1.5 text-kitsuden-green hover:bg-kitsuden-green/10 rounded"
                         onclick={() => (editingField = null)}
                       >
                         <Save class="w-4 h-4" />
@@ -348,12 +353,12 @@
                     </div>
                   {:else}
                     <div class="flex items-center gap-3">
-                      <span class="font-medium text-gremius-text">{field.label}</span>
-                      <code class="text-xs text-gremius-subtle bg-gremius-bg px-2 py-0.5 rounded"
+                      <span class="font-medium text-kitsuden-text">{field.label}</span>
+                      <code class="text-xs text-kitsuden-subtle bg-kitsuden-bg px-2 py-0.5 rounded"
                         >{field.name}</code
                       >
                       <span
-                        class="text-xs text-gremius-subtle px-2 py-0.5 bg-gremius-cyan/10 text-gremius-cyan rounded"
+                        class="text-xs text-kitsuden-subtle px-2 py-0.5 bg-kitsuden-accent/10 text-kitsuden-accent rounded"
                       >
                         {nativeFieldTypes.find((t) => t.id === field.type)?.label}
                       </span>
@@ -362,13 +367,13 @@
                 </div>
                 <div class="flex items-center gap-1">
                   <button
-                    class="p-1.5 text-gremius-subtle hover:text-gremius-text"
+                    class="p-1.5 text-kitsuden-subtle hover:text-kitsuden-text"
                     onclick={() => (editingField = field)}
                   >
                     <Settings class="w-4 h-4" />
                   </button>
                   <button
-                    class="p-1.5 text-gremius-subtle hover:text-gremius-pink"
+                    class="p-1.5 text-kitsuden-subtle hover:text-kitsuden-accent-2"
                     onclick={() => removeField(index)}
                   >
                     <X class="w-4 h-4" />
@@ -384,10 +389,10 @@
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="font-medium text-gremius-text">
+            <h3 class="font-medium text-kitsuden-text">
               Calculated Fields & KPIs ({calculatedFields.length})
             </h3>
-            <p class="text-sm text-gremius-subtle">
+            <p class="text-sm text-kitsuden-subtle">
               Create metrics and formulas based on your fields
             </p>
           </div>
@@ -401,10 +406,10 @@
         </div>
 
         {#if calculatedFields.length === 0}
-          <div class="text-center py-12 border-2 border-dashed border-gremius-border rounded-xl">
-            <Calculator class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
-            <p class="text-gremius-text-dim">No calculated fields yet</p>
-            <p class="text-sm text-gremius-subtle mt-1">
+          <div class="text-center py-12 border-2 border-dashed border-kitsuden-border rounded-xl">
+            <Calculator class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
+            <p class="text-kitsuden-text-dim">No calculated fields yet</p>
+            <p class="text-sm text-kitsuden-subtle mt-1">
               Create KPIs like totals, averages, or custom formulas
             </p>
           </div>
@@ -412,33 +417,35 @@
           <div class="space-y-3">
             {#each calculatedFields as cf, index}
               <div
-                class="flex items-center gap-4 p-4 bg-gremius-surface/50 rounded-lg border border-gremius-border"
+                class="flex items-center gap-4 p-4 bg-kitsuden-surface/50 rounded-lg border border-kitsuden-border"
               >
                 <div
-                  class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center"
+                  class="w-10 h-10 rounded-lg bg-kitsuden-accent/10 flex items-center justify-center"
                 >
-                  <Calculator class="w-5 h-5 text-gremius-cyan" />
+                  <Calculator class="w-5 h-5 text-kitsuden-accent" />
                 </div>
                 <div class="flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-gremius-text">{cf.label}</span>
+                    <span class="font-medium text-kitsuden-text">{cf.label}</span>
                     {#if cf.isKpi}
                       <span class="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded"
                         >KPI</span
                       >
                     {/if}
                   </div>
-                  <code class="text-xs text-gremius-subtle">{cf.name}</code>
+                  <code class="text-xs text-kitsuden-subtle">{cf.name}</code>
                   {#if cf.config?.expression}
-                    <p class="text-xs text-gremius-subtle mt-1 font-mono">{cf.config.expression}</p>
+                    <p class="text-xs text-kitsuden-subtle mt-1 font-mono">
+                      {cf.config.expression}
+                    </p>
                   {/if}
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-xs text-gremius-subtle px-2 py-1 bg-gremius-bg rounded">
+                  <span class="text-xs text-kitsuden-subtle px-2 py-1 bg-kitsuden-bg rounded">
                     {cf.format?.type}
                   </span>
                   <button
-                    class="p-1.5 text-gremius-subtle hover:text-gremius-pink"
+                    class="p-1.5 text-kitsuden-subtle hover:text-kitsuden-accent-2"
                     onclick={() => removeCalculatedField(index)}
                   >
                     <X class="w-4 h-4" />
@@ -451,9 +458,9 @@
 
         <!-- Quick Formula Builder -->
         {#if fields.length > 0}
-          <div class="mt-8 p-4 bg-gremius-surface/30 rounded-xl border border-gremius-border">
-            <h4 class="font-medium text-gremius-text mb-4 flex items-center gap-2">
-              <Calculator class="w-4 h-4 text-gremius-cyan" />
+          <div class="mt-8 p-4 bg-kitsuden-surface/30 rounded-xl border border-kitsuden-border">
+            <h4 class="font-medium text-kitsuden-text mb-4 flex items-center gap-2">
+              <Calculator class="w-4 h-4 text-kitsuden-accent" />
               Quick Formula Preview
             </h4>
             <FormulaBuilder
@@ -467,45 +474,45 @@
     {:else if step === 4}
       <!-- Step 4: Review -->
       <div class="space-y-6">
-        <h3 class="font-medium text-gremius-text">Review Dataset Configuration</h3>
+        <h3 class="font-medium text-kitsuden-text">Review Dataset Configuration</h3>
 
         <div class="space-y-4">
-          <div class="p-4 bg-gremius-surface/50 rounded-lg">
-            <h4 class="text-sm font-medium text-gremius-text mb-2">Basic Info</h4>
+          <div class="p-4 bg-kitsuden-surface/50 rounded-lg">
+            <h4 class="text-sm font-medium text-kitsuden-text mb-2">Basic Info</h4>
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span class="text-gremius-subtle">Label:</span>
-                <span class="text-gremius-text ml-2">{datasetLabel}</span>
+                <span class="text-kitsuden-subtle">Label:</span>
+                <span class="text-kitsuden-text ml-2">{datasetLabel}</span>
               </div>
               <div>
-                <span class="text-gremius-subtle">Name:</span>
-                <code class="text-gremius-cyan ml-2">{datasetName}</code>
+                <span class="text-kitsuden-subtle">Name:</span>
+                <code class="text-kitsuden-accent ml-2">{datasetName}</code>
               </div>
             </div>
           </div>
 
-          <div class="p-4 bg-gremius-surface/50 rounded-lg">
-            <h4 class="text-sm font-medium text-gremius-text mb-2">
+          <div class="p-4 bg-kitsuden-surface/50 rounded-lg">
+            <h4 class="text-sm font-medium text-kitsuden-text mb-2">
               Native Fields ({fields.length})
             </h4>
             <div class="flex flex-wrap gap-2">
               {#each fields as field}
-                <span class="px-3 py-1 bg-gremius-bg rounded-lg text-sm text-gremius-text">
+                <span class="px-3 py-1 bg-kitsuden-bg rounded-lg text-sm text-kitsuden-text">
                   {field.label}
-                  <span class="text-gremius-subtle text-xs">({field.type})</span>
+                  <span class="text-kitsuden-subtle text-xs">({field.type})</span>
                 </span>
               {/each}
             </div>
           </div>
 
-          <div class="p-4 bg-gremius-surface/50 rounded-lg">
-            <h4 class="text-sm font-medium text-gremius-text mb-2">
+          <div class="p-4 bg-kitsuden-surface/50 rounded-lg">
+            <h4 class="text-sm font-medium text-kitsuden-text mb-2">
               Calculated Fields ({calculatedFields.length})
             </h4>
             <div class="flex flex-wrap gap-2">
               {#each calculatedFields as cf}
                 <span
-                  class="px-3 py-1 bg-gremius-cyan/10 border border-gremius-cyan/20 rounded-lg text-sm text-gremius-cyan"
+                  class="px-3 py-1 bg-kitsuden-accent/10 border border-kitsuden-accent/20 rounded-lg text-sm text-kitsuden-accent"
                 >
                   {cf.label}
                   {#if cf.isKpi}
@@ -524,16 +531,16 @@
 <!-- Modal: Add Field -->
 {#if showAddField}
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-gremius-card border border-gremius-border rounded-xl w-full max-w-lg p-6">
-      <h3 class="text-lg font-bold text-gremius-text mb-4">Add Field</h3>
+    <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl w-full max-w-lg p-6">
+      <h3 class="text-lg font-bold text-kitsuden-text mb-4">Add Field</h3>
       <div class="grid grid-cols-2 gap-3">
         {#each nativeFieldTypes as type}
           <button
-            class="p-4 rounded-lg border border-gremius-border hover:border-gremius-cyan/50 text-left transition-colors"
+            class="p-4 rounded-lg border border-kitsuden-border hover:border-kitsuden-accent/50 text-left transition-colors"
             onclick={() => addField(type.id)}
           >
-            <p class="font-medium text-gremius-text">{type.label}</p>
-            <p class="text-xs text-gremius-subtle">{type.description}</p>
+            <p class="font-medium text-kitsuden-text">{type.label}</p>
+            <p class="text-xs text-kitsuden-subtle">{type.description}</p>
           </button>
         {/each}
       </div>
@@ -557,9 +564,9 @@
 
 <style>
   .btn-primary {
-    @apply px-4 py-2 bg-gremius-cyan text-black font-medium rounded-lg hover:brightness-110 transition-all;
+    @apply px-4 py-2 bg-kitsuden-accent text-black font-medium rounded-lg hover:brightness-110 transition-all;
   }
   .btn-secondary {
-    @apply px-4 py-2 bg-gremius-surface border border-gremius-border text-gremius-text rounded-lg hover:border-gremius-cyan/50 transition-all;
+    @apply px-4 py-2 bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text rounded-lg hover:border-kitsuden-accent/50 transition-all;
   }
 </style>

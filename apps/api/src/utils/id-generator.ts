@@ -4,17 +4,34 @@
  * Utilidades centralizadas para generar identificadores únicos
  * con formatos estandarizados según el tipo de entidad.
  *
- * Formato para Agentes: grm_agent_{tipo}_{hash_unico}
- * Ejemplo: grm_agent_claude_abc123xyz
+ * Formato para Agentes: kitsuden_agent_{tipo}_{hash_unico}
+ * Ejemplo: kitsuden_agent_claude_abc123xyz
  */
 
 import { createHash, randomBytes } from "crypto";
+
+import { hash as argon2Hash } from "@node-rs/argon2";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTES
 // ═══════════════════════════════════════════════════════════════════════════
 
-const AGENT_ID_PREFIX = "grm_agent";
+const AGENT_ID_PREFIX = "kitsuden_agent";
+
+/**
+ * Prefijos legacy aceptados SOLO al parsear/validar identidades ya emitidas.
+ * Nunca se generan. Sunset 2026-08-01 (mismo que las keys `kitsuden_sk_*`), tras
+ * el cual se elimina esta lista y los tokens antiguos dejan de autenticar.
+ */
+const LEGACY_AGENT_ID_PREFIXES = ["grm_agent"] as const;
+
+/** Prefijo canónico + legacy, para parseo tolerante durante la migración. */
+const ACCEPTED_AGENT_ID_PREFIXES = [AGENT_ID_PREFIX, ...LEGACY_AGENT_ID_PREFIXES];
+
+/** Devuelve el prefijo aceptado con el que empieza `value`, o null. */
+function matchAgentPrefix(value: string): string | null {
+  return ACCEPTED_AGENT_ID_PREFIXES.find((p) => value.startsWith(`${p}_`)) ?? null;
+}
 const ID_HASH_LENGTH = 16; // Longitud del hash único
 const API_KEY_RANDOM_LENGTH = 32; // Bytes para generar la parte aleatoria
 
@@ -64,7 +81,7 @@ export interface AgentIdOptions {
 }
 
 export interface GeneratedAgentId {
-  /** ID completo: grm_agent_{tipo}_{hash} */
+  /** ID completo: kitsuden_agent_{tipo}_{hash} */
   id: string;
   /** Solo el tipo normalizado */
   type: string;
@@ -77,8 +94,8 @@ export interface GeneratedAgentId {
 /**
  * Genera un ID único para un agente con formato estandarizado.
  *
- * Formato: grm_agent_{tipo}_{hash_unico}
- * Ejemplo: grm_agent_claude-desktop_a1b2c3d4e5f67890
+ * Formato: kitsuden_agent_{tipo}_{hash_unico}
+ * Ejemplo: kitsuden_agent_claude-desktop_a1b2c3d4e5f67890
  *
  * @param options - Opciones de generación
  * @returns Objeto con el ID completo y sus componentes
@@ -86,7 +103,7 @@ export interface GeneratedAgentId {
  * @example
  * ```typescript
  * const agentId = generateAgentId({ type: "claude-desktop" });
- * console.log(agentId.id); // "grm_agent_claude-desktop_a1b2c3d4e5f67890"
+ * console.log(agentId.id); // "kitsuden_agent_claude-desktop_a1b2c3d4e5f67890"
  * ```
  */
 export function generateAgentId(options: AgentIdOptions): GeneratedAgentId {
@@ -134,38 +151,45 @@ export interface AgentApiKeyOptions {
 export interface GeneratedAgentApiKey {
   /** API key completa en texto plano (SOLO MOSTRAR UNA VEZ) */
   plainKey: string;
-  /** Hash SHA-256 para almacenar en DB */
+  /** Hash Argon2id del secret para almacenar en DB */
   keyHash: string;
+  /** keyId público para lookup en DB */
+  keyId: string;
+  /** Algoritmo de hashing */
+  algorithm: "argon2id";
   /** Prefijo para mostrar en UI (oculta parte sensible) */
   keyPrefix: string;
   /** Componentes de la key */
   components: {
     prefix: string;
     type: string;
-    random: string;
+    keyId: string;
+    secret: string;
   };
 }
 
 /**
- * Genera una API key para un agente con formato estandarizado.
+ * Genera una API key para un agente con formato estandarizado y Argon2id.
  *
- * Formato: grm_agent_{tipo}_{random_base64url}
- * Ejemplo: grm_agent_claude-desktop_a1b2c3d4e5f6...
+ * Formato nuevo: kitsuden_agent_{tipo}_{key_id}_{secret}
+ * Ejemplo: kitsuden_agent_claude-desktop_a1b2c3d4e5f67890_xxxxxxxx...
  *
- * La key generada tiene alta entropía (256 bits) y es segura
- * para uso en headers de autorización.
+ * - key_id: identificador público de 16 hex (64 bits) para lookup en DB.
+ * - secret: parte secreta de 256 bits hasheada con Argon2id.
  *
  * @param options - Opciones de generación
- * @returns Objeto con la key plain, hash y prefijo
+ * @returns Objeto con la key plain, hash Argon2id y keyId
  *
  * @example
  * ```typescript
- * const apiKey = generateAgentApiKey({ type: "claude-desktop" });
- * console.log(apiKey.plainKey); // "grm_agent_claude-desktop_..."
+ * const apiKey = await generateAgentApiKey({ type: "claude-desktop" });
+ * console.log(apiKey.plainKey); // "kitsuden_agent_claude-desktop_..."
  * console.log(apiKey.keyHash);  // Guardar esto en DB
  * ```
  */
-export function generateAgentApiKey(options: AgentApiKeyOptions): GeneratedAgentApiKey {
+export async function generateAgentApiKey(
+  options: AgentApiKeyOptions
+): Promise<GeneratedAgentApiKey> {
   const { type, randomLength = API_KEY_RANDOM_LENGTH } = options;
 
   // Normalizar tipo
@@ -175,26 +199,32 @@ export function generateAgentApiKey(options: AgentApiKeyOptions): GeneratedAgent
     throw new Error("Agent type cannot be empty");
   }
 
-  // Generar parte aleatoria (alta entropía)
-  const randomPart = randomBytes(randomLength).toString("base64url");
+  // key_id público de 16 hex (64 bits) para lookup único
+  const keyId = randomBytes(8).toString("hex");
 
-  // Construir key completa
-  const plainKey = `${AGENT_ID_PREFIX}_${normalizedType}_${randomPart}`;
+  // Secret de alta entropía (256 bits)
+  const secret = randomBytes(randomLength).toString("base64url");
 
-  // Crear hash para almacenar (SHA-256 es suficiente para keys aleatorias de alta entropía)
-  const keyHash = createHash("sha256").update(plainKey).digest("hex");
+  // Key completa
+  const plainKey = `${AGENT_ID_PREFIX}_${normalizedType}_${keyId}_${secret}`;
 
-  // Prefijo para UI (últimos 8 caracteres visibles)
-  const keyPrefix = `${AGENT_ID_PREFIX}_${normalizedType}_****${randomPart.slice(-8)}`;
+  // Hash Argon2id del secret (no de toda la key)
+  const keyHash = await argon2Hash(secret);
+
+  // Prefijo para UI (últimos 4 chars del keyId)
+  const keyPrefix = `${AGENT_ID_PREFIX}_${normalizedType}_****${keyId.slice(-4)}`;
 
   return {
     plainKey,
     keyHash,
+    keyId,
+    algorithm: "argon2id",
     keyPrefix,
     components: {
       prefix: AGENT_ID_PREFIX,
       type: normalizedType,
-      random: randomPart,
+      keyId,
+      secret,
     },
   };
 }
@@ -206,27 +236,24 @@ export function generateAgentApiKey(options: AgentApiKeyOptions): GeneratedAgent
 /**
  * Parsea un ID de agente para extraer sus componentes
  *
- * @param id - ID completo (ej: "grm_agent_claude-desktop_abc123")
+ * @param id - ID completo (ej: "kitsuden_agent_claude-desktop_abc123")
  * @returns Componentes del ID o null si es inválido
  */
 export function parseAgentId(id: string): { prefix: string; type: string; hash: string } | null {
-  const parts = id.split("_");
+  // Acepta el prefijo canónico (kitsuden_agent) y los legacy en sunset (grm_agent).
+  const prefix = matchAgentPrefix(id);
+  if (!prefix) return null;
 
-  // Debe tener al menos 3 partes: grm, agent, tipo, hash
-  if (parts.length < 4) return null;
+  const parts = id.slice(prefix.length + 1).split("_");
 
-  // Verificar prefijo
-  if (parts[0] !== "grm" || parts[1] !== "agent") return null;
+  // Debe quedar al menos tipo + hash
+  if (parts.length < 2) return null;
 
-  // El tipo puede contener guiones (partes 2 hasta la última)
+  // El tipo puede contener guiones bajos (todo menos la última parte)
   const hash = parts[parts.length - 1];
-  const type = parts.slice(2, parts.length - 1).join("_");
+  const type = parts.slice(0, parts.length - 1).join("_");
 
-  return {
-    prefix: `${parts[0]}_${parts[1]}`,
-    type,
-    hash,
-  };
+  return { prefix, type, hash };
 }
 
 /**
@@ -265,9 +292,10 @@ export function getAgentTypeFromId(id: string): string | null {
  * @returns Tipo normalizado o null si es inválido
  */
 export function getAgentTypeFromApiKey(apiKey: string): string | null {
-  if (!apiKey.startsWith(`${AGENT_ID_PREFIX}_`)) return null;
+  const prefix = matchAgentPrefix(apiKey);
+  if (!prefix) return null;
 
-  const parts = apiKey.slice(AGENT_ID_PREFIX.length + 1).split("_");
+  const parts = apiKey.slice(prefix.length + 1).split("_");
   if (parts.length < 2) return null;
 
   // El tipo son todas las partes excepto la última (random)
@@ -282,15 +310,12 @@ export function getAgentTypeFromApiKey(apiKey: string): string | null {
  * Genera una API key sin tipo (formato legacy)
  * @deprecated Use generateAgentApiKey({ type: "..." }) instead
  */
-export function generateLegacyAgentApiKey(): {
+export async function generateLegacyAgentApiKey(): Promise<{
   plainKey: string;
   keyHash: string;
+  keyId: string;
+  algorithm: "argon2id";
   keyPrefix: string;
-} {
-  const randomPart = randomBytes(32).toString("base64url");
-  const plainKey = `${AGENT_ID_PREFIX}_${randomPart}`;
-  const keyHash = createHash("sha256").update(plainKey).digest("hex");
-  const keyPrefix = `${AGENT_ID_PREFIX}_****${randomPart.slice(-8)}`;
-
-  return { plainKey, keyHash, keyPrefix };
+}> {
+  return generateAgentApiKey({ type: "legacy" });
 }

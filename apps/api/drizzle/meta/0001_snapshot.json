@@ -968,10 +968,10 @@
         }
       },
       "foreignKeys": {
-        "function_executions_function_id_gremius_functions_id_fk": {
-          "name": "function_executions_function_id_gremius_functions_id_fk",
+        "function_executions_function_id_kitsuden_functions_id_fk": {
+          "name": "function_executions_function_id_kitsuden_functions_id_fk",
           "tableFrom": "function_executions",
-          "tableTo": "gremius_functions",
+          "tableTo": "kitsuden_functions",
           "columnsFrom": ["function_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1548,8 +1548,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.gremius_functions": {
-      "name": "gremius_functions",
+    "public.kitsuden_functions": {
+      "name": "kitsuden_functions",
       "schema": "",
       "columns": {
         "id": {
@@ -1741,18 +1741,18 @@
         }
       },
       "foreignKeys": {
-        "gremius_functions_watch_dataset_id_data_sets_id_fk": {
-          "name": "gremius_functions_watch_dataset_id_data_sets_id_fk",
-          "tableFrom": "gremius_functions",
+        "kitsuden_functions_watch_dataset_id_data_sets_id_fk": {
+          "name": "kitsuden_functions_watch_dataset_id_data_sets_id_fk",
+          "tableFrom": "kitsuden_functions",
           "tableTo": "data_sets",
           "columnsFrom": ["watch_dataset_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "gremius_functions_created_by_id_auth_users_id_fk": {
-          "name": "gremius_functions_created_by_id_auth_users_id_fk",
-          "tableFrom": "gremius_functions",
+        "kitsuden_functions_created_by_id_auth_users_id_fk": {
+          "name": "kitsuden_functions_created_by_id_auth_users_id_fk",
+          "tableFrom": "kitsuden_functions",
           "tableTo": "auth_users",
           "columnsFrom": ["created_by_id"],
           "columnsTo": ["id"],
@@ -1921,8 +1921,8 @@
           "notNull": true,
           "default": false
         },
-        "realm_id": {
-          "name": "realm_id",
+        "grimoire_id": {
+          "name": "grimoire_id",
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false
@@ -2067,7 +2067,7 @@
           "type": "varchar(200)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'GremiusCMS'"
+          "default": "'Kitsuden'"
         },
         "site_description": {
           "name": "site_description",

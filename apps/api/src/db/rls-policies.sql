@@ -13,6 +13,24 @@
 -- el middleware de Hono en cada petición.
 --
 -- NOTA: Ejecutar este archivo después de las migraciones de Drizzle.
+--
+-- ── «CONTEXTO VACÍO = PERMITIR TODO» TENÍA UN AGUJERO ───────────────────────
+--
+-- Las políticas fallan ABIERTAS sin contexto (migraciones, seeds y workers
+-- corren sin usuario). Pero `current_setting('app.current_user_id', true)`
+-- devuelve NULL —no ''— en una conexión donde NADIE lo ha fijado todavía, y
+-- `NULL = ''` no es verdadero: es NULL. La política no permitía nada.
+--
+-- Como las conexiones son de un pool, el resultado dependía de por dónde
+-- hubiera pasado antes esa conexión: una recién abierta devolvía cero filas
+-- y otra, reutilizada de una petición con contexto, las devolvía todas. El
+-- mismo GET anónimo a un dataset público daba una cosa u otra según le
+-- tocara. Por eso ahora se comprueba también `IS NULL`, igual que en
+-- rls-owned-tables.sql.
+--
+-- Y cada política se BORRA antes de crearse: el aplicador se traga los
+-- «already exists», así que sin el DROP editar este fichero no cambiaba nada
+-- en una base que ya lo tuviera aplicado.
 -- ============================================================================
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -38,13 +56,16 @@ END $$;
 
 -- Política: Los usuarios solo ven sus propios registros
 -- Se aplica cuando owner_id está establecido
+DROP POLICY IF EXISTS data_entries_owner_isolation ON data_entries;
+
 CREATE POLICY data_entries_owner_isolation ON data_entries
     FOR ALL
     TO PUBLIC
     USING (
         -- Si no hay contexto RLS (app.current_user_id vacío), permitir todo
         -- (para compatibilidad con migraciones y scripts admin)
-        current_setting('app.current_user_id', true) = ''
+        (current_setting('app.current_user_id', true) IS NULL
+         OR current_setting('app.current_user_id', true) = '')
         OR
         -- Si es admin, permitir todo
         current_setting('app.current_user_role', true) = 'admin'
@@ -60,7 +81,8 @@ CREATE POLICY data_entries_owner_isolation ON data_entries
     )
     WITH CHECK (
         -- Solo el dueño puede modificar
-        current_setting('app.current_user_id', true) = ''
+        (current_setting('app.current_user_id', true) IS NULL
+         OR current_setting('app.current_user_id', true) = '')
         OR
         current_setting('app.current_user_role', true) = 'admin'
         OR
@@ -69,6 +91,8 @@ CREATE POLICY data_entries_owner_isolation ON data_entries
 
 -- Política: Registros públicos son visibles por todos
 -- (cuando no hay restricción de owner)
+DROP POLICY IF EXISTS data_entries_public_read ON data_entries;
+
 CREATE POLICY data_entries_public_read ON data_entries
     FOR SELECT
     TO PUBLIC
@@ -86,11 +110,14 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ai_memories') THEN
         -- Política: Usuarios solo ven sus propias memorias
+        DROP POLICY IF EXISTS ai_memories_user_isolation ON ai_memories;
+
         CREATE POLICY ai_memories_user_isolation ON ai_memories
             FOR ALL
             TO PUBLIC
             USING (
-                current_setting('app.current_user_id', true) = ''
+                (current_setting('app.current_user_id', true) IS NULL
+         OR current_setting('app.current_user_id', true) = '')
                 OR
                 user_id = current_setting('app.current_user_id', true)
             )
@@ -108,7 +135,7 @@ END $$;
 CREATE OR REPLACE FUNCTION is_rls_active()
 RETURNS boolean AS $$
 BEGIN
-    RETURN current_setting('app.current_user_id', true) != '';
+    RETURN COALESCE(current_setting('app.current_user_id', true), '') != '';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -163,7 +190,7 @@ COMMENT ON POLICY data_entries_owner_isolation ON data_entries IS 'Política RLS
 -- ============================================================================
 -- 
 -- INSTRUCCIONES DE USO:
--- 1. Ejecutar: psql -d gremius -f apps/api/src/db/rls-policies.sql
+-- 1. Ejecutar: psql -d kitsuden -f apps/api/src/db/rls-policies.sql
 -- 2. Verificar: SELECT * FROM pg_policies WHERE tablename = 'data_entries';
 -- 3. Testing: SELECT set_config('app.current_user_id', 'user-123', true);
 --              SELECT * FROM data_entries; -- Debe retornar solo registros del usuario

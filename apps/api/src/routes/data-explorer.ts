@@ -11,6 +11,7 @@
  *   ✅ Smart Views (saved filter presets)
  */
 
+import { messageOf } from "@kitsuden/engine";
 import { count, eq, sql, asc, desc, ilike, gt, lt, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
 
@@ -23,13 +24,33 @@ import {
   siteSettings,
   modules,
 } from "../db/schema";
+import { escrituraExigeAdmin, tablaEsExplorable } from "../lib/tablas-explorables";
 import { requireAuth } from "../middleware/auth";
-import { introspectTable, getAllTables } from "../services/schema-introspector";
+import {
+  introspectTable,
+  getAllTables,
+  type IntrospectedColumn,
+} from "../services/schema-introspector";
 
 export const explorerRoutes = new Hono();
 
 // Apply authentication to all routes
 explorerRoutes.use("/*", requireAuth);
+
+/**
+ * Operadores de `?filter_op=`.
+ *
+ * La lista se declara una vez y se usa para RECHAZAR lo que no esté en ella.
+ * Los dos caminos de este archivo —el tipado y el de SQL dinámico— trataban un
+ * operador desconocido como "sin filtro": quien pidiera `filter_op=starts_with`
+ * recibía la tabla entera creyendo que la había filtrado. Devolver de más en
+ * silencio es peor que devolver un error.
+ *
+ * El camino dinámico solo entiende los dos primeros; lo dice en su propia
+ * comprobación.
+ */
+const FILTER_OPS = ["contains", "equals", "gt", "lt", "gte", "lte"] as const;
+const FILTER_OPS_DINAMICO = ["contains", "equals"] as const;
 
 // ═══════════════════════════════════════════════
 // DYNAMIC TABLE RESOLUTION (fallback for tables not in static registry)
@@ -40,7 +61,55 @@ explorerRoutes.use("/*", requireAuth);
  * dynamic introspection of any real DB table via information_schema.
  * This allows ALL tables to be explored without manual registration.
  */
+/**
+ * Deniega la escritura de tablas sensibles a quien no sea `admin`.
+ *
+ * `auth_users` y `modules` se pueden MIRAR con sesión —son datos que el panel
+ * enseña— pero modificarlas es otra cosa: cambiar `role` en `auth_users` es
+ * escalar privilegios, y `modules` es el interruptor que instala kons.
+ *
+ * Devuelve la respuesta a enviar, o `null` si puede seguir.
+ */
+function denegarEscrituraSensible(
+  c: { get(k: "user"): { role?: string } | undefined; json: (b: unknown, s: 403) => Response },
+  tabla: string
+): Response | null {
+  if (!escrituraExigeAdmin(tabla)) return null;
+
+  const rol = c.get("user")?.role;
+  if (rol === "admin") return null;
+
+  return c.json(
+    {
+      error: "Forbidden",
+      message: `Modificar '${tabla}' requiere rol administrador.`,
+    },
+    403
+  );
+}
+
 async function resolveTable(name: string): Promise<TableMeta | null> {
+  /**
+   * La política de acceso vive AQUÍ porque aquí pasan todas las rutas de datos
+   * —listar, crear, modificar, borrar y opciones—. Ponerla en cada handler
+   * habría dejado el hueco en el que se olvidara.
+   *
+   * Antes esto resolvía cualquier tabla de la base por introspección, y el
+   * router entero estaba protegido solo con `requireAuth`, que no mira el rol.
+   * Un `editor` llegaba a `kitsuden_secrets`, `auth_accounts` y
+   * `kitsuden_migrations`, con escritura. Ver `lib/tablas-explorables.ts`.
+   *
+   * Se devuelve `null` —lo mismo que una tabla inexistente— a propósito: un 403
+   * confirmaría que la tabla existe.
+   */
+  const veredicto = await tablaEsExplorable(name, Object.keys(tableRegistry));
+  if (!veredicto.permitida) {
+    if (veredicto.motivo === "prohibida") {
+      console.warn(`[Explorer] Acceso denegado a tabla protegida: ${name}`);
+    }
+    return null;
+  }
+
   // 1. Static registry (fast, typed Drizzle references)
   if (tableRegistry[name]) return tableRegistry[name];
 
@@ -78,18 +147,160 @@ function humanizeTableNameLocal(name: string): string {
 // SCHEMA INTROSPECTION — For Admin UI generation
 // ═══════════════════════════════════════════════
 
-// ── GET /schema/:grimoire — Get schema for a grimoire's tables ──
-explorerRoutes.get("/schema/:grimoire", async (c) => {
-  const grimoireId = c.req.param("grimoire");
+/**
+ * GET /schema/json/:table — JSON Schema de una tabla
+ * ----------------------------------------------------------------------------
+ *
+ * Es el endpoint que el panel pide PRIMERO para saber qué campos tiene un
+ * formulario. Tenía dos fallos que se sumaban, y los dos se veían igual desde
+ * el navegador: «No fields available».
+ *
+ * ── 1. NUNCA SE EJECUTABA ──────────────────────────────────────────────────
+ *
+ * Estaba registrado DESPUÉS de `/schema/:kon/:table`. Hono resuelve por orden
+ * de registro entre patrones de la misma forma, así que `/schema/json/cursos`
+ * entraba por el otro con `kon="json"` y `table="cursos"`. Por eso ahora va
+ * antes: una ruta literal tiene que registrarse antes que el comodín que la
+ * cubre. Lo vigila `tests/unit/rutas-ensombrecidas.test.ts`.
+ *
+ * ── 2. DEDUCÍA LAS COLUMNAS DE UNA FILA DE EJEMPLO ─────────────────────────
+ *
+ * Hacía `SELECT … LIMIT 1` y sacaba los campos del objeto devuelto. En una
+ * tabla VACÍA no hay fila, así que devolvía `properties: {}` — cero campos.
+ *
+ * Es decir: el formulario de «crear el primer registro» no tenía campos
+ * precisamente cuando no había ningún registro. Y el diagnóstico que enseñaba
+ * el panel —«Total columns received: 0»— describía el síntoma sin delatar la
+ * causa.
+ *
+ * Ahora se lee `information_schema`, que responde igual con la tabla vacía y
+ * además trae el tipo real, si acepta nulos y las claves ajenas de verdad en
+ * vez de adivinarlas por el nombre de la columna.
+ */
+explorerRoutes.get("/schema/json/:table", async (c) => {
+  const tableName = c.req.param("table");
 
-  // Map grimoire IDs to their tables
-  const grimoireTables: Record<string, string[]> = {
+  // La misma puerta que `resolveTable`: este endpoint introspecta por su cuenta
+  // y sin esto seguiría entregando el ESQUEMA de `kitsuden_secrets` o
+  // `auth_accounts` —nombres de columna incluidos— a cualquiera con sesión.
+  const veredicto = await tablaEsExplorable(tableName, Object.keys(tableRegistry));
+  const introspected = veredicto.permitida ? await introspectTable(tableName) : null;
+  if (!introspected) {
+    return c.json(
+      {
+        error: `Table '${tableName}' not found`,
+        /**
+         * Solo lo EXPLORABLE.
+         *
+         * Antes esto listaba `getAllTables()` entero, así que la respuesta 404
+         * de una tabla cualquiera enumeraba `kitsuden_secrets`, `auth_accounts`
+         * y las demás. Un mensaje de "no encontrada" no puede ser un índice de
+         * lo que hay.
+         */
+        available: (
+          await Promise.all(
+            [...new Set([...Object.keys(tableRegistry), ...(await getAllTables())])].map(
+              async (t) =>
+                (await tablaEsExplorable(t, Object.keys(tableRegistry))).permitida ? t : null
+            )
+          )
+        )
+          .filter((t): t is string => t !== null)
+          .sort(),
+      },
+      404
+    );
+  }
+
+  const meta = tableRegistry[tableName];
+  const pk = introspected.primaryKey[0] || meta?.pk || "id";
+  const soloLectura = new Set(
+    meta?.readonlyFields ?? [
+      pk,
+      ...introspected.columns
+        .filter(
+          (col) => col.name.endsWith("_at") || col.name === "createdAt" || col.name === "updatedAt"
+        )
+        .map((col) => col.name),
+    ]
+  );
+
+  const properties: Record<string, unknown> = {};
+  const required: string[] = [];
+
+  for (const col of introspected.columns) {
+    const colType = tipoDeColumna(col);
+    // La clave ajena declarada en la base manda sobre el nombre: `author_id`
+    // puede apuntar a cualquier tabla, y el mapa de nombres solo acierta con
+    // las convenciones que alguien recordó escribir.
+    const relatedTable = col.foreignTable ?? getRelatedTable(col.name);
+
+    const prop: Record<string, unknown> = { type: tipoJsonSchema(colType, col.type) };
+
+    if (colType === "date") prop.format = "date-time";
+    if (colType === "email") prop.format = "email";
+    if (colType === "url") prop.format = "uri";
+    if (colType === "id") prop.format = "uuid";
+
+    if (colType === "relation" && relatedTable) {
+      prop.format = "uuid";
+      prop["x-relation"] = {
+        table: relatedTable,
+        optionsEndpoint: `/api/explorer/${relatedTable}/options`,
+      };
+    }
+
+    if (soloLectura.has(col.name)) prop.readOnly = true;
+    if (col.maxLength) prop.maxLength = col.maxLength;
+    prop.description = generateFieldDescription(col.name, colType, relatedTable);
+
+    properties[col.name] = prop;
+
+    // Obligatorio = la base lo exige y no tiene valor por defecto. Antes se
+    // marcaba obligatorio "todo lo que traía valor en la fila de ejemplo", que
+    // no tiene ninguna relación con lo que la tabla permite.
+    if (!col.nullable && col.defaultValue === null && !soloLectura.has(col.name)) {
+      required.push(col.name);
+    }
+  }
+
+  return c.json({
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    $id: `kitsuden://tables/${tableName}`,
+    title: meta?.label ?? humanizeTableNameLocal(tableName),
+    description: `Schema for the ${meta?.label ?? tableName} table in Kitsuden`,
+    type: "object",
+    properties,
+    required,
+    "x-kitsuden": {
+      table: tableName,
+      primaryKey: pk,
+      icon: meta?.icon ?? "📋",
+      readonlyFields: [...soloLectura],
+      rowCount: introspected.estimatedRowCount,
+      endpoints: {
+        list: `/api/explorer/${tableName}`,
+        create: `/api/explorer/${tableName}`,
+        update: `/api/explorer/${tableName}/{id}`,
+        delete: `/api/explorer/${tableName}/{id}`,
+        options: `/api/explorer/${tableName}/options`,
+      },
+    },
+  });
+});
+
+// ── GET /schema/:kon — Get schema for a kon's tables ──
+explorerRoutes.get("/schema/:kon", async (c) => {
+  const konId = c.req.param("kon");
+
+  // Map kon IDs to their tables
+  const konTables: Record<string, string[]> = {
     academy: ["courses", "lessons", "enrollments"],
     booking: ["bookings", "services", "availability"],
     directory: ["listings", "categories", "reviews"],
     dms: ["documents", "folders", "tags"],
     esports: ["tournaments", "matches", "teams", "players"],
-    "gremius-crm": ["contacts", "deals", "activities"],
+    "kitsuden-crm": ["contacts", "deals", "activities"],
     games: ["games", "game_collections"],
     media: ["media"],
     posts: ["posts"],
@@ -98,7 +309,7 @@ explorerRoutes.get("/schema/:grimoire", async (c) => {
     workers: ["workers"],
   };
 
-  const tables = grimoireTables[grimoireId] || [grimoireId];
+  const tables = konTables[konId] || [konId];
 
   // Return schema info for each table
   const schema = tables.map((tableName) => {
@@ -111,11 +322,11 @@ explorerRoutes.get("/schema/:grimoire", async (c) => {
     };
   });
 
-  return c.json({ grimoire: grimoireId, tables: schema });
+  return c.json({ kon: konId, tables: schema });
 });
 
-// ── GET /schema/:grimoire/:table — Get detailed column info ──
-explorerRoutes.get("/schema/:grimoire/:table", async (c) => {
+// ── GET /schema/:kon/:table — Get detailed column info ──
+explorerRoutes.get("/schema/:kon/:table", async (c) => {
   const tableName = c.req.param("table");
   const meta = tableRegistry[tableName];
 
@@ -149,101 +360,8 @@ explorerRoutes.get("/schema/:grimoire/:table", async (c) => {
       primaryKey: meta.pk,
       columns,
     });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ── GET /schema/json/:table — JSON Schema export (for AI codegen & SDK) ──
-// Returns a standard JSON Schema document. TOON-compatible via middleware.
-explorerRoutes.get("/schema/json/:table", async (c) => {
-  const tableName = c.req.param("table");
-  const meta = tableRegistry[tableName];
-
-  if (!meta) {
-    return c.json(
-      {
-        error: `Table '${tableName}' not found`,
-        available: Object.keys(tableRegistry),
-      },
-      404
-    );
-  }
-
-  try {
-    const [sample] = await db.select().from(meta.table).limit(1);
-
-    const properties: Record<string, any> = {};
-    const required: string[] = [];
-
-    if (sample) {
-      for (const [key, value] of Object.entries(sample)) {
-        const colType = inferColumnType(key, value);
-        const isReadonly = meta.readonlyFields.includes(key);
-        const relatedTable = getRelatedTable(key);
-
-        const prop: Record<string, any> = {
-          type: mapToJsonSchemaType(colType, value),
-        };
-
-        // Add format hints
-        if (colType === "date") prop.format = "date-time";
-        if (colType === "email") prop.format = "email";
-        if (colType === "url") prop.format = "uri";
-        if (colType === "id") prop.format = "uuid";
-
-        // Add relation metadata
-        if (colType === "relation" && relatedTable) {
-          prop.format = "uuid";
-          prop["x-relation"] = {
-            table: relatedTable,
-            optionsEndpoint: `/api/explorer/${relatedTable}/options`,
-          };
-        }
-
-        // Add readonly hint
-        if (isReadonly) {
-          prop.readOnly = true;
-        }
-
-        // Description
-        prop.description = generateFieldDescription(key, colType, relatedTable);
-
-        properties[key] = prop;
-
-        // Non-nullable, non-readonly fields are required
-        if (value !== null && !isReadonly && key !== meta.pk) {
-          required.push(key);
-        }
-      }
-    }
-
-    const jsonSchema = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: `gremius://tables/${tableName}`,
-      title: meta.label,
-      description: `Schema for the ${meta.label} table in GremiusCMS`,
-      type: "object",
-      properties,
-      required,
-      "x-gremius": {
-        table: tableName,
-        primaryKey: meta.pk,
-        icon: meta.icon,
-        readonlyFields: meta.readonlyFields,
-        endpoints: {
-          list: `/api/explorer/${tableName}`,
-          create: `/api/explorer/${tableName}`,
-          update: `/api/explorer/${tableName}/{id}`,
-          delete: `/api/explorer/${tableName}/{id}`,
-          options: `/api/explorer/${tableName}/options`,
-        },
-      },
-    };
-
-    return c.json(jsonSchema);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: messageOf(error) }, 500);
   }
 });
 
@@ -331,8 +449,20 @@ explorerRoutes.get("/tables", async (c) => {
   // Discover additional tables from DB that aren't in static registry
   const allDbTables = await getAllTables();
   const staticKeys = new Set(Object.keys(tableRegistry));
-  const dynamicTables = allDbTables
-    .filter((t) => !staticKeys.has(t) && !t.startsWith("auth_") && !t.startsWith("_"))
+  /**
+   * Filtrado por la MISMA política que el resto del explorador.
+   *
+   * Aquí había un filtro a mano —`!t.startsWith("auth_") && !t.startsWith("_")`—
+   * que tapaba las de auth y nada más: `kitsuden_secrets`, `api_keys` y
+   * `kitsuden_migrations` salían en la lista. Un filtro por prefijo escrito en
+   * un sitio no sabe nada de lo que se decide en otro.
+   */
+  const explorables = await Promise.all(
+    allDbTables.map(async (t) => ((await tablaEsExplorable(t, staticKeys)).permitida ? t : null))
+  );
+  const dynamicTables = explorables
+    .filter((t): t is string => t !== null)
+    .filter((t) => !staticKeys.has(t))
     .map((t) => ({
       key: t,
       label: humanizeTableNameLocal(t),
@@ -344,16 +474,16 @@ explorerRoutes.get("/tables", async (c) => {
   return c.json({ tables: [...staticTables, ...dynamicTables] });
 });
 
-// ── GET /discover/:grimoireId — Discover tables owned by a grimoire ──
-// Reads grimoire.json tables[] AND cross-refs with real DB tables
-explorerRoutes.get("/discover/:grimoireId", async (c) => {
-  const grimoireId = c.req.param("grimoireId");
+// ── GET /discover/:konId — Discover tables owned by a kon ──
+// Reads kon.json tables[] AND cross-refs with real DB tables
+explorerRoutes.get("/discover/:konId", async (c) => {
+  const konId = c.req.param("konId");
   const allDbTables = await getAllTables();
 
-  // Strategy 1: Check grimoire.json for declared tables
+  // Strategy 1: Check kon.json for declared tables
   const { scanPackages } = await import("../services/scanner");
-  const grimoires = await scanPackages("grimoires");
-  const manifest = grimoires.find((g) => g.id === grimoireId || g.id === `grimoire-${grimoireId}`);
+  const kons = await scanPackages("kons");
+  const manifest = kons.find((g) => g.id === konId || g.id === `kon-${konId}`);
 
   let declaredTables: string[] = [];
   if (manifest?.tables) {
@@ -362,8 +492,8 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
       .filter(Boolean);
   }
 
-  // Strategy 2: Pattern-match DB tables by grimoire name prefix
-  const shortId = grimoireId.replace(/^grimoire-/, "").replace(/-/g, "_");
+  // Strategy 2: Pattern-match DB tables by kon name prefix
+  const shortId = konId.replace(/^kon-/, "").replace(/-/g, "_");
   const patternMatches = allDbTables.filter(
     (t) => t.startsWith(shortId + "_") || t === shortId || t === shortId + "s"
   );
@@ -393,13 +523,26 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
     tags: ["tags"],
     collections: ["game_collections", "game_collection_entries"],
     "ai-memories": ["ai_memories", "ai_memory_chunks"],
-    workers: ["gremius_functions", "function_executions"],
-    "gremius-crm": [], // No tables in migration yet
+    workers: ["kitsuden_functions", "function_executions"],
+    "kitsuden-crm": [], // No tables in migration yet
   };
-  const knownTables = knownPatterns[shortId] || knownPatterns[grimoireId] || [];
+  const knownTables = knownPatterns[shortId] || knownPatterns[konId] || [];
 
-  // Merge all sources, dedupe, and validate against actual DB
-  const allCandidates = new Set([...declaredTables, ...patternMatches, ...knownTables]);
+  /**
+   * Se juntan las tres fuentes y se filtra por la MISMA política.
+   *
+   * Las estrategias 2 y 3 adivinan por prefijo y por una lista escrita a mano,
+   * asi que un kon llamado `kitsuden` habria hecho coincidir `kitsuden_secrets`
+   * y `kitsuden_migrations` por «empieza igual». Descubrir tablas por parecido
+   * de nombre no puede saltarse lo que se decide en un solo sitio.
+   */
+  const candidatasSinFiltrar = new Set([...declaredTables, ...patternMatches, ...knownTables]);
+  const permitidas = await Promise.all(
+    [...candidatasSinFiltrar].map(async (t) =>
+      (await tablaEsExplorable(t, Object.keys(tableRegistry))).permitida ? t : null
+    )
+  );
+  const allCandidates = new Set(permitidas.filter((t): t is string => t !== null));
   const verified: Array<{ name: string; exists: boolean; rowCount: number; source: string }> = [];
 
   for (const tableName of allCandidates) {
@@ -412,7 +555,7 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
       } catch {}
     }
     const source = declaredTables.includes(tableName)
-      ? "grimoire.json"
+      ? "kon.json"
       : knownTables.includes(tableName)
         ? "known-pattern"
         : "prefix-match";
@@ -420,7 +563,7 @@ explorerRoutes.get("/discover/:grimoireId", async (c) => {
   }
 
   return c.json({
-    grimoireId,
+    konId,
     tables: verified.filter((t) => t.exists),
     missing: verified.filter((t) => !t.exists).map((t) => t.name),
     manifestFound: !!manifest,
@@ -457,66 +600,55 @@ explorerRoutes.get("/:collection", async (c) => {
   const filterValue = c.req.query("filter_value");
 
   try {
-    // Build base query
-    let query = db.select().from(meta.table).$dynamic();
-
-    // Apply filter
-    if (filterField && filterValue) {
+    /**
+     * El filtro se construye UNA vez y lo usan las dos consultas.
+     *
+     * Antes el mismo `switch` de seis operadores estaba escrito dos veces, una
+     * por consulta. Funcionaba, pero es la forma exacta de acabar con el total
+     * y la página en desacuerdo: basta con añadir un operador en un sitio y
+     * olvidarlo en el otro para que el contador diga 400 y la tabla muestre
+     * 12, sin que nada falle.
+     */
+    const filtro = (() => {
+      if (!filterField || !filterValue) return undefined;
       const col = meta.table[filterField];
-      if (col) {
-        switch (filterOp) {
-          case "contains":
-            query = query.where(ilike(col, `%${filterValue}%`));
-            break;
-          case "equals":
-            query = query.where(eq(col, filterValue));
-            break;
-          case "gt":
-            query = query.where(gt(col, filterValue));
-            break;
-          case "lt":
-            query = query.where(lt(col, filterValue));
-            break;
-          case "gte":
-            query = query.where(gte(col, filterValue));
-            break;
-          case "lte":
-            query = query.where(lte(col, filterValue));
-            break;
-        }
+      if (!col) return undefined;
+
+      switch (filterOp) {
+        case "contains":
+          return ilike(col, `%${filterValue}%`);
+        case "equals":
+          return eq(col, filterValue);
+        case "gt":
+          return gt(col, filterValue);
+        case "lt":
+          return lt(col, filterValue);
+        case "gte":
+          return gte(col, filterValue);
+        case "lte":
+          return lte(col, filterValue);
+        default:
+          // Un operador desconocido NO puede caer en "sin filtro": quien pidió
+          // `filter_op=starts_with` recibiría la tabla entera creyendo que
+          // está filtrada.
+          return null;
       }
+    })();
+
+    if (filtro === null) {
+      return c.json(
+        { error: `Operador de filtro no soportado: "${filterOp}"`, soportados: FILTER_OPS },
+        400
+      );
     }
 
-    // Get total (with filters applied)
-    // We need a separate count query with same filters
-    let countQuery = db.select({ value: count() }).from(meta.table).$dynamic();
-    if (filterField && filterValue) {
-      const col = meta.table[filterField];
-      if (col) {
-        switch (filterOp) {
-          case "contains":
-            countQuery = countQuery.where(ilike(col, `%${filterValue}%`));
-            break;
-          case "equals":
-            countQuery = countQuery.where(eq(col, filterValue));
-            break;
-          case "gt":
-            countQuery = countQuery.where(gt(col, filterValue));
-            break;
-          case "lt":
-            countQuery = countQuery.where(lt(col, filterValue));
-            break;
-          case "gte":
-            countQuery = countQuery.where(gte(col, filterValue));
-            break;
-          case "lte":
-            countQuery = countQuery.where(lte(col, filterValue));
-            break;
-        }
-      }
-    }
+    let query = db.select().from(meta.table).where(filtro).$dynamic();
 
-    const [countResult] = await countQuery;
+    const [countResult] = await db
+      .select({ value: count() })
+      .from(meta.table)
+      .where(filtro)
+      .$dynamic();
     const total = Number(countResult?.value ?? 0);
 
     // Apply sort
@@ -555,9 +687,9 @@ explorerRoutes.get("/:collection", async (c) => {
         hasPrevPage: page > 1,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Error [${collectionName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 });
 
@@ -570,6 +702,10 @@ explorerRoutes.patch("/:collection/:id", async (c) => {
   if (!meta) {
     return c.json({ error: `Collection '${collectionName}' not found.` }, 404);
   }
+
+  // Escritura sobre una tabla sensible: solo `admin`. Ver el helper.
+  const denegado = denegarEscrituraSensible(c, collectionName);
+  if (denegado) return denegado;
 
   if (meta._dynamic) {
     return handleDynamicUpdate(c, collectionName, meta, id);
@@ -600,9 +736,9 @@ explorerRoutes.patch("/:collection/:id", async (c) => {
     }
 
     return c.json(updated);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Update [${collectionName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 });
 
@@ -614,6 +750,10 @@ explorerRoutes.post("/:collection", async (c) => {
   if (!meta) {
     return c.json({ error: `Collection '${collectionName}' not found.` }, 404);
   }
+
+  // Escritura sobre una tabla sensible: solo `admin`. Ver el helper.
+  const denegado = denegarEscrituraSensible(c, collectionName);
+  if (denegado) return denegado;
 
   if (meta._dynamic) {
     return handleDynamicCreate(c, collectionName, meta);
@@ -636,9 +776,9 @@ explorerRoutes.post("/:collection", async (c) => {
     const created = Array.isArray(result) ? result[0] : result;
 
     return c.json(created, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Create [${collectionName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 });
 
@@ -651,6 +791,10 @@ explorerRoutes.delete("/:collection/:id", async (c) => {
   if (!meta) {
     return c.json({ error: `Collection '${collectionName}' not found.` }, 404);
   }
+
+  // Escritura sobre una tabla sensible: solo `admin`. Ver el helper.
+  const denegado = denegarEscrituraSensible(c, collectionName);
+  if (denegado) return denegado;
 
   if (meta._dynamic) {
     return handleDynamicDelete(c, collectionName, meta, id);
@@ -665,9 +809,9 @@ explorerRoutes.delete("/:collection/:id", async (c) => {
     }
 
     return c.json({ deleted: true, id });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Delete [${collectionName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 });
 
@@ -713,8 +857,8 @@ explorerRoutes.get("/:collection/options", async (c) => {
     }));
 
     return c.json({ options, displayField, collection: collectionName });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: messageOf(error) }, 500);
   }
 });
 
@@ -746,8 +890,17 @@ async function handleDynamicQuery(c: any, tableName: string, meta: TableMeta) {
         countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)} WHERE "${sql.raw(safeField)}"::text = ${filterValue}`;
         dataSql = sql`SELECT * FROM ${sql.raw(`"${tableName}"`)} WHERE "${sql.raw(safeField)}"::text = ${filterValue} ORDER BY "${sql.raw(safeSort)}" ${sql.raw(sortDir)} LIMIT ${sql.raw(String(limit))} OFFSET ${sql.raw(String(offset))}`;
       } else {
-        countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)}`;
-        dataSql = sql`SELECT * FROM ${sql.raw(`"${tableName}"`)} ORDER BY "${sql.raw(safeSort)}" ${sql.raw(sortDir)} LIMIT ${sql.raw(String(limit))} OFFSET ${sql.raw(String(offset))}`;
+        // Antes esta rama devolvía la tabla SIN filtrar. Quien pidiera un
+        // operador que este camino no implementa —`gt`, por ejemplo, que sí
+        // existe en el otro— se llevaba todas las filas dando por hecho que
+        // estaban filtradas.
+        return c.json(
+          {
+            error: `Operador de filtro no soportado para esta tabla: "${filterOp}"`,
+            soportados: FILTER_OPS_DINAMICO,
+          },
+          400
+        );
       }
     } else {
       countSql = sql`SELECT count(*) as total FROM ${sql.raw(`"${tableName}"`)}`;
@@ -781,9 +934,9 @@ async function handleDynamicQuery(c: any, tableName: string, meta: TableMeta) {
         hasPrevPage: page > 1,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Dynamic Query [${tableName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 }
 
@@ -803,9 +956,9 @@ async function handleDynamicCreate(c: any, tableName: string, meta: TableMeta) {
       )
     );
     return c.json(result.rows[0], 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Dynamic Create [${tableName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 }
 
@@ -829,9 +982,9 @@ async function handleDynamicUpdate(c: any, tableName: string, meta: TableMeta, i
     );
     if (result.rows.length === 0) return c.json({ error: "Record not found" }, 404);
     return c.json(result.rows[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Dynamic Update [${tableName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 }
 
@@ -843,9 +996,9 @@ async function handleDynamicDelete(c: any, tableName: string, meta: TableMeta, i
     );
     if (result.rows.length === 0) return c.json({ error: "Record not found" }, 404);
     return c.json({ deleted: true, id });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Explorer Dynamic Delete [${tableName}]:`, error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: messageOf(error) }, 500);
   }
 }
 
@@ -873,8 +1026,8 @@ async function handleDynamicOptions(c: any, tableName: string, meta: TableMeta) 
       label: String(row[displayField] || row[meta.pk]),
     }));
     return c.json({ options, displayField, collection: tableName });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: messageOf(error) }, 500);
   }
 }
 
@@ -989,6 +1142,54 @@ function inferColumnType(key: string, value: any): string {
   if (key.includes("email")) return "email";
   if (key.includes("color") || key.includes("Color")) return "color";
   return "text";
+}
+
+/**
+ * Tipo de campo a partir de la columna REAL, no de un valor de ejemplo.
+ *
+ * `inferColumnType` (más abajo, todavía en uso por los endpoints que sí tienen
+ * una fila delante) mira el valor: `typeof value === "boolean"`. Con la tabla
+ * vacía no hay valor, y con una columna nula tampoco — un `timestamp` a NULL
+ * se clasificaba como texto y el formulario pintaba una caja de texto donde
+ * hacía falta un selector de fecha.
+ *
+ * Aquí manda el catálogo: `information_schema.columns.data_type` más la clave
+ * ajena declarada.
+ */
+function tipoDeColumna(col: IntrospectedColumn): string {
+  if (col.isPrimaryKey && col.name === "id") return "id";
+  if (col.isForeignKey) return "relation";
+
+  const t = (col.type || "").toLowerCase();
+  if (t.includes("bool")) return "boolean";
+  if (
+    t.includes("int") ||
+    t.includes("numeric") ||
+    t.includes("decimal") ||
+    t.includes("real") ||
+    t.includes("double")
+  ) {
+    return "number";
+  }
+  if (t.includes("timestamp") || t === "date" || t.includes("time")) return "date";
+  if (t.includes("json")) return "json";
+  if (t === "uuid") return col.name.endsWith("_id") ? "relation" : "id";
+
+  // Solo cuando el tipo no lo decide se recurre al nombre.
+  if (col.name.includes("email")) return "email";
+  if (/url$/i.test(col.name) || col.name.includes("Url")) return "url";
+  if (col.name.includes("color") || col.name.includes("Color")) return "color";
+  return "text";
+}
+
+/** Igual que `mapToJsonSchemaType`, pero decidiendo entero/decimal por el tipo de la base. */
+function tipoJsonSchema(colType: string, tipoPg: string): string {
+  if (colType === "number") {
+    return /int/i.test(tipoPg) ? "integer" : "number";
+  }
+  if (colType === "boolean") return "boolean";
+  if (colType === "json") return "object";
+  return "string";
 }
 
 /** Get the related table for a FK column name */

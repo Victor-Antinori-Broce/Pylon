@@ -52,7 +52,7 @@
 
 <div class="flex items-center gap-3">
   <div
-    class="relative overflow-hidden bg-gremius-card border border-gremius-border flex items-center justify-center {sizeClasses[
+    class="relative overflow-hidden bg-kitsuden-card border border-kitsuden-border flex items-center justify-center {sizeClasses[
       size
     ]}"
     class:rounded-lg={!rounded}
@@ -71,18 +71,18 @@
       {#if isLoading}
         <div class="absolute inset-0 flex items-center justify-center">
           <div
-            class="w-4 h-4 border-2 border-gremius-border border-t-gremius-cyan rounded-full animate-spin"
+            class="w-4 h-4 border-2 border-kitsuden-border border-t-kitsuden-accent rounded-full animate-spin"
           ></div>
         </div>
       {/if}
     {:else if fallback === "icon"}
-      <ImageIcon class="w-4 h-4 text-gremius-subtle" />
+      <ImageIcon class="w-4 h-4 text-kitsuden-subtle" />
     {:else if fallback === "initials" && alt}
-      <span class="text-xs font-medium text-gremius-text-dim">{initials}</span>
+      <span class="text-xs font-medium text-kitsuden-text-dim">{initials}</span>
     {/if}
   </div>
 
   {#if alt}
-    <span class="text-sm text-gremius-text truncate">{alt}</span>
+    <span class="text-sm text-kitsuden-text truncate">{alt}</span>
   {/if}
 </div>

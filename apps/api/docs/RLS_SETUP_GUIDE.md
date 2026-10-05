@@ -91,7 +91,7 @@ curl -H "Cookie: session=..." \
 
 ```sql
 -- Conectar a PostgreSQL
-psql -d gremius
+psql -d kitsuden
 
 -- Ver contexto vacío (sin usuario)
 SELECT current_setting('app.current_user_id', true);

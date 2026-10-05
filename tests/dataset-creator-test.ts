@@ -16,7 +16,7 @@ import { z } from "zod";
 // SECCIÓN 1: IMPORTACIÓN DE ESQUEMAS (simulado para el test)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Copia de los esquemas desde @gremius/shared para testing
+// Copia de los esquemas desde @kitsuden/shared para testing
 const FieldTypeSchema = z.enum([
   "text",
   "number",

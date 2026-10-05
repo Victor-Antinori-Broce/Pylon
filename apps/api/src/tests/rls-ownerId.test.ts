@@ -32,24 +32,47 @@ describe("RLS OwnerId Tests", () => {
     }
   });
 
-  // ── 1. Smoke test: source code contains ownerId assignment logic ──
-  it("crud.ts should assign ownerId from context or payload", async () => {
-    const file = Bun.file("src/routes/crud.ts");
-    const text = await file.text();
-    expect(text).toContain('ownerId = e.ownerId ?? c.get("user")');
+  // ── 1. La regla de propiedad, probada por COMPORTAMIENTO ──
+  //
+  // Antes esto era `expect(fuente).toContain('ownerId = e.ownerId ?? c.get(...)')`.
+  // Un grep del código fuente no comprueba nada: se puso rojo por un refactor
+  // que no cambió el comportamiento, y habría seguido verde si alguien hubiera
+  // borrado la asignación dejando el texto en un comentario. `owner_id` es la
+  // columna sobre la que se apoyan las políticas RLS; merece un test de verdad.
+  describe("de quién es una entry nueva", () => {
+    it("sin ownerId en el payload, es del usuario de la sesión", async () => {
+      const { resolveEntryOwnerId } = await import("../routes/crud");
+      expect(resolveEntryOwnerId({ title: "Algo" }, "user-1")).toBe("user-1");
+    });
+
+    it("el ownerId del payload MANDA sobre la sesión", async () => {
+      // Deliberado: lo usan las importaciones que atribuyen filas a otro
+      // usuario. Si algún día se restringe, este test es el que debe cambiar.
+      const { resolveEntryOwnerId } = await import("../routes/crud");
+      expect(resolveEntryOwnerId({ ownerId: "user-2" }, "user-1")).toBe("user-2");
+    });
+
+    it("sin payload y sin sesión queda NULL, nunca undefined", async () => {
+      // `undefined` en un insert de Drizzle se omite y la columna toma su
+      // default en vez de quedar sin dueño explícito: la fila acabaría fuera
+      // de toda política de propiedad sin que nadie lo note.
+      const { resolveEntryOwnerId } = await import("../routes/crud");
+      expect(resolveEntryOwnerId({}, undefined)).toBeNull();
+    });
   });
 
   it("items.ts POST /:collection should include ownerId", async () => {
     const file = Bun.file("src/routes/items.ts");
     const text = await file.text();
     expect(text).toContain("ownerId");
-    const postHandlerIndex = text.indexOf('itemsRoutes.post("/:collection"');
-    expect(postHandlerIndex).toBeGreaterThan(-1);
-    const nextHandlerIndex = text.indexOf("itemsRoutes.post", postHandlerIndex + 1);
+    const handlerIndex = text.indexOf("export async function createItemHandler");
+    expect(handlerIndex).toBeGreaterThan(-1);
+    const nextHandlerIndex = text.indexOf(
+      "export async function updateItemHandler",
+      handlerIndex + 1
+    );
     const snippet =
-      nextHandlerIndex > -1
-        ? text.slice(postHandlerIndex, nextHandlerIndex)
-        : text.slice(postHandlerIndex);
+      nextHandlerIndex > -1 ? text.slice(handlerIndex, nextHandlerIndex) : text.slice(handlerIndex);
     expect(snippet).toContain("ownerId");
   });
 

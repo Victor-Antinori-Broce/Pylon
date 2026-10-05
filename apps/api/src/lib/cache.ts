@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Valkey Caching Layer for Postgres Queries
+ * Kitsuden — Valkey Caching Layer for Postgres Queries
  *
  * Wraps `cacheGet`/`cacheSet` from valkey.ts into a convenient
  * `cachedQuery` helper. Falls through to Postgres when Valkey is down.

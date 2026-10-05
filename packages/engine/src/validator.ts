@@ -56,7 +56,7 @@ export interface ValidationRule {
   /** Regla a aplicar si la condición es falsa */
   else?: ValidationRule;
   /** Validación custom */
-  validate?: (value: any, data: Record<string, any>) => boolean | string;
+  validate?: (value: any, data: Record<string, unknown>) => boolean | string;
 }
 
 /** Condición para validación if/then */
@@ -87,7 +87,7 @@ export interface ValidationResult {
   /** Lista de errores encontrados */
   errors: ValidationError[];
   /** Datos validados y transformados */
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 /** Error de validación individual */
@@ -113,7 +113,7 @@ export interface ValidatorOptions {
   /** Permitir campos adicionales */
   allowUnknown?: boolean;
   /** Contexto para validaciones custom */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -127,7 +127,7 @@ function validateRule(
   value: any,
   rule: ValidationRule,
   fieldName: string,
-  fullData: Record<string, any>,
+  fullData: Record<string, unknown>,
   path?: string
 ): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -226,7 +226,7 @@ function validateRule(
 /**
  * Evalúa una condición contra los datos.
  */
-function evaluateCondition(condition: Condition, data: Record<string, any>): boolean {
+function evaluateCondition(condition: Condition, data: Record<string, unknown>): boolean {
   const value = data[condition.field];
   let result = false;
 
@@ -387,12 +387,12 @@ function validateMax(
  * ```
  */
 export function validate(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   schema: ValidationSchema,
   options: ValidatorOptions = {}
 ): ValidationResult {
   const errors: ValidationError[] = [];
-  const validatedData: Record<string, any> = {};
+  const validatedData: Record<string, unknown> = {};
   const { stripUnknown = false, abortEarly = false, allowUnknown = false } = options;
 
   // Validar campos definidos en el schema
@@ -441,7 +441,7 @@ export function validate(
  * Valida un array de objetos contra un esquema.
  */
 export function validateBatch(
-  items: Record<string, any>[],
+  items: Record<string, unknown>[],
   schema: ValidationSchema,
   options: ValidatorOptions = {}
 ): Array<ValidationResult & { index: number }> {
@@ -456,9 +456,9 @@ export function validateBatch(
  */
 export function createValidator(schema: ValidationSchema, defaultOptions: ValidatorOptions = {}) {
   return {
-    validate: (data: Record<string, any>, options?: ValidatorOptions) =>
+    validate: (data: Record<string, unknown>, options?: ValidatorOptions) =>
       validate(data, schema, { ...defaultOptions, ...options }),
-    validateBatch: (items: Record<string, any>[], options?: ValidatorOptions) =>
+    validateBatch: (items: Record<string, unknown>[], options?: ValidatorOptions) =>
       validateBatch(items, schema, { ...defaultOptions, ...options }),
     schema,
   };

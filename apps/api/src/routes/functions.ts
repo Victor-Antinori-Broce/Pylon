@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Gremius Workers API Routes
+ * Kitsuden — Kitsuden Workers API Routes
  *
  * CRUD for cloud functions + manual execution + execution logs.
  *
@@ -14,11 +14,13 @@
  *   GET    /api/functions/cron/status — Get cron job status
  */
 
+import { messageOf, eqEnum } from "@kitsuden/engine";
 import { eq, desc, and } from "drizzle-orm";
+import type { Context } from "hono";
 import { Hono } from "hono";
 
 import { db } from "../db";
-import { gremiusFunctions, functionExecutions, dataSets } from "../db/schema";
+import { kitsudenFunctions, functionExecutions, dataSets } from "../db/schema";
 import { refreshCronJob, removeCronJob, getCronJobStatus } from "../lib/cron-scheduler";
 import { executeManually } from "../lib/function-dispatcher";
 import { protectRoute } from "../middleware/auth-guard";
@@ -33,43 +35,49 @@ functionsRoutes.use("/*", protectRoute);
 // ═══════════════════════════════════════════════════════════════
 
 // ── List functions ──
-functionsRoutes.get("/", async (c) => {
+export async function listFunctionsHandler(c: Context) {
   const limit = Math.min(Number(c.req.query("limit")) || 50, 200);
   const trigger = c.req.query("trigger");
   const status = c.req.query("status");
 
   // Drizzle doesn't allow dynamic chaining well, so build conditions
   const conditions = [];
-  if (trigger) conditions.push(eq(gremiusFunctions.trigger, trigger as any));
-  if (status) conditions.push(eq(gremiusFunctions.status, status as any));
+  // `eqEnum` devuelve undefined si el valor no pertenece al enum.
+  const filtro44 = eqEnum(kitsudenFunctions.trigger, trigger);
+  if (filtro44) conditions.push(filtro44);
+  // `eqEnum` devuelve undefined si el valor no pertenece al enum.
+  const filtro45 = eqEnum(kitsudenFunctions.status, status);
+  if (filtro45) conditions.push(filtro45);
 
   const docs =
     conditions.length > 0
       ? await db
           .select()
-          .from(gremiusFunctions)
+          .from(kitsudenFunctions)
           .where(and(...conditions))
-          .orderBy(desc(gremiusFunctions.updatedAt))
+          .orderBy(desc(kitsudenFunctions.updatedAt))
           .limit(limit)
       : await db
           .select()
-          .from(gremiusFunctions)
-          .orderBy(desc(gremiusFunctions.updatedAt))
+          .from(kitsudenFunctions)
+          .orderBy(desc(kitsudenFunctions.updatedAt))
           .limit(limit);
 
   return c.json({ docs, totalDocs: docs.length });
-});
+}
+functionsRoutes.get("/", listFunctionsHandler);
 
 // ── Get single function ──
-functionsRoutes.get("/cron/status", async (c) => {
+export async function getCronStatusHandler(c: Context) {
   return c.json({ jobs: getCronJobStatus() });
-});
+}
+functionsRoutes.get("/cron/status", getCronStatusHandler);
 
-functionsRoutes.get("/:id", async (c) => {
+export async function getFunctionHandler(c: Context) {
   const [fn] = await db
     .select()
-    .from(gremiusFunctions)
-    .where(eq(gremiusFunctions.id, c.req.param("id")))
+    .from(kitsudenFunctions)
+    .where(eq(kitsudenFunctions.id, c.req.param("id")))
     .limit(1);
 
   if (!fn) return c.json({ error: "Function not found" }, 404);
@@ -86,10 +94,11 @@ functionsRoutes.get("/:id", async (c) => {
   }
 
   return c.json({ ...fn, watchDataset });
-});
+}
+functionsRoutes.get("/:id", getFunctionHandler);
 
 // ── Create function ──
-functionsRoutes.post("/", async (c) => {
+export async function createFunctionHandler(c: Context) {
   const body = await c.req.json();
 
   if (!body.name || !body.code || !body.trigger) {
@@ -109,7 +118,7 @@ functionsRoutes.post("/", async (c) => {
   }
 
   const [fn] = await db
-    .insert(gremiusFunctions)
+    .insert(kitsudenFunctions)
     .values({
       name: body.name,
       slug,
@@ -130,12 +139,13 @@ functionsRoutes.post("/", async (c) => {
   refreshCronJob(fn as any);
 
   return c.json(fn, 201);
-});
+}
+functionsRoutes.post("/", createFunctionHandler);
 
 // ── Update function ──
-functionsRoutes.patch("/:id", async (c) => {
+export async function updateFunctionHandler(c: Context) {
   const body = await c.req.json();
-  const updates: Record<string, any> = { updatedAt: new Date() };
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
 
   const allowedFields = [
     "name",
@@ -163,9 +173,9 @@ functionsRoutes.patch("/:id", async (c) => {
   }
 
   const [updated] = await db
-    .update(gremiusFunctions)
+    .update(kitsudenFunctions)
     .set(updates)
-    .where(eq(gremiusFunctions.id, c.req.param("id")))
+    .where(eq(kitsudenFunctions.id, c.req.param("id")))
     .returning();
 
   if (!updated) return c.json({ error: "Function not found" }, 404);
@@ -174,31 +184,33 @@ functionsRoutes.patch("/:id", async (c) => {
   refreshCronJob(updated as any);
 
   return c.json(updated);
-});
+}
+functionsRoutes.patch("/:id", updateFunctionHandler);
 
 // ── Delete function ──
-functionsRoutes.delete("/:id", async (c) => {
+export async function deleteFunctionHandler(c: Context) {
   const id = c.req.param("id");
 
   // Remove cron job first
   removeCronJob(id);
 
   const [deleted] = await db
-    .delete(gremiusFunctions)
-    .where(eq(gremiusFunctions.id, id))
-    .returning({ id: gremiusFunctions.id, name: gremiusFunctions.name });
+    .delete(kitsudenFunctions)
+    .where(eq(kitsudenFunctions.id, id))
+    .returning({ id: kitsudenFunctions.id, name: kitsudenFunctions.name });
 
   if (!deleted) return c.json({ error: "Function not found" }, 404);
 
   return c.json({ success: true, id: deleted.id, name: deleted.name });
-});
+}
+functionsRoutes.delete("/:id", deleteFunctionHandler);
 
 // ═══════════════════════════════════════════════════════════════
 // Execution
 // ═══════════════════════════════════════════════════════════════
 
 // ── Manual Execute ──
-functionsRoutes.post("/:id/execute", async (c) => {
+export async function executeFunctionHandler(c: Context) {
   const body = await c.req.json().catch(() => ({}));
 
   try {
@@ -211,18 +223,21 @@ functionsRoutes.post("/:id/execute", async (c) => {
       durationMs: result.durationMs,
       exitReason: result.exitReason,
     });
-  } catch (err: any) {
-    return c.json({ error: err.message }, 404);
+  } catch (err: unknown) {
+    return c.json({ error: messageOf(err) }, 404);
   }
-});
+}
+functionsRoutes.post("/:id/execute", executeFunctionHandler);
 
 // ── Execution Logs ──
-functionsRoutes.get("/:id/executions", async (c) => {
+export async function listExecutionsHandler(c: Context) {
   const limit = Math.min(Number(c.req.query("limit")) || 25, 100);
   const status = c.req.query("status");
 
   const conditions = [eq(functionExecutions.functionId, c.req.param("id"))];
-  if (status) conditions.push(eq(functionExecutions.status, status as any));
+  // `eqEnum` devuelve undefined si el valor no pertenece al enum.
+  const filtro233 = eqEnum(functionExecutions.status, status);
+  if (filtro233) conditions.push(filtro233);
 
   const docs = await db
     .select()
@@ -232,4 +247,5 @@ functionsRoutes.get("/:id/executions", async (c) => {
     .limit(limit);
 
   return c.json({ docs, totalDocs: docs.length });
-});
+}
+functionsRoutes.get("/:id/executions", listExecutionsHandler);

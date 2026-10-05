@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# GremiusCMS — Docker Compose
+# Kitsuden — Docker Compose
 #
 # 🚀 USO RÁPIDO: docker compose up -d
 #
@@ -12,166 +12,245 @@
 #
 # PERFILES DISPONIBLES:
 #   • (sin perfil)  — Solo core: Postgres + Valkey + API + Admin
-#   • --profile s3  — Añade MinIO para storage S3-compatible
-#   • --profile full — Todos los servicios incluyendo MinIO
+#   • --profile s3  — Añade SeaweedFS para storage S3-compatible
+#   • --profile full — Todos los servicios incluyendo SeaweedFS
 #
 # DEFAULT PARA DESARROLLO LOCAL:
-#   MinIO está incluido por defecto para desarrollo sin dependencias externas.
+#   SeaweedFS está incluido por defecto para desarrollo sin dependencias externas.
 #   En producción usa AWS S3, Cloudflare R2, u otro provider.
 #
 # Acceso local (con --profile s3):
 #   • API + Swagger: http://localhost:3000/api/swagger
 #   • Admin Panel:   http://localhost:3001
-#   • MinIO Console: http://localhost:9001
+#   • SeaweedFS (panel): http://localhost:9001
 #
 # ═══════════════════════════════════════════════════════════════════════════
+
+# ── RED: POR QUE TODO ESCUCHA EN 127.0.0.1 ──────────────────────────────────
+#
+# Cada `ports:` publicaba en TODAS las interfaces (`"5432:5432"` significa
+# 0.0.0.0:5432). En un portatil da igual; en un servidor sin cortafuegos eso
+# es Postgres, Valkey (sin contraseña) y el panel del almacenamiento S3 abiertos a
+# internet, con un `docker compose up -d` y ningun aviso.
+#
+# Ahora el valor por defecto es 127.0.0.1: todo sigue funcionando desde la
+# propia maquina —`localhost:3000`, `localhost:5432`— y nada es alcanzable
+# desde fuera.
+#
+# Para publicar de verdad hay dos caminos, los dos deliberados:
+#   · con TLS (lo correcto): `docker compose -f docker-compose.yml
+#     -f docker-compose.tls.yml up -d`, que pone Caddy en 80/443 delante.
+#   · sin TLS, a proposito: `BIND_ADDRESS=0.0.0.0` en `.env`.
+#
+# Exponer una base de datos tiene que ser una decision escrita, no el
+# comportamiento por defecto.
 
 services:
   # ═══════════════════════════════════════════════════════════════════════
   # PostgreSQL 16 con pgvector (REQUERIDO)
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_db:
+  kitsuden_db:
     image: pgvector/pgvector:pg16
-    container_name: gremius_db_prod
+    container_name: kitsuden_db_prod
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-gremius}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gremiuspassword}
-      POSTGRES_DB: ${POSTGRES_DB:-gremius_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-kitsuden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kitsuden_prod}
     volumes:
-      - gremius_postgres_prod:/var/lib/postgresql/data
+      - kitsuden_postgres_prod:/var/lib/postgresql/data
       - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${BIND_ADDRESS:-127.0.0.1}:${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gremius} -d ${POSTGRES_DB:-gremius_prod}"]
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kitsuden} -d ${POSTGRES_DB:-kitsuden_prod}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - gremius_net_prod
+      - kitsuden_net_prod
 
   # ═══════════════════════════════════════════════════════════════════════
   # Valkey 7 (REQUERIDO) - Cache, Pub/Sub, Queue backend
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_state:
+  kitsuden_state:
     image: valkey/valkey:7-alpine
-    container_name: gremius_state_prod
+    container_name: kitsuden_state_prod
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
-      - "${VALKEY_PORT:-6379}:6379"
+      - "${BIND_ADDRESS:-127.0.0.1}:${VALKEY_PORT:-6379}:6379"
     volumes:
-      - gremius_valkey_prod:/data
+      - kitsuden_valkey_prod:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
     networks:
-      - gremius_net_prod
+      - kitsuden_net_prod
 
   # ═══════════════════════════════════════════════════════════════════════
-  # MinIO (OPCIONAL) - S3-compatible storage para desarrollo local
+  # SeaweedFS (OPCIONAL) - S3-compatible storage para desarrollo local
   #
   # PERFILES: s3, full, dev
   # En producción se recomienda usar AWS S3, R2, u otro provider cloud.
+  #
+  # Sustituye a MinIO: su edición libre dejó de mantenerse (sin imágenes
+  # oficiales desde octubre de 2025, repositorio archivado en abril de 2026).
+  # Las variables son las mismas —S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET— y
+  # la API no cambia: sigue hablando S3 por el puerto de siempre.
+  #
+  # El arranque está en docker/seaweedfs-arranque.sh: escribe las identidades
+  # S3 (sin ellas SeaweedFS deja entrar a cualquiera), crea el bucket, da
+  # lectura anónima SOLO a ese bucket para las URLs públicas, y apaga la
+  # telemetría. Ya no hace falta un contenedor aparte para crear el bucket.
+  #
+  # Solo se publican el S3 y el panel. El resto de piezas (maestro, filer,
+  # volumen) quedan dentro de la red de Docker.
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_minio:
-    image: minio/minio:latest
-    container_name: gremius_minio_prod
+  kitsuden_seaweedfs:
+    # Versión fija, como Postgres y Valkey: `latest` es justo lo que dejó a
+    # MinIO congelado sin que nada avisara
+    image: chrislusf/seaweedfs:4.47
+    container_name: kitsuden_seaweedfs_prod
     restart: unless-stopped
     profiles: ["s3", "full", "dev"]
-    command: server /data --console-address ":9001"
+    entrypoint: ["/bin/sh", "/kitsuden/arranque.sh"]
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-gremius_minio}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-gremius_minio_secret_2025}
+      # ⚠️ REQUIRED when using --profile s3/full/dev. Set in .env
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required when using s3/full/dev profile - set it in .env}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required when using s3/full/dev profile - set it in .env}
+      S3_BUCKET: ${S3_BUCKET:-kitsuden-media}
     ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      # S3_PORT / S3_CONSOLE_PORT; MINIO_PORT / MINIO_CONSOLE_PORT siguen
+      # valiendo para que un .env anterior no cambie de puerto
+      - "${BIND_ADDRESS:-127.0.0.1}:${S3_PORT:-${MINIO_PORT:-9000}}:8333"
+      - "${BIND_ADDRESS:-127.0.0.1}:${S3_CONSOLE_PORT:-${MINIO_CONSOLE_PORT:-9001}}:23646"
     volumes:
-      - gremius_minio_prod:/data
+      - kitsuden_seaweedfs_prod:/data
+      - ./docker/seaweedfs-arranque.sh:/kitsuden/arranque.sh:ro
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8333/healthz"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
     networks:
-      - gremius_net_prod
-
-  # ═══════════════════════════════════════════════════════════════════════
-  # MinIO Init (OPCIONAL) - Crea bucket automáticamente
-  # ═══════════════════════════════════════════════════════════════════════
-  gremius_minio_init:
-    image: minio/mc:latest
-    container_name: gremius_minio_init_prod
-    profiles: ["s3", "full", "dev"]
-    depends_on:
-      gremius_minio:
-        condition: service_healthy
-    entrypoint: >
-      sh -c "
-        echo 'Waiting for MinIO...' &&
-        sleep 3 &&
-        mc alias set local http://gremius_minio_prod:9000 ${S3_ACCESS_KEY:-gremius_minio} ${S3_SECRET_KEY:-gremius_minio_secret_2025} &&
-        mc mb local/${S3_BUCKET:-gremius-media} --ignore-existing &&
-        echo 'Bucket created: ${S3_BUCKET:-gremius-media}'
-      "
-    networks:
-      - gremius_net_prod
+      - kitsuden_net_prod
 
   # ═══════════════════════════════════════════════════════════════════════
   # API - Backend (Bun + Hono) (REQUERIDO)
   #
   # DUAL MODE:
   #   • Vibecoder (default):  docker compose up -d
-  #     Usa imagen pre-builded: gremius/api:latest
+  #     Usa imagen pre-builded: kitsuden/api:latest
   #   • Developer:            docker compose up -d --build
   #     Build desde source con Dockerfile.prod
   #
   # Para forzar build sin afectar otros servicios:
-  #   docker compose up -d --build gremius_api
+  #   docker compose up -d --build kitsuden_api
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_api:
-    image: ${GREMIUS_API_IMAGE:-gremius/api:latest}
+  kitsuden_api:
+    image: ${KITSUDEN_API_IMAGE:-kitsuden/api:latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: api
-    container_name: gremius_api_prod
+    container_name: kitsuden_api_prod
     restart: unless-stopped
     depends_on:
-      gremius_db:
+      kitsuden_db:
         condition: service_healthy
-      gremius_state:
+      kitsuden_state:
         condition: service_healthy
-      # MinIO es opcional - el API funciona con Local storage si no está
+      # SeaweedFS es opcional - el API funciona con Local storage si no está
     environment:
       # Server
       - NODE_ENV=production
       - PORT=3000
       # Database
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-gremius}:${POSTGRES_PASSWORD:-gremiuspassword}@gremius_db_prod:5432/${POSTGRES_DB:-gremius_prod}
+      # Dos conexiones a proposito, y la diferencia es de seguridad:
+      #
+      #   ADMIN  superusuario. Solo para crear la base, instalar pgvector,
+      #          migrar y crear el rol de aplicacion. No sirve trafico.
+      #   URL    rol normal. Es con el que corre la API.
+      #
+      # Postgres IGNORA las politicas RLS cuando quien consulta es superusuario.
+      # Antes ambas eran la misma cuenta de superusuario: las politicas estaban
+      # aplicadas —"RLS activo en 3 tablas"— y no aislaban nada. El arranque lo
+      # avisaba por consola y era facil no verlo, porque todo funcionaba.
+      #
+      # El rol se crea solo en el arranque, con los GRANT necesarios; ver
+      # docker/start-with-check.sh.
+      - DATABASE_ADMIN_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
+      - DATABASE_URL=postgresql://${APP_DB_USER:-kitsuden_app}:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required - set it in .env}@kitsuden_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
       # Valkey
-      - REDIS_URL=redis://gremius_state_prod:6379
+      - REDIS_URL=redis://kitsuden_state_prod:6379
       # Storage Configuration (configurable vía Media Library settings)
       - DEFAULT_STORAGE_PROVIDER=${DEFAULT_STORAGE_PROVIDER:-local}
-      # MinIO/S3 (usado si DEFAULT_STORAGE_PROVIDER=minio)
-      - S3_ENDPOINT=http://gremius_minio_prod:9000
+      # SeaweedFS/S3 (usado si DEFAULT_STORAGE_PROVIDER=s3; `minio` sigue aceptándose)
+      - S3_ENDPOINT=http://kitsuden_seaweedfs_prod:8333
       - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:9000}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-gremius_minio}
-      - S3_SECRET_KEY=${S3_SECRET_KEY:-gremius_minio_secret_2025}
-      - S3_BUCKET=${S3_BUCKET:-gremius-media}
+      # ⚠️ REQUIRED only when DEFAULT_STORAGE_PROVIDER=minio or s3 (optional for local storage)
+      # NOTA: el perfil s3/full/dev sí las exige (ver kitsuden_seaweedfs), aquí son opcionales
+      # para que `docker compose up -d` funcione con el default local storage.
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-}
+      - S3_BUCKET=${S3_BUCKET:-kitsuden-media}
       - S3_REGION=${S3_REGION:-us-east-1}
       # Local Storage (usado si DEFAULT_STORAGE_PROVIDER=local)
-      - STORAGE_LOCAL_PATH=/app/uploads
-      - STORAGE_LOCAL_URL=http://localhost:3000/uploads
+      - STORAGE_LOCAL_PATH=/app/data
+      # RELATIVA a proposito: con `http://localhost:3000/...` cada fichero
+      # subido guardaba en la base una URL que solo funciona desde la propia
+      # maquina. Detras de un dominio real, todas las imagenes apuntarian a
+      # ninguna parte — y la URL queda escrita en la fila, asi que el fallo
+      # sobrevive al cambio de configuracion.
+      - STORAGE_LOCAL_URL=/media
       # Auth
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required - set it in .env}
-      - BETTER_AUTH_URL=http://localhost:${API_PORT:-3000}
-      # CORS
-      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:3001
-      - ADMIN_URL=http://localhost:3001
+      # KITSUDEN Secrets Manager (clave maestra AES-256-GCM; fallback a BETTER_AUTH_SECRET)
+      - KITSUDEN_SECRETS_KEY=${KITSUDEN_SECRETS_KEY:-}
+      # KITSUDEN Vault (esquemas dinámicos con DDL real, opt-in)
+      - KITSUDEN_VAULT_ENABLED=${KITSUDEN_VAULT_ENABLED:-false}
+      # ── URLs públicas ──
+      #
+      # Estaban ESCRITAS como localhost. Detrás de un dominio real, las vueltas
+      # de OAuth (GitHub, Google, Discord) y la comprobación de origen de
+      # better-auth apuntaban a la máquina de quien abre la página, y el login
+      # social dejaba de funcionar sin ningún error del lado del servidor.
+      #
+      # Ahora salen del entorno. El valor por defecto sigue siendo localhost
+      # para que el uso local no cambie; el overlay TLS (docker-compose.tls.yml)
+      # las deriva de KITSUDEN_DOMAIN, y en modo público el arranque se NIEGA a
+      # seguir si alguna sigue apuntando a localhost.
+      - KITSUDEN_PUBLIC=${KITSUDEN_PUBLIC:-false}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
+      - ADMIN_URL=${ADMIN_URL:-http://localhost:3001}
+      - APP_URL=${APP_URL:-http://localhost:3001}
+      # Sitio publico (frontend). Las wikis viven en <wiki>.<su dominio>: kon-wiki
+      # genera esas direcciones a partir de esta URL.
+      - SITE_URL=${SITE_URL:-http://localhost:4321}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:3001}
+      # ── Correo ──
+      #
+      # Ninguna de estas llegaba al contenedor: el Mailer caía al driver `log`
+      # y la recuperación de contraseña se imprimía en consola. Orden de
+      # resolución: MAIL_DRIVER explícito → Resend si hay clave → SMTP si hay
+      # host → log. En modo público, `log` aborta el arranque.
+      #
+      # MAIL_FROM lleva valor por defecto a propósito: pasarlo VACÍO no es lo
+      # mismo que no pasarlo — el Mailer usa `??`, y una cadena vacía cuenta
+      # como definida, con lo que saldrían correos sin remitente.
+      - MAIL_DRIVER=${MAIL_DRIVER:-}
+      - MAIL_FROM=${MAIL_FROM:-noreply@localhost}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # Features
@@ -179,46 +258,162 @@ services:
       - ENABLE_MCP=true
       # Rate limiting
       - RATE_LIMIT_ENABLED=true
+      # Clave que comparte con el sitio público (Astro): con ella el cupo se
+      # cuenta por visitante y no para todo el sitio a la vez. Vacía = sin efecto.
+      # Ver apps/api/src/lib/rate-limiter.ts (visitanteDelSitio).
+      - SITIO_API_CLAVE=${SITIO_API_CLAVE:-}
     ports:
-      - "${API_PORT:-3000}:3000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-3000}:3000"
     networks:
-      - gremius_net_prod
+      - kitsuden_net_prod
     command: ["sh", "/app/docker/start-with-check.sh"]
+    volumes:
+      # Ficheros subidos en modo local. Sin este montaje viven dentro del
+      # contenedor y desaparecen al recrearlo: un `docker compose up -d` tras
+      # cambiar de imagen borraria la biblioteca de medios entera, en silencio.
+      - kitsuden_uploads_prod:/app/data
+
+    # Healthcheck de la API — REQUERIDO: kitsuden_admin declara
+    # `depends_on: kitsuden_api: condition: service_healthy`, y sin este bloque esa
+    # condición nunca se cumple y el admin queda esperando para siempre.
+    #
+    # Usa /live (liveness puro: 200 mientras el event loop responda), NO /ready
+    # — ready también verifica DB y cache, así que un fallo temporal de Valkey
+    # marcaría la API como unhealthy y Docker la reiniciaría en bucle. Lo mismo
+    # vale para /api/health, que hace comprobaciones profundas.
+    #
+    # SIN prefijo /api: las rutas de observabilidad se montan en la RAÍZ
+    # (`app.route("/", observabilityRoutes)` en src/lib/critical-features.ts),
+    # así que son /live, /health y /ready. Esto decía /api/live, que devuelve
+    # 404 — y un healthcheck contra una ruta inexistente falla siempre: la API
+    # arrancaba perfectamente, respondía 200 en /api/health, y aun así compose
+    # daba `dependency failed to start ... is unhealthy` y el admin no llegaba
+    # a levantarse nunca.
+    #
+    # start_period cubre el arranque real: migraciones + build del schema
+    # mergeado antes de escuchar. Durante esa ventana los fallos no cuentan.
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
 
   # ═══════════════════════════════════════════════════════════════════════
   # Admin Panel - Frontend (SvelteKit) (REQUERIDO)
   #
   # DUAL MODE: Igual que API
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_admin:
-    image: ${GREMIUS_ADMIN_IMAGE:-gremius/admin:latest}
+  kitsuden_admin:
+    image: ${KITSUDEN_ADMIN_IMAGE:-kitsuden/admin:latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: admin
       # No PUBLIC_API_URL needed - admin uses relative /api/* URLs
       # which nginx proxies to the API container internally
-    container_name: gremius_admin_prod
+    container_name: kitsuden_admin_prod
     restart: unless-stopped
     depends_on:
-      - gremius_api
+      kitsuden_api:
+        condition: service_healthy
     ports:
-      - "${ADMIN_PORT:-3001}:80"
+      - "${BIND_ADDRESS:-127.0.0.1}:${ADMIN_PORT:-3001}:80"
     networks:
-      - gremius_net_prod
+      - kitsuden_net_prod
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Backups (REQUERIDO en produccion)
+  #
+  # `apps/api/scripts/backup.ts` existia —con retencion y verificacion de cada
+  # volcado con `pg_restore --list`— y NADA lo programaba. Las copias dependian
+  # de que alguien se acordara de lanzarlo a mano.
+  #
+  # Usa la misma imagen que la API: ya trae bun, el script y `pg_dump` 17, que
+  # puede volcar el servidor 16.
+  #
+  # CON EL SUPERUSUARIO, A PROPOSITO. `pg_dump` desactiva RLS para leer tablas
+  # enteras y, si quien vuelca no puede saltarse las politicas, FALLA. El rol
+  # de la aplicacion no puede (y no debe). Con el rol de la app no habria
+  # copias; con uno que filtrara en silencio, habria copias incompletas.
+  #
+  # LO QUE ESTO NO ES: una copia fuera de la maquina. El volumen vive en el
+  # mismo disco que la base. Protege de un DROP TABLE o de una migracion rota,
+  # no de perder el servidor. Sacar `kitsuden_backups_prod` a otro sitio
+  # (S3, rclone, snapshot del proveedor) sigue siendo trabajo pendiente.
+  # ═══════════════════════════════════════════════════════════════════════
+  kitsuden_backup:
+    image: ${KITSUDEN_API_IMAGE:-kitsuden/api:latest}
+    container_name: kitsuden_backup_prod
+    restart: unless-stopped
+    depends_on:
+      kitsuden_db:
+        condition: service_healthy
+    working_dir: /app/apps/api
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
+      - BACKUP_DIR=/backups
+      - BACKUP_KEEP=${BACKUP_KEEP:-14}
+      - BACKUP_INTERVAL_HOURS=${BACKUP_INTERVAL_HOURS:-24}
+    entrypoint: ["sh", "-c"]
+    # `$$` es un `$` para el shell: sin duplicarlo, compose intenta sustituir
+    # las variables del bucle al leer el fichero y el bucle recibe cadenas vacias.
+    command:
+      - |
+        INTERVALO=$$(( $${BACKUP_INTERVAL_HOURS} * 3600 ))
+        echo "Backups cada $${BACKUP_INTERVAL_HOURS}h en /backups (se conservan $${BACKUP_KEEP})"
+        # Un fallo NO espera al siguiente intervalo: reintenta en 5 minutos.
+        # `depends_on: service_healthy` solo lo respeta `docker compose up`;
+        # cuando Docker arranca y relanza los contenedores por su politica de
+        # reinicio, los levanta a la vez. Asi paso el 2026-09-16: el volcado
+        # salio antes de que Postgres escuchara, fallo, y el bucle se durmio
+        # 24 h — cuatro dias sin copia hasta que el healthcheck lo marco.
+        while true; do
+          if bun run scripts/backup.ts; then
+            date -u +%s > /backups/.ultimo-ok
+            sleep "$$INTERVALO"
+          else
+            echo "BACKUP FALLIDO $$(date -u +%FT%TZ) - reintento en 5 min" >&2
+            sleep 300
+          fi
+        done
+    # Sano = hay una copia buena de hace menos de dos intervalos. Sin esto,
+    # un contenedor que falla cada noche figura «Up» durante meses.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "test -f /backups/.ultimo-ok && [ $$(( $$(date -u +%s) - $$(cat /backups/.ultimo-ok) )) -lt $$(( $${BACKUP_INTERVAL_HOURS:-24} * 7200 )) ]",
+        ]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 15m
+    volumes:
+      - kitsuden_backups_prod:/backups
+    networks:
+      - kitsuden_net_prod
 
 volumes:
-  gremius_postgres_prod:
-    name: gremius_postgres_prod
+  # Los ficheros subidos en modo local. SIN esto se guardan dentro del
+  # contenedor y desaparecen al recrearlo: `docker compose up -d` tras un
+  # cambio de imagen borraria toda la biblioteca de medios sin avisar.
+  kitsuden_uploads_prod:
+  kitsuden_postgres_prod:
+    name: kitsuden_postgres_prod
     driver: local
-  gremius_minio_prod:
-    name: gremius_minio_prod
+  kitsuden_seaweedfs_prod:
+    name: kitsuden_seaweedfs_prod
     driver: local
-  gremius_valkey_prod:
-    name: gremius_valkey_prod
+  kitsuden_valkey_prod:
+    name: kitsuden_valkey_prod
+    driver: local
+  kitsuden_backups_prod:
+    name: kitsuden_backups_prod
     driver: local
 
 networks:
-  gremius_net_prod:
-    name: gremius_net_prod
+  kitsuden_net_prod:
+    name: kitsuden_net_prod
     driver: bridge

@@ -59,23 +59,23 @@
   function getIconColor(type: string) {
     switch (type) {
       case "post":
-        return "bg-gremius-cyan/10 text-gremius-cyan";
+        return "bg-kitsuden-accent/10 text-kitsuden-accent";
       case "user":
-        return "bg-gremius-green/10 text-gremius-green";
+        return "bg-kitsuden-green/10 text-kitsuden-green";
       case "media":
-        return "bg-gremius-purple/10 text-gremius-purple";
+        return "bg-kitsuden-purple/10 text-kitsuden-purple";
       case "settings":
-        return "bg-gremius-amber/10 text-gremius-amber";
+        return "bg-kitsuden-amber/10 text-kitsuden-amber";
       default:
-        return "bg-gremius-border text-gremius-subtle";
+        return "bg-kitsuden-border text-kitsuden-subtle";
     }
   }
 </script>
 
 <div class="space-y-4">
   <div class="flex items-center justify-between">
-    <h3 class="font-semibold text-gremius-text flex items-center gap-2">
-      <Activity class="w-4 h-4 text-gremius-cyan" />
+    <h3 class="font-semibold text-kitsuden-text flex items-center gap-2">
+      <Activity class="w-4 h-4 text-kitsuden-accent" />
       Recent Activity
     </h3>
   </div>
@@ -93,11 +93,11 @@
           <Icon class="w-4 h-4" />
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm text-gremius-text">
+          <p class="text-sm text-kitsuden-text">
             <span class="font-medium">{activity.action}</span>
-            <span class="text-gremius-text-dim">{activity.item}</span>
+            <span class="text-kitsuden-text-dim">{activity.item}</span>
           </p>
-          <p class="text-xs text-gremius-subtle mt-0.5">
+          <p class="text-xs text-kitsuden-subtle mt-0.5">
             by {activity.user} • {activity.time}
           </p>
         </div>
@@ -105,47 +105,47 @@
     {/each}
   </div>
 
-  <button class="w-full text-center text-xs text-gremius-cyan hover:underline">
+  <button class="w-full text-center text-xs text-kitsuden-accent hover:underline">
     View All Activity
   </button>
 </div>
 
 <style>
-  .text-gremius-cyan {
-    color: var(--gremius-color-cyan);
+  .text-kitsuden-accent {
+    color: var(--kitsuden-color-cyan);
   }
-  .text-gremius-green {
-    color: var(--gremius-color-green);
+  .text-kitsuden-green {
+    color: var(--kitsuden-color-green);
   }
-  .text-gremius-purple {
-    color: var(--gremius-color-purple);
+  .text-kitsuden-purple {
+    color: var(--kitsuden-color-purple);
   }
-  .text-gremius-amber {
-    color: var(--gremius-color-amber);
+  .text-kitsuden-amber {
+    color: var(--kitsuden-color-amber);
   }
-  .text-gremius-text {
-    color: var(--gremius-color-text);
+  .text-kitsuden-text {
+    color: var(--kitsuden-color-text);
   }
-  .text-gremius-text-dim {
-    color: var(--gremius-color-text-dim);
+  .text-kitsuden-text-dim {
+    color: var(--kitsuden-color-text-dim);
   }
-  .text-gremius-subtle {
-    color: var(--gremius-color-subtle);
+  .text-kitsuden-subtle {
+    color: var(--kitsuden-color-subtle);
   }
 
-  .bg-gremius-cyan\/10 {
-    background-color: rgba(0, 229, 255, 0.1);
+  .bg-kitsuden-accent\/10 {
+    background-color: rgba(168, 85, 247, 0.1);
   }
-  .bg-gremius-green\/10 {
+  .bg-kitsuden-green\/10 {
     background-color: rgba(0, 230, 118, 0.1);
   }
-  .bg-gremius-purple\/10 {
+  .bg-kitsuden-purple\/10 {
     background-color: rgba(179, 136, 255, 0.1);
   }
-  .bg-gremius-amber\/10 {
+  .bg-kitsuden-amber\/10 {
     background-color: rgba(255, 171, 0, 0.1);
   }
-  .bg-gremius-border {
-    background-color: var(--gremius-color-border);
+  .bg-kitsuden-border {
+    background-color: var(--kitsuden-color-border);
   }
 </style>

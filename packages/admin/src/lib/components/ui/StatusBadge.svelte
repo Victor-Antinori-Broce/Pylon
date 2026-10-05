@@ -42,15 +42,15 @@
 
   // Mapeo de variantes a clases Tailwind
   const variantStyles: Record<StatusVariant, string> = {
-    default: "bg-gray-500/10 text-gremius-subtle border-gray-500/20",
-    success: "bg-gremius-green-10 text-gremius-green border-gremius-green-20",
-    error: "bg-gremius-pink-10 text-gremius-pink border-gremius-pink-20",
-    warning: "bg-gremius-amber-10 text-gremius-amber border-gremius-amber-20",
-    info: "bg-gremius-cyan-10 text-gremius-cyan border-gremius-cyan-20",
-    active: "bg-gremius-green-10 text-gremius-green border-gremius-green-20",
-    inactive: "bg-gremius-muted/20 text-gremius-subtle border-gremius-border",
-    pending: "bg-gremius-amber-10 text-gremius-amber border-gremius-amber-20",
-    archived: "bg-gremius-muted/20 text-gremius-text-dim border-gremius-border",
+    default: "bg-gray-500/10 text-kitsuden-subtle border-gray-500/20",
+    success: "bg-kitsuden-green-10 text-kitsuden-green border-kitsuden-green-20",
+    error: "bg-kitsuden-accent-2-10 text-kitsuden-accent-2 border-kitsuden-accent-2-20",
+    warning: "bg-kitsuden-amber-10 text-kitsuden-amber border-kitsuden-amber-20",
+    info: "bg-kitsuden-accent-10 text-kitsuden-accent border-kitsuden-accent-20",
+    active: "bg-kitsuden-green-10 text-kitsuden-green border-kitsuden-green-20",
+    inactive: "bg-kitsuden-muted/20 text-kitsuden-subtle border-kitsuden-border",
+    pending: "bg-kitsuden-amber-10 text-kitsuden-amber border-kitsuden-amber-20",
+    archived: "bg-kitsuden-muted/20 text-kitsuden-text-dim border-kitsuden-border",
   };
 
   const sizeStyles: Record<StatusSize, string> = {
@@ -67,14 +67,14 @@
 
   const dotColors: Record<StatusVariant, string> = {
     default: "bg-gray-400",
-    success: "bg-gremius-green",
-    error: "bg-gremius-pink",
-    warning: "bg-gremius-amber",
-    info: "bg-gremius-cyan",
-    active: "bg-gremius-green animate-pulse",
-    inactive: "bg-gremius-subtle",
-    pending: "bg-gremius-amber animate-pulse",
-    archived: "bg-gremius-text-dim",
+    success: "bg-kitsuden-green",
+    error: "bg-kitsuden-accent-2",
+    warning: "bg-kitsuden-amber",
+    info: "bg-kitsuden-accent",
+    active: "bg-kitsuden-green animate-pulse",
+    inactive: "bg-kitsuden-subtle",
+    pending: "bg-kitsuden-amber animate-pulse",
+    archived: "bg-kitsuden-text-dim",
   };
 </script>
 

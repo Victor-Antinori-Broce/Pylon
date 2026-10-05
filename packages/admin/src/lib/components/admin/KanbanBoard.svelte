@@ -247,29 +247,29 @@
 
 <div class="space-y-4">
   <div class="flex items-center justify-between">
-    <h2 class="text-xl font-semibold text-gremius-text">{view.title}</h2>
-    <span class="text-sm text-gremius-text-dim">{data.length} records</span>
+    <h2 class="text-xl font-semibold text-kitsuden-text">{view.title}</h2>
+    <span class="text-sm text-kitsuden-text-dim">{data.length} records</span>
   </div>
 
   {#if loading}
     <div class="flex items-center justify-center h-64">
       <div
-        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
     </div>
   {:else if !hasValidGroupBy}
     <div
-      class="flex items-center justify-center h-64 bg-gremius-bg/50 border border-gremius-border border-dashed rounded-xl"
+      class="flex items-center justify-center h-64 bg-kitsuden-bg/50 border border-kitsuden-border border-dashed rounded-xl"
     >
       <div class="text-center max-w-md p-6">
         <div class="text-4xl mb-4">⚠️</div>
-        <h3 class="text-lg font-semibold text-gremius-text mb-2">Incompatible Kanban View</h3>
-        <p class="text-sm text-gremius-subtle mb-4">
+        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">Incompatible Kanban View</h3>
+        <p class="text-sm text-kitsuden-subtle mb-4">
           This Kanban view is configured to group cards by <code
-            class="bg-gremius-bg px-1.5 py-0.5 rounded text-gremius-cyan">'{view.groupBy}'</code
+            class="bg-kitsuden-bg px-1.5 py-0.5 rounded text-kitsuden-accent">'{view.groupBy}'</code
           >, but the current dataset does not contain this field.
         </p>
-        <p class="text-xs text-gremius-text-dim">
+        <p class="text-xs text-kitsuden-text-dim">
           Please update the grimoire config to use a valid field, or switch to Grid view.
         </p>
       </div>
@@ -280,9 +280,9 @@
         {@const items = grouped[stage] || []}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-          class="flex-shrink-0 w-72 flex flex-col rounded-xl border-2 bg-gremius-bg transition-colors {dragOverColumn ===
+          class="flex-shrink-0 w-72 flex flex-col rounded-xl border-2 bg-kitsuden-bg transition-colors {dragOverColumn ===
           stage
-            ? 'border-gremius-cyan/50 bg-gremius-cyan/5'
+            ? 'border-kitsuden-accent/50 bg-kitsuden-accent/5'
             : getStageColor(stage, i)}"
           ondragover={(e) => handleDragOver(e, stage)}
           ondragleave={handleDragLeave}
@@ -290,7 +290,7 @@
         >
           <!-- Column Header -->
           <div
-            class="flex items-center justify-between px-3 py-2.5 border-b border-gremius-border/50"
+            class="flex items-center justify-between px-3 py-2.5 border-b border-kitsuden-border/50"
           >
             <div class="flex items-center gap-2">
               <span
@@ -301,10 +301,10 @@
               >
                 {resolveGroupDisplay(stage)}
               </span>
-              <span class="text-xs text-gremius-subtle">{items.length}</span>
+              <span class="text-xs text-kitsuden-subtle">{items.length}</span>
             </div>
-            <button class="p-1 rounded hover:bg-gremius-border/30">
-              <Plus class="w-3.5 h-3.5 text-gremius-text-dim" />
+            <button class="p-1 rounded hover:bg-kitsuden-border/30">
+              <Plus class="w-3.5 h-3.5 text-kitsuden-text-dim" />
             </button>
           </div>
 
@@ -313,24 +313,24 @@
             {#each items as item}
               <!-- svelte-ignore a11y_no_static_element_interactions -->
               <div
-                class="bg-gremius-card border border-gremius-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-gremius-cyan/30 transition-all shadow-sm hover:shadow-md"
+                class="bg-kitsuden-card border border-kitsuden-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-kitsuden-accent/30 transition-all shadow-sm hover:shadow-md"
                 draggable="true"
                 ondragstart={() => handleDragStart(item)}
               >
                 <!-- Card Title (first cardField or ID) -->
                 <div class="flex items-center justify-between mb-2">
                   <div class="min-w-0">
-                    <p class="text-sm font-medium text-gremius-text truncate">
+                    <p class="text-sm font-medium text-kitsuden-text truncate">
                       {item[cardFields[0]] || item.title || item.name || item.id}
                     </p>
                     {#if isRelationColumn(view.groupBy)}
-                      <span class="text-[10px] text-gremius-subtle">
+                      <span class="text-[10px] text-kitsuden-subtle">
                         {resolveGroupDisplay(item[view.groupBy])}
                       </span>
                     {/if}
                   </div>
-                  <button class="p-1 rounded hover:bg-gremius-border/30 shrink-0">
-                    <MoreHorizontal class="w-3.5 h-3.5 text-gremius-text-dim" />
+                  <button class="p-1 rounded hover:bg-kitsuden-border/30 shrink-0">
+                    <MoreHorizontal class="w-3.5 h-3.5 text-kitsuden-text-dim" />
                   </button>
                 </div>
 
@@ -338,8 +338,9 @@
                 {#each cardFields.slice(1) as field}
                   {#if item[field] !== undefined && item[field] !== null}
                     <div class="flex items-center justify-between text-xs mb-1">
-                      <span class="text-gremius-subtle capitalize">{field.replace(/_/g, " ")}</span>
-                      <span class="text-gremius-text-dim font-medium"
+                      <span class="text-kitsuden-subtle capitalize">{field.replace(/_/g, " ")}</span
+                      >
+                      <span class="text-kitsuden-text-dim font-medium"
                         >{formatCardValue(item[field])}</span
                       >
                     </div>
@@ -349,7 +350,7 @@
             {/each}
 
             {#if items.length === 0}
-              <div class="flex items-center justify-center h-20 text-xs text-gremius-subtle">
+              <div class="flex items-center justify-center h-20 text-xs text-kitsuden-subtle">
                 No items
               </div>
             {/if}

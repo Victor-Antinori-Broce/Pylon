@@ -1,2 +1,0 @@
-  ⏰ Cron Scheduler: Failed to load — Failed query: select "id", "name", "slug", "description", "code", "trigger", "cron_expression", "watch_dataset_id", "timeout_ms", "memory_limit_mb", "status", "env_vars", "last_executed_at", "last_error", "execution_count", "error_count", "created_by_id", "created_at", "updated_at" from "gremius_functions" where ("gremius_functions"."trigger" = $1 and "gremius_functions"."status" = $2)
-params: cron,active

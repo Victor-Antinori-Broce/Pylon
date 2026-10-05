@@ -1,7 +1,7 @@
-# GremiusCMS Docker Build & API Route Analysis Report
+# Kitsuden Docker Build & API Route Analysis Report
 
 **Date:** 2026-03-26  
-**Project:** GremiusCMS v0.8.0-beta  
+**Project:** Kitsuden v0.8.0-beta  
 **Purpose:** Validate Docker build configuration and identify potential API route issues (500/404 errors)
 
 ---
@@ -48,14 +48,14 @@ Stage 5: admin       → Nginx serving static files
 | ---------------------------- | ---------- | ------------------------------------------ |
 | `pnpm-lock.yaml` drift       | Medium     | Use `--frozen-lockfile` or commit lockfile |
 | Missing `BETTER_AUTH_SECRET` | Low        | Already set in `.env` file                 |
-| Grimoire loading at runtime  | Medium     | Fallbacks exist in `module-loader.ts`      |
+| Kon loading at runtime       | Medium     | Fallbacks exist in `module-loader.ts`      |
 
 ### 1.4 Dockerfile Validation
 
 ```powershell
 # To test the build locally:
-docker build -f docker/Dockerfile.prod --target api -t gremius/api:test .
-docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test .
+docker build -f docker/Dockerfile.prod --target api -t kitsuden/api:test .
+docker build -f docker/Dockerfile.prod --target admin -t kitsuden/admin:test .
 ```
 
 **Expected Result:** Build should succeed (15-25 minutes first time)
@@ -66,12 +66,12 @@ docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test .
 
 ### 2.1 Route Categories
 
-| Category                    | Count    | Auth Required       | Status                         |
-| --------------------------- | -------- | ------------------- | ------------------------------ |
-| **Public Routes**           | 6        | No                  | ✅ Should work                 |
-| **Auth Routes**             | 8        | No (auth endpoints) | ✅ Should work                 |
-| **Protected Routes**        | 30+      | Yes                 | ⚠️ Returns 401 without auth    |
-| **Dynamic Grimoire Routes** | Variable | Mixed               | ⚠️ Depends on grimoire loading |
+| Category               | Count    | Auth Required       | Status                      |
+| ---------------------- | -------- | ------------------- | --------------------------- |
+| **Public Routes**      | 6        | No                  | ✅ Should work              |
+| **Auth Routes**        | 8        | No (auth endpoints) | ✅ Should work              |
+| **Protected Routes**   | 30+      | Yes                 | ⚠️ Returns 401 without auth |
+| **Dynamic Kon Routes** | Variable | Mixed               | ⚠️ Depends on kon loading   |
 
 ### 2.2 Public Routes (Should Return 200)
 
@@ -109,19 +109,19 @@ docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test .
 | Source              | Location                   | Risk            | Mitigation                   |
 | ------------------- | -------------------------- | --------------- | ---------------------------- |
 | Database connection | `src/db/index.ts`          | High if DB down | Connection pooling + retries |
-| Grimoire loading    | `src/lib/module-loader.ts` | Medium          | try/catch in loader          |
+| Kon loading         | `src/lib/module-loader.ts` | Medium          | try/catch in loader          |
 | Better-Auth session | `src/lib/auth.ts`          | Low             | Graceful degradation         |
 | Queue (BullMQ)      | `src/lib/queue.ts`         | Low             | Non-fatal if unavailable     |
 | Realtime Valkey     | `src/lib/realtime.ts`      | Low             | Non-fatal if unavailable     |
 
 ### 2.5 Potential 404 Error Sources
 
-| Source                     | Location                        | Risk     | Mitigation              |
-| -------------------------- | ------------------------------- | -------- | ----------------------- |
-| Non-existent routes        | `src/index.ts` notFound handler | Expected | Returns proper JSON 404 |
-| Grimoire routes not loaded | Dynamic loading                 | Medium   | Graceful fallback       |
-| Dataset slug not found     | `src/routes/crud.ts`            | Expected | Returns 404             |
-| Entry ID not found         | `src/routes/datasets.ts`        | Expected | Returns 404             |
+| Source                 | Location                        | Risk     | Mitigation              |
+| ---------------------- | ------------------------------- | -------- | ----------------------- |
+| Non-existent routes    | `src/index.ts` notFound handler | Expected | Returns proper JSON 404 |
+| Kon routes not loaded  | Dynamic loading                 | Medium   | Graceful fallback       |
+| Dataset slug not found | `src/routes/crud.ts`            | Expected | Returns 404             |
+| Entry ID not found     | `src/routes/datasets.ts`        | Expected | Returns 404             |
 
 ---
 
@@ -140,7 +140,7 @@ docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test .
 | Route                 | Issue                    | Mitigation              |
 | --------------------- | ------------------------ | ----------------------- |
 | `/api/system/setup`   | Race condition on init   | Check user count first  |
-| `/api/admin/registry` | Grimoire not loaded      | Returns empty array     |
+| `/api/admin/registry` | Kon not loaded           | Returns empty array     |
 | `/api/schema/*`       | DB reflection on startup | Cached after first call |
 
 ### 🟢 Low Risk (Should Work)
@@ -198,10 +198,10 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/nonexistent" -Method GET
 1. **Run the test script**: Execute `scripts/docker-api-test.ps1` to validate
 2. **Set proper secrets**: Ensure `BETTER_AUTH_SECRET` is a real 32+ character secret
 3. **Configure CORS**: Update `ALLOWED_ORIGINS` in docker-compose.yml
-4. **Test grimoire loading**: Verify core grimoires load correctly:
-   - `grimoire-datasets`
-   - `grimoire-media`
-   - `grimoire-data-visualizer`
+4. **Test kon loading**: Verify core kons load correctly:
+   - `kon-datasets`
+   - `kon-media`
+   - `kon-data-visualizer`
 
 ### 5.2 Monitoring Checklist
 
@@ -245,4 +245,4 @@ The API routes are properly structured with:
 
 ---
 
-_Report generated by automated analysis of the GremiusCMS codebase_
+_Report generated by automated analysis of the Kitsuden codebase_

@@ -55,7 +55,8 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
         },
         {
           question: "How to contact support?",
-          answer: "Email us at support@gremius.gg or use the live chat in the bottom right corner.",
+          answer:
+            "Email us at support@kitsuden.gg or use the live chat in the bottom right corner.",
           category: "support",
         },
         {
@@ -124,7 +125,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
       expect(toolsRes.ok()).toBe(true);
       const toolsData = await toolsRes.json();
       const hasSearchTool = toolsData.result.tools.some(
-        (t: any) => t.name === "gremius_search_entries"
+        (t: any) => t.name === "kitsuden_search_entries"
       );
       expect(hasSearchTool).toBe(true);
 
@@ -134,7 +135,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_search_entries",
+            name: "kitsuden_search_entries",
             arguments: {
               datasetId: testDatasetId,
               query: "change password",
@@ -162,7 +163,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_search_entries",
+            name: "kitsuden_search_entries",
             arguments: {
               datasetId: testDatasetId,
               query: "payment methods credit card",
@@ -189,7 +190,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_search_entries",
+            name: "kitsuden_search_entries",
             arguments: {
               datasetId: testDatasetId,
               query: "contact support help",
@@ -219,7 +220,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_get_dataset_schema",
+            name: "kitsuden_get_dataset_schema",
             arguments: {
               datasetId: testDatasetId,
             },
@@ -247,7 +248,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_create_entry",
+            name: "kitsuden_create_entry",
             arguments: {
               datasetId: testDatasetId,
               data: {
@@ -275,7 +276,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_search_entries",
+            name: "kitsuden_search_entries",
             arguments: {
               datasetId: testDatasetId,
               query: "mobile app download",
@@ -304,7 +305,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_search_entries",
+            name: "kitsuden_search_entries",
             arguments: {
               datasetId: "non-existent-uuid",
               query: "test",
@@ -326,7 +327,7 @@ test.describe("🎯 E2E: Claude → MCP → Vector Search Flow", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_search_entries",
+            name: "kitsuden_search_entries",
             arguments: {
               datasetId: testDatasetId,
               query: "",
@@ -358,7 +359,7 @@ test.describe("🔐 E2E: Zero-Trust Security in MCP + Vector Search", () => {
         jsonrpc: "2.0",
         method: "tools/call",
         params: {
-          name: "gremius_search_entries",
+          name: "kitsuden_search_entries",
           arguments: { datasetId: "test", query: "test" },
         },
         id: 1,

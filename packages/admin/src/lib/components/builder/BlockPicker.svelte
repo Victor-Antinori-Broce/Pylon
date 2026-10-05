@@ -56,8 +56,8 @@
 
 <div class="h-full flex flex-col">
   <!-- Header -->
-  <div class="p-4 border-b border-gremius-border flex items-center justify-between">
-    <h3 class="text-sm font-semibold text-gremius-text">Add Block</h3>
+  <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-kitsuden-text">Add Block</h3>
     <button onclick={onClose} class="btn-icon p-1"><X class="w-4 h-4" /></button>
   </div>
 
@@ -67,7 +67,7 @@
       {@const catBlocks = BLOCK_REGISTRY.filter((b) => b.category === cat.id)}
       {#if catBlocks.length > 0}
         <div>
-          <h4 class="text-[10px] font-semibold uppercase tracking-wider text-gremius-subtle mb-3">
+          <h4 class="text-[10px] font-semibold uppercase tracking-wider text-kitsuden-subtle mb-3">
             {cat.label}
           </h4>
           <div class="grid grid-cols-2 gap-2">
@@ -78,7 +78,7 @@
                   if (e.dataTransfer) e.dataTransfer.setData("block-type", block.type);
                 }}
                 onclick={() => onAdd?.(block.type)}
-                class="group flex flex-col items-center gap-2 p-3 rounded-xl border border-gremius-border hover:border-gremius-cyan/50 hover:bg-gremius-cyan/[0.03] transition-all text-center"
+                class="group flex flex-col items-center gap-2 p-3 rounded-xl border border-kitsuden-border hover:border-kitsuden-accent/50 hover:bg-kitsuden-accent/[0.03] transition-all text-center"
               >
                 {#if true}
                   {@const BlockIcon = getBlockIcon(block.icon)}
@@ -91,11 +91,11 @@
                 {/if}
                 <div>
                   <p
-                    class="text-xs font-medium text-gremius-text group-hover:text-gremius-text transition-colors"
+                    class="text-xs font-medium text-kitsuden-text group-hover:text-kitsuden-text transition-colors"
                   >
                     {block.label}
                   </p>
-                  <p class="text-[9px] text-gremius-subtle mt-0.5 line-clamp-2">
+                  <p class="text-[9px] text-kitsuden-subtle mt-0.5 line-clamp-2">
                     {block.description}
                   </p>
                 </div>
@@ -108,8 +108,8 @@
   </div>
 
   <!-- Footer tip -->
-  <div class="p-3 border-t border-gremius-border bg-gremius-bg/50">
-    <p class="text-[10px] text-gremius-subtle text-center">
+  <div class="p-3 border-t border-kitsuden-border bg-kitsuden-bg/50">
+    <p class="text-[10px] text-kitsuden-subtle text-center">
       Tip: You can also drag blocks to the canvas
     </p>
   </div>

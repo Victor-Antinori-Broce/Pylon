@@ -1,14 +1,14 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * GREDIUS TESTING FRAMEWORK - Minimalist Grimoire Testing
+ * GREDIUS TESTING FRAMEWORK - Minimalist Kon Testing
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Usage:
  * ```typescript
- * import { createTestSandbox, defineFixture } from "@gremius/testing";
+ * import { createTestSandbox, defineFixture } from "@kitsuden/testing";
  *
  * const sandbox = createTestSandbox({
- *   grimoires: ["grimoire-blog"],
+ *   kons: ["kon-blog"],
  *   fixtures: "blog-seed"
  * });
  *
@@ -16,7 +16,7 @@
  * afterAll(() => sandbox.teardown());
  * afterEach(() => sandbox.reset());
  *
- * describe("grimoire-blog", () => {
+ * describe("kon-blog", () => {
  *   it("creates posts", async () => {
  *     const response = await sandbox.http
  *       .asUser("admin")
@@ -31,19 +31,19 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * GREMius TESTING FRAMEWORK - Optimized for Bun + Drizzle + Hono
+ * Kitsuden TESTING FRAMEWORK - Optimized for Bun + Drizzle + Hono
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * RECOMMENDED IMPORTS for your stack:
  *
  * 1. Full sandbox with Drizzle:
- *    import { createDrizzleSandbox } from "@gremius/testing/sandbox-drizzle"
+ *    import { createDrizzleSandbox } from "@kitsuden/testing/sandbox-drizzle"
  *
  * 2. Bun test runner helpers:
- *    import { createTestSandbox } from "@gremius/testing/bun"
+ *    import { createTestSandbox } from "@kitsuden/testing/bun"
  *
  * 3. Raw Drizzle test DB:
- *    import { createDrizzleTestDb } from "@gremius/testing/drizzle"
+ *    import { createDrizzleTestDb } from "@kitsuden/testing/drizzle"
  */
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -70,8 +70,8 @@ export { loadFixtures, defineFixture, createDataFixture } from "./fixtures.js";
 export type {
   SandboxConfig,
   TestSandbox,
-  TestGrimoireContext,
-  TestGrimoire,
+  TestKonContext,
+  TestKon,
   TestHttpClient,
   TestResponse,
   TestUser,
@@ -89,13 +89,13 @@ export const VERSION = "0.1.0";
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Bun users: import from "@gremius/testing/bun"
+ * Bun users: import from "@kitsuden/testing/bun"
  *
  * Uses Bun's native test runner and fetch
  */
 
 /**
- * Drizzle ORM users: import from "@gremius/testing/drizzle"
+ * Drizzle ORM users: import from "@kitsuden/testing/drizzle"
  *
  * Provides real Drizzle instances with:
  * - pg-mem (in-memory PostgreSQL)

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Grimoires from "$views/Grimoires.svelte";
+  import GrimoiresView from "$views/grimoires/GrimoiresView.svelte";
 </script>
 
-<Grimoires />
+<GrimoiresView />

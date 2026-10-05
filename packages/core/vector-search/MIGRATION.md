@@ -1,8 +1,8 @@
-# Migración: AI Memories Grimoire → Core Vector Search
+# Migración: AI Memories Kon → Core Vector Search
 
 ## Resumen
 
-El grimoire `ai-memories` ha sido migrado a `packages/core/vector-search/` como una **capability transversal** del core de Gremius.
+El kon `ai-memories` ha sido migrado a `packages/core/vector-search/` como una **capability transversal** del core de Kitsuden.
 
 **Fecha de migración:** 2026-03-19  
 **Versión:** 1.0.0  
@@ -12,7 +12,7 @@ El grimoire `ai-memories` ha sido migrado a `packages/core/vector-search/` como 
 
 ## Cambios Principales
 
-### Antes (Grimoire AI Memories)
+### Antes (Kon AI Memories)
 
 ```typescript
 // Tablas separadas
@@ -44,11 +44,11 @@ POST /api/vector-search/global          // Buscar en todos los datasets (admin)
 
 ## Ventajas de la Migración
 
-| Aspecto           | Antes (Grimoire)            | Después (Core)                        |
+| Aspecto           | Antes (Kon)                 | Después (Core)                        |
 | ----------------- | --------------------------- | ------------------------------------- |
 | **Scope**         | Memoria general del sistema | Extensión de cualquier dataset        |
 | **API**           | Endpoints separados         | Integrado con `/api/datasets/*`       |
-| **Configuración** | Instalar grimoire           | Toggle en definición de dataset       |
+| **Configuración** | Instalar kon                | Toggle en definición de dataset       |
 | **Flexibilidad**  | Tablas fijas                | Cualquier dataset puede usar vectores |
 | **Mantenimiento** | Código duplicado            | Centralizado en core                  |
 
@@ -61,7 +61,7 @@ POST /api/vector-search/global          // Buscar en todos los datasets (admin)
 **Antes:**
 
 ```typescript
-// Crear memoria en grimoire separado
+// Crear memoria en kon separado
 POST /api/ai-memories
 {
   "content": "Producto: Laptop Gamer XYZ",
@@ -229,7 +229,7 @@ POST /api/datasets/products/vector-search
 ### Indexación Programática
 
 ```typescript
-import { indexContent } from "@gremius/core/vector-search";
+import { indexContent } from "@kitsuden/core/vector-search";
 
 // En tu código
 await indexContent({
@@ -336,7 +336,7 @@ ON vector_index USING ivfflat (embedding vector_cosine_ops);
 ## Referencias
 
 - **Nuevo README:** `packages/core/vector-search/README.md`
-- **Grimoire Legacy:** `packages/grimoires/ai-memories/README.md` (archived)
+- **Kon Legacy:** `packages/kons/ai-memories/README.md` (archived)
 - **Documentación API:** Ver OpenAPI en `/api/swagger`
 
 ---

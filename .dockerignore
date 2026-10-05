@@ -1,5 +1,5 @@
 # ===================================================================
-# GremiusCMS .dockerignore
+# Kitsuden .dockerignore
 # Excludes files not needed in Docker build context
 # ===================================================================
 
@@ -48,7 +48,7 @@ tests.json
 # Build diagnostics (not needed in image)
 build-diag*.txt
 progress.txt
-gremius_progress.txt
+kitsuden_progress.txt
 
 # Legacy / experimental folders
 Pylon
@@ -75,8 +75,8 @@ DOCKER_BUILD_VERIFICATION_REPORT.md
 ENDPOINT_*.md
 ENGINE_CORE_INTEGRATION.md
 FINAL_*.md
-gremius.md
-GRIMOIRE*.md
+kitsuden.md
+KON*.md
 jiira.md
 KCD.md
 legacyrefactor.md
@@ -127,3 +127,6 @@ playwright.config.d.ts
 playwright.config.d.ts.map
 playwright.config.js
 playwright.config.js.map
+
+gamedata/
+apps/api/data/

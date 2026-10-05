@@ -135,7 +135,7 @@
 
   function getEventColor(index: number): string {
     const colors = [
-      "bg-gremius-cyan/20 text-gremius-cyan border-l-2 border-gremius-cyan",
+      "bg-kitsuden-accent/20 text-kitsuden-accent border-l-2 border-kitsuden-accent",
       "bg-purple-500/20 text-purple-400 border-l-2 border-purple-500",
       "bg-green-500/20 text-green-400 border-l-2 border-green-500",
       "bg-orange-500/20 text-orange-400 border-l-2 border-orange-500",
@@ -148,18 +148,18 @@
 <div class="space-y-4">
   <!-- Header -->
   <div class="flex items-center justify-between">
-    <h2 class="text-xl font-semibold text-gremius-text">{view.title}</h2>
+    <h2 class="text-xl font-semibold text-kitsuden-text">{view.title}</h2>
     <div class="flex items-center gap-2">
       <button class="btn-secondary-sm" onclick={goToday}>Today</button>
-      <button class="p-2 rounded hover:bg-gremius-border/30" onclick={prevMonth}>
-        <ChevronLeft class="w-4 h-4 text-gremius-text-dim" />
+      <button class="p-2 rounded hover:bg-kitsuden-border/30" onclick={prevMonth}>
+        <ChevronLeft class="w-4 h-4 text-kitsuden-text-dim" />
       </button>
-      <span class="text-sm font-medium text-gremius-text min-w-[140px] text-center">
+      <span class="text-sm font-medium text-kitsuden-text min-w-[140px] text-center">
         {MONTHS[currentMonth]}
         {currentYear}
       </span>
-      <button class="p-2 rounded hover:bg-gremius-border/30" onclick={nextMonth}>
-        <ChevronRight class="w-4 h-4 text-gremius-text-dim" />
+      <button class="p-2 rounded hover:bg-kitsuden-border/30" onclick={nextMonth}>
+        <ChevronRight class="w-4 h-4 text-kitsuden-text-dim" />
       </button>
     </div>
   </div>
@@ -167,33 +167,34 @@
   {#if loading}
     <div class="flex items-center justify-center h-64">
       <div
-        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
     </div>
   {:else if !hasValidDateField}
     <div
-      class="flex items-center justify-center h-64 bg-gremius-bg/50 border border-gremius-border border-dashed rounded-xl"
+      class="flex items-center justify-center h-64 bg-kitsuden-bg/50 border border-kitsuden-border border-dashed rounded-xl"
     >
       <div class="text-center max-w-md p-6">
         <div class="text-4xl mb-4">⚠️</div>
-        <h3 class="text-lg font-semibold text-gremius-text mb-2">Incompatible Calendar View</h3>
-        <p class="text-sm text-gremius-subtle mb-4">
+        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">Incompatible Calendar View</h3>
+        <p class="text-sm text-kitsuden-subtle mb-4">
           This Calendar view is configured to map events by <code
-            class="bg-gremius-bg px-1.5 py-0.5 rounded text-gremius-cyan">'{view.dateField}'</code
+            class="bg-kitsuden-bg px-1.5 py-0.5 rounded text-kitsuden-accent"
+            >'{view.dateField}'</code
           >, but the underlying table does not contain this field.
         </p>
-        <p class="text-xs text-gremius-text-dim">
+        <p class="text-xs text-kitsuden-text-dim">
           Please update the grimoire config to use a valid date field, or switch to Grid view.
         </p>
       </div>
     </div>
   {:else}
-    <div class="border border-gremius-border rounded-xl overflow-hidden bg-gremius-card">
+    <div class="border border-kitsuden-border rounded-xl overflow-hidden bg-kitsuden-card">
       <!-- Day Headers -->
-      <div class="grid grid-cols-7 border-b border-gremius-border">
+      <div class="grid grid-cols-7 border-b border-kitsuden-border">
         {#each DAYS as day}
           <div
-            class="p-2 text-center text-xs font-semibold uppercase tracking-wider text-gremius-subtle bg-gremius-bg"
+            class="p-2 text-center text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle bg-kitsuden-bg"
           >
             {day}
           </div>
@@ -204,17 +205,17 @@
       <div class="grid grid-cols-7">
         {#each calendarDays as cell, i}
           <div
-            class="min-h-[100px] p-1.5 border-b border-r border-gremius-border/50 {cell.date ===
+            class="min-h-[100px] p-1.5 border-b border-r border-kitsuden-border/50 {cell.date ===
             null
-              ? 'bg-gremius-bg/50'
-              : 'hover:bg-gremius-border/10'} {cell.isToday ? 'bg-gremius-cyan/5' : ''}"
+              ? 'bg-kitsuden-bg/50'
+              : 'hover:bg-kitsuden-border/10'} {cell.isToday ? 'bg-kitsuden-accent/5' : ''}"
           >
             {#if cell.date !== null}
               <div class="flex items-center justify-between mb-1">
                 <span
                   class="text-xs font-medium {cell.isToday
-                    ? 'bg-gremius-cyan text-white w-6 h-6 rounded-full flex items-center justify-center'
-                    : 'text-gremius-text-dim px-1'}"
+                    ? 'bg-kitsuden-accent text-white w-6 h-6 rounded-full flex items-center justify-center'
+                    : 'text-kitsuden-text-dim px-1'}"
                 >
                   {cell.date}
                 </span>
@@ -229,7 +230,7 @@
                     </div>
                   {/each}
                   {#if eventsByDate[cell.fullDate].length > 3}
-                    <div class="text-[9px] text-gremius-subtle px-1.5">
+                    <div class="text-[9px] text-kitsuden-subtle px-1.5">
                       +{eventsByDate[cell.fullDate].length - 3} more
                     </div>
                   {/if}
@@ -242,12 +243,12 @@
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center gap-4 text-xs text-gremius-text-dim">
+    <div class="flex items-center gap-4 text-xs text-kitsuden-text-dim">
       <span>{data.length} events total</span>
       <span>·</span>
-      <span>Date field: <code class="text-gremius-cyan">{view.dateField}</code></span>
+      <span>Date field: <code class="text-kitsuden-accent">{view.dateField}</code></span>
       <span>·</span>
-      <span>Title field: <code class="text-gremius-cyan">{view.titleField}</code></span>
+      <span>Title field: <code class="text-kitsuden-accent">{view.titleField}</code></span>
     </div>
   {/if}
 </div>

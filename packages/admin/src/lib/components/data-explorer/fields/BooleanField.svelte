@@ -11,11 +11,11 @@
 {#if mode === "view" || mode === "inline"}
   <span class="inline-flex items-center gap-1.5">
     {#if isTrue}
-      <Check class="w-4 h-4 text-gremius-green" />
-      <span class="text-gremius-green text-sm">Yes</span>
+      <Check class="w-4 h-4 text-kitsuden-green" />
+      <span class="text-kitsuden-green text-sm">Yes</span>
     {:else}
-      <X class="w-4 h-4 text-gremius-subtle" />
-      <span class="text-gremius-subtle text-sm">No</span>
+      <X class="w-4 h-4 text-kitsuden-subtle" />
+      <span class="text-kitsuden-subtle text-sm">No</span>
     {/if}
   </span>
 {:else}
@@ -23,9 +23,9 @@
     <input
       type="checkbox"
       checked={isTrue}
-      class="w-5 h-5 rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan"
+      class="w-5 h-5 rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent"
       onchange={(e) => onChange?.(e.currentTarget.checked)}
     />
-    <span class="text-sm text-gremius-text">{isTrue ? "Enabled" : "Disabled"}</span>
+    <span class="text-sm text-kitsuden-text">{isTrue ? "Enabled" : "Disabled"}</span>
   </label>
 {/if}

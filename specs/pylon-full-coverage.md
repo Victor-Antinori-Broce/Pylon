@@ -1,8 +1,8 @@
-# GremiusCMS — Complete E2E Test Plan
+# Kitsuden — Complete E2E Test Plan
 
 ## Application Overview
 
-GremiusCMS is a gaming-focused headless CMS built with Vue 3 (admin), Hono/Bun (API), and PostgreSQL. The admin panel at `http://localhost:5173` provides a dark-themed interface for managing games, blog posts, media, datasets, modules, and system settings.
+Kitsuden is a gaming-focused headless CMS built with Vue 3 (admin), Hono/Bun (API), and PostgreSQL. The admin panel at `http://localhost:5173` provides a dark-themed interface for managing games, blog posts, media, datasets, modules, and system settings.
 
 Key features:
 
@@ -29,7 +29,7 @@ Key features:
 
 1. Navigate to `http://localhost:5173`
 2. Should redirect to `/login`
-3. Enter email: `admin@gremiuscms.dev`
+3. Enter email: `admin@kitsuden.dev`
 4. Enter password: `admin123`
 5. Click "Sign In" button
 
@@ -37,7 +37,7 @@ Key features:
 
 - Redirects to dashboard (`/`)
 - "Welcome back" heading is visible
-- Sidebar shows GremiusCMS branding
+- Sidebar shows Kitsuden branding
 - "API Connected" indicator is green
 - User avatar/initial visible in sidebar footer
 
@@ -46,7 +46,7 @@ Key features:
 **Steps:**
 
 1. Navigate to `/login`
-2. Enter email: `admin@gremiuscms.dev`
+2. Enter email: `admin@kitsuden.dev`
 3. Enter password: `wrongpassword`
 4. Click "Sign In"
 
@@ -138,7 +138,7 @@ Key features:
 **Expected Results:**
 
 - Navigates to `/posts`
-- Shows at least 1 post ("Welcome to GremiusCMS")
+- Shows at least 1 post ("Welcome to Kitsuden")
 - Post entries show title, status, date
 
 #### 4.2 Create New Blog Post
@@ -369,7 +369,7 @@ Key features:
 **Expected Results:**
 
 - Navigates to `/settings`
-- Site name field shows "GremiusCMS"
+- Site name field shows "Kitsuden"
 - Various configuration sections visible
 
 ---
@@ -424,7 +424,7 @@ Key features:
 **Expected Results:**
 
 - Status 200
-- Response includes `{ status: "ok", service: "gremius-api" }`
+- Response includes `{ status: "ok", service: "kitsuden-api" }`
 
 #### 11.2 API Games Endpoint
 

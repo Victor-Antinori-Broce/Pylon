@@ -7,7 +7,7 @@
 #   3. Missing VITE_API_URL env var (uses PUBLIC_API_URL which Vite ignores)
 #
 # Use instead:
-#   docker build -f docker/Dockerfile.prod --target admin -t gremius-admin:latest .
+#   docker build -f docker/Dockerfile.prod --target admin -t kitsuden-admin:latest .
 #
 # See docker-compose.yml for the correct production setup.
 # ===================================================================
@@ -26,7 +26,7 @@ RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 COPY packages/admin ./packages/admin
 COPY packages/shared ./packages/shared
 
-RUN pnpm --filter @gremius/shared build
+RUN pnpm --filter @kitsuden/shared build
 
 WORKDIR /app/packages/admin
 ENV NODE_ENV=production

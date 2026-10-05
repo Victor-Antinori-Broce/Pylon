@@ -23,10 +23,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@gremius/shared": ["../../packages/shared/dist"],
-      "@gremius/shared/*": ["../../packages/shared/dist/*"]
+      "@kitsuden/shared": ["../../packages/shared/dist"],
+      "@kitsuden/shared/*": ["../../packages/shared/dist/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/types/**/*.d.ts", "gremius.config.ts"],
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts", "kitsuden.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

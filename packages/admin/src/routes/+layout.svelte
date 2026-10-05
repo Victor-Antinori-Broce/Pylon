@@ -18,10 +18,8 @@
   let loading = $state(true);
 
   onMount(async () => {
-    console.log("[layout] onMount start");
     await loadTheme();
     await checkInit();
-    console.log(`[layout] initialized=${isInitialized()}`);
 
     // Only check session if the system is already initialized
     if (isInitialized()) {
@@ -29,27 +27,16 @@
     }
 
     loading = false;
-
-    console.log(
-      `[layout] onMount done: loggedIn=${loggedIn}, checked=${checked}, initialized=${initialized}`
-    );
-  });
-
-  // Debug: watch state changes
-  $effect(() => {
-    console.log(
-      `[layout] STATE: loading=${loading}, loggedIn=${loggedIn}, checked=${checked}, initialized=${initialized}`
-    );
   });
 </script>
 
 {#if loading}
-  <div class="min-h-screen flex items-center justify-center bg-gremius-bg">
+  <div class="min-h-screen flex items-center justify-center bg-kitsuden-bg">
     <div class="flex flex-col items-center gap-4">
       <div
-        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
-      <p class="text-gremius-subtle text-sm">Loading...</p>
+      <p class="text-kitsuden-subtle text-sm">Loading...</p>
     </div>
   </div>
 {:else if !initialized}
@@ -61,12 +48,12 @@
 {:else if checked}
   <LoginView />
 {:else}
-  <div class="min-h-screen flex items-center justify-center bg-gremius-bg">
+  <div class="min-h-screen flex items-center justify-center bg-kitsuden-bg">
     <div class="flex flex-col items-center gap-4">
       <div
-        class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
-      <p class="text-gremius-subtle text-sm">Loading...</p>
+      <p class="text-kitsuden-subtle text-sm">Loading...</p>
     </div>
   </div>
 {/if}

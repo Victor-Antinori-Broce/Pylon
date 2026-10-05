@@ -1,4 +1,4 @@
-// spec: specs/gremius-full-coverage.md — Section 1: Authentication
+// spec: specs/kitsuden-full-coverage.md — Section 1: Authentication
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
@@ -16,8 +16,8 @@ test.describe("Authentication Flow", () => {
     }
 
     // Login form uses input[type=email] and input[type=password]
-    await page.locator('input[type="email"]').fill("admin@gremius.gg");
-    await page.locator('input[type="password"]').fill("gremius123");
+    await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+    await page.locator('input[type="password"]').fill("kitsuden123");
     await page.locator('button[type="submit"]').click();
 
     // Dashboard
@@ -35,7 +35,7 @@ test.describe("Authentication Flow", () => {
       return;
     }
 
-    await page.locator('input[type="email"]').fill("admin@gremius.gg");
+    await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
     await page.locator('input[type="password"]').fill("wrongpassword");
     await page.locator('button[type="submit"]').click();
 
@@ -54,8 +54,8 @@ test.describe("Authentication Flow", () => {
     }
 
     // Login
-    await page.locator('input[type="email"]').fill("admin@gremius.gg");
-    await page.locator('input[type="password"]').fill("gremius123");
+    await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+    await page.locator('input[type="password"]').fill("kitsuden123");
     await page.locator('button[type="submit"]').click();
     await page.waitForURL(/\/$/, { timeout: 15_000 });
 

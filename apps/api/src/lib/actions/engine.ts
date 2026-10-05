@@ -12,6 +12,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { db } from "../../db";
 import { actions, actionExecutions } from "../../db/schema";
 import { events } from "../events";
+import { logger } from "../logger";
 
 import {
   executeCodeAction,
@@ -450,7 +451,12 @@ export async function dispatchEvent(
 
     if (filteredActions.length === 0) return;
 
-    console.log(`[Actions] ${eventName} → dispatching ${filteredActions.length} action(s)`);
+    // Por EVENTO. Es la línea que dice qué se disparó a raíz de qué, así que
+    // sin traza compartida no sirve para reconstruir nada.
+    logger.info(
+      { event: eventName, acciones: filteredActions.length },
+      "[Actions] despachando acciones"
+    );
 
     // Execute all matching actions concurrently
     for (const action of filteredActions) {

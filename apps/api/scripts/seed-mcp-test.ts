@@ -33,7 +33,7 @@ function generateAgentApiKey(options: { type: string; randomLength?: number }): 
   keyPrefix: string;
 } {
   const { type, randomLength = 32 } = options;
-  const AGENT_ID_PREFIX = "grm_agent";
+  const AGENT_ID_PREFIX = "kitsuden_agent";
 
   // Normalizar tipo
   const normalizedType = type
@@ -82,7 +82,7 @@ async function seedMcpTest() {
     }
 
     // ───────────────────────────────────────────────────────────────────────
-    // GENERAR TOKEN CON FORMATO grm_agent_...
+    // GENERAR TOKEN CON FORMATO kitsuden_agent_...
     // ───────────────────────────────────────────────────────────────────────
     log("🔑 Paso 2: Generando token MCP seguro...", "yellow");
 
@@ -135,7 +135,7 @@ async function seedMcpTest() {
             type: "claude-desktop",
             capabilities: ["mcp-connect", "tool-execution", "context-management"],
             systemPrompt:
-              "Eres DevBot, un agente de desarrollo conectado a Gremius CMS. Tienes acceso a herramientas MCP para interactuar con el sistema.",
+              "Eres DevBot, un agente de desarrollo conectado a Kitsuden CMS. Tienes acceso a herramientas MCP para interactuar con el sistema.",
             allowedTools: ["read_dataset", "write_intake", "search_memories"],
             scopes: ["read:issues", "write:intake"],
             rateLimit: 120,
@@ -212,7 +212,7 @@ INSERT INTO agent_identities (
   'Agente de desarrollo para pruebas MCP con Claude Desktop',
   'claude-desktop',
   '["mcp-connect", "tool-execution", "context-management"]',
-  'Eres DevBot, un agente de desarrollo conectado a Gremius CMS.',
+  'Eres DevBot, un agente de desarrollo conectado a Kitsuden CMS.',
   '["read_dataset", "write_intake", "search_memories"]',
   '["read:issues", "write:intake"]',
   120,
@@ -259,7 +259,7 @@ INSERT INTO agent_api_keys (
 
     const claudeConfig = {
       mcpServers: {
-        gremius: {
+        kitsuden: {
           command: "bun",
           args: ["run", "apps/api/src/mcp-server.ts"],
           cwd: "C:\\Users\\vantinori\\Documents\\github\\cms",
@@ -286,7 +286,7 @@ INSERT INTO agent_api_keys (
     log("PRUEBA DE CONEXIÓN:", "bold");
     log("════════════════════════════════════════════════════════════════\n", "bold");
 
-    log("1. Asegúrate de que el servidor Gremius esté corriendo:", "reset");
+    log("1. Asegúrate de que el servidor Kitsuden esté corriendo:", "reset");
     log("   cd apps/api && bun run dev\n", "cyan");
 
     log("2. Abre Claude Desktop", "reset");
@@ -300,7 +300,7 @@ INSERT INTO agent_api_keys (
     log("════════════════════════════════════════════════════════════════\n", "bold");
 
     log("✅ El middleware validará:", "green");
-    log("   • Formato del token: grm_agent_claude-desktop_...", "reset");
+    log("   • Formato del token: kitsuden_agent_claude-desktop_...", "reset");
     log("   • Hash SHA-256 en base de datos", "reset");
     log("   • Scopes del agente: [read:issues, write:intake]", "reset");
     log("   • Rate limiting por agente", "reset");

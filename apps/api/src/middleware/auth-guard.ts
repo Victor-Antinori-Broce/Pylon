@@ -7,7 +7,7 @@ import { auth } from "../lib/auth";
  *
  * Supports both:
  * 1. Human authentication (Better-Auth cookies)
- * 2. Agent authentication (grm_agent_ API keys)
+ * 2. Agent authentication (kitsuden_agent_ API keys)
  *
  * Priority: Agent > Human (for API routes that support both)
  */

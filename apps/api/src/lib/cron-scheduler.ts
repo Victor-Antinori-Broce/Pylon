@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Cron Scheduler for Actions
+ * Kitsuden — Cron Scheduler for Actions
  *
  * Uses `croner` (lightweight, no native deps) to schedule
  * cron-triggered actions. On startup, loads all active cron
@@ -11,16 +11,18 @@
  *   - Graceful shutdown (stops all scheduled jobs)
  *   - Logs each cron execution to action_executions
  *
- * Phase 3: Updated to use the unified actions table instead of gremius_functions.
+ * Phase 3: Updated to use the unified actions table instead of kitsuden_functions.
  */
 
+import { messageOf } from "@kitsuden/engine";
 import { Cron } from "croner";
 import { eq, and } from "drizzle-orm";
 
 import { db } from "../db";
-import { actions, gremiusFunctions } from "../db/schema";
+import { actions, kitsudenFunctions } from "../db/schema";
 
 import { executeActionById } from "./actions";
+import { logger } from "./logger";
 
 // ═══════════════════════════════════════════════════════════════
 // State
@@ -60,21 +62,22 @@ function scheduleCronJob(action: typeof actions.$inferSelect): void {
     const job = new Cron(
       cronExpression,
       {
-        name: `gremius-action:${action.slug}`,
+        name: `kitsuden-action:${action.slug}`,
         catch: (err) => {
-          console.error(`  ⏰ [CRON] Error in "${action.name}":`, err);
+          logger.error({ err, action: action.name }, "[CRON] fallo en la ejecución");
         },
       },
       async () => {
-        console.log(`  ⏰ [CRON] Firing "${action.name}" (${cronExpression})`);
+        // Por EJECUCIÓN. Un cron que dispara de más o de menos se diagnostica
+        // cruzando estas líneas con lo que hizo la acción, y para eso hace
+        // falta que compartan traza.
+        logger.info({ action: action.name, cron: cronExpression }, "[CRON] disparando");
 
         // Re-fetch action to get latest status
         const [latest] = await db.select().from(actions).where(eq(actions.id, action.id)).limit(1);
 
         if (!latest || latest.status !== "active") {
-          console.log(
-            `  ⏰ [CRON] Action "${action.name}" is no longer active, skipping execution`
-          );
+          logger.info({ action: action.name }, "[CRON] omitida: la acción ya no está activa");
           return;
         }
 
@@ -92,9 +95,9 @@ function scheduleCronJob(action: typeof actions.$inferSelect): void {
     console.log(
       `  ⏰ [CRON] Scheduled "${action.name}" (${cronExpression}) → next: ${nextRun?.toISOString() || "N/A"}`
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
-      `  ⏰ [CRON] Invalid cron expression for "${action.name}": ${cronExpression} — ${err.message}`
+      `  ⏰ [CRON] Invalid cron expression for "${action.name}": ${cronExpression} — ${messageOf(err)}`
     );
   }
 }
@@ -129,8 +132,8 @@ export async function initCronScheduler(): Promise<void> {
     }
 
     console.log(`  ⏰ Cron Scheduler initialized: ${cronActions.length} job(s) loaded`);
-  } catch (err: any) {
-    console.warn(`  ⏰ Cron Scheduler: Failed to load — ${err.message}`);
+  } catch (err: unknown) {
+    console.warn(`  ⏰ Cron Scheduler: Failed to load — ${messageOf(err)}`);
   }
 }
 
@@ -194,6 +197,6 @@ export function getCronJobStatus(): Array<{
 /**
  * @deprecated Use refreshCronJob with actions table instead
  */
-export function refreshCronJobLegacy(_fn: typeof gremiusFunctions.$inferSelect): void {
+export function refreshCronJobLegacy(_fn: typeof kitsudenFunctions.$inferSelect): void {
   console.warn("[DEPRECATED] refreshCronJobLegacy called, migrate to new actions table");
 }

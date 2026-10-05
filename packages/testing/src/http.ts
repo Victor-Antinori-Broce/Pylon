@@ -1,18 +1,12 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * HTTP TEST CLIENT - Make requests to grimoire routers
+ * HTTP TEST CLIENT - Make requests to kon routers
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import { Hono } from "hono";
 
-import type {
-  TestHttpClient,
-  TestResponse,
-  TestUser,
-  TestGrimoireContext,
-  TestGrimoire,
-} from "./types.js";
+import type { TestHttpClient, TestResponse, TestUser, TestKonContext, TestKon } from "./types.js";
 
 interface RequestContext {
   user?: TestUser;
@@ -21,22 +15,22 @@ interface RequestContext {
 }
 
 /**
- * Create HTTP test client for making requests to grimoires
+ * Create HTTP test client for making requests to kons
  */
 export function createTestHttpClient(
-  grimoires: Record<string, TestGrimoire>,
-  context: TestGrimoireContext
+  kons: Record<string, TestKon>,
+  _context: TestKonContext
 ): TestHttpClient {
   const requestContext: RequestContext = {
     headers: {},
   };
 
-  // Combine all grimoire routers into one app
+  // Combine all kon routers into one app
   const app = new Hono();
 
-  for (const [id, grimoire] of Object.entries(grimoires)) {
-    const mountPath = grimoire.definition.mountPath || `/api/${id.replace(/^grimoire-/, "")}`;
-    app.route(mountPath, grimoire.router);
+  for (const [id, kon] of Object.entries(kons)) {
+    const mountPath = kon.definition.mountPath || `/api/${id.replace(/^kon-/, "")}`;
+    app.route(mountPath, kon.router);
   }
 
   // Middleware to inject test context

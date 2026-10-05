@@ -1,7 +1,7 @@
 /**
  * Railway Deploy Provider
  *
- * Deploys Gremius projects to Railway.app using the official CLI.
+ * Deploys Kitsuden projects to Railway.app using the official CLI.
  * Supports both Nixpacks auto-detection and Dockerfile builds.
  */
 
@@ -136,6 +136,8 @@ export async function deployToRailway(
       "GITHUB_CLIENT_SECRET",
       "GOOGLE_CLIENT_ID",
       "GOOGLE_CLIENT_SECRET",
+      "DISCORD_CLIENT_ID",
+      "DISCORD_CLIENT_SECRET",
     ];
 
     const varsToSync: string[] = [];
@@ -195,7 +197,7 @@ export async function deployToRailway(
           healthSpinner.warn(chalk.yellow("Health check timed out (app may still be starting)"));
         }
 
-        console.log(chalk.gray("\nTip: Run 'gremius status' to check deployment status.\n"));
+        console.log(chalk.gray("\nTip: Run 'kitsuden status' to check deployment status.\n"));
         return { success: true, url };
       }
     } catch {

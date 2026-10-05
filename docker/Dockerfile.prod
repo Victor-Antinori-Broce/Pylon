@@ -1,13 +1,15 @@
+# syntax=docker/dockerfile:1.7-labs
+# ^ necesaria para `COPY --parents`, que preserva la ruta de origen.
 # ===================================================================
-# GremiusCMS - Production Dockerfile (Multi-Stage + BuildKit Cache)
+# Kitsuden - Production Dockerfile (Multi-Stage + BuildKit Cache)
 #
 # Builds:
 #   - API (Bun runtime)
 #   - Admin (SvelteKit static + nginx)
 #
 # USAGE:
-#   docker build -f docker/Dockerfile.prod --target api -t gremius/api:latest .
-#   docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:latest .
+#   docker build -f docker/Dockerfile.prod --target api -t kitsuden/api:latest .
+#   docker build -f docker/Dockerfile.prod --target admin -t kitsuden/admin:latest .
 #
 # DUAL MODE SUPPORT:
 #   Option A (Vibecoder):  docker compose up -d          (pulls pre-built images)
@@ -41,29 +43,41 @@ FROM base AS dependencies
 # Copy workspace configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy all package.json files for layer caching
-COPY apps/api/package.json ./apps/api/
-COPY packages/admin/package.json ./packages/admin/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/mcp-server/package.json ./packages/mcp-server/
-COPY packages/sdk/package.json ./packages/sdk/
-COPY packages/engine/package.json ./packages/engine/
-COPY packages/core/package.json ./packages/core/
-COPY packages/orm/package.json ./packages/orm/
-COPY packages/cli/package.json ./packages/cli/
-COPY packages/testing/package.json ./packages/testing/
-COPY packages/grimoires/package.json ./packages/grimoires/
-COPY packages/realms/package.json ./packages/realms/
-
-# Copy grimoire package.json files
-COPY packages/grimoires/*/package.json ./packages/grimoires/
-COPY packages/starters/*/package.json ./packages/starters/
+# Manifiestos de TODOS los proyectos del workspace, para cachear la instalacion.
+#
+# Esto era una lista escrita a mano de 14 rutas, y el workspace tiene 53
+# proyectos. Lo que faltaba no fallaba de forma visible: simplemente sus
+# dependencias no se instalaban, y el build moria mucho despues con un
+# `Could not resolve` que parecia otra cosa. Asi se perdio `openai`, que declara
+# `packages/core/vector-search` — un paquete propio cuyo manifiesto nadie copiaba.
+#
+# `--parents` preserva la ruta de origen. Sin el, `COPY packages/kons/*/package.json
+# ./packages/kons/` APLASTA los 30 ficheros sobre el mismo destino y solo
+# sobrevive el ultimo; era el caso hasta ahora.
+#
+# Los globs siguen a `pnpm-workspace.yaml`: `apps/*`, `packages/*` y los de dos
+# niveles (`packages/core/*`, `packages/kons/*`, `packages/starters/*`).
+COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
 
 # Install dependencies with BuildKit cache mount for pnpm store
 # This makes reinstalls almost instant on rebuilds
+#
+# --ignore-scripts NO es opcional aqui, y conviene saber por que:
+#
+# En esta capa solo se han copiado los `package.json` — a proposito, para que
+# cambiar codigo no invalide la instalacion. Pero `@kitsuden/shared` declara
+# `prepare: bun run scripts/build.ts`, y pnpm ejecuta el `prepare` de los
+# paquetes del workspace al instalar. Ese fichero todavia no existe en la
+# imagen: bun aborta con `Module not found "scripts/build.ts"` y se lleva por
+# delante el `pnpm install` entero. El `|| pnpm install` de respaldo fallaba
+# por lo mismo, claro.
+#
+# Los scripts de las dependencias (sharp, esbuild, msgpackr...) no se pierden:
+# `builder` hace `pnpm rebuild` cuando ya tiene el codigo completo, y es de
+# `builder` —no de esta etapa— de donde el runtime copia `node_modules`.
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     --mount=type=cache,target=/root/.cache \
-    pnpm install --prefer-offline || pnpm install
+    pnpm install --prefer-offline --ignore-scripts || pnpm install --ignore-scripts
 
 # ===================================================================
 # STAGE 3: Builder - Compile everything
@@ -81,38 +95,41 @@ ENV VITE_API_URL=${PUBLIC_API_URL}
 # Copy source code
 COPY . .
 
+# Ahora SI se ejecutan los scripts de instalacion de las dependencias, que la
+# etapa anterior salto con --ignore-scripts. Aqui ya esta todo el codigo: sharp
+# compila contra musl y esbuild coloca su binario de plataforma. No cuesta
+# cache — el `COPY . .` de arriba ya invalida con cualquier cambio de codigo.
+RUN pnpm rebuild
+
 # Build workspace packages in dependency order
 # Only packages that actually produce dist/ artifacts need explicit builds here.
-# Packages like engine, core, realms, grimoires(root) have no-op build scripts
+# Packages like engine, core, grimoires, kons(root) have no-op build scripts
 # and are consumed as TS source by Bun.
 
 RUN --mount=type=cache,target=/app/packages/shared/.tsbuildinfo \
-    pnpm --filter @gremius/shared build
+    pnpm --filter @kitsuden/shared build
 
 RUN --mount=type=cache,target=/app/packages/sdk/.tsbuildinfo \
-    pnpm --filter @gremius/sdk build
-
-RUN --mount=type=cache,target=/app/packages/orm/.tsbuildinfo \
-    pnpm --filter @gremius/orm build
+    pnpm --filter @kitsuden/sdk build
 
 RUN --mount=type=cache,target=/app/packages/mcp-server/.tsbuildinfo \
-    pnpm --filter @gremius/mcp-server build
+    pnpm --filter @kitsuden/mcp-server build
 
-# Build grimoire sub-packages that have build scripts
-# Note: Grimoires function as TS source via Bun, so dist/ is optional.
-# This step is allowed to fail for individual grimoires without breaking the build.
-RUN pnpm --filter "@gremius/grimoire-*" build 2>&1 || echo "Warning: Some grimoires failed to build, continuing..."
+# Build kon sub-packages that have build scripts
+# Note: Kons function as TS source via Bun, so dist/ is optional.
+# This step is allowed to fail for individual kons without breaking the build.
+RUN pnpm --filter "@kitsuden/kon-*" build 2>&1 || echo "Warning: Some kons failed to build, continuing..."
 
 # Build API
 RUN --mount=type=cache,target=/app/apps/api/.tsbuildinfo \
-    pnpm --filter @gremius/api build
+    pnpm --filter @kitsuden/api build
 
 # Remove conflicting generated JS files before admin build
 RUN find packages/admin/src -name "+layout.js" -type f -delete 2>/dev/null || true
 
 # Build Admin (SvelteKit)
 RUN --mount=type=cache,target=/app/packages/admin/.vite \
-    pnpm --filter @gremius/admin build
+    pnpm --filter @kitsuden/admin build
 
 # Rebuild sharp for Alpine/musl
 RUN SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm rebuild sharp
@@ -131,22 +148,39 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 # Copy API source for dynamic imports used by startup scripts & module-loader
 COPY --from=builder /app/apps/api/src ./apps/api/src
 COPY --from=builder /app/apps/api/drizzle ./apps/api/drizzle
+# El runner de migraciones vive aqui y se ejecuta en el arranque del contenedor
+# (start-with-check.sh paso 4). Sin esta copia, el contenedor arranca sin poder
+# migrar y la API levanta contra un esquema desactualizado.
+COPY --from=builder /app/apps/api/scripts ./apps/api/scripts
 COPY --from=builder /app/apps/api/migrations ./apps/api/migrations
-COPY --from=builder /app/apps/api/gremius.config.ts ./apps/api/gremius.config.ts
+COPY --from=builder /app/apps/api/kitsuden.config.ts ./apps/api/kitsuden.config.ts
 COPY --from=builder /app/apps/api/drizzle.config.ts ./apps/api/drizzle.config.ts
 COPY --from=builder /app/apps/api/package.json ./apps/api/
+
+# Los enlaces de dependencias de apps/api.
+#
+# Hacen falta porque el bundle NO lleva dentro los modulos nativos (`sharp`,
+# `@node-rs/argon2`): esos van `--external`, y por tanto se resuelven en
+# ejecucion desde la carpeta del bundle, `/app/apps/api/dist/`. Sin este COPY,
+# la busqueda sube por `apps/api/node_modules` —que no existia—, `apps/` y
+# `/app/node_modules`, y no encuentra nada: el contenedor moria con
+# `Failed to load native binding`, teniendo el binario dentro de la imagen.
+#
+# Son enlaces simbolicos que apuntan a `/app/node_modules/.pnpm/...`, que ya se
+# copia justo debajo, asi que esto casi no ocupa: es el mapa, no el territorio.
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/docker ./docker
 
 # Copy workspace packages that API imports dynamically
-# engine, core, realms are consumed as TS source (Bun runs TS natively)
+# engine, core, grimoires are consumed as TS source (Bun runs TS natively)
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/packages/engine ./packages/engine
 COPY --from=builder /app/packages/core ./packages/core
-COPY --from=builder /app/packages/orm ./packages/orm
+COPY --from=builder /app/packages/codegen ./packages/codegen
 COPY --from=builder /app/packages/sdk ./packages/sdk
 COPY --from=builder /app/packages/mcp-server ./packages/mcp-server
+COPY --from=builder /app/packages/kons ./packages/kons
 COPY --from=builder /app/packages/grimoires ./packages/grimoires
-COPY --from=builder /app/packages/realms ./packages/realms
 
 # Copy node_modules with pnpm symlinks intact
 COPY --from=builder /app/node_modules ./node_modules
@@ -158,12 +192,25 @@ RUN mkdir -p uploads logs
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV GREMIUS_AUTO_SETUP=true
+ENV KITSUDEN_AUTO_SETUP=true
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+# 127.0.0.1 y /live, por el mismo motivo que en la imagen del admin y en
+# docker-compose.yml:
+#
+#   · 127.0.0.1, no `localhost`: hoy bun escucha en doble pila (`:::3000`) y
+#     ambas funcionan, pero nginx —con `listen 80;`— solo escuchaba en IPv4 y
+#     `localhost` resolvia a ::1: el contenedor servia el sitio y figuraba
+#     `unhealthy` para siempre. La regla se aplica igual aqui para que no
+#     dependa de que el runtime siga siendo de doble pila.
+#
+#   · /live, no /api/health: liveness puro. /api/health comprueba base, cola y
+#     cache, asi que un fallo temporal de Valkey marcaria la API como muerta y
+#     Docker la reiniciaria en bucle. Y NO lleva prefijo /api: las rutas de
+#     observabilidad se montan en la raiz (src/lib/critical-features.ts).
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/live || exit 1
 
 CMD ["sh", "/app/docker/start-with-check.sh"]
 
@@ -178,6 +225,14 @@ COPY docker/nginx-admin.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+# 127.0.0.1, NO localhost: en esta imagen `localhost` resuelve primero a `::1`
+# y nginx escucha solo en IPv4 (`listen 80;` en nginx-admin.conf). El resultado
+# era un contenedor que servia el admin perfectamente —200 en el puerto 3001—
+# y que Docker marcaba `unhealthy` para siempre, con
+# `wget: can't connect to remote host: Connection refused` como unica pista.
+#
+# Si algun dia nginx escucha tambien en IPv6 (`listen [::]:80;`), esto seguira
+# siendo correcto: se comprueba la pila que de verdad sirve el trafico.
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

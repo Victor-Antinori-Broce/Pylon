@@ -1,43 +1,30 @@
 {
-  "name": "@gremius/shared",
+  "name": "@kitsuden/shared",
   "version": "0.9.0-beta",
-  "description": "Shared types, schemas, and utilities for GremiusCMS",
+  "description": "Shared types, schemas, and utilities for Kitsuden",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "./schemas": {
-      "import": "./dist/schemas.js",
-      "types": "./dist/schemas.d.ts"
-    },
-    "./types": {
-      "import": "./dist/types.js",
-      "types": "./dist/types.d.ts"
-    },
-    "./utils": {
-      "import": "./dist/utils.js",
-      "types": "./dist/utils.d.ts"
-    },
-    "./constants": {
-      "import": "./dist/constants.js",
-      "types": "./dist/constants.d.ts"
-    }
+    "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "pnpm exec tsc",
-    "dev": "pnpm exec tsc --watch",
+    "build": "bun run scripts/build.ts",
+    "prepare": "bun run scripts/build.ts",
+    "dev": "bun run scripts/build.ts --watch",
     "typecheck": "pnpm exec tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "gremius",
+    "kitsuden",
     "cms",
     "baas",
     "types",
@@ -48,18 +35,19 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourorg/gremius.git",
+    "url": "https://github.com/yourorg/kitsuden.git",
     "directory": "packages/shared"
   },
   "bugs": {
-    "url": "https://github.com/yourorg/gremius/issues"
+    "url": "https://github.com/yourorg/kitsuden/issues"
   },
-  "homepage": "https://docs.gremius.dev",
+  "homepage": "https://docs.kitsuden.dev",
   "dependencies": {
+    "marked": "^17.0.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"

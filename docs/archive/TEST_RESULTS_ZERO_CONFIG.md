@@ -16,9 +16,9 @@
 
 ### Frontend Tests (Vitest)
 
-| Suite           | Tests | Status  | Duración |
-| --------------- | ----- | ------- | -------- |
-| Grimoire Loader | 13/13 | ✅ Pass | 43ms     |
+| Suite      | Tests | Status  | Duración |
+| ---------- | ----- | ------- | -------- |
+| Kon Loader | 13/13 | ✅ Pass | 43ms     |
 
 **Total: 27 tests passed**
 
@@ -30,31 +30,31 @@
 
 ```
 ✅ should build registry without errors
-✅ should return grimoires with required fields
-✅ should detect tables from grimoire.json
-✅ should get specific grimoire config
-✅ should return null for non-existent grimoire
+✅ should return kons with required fields
+✅ should detect tables from kon.json
+✅ should get specific kon config
+✅ should return null for non-existent kon
 ✅ should have consistent view configuration
-✅ should scan grimoires successfully
-✅ should have valid grimoire.json files
-✅ should parse table configs from grimoire.json
+✅ should scan kons successfully
+✅ should have valid kon.json files
+✅ should parse table configs from kon.json
 ✅ should support searchable and filterable fields
 ```
 
 **Validaciones:**
 
 - ✅ El registro se construye sin errores
-- ✅ Todos los grimoires tienen campos requeridos (id, name, category, views)
-- ✅ Detecta tablas desde grimoire.json automáticamente
+- ✅ Todos los kons tienen campos requeridos (id, name, category, views)
+- ✅ Detecta tablas desde kon.json automáticamente
 - ✅ Las vistas tienen configuración consistente
-- ✅ Valida grimoires inexistentes
+- ✅ Valida kons inexistentes
 
 ### 2. Admin Registry HTTP API (`admin-registry-http.test.ts`)
 
 ```
 ✅ should return registry with correct structure
-✅ should return specific grimoire config
-✅ should return 404 for non-existent grimoire
+✅ should return specific kon config
+✅ should return 404 for non-existent kon
 ✅ should clear cache and rebuild registry
 ```
 
@@ -65,20 +65,20 @@
 - ✅ Autenticación requerida (401 para requests sin auth)
 - ✅ Refresca cache correctamente
 
-### 3. Grimoire Loader Frontend (`grimoire-loader.test.ts`)
+### 3. Kon Loader Frontend (`kon-loader.test.ts`)
 
 ```
 ✅ should start with empty cache
 ✅ should detect legacy registry entries
-✅ should return false for unknown grimoires
-✅ should return correct icons for known grimoires
-✅ should return default icon for unknown grimoires
-✅ should generate config from grimoire data
+✅ should return false for unknown kons
+✅ should return correct icons for known kons
+✅ should return default icon for unknown kons
+✅ should generate config from kon data
 ✅ should handle kanban views
 ✅ should handle calendar views
 ✅ should filter out custom views
 ✅ should generate fallback config
-✅ should handle grimoire- prefix
+✅ should handle kon- prefix
 ✅ should have webhooks view registered
 ✅ should have games view registered
 ```
@@ -113,9 +113,9 @@
 
 #### Frontend
 
-- ✅ `packages/admin/src/lib/grimoire-loader.ts` — 0 errores TypeScript
-- ✅ `packages/admin/src/lib/grimoire-views.ts` — 0 errores TypeScript
-- ✅ `packages/admin/src/lib/components/admin/GrimoirePage.svelte` — 0 errores
+- ✅ `packages/admin/src/lib/kon-loader.ts` — 0 errores TypeScript
+- ✅ `packages/admin/src/lib/kon-views.ts` — 0 errores TypeScript
+- ✅ `packages/admin/src/lib/components/admin/KonPage.svelte` — 0 errores
 
 ---
 
@@ -124,9 +124,9 @@
 ```
 1. Inicio de API
    ↓
-2. Scan automático de packages/grimoires/*/
+2. Scan automático de packages/kons/*/
    ↓
-3. Lectura de grimoire.json (tables, config)
+3. Lectura de kon.json (tables, config)
    ↓
 4. Detección de vistas custom por convención
    ↓
@@ -149,7 +149,7 @@ apps/api/src/tests/
 └── admin-registry-http.test.ts ← Tests de HTTP API
 
 packages/admin/src/tests/
-└── grimoire-loader.test.ts     ← Tests de frontend
+└── kon-loader.test.ts     ← Tests de frontend
 ```
 
 ---
@@ -158,8 +158,8 @@ packages/admin/src/tests/
 
 ### Bug #1: Función humanize no reemplazaba guiones
 
-**Archivo:** `packages/admin/src/lib/grimoire-loader.ts`  
-**Problema:** `"my-grimoire"` → `"My-grimoire"` (debería ser `"My grimoire"`)  
+**Archivo:** `packages/admin/src/lib/kon-loader.ts`  
+**Problema:** `"my-kon"` → `"My-kon"` (debería ser `"My kon"`)  
 **Fix:** Agregar `-` a la regex de reemplazo: `.replace(/[-_]/g, " ")`
 
 **Estado:** ✅ Corregido
@@ -170,7 +170,7 @@ packages/admin/src/tests/
 
 | Feature                                | Tests | Status             |
 | -------------------------------------- | ----- | ------------------ |
-| Auto-scan de grimoires                 | ✅    | Service + HTTP     |
+| Auto-scan de kons                      | ✅    | Service + HTTP     |
 | Detección de tablas                    | ✅    | Service + Unit     |
 | Config de views (grid/kanban/calendar) | ✅    | Unit tests         |
 | Detección de vistas custom             | ✅    | Unit + Integration |
@@ -185,21 +185,21 @@ packages/admin/src/tests/
 
 ### Tests de Integración E2E
 
-- [ ] Navegación a grimoire con DataExplorer
-- [ ] Navegación a grimoire con vista custom
+- [ ] Navegación a kon con DataExplorer
+- [ ] Navegación a kon con vista custom
 - [ ] Cambio entre vistas (grid ↔ kanban)
 - [ ] Edición inline de datos
 - [ ] Filtros y búsqueda
 
 ### Tests de Performance
 
-- [ ] Tiempo de carga del registry (>100 grimoires)
+- [ ] Tiempo de carga del registry (>100 kons)
 - [ ] Cache hit/miss ratio
 - [ ] Re-render de DataExplorer con muchos datos
 
 ### Tests de Regresión
 
-- [ ] Grimoires sin grimoire.json (degradación graceful)
+- [ ] Kons sin kon.json (degradación graceful)
 - [ ] Tablas sin schema en DB
 - [ ] Network failure (fallback funciona)
 

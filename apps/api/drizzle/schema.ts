@@ -111,7 +111,7 @@ export const modules = pgTable("modules", {
   icon: varchar({ length: 50 }),
   category: varchar({ length: 100 }),
   enabled: boolean().default(false).notNull(),
-  realmId: varchar("realm_id", { length: 100 }),
+  grimoireId: varchar("grimoire_id", { length: 100 }),
   settings: jsonb().default({}),
   sidebarPath: varchar("sidebar_path", { length: 200 }),
   sidebarIcon: varchar("sidebar_icon", { length: 50 }),
@@ -121,7 +121,7 @@ export const modules = pgTable("modules", {
 
 export const siteSettings = pgTable("site_settings", {
   id: uuid().defaultRandom().primaryKey().notNull(),
-  siteName: varchar("site_name", { length: 200 }).default("GremiusCMS").notNull(),
+  siteName: varchar("site_name", { length: 200 }).default("Kitsuden").notNull(),
   siteDescription: text("site_description"),
   siteUrl: text("site_url").default("http://localhost:4321").notNull(),
   branding: jsonb(),
@@ -301,12 +301,13 @@ export const blogPosts = pgTable(
       .notNull(),
   },
   (table) => [
-    index("blog_published_idx").using(
+    // Con el nombre del kon: los `blog_*_idx` de 0000 eran gemelos y los retira kon-blog/0007
+    index("blog_posts_published_idx").using(
       "btree",
       table.publishedAt.asc().nullsLast().op("timestamptz_ops")
     ),
-    uniqueIndex("blog_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
-    index("blog_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
+    uniqueIndex("blog_posts_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
+    index("blog_posts_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
     foreignKey({
       columns: [table.authorId],
       foreignColumns: [authUsers.id],
@@ -528,8 +529,8 @@ export const dataEntries = pgTable(
   ]
 );
 
-export const gremiusFunctions = pgTable(
-  "gremius_functions",
+export const kitsudenFunctions = pgTable(
+  "kitsuden_functions",
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
     name: varchar({ length: 200 }).notNull(),
@@ -563,12 +564,12 @@ export const gremiusFunctions = pgTable(
     foreignKey({
       columns: [table.watchDatasetId],
       foreignColumns: [dataSets.id],
-      name: "gremius_functions_watch_dataset_id_data_sets_id_fk",
+      name: "kitsuden_functions_watch_dataset_id_data_sets_id_fk",
     }).onDelete("set null"),
     foreignKey({
       columns: [table.createdById],
       foreignColumns: [authUsers.id],
-      name: "gremius_functions_created_by_id_auth_users_id_fk",
+      name: "kitsuden_functions_created_by_id_auth_users_id_fk",
     }).onDelete("set null"),
   ]
 );
@@ -598,8 +599,8 @@ export const functionExecutions = pgTable(
     index("fe_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
     foreignKey({
       columns: [table.functionId],
-      foreignColumns: [gremiusFunctions.id],
-      name: "function_executions_function_id_gremius_functions_id_fk",
+      foreignColumns: [kitsudenFunctions.id],
+      name: "function_executions_function_id_kitsuden_functions_id_fk",
     }).onDelete("cascade"),
   ]
 );

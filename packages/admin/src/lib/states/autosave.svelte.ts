@@ -18,7 +18,7 @@ export interface AutosaveVersion {
 // Configuración
 // ═══════════════════════════════════════════════════════════════════════════
 
-const STORAGE_KEY_PREFIX = "gremius_autosave_";
+const STORAGE_KEY_PREFIX = "kitsuden_autosave_";
 const MAX_VERSIONS = 5;
 const AUTOSAVE_INTERVAL_MS = 10000;
 
@@ -90,6 +90,19 @@ export class AutosaveStore {
     if (this.status !== "saving") {
       this.status = "unsaved";
     }
+  }
+
+  /**
+   * Versiones guardadas de una clave, SIN arrancar el autoguardado.
+   *
+   * Hace falta para poder mirar si hay un borrador anterior antes de decidir
+   * que se hace con el. `startAutosave` tambien las carga, pero de paso pone en
+   * marcha el reloj y fija la instantanea de referencia: usarlo para consultar
+   * obligaria a arrancar antes de saber si hay algo que recuperar, y la primera
+   * escritura del intervalo pisaria el borrador que se queria leer.
+   */
+  versionesGuardadas(key: string): AutosaveVersion[] {
+    return this.loadVersions(key);
   }
 
   // ─── Operaciones de versiones ───

@@ -6,13 +6,13 @@ import { describe, it, expect } from "vitest";
 const PROJECT_ROOT = process.cwd();
 
 describe("admin package extraction to packages/admin", () => {
-  it('packages/admin/package.json exists and has name "@gremius/admin"', () => {
+  it('packages/admin/package.json exists and has name "@kitsuden/admin"', () => {
     const pkgPath = path.join(PROJECT_ROOT, "packages", "admin", "package.json");
     expect(fs.existsSync(pkgPath)).toBe(true);
 
     const content = fs.readFileSync(pkgPath, "utf-8");
     const pkg = JSON.parse(content);
-    expect(pkg.name).toBe("@gremius/admin");
+    expect(pkg.name).toBe("@kitsuden/admin");
   });
 
   it("apps/admin does not exist or is empty/symlink", () => {

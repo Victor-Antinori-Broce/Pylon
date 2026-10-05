@@ -82,8 +82,8 @@ export interface RelationInfo {
 }
 
 /** Query row from database execution */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface QueryRow extends Record<string, any> {}
+
+interface QueryRow extends Record<string, unknown> {}
 
 /**
  * Detect all relations for a table

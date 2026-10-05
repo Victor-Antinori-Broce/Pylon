@@ -1,3 +1,4 @@
+-- ⚠ PLANTILLA: reemplaza los placeholders antes de ejecutar. NUNCA commitees hashes/tokens reales.
 -- Insertar DevBot en agent_identities
 INSERT INTO agent_identities (
   id, name, description, type, capabilities, system_prompt, 
@@ -8,7 +9,7 @@ INSERT INTO agent_identities (
   'Agente de desarrollo para pruebas MCP con Claude Desktop',
   'claude-desktop',
   '["mcp-connect", "tool-execution", "context-management"]',
-  'Eres DevBot, un agente de desarrollo conectado a Gremius CMS.',
+  'Eres DevBot, un agente de desarrollo conectado a Kitsuden CMS.',
   '["read_dataset", "write_intake", "search_memories"]',
   '["read:issues", "write:intake"]',
   120,
@@ -24,8 +25,8 @@ INSERT INTO agent_api_keys (
 ) VALUES (
   gen_random_uuid(),
   'agent_6ec4cd84e65f800f',
-  '0976d057a81fab7ecbc29983f635b66051e878bb47631ac72d11069173ab24e6',
-  'grm_agent_claude-desktop_****nDsAdLxw',
+  '<SHA256_HASH_DEL_TOKEN>' -- Genera: echo -n 'grm_agent_...' | sha256sum,
+  '<PREFIX_ENMASCARADO_DEL_TOKEN>',
   NOW(),
   NULL
 );

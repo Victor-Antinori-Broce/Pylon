@@ -3,15 +3,19 @@
  * Defines the schema for virtual tables (dataset_definitions + dataset_entries)
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * MIGRADO: Este archivo ahora re-exporta desde @gremius/shared
+ * MIGRADO: Este archivo ahora re-exporta desde @kitsuden/shared
  * para mantener una única fuente de verdad.
  *
  * El "Puente Zod" garantiza que Frontend y Backend usen los mismos tipos.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+// El re-export de abajo NO trae el nombre al ambito local: para usarlo aqui
+// hace falta un import de verdad.
+import { creatableFieldTypes } from "@kitsuden/shared";
+
 // ═══════════════════════════════════════════════════════════════════════════
-// RE-EXPORTACIONES DESDE EL PUENTE ZOD (@gremius/shared)
+// RE-EXPORTACIONES DESDE EL PUENTE ZOD (@kitsuden/shared)
 // ═══════════════════════════════════════════════════════════════════════════
 
 export {
@@ -40,7 +44,8 @@ export {
   generateFieldId,
   createEmptyField,
   safeValidateDataset,
-} from "@gremius/shared";
+  creatableFieldTypes,
+} from "@kitsuden/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIPOS ESPECÍFICOS DE UI (Solo Frontend)
@@ -50,7 +55,7 @@ export {
  * Opción de tipo de campo para la UI del SchemaBuilder
  */
 export interface FieldTypeOption {
-  type: import("@gremius/shared").FieldType;
+  type: import("@kitsuden/shared").FieldType;
   label: string;
   icon: string;
   description: string;
@@ -58,76 +63,24 @@ export interface FieldTypeOption {
 }
 
 /**
- * Opciones de tipos de campo disponibles en el SchemaBuilder
+ * Opciones de tipos de campo disponibles en el SchemaBuilder.
+ *
+ * Se derivan del registro compartido en vez de mantener aqui una segunda
+ * lista. Esa segunda lista es la razon por la que `multiselect`, `textarea`,
+ * `datetime` y `media` validaban en el backend sin poder crearse: nadie los
+ * anadio aqui al anadirlos alli.
+ *
+ * Los tipos marcados `creatable: false` en el registro (alias heredados)
+ * quedan fuera a proposito: siguen validando, pero ofrecer dos nombres para lo
+ * mismo en la paleta solo confunde.
  */
-export const FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
-  {
-    type: "text",
-    label: "Text",
-    icon: "Type",
-    description: "Single or multi-line text",
-    color: "#00E5FF",
-  },
-  {
-    type: "number",
-    label: "Number",
-    icon: "Hash",
-    description: "Integer or decimal",
-    color: "#76FF03",
-  },
-  {
-    type: "boolean",
-    label: "Boolean",
-    icon: "ToggleLeft",
-    description: "True / False toggle",
-    color: "#FFD600",
-  },
-  {
-    type: "date",
-    label: "Date",
-    icon: "Calendar",
-    description: "Date or datetime",
-    color: "#E040FB",
-  },
-  {
-    type: "image",
-    label: "Image",
-    icon: "ImageIcon",
-    description: "Image upload or URL",
-    color: "#FF6E40",
-  },
-  { type: "url", label: "URL", icon: "Link2", description: "Web address", color: "#40C4FF" },
-  { type: "email", label: "Email", icon: "Mail", description: "Email address", color: "#FFAB00" },
-  {
-    type: "select",
-    label: "Select",
-    icon: "List",
-    description: "Dropdown from options",
-    color: "#69F0AE",
-  },
-  { type: "json", label: "JSON", icon: "Braces", description: "Raw JSON object", color: "#B388FF" },
-  {
-    type: "richtext",
-    label: "Rich Text",
-    icon: "FileText",
-    description: "Formatted content",
-    color: "#FF80AB",
-  },
-  {
-    type: "relation",
-    label: "Relation",
-    icon: "GitBranch",
-    description: "Link to another collection",
-    color: "#FF2A6D",
-  },
-  {
-    type: "kpi",
-    label: "KPI / Formula",
-    icon: "Calculator",
-    description: "Calculated metric",
-    color: "#FF1493",
-  },
-];
+export const FIELD_TYPE_OPTIONS: FieldTypeOption[] = creatableFieldTypes().map((t) => ({
+  type: t.type,
+  label: t.label,
+  icon: t.icon,
+  description: t.description,
+  color: t.color,
+}));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS LEGACY (Mantener para compatibilidad)
@@ -152,7 +105,7 @@ export function generateFieldKey(label: string): string {
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Antes: Cada app definía sus propios tipos, causando desfase.
-// Después: Todos usan @gremius/shared que contiene la Verdad Absoluta.
+// Después: Todos usan @kitsuden/shared que contiene la Verdad Absoluta.
 //
 // Si necesitas modificar la estructura de un Dataset:
 // 1. Edita packages/shared/src/schemas.ts

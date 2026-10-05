@@ -4,13 +4,47 @@
   let name = $state("");
   let email = $state("");
   let password = $state("");
+  let passwordConfirm = $state("");
+  let showPassword = $state(false);
   let error = $state<string | null>(null);
   let loading = $state(false);
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
 
+  /** Mínimo que exige el backend. Se repite aquí para avisar antes de enviar. */
+  const MIN_PASSWORD = 8;
+
+  /**
+   * Esta contraseña abre la instalación entera, y todavía no hay ningún
+   * "he olvidado mi contraseña": no existe otro usuario que pueda restablecerla
+   * ni correo configurado para enviarla. Una errata al teclear deja la
+   * instalación inaccesible y obliga a recrear la base de datos.
+   *
+   * De ahí las dos protecciones: repetirla, y poder verla antes de enviar.
+   */
+  const passwordLongEnough = $derived(password.length >= MIN_PASSWORD);
+  const passwordsMatch = $derived(password.length > 0 && password === passwordConfirm);
+  const canSubmit = $derived(
+    !loading &&
+      name.trim().length > 0 &&
+      email.trim().length > 0 &&
+      passwordLongEnough &&
+      passwordsMatch
+  );
+
   async function handleSetup(e: Event) {
     e.preventDefault();
+
+    // No basta con deshabilitar el botón: el formulario también se envía con Enter.
+    if (!passwordLongEnough) {
+      error = `La contraseña maestra necesita al menos ${MIN_PASSWORD} caracteres.`;
+      return;
+    }
+    if (!passwordsMatch) {
+      error = "Las dos contraseñas no coinciden.";
+      return;
+    }
+
     loading = true;
     error = null;
 
@@ -18,7 +52,7 @@
       const res = await fetch(`${API_URL}/api/system/setup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Need credentials to save the auth cookie the backend sets
+        // Hace falta para guardar la cookie de sesión que devuelve el backend.
         credentials: "include",
         body: JSON.stringify({ name, email, password }),
       });
@@ -26,54 +60,60 @@
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Launch sequence failed.");
+        throw new Error(data.error || "No se pudo inicializar la instalación.");
       }
 
-      // Setup successful!
-      // The setup endpoint creates the user but doesn't set a session cookie.
-      // We need to sign in explicitly to get a session.
+      // El endpoint de setup crea el usuario pero no abre sesión, así que se
+      // inicia explícitamente para obtener la cookie.
       const { signIn } = await import("../../lib/auth.svelte");
       await signIn(email, password);
 
-      // Now fetch init state and full session (with role)
       await checkInit();
       await checkSession();
-      // Layout component reactive logic will then show the admin panel!
     } catch (err: any) {
-      error = err.message || "An unexpected error occurred.";
+      error = err.message || "Ha ocurrido un error inesperado.";
     } finally {
       loading = false;
     }
   }
 </script>
 
-<div class="login-bg">
+<div class="auth-bg">
   <div class="grid-overlay"></div>
+  <div class="glow glow-violet"></div>
+  <div class="glow glow-crimson"></div>
 
-  <div class="login-card">
+  <div class="auth-card">
     <div class="brand">
       <div class="brand-icon">
+        <!--
+          Kitsune: máscara de zorro geométrica. Orejas y hocico van con trazos
+          rectos para que rime con la rejilla del fondo.
+        -->
         <svg
-          width="32"
-          height="32"
-          viewBox="0 0 24 24"
+          width="34"
+          height="34"
+          viewBox="0 0 32 32"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.5"
+          stroke-width="1.6"
           stroke-linecap="round"
           stroke-linejoin="round"
+          aria-hidden="true"
         >
-          <polygon points="12 2 2 7 12 12 22 7 12 2" />
-          <polyline points="2 17 12 22 22 17" />
-          <polyline points="2 12 12 17 22 12" />
+          <path d="M4 5 L10 11 M28 5 L22 11" />
+          <path d="M4 5 L6 13 M28 5 L26 13" />
+          <path d="M6 13 C6 22, 11 27, 16 29 C21 27, 26 22, 26 13 L22 11 L16 14 L10 11 Z" />
+          <path d="M11.5 18 L13.5 18 M18.5 18 L20.5 18" />
+          <path d="M16 22 L14.5 24 M16 22 L17.5 24" />
         </svg>
       </div>
-      <h1 class="brand-name">System Init</h1>
-      <p class="brand-sub">Create master admin</p>
+      <h1 class="brand-name">Kitsuden</h1>
+      <p class="brand-sub">Crear administrador maestro</p>
     </div>
 
     {#if error}
-      <div class="error-banner">
+      <div class="error-banner" role="alert">
         <svg
           width="16"
           height="16"
@@ -81,75 +121,164 @@
           fill="none"
           stroke="currentColor"
           stroke-width="2"
+          aria-hidden="true"
         >
-          <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line
-            x1="9"
-            y1="9"
-            x2="15"
-            y2="15"
-          />
+          <circle cx="12" cy="12" r="10" />
+          <line x1="15" y1="9" x2="9" y2="15" />
+          <line x1="9" y1="9" x2="15" y2="15" />
         </svg>
         {error}
       </div>
     {/if}
 
-    <form onsubmit={handleSetup} class="login-form">
+    <form onsubmit={handleSetup} class="auth-form">
       <div class="field">
-        <label class="field-label" for="name">Display Name</label>
+        <label class="field-label" for="name">Nombre visible</label>
         <input
           bind:value={name}
           type="text"
           id="name"
-          placeholder="System Admin"
+          placeholder="Administrador"
           class="field-input"
           required
         />
       </div>
+
       <div class="field">
-        <label class="field-label" for="email">Admin Email</label>
+        <label class="field-label" for="email">Correo del administrador</label>
         <input
           bind:value={email}
           type="email"
           id="email"
-          placeholder="admin@gremius.gg"
+          placeholder="admin@kitsuden.gg"
           class="field-input"
           required
         />
       </div>
+
       <div class="field">
-        <label class="field-label" for="password">Master Password</label>
+        <label class="field-label" for="password">Contraseña maestra</label>
+        <div class="input-wrap">
+          <!-- El tipo cambia en caliente; el valor sigue en el mismo binding. -->
+          <input
+            bind:value={password}
+            type={showPassword ? "text" : "password"}
+            id="password"
+            placeholder="Mínimo {MIN_PASSWORD} caracteres"
+            class="field-input has-affix"
+            minlength={MIN_PASSWORD}
+            autocomplete="new-password"
+            required
+          />
+          <button
+            type="button"
+            class="affix-btn"
+            onclick={() => (showPassword = !showPassword)}
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-pressed={showPassword}
+            title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+          >
+            {#if showPassword}
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            {:else}
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            {/if}
+          </button>
+        </div>
+        {#if password.length > 0 && !passwordLongEnough}
+          <p class="field-note warn">Faltan {MIN_PASSWORD - password.length} caracteres.</p>
+        {/if}
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password-confirm">Repite la contraseña</label>
         <input
-          bind:value={password}
-          type="password"
-          id="password"
-          placeholder="••••••••"
+          bind:value={passwordConfirm}
+          type={showPassword ? "text" : "password"}
+          id="password-confirm"
+          placeholder="La misma, otra vez"
           class="field-input"
-          minlength="8"
+          class:mismatch={passwordConfirm.length > 0 && !passwordsMatch}
+          autocomplete="new-password"
           required
         />
+        {#if passwordConfirm.length > 0 && !passwordsMatch}
+          <p class="field-note warn">No coinciden.</p>
+        {:else if passwordsMatch}
+          <p class="field-note ok">Coinciden.</p>
+        {/if}
       </div>
-      <button type="submit" disabled={loading} class="login-btn mt-2">
+
+      <button type="submit" disabled={!canSubmit} class="auth-btn">
         {#if loading}
           <span class="spinner"></span>
         {:else}
-          <span>Initialize Registry</span>
+          <span>Inicializar Kitsuden</span>
         {/if}
       </button>
     </form>
 
-    <p class="login-hint">This action seals the installation.</p>
+    <p class="auth-hint">
+      Esta cuenta es la única con acceso total, y todavía no hay forma de recuperarla. Guárdala
+      antes de continuar.
+    </p>
   </div>
 </div>
 
 <style>
-  /* Same styles as LoginView but tweaked slightly */
-  .login-bg {
+  /**
+   * Paleta: violeta y carmesí sobre negro azulado.
+   *
+   * Van como variables locales y no sueltas por el fichero para que cambiar el
+   * acento sea una línea.
+   *
+   * Los valores coinciden con los tokens globales de `src/style.css`
+   * (--kitsuden-accent / --kitsuden-accent-2, que hoy son violeta y carmesí pese al
+   * nombre). Se repiten aquí en vez de usarlos porque esta pantalla se ve ANTES
+   * de que el motor de temas cargue la configuración del sitio: si tomara los
+   * tokens, el primer fotograma saldría sin color.
+   */
+  .auth-bg {
+    --violeta: #a855f7;
+    --violeta-claro: #c084fc;
+    --carmesi: #ff2d6f;
+    --fondo: #0a0612;
+    --texto-tenue: rgba(255, 255, 255, 0.35);
+
     position: fixed;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #0a0a12;
+    background: var(--fondo);
     overflow: hidden;
   }
 
@@ -157,10 +286,33 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(168, 85, 247, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168, 85, 247, 0.045) 1px, transparent 1px);
     background-size: 60px 60px;
     animation: drift 20s linear infinite;
+  }
+
+  /* Dos focos de color: son los que dan la mezcla violeta/rojo del fondo. */
+  .glow {
+    position: absolute;
+    width: 46vw;
+    height: 46vw;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .glow-violet {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.5), transparent 70%);
+    top: -14vw;
+    left: -10vw;
+  }
+
+  .glow-crimson {
+    background: radial-gradient(circle, rgba(255, 45, 111, 0.34), transparent 70%);
+    bottom: -16vw;
+    right: -10vw;
   }
 
   @keyframes drift {
@@ -172,20 +324,21 @@
     }
   }
 
-  .login-card {
+  .auth-card {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 400px; /* Slightly wider for the extra fields */
+    max-width: 410px;
     padding: 2.5rem 2rem;
-    background: rgba(16, 16, 24, 0.7);
+    background: rgba(18, 12, 28, 0.72);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.16);
     border-radius: 1.25rem;
     box-shadow:
-      0 0 80px rgba(0, 229, 255, 0.05),
-      inset 0 0 60px rgba(0, 0, 0, 0.3);
+      0 0 90px rgba(168, 85, 247, 0.12),
+      0 0 40px rgba(255, 45, 111, 0.06),
+      inset 0 0 60px rgba(0, 0, 0, 0.35);
   }
 
   .brand {
@@ -197,27 +350,30 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 56px;
+    width: 58px;
+    height: 58px;
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(0, 229, 255, 0.03));
-    border: 1px solid rgba(0, 229, 255, 0.15);
-    color: #00e5ff;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(255, 45, 111, 0.08));
+    border: 1px solid rgba(168, 85, 247, 0.28);
+    color: var(--violeta-claro);
     margin-bottom: 1rem;
   }
 
   .brand-name {
-    font-size: 1.375rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    color: #fff;
     letter-spacing: -0.02em;
+    background: linear-gradient(100deg, var(--violeta-claro), var(--carmesi));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .brand-sub {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--texto-tenue);
     margin-top: 4px;
   }
 
@@ -228,17 +384,17 @@
     padding: 10px 14px;
     margin-bottom: 1.25rem;
     border-radius: 10px;
-    background: rgba(255, 42, 109, 0.08);
-    border: 1px solid rgba(255, 42, 109, 0.15);
-    color: #ff6b8a;
+    background: rgba(255, 45, 111, 0.1);
+    border: 1px solid rgba(255, 45, 111, 0.25);
+    color: #ff7ba3;
     font-size: 0.75rem;
     font-weight: 500;
   }
 
-  .login-form {
+  .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.1rem;
   }
 
   .field {
@@ -252,12 +408,18 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--texto-tenue);
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
   }
 
   .field-input {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    width: 100%;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(168, 85, 247, 0.12);
     border-radius: 10px;
     padding: 12px 14px;
     font-size: 0.85rem;
@@ -269,28 +431,82 @@
     font-family: inherit;
   }
 
+  /* Deja sitio al botón del ojo para que no tape lo escrito. */
+  .field-input.has-affix {
+    padding-right: 44px;
+  }
+
   .field-input::placeholder {
-    color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.18);
   }
 
   .field-input:focus {
-    border-color: rgba(0, 229, 255, 0.3);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.06);
+    border-color: rgba(168, 85, 247, 0.55);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.12);
   }
 
-  .login-btn {
+  .field-input.mismatch {
+    border-color: rgba(255, 45, 111, 0.5);
+  }
+
+  .affix-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+
+  .affix-btn:hover {
+    color: var(--violeta-claro);
+    background: rgba(168, 85, 247, 0.1);
+  }
+
+  .affix-btn:focus-visible {
+    outline: 2px solid rgba(168, 85, 247, 0.6);
+    outline-offset: 1px;
+  }
+
+  .field-note {
+    font-size: 0.68rem;
+    margin: 0;
+  }
+
+  .field-note.warn {
+    color: #ff7ba3;
+  }
+
+  .field-note.ok {
+    color: #9fe8a0;
+  }
+
+  .auth-btn {
     width: 100%;
+    margin-top: 0.35rem;
     padding: 12px;
     border-radius: 10px;
     border: none;
-    background: linear-gradient(135deg, #00e5ff, #00b8d4);
-    color: #0a0a12;
+    background: linear-gradient(120deg, var(--violeta), var(--carmesi));
+    color: #fff;
     font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
     transition:
       transform 0.15s,
-      box-shadow 0.2s;
+      box-shadow 0.2s,
+      filter 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -298,29 +514,26 @@
     font-family: inherit;
   }
 
-  .mt-2 {
-    margin-top: 0.5rem;
-  }
-
-  .login-btn:hover:not(:disabled) {
+  .auth-btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 24px rgba(0, 229, 255, 0.2);
+    box-shadow: 0 6px 28px rgba(168, 85, 247, 0.32);
+    filter: brightness(1.06);
   }
 
-  .login-btn:active:not(:disabled) {
+  .auth-btn:active:not(:disabled) {
     transform: translateY(0);
   }
 
-  .login-btn:disabled {
-    opacity: 0.6;
+  .auth-btn:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
   }
 
   .spinner {
     width: 18px;
     height: 18px;
-    border: 2px solid rgba(10, 10, 18, 0.3);
-    border-top-color: #0a0a12;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
@@ -331,10 +544,18 @@
     }
   }
 
-  .login-hint {
+  .auth-hint {
     text-align: center;
-    font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.15);
+    font-size: 0.66rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.3);
     margin-top: 1.5rem;
+  }
+
+  /* Quien haya pedido menos movimiento no debería ver la rejilla desplazarse. */
+  @media (prefers-reduced-motion: reduce) {
+    .grid-overlay {
+      animation: none;
+    }
   }
 </style>

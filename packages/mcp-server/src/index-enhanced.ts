@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * ENHANCED GRemius MCP Server
+ * ENHANCED Kitsuden MCP Server
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Full MCP server with enhanced tools and resources for AI agents.
@@ -23,7 +23,7 @@ import type { McpServerDependencies } from "./index";
 export function createEnhancedMcpServer(deps: McpServerDependencies): McpServer {
   const server = new McpServer(
     {
-      name: "gremius-mcp-server",
+      name: "kitsuden-mcp-server",
       version: "2.0.0",
     },
     {
@@ -54,7 +54,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
 
   // Query dataset
   server.registerTool(
-    "gremius_query_dataset",
+    "kitsuden_query_dataset",
     {
       title: "Query Dataset",
       description: "Select and filter records from a specific dataset",
@@ -89,7 +89,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
 
   // Insert record
   server.registerTool(
-    "gremius_insert_record",
+    "kitsuden_insert_record",
     {
       title: "Insert Record",
       description: "Insert a new record into a dataset",
@@ -125,7 +125,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
 
   // Dispatch worker
   server.registerTool(
-    "gremius_dispatch_worker",
+    "kitsuden_dispatch_worker",
     {
       title: "Dispatch Worker",
       description: "Enqueue an async task to BullMQ",
@@ -159,7 +159,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
   // List datasets resource
   server.registerResource(
     "datasets",
-    "gremius://datasets",
+    "kitsuden://datasets",
     {
       title: "Datasets",
       description: "All datasets in the system",
@@ -187,13 +187,13 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
     }
   );
 
-  // Grimoires resource
+  // Kons resource
   server.registerResource(
-    "grimoires",
-    "gremius://grimoires",
+    "kons",
+    "kitsuden://kons",
     {
-      title: "Grimoires",
-      description: "Active grimoire modules",
+      title: "Kons",
+      description: "Active kon modules",
       mimeType: "application/json",
     },
     async (uri) => {
@@ -202,7 +202,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
           {
             uri: uri.href,
             text: JSON.stringify(
-              Object.values(deps.grimoireRegistry || {}).map((g: any) => ({
+              Object.values(deps.konRegistry || {}).map((g: any) => ({
                 id: g.id,
                 name: g.name,
                 version: g.version,
@@ -227,12 +227,12 @@ export async function startEnhancedMcpServer(deps: McpServerDependencies) {
 
   await server.connect(transport);
 
-  console.error("Gremius MCP Server v2.0.0 started (stdio)");
+  console.error("Kitsuden MCP Server v2.0.0 started (stdio)");
   console.error(
-    "Available resources: gremius://datasets, gremius://grimoires, gremius://project-context"
+    "Available resources: kitsuden://datasets, kitsuden://kons, kitsuden://project-context"
   );
   console.error(
-    "Enhanced tools: intelligent_query, generate_grimoire, introspect_schema, batch_operations"
+    "Enhanced tools: intelligent_query, generate_kon, introspect_schema, batch_operations"
   );
 
   return server;

@@ -1,4 +1,4 @@
-import type { DatasetDefinition, CreateDatasetPayload } from "@gremius/shared";
+import type { DatasetDefinition, CreateDatasetPayload } from "@kitsuden/shared";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { DatasetStore } from "./datasets.svelte";
@@ -35,6 +35,45 @@ describe("DatasetStore", () => {
       expect(store.datasets[0].name).toBe("Test Dataset");
       expect(store.isLoading).toBe(false);
       expect(store.error).toBeNull();
+    });
+
+    /**
+     * Las columnas se llaman `schema` en la base y en la API, y `fields` en
+     * `DatasetDefinition`. Sin traducción, la lista leía `dataset.fields` de
+     * una fila que solo traía `schema`: **todos los datasets salían con «0
+     * fields»**, incluidos los de veinte columnas y miles de filas.
+     */
+    it("traduce `schema` de la API al `fields` que declara el tipo", async () => {
+      const columnas = [
+        { key: "name", label: "Nombre", type: "text" },
+        { key: "slug", label: "Dirección", type: "text" },
+      ];
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          docs: [{ id: "1", name: "AFK Journey · Héroes", slug: "afk-heroes", schema: columnas }],
+          totalDocs: 1,
+        }),
+      } as Response);
+
+      await store.fetchDatasets();
+
+      expect(store.datasets[0].fields).toHaveLength(2);
+      expect(store.datasets[0].fields[0].key).toBe("name");
+    });
+
+    it("un `schema` que no es un array no rompe la lista", async () => {
+      // La ruta de creación guardaba `{ fields: [] }` (objeto) donde todo lo
+      // demás espera un array
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ docs: [{ id: "1", name: "Raro", slug: "raro", schema: { fields: [] } }] }),
+      } as Response);
+
+      await store.fetchDatasets();
+
+      expect(store.datasets[0].fields).toEqual([]);
     });
 
     it("should handle fetch error", async () => {

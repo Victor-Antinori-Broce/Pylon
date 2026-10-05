@@ -1,4 +1,4 @@
-# Backend in 15 Minutes — Gremius Vibecoder Demo
+# Backend in 15 Minutes — Kitsuden Vibecoder Demo
 
 > **Prerequisite:** Node.js + Docker Desktop installed.  
 > **Goal:** Go from zero to a working backend with auth, database, admin panel, and typed frontend hooks.
@@ -8,13 +8,13 @@
 ## Minute 0–2: Initialize
 
 ```bash
-npx gremius@latest init my-app --template blog
+npx kitsuden@latest init my-app --template blog
 ```
 
 **What happens:**
 
-- Creates `my-app/` with Docker Compose, `.env`, and `realm.json`
-- Template: `grimoire-auth` + `grimoire-blog` + `grimoire-media`
+- Creates `my-app/` with Docker Compose, `.env`, and `grimoire.json`
+- Template: `kon-auth` + `kon-blog` + `kon-media`
 
 ```bash
 cd my-app
@@ -38,13 +38,13 @@ init.bat
 
 **What happens:**
 
-- PostgreSQL + Valkey + MinIO + Gremius API + Admin spin up
+- PostgreSQL + Valkey + MinIO + Kitsuden API + Admin spin up
 - First build takes ~3 minutes; subsequent starts are <30s
 
 **Verify:**
 
 ```bash
-gremius status
+kitsuden status
 # ✅ API: http://localhost:3000
 # ✅ Admin: http://localhost:3001
 # ✅ DB: PostgreSQL connected
@@ -57,7 +57,7 @@ gremius status
 **Email/password** is already enabled by default. Add Google OAuth:
 
 ```bash
-npx gremius auth add google \
+npx kitsuden auth add google \
   --client-id YOUR_GOOGLE_CLIENT_ID \
   --client-secret YOUR_GOOGLE_CLIENT_SECRET
 ```
@@ -65,7 +65,7 @@ npx gremius auth add google \
 Restart the API container:
 
 ```bash
-docker compose restart gremius_api
+docker compose restart kitsuden_api
 ```
 
 ---
@@ -86,8 +86,8 @@ docker compose restart gremius_api
 curl -X POST http://localhost:3000/api/items/blog-posts \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Hello Gremius",
-    "slug": "hello-gremius",
+    "title": "Hello Kitsuden",
+    "slug": "hello-kitsuden",
     "content": "{\"type\":\"doc\",\"content\":[]}",
     "status": "published",
     "excerpt": "My first post"
@@ -100,7 +100,7 @@ curl -X POST http://localhost:3000/api/items/blog-posts \
 
 ```bash
 # React hooks + components + types
-npx gremius generate-sdk --framework react --collection blog-posts
+npx kitsuden generate-sdk --framework react --collection blog-posts
 
 # Output: ./sdk/blog-posts/
 #   - useBlogPosts.ts      (SWR query hook)
@@ -147,14 +147,14 @@ export default function BlogPage() {
 
 ```bash
 # Deploy to Railway
-gremius deploy --provider railway
+kitsuden deploy --provider railway
 
 # Or add more features
-gremius install grimoire-booking    # appointment scheduling
-gremius install grimoire-crm        # contacts & pipelines
+kitsuden install kon-booking    # appointment scheduling
+kitsuden install kon-crm        # contacts & pipelines
 
 # Or let Cursor/Claude do it via MCP
-gremius mcp connect
+kitsuden mcp connect
 ```
 
 ---
@@ -166,9 +166,9 @@ gremius mcp connect
 | Port 3000 already in use      | Edit `.env` → change `API_PORT=3002`                |
 | Database connection failed    | Wait 10s for Postgres to start, then restart API    |
 | Auth redirect fails           | Check `BETTER_AUTH_URL` matches your localhost port |
-| Generated SDK has wrong types | Re-run `gremius generate-sdk` after schema changes  |
+| Generated SDK has wrong types | Re-run `kitsuden generate-sdk` after schema changes |
 
 ---
 
-**Video walkthrough:** [youtube.com/gremius/15-min-backend](https://youtube.com) _(placeholder)_  
-**Community:** [discord.gg/gremius](https://discord.gg) _(placeholder)_
+**Video walkthrough:** [youtube.com/kitsuden/15-min-backend](https://youtube.com) _(placeholder)_  
+**Community:** [discord.gg/kitsuden](https://discord.gg) _(placeholder)_

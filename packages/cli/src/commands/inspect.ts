@@ -13,8 +13,8 @@ export async function inspectCommand(target: string) {
     case "routes":
       await inspectRoutes();
       break;
-    case "grimoires":
-      await inspectGrimoires();
+    case "kons":
+      await inspectKons();
       break;
     case "middleware":
       await inspectMiddleware();
@@ -25,7 +25,7 @@ export async function inspectCommand(target: string) {
       break;
     default:
       console.error(chalk.red(`Unknown inspect target: ${target}`));
-      console.log("Available: routes, grimoires, middleware, db");
+      console.log("Available: routes, kons, middleware, db");
       process.exit(1);
   }
 }
@@ -62,13 +62,13 @@ async function inspectRoutes() {
   console.log(chalk.gray(`\nTotal: ${routes.length} route(s)`));
 }
 
-async function inspectGrimoires() {
-  console.log(chalk.blue("📦 Active Grimoires\n"));
+async function inspectKons() {
+  console.log(chalk.blue("📦 Active Kons\n"));
 
-  const grimoiresPath = path.resolve("packages/grimoires");
+  const konsPath = path.resolve("packages/kons");
 
   try {
-    const grimoires = await fs.readdir(grimoiresPath);
+    const kons = await fs.readdir(konsPath);
 
     console.log(
       chalk.yellow(
@@ -77,14 +77,14 @@ async function inspectGrimoires() {
     );
     console.log(chalk.gray("-".repeat(70)));
 
-    for (const grimoire of grimoires) {
-      const grimoireJsonPath = path.join(grimoiresPath, grimoire, "grimoire.json");
+    for (const kon of kons) {
+      const konJsonPath = path.join(konsPath, kon, "kon.json");
 
       try {
-        const config = JSON.parse(await fs.readFile(grimoireJsonPath, "utf-8"));
+        const config = JSON.parse(await fs.readFile(konJsonPath, "utf-8"));
 
         // Contar tablas
-        const schemaPath = path.join(grimoiresPath, grimoire, "schema.ts");
+        const schemaPath = path.join(konsPath, kon, "schema.ts");
         let tableCount = 0;
         try {
           const schemaContent = await fs.readFile(schemaPath, "utf-8");
@@ -102,11 +102,11 @@ async function inspectGrimoires() {
           console.log(chalk.gray(`  deps: ${config.dependencies.join(", ")}`));
         }
       } catch {
-        console.log(chalk.gray(`${grimoire.padEnd(25)} (no config)`));
+        console.log(chalk.gray(`${kon.padEnd(25)} (no config)`));
       }
     }
   } catch (error) {
-    console.error(chalk.red("Error reading grimoires:"), error);
+    console.error(chalk.red("Error reading kons:"), error);
   }
 }
 

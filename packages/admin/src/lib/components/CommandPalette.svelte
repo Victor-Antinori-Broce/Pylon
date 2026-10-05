@@ -11,6 +11,7 @@
     GraduationCap,
     Settings,
     LayoutDashboard,
+    Brain,
   } from "lucide-svelte";
   import { fade, scale } from "svelte/transition";
 
@@ -46,7 +47,10 @@
   let open = $state(false);
   let query = $state("");
   let selectedIndex = $state(0);
-  let inputRef: HTMLInputElement;
+  // $state: se lee dentro del $effect que da el foco al abrir. Sin
+  // reactividad, ese efecto no se re-ejecuta al asignarse la referencia y el
+  // foco se perdía en la primera apertura.
+  let inputRef = $state<HTMLInputElement | null>(null);
 
   // Mock recent datasets / entries
   const recentItems: CommandItem[] = [
@@ -55,28 +59,28 @@
       type: "recent",
       label: "Users Dataset",
       icon: Database,
-      action: () => goto("/datasets/users"),
+      action: () => goto("/datasets"),
     },
     {
       id: "recent-2",
       type: "recent",
       label: "Blog Posts Dataset",
       icon: FileText,
-      action: () => goto("/datasets/posts"),
+      action: () => goto("/g/kon-blog"),
     },
     {
       id: "recent-3",
       type: "recent",
       label: "Media Assets",
       icon: Image,
-      action: () => goto("/media"),
+      action: () => goto("/g/kon-media"),
     },
     {
       id: "recent-4",
       type: "recent",
       label: "Page Builder Blocks",
       icon: Blocks,
-      action: () => goto("/blocks"),
+      action: () => goto("/g/kon-blocks"),
     },
     {
       id: "recent-5",
@@ -90,7 +94,7 @@
       type: "recent",
       label: "Games Registry",
       icon: Gamepad2,
-      action: () => goto("/games"),
+      action: () => goto("/g/kon-games"),
     },
   ];
 
@@ -102,7 +106,7 @@
       label: "New Post",
       shortcut: "N",
       icon: FilePlus,
-      action: () => goto("/posts/new"),
+      action: () => goto("/g/kon-blog"),
     },
     {
       id: "action-2",
@@ -118,7 +122,7 @@
       label: "Go to Media",
       shortcut: "M",
       icon: Image,
-      action: () => goto("/media"),
+      action: () => goto("/g/kon-media"),
     },
     {
       id: "action-4",
@@ -135,6 +139,13 @@
       shortcut: ",",
       icon: Settings,
       action: () => goto("/settings"),
+    },
+    {
+      id: "action-brain",
+      type: "action",
+      label: "Open KITSUDEN Brain",
+      icon: Brain,
+      action: () => goto("/brain"),
     },
   ];
 
@@ -173,7 +184,8 @@
   // Focus input when opened
   $effect(() => {
     if (open && inputRef) {
-      setTimeout(() => inputRef.focus(), 10);
+      // El elemento puede desmontarse antes de que salte el timeout.
+      setTimeout(() => inputRef?.focus(), 10);
     }
   });
 
@@ -247,7 +259,7 @@
   >
     <!-- Palette -->
     <div
-      class="w-full max-w-xl overflow-hidden rounded-xl border border-gremius-border bg-gremius-card shadow-2xl"
+      class="w-full max-w-xl overflow-hidden rounded-xl border border-kitsuden-border bg-kitsuden-card shadow-2xl"
       transition:scale={{ duration: 150, start: 0.95 }}
       onclick={(e) => e.stopPropagation()}
       role="dialog"
@@ -255,17 +267,17 @@
       aria-label="Command palette"
     >
       <!-- Search Input -->
-      <div class="flex items-center gap-3 border-b border-gremius-border px-4 py-3">
-        <Search class="h-5 w-5 shrink-0 text-gremius-text-dim" />
+      <div class="flex items-center gap-3 border-b border-kitsuden-border px-4 py-3">
+        <Search class="h-5 w-5 shrink-0 text-kitsuden-text-dim" />
         <input
           bind:this={inputRef}
           bind:value={query}
           type="text"
           placeholder="Search commands, pages, and recent items..."
-          class="flex-1 bg-transparent text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none"
+          class="flex-1 bg-transparent text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none"
         />
         <kbd
-          class="hidden items-center gap-1 rounded border border-gremius-border bg-gremius-bg px-2 py-1 font-mono text-[10px] text-gremius-text-dim sm:inline-flex"
+          class="hidden items-center gap-1 rounded border border-kitsuden-border bg-kitsuden-bg px-2 py-1 font-mono text-[10px] text-kitsuden-text-dim sm:inline-flex"
         >
           ESC
         </kbd>
@@ -274,7 +286,7 @@
       <!-- Results -->
       <div class="max-h-[50vh] overflow-y-auto py-1">
         {#if filteredItems.length === 0}
-          <div class="px-4 py-8 text-center text-sm text-gremius-text-dim">
+          <div class="px-4 py-8 text-center text-sm text-kitsuden-text-dim">
             No results found for "{query}"
           </div>
         {:else}
@@ -284,8 +296,8 @@
               class={cn(
                 "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors",
                 i === selectedIndex
-                  ? "bg-gremius-cyan/10 text-gremius-text"
-                  : "text-gremius-text-dim hover:bg-gremius-border/30 hover:text-gremius-text"
+                  ? "bg-kitsuden-accent/10 text-kitsuden-text"
+                  : "text-kitsuden-text-dim hover:bg-kitsuden-border/30 hover:text-kitsuden-text"
               )}
               onclick={() => executeItem(item)}
               onmouseenter={() => (selectedIndex = i)}
@@ -295,12 +307,12 @@
               <span class="flex-1 truncate">{item.label}</span>
               {#if item.shortcut}
                 <kbd
-                  class="rounded border border-gremius-border bg-gremius-bg px-1.5 py-0.5 font-mono text-[10px] text-gremius-text-dim"
+                  class="rounded border border-kitsuden-border bg-kitsuden-bg px-1.5 py-0.5 font-mono text-[10px] text-kitsuden-text-dim"
                 >
                   {item.shortcut}
                 </kbd>
               {/if}
-              <span class="text-[10px] text-gremius-subtle">{typeLabel(item.type)}</span>
+              <span class="text-[10px] text-kitsuden-subtle">{typeLabel(item.type)}</span>
             </button>
           {/each}
         {/if}
@@ -308,26 +320,26 @@
 
       <!-- Footer -->
       <div
-        class="flex items-center justify-between border-t border-gremius-border bg-gremius-bg/50 px-4 py-2"
+        class="flex items-center justify-between border-t border-kitsuden-border bg-kitsuden-bg/50 px-4 py-2"
       >
-        <div class="flex items-center gap-3 text-[10px] text-gremius-subtle">
+        <div class="flex items-center gap-3 text-[10px] text-kitsuden-subtle">
           <span class="flex items-center gap-1">
-            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono"
+            <kbd class="rounded border border-kitsuden-border bg-kitsuden-bg px-1 py-0.5 font-mono"
               >↑</kbd
             >
-            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono"
+            <kbd class="rounded border border-kitsuden-border bg-kitsuden-bg px-1 py-0.5 font-mono"
               >↓</kbd
             >
             <span>to navigate</span>
           </span>
           <span class="flex items-center gap-1">
-            <kbd class="rounded border border-gremius-border bg-gremius-bg px-1 py-0.5 font-mono"
+            <kbd class="rounded border border-kitsuden-border bg-kitsuden-bg px-1 py-0.5 font-mono"
               >↵</kbd
             >
             <span>to select</span>
           </span>
         </div>
-        <div class="text-[10px] text-gremius-subtle">
+        <div class="text-[10px] text-kitsuden-subtle">
           {filteredItems.length} result{filteredItems.length === 1 ? "" : "s"}
         </div>
       </div>

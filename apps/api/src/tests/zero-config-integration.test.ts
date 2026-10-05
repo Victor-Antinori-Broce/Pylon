@@ -2,7 +2,7 @@
  * Zero Config Integration Tests
  *
  * Validates the complete flow:
- * 1. Grimoire auto-discovery from grimoire.json
+ * 1. Kon auto-discovery from kon.json
  * 2. Schema introspection from database
  * 3. Admin config generation
  * 4. Inline relations detection
@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeAll } from "bun:test";
 
-import { buildAdminRegistry, getGrimoireAdminConfig } from "../services/admin-registry";
+import { buildAdminRegistry, getKonAdminConfig } from "../services/admin-registry";
 import { detectRelations, generateInlineConfigs } from "../services/inline-relations";
 import {
   introspectTable,
@@ -29,18 +29,18 @@ describe("Zero Config Integration", () => {
   });
 
   describe("🎛️ Admin Registry Flow", () => {
-    it("should discover grimoires from filesystem", async () => {
+    it("should discover kons from filesystem", async () => {
       const registry = await buildAdminRegistry();
 
       expect(registry.length).toBeGreaterThan(0);
 
-      // Check for known grimoires
-      const hasGames = registry.some((g) => g.id === "grimoire-games");
+      // Check for known kons
+      const hasGames = registry.some((g) => g.id === "kon-games");
       expect(hasGames).toBe(true);
     });
 
-    it("should parse grimoire.json config correctly", async () => {
-      const config = await getGrimoireAdminConfig("grimoire-games");
+    it("should parse kon.json config correctly", async () => {
+      const config = await getKonAdminConfig("kon-games");
 
       expect(config).toBeDefined();
       expect(config?.name).toBe("Games");
@@ -131,14 +131,14 @@ describe("Zero Config Integration", () => {
   });
 
   describe("🔄 End-to-End Flow", () => {
-    it("complete flow: grimoire → introspection → relations", async () => {
+    it("complete flow: kon → introspection → relations", async () => {
       if (!dbAvailable) return;
-      // Step 1: Get grimoire from registry
-      const grimoire = await getGrimoireAdminConfig("grimoire-games");
-      expect(grimoire).toBeDefined();
+      // Step 1: Get kon from registry
+      const kon = await getKonAdminConfig("kon-games");
+      expect(kon).toBeDefined();
 
       // Step 2: Introspect its main table
-      const mainTable = grimoire?.tables[0]?.name;
+      const mainTable = kon?.tables[0]?.name;
       expect(mainTable).toBeDefined();
 
       const introspected = await introspectTable(mainTable!);
@@ -163,9 +163,9 @@ describe("Zero Config Integration", () => {
       expect(introspected).toBeNull();
     });
 
-    it("should handle missing grimoires gracefully", async () => {
+    it("should handle missing kons gracefully", async () => {
       if (!dbAvailable) return;
-      const config = await getGrimoireAdminConfig("non-existent-grimoire");
+      const config = await getKonAdminConfig("non-existent-kon");
       expect(config).toBeNull();
     });
   });

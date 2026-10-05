@@ -1,4 +1,4 @@
-# GremiusCMS - NPM Package Publication Audit
+# Kitsuden - NPM Package Publication Audit
 
 **Date:** 2026-03-06  
 **Auditor:** System Architect  
@@ -22,7 +22,7 @@
 
 ## 🎯 Package Analysis
 
-### 1. @gremius/sdk - MOST READY
+### 1. @kitsuden/sdk - MOST READY
 
 **Current Score:** 7.5/10 ⭐ (Best candidate for publication)
 
@@ -49,7 +49,7 @@
 
 ```bash
 # Create README.md
-echo "# @gremius/sdk" > README.md
+echo "# @kitsuden/sdk" > README.md
 
 # Create CHANGELOG.md
 echo "# Changelog" > CHANGELOG.md
@@ -63,7 +63,7 @@ npm version 1.0.0
 
 ---
 
-### 2. @gremius/shared - NEEDS WORK
+### 2. @kitsuden/shared - NEEDS WORK
 
 **Current Score:** 5/10 ⚠️
 
@@ -98,9 +98,9 @@ npm version 1.0.0
 
 ```json
 {
-  "name": "@gremius/shared",
+  "name": "@kitsuden/shared",
   "version": "0.7.0",
-  "description": "Shared types and utilities for GremiusCMS",
+  "description": "Shared types and utilities for Kitsuden",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -120,11 +120,11 @@ npm version 1.0.0
       "types": "./dist/types.d.ts"
     }
   },
-  "keywords": ["gremius", "cms", "types", "schemas"],
+  "keywords": ["kitsuden", "cms", "types", "schemas"],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourorg/gremius.git",
+    "url": "https://github.com/yourorg/kitsuden.git",
     "directory": "packages/shared"
   },
   "scripts": {
@@ -137,7 +137,7 @@ npm version 1.0.0
 
 ---
 
-### 3. @gremius/mcp-server - NOT READY
+### 3. @kitsuden/mcp-server - NOT READY
 
 **Current Score:** 3/10 ❌
 
@@ -159,14 +159,14 @@ npm version 1.0.0
   "files": ["dist"], // ❌ MISSING
   "exports": {}, // ❌ MISSING
   "dependencies": {
-    "@gremius/shared": "workspace:*" // ❌ Must be version before publish
+    "@kitsuden/shared": "workspace:*" // ❌ Must be version before publish
   }
 }
 ```
 
 ---
 
-### 4. @gremius/api - NOT PUBLISHABLE
+### 4. @kitsuden/api - NOT PUBLISHABLE
 
 **Current Score:** 2/10 ❌
 
@@ -186,8 +186,8 @@ npm version 1.0.0
 | ---------------------- | ------------------ | ---------------- |
 | `packages/core`        | ❌ No package.json | Create if needed |
 | `packages/engine`      | ❌ No package.json | Create if needed |
+| `packages/kons/*`      | ❌ No package.json | Create if needed |
 | `packages/grimoires/*` | ❌ No package.json | Create if needed |
-| `packages/realms/*`    | ❌ No package.json | Create if needed |
 | `packages/starters/*`  | ❌ No package.json | Create if needed |
 
 ---
@@ -230,7 +230,7 @@ Fix: Add README to each publishable package
 
 ## 📋 Pre-Publication Checklist
 
-### For @gremius/sdk (Priority 1)
+### For @kitsuden/sdk (Priority 1)
 
 - [x] package.json configured
 - [x] Build system working
@@ -242,7 +242,7 @@ Fix: Add README to each publishable package
 - [ ] Test on fresh project
 - [ ] npm publish --dry-run
 
-### For @gremius/shared (Priority 2)
+### For @kitsuden/shared (Priority 2)
 
 - [ ] Remove `"private": true`
 - [ ] Add `"files": ["dist"]`
@@ -265,41 +265,41 @@ Fix: Add README to each publishable package
 
 ## 🔧 Quick Fix Scripts
 
-### Fix @gremius/sdk
+### Fix @kitsuden/sdk
 
 ````bash
 cd packages/sdk
 
 # Create README
 cat > README.md << 'EOF'
-# @gremius/sdk
+# @kitsuden/sdk
 
-Official JavaScript/TypeScript SDK for GremiusCMS.
+Official JavaScript/TypeScript SDK for Kitsuden.
 
 ## Installation
 
 ```bash
-npm install @gremius/sdk
+npm install @kitsuden/sdk
 # or
-bun add @gremius/sdk
+bun add @kitsuden/sdk
 ````
 
 ## Quick Start
 
 ```typescript
-import { GremiusClient } from "@gremius/sdk";
+import { KitsudenClient } from "@kitsuden/sdk";
 
-const gremius = new GremiusClient({
+const kitsuden = new KitsudenClient({
   url: "https://api.example.com",
   apiKey: "your-api-key",
 });
 
-const posts = await gremius.collection("posts").get();
+const posts = await kitsuden.collection("posts").get();
 ```
 
 ## Documentation
 
-See [full documentation](https://docs.gremius.dev/sdk)
+See [full documentation](https://docs.kitsuden.dev/sdk)
 EOF
 
 # Create CHANGELOG
@@ -322,7 +322,7 @@ npm version 1.0.0
 
 ````
 
-### Fix @gremius/shared
+### Fix @kitsuden/shared
 
 ```bash
 cd packages/shared
@@ -334,11 +334,11 @@ const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
 delete pkg.private;
 pkg.files = ['dist'];
-pkg.keywords = ['gremius', 'cms', 'types', 'schemas', 'zod'];
+pkg.keywords = ['kitsuden', 'cms', 'types', 'schemas', 'zod'];
 pkg.license = 'MIT';
 pkg.repository = {
   type: 'git',
-  url: 'https://github.com/yourorg/gremius.git',
+  url: 'https://github.com/yourorg/kitsuden.git',
   directory: 'packages/shared'
 };
 pkg.exports = {
@@ -361,15 +361,15 @@ fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
 
 # Create README
 cat > README.md << 'EOF'
-# @gremius/shared
+# @kitsuden/shared
 
-Shared types, schemas, and utilities for GremiusCMS.
+Shared types, schemas, and utilities for Kitsuden.
 
 ## Usage
 
 ```typescript
-import { DatasetDefinitionSchema } from '@gremius/shared/schemas';
-import type { DataSet, DataEntry } from '@gremius/shared/types';
+import { DatasetDefinitionSchema } from '@kitsuden/shared/schemas';
+import type { DataSet, DataEntry } from '@kitsuden/shared/types';
 ````
 
 EOF
@@ -382,14 +382,14 @@ EOF
 
 ### Phase 1: SDK Only (Week 1)
 
-1. Polish @gremius/sdk
+1. Polish @kitsuden/sdk
 2. Add documentation
 3. Publish v1.0.0
 4. Announce beta to community
 
 ### Phase 2: Shared Package (Week 2)
 
-1. Fix @gremius/shared
+1. Fix @kitsuden/shared
 2. Remove workspace dependencies
 3. Publish v0.7.0
 4. Update SDK to use published shared
@@ -407,10 +407,10 @@ EOF
 
 | Package | Current | Target | Priority |
 |---------|---------|--------|----------|
-| @gremius/sdk | 7.5/10 | 9.5/10 | P1 |
-| @gremius/shared | 5/10 | 9/10 | P2 |
-| @gremius/mcp-server | 3/10 | 8/10 | P3 |
-| @gremius/api | N/A | N/A | Don't publish |
+| @kitsuden/sdk | 7.5/10 | 9.5/10 | P1 |
+| @kitsuden/shared | 5/10 | 9/10 | P2 |
+| @kitsuden/mcp-server | 3/10 | 8/10 | P3 |
+| @kitsuden/api | N/A | N/A | Don't publish |
 
 ---
 
@@ -425,14 +425,14 @@ EOF
 
 ### Short Term (Next 2 Weeks)
 
-1. **Publish @gremius/sdk v1.0.0**
-2. **Fix and publish @gremius/shared**
+1. **Publish @kitsuden/sdk v1.0.0**
+2. **Fix and publish @kitsuden/shared**
 3. **Set up automated publishing** with GitHub Actions
 4. **Add npm provenance** for security
 
 ### Long Term (Next Month)
 
-1. **Evaluate grimoire packages** - Should they be individual packages?
+1. **Evaluate kon packages** - Should they be individual packages?
 2. **Create starter templates** - Publish as npm create commands
 3. **Documentation website** - API reference, guides
 4. **Community examples** - Showcase projects
@@ -452,7 +452,7 @@ EOF
 **Current State:** Not ready for publication
 **Blockers:** 4 critical issues
 **Timeline:** 2-3 weeks to full publication
-**Priority:** Start with @gremius/sdk
+**Priority:** Start with @kitsuden/sdk
 
 The foundation is solid, but documentation and packaging metadata need work before npm publication.
 ```

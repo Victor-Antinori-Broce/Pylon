@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-Powered by [GremiusCMS](https://gremius.gg) — AI-Native Backend
+Powered by [Kitsuden](https://kitsuden.gg) — AI-Native Backend
 
 ## 🚀 Quick Start
 
@@ -27,9 +27,9 @@ MCP Endpoint: http://localhost:3000/api/mcp
 For hot-reload development with the full monorepo:
 
 ```bash
-# Clone the Gremius monorepo
-git clone https://github.com/gremiuscms/gremius.git
-cd gremius
+# Clone the Kitsuden monorepo
+git clone https://github.com/kitsuden/kitsuden.git
+cd kitsuden
 pnpm install
 pnpm dev:start:simple
 ```
@@ -38,7 +38,7 @@ pnpm dev:start:simple
 
 - `docker-compose.yml` — All services
 - `.env` — Configuration
-- `realm.json` — Active modules (auto-generated)
+- `grimoire.json` — Active modules (auto-generated)
 
 ## 🔧 Customization
 
@@ -46,5 +46,5 @@ Edit `.env` to change ports, passwords, or enable features.
 
 ## 📚 Documentation
 
-- [Getting Started](https://docs.gremius.gg)
-- [MCP Setup](https://docs.gremius.gg/mcp)
+- [Getting Started](https://docs.kitsuden.gg)
+- [MCP Setup](https://docs.kitsuden.gg/mcp)

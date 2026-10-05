@@ -1,9 +1,9 @@
 /**
- * GremiusCMS Shared Constants
+ * Kitsuden Shared Constants
  */
 
 export const SITE_CONFIG = {
-  name: "GremiusCMS",
+  name: "Kitsuden",
   description: "High-Performance Gaming CMS",
   defaultLocale: "en",
   postsPerPage: 12,

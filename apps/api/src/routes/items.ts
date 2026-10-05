@@ -5,7 +5,7 @@
  *
  * Provides a standard REST interface for ANY collection:
  *   - Datasets (JSONB in data_entries)
- *   - Grimoire tables (native PostgreSQL tables)
+ *   - Kon tables (native PostgreSQL tables)
  *
  * Endpoints:
  *   GET    /api/items/:collection         → list
@@ -24,12 +24,19 @@
  *   - Mutations: requireAuth + transactional RLS
  */
 
-import { parseGremiusQuery, GremiusQLError } from "@gremius/engine";
+import { parseKitsudenQuery, KitsudenQLError, messageOf } from "@kitsuden/engine";
 import { eq, sql, desc, asc, and, ilike, gt, gte, lt, lte, inArray } from "drizzle-orm";
 import { Hono } from "hono";
+import type { Context } from "hono";
 
 import { db as rawDb, mergedSchema } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
+import {
+  addSchemaVersionToData,
+  buildDatasetSearchCondition,
+  buildDatasetWhereConditions,
+  validateDatasetEntry,
+} from "../lib/dataset-optimizations";
 import { logger } from "../lib/logger";
 import { broadcastMutation } from "../lib/realtime";
 import { requireAuth } from "../middleware/auth";
@@ -38,23 +45,14 @@ import type { AppVariables } from "../types/hono";
 
 import { invalidateGraphQLCache } from "./graphql";
 
-export const itemsRoutes = new Hono<{ Variables: AppVariables }>();
+// itemsRoutes se define al FINAL del archivo como expresión encadenada
+// (Hono RPC: el chaining acumula los tipos de cada endpoint).
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECURITY MIDDLEWARE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Apply transactional RLS for all routes (reads + mutations)
-// Handlers MUST use getDb(c) to get the transaction-aware db instance
-itemsRoutes.use("/*", async (c, next) => {
-  if (["POST", "PATCH", "DELETE"].includes(c.req.method)) {
-    return requireAuth(c, async () => {
-      await withTransactionalRLS()(c, next);
-    });
-  }
-  // For reads, also use transactional RLS so policies are enforced consistently
-  await withTransactionalRLS()(c, next);
-});
+// El middleware RLS transaccional vive en la cadena del final del archivo.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -209,10 +207,10 @@ function buildOrderBy(table: any, sort: string | undefined) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// QUERY (Gremius QL) — Unified for datasets and native tables
+// QUERY (Kitsuden QL) — Unified for datasets and native tables
 // ═══════════════════════════════════════════════════════════════════════════════
 
-itemsRoutes.post("/:collection/query", async (c) => {
+export async function queryItemsHandler(c: Context) {
   const db = getDb(c);
   const collection = c.req.param("collection");
   const body = await c.req.json().catch(() => ({}));
@@ -225,7 +223,7 @@ itemsRoutes.post("/:collection/query", async (c) => {
   try {
     if (resolved.type === "dataset") {
       const ds = resolved.dataset;
-      const result = await parseGremiusQuery(dataEntries, {
+      const result = await parseKitsudenQuery(dataEntries, {
         ...body,
         where: {
           ...(body.where || {}),
@@ -236,22 +234,23 @@ itemsRoutes.post("/:collection/query", async (c) => {
     }
 
     const table = resolved.table;
-    const result = await parseGremiusQuery(table, body);
+    const result = await parseKitsudenQuery(table, body);
     return c.json(result);
-  } catch (err: any) {
-    if (err instanceof GremiusQLError) {
-      return c.json({ error: err.message, code: err.code, details: err.details }, 400);
+  } catch (err: unknown) {
+    if (err instanceof KitsudenQLError) {
+      return c.json({ error: messageOf(err), code: err.code, details: err.details }, 400);
     }
-    logger.error({ collection, error: err.message }, "Failed to query items");
-    return c.json({ error: "Query failed", details: err.message }, 500);
+    logger.error({ collection, error: messageOf(err) }, "Failed to query items");
+    return c.json({ error: "Query failed", details: messageOf(err) }, 500);
   }
-});
+}
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LIST
 // ═══════════════════════════════════════════════════════════════════════════════
 
-itemsRoutes.get("/:collection", async (c) => {
+export async function listItemsHandler(c: Context) {
   const db = getDb(c);
   const collection = c.req.param("collection");
   const limit = Math.min(Number(c.req.query("limit")) || 50, 1000);
@@ -268,16 +267,24 @@ itemsRoutes.get("/:collection", async (c) => {
   try {
     if (resolved.type === "dataset") {
       const ds = resolved.dataset;
-      const conditions = [eq(dataEntries.dataSetId, ds.id)];
+      const searchTerm = c.req.query("search");
+      const conditions: (ReturnType<typeof eq> | ReturnType<typeof sql>)[] = [
+        eq(dataEntries.dataSetId, ds.id),
+      ];
 
       if (whereJson) {
         try {
           const filters = JSON.parse(whereJson);
-          for (const [key, val] of Object.entries(filters)) {
-            conditions.push(sql`data->>${key} = ${val as string}`);
-          }
+          conditions.push(...buildDatasetWhereConditions(filters));
         } catch {
           /* ignore invalid JSON */
+        }
+      }
+
+      if (searchTerm) {
+        const searchCondition = buildDatasetSearchCondition(ds.schema ?? [], searchTerm);
+        if (searchCondition) {
+          conditions.push(searchCondition);
         }
       }
 
@@ -335,17 +342,18 @@ itemsRoutes.get("/:collection", async (c) => {
       offset,
       collection,
     });
-  } catch (err: any) {
-    logger.error({ collection, error: err.message }, "Failed to list items");
-    return c.json({ error: "Query failed", details: err.message }, 500);
+  } catch (err: unknown) {
+    logger.error({ collection, error: messageOf(err) }, "Failed to list items");
+    return c.json({ error: "Query failed", details: messageOf(err) }, 500);
   }
-});
+}
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET ONE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-itemsRoutes.get("/:collection/:id", async (c) => {
+export async function getItemHandler(c: Context) {
   const db = getDb(c);
   const collection = c.req.param("collection");
   const id = c.req.param("id");
@@ -374,17 +382,18 @@ itemsRoutes.get("/:collection/:id", async (c) => {
     const [doc] = await db.select().from(table).where(eq(table.id, id)).limit(1);
     if (!doc) return c.json({ error: "Not found" }, 404);
     return c.json(doc);
-  } catch (err: any) {
-    logger.error({ collection, id, error: err.message }, "Failed to get item");
-    return c.json({ error: "Query failed", details: err.message }, 500);
+  } catch (err: unknown) {
+    logger.error({ collection, id, error: messageOf(err) }, "Failed to get item");
+    return c.json({ error: "Query failed", details: messageOf(err) }, 500);
   }
-});
+}
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CREATE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-itemsRoutes.post("/:collection", async (c) => {
+export async function createItemHandler(c: Context) {
   const db = getDb(c);
   const collection = c.req.param("collection");
   const body = await c.req.json();
@@ -397,14 +406,21 @@ itemsRoutes.post("/:collection", async (c) => {
   try {
     if (resolved.type === "dataset") {
       const ds = resolved.dataset;
-      const title = body.title || body.name || "Untitled";
-      const ownerId = body.ownerId ?? c.get("user")?.id ?? null;
+      const schema = ds.schema ?? [];
+      const validation = validateDatasetEntry(schema, body);
+      if (!validation.success) {
+        return c.json({ error: "Validation failed", details: validation.error.format() }, 400);
+      }
+      const validated = validation.data;
+      const versioned = addSchemaVersionToData(ds.schema ?? [], validated);
+      const title = (versioned.title as string) || (versioned.name as string) || "Untitled";
+      const ownerId = versioned.ownerId ?? c.get("user")?.id ?? null;
       const [doc] = await db
         .insert(dataEntries)
         .values({
           dataSetId: ds.id,
           title,
-          data: { ...body, ownerId },
+          data: { ...versioned, ownerId },
           ownerId,
         })
         .returning();
@@ -419,17 +435,18 @@ itemsRoutes.post("/:collection", async (c) => {
     broadcastMutation(collection, "insert", { id: doc.id });
     await invalidateGraphQLCache();
     return c.json(doc, 201);
-  } catch (err: any) {
-    logger.error({ collection, error: err.message }, "Failed to create item");
-    return c.json({ error: "Insert failed", details: err.message }, 500);
+  } catch (err: unknown) {
+    logger.error({ collection, error: messageOf(err) }, "Failed to create item");
+    return c.json({ error: "Insert failed", details: messageOf(err) }, 500);
   }
-});
+}
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UPDATE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-itemsRoutes.patch("/:collection/:id", async (c) => {
+export async function updateItemHandler(c: Context) {
   const db = getDb(c);
   const collection = c.req.param("collection");
   const id = c.req.param("id");
@@ -450,10 +467,19 @@ itemsRoutes.patch("/:collection/:id", async (c) => {
         .limit(1);
       if (!existing) return c.json({ error: "Not found" }, 404);
 
-      const mergedData = { ...(existing.data as any), ...body };
+      const schema = ds.schema ?? [];
+      const mergedInput = { ...(existing.data as any), ...body };
+      const validation = validateDatasetEntry(schema, mergedInput);
+      if (!validation.success) {
+        return c.json({ error: "Validation failed", details: validation.error.format() }, 400);
+      }
+      const versioned = addSchemaVersionToData(schema, validation.data);
       const [doc] = await db
         .update(dataEntries)
-        .set({ data: mergedData, title: body.title || body.name || existing.title })
+        .set({
+          data: versioned,
+          title: (versioned.title as string) || (versioned.name as string) || existing.title,
+        })
         .where(eq(dataEntries.id, id))
         .returning();
 
@@ -470,17 +496,18 @@ itemsRoutes.patch("/:collection/:id", async (c) => {
     broadcastMutation(collection, "update", { id: doc.id });
     await invalidateGraphQLCache();
     return c.json(doc);
-  } catch (err: any) {
-    logger.error({ collection, id, error: err.message }, "Failed to update item");
-    return c.json({ error: "Update failed", details: err.message }, 500);
+  } catch (err: unknown) {
+    logger.error({ collection, id, error: messageOf(err) }, "Failed to update item");
+    return c.json({ error: "Update failed", details: messageOf(err) }, 500);
   }
-});
+}
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DELETE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-itemsRoutes.delete("/:collection/:id", async (c) => {
+export async function deleteItemHandler(c: Context) {
   const db = getDb(c);
   const collection = c.req.param("collection");
   const id = c.req.param("id");
@@ -514,8 +541,35 @@ itemsRoutes.delete("/:collection/:id", async (c) => {
     broadcastMutation(collection, "delete", { id });
     await invalidateGraphQLCache();
     return c.json({ success: true, id });
-  } catch (err: any) {
-    logger.error({ collection, id, error: err.message }, "Failed to delete item");
-    return c.json({ error: "Delete failed", details: err.message }, 500);
+  } catch (err: unknown) {
+    logger.error({ collection, id, error: messageOf(err) }, "Failed to delete item");
+    return c.json({ error: "Delete failed", details: messageOf(err) }, 500);
   }
-});
+}
+// (registrado en la cadena final)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTER (chained — Hono RPC, arquitectura KITSUDEN §7)
+// Mismo orden de registro que la versión statement-style. El middleware aplica
+// RLS transaccional a todo; mutaciones exigen además requireAuth.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const itemsRoutes = new Hono<{ Variables: AppVariables }>()
+  .use("/*", async (c, next) => {
+    if (["POST", "PATCH", "DELETE"].includes(c.req.method)) {
+      return requireAuth(c, async () => {
+        await withTransactionalRLS()(c, next);
+      });
+    }
+    // For reads, also use transactional RLS so policies are enforced consistently
+    await withTransactionalRLS()(c, next);
+  })
+  .post("/:collection/query", queryItemsHandler)
+  .get("/:collection", listItemsHandler)
+  .get("/:collection/:id", getItemHandler)
+  .post("/:collection", createItemHandler)
+  .patch("/:collection/:id", updateItemHandler)
+  .delete("/:collection/:id", deleteItemHandler);
+
+/** Tipo acumulado del router — consumido por src/rpc.ts */
+export type ItemsRoutesType = typeof itemsRoutes;

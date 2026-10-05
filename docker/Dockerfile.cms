@@ -2,10 +2,10 @@
 # DEPRECATED - Dockerfile.cms
 #
 # This Dockerfile references apps/cms (Payload CMS) which was removed
-# from the project. GremiusCMS now uses its own Bun + Hono backend.
+# from the project. Kitsuden now uses its own Bun + Hono backend.
 #
 # Use instead:
-#   docker build -f docker/Dockerfile.prod --target api -t gremius-api:latest .
+#   docker build -f docker/Dockerfile.prod --target api -t kitsuden-api:latest .
 #
 # This file is kept for historical reference only.
 # ===================================================================

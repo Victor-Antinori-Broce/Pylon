@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# GremiusCMS — Vibecoder Mode 🚀
+# Kitsuden — Vibecoder Mode 🚀
 #
 # Zero-config backend. Just run:
 #   docker compose up -d --build
@@ -8,93 +8,95 @@
 #   • API + Swagger: http://localhost:3000/api/swagger
 #   • Admin Panel:   http://localhost:3001
 #   • MinIO Console: http://localhost:9001
+#
+# IMPORTANT: Copy .env.example to .env and set strong secrets before deploying.
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
-  gremius_db:
+  kitsuden_db:
     image: pgvector/pgvector:pg16
-    container_name: ${PROJECT_NAME:-gremius}_db
+    container_name: ${PROJECT_NAME:-kitsuden}_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-gremius}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gremiuspassword}
-      POSTGRES_DB: ${POSTGRES_DB:-gremius}
+      POSTGRES_USER: ${POSTGRES_USER:-kitsuden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kitsuden}
     volumes:
-      - gremius_postgres:/var/lib/postgresql/data
+      - kitsuden_postgres:/var/lib/postgresql/data
       - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
     ports:
       - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gremius}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kitsuden}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - gremius_net
+      - kitsuden_net
 
-  gremius_state:
+  kitsuden_state:
     image: valkey/valkey:7-alpine
-    container_name: ${PROJECT_NAME:-gremius}_cache
+    container_name: ${PROJECT_NAME:-kitsuden}_cache
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
       - "${CACHE_PORT:-6379}:6379"
     volumes:
-      - gremius_valkey:/data
+      - kitsuden_valkey:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
     networks:
-      - gremius_net
+      - kitsuden_net
 
-  gremius_minio:
+  kitsuden_minio:
     image: minio/minio:latest
-    container_name: ${PROJECT_NAME:-gremius}_minio
+    container_name: ${PROJECT_NAME:-kitsuden}_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-gremius_minio}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-gremius_minio_secret}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-kitsuden_minio}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
     ports:
       - "${MINIO_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - gremius_minio:/data
+      - kitsuden_minio:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - gremius_net
+      - kitsuden_net
 
-  gremius_api:
+  kitsuden_api:
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: api
-    container_name: ${PROJECT_NAME:-gremius}_api
+    container_name: ${PROJECT_NAME:-kitsuden}_api
     restart: unless-stopped
     depends_on:
-      gremius_db:
+      kitsuden_db:
         condition: service_healthy
-      gremius_state:
+      kitsuden_state:
         condition: service_healthy
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-gremius}:${POSTGRES_PASSWORD:-gremiuspassword}@gremius_db:5432/${POSTGRES_DB:-gremius}
-      - REDIS_URL=redis://gremius_state:6379
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db:5432/${POSTGRES_DB:-kitsuden}
+      - REDIS_URL=redis://kitsuden_state:6379
       - DEFAULT_STORAGE_PROVIDER=minio
-      - S3_ENDPOINT=http://gremius_minio:9000
+      - S3_ENDPOINT=http://kitsuden_minio:9000
       - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:9000}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-gremius_minio}
-      - S3_SECRET_KEY=${S3_SECRET_KEY:-gremius_minio_secret}
-      - S3_BUCKET=${S3_BUCKET:-gremius-media}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-kitsuden_minio}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+      - S3_BUCKET=${S3_BUCKET:-kitsuden-media}
       - S3_REGION=${S3_REGION:-us-east-1}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-change-me-in-production}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required - set it in .env (min 32 chars)}
       - BETTER_AUTH_URL=http://localhost:${API_PORT:-3000}
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
       - ADMIN_URL=http://localhost:3001
@@ -105,29 +107,29 @@ services:
     ports:
       - "${API_PORT:-3000}:3000"
     networks:
-      - gremius_net
+      - kitsuden_net
     command: ["sh", "/app/docker/start-with-check.sh"]
     working_dir: /app/apps/api
 
-  gremius_admin:
+  kitsuden_admin:
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: admin
-    container_name: ${PROJECT_NAME:-gremius}_admin
+    container_name: ${PROJECT_NAME:-kitsuden}_admin
     restart: unless-stopped
     depends_on:
-      - gremius_api
+      - kitsuden_api
     ports:
       - "${ADMIN_PORT:-3001}:80"
     networks:
-      - gremius_net
+      - kitsuden_net
 
 volumes:
-  gremius_postgres:
-  gremius_valkey:
-  gremius_minio:
+  kitsuden_postgres:
+  kitsuden_valkey:
+  kitsuden_minio:
 
 networks:
-  gremius_net:
+  kitsuden_net:
     driver: bridge

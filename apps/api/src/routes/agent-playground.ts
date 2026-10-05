@@ -2,20 +2,25 @@
  * Agent Playground API
  *
  * Endpoint para chatear con agentes desde el Admin UI.
- * Conecta con el MCP server para procesar mensajes.
+ * Conecta con el Agent Engine y LLMs reales.
  */
 
+import { messageOf } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
-// @ts-ignore - Path alias @/ not resolved by tsc
-import { agentIdentities, agentTraces, agentTraceSteps } from "@/db/schema";
-// @ts-ignore - Path alias @/ not resolved by tsc
+import { agentIdentities } from "@/db/schema";
 import { logger } from "@/lib/logger";
+import { runAgent } from "@/services/agent-engine";
 
-const playgroundRouter = new Hono();
+import { requireAuth } from "../middleware/auth";
+import type { AppVariables } from "../types/hono";
+
+const playgroundRouter = new Hono<{ Variables: AppVariables }>();
+
+// Requiere sesión de administrador (usado desde el Admin UI)
+playgroundRouter.use("*", requireAuth);
 
 /**
  * POST /api/admin/agents/:id/chat
@@ -24,7 +29,17 @@ const playgroundRouter = new Hono();
 playgroundRouter.post("/:id/chat", async (c) => {
   try {
     const agentId = c.req.param("id");
-    const { message, sessionId = crypto.randomUUID(), history: _history = [] } = await c.req.json();
+    const {
+      message,
+      sessionId = crypto.randomUUID(),
+      history = [],
+      enableMemory = true,
+      enableBrainSearch = true,
+    } = await c.req.json();
+
+    if (!message || typeof message !== "string") {
+      return c.json({ success: false, error: "Message is required" }, 400);
+    }
 
     // Verificar que el agente existe
     const [agent] = await db
@@ -34,120 +49,77 @@ playgroundRouter.post("/:id/chat", async (c) => {
       .limit(1);
 
     if (!agent) {
-      return c.json({ error: "Agent not found" }, 404);
+      return c.json({ success: false, error: "Agent not found" }, 404);
     }
 
     if (!agent.isActive) {
-      return c.json({ error: "Agent is inactive" }, 400);
+      return c.json({ success: false, error: "Agent is inactive" }, 400);
     }
 
-    // Crear trace para esta conversación
-    const [trace] = await db
-      .insert(agentTraces)
-      .values({
+    // Ejecutar a través del Agent Engine
+    const result = await runAgent({
+      agentId,
+      message,
+      sessionId,
+      history,
+      enableMemory,
+      enableBrainSearch,
+    });
+
+    logger.info(
+      {
         agentId,
-        sessionId,
-        name: `Playground: ${message.slice(0, 50)}...`,
-        input: { message, history: _history },
-        status: "running",
-        startedAt: new Date(),
-      })
-      .returning({ id: agentTraces.id });
-
-    // trace.id is used below
-
-    // Agregar step de user_input
-    await db.insert(agentTraceSteps).values({
-      traceId: trace.id,
-      stepOrder: 0,
-      stepType: "user_input",
-      content: message,
-      createdAt: new Date(),
-    });
-
-    // Procesar con el agente (simulado por ahora, luego se conecta a MCP/LLM)
-    const startTime = Date.now();
-
-    // TODO: Integrar con LLM real (OpenAI, Claude, etc.)
-    // Por ahora simulamos una respuesta
-    const response = await processWithAgent(agent, message, _history, trace.id);
-
-    const durationMs = Date.now() - startTime;
-
-    // Agregar step de respuesta
-    await db.insert(agentTraceSteps).values({
-      traceId: trace.id,
-      stepOrder: 1,
-      stepType: "llm_call",
-      content: response,
-      durationMs,
-      createdAt: new Date(),
-    });
-
-    // Completar trace
-    await db
-      .update(agentTraces)
-      .set({
-        output: { response },
-        status: "success",
-        totalDurationMs: durationMs,
-        completedAt: new Date(),
-      })
-      .where(eq(agentTraces.id, trace.id));
-
-    logger.info({ agentId, traceId: trace.id, durationMs }, "Agent playground chat completed");
+        traceId: result.traceId,
+        sessionId: result.sessionId,
+        provider: result.provider,
+        model: result.model,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        durationMs: result.durationMs,
+        cached: result.cached,
+      },
+      "Agent playground chat completed"
+    );
 
     return c.json({
       success: true,
-      response,
-      traceId: trace.id,
-      sessionId,
+      response: result.response,
+      traceId: result.traceId,
+      sessionId: result.sessionId,
+      provider: result.provider,
+      model: result.model,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+      durationMs: result.durationMs,
+      cached: result.cached,
     });
-  } catch (error: any) {
-    const _agentId = c.req.param("id");
-    logger.error({ error, agentId: _agentId }, "Agent playground chat failed");
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    const agentId = c.req.param("id");
+    logger.error({ error, agentId }, "Agent playground chat failed");
+
+    // Mensajes de error amigables
+    if (messageOf(error)?.includes("No LLM provider configured")) {
+      return c.json(
+        {
+          success: false,
+          error:
+            "No LLM provider configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, or OLLAMA_BASE_URL in your .env file.",
+          code: "LLM_NOT_CONFIGURED",
+        },
+        503
+      );
+    }
+
+    return c.json(
+      {
+        success: false,
+        error: messageOf(error) || "Failed to process agent message",
+        code: "AGENT_ENGINE_ERROR",
+      },
+      500
+    );
   }
 });
-
-/**
- * Procesa un mensaje con el agente
- *
- * Por ahora es una simulación. En producción esto debería:
- * 1. Llamar a la API de OpenAI/Claude con el system prompt del agente
- * 2. Ejecutar tools si el LLM las solicita
- * 3. Retornar la respuesta final
- */
-async function processWithAgent(
-  agent: typeof agentIdentities.$inferSelect,
-  message: string,
-  _history: Array<{ role: string; content: string }>,
-  _traceId: string
-): Promise<string> {
-  // Simulación de respuesta
-  // En producción, esto llamaría a OpenAI/Claude
-
-  const lowerMsg = message.toLowerCase();
-
-  if (lowerMsg.includes("hola") || lowerMsg.includes("hi") || lowerMsg.includes("hello")) {
-    return `¡Hola! Soy ${agent.name}, tu asistente virtual. ${agent.description || "Estoy aquí para ayudarte."}`;
-  }
-
-  if (lowerMsg.includes("ayuda") || lowerMsg.includes("help")) {
-    return `Puedo ayudarte con diversas tareas. ${agent.systemPrompt || "Soy un agente de propósito general."}`;
-  }
-
-  if (lowerMsg.includes("capacidades") || lowerMsg.includes("qué puedes hacer")) {
-    const capabilities = agent.capabilities as string[] | undefined;
-    const caps = capabilities?.length
-      ? `Mis capacidades incluyen: ${capabilities.join(", ")}.`
-      : "Tengo capacidades generales de asistencia.";
-    return caps;
-  }
-
-  // Respuesta genérica
-  return `Entiendo: "${message}". Como ${agent.name}, estoy procesando tu solicitud. En una implementación completa, esto se conectaría con un LLM como GPT-4 o Claude para darte una respuesta inteligente.`;
-}
 
 /**
  * GET /api/admin/agents/:id/chat/history
@@ -155,14 +127,16 @@ async function processWithAgent(
  */
 playgroundRouter.get("/:id/chat/history", async (c) => {
   try {
-    void c.req.param("id"); // agentId extracted for validation
+    void c.req.param("id"); // agentId extraído para validación futura
     const sessionId = c.req.query("sessionId");
 
     if (!sessionId) {
-      return c.json({ error: "sessionId required" }, 400);
+      return c.json({ success: false, error: "sessionId required" }, 400);
     }
 
     // Obtener traces de esta sesión
+    const { agentTraces, agentTraceSteps } = await import("@/db/schema");
+
     const traces = await db
       .select()
       .from(agentTraces)
@@ -201,9 +175,16 @@ playgroundRouter.get("/:id/chat/history", async (c) => {
       history,
       sessionId,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error({ error }, "Failed to get chat history");
-    return c.json({ error: error.message }, 500);
+    return c.json(
+      {
+        success: false,
+        error: messageOf(error),
+        code: "HISTORY_ERROR",
+      },
+      500
+    );
   }
 });
 

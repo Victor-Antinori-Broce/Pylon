@@ -1,5 +1,5 @@
 /**
- * GremiusCMS ESLint Configuration — Flat Config (ESLint v9)
+ * Kitsuden ESLint Configuration — Flat Config (ESLint v9)
  * Style and code-quality only; type-checking is handled by `tsc --noEmit`.
  */
 import js from "@eslint/js";
@@ -40,6 +40,24 @@ export default tseslint.config(
       "**/*.bin",
       "packages/testing/diag.ts",
       "packages/cli/test-vibecoder-app/**",
+      "**/.venv*/**",
+      "packages/admin/.venv-admin/**",
+      "**/tmp_*.py",
+      // Salida del bundler que queda suelta en el arbol (esta en .gitignore,
+      // pero el flat config de ESLint NO lee .gitignore). Son ficheros de una
+      // sola linea de hasta 8 MB: al lintarlos, la cache de resultados se
+      // serializa y revienta con `RangeError: Invalid string length`, asi que
+      // `pnpm lint` —y con el `pnpm qa`— no terminaba nunca en local.
+      "**/tmp_build_*/**",
+      "**/tserrors-*.txt",
+      "**/build-diag*.txt",
+      "**/kitsuden_progress.txt",
+      "**/progress.txt",
+      "**/tmp_labels.txt",
+      "**/null",
+      "**/api.err",
+      "**/api.log",
+      "**/*.test-results.*",
     ],
   },
 
@@ -106,7 +124,20 @@ export default tseslint.config(
       "prefer-const": "warn",
       "no-var": "error",
       "object-shorthand": "warn",
-      eqeqeq: ["warn", "always"],
+      // `x != null` es el idioma para "ni null ni undefined" y se usa a
+      // propósito en todo el repo. Marcarlo empuja a "arreglarlo" a `!== null`,
+      // que deja pasar `undefined` — o sea, la regla estaba generando bugs en
+      // vez de evitarlos. Con `null: "ignore"` se sigue persiguiendo el `==`
+      // de verdad, que es el que escondía el fallo de los filtros de datasets.
+      eqeqeq: ["warn", "always", { null: "ignore" }],
+      // Los espacios de ancho cero que hay por el repo NO son basura pegada:
+      // están dentro de JSDoc, y sirven para escribir un `*` seguido de `/`
+      // dentro del propio comentario sin cerrarlo. Es la única forma de
+      // documentar un glob como `packages/core/*​/migrations` o de citar
+      // `import(/* @vite-ignore *​/ ...)`. Quitarlos rompería el comentario;
+      // por eso se salta el chequeo AHÍ y solo ahí — en código real, un espacio
+      // irregular sigue siendo un error.
+      "no-irregular-whitespace": ["error", { skipComments: true }],
       "no-useless-escape": "off",
       "no-empty": "off",
       "no-case-declarations": "off",
@@ -128,9 +159,30 @@ export default tseslint.config(
     },
   },
 
-  // ── Scripts ──
+  // ── Scripts, CLI y runners de test ──
+  // `console` es la interfaz de usuario aquí (no logging de servidor), así que
+  // la regla no aplica: CLI imprime a stdout por diseño, los scripts de codegen
+  // reportan su progreso y los runners caseros (pre-bun:test) muestran results.
+  //
+  // Se añaden las semillas y el arnés de tests por la misma razón: se invocan a
+  // mano desde una terminal y su salida la lee una persona. Pasarlas por pino
+  // convertiría "✅ 12 usuarios creados" en una línea de JSON.
+  //
+  // Lo que NO entra aquí es el código que corre POR PETICIÓN o POR JOB. Ahí
+  // `console.log` sí es un defecto: la línea sale sin `trace_id` ni
+  // `request_id`, así que no se puede correlacionar con nada y el logging
+  // estructurado que monta `accessLogAndMetrics` deja de servir justo cuando
+  // hace falta. Esos van al logger.
   {
-    files: ["**/scripts/**", "**/migrations/**"],
+    files: [
+      "**/scripts/**",
+      "**/migrations/**",
+      "packages/cli/**",
+      "**/test-*.ts",
+      "**/*.test.ts",
+      "**/db/seed*.ts",
+      "apps/api/src/tests/**",
+    ],
     rules: {
       "no-console": "off",
     },

@@ -1,43 +1,66 @@
-# Arquitectura de GremiusCMS
+# Arquitectura de Kitsuden
 
 ## Propósito a Vista de Pájaro (El "Por qué" y el "Cómo")
 
 Este documento explica las decisiones de arquitectura de alto nivel del proyecto, cómo organizamos el código y por qué se toman ciertas decisiones técnicas relativas al manejo de datos dinámicos.
 
-## Estructura de Carpetas
+## Estructura de Carpetas — La Jerarquía de 3 Niveles
 
-- **`apps/api/` (Core):**
-  Aquí reside el núcleo de la aplicación. Contiene la API principal construida sobre Bun y Hono, configuraciones globales, middlewares, y la capa de base de datos base (esquemas y migraciones core). Es responsable de proveer las primitivas sobre las que operan los demás módulos y de manejar la seguridad, la autenticación y el enrutamiento principal.
+Kitsuden separa **baterías del framework** (lo que toda app querría) de **módulos
+de dominio** (las apps que construyes encima). Ver [CORE.md](CORE.md) para el
+mapa completo y la regla de clasificación.
+
+- **`apps/api/` (Host):**
+  El runtime. API sobre Bun + Hono, middlewares, seguridad, auth, enrutamiento,
+  y servicios del host acoplados al runtime (Vault, Secrets, GraphQL auto).
+
+- **`packages/engine/` (Nivel 1 — Engine):**
+  Primitivos puros del framework, importables por `apps/api` Y por los kons vía
+  `@kitsuden/engine`: authz, validation, errors, `repo()`, request-scope,
+  interceptors, brain, code-graph, system-map, actions.
+
+- **`packages/core/` (Nivel 2 — Kitsuden Core, las baterías):**
+  Capacidades que toda app querría, como paquetes propios: `datasets`
+  (`@kitsuden/datasets`), `media` (`@kitsuden/media`), `blocks` (`@kitsuden/blocks`),
+  `vector-search`, `content-publishing`. Se cargan por el module-loader igual
+  que un kon pero viven aquí para declarar que son infraestructura, no dominio.
+
+- **`packages/kons/` (Nivel 3 — Kons de dominio):**
+  Los módulos de negocio: games, esports, streamers, crm, agile, booking,
+  directory, dms, conta, blog, academy-lms, ocr. Cada uno es una unidad
+  funcional independiente. Un `kon-games` es una app sobre Kitsuden, no una
+  batería del framework.
+
+- **`packages/grimoires/` (Bundles):**
+  Ecosistemas que agrupan kons y definen la experiencia visual. Un grimoire
+  declara qué kons están activos mediante su `grimoire.json`.
 
 - **`packages/admin/` (Admin UI):**
-  Panel de administración construido con React. Permite gestionar datasets, contenido, usuarios, y configuración del sistema.
+  Panel de administración construido con Svelte 5.
 
-- **`packages/grimoires/` (Grimorios/Código Mágico):**
-  Esta ubicación alberga los grimorios — bloques individuales de código mágico con esquemas y rutas. Cada grimoire es una unidad funcional independiente que proporciona una capacidad específica (juegos, torneos, equipos, etc.). Anteriormente se llamaban "módulos".
-
-- **`packages/realms/` (Reinos/Ecosistemas):**
-  Esta ubicación alberga los reinos — ecosistemas de negocio que agrupan grimorios y definen la experiencia visual. Un reino declara qué grimorios están activos mediante su `realm.json`. Anteriormente se llamaban "themes".
+- **`packages/grimoires/` (Reinos/Ecosistemas):**
+  Esta ubicación alberga los reinos — ecosistemas de negocio que agrupan kons y definen la experiencia visual. Un reino declara qué kons están activos mediante su `grimoire.json`. Anteriormente se llamaban "themes".
 
 - **`packages/mcp-server/` (MCP Server):**
-  Implementación del Model Context Protocol para permitir que agentes de IA (Claude, Cursor, etc.) interactúen con Gremius. Expone resources y tools vía SSE.
+  Implementación del Model Context Protocol para permitir que agentes de IA (Claude, Cursor, etc.) interactúen con Kitsuden. Expone resources y tools vía SSE.
 
 - **`packages/shared/` (Shared):**
   Esquemas Zod, tipos TypeScript, y utilidades compartidas entre todos los paquetes.
 
 ## El Flujo de Datos (Data Flow)
 
-El ciclo vital de la información dentro del entorno de Gremius funciona en un esquema de tres fases:
+El ciclo vital de la información dentro del entorno de Kitsuden funciona en un esquema de tres fases:
 
 1. **Entrada por Hono:**
    Cualquier petición (HTTP, inserción o lectura de contenido) toca primero nuestros endpoints expuestos mediante **Hono**. Aquí ocurren procesos como validación de cabeceras, manejo de tokens y control de rate limiting.
 2. **Intercepción por el AppRegistry:**
-   El controlador no procesa la lógica pesada por sí mismo, sino que delega la definición al `AppRegistry` (el registro dinámico de grimorios y esquemas del sistema de base de datos). El registro identifica rápidamente las definiciones de esquemas, los campos requeridos, relaciones dinámicas y validaciones pertinentes a ese módulo Vertical en específico.
+   El controlador no procesa la lógica pesada por sí mismo, sino que delega la definición al `AppRegistry` (el registro dinámico de kons y esquemas del sistema de base de datos). El registro identifica rápidamente las definiciones de esquemas, los campos requeridos, relaciones dinámicas y validaciones pertinentes a ese módulo Vertical en específico.
 3. **Persistencia en JSONB (`data_entries`):**
    Una vez que el manejador consolida y valida los datos, en vez de insertarlos en una tabla estricta fuertemente tipada de su entidad, el payload termina guardándose serializado dinámicamente en una columna de formato JSONB dentro de la tabla global de contenido dinámico `data_entries`.
 
 ## Model Context Protocol (MCP)
 
-Gremius expone un servidor MCP en `/api/mcp` que permite la integración con agentes de IA:
+Kitsuden expone un servidor MCP en `/api/mcp` que permite la integración con agentes de IA:
 
 ### Protocolo
 
@@ -54,18 +77,18 @@ POST /api/mcp       # Envío de mensajes JSON-RPC
 
 ### Tools Disponibles
 
-| Tool                      | Descripción                            |
-| ------------------------- | -------------------------------------- |
-| `gremius_query_dataset`   | Query registros con filtros opcionales |
-| `gremius_insert_record`   | Insertar nuevo registro en dataset     |
-| `gremius_dispatch_worker` | Encolar trabajo en BullMQ              |
+| Tool                       | Descripción                            |
+| -------------------------- | -------------------------------------- |
+| `kitsuden_query_dataset`   | Query registros con filtros opcionales |
+| `kitsuden_insert_record`   | Insertar nuevo registro en dataset     |
+| `kitsuden_dispatch_worker` | Encolar trabajo en BullMQ              |
 
 ### Resources Disponibles
 
-| Resource  | URI                   |
-| --------- | --------------------- |
-| Datasets  | `gremius://datasets`  |
-| Grimoires | `gremius://grimoires` |
+| Resource | URI                   |
+| -------- | --------------------- |
+| Datasets | `kitsuden://datasets` |
+| Kons     | `kitsuden://kons`     |
 
 ## Decisiones Clave (ADR - Architecture Decision Records)
 
@@ -85,7 +108,7 @@ Usando `set_config('app.current_user_id', ...)` inyectamos el contexto de usuari
 
 > **Exponemos funcionalidades del CMS vía MCP en lugar de APIs ad-hoc para cada agente.**
 
-El protocolo estándar MCP permite que cualquier agente compatible (Claude Desktop, Cursor, etc.) se conecte a Gremius sin integraciones específicas. El servidor MCP reutiliza el mismo código de la API y respeta las mismas políticas de seguridad (RLS, auth).
+El protocolo estándar MCP permite que cualquier agente compatible (Claude Desktop, Cursor, etc.) se conecte a Kitsuden sin integraciones específicas. El servidor MCP reutiliza el mismo código de la API y respeta las mismas políticas de seguridad (RLS, auth).
 
 ---
 
@@ -106,7 +129,7 @@ flowchart TD
 
     subgraph Ecosistema Modular
         Reg <-.->|Consulta
- Definiciones / Esquemas| Vert[packages/grimoires/<br/>Módulos Verticales]
+ Definiciones / Esquemas| Vert[packages/kons/<br/>Módulos Verticales]
     end
 
     subgraph Base de Datos PostgreSQL

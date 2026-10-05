@@ -8,17 +8,17 @@ import type { AgentAuthContext } from "../../apps/api/src/services/agent-auth";
 describe("Agent Authentication", () => {
   describe("Token Format", () => {
     test("should validate NHI token format", () => {
-      const validToken = "grm_agent_test_abc123xyz";
-      const tokenPattern = /^grm_agent_[a-z-]+_[A-Za-z0-9_-]{43}$/;
+      const validToken = "kitsuden_agent_test_abc123xyz";
+      const tokenPattern = /^kitsuden_agent_[a-z-]+_[A-Za-z0-9_-]{43}$/;
 
       // Note: Using simplified pattern for test
-      const simplePattern = /^grm_agent_/;
+      const simplePattern = /^kitsuden_agent_/;
       expect(validToken).toMatch(simplePattern);
     });
 
     test("should reject legacy API key format", () => {
-      const legacyKey = "gremius_sk_abc123";
-      const nhiPattern = /^grm_agent_/;
+      const legacyKey = "kitsuden_sk_abc123";
+      const nhiPattern = /^kitsuden_agent_/;
 
       expect(legacyKey).not.toMatch(nhiPattern);
     });

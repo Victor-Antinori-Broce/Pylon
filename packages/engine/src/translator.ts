@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * GREMIUS QL ENGINE - Traductor Prisma JSON a Drizzle SQL
+ * KITSUDEN QL ENGINE - Traductor Prisma JSON a Drizzle SQL
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Traduce consultas en formato Prisma JSON a sentencias SQL seguras mediante
@@ -16,7 +16,7 @@
  *
  * @example
  * ```typescript
- * const result = await parseGremiusQuery(agentIdentities, {
+ * const result = await parseKitsudenQuery(agentIdentities, {
  *   where: {
  *     AND: [
  *       { isActive: true },
@@ -77,8 +77,8 @@ export interface WhereFilter {
   NOT?: WhereFilter;
 }
 
-/** Opciones de consulta Gremius QL */
-export interface GremiusQueryOptions {
+/** Opciones de consulta Kitsuden QL */
+export interface KitsudenQueryOptions {
   /** Filtros where */
   where?: WhereFilter;
   /** Relaciones a expandir */
@@ -94,7 +94,7 @@ export interface GremiusQueryOptions {
 }
 
 /** Resultado de consulta */
-export interface GremiusQueryResult<T = any> {
+export interface KitsudenQueryResult<T = any> {
   data: T[];
   meta: {
     total: number;
@@ -107,14 +107,14 @@ export interface GremiusQueryResult<T = any> {
 }
 
 /** Error semántico de validación */
-export class GremiusQLError extends Error {
+export class KitsudenQLError extends Error {
   constructor(
     message: string,
     public code: string,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
-    this.name = "GremiusQLError";
+    this.name = "KitsudenQLError";
   }
 }
 
@@ -311,7 +311,7 @@ function buildOperatorCondition(
       return lte(column, value);
     case "in":
       if (!Array.isArray(value)) {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           `El operador "in" requiere un array de valores`,
           "INVALID_OPERATOR_VALUE",
           { operator, value, expected: "array" }
@@ -320,7 +320,7 @@ function buildOperatorCondition(
       return inArray(column, value);
     case "contains":
       if (typeof value !== "string") {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           `El operador "contains" requiere un string`,
           "INVALID_OPERATOR_VALUE",
           { operator, value, expected: "string" }
@@ -331,7 +331,7 @@ function buildOperatorCondition(
       return ilike(column, `%${escapedValue}%`);
     case "startsWith":
       if (typeof value !== "string") {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           `El operador "startsWith" requiere un string`,
           "INVALID_OPERATOR_VALUE",
           { operator, value, expected: "string" }
@@ -341,7 +341,7 @@ function buildOperatorCondition(
       return ilike(column, `${escapedStart}%`);
     case "endsWith":
       if (typeof value !== "string") {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           `El operador "endsWith" requiere un string`,
           "INVALID_OPERATOR_VALUE",
           { operator, value, expected: "string" }
@@ -350,7 +350,7 @@ function buildOperatorCondition(
       const escapedEnd = value.replace(/[%_]/g, "\\$&");
       return ilike(column, `%${escapedEnd}`);
     default:
-      throw new GremiusQLError(`Operador no soportado: ${operator}`, "UNSUPPORTED_OPERATOR", {
+      throw new KitsudenQLError(`Operador no soportado: ${operator}`, "UNSUPPORTED_OPERATOR", {
         operator,
         supportedOperators: [
           "eq",
@@ -392,10 +392,13 @@ function parseWhereClause(table: PgTable, where: WhereFilter | undefined): SQL |
     // Operador lógico AND
     if (key === "AND") {
       if (!Array.isArray(value)) {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           "AND requiere un array de condiciones",
           "INVALID_LOGICAL_OPERATOR",
-          { key, value }
+          {
+            key,
+            value,
+          }
         );
       }
       const andConditions = value
@@ -410,10 +413,13 @@ function parseWhereClause(table: PgTable, where: WhereFilter | undefined): SQL |
     // Operador lógico OR
     if (key === "OR") {
       if (!Array.isArray(value)) {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           "OR requiere un array de condiciones",
           "INVALID_LOGICAL_OPERATOR",
-          { key, value }
+          {
+            key,
+            value,
+          }
         );
       }
       const orConditions = value
@@ -428,10 +434,13 @@ function parseWhereClause(table: PgTable, where: WhereFilter | undefined): SQL |
     // Operador lógico NOT
     if (key === "NOT") {
       if (typeof value !== "object" || Array.isArray(value)) {
-        throw new GremiusQLError(
+        throw new KitsudenQLError(
           "NOT requiere un objeto de condiciones",
           "INVALID_LOGICAL_OPERATOR",
-          { key, value }
+          {
+            key,
+            value,
+          }
         );
       }
       const notCondition = parseWhereClause(table, value as WhereFilter);
@@ -445,7 +454,7 @@ function parseWhereClause(table: PgTable, where: WhereFilter | undefined): SQL |
     if (!validateColumnExists(table, key)) {
       const tableName = getTableName(table);
       const availableColumns = getTableColumns(table);
-      throw new GremiusQLError(
+      throw new KitsudenQLError(
         `Columna "${key}" no existe en la tabla "${tableName}"`,
         "COLUMN_NOT_FOUND",
         {
@@ -465,7 +474,7 @@ function parseWhereClause(table: PgTable, where: WhereFilter | undefined): SQL |
     if (value && typeof value === "object" && !Array.isArray(value)) {
       for (const [op, opValue] of Object.entries(value)) {
         if (!validateOperator(op)) {
-          throw new GremiusQLError(`Operador "${op}" no soportado`, "UNSUPPORTED_OPERATOR", {
+          throw new KitsudenQLError(`Operador "${op}" no soportado`, "UNSUPPORTED_OPERATOR", {
             operator: op,
             column: key,
             supportedOperators: [
@@ -524,7 +533,7 @@ function buildWithObject(
     const relation = tableRelations.get(relName);
     if (!relation) {
       const availableRelations = Array.from(tableRelations.keys());
-      throw new GremiusQLError(
+      throw new KitsudenQLError(
         `Relación "${relName}" no existe en la tabla "${tableName}"`,
         "RELATION_NOT_FOUND",
         {
@@ -553,7 +562,7 @@ async function executeWithRelations<T>(
   table: PgTable,
   whereClause: SQL | undefined,
   withObj: Record<string, true | { with: Record<string, true> }> | undefined,
-  options: GremiusQueryOptions
+  options: KitsudenQueryOptions
 ): Promise<T[]> {
   const tableName = getTableName(table);
   const limit = Math.min(Math.max(1, options.limit ?? 50), 1000);
@@ -590,7 +599,7 @@ async function executeWithRelations<T>(
     return results as T[];
   } catch (error) {
     // Si falla el query API, hacer fallback al método tradicional
-    console.warn(`[GremiusQL] Query API falló para ${tableName}, usando fallback:`, error);
+    console.warn(`[KitsudenQL] Query API falló para ${tableName}, usando fallback:`, error);
     return executeFallback<T>(table, whereClause, options);
   }
 }
@@ -602,7 +611,7 @@ async function executeWithRelations<T>(
 async function executeFallback<T>(
   table: PgTable,
   whereClause: SQL | undefined,
-  options: GremiusQueryOptions
+  options: KitsudenQueryOptions
 ): Promise<T[]> {
   const limit = Math.min(Math.max(1, options.limit ?? 50), 1000);
   const offset = Math.max(0, options.offset ?? 0);
@@ -649,7 +658,7 @@ async function expandRelationsManually(
     expand.map(async (relName) => {
       const relation = relationsMap.get(tableName)?.get(relName);
       if (!relation) {
-        console.warn(`[GremiusQL] Relación no encontrada: ${tableName}.${relName}`);
+        console.warn(`[KitsudenQL] Relación no encontrada: ${tableName}.${relName}`);
         return { relName, data: new Map() };
       }
 
@@ -723,7 +732,7 @@ async function loadRelationData(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Parsea y ejecuta una consulta Gremius QL.
+ * Parsea y ejecuta una consulta Kitsuden QL.
  *
  * Traduce un objeto JSON estilo Prisma a una consulta SQL ejecutable mediante Drizzle.
  *
@@ -733,7 +742,7 @@ async function loadRelationData(
  *
  * @example
  * ```typescript
- * const result = await parseGremiusQuery(agentIdentities, {
+ * const result = await parseKitsudenQuery(agentIdentities, {
  *   where: {
  *     AND: [
  *       { isActive: true },
@@ -747,10 +756,10 @@ async function loadRelationData(
  * });
  * ```
  */
-export async function parseGremiusQuery<T = any>(
+export async function parseKitsudenQuery<T = any>(
   table: PgTable,
-  jsonPayload: GremiusQueryOptions
-): Promise<GremiusQueryResult<T>> {
+  jsonPayload: KitsudenQueryOptions
+): Promise<KitsudenQueryResult<T>> {
   const startTime = performance.now();
   const tableName = getTableName(table);
 
@@ -769,7 +778,13 @@ export async function parseGremiusQuery<T = any>(
     if (whereClause) {
       totalQuery = totalQuery.where(whereClause) as any;
     }
-    const [{ count: total }] = await totalQuery;
+    // `count(*)` es bigint, y los drivers de Postgres lo entregan como STRING
+    // para no perder precisión. Sin la conversión, `total` acaba siendo "42" y
+    // la comparación de `hasMore` (`offset + data.length < total`) compara un
+    // número con una cadena — que en JavaScript no falla, solo da resultados
+    // equivocados en silencio.
+    const [filaTotal] = await totalQuery;
+    const total = Number(filaTotal?.count ?? 0);
 
     const queryTimeMs = performance.now() - startTime;
 
@@ -785,12 +800,12 @@ export async function parseGremiusQuery<T = any>(
       },
     };
   } catch (error) {
-    if (error instanceof GremiusQLError) {
+    if (error instanceof KitsudenQLError) {
       throw error;
     }
 
     // Wrap unexpected errors
-    throw new GremiusQLError(
+    throw new KitsudenQLError(
       `Error ejecutando consulta: ${(error as Error).message}`,
       "QUERY_EXECUTION_ERROR",
       { table: tableName, payload: jsonPayload, originalError: error }
@@ -799,21 +814,21 @@ export async function parseGremiusQuery<T = any>(
 }
 
 /**
- * Valida una consulta Gremius QL sin ejecutarla.
+ * Valida una consulta Kitsuden QL sin ejecutarla.
  *
  * @returns Objeto con validación y lista de errores si los hay
  *
  * @example
  * ```typescript
- * const { valid, errors } = validateGremiusQuery(agentIdentities, {
+ * const { valid, errors } = validateKitsudenQuery(agentIdentities, {
  *   where: { level: { gte: 50 } },
  *   expand: ["traces"]
  * });
  * ```
  */
-export function validateGremiusQuery(
+export function validateKitsudenQuery(
   table: PgTable,
-  jsonPayload: GremiusQueryOptions
+  jsonPayload: KitsudenQueryOptions
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   const tableName = getTableName(table);
@@ -822,7 +837,7 @@ export function validateGremiusQuery(
     // Intentar parsear el where (esto valida columnas y operadores)
     parseWhereClause(table, jsonPayload.where);
   } catch (error) {
-    if (error instanceof GremiusQLError) {
+    if (error instanceof KitsudenQLError) {
       errors.push(`${error.code}: ${error.message}`);
     } else {
       errors.push(`Error inesperado: ${(error as Error).message}`);
@@ -910,7 +925,7 @@ export function getRelationsMap(): Map<string, Map<string, RelationDef>> {
  */
 export function debugQuery(
   table: PgTable,
-  jsonPayload: GremiusQueryOptions
+  jsonPayload: KitsudenQueryOptions
 ): { sql: string; params: any[] } {
   const tableName = getTableName(table);
 

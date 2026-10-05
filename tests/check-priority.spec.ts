@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 const ADMIN = process.env.ADMIN_URL || "http://localhost:5173";
 
-test.describe("Grimoire Custom UI vs Data Explorer Priority", () => {
+test.describe("Kon Custom UI vs Data Explorer Priority", () => {
   test.setTimeout(60000);
 
   test("Verify rendering priorities", async ({ page }) => {
@@ -14,20 +14,20 @@ test.describe("Grimoire Custom UI vs Data Explorer Priority", () => {
     if (page.url().includes("/setup")) {
       await page.waitForSelector('input[type="text"]', { timeout: 20000 });
       await page.locator('input[type="text"]').fill("Admin PriorityTest");
-      await page.locator('input[type="email"]').fill("priority@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("priority@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
       await page.waitForURL(/\/$/, { timeout: 20_000 });
     } else if (page.url().includes("/login")) {
       await page.waitForSelector('input[type="email"]');
-      await page.locator('input[type="email"]').fill("admin@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
 
       try {
         await page.waitForURL(/\/$/, { timeout: 15_000 });
       } catch (e) {
-        await page.locator('input[type="email"]').fill("priority@gremius.gg");
+        await page.locator('input[type="email"]').fill("priority@kitsuden.gg");
         await page.locator('button[type="submit"]').click();
         await page.waitForURL(/\/$/, { timeout: 15_000 });
       }

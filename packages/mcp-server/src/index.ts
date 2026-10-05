@@ -1,8 +1,8 @@
 /**
- * Gremius MCP Server
+ * Kitsuden MCP Server
  *
  * Model Context Protocol server for AI agents (Claude, Cursor, etc.)
- * to interact with Gremius CMS backend.
+ * to interact with Kitsuden CMS backend.
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -25,13 +25,13 @@ export interface McpServerDependencies {
   queue: {
     addJob: (queueName: string, jobName: string, payload: any) => Promise<string | null>;
   };
-  grimoireRegistry: Record<string, any>;
+  konRegistry: Record<string, any>;
 }
 
-export function createGremiusMcpServer(deps: McpServerDependencies): Server {
+export function createKitsudenMcpServer(deps: McpServerDependencies): Server {
   const server = new Server(
     {
-      name: "gremius-mcp-server",
+      name: "kitsuden-mcp-server",
       version: "1.0.0",
     },
     {
@@ -52,23 +52,23 @@ export function createGremiusMcpServer(deps: McpServerDependencies): Server {
 }
 
 function registerResourceHandlers(server: Server, deps: McpServerDependencies) {
-  const { db, schema, grimoireRegistry } = deps;
+  const { db, schema, konRegistry } = deps;
 
   // List available resources
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
         {
-          uri: "gremius://datasets",
-          name: "Gremius Datasets",
+          uri: "kitsuden://datasets",
+          name: "Kitsuden Datasets",
           mimeType: "application/json",
           description: "List of all active dynamic datasets in the CMS",
         },
         {
-          uri: "gremius://grimoires",
-          name: "Active Grimoires",
+          uri: "kitsuden://kons",
+          name: "Active Kons",
           mimeType: "application/json",
-          description: "List of active core and realm grimoire modules",
+          description: "List of active core and grimoire kon modules",
         },
       ],
     };
@@ -78,7 +78,7 @@ function registerResourceHandlers(server: Server, deps: McpServerDependencies) {
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
 
-    if (uri === "gremius://datasets") {
+    if (uri === "kitsuden://datasets") {
       const allDatasets = await db.select().from(schema.dataSets);
       const mapped = allDatasets.map((ds: any) => ({
         id: ds.id,
@@ -99,13 +99,13 @@ function registerResourceHandlers(server: Server, deps: McpServerDependencies) {
       };
     }
 
-    if (uri === "gremius://grimoires") {
+    if (uri === "kitsuden://kons") {
       return {
         contents: [
           {
             uri,
             mimeType: "application/json",
-            text: JSON.stringify(grimoireRegistry, null, 2),
+            text: JSON.stringify(konRegistry, null, 2),
           },
         ],
       };
@@ -123,7 +123,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
     return {
       tools: [
         {
-          name: "gremius_query_dataset",
+          name: "kitsuden_query_dataset",
           description: "Select and filter records from a specific dataset",
           inputSchema: {
             type: "object",
@@ -145,7 +145,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           },
         },
         {
-          name: "gremius_insert_record",
+          name: "kitsuden_insert_record",
           description: "Insert a new record into a dataset",
           inputSchema: {
             type: "object",
@@ -172,14 +172,14 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           },
         },
         {
-          name: "gremius_dispatch_worker",
+          name: "kitsuden_dispatch_worker",
           description: "Enqueue an asynchronous task to Valkey via BullMQ",
           inputSchema: {
             type: "object",
             properties: {
               queueName: {
                 type: "string",
-                description: "Name of the queue (e.g., 'gremius-email', 'gremius-webhooks')",
+                description: "Name of the queue (e.g., 'kitsuden-email', 'kitsuden-webhooks')",
               },
               jobName: {
                 type: "string",
@@ -194,7 +194,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           },
         },
         {
-          name: "gremius_encode_toon",
+          name: "kitsuden_encode_toon",
           description:
             "Encode arbitrary JSON data into TOON (Token-Optimized Object Notation) format to save LLM context window space",
           inputSchema: {
@@ -218,7 +218,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
 
     try {
       switch (name) {
-        case "gremius_query_dataset": {
+        case "kitsuden_query_dataset": {
           const { datasetId, limit = 50, status } = args as any;
           const { eq, and } = await import("drizzle-orm");
 
@@ -248,7 +248,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           };
         }
 
-        case "gremius_insert_record": {
+        case "kitsuden_insert_record": {
           const { datasetId, title, data, status = "draft" } = args as any;
 
           const [newRecord] = await db
@@ -271,7 +271,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           };
         }
 
-        case "gremius_dispatch_worker": {
+        case "kitsuden_dispatch_worker": {
           const { queueName, jobName, payload } = args as any;
 
           try {
@@ -297,7 +297,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           }
         }
 
-        case "gremius_encode_toon": {
+        case "kitsuden_encode_toon": {
           const { data } = args as any;
 
           // We must import it. If mcp-server is used outside api, it might need to provide a function in deps.

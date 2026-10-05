@@ -93,12 +93,12 @@ Add `mermaid` to `apps/admin/package.json`:
 
 ### Build Log Analysis
 
-| Stage            | Status  | Duration | Notes                        |
-| ---------------- | ------- | -------- | ---------------------------- |
-| dependencies     | ✅ OK   | Cached   | pnpm install successful      |
-| builder (shared) | ✅ OK   | 8.9s     | @gremius/shared build        |
-| builder (api)    | ✅ OK   | 4.6s     | @gremius/api build (6.86 MB) |
-| builder (admin)  | ❌ FAIL | 20.6s    | Missing mermaid dependency   |
+| Stage            | Status  | Duration | Notes                         |
+| ---------------- | ------- | -------- | ----------------------------- |
+| dependencies     | ✅ OK   | Cached   | pnpm install successful       |
+| builder (shared) | ✅ OK   | 8.9s     | @kitsuden/shared build        |
+| builder (api)    | ✅ OK   | 4.6s     | @kitsuden/api build (6.86 MB) |
+| builder (admin)  | ❌ FAIL | 20.6s    | Missing mermaid dependency    |
 
 ### Warnings (Non-blocking)
 
@@ -178,8 +178,8 @@ apps/admin/src/routes/
 ├── formulas/+page.svelte
 ├── g/[id]/+page.svelte
 ├── games/+page.svelte
-├── gremius-crm/+page.svelte
-├── grimoires/+page.svelte
+├── kitsuden-crm/+page.svelte
+├── kons/+page.svelte
 ├── matches/+page.svelte
 ├── mcp/+page.svelte
 ├── media/+page.svelte
@@ -189,7 +189,7 @@ apps/admin/src/routes/
 ├── posts/[id]/+page.svelte
 ├── posts/new/+page.svelte
 ├── promote/+page.svelte
-├── realms/+page.svelte
+├── grimoires/+page.svelte
 ├── settings/+page.svelte
 ├── streamers/+page.svelte
 ├── tags/+page.svelte
@@ -244,7 +244,7 @@ pnpm add mermaid
 cd apps/admin && pnpm add mermaid
 
 # 2. Rebuild Docker
-docker build -f docker/Dockerfile.prod --target api -t gremius-api:test .
+docker build -f docker/Dockerfile.prod --target api -t kitsuden-api:test .
 
 # 3. Test full stack
 docker-compose up -d

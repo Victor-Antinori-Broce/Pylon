@@ -7,7 +7,7 @@
  * Uses REAL Drizzle ORM with pg-mem or PostgreSQL transactions
  */
 
-import type { GrimoireDefinition } from "@gremius/shared";
+import type { KonDefinition } from "@kitsuden/shared";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { newDb, DataType } from "pg-mem";
@@ -17,13 +17,7 @@ import { createTestContext as createBaseContext } from "./context.js";
 import { createTestEvents } from "./events.js";
 import { loadFixtures } from "./fixtures.js";
 import { createTestHttpClient } from "./http.js";
-import type {
-  SandboxConfig,
-  TestSandbox,
-  TestGrimoire,
-  TestGrimoireContext,
-  TestDatabase,
-} from "./types.js";
+import type { SandboxConfig, TestSandbox, TestKon, TestKonContext, TestDatabase } from "./types.js";
 
 export interface DrizzleSandboxConfig extends SandboxConfig {
   /** Database strategy - defaults to pg-mem for speed */
@@ -130,7 +124,7 @@ export async function createDrizzleSandbox(
         }
       },
     },
-  } as TestGrimoireContext;
+  } as TestKonContext;
 
   // 3. Track events
   const events = createTestEvents();
@@ -186,18 +180,18 @@ export async function createDrizzleSandbox(
     },
   };
 
-  // 5. Load grimoires
-  const grimoires: Record<string, TestGrimoire> = {};
+  // 5. Load kons
+  const kons: Record<string, TestKon> = {};
 
-  for (const grimoireId of config.grimoires) {
-    const grimoire = await loadGrimoire(grimoireId, context, events, drizzleInstance);
-    if (grimoire) {
-      grimoires[grimoireId] = grimoire;
+  for (const konId of config.kons) {
+    const kon = await loadKon(konId, context, events, drizzleInstance);
+    if (kon) {
+      kons[konId] = kon;
     }
   }
 
   // 6. HTTP client
-  const http = createTestHttpClient(grimoires, context);
+  const http = createTestHttpClient(kons, context);
 
   // 7. Assertions
   const assert = createTestAssertions(db, events);
@@ -206,7 +200,7 @@ export async function createDrizzleSandbox(
   const sandbox = {
     id: sandboxId,
     context,
-    grimoires,
+    kons,
     fixtures: {},
     http,
     db,
@@ -220,17 +214,17 @@ export async function createDrizzleSandbox(
         sandbox.fixtures = await loadFixtures(config.fixtures, context);
       }
 
-      for (const grimoire of Object.values(grimoires)) {
-        if (grimoire.definition.hooks?.onStartup) {
-          await grimoire.definition.hooks.onStartup(context);
+      for (const kon of Object.values(kons)) {
+        if (kon.definition.hooks?.onStartup) {
+          await kon.definition.hooks.onStartup(context);
         }
       }
     },
 
     teardown: async () => {
-      for (const grimoire of Object.values(grimoires)) {
-        if (grimoire.definition.hooks?.onDisable) {
-          await grimoire.definition.hooks.onDisable(context);
+      for (const kon of Object.values(kons)) {
+        if (kon.definition.hooks?.onDisable) {
+          await kon.definition.hooks.onDisable(context);
         }
       }
 
@@ -318,7 +312,7 @@ async function createPostgresInstance(schema: Record<string, any>, databaseUrl?:
   const url =
     databaseUrl ||
     process.env.TEST_DATABASE_URL ||
-    "postgres://postgres:postgres@localhost:5432/gremius_test";
+    "postgres://postgres:postgres@localhost:5432/kitsuden_test";
 
   const pool = new Pool({ connectionString: url });
   const db = drizzle(pool, { schema });
@@ -347,21 +341,21 @@ async function createPostgresInstance(schema: Record<string, any>, databaseUrl?:
 }
 
 /**
- * Load grimoire with real Drizzle
+ * Load kon with real Drizzle
  */
-async function loadGrimoire(
-  grimoireId: string,
-  context: TestGrimoireContext,
+async function loadKon(
+  konId: string,
+  context: TestKonContext,
   events: ReturnType<typeof createTestEvents>,
   _drizzleInstance: any
-): Promise<TestGrimoire | null> {
+): Promise<TestKon | null> {
   try {
-    const path = `../../../packages/grimoires/${grimoireId}/index.ts`;
+    const path = `../../../packages/kons/${konId}/index.ts`;
     const module = await import(path);
-    const definition: GrimoireDefinition = module.grimoire || module.default;
+    const definition: KonDefinition = module.kon || module.default;
 
     if (!definition) {
-      console.warn(`Grimoire ${grimoireId} not found`);
+      console.warn(`Kon ${konId} not found`);
       return null;
     }
 
@@ -374,7 +368,7 @@ async function loadGrimoire(
           return (context as any).events.emit(name, data);
         },
       },
-    } as TestGrimoireContext;
+    } as TestKonContext;
 
     const router = definition.createRouter(contextWithEvents);
 
@@ -386,7 +380,7 @@ async function loadGrimoire(
       },
     };
   } catch (error) {
-    console.warn(`Failed to load grimoire ${grimoireId}:`, error);
+    console.warn(`Failed to load kon ${konId}:`, error);
     return null;
   }
 }

@@ -1,15 +1,15 @@
-# Migración: Eliminación de grimoire-formulas + Sistema de Campos Calculados
+# Migración: Eliminación de kon-formulas + Sistema de Campos Calculados
 
 ## ✅ Eliminado
 
-### grimoire-formulas
+### kon-formulas
 
 ```
-packages/grimoires/grimoire-formulas/     ← ELIMINADO
+packages/kons/kon-formulas/     ← ELIMINADO
 packages/admin/src/views/formulas/            ← ELIMINADO
 ```
 
-**Razón**: Era una vista custom innecesaria. Los campos calculados deben ser una **feature del core**, no un grimoire separado.
+**Razón**: Era una vista custom innecesaria. Los campos calculados deben ser una **feature del core**, no un kon separado.
 
 ---
 
@@ -73,16 +73,16 @@ Wizard de 4 pasos:
 
 ## 📊 Comparación: Antes vs Después
 
-| Aspecto           | Antes (grimoire-formulas) | Después (Sistema Integrado) |
-| ----------------- | ------------------------- | --------------------------- |
-| **Arquitectura**  | Grimoire separado         | Feature del core            |
-| **Ubicación**     | Vista custom aparte       | Integrado en DataExplorer   |
-| **Configuración** | JSON manual               | Builder visual              |
-| **Tipos**         | Solo fórmulas             | 8 tipos de cálculo          |
-| **Formatos**      | Limitado                  | 6 tipos (currency, %, etc.) |
-| **KPIs**          | ❌ No soportado           | ✅ Targets y alertas        |
-| **Agregaciones**  | ❌ No soportado           | ✅ Count/Sum/Avg de tablas  |
-| **Relaciones**    | ❌ No soportado           | ✅ Lookup entre tablas      |
+| Aspecto           | Antes (kon-formulas) | Después (Sistema Integrado) |
+| ----------------- | -------------------- | --------------------------- |
+| **Arquitectura**  | Kon separado         | Feature del core            |
+| **Ubicación**     | Vista custom aparte  | Integrado en DataExplorer   |
+| **Configuración** | JSON manual          | Builder visual              |
+| **Tipos**         | Solo fórmulas        | 8 tipos de cálculo          |
+| **Formatos**      | Limitado             | 6 tipos (currency, %, etc.) |
+| **KPIs**          | ❌ No soportado      | ✅ Targets y alertas        |
+| **Agregaciones**  | ❌ No soportado      | ✅ Count/Sum/Avg de tablas  |
+| **Relaciones**    | ❌ No soportado      | ✅ Lookup entre tablas      |
 
 ---
 
@@ -142,7 +142,7 @@ function addKpi(field: CalculatedField) {
 
 ### Eliminados
 
-- ❌ `packages/grimoires/grimoire-formulas/`
+- ❌ `packages/kons/kon-formulas/`
 - ❌ `packages/admin/src/views/formulas/FormulasView.svelte`
 
 ### Creados
@@ -159,7 +159,7 @@ function addKpi(field: CalculatedField) {
 
 ## 🚀 Próximos Pasos
 
-1. **Integrar con DataExplorer**: Que los campos calculados del grimoire.json se rendericen automáticamente
+1. **Integrar con DataExplorer**: Que los campos calculados del kon.json se rendericen automáticamente
 2. **API Backend**: Endpoints para evaluar fórmulas y agregaciones
 3. **Persistencia**: Guardar configuración de campos calculados en la base de datos
 4. **Validación**: Validar expresiones y dependencias circulares

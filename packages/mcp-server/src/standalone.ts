@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Gremius MCP Server — Standalone Mode (Enterprise)
+ * Kitsuden MCP Server — Standalone Mode (Enterprise)
  *
  * Full MCP server with tools for:
  *   - Explorer table CRUD (list, create, update, delete)
@@ -13,7 +13,7 @@
  * IDE Support: Cursor, VS Code, Claude Desktop, Windsurf
  *
  * Usage:
- *   GREMIUS_API_URL=http://localhost:3001 bun run src/standalone.ts
+ *   KITSUDEN_API_URL=http://localhost:3001 bun run src/standalone.ts
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -31,16 +31,18 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+import { DOMAIN_TOOL_DEFINITIONS, runDomainTool } from "./herramientas-de-dominio.js";
+
 const app = new Hono();
 
 // ═══════════════════════════════════════════════════════════════
 // Configuration
 // ═══════════════════════════════════════════════════════════════
 
-const API_URL = process.env.GREMIUS_API_URL || "http://localhost:3000";
-const API_TOKEN = process.env.GREMIUS_API_TOKEN || "";
+const API_URL = process.env.KITSUDEN_API_URL || "http://localhost:3000";
+const API_TOKEN = process.env.KITSUDEN_API_TOKEN || "";
 const PORT = parseInt(process.env.PORT || "3002");
-const SERVER_NAME = "gremius-mcp-server";
+const SERVER_NAME = "kitsuden-mcp-server";
 const SERVER_VERSION = "1.0.0";
 
 // ═══════════════════════════════════════════════════════════════
@@ -80,7 +82,9 @@ async function apiRequest(
   if (res.status === 204) return null;
 
   const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/vnd.toon")) {
+  // La guía para agentes (`/llms.txt`) es Markdown: sin esto `res.json()`
+  // lanzaba y la herramienta que la sirve fallaba con un error de JSON.
+  if (contentType.includes("application/vnd.toon") || !contentType.includes("json")) {
     return await res.text();
   }
 
@@ -146,20 +150,26 @@ app.get("/health", (c) => {
 // ═══════════════════════════════════════════════════════════════
 
 const TOOL_DEFINITIONS = [
+  // ── Dominio: torneos, tier lists, catálogos, emisión ──
+  // Primero, a propósito: un agente lee la lista de arriba abajo, y las
+  // genéricas de abajo le invitan a escribir filas a mano saltándose las
+  // reglas del dominio.
+  ...DOMAIN_TOOL_DEFINITIONS,
+
   // ── Explorer CRUD ──
   {
-    name: "gremius_list_tables",
+    name: "kitsuden_list_tables",
     description:
-      "List all available data tables in Gremius with their row counts. Use this first to discover what data exists.",
+      "List all available data tables in Kitsuden with their row counts. Use this first to discover what data exists.",
     inputSchema: {
       type: "object",
       properties: {},
     },
   },
   {
-    name: "gremius_query_table",
+    name: "kitsuden_query_table",
     description:
-      "Query records from any Gremius table with pagination, sorting, and filtering. Returns data + column metadata.",
+      "Query records from any Kitsuden table with pagination, sorting, and filtering. Returns data + column metadata.",
     inputSchema: {
       type: "object",
       properties: {
@@ -198,9 +208,9 @@ const TOOL_DEFINITIONS = [
     },
   },
   {
-    name: "gremius_create_record",
+    name: "kitsuden_create_record",
     description:
-      "Create a new record in a Gremius table. Returns the created record with generated ID.",
+      "Create a new record in a Kitsuden table. Returns the created record with generated ID.",
     inputSchema: {
       type: "object",
       properties: {
@@ -208,15 +218,15 @@ const TOOL_DEFINITIONS = [
         data: {
           type: "object",
           description:
-            "Record data as key-value pairs. Use gremius_get_schema first to see available fields.",
+            "Record data as key-value pairs. Use kitsuden_get_schema first to see available fields.",
         },
       },
       required: ["table", "data"],
     },
   },
   {
-    name: "gremius_update_record",
-    description: "Update an existing record in a Gremius table by ID.",
+    name: "kitsuden_update_record",
+    description: "Update an existing record in a Kitsuden table by ID.",
     inputSchema: {
       type: "object",
       properties: {
@@ -228,8 +238,8 @@ const TOOL_DEFINITIONS = [
     },
   },
   {
-    name: "gremius_delete_record",
-    description: "Delete a record from a Gremius table by ID. This action is permanent.",
+    name: "kitsuden_delete_record",
+    description: "Delete a record from a Kitsuden table by ID. This action is permanent.",
     inputSchema: {
       type: "object",
       properties: {
@@ -241,7 +251,7 @@ const TOOL_DEFINITIONS = [
   },
   // ── Schema ──
   {
-    name: "gremius_get_schema",
+    name: "kitsuden_get_schema",
     description:
       "Get the JSON Schema for a table. Shows field names, types, required fields, FK relations, and API endpoints. Essential before creating/updating records.",
     inputSchema: {
@@ -254,16 +264,16 @@ const TOOL_DEFINITIONS = [
   },
   // ── Modules ──
   {
-    name: "gremius_list_modules",
-    description: "List all Gremius modules (grimoires) with their enabled/disabled status.",
+    name: "kitsuden_list_modules",
+    description: "List all Kitsuden modules (kons) with their enabled/disabled status.",
     inputSchema: {
       type: "object",
       properties: {},
     },
   },
   {
-    name: "gremius_toggle_module",
-    description: "Enable or disable a Gremius module (grimoire).",
+    name: "kitsuden_toggle_module",
+    description: "Enable or disable a Kitsuden module (kon).",
     inputSchema: {
       type: "object",
       properties: {
@@ -274,7 +284,7 @@ const TOOL_DEFINITIONS = [
   },
   // ── TOON ──
   {
-    name: "gremius_encode_toon",
+    name: "kitsuden_encode_toon",
     description:
       "Encode any JSON data into TOON (Token-Optimized Object Notation) format. TOON uses ~60% fewer LLM tokens than JSON. Use this when you need to include large datasets in your context.",
     inputSchema: {
@@ -287,9 +297,9 @@ const TOOL_DEFINITIONS = [
   },
   // ── Datasets (legacy) ──
   {
-    name: "gremius_list_datasets",
+    name: "kitsuden_list_datasets",
     description:
-      "List all dynamic datasets in Gremius (spreadsheet-like collections). For static tables, use gremius_list_tables instead.",
+      "List all dynamic datasets in Kitsuden (spreadsheet-like collections). For static tables, use kitsuden_list_tables instead.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -297,9 +307,9 @@ const TOOL_DEFINITIONS = [
   },
   // ── Escape Hatch ──
   {
-    name: "gremius_api_request",
+    name: "kitsuden_api_request",
     description:
-      "Make a raw HTTP request to any Gremius API endpoint. Use this for APIs not covered by other tools.",
+      "Make a raw HTTP request to any Kitsuden API endpoint. Use this for APIs not covered by other tools.",
     inputSchema: {
       type: "object",
       properties: {
@@ -321,6 +331,201 @@ const TOOL_DEFINITIONS = [
       required: ["path"],
     },
   },
+  // ── Code Intelligence (Graphify + Serena + Sourcegraph style) ──
+  {
+    name: "kitsuden_find_symbol",
+    description:
+      "Find a symbol (function, class, interface, type, const) by name in the codebase. Returns file:line locations plus who calls it and who imports its file. IDE-grade navigation: prefer this over text search when you know the symbol name.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Symbol name (exact or prefix)" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "kitsuden_file_outline",
+    description:
+      "Get the symbol-level skeleton of a source file: imports plus every function/class/interface/type with its line number and export status. Use before reading a whole file to know what's inside.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          description: "File path (relative, e.g. 'apps/api/src/lib/auth.ts')",
+        },
+      },
+      required: ["file"],
+    },
+  },
+  {
+    name: "kitsuden_search_code",
+    description:
+      "Structured regex search across the indexed codebase. Returns file:line hits with the matching text. Sourcegraph-style exact/regex search.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        pattern: { type: "string", description: "Regex pattern (or literal text)" },
+        limit: { type: "number", description: "Max results (default 50)" },
+      },
+      required: ["pattern"],
+    },
+  },
+  {
+    name: "kitsuden_graph_path",
+    description:
+      "Trace the shortest connection between two code entities (files or symbols) through imports/declares/calls edges. Answers 'how is A connected to B?'.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        from: { type: "string", description: "Start: file path or symbol name" },
+        to: { type: "string", description: "End: file path or symbol name" },
+      },
+      required: ["from", "to"],
+    },
+  },
+  {
+    name: "kitsuden_commit_history",
+    description:
+      "Search git history: recent commits, commits touching a path, or commits matching a message. Returns sha, author, date, subject.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Limit to commits touching this path" },
+        grep: { type: "string", description: "Search text in commit messages" },
+        limit: { type: "number", description: "Max commits (default 20)" },
+      },
+    },
+  },
+  {
+    name: "kitsuden_semantic_search",
+    description:
+      "Find code by MEANING, not by exact text. Ask in plain language ('where is auth token validated', 'RLS policy building') and get the most relevant symbols ranked by similarity. Use this when you don't know the exact symbol name; use kitsuden_search_code for exact/regex matches.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Natural-language description of what you're looking for",
+        },
+        limit: { type: "number", description: "Max results (default 10)" },
+      },
+      required: ["query"],
+    },
+  },
+  // ── Semantic EDITING (IDE-grade refactoring) ──
+  {
+    name: "kitsuden_rename_symbol",
+    description:
+      "Rename a symbol and ALL its references across the codebase, using the AST (never touches strings, comments or partial matches). DRY-RUN by default: returns the resulting file contents for review. Pass apply:true to write to disk. Refuses if the name is ambiguous or the new name already exists.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Current symbol name" },
+        newName: { type: "string", description: "New symbol name" },
+        apply: {
+          type: "boolean",
+          description: "Write to disk (default false = dry-run)",
+          default: false,
+        },
+      },
+      required: ["name", "newName"],
+    },
+  },
+  {
+    name: "kitsuden_replace_symbol_body",
+    description:
+      "Replace a symbol's entire declaration with new code, located by name rather than line numbers. DRY-RUN by default; pass apply:true to write. The edit is rejected if the result would not parse as valid TypeScript.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Symbol to replace" },
+        code: {
+          type: "string",
+          description: "Full replacement declaration (e.g. 'export function foo() { ... }')",
+        },
+        apply: {
+          type: "boolean",
+          description: "Write to disk (default false = dry-run)",
+          default: false,
+        },
+      },
+      required: ["name", "code"],
+    },
+  },
+  {
+    name: "kitsuden_safe_delete_symbol",
+    description:
+      "Delete a symbol ONLY if nothing references it — the safe way to remove dead code. Refuses with the list of live references if any exist. DRY-RUN by default; pass apply:true to write.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Symbol to delete" },
+        apply: {
+          type: "boolean",
+          description: "Write to disk (default false = dry-run)",
+          default: false,
+        },
+      },
+      required: ["name"],
+    },
+  },
+  // ── Mail ──
+  {
+    name: "kitsuden_list_mailables",
+    description:
+      "List every email the app can send. Each Mailable is owned by the core ('system.*') or by a kon ('crm.*'), and the name doubles as the queue job name — `emailQueue.add('<name>', data)` sends it. Use this to discover what emails exist before writing code that sends one.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "kitsuden_preview_mail",
+    description:
+      "Render an email WITHOUT sending it: returns subject, HTML and plain-text for the given data and locale. Use it to check how a template looks, or to iterate on the payload a Mailable expects (a render error tells you what's missing).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Mailable name (e.g. 'system.welcome')" },
+        data: { type: "object", description: "Data the Mailable expects (to, name, urls…)" },
+        locale: { type: "string", description: "Locale, e.g. 'es'. Defaults to the app locale." },
+      },
+      required: ["name"],
+    },
+  },
+  // ── Tree retrieval (reasoning over structure, not vector similarity) ──
+  {
+    name: "kitsuden_document_index",
+    description:
+      "Turn a long document into a compact table-of-contents index: every section gets an id, a title and a one-line summary. TWO-STEP RETRIEVAL — call this first, read the index, pick the section ids that answer the question, then call kitsuden_read_sections with those ids. This beats chunk-and-embed on structured docs (guides, manuals, specs) because sections keep their meaning and every answer can cite its source path.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "Full document text (markdown)" },
+        title: { type: "string", description: "Optional document title" },
+        depth: { type: "number", description: "Max heading depth to show (default 3)" },
+      },
+      required: ["content"],
+    },
+  },
+  {
+    name: "kitsuden_read_sections",
+    description:
+      "Step 2 of tree retrieval: read the full content of the section ids you chose from kitsuden_document_index. Returns each section with its citation path ('Guide > Phase 3 > Gear') and source line, so your answer can point at exactly where it came from. Omit `sections` to let a deterministic keyword heuristic pick them instead.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "The same document text" },
+        query: { type: "string", description: "The question being answered" },
+        sections: {
+          type: "array",
+          items: { type: "string" },
+          description: "Section ids from the index (e.g. ['0.1.1', '0.2'])",
+        },
+        maxSections: { type: "number", description: "Max sections to return (default 3)" },
+      },
+      required: ["content", "query"],
+    },
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -329,25 +534,25 @@ const TOOL_DEFINITIONS = [
 
 const RESOURCE_DEFINITIONS = [
   {
-    uri: "gremius://tables",
+    uri: "kitsuden://tables",
     name: "Available Tables",
     mimeType: "application/json",
-    description: "List of all data tables in Gremius with row counts",
+    description: "List of all data tables in Kitsuden with row counts",
   },
   {
-    uri: "gremius://modules",
+    uri: "kitsuden://modules",
     name: "Active Modules",
     mimeType: "application/json",
-    description: "List of all grimoire modules and their status",
+    description: "List of all kon modules and their status",
   },
   {
-    uri: "gremius://health",
+    uri: "kitsuden://health",
     name: "API Health",
     mimeType: "application/json",
-    description: "Gremius API health status and diagnostics",
+    description: "Kitsuden API health status and diagnostics",
   },
   {
-    uri: "gremius://datasets",
+    uri: "kitsuden://datasets",
     name: "Datasets",
     mimeType: "application/json",
     description: "List of all dynamic datasets",
@@ -356,7 +561,7 @@ const RESOURCE_DEFINITIONS = [
 
 const RESOURCE_TEMPLATE_DEFINITIONS = [
   {
-    uriTemplate: "gremius://schema/{table}",
+    uriTemplate: "kitsuden://schema/{table}",
     name: "Table Schema",
     mimeType: "application/json",
     description: "JSON Schema for a specific table",
@@ -392,36 +597,36 @@ function createStandaloneMcpServer() {
     const { uri } = request.params;
 
     try {
-      if (uri === "gremius://tables") {
+      if (uri === "kitsuden://tables") {
         const data = await apiRequest("/explorer/tables");
         return {
           contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
         };
       }
 
-      if (uri === "gremius://modules") {
+      if (uri === "kitsuden://modules") {
         const data = await apiRequest("/modules");
         return {
           contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
         };
       }
 
-      if (uri === "gremius://health") {
+      if (uri === "kitsuden://health") {
         const data = await apiRequest("/health");
         return {
           contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
         };
       }
 
-      if (uri === "gremius://datasets") {
+      if (uri === "kitsuden://datasets") {
         const data = await apiRequest("/datasets");
         return {
           contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
         };
       }
 
-      // Template: gremius://schema/{table}
-      const schemaMatch = uri.match(/^gremius:\/\/schema\/(.+)$/);
+      // Template: kitsuden://schema/{table}
+      const schemaMatch = uri.match(/^kitsuden:\/\/schema\/(.+)$/);
       if (schemaMatch) {
         const table = schemaMatch[1];
         const data = await apiRequest(`/explorer/schema/json/${table}`);
@@ -448,12 +653,12 @@ function createStandaloneMcpServer() {
     try {
       switch (name) {
         // ── Explorer CRUD ──
-        case "gremius_list_tables": {
+        case "kitsuden_list_tables": {
           const data = await apiRequest("/explorer/tables");
           return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
-        case "gremius_query_table": {
+        case "kitsuden_query_table": {
           const {
             table,
             limit = 25,
@@ -488,7 +693,7 @@ function createStandaloneMcpServer() {
           return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
-        case "gremius_create_record": {
+        case "kitsuden_create_record": {
           const { table, data: recordData } = args as any;
           const result = await apiRequest(`/explorer/${table}`, "POST", recordData);
           return {
@@ -501,7 +706,7 @@ function createStandaloneMcpServer() {
           };
         }
 
-        case "gremius_update_record": {
+        case "kitsuden_update_record": {
           const { table, id, data: updateData } = args as any;
           const result = await apiRequest(`/explorer/${table}/${id}`, "PATCH", updateData);
           return {
@@ -514,26 +719,26 @@ function createStandaloneMcpServer() {
           };
         }
 
-        case "gremius_delete_record": {
+        case "kitsuden_delete_record": {
           const { table, id } = args as any;
           await apiRequest(`/explorer/${table}/${id}`, "DELETE");
           return { content: [{ type: "text", text: `Record deleted: ${id}` }] };
         }
 
         // ── Schema ──
-        case "gremius_get_schema": {
+        case "kitsuden_get_schema": {
           const { table } = args as any;
           const data = await apiRequest(`/explorer/schema/json/${table}`);
           return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         // ── Modules ──
-        case "gremius_list_modules": {
+        case "kitsuden_list_modules": {
           const data = await apiRequest("/modules");
           return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
-        case "gremius_toggle_module": {
+        case "kitsuden_toggle_module": {
           const { key } = args as any;
           const result = await apiRequest(`/modules/${key}/toggle`, "POST", {});
           return {
@@ -547,7 +752,7 @@ function createStandaloneMcpServer() {
         }
 
         // ── TOON ──
-        case "gremius_encode_toon": {
+        case "kitsuden_encode_toon": {
           const { data } = args as any;
           const toonOutput = toTOON(data);
           const jsonLen = JSON.stringify(data).length;
@@ -565,13 +770,13 @@ function createStandaloneMcpServer() {
         }
 
         // ── Datasets (legacy) ──
-        case "gremius_list_datasets": {
+        case "kitsuden_list_datasets": {
           const data = await apiRequest("/datasets");
           return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         // ── Escape Hatch ──
-        case "gremius_api_request": {
+        case "kitsuden_api_request": {
           const { method = "GET", path, body, format = "json" } = args as any;
           const data = await apiRequest(path.replace(/^\/api/, ""), method, body, format as any);
           if (typeof data === "string") {
@@ -580,8 +785,135 @@ function createStandaloneMcpServer() {
           return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
-        default:
+        // ── Code Intelligence ──
+        case "kitsuden_find_symbol": {
+          const { name: symbolName } = args as any;
+          const data = await apiRequest(`/code-graph/symbol/${encodeURIComponent(symbolName)}`);
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_file_outline": {
+          const { file } = args as any;
+          const data = await apiRequest(`/code-graph/outline?file=${encodeURIComponent(file)}`);
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_search_code": {
+          const { pattern, limit = 50 } = args as any;
+          const data = await apiRequest(
+            `/code-graph/search?q=${encodeURIComponent(pattern)}&limit=${limit}`
+          );
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_graph_path": {
+          const { from, to } = args as any;
+          const data = await apiRequest(
+            `/code-graph/path?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+          );
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_commit_history": {
+          const { path: histPath, grep, limit = 20 } = args as any;
+          const qs = new URLSearchParams();
+          if (histPath) qs.set("path", histPath);
+          if (grep) qs.set("grep", grep);
+          qs.set("limit", String(limit));
+          const data = await apiRequest(`/code-graph/history?${qs.toString()}`);
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_semantic_search": {
+          const { query, limit = 10 } = args as any;
+          const data = await apiRequest(
+            `/code-graph/semantic?q=${encodeURIComponent(query)}&limit=${limit}`
+          );
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        // ── Semantic editing: dry-run unless apply:true ──
+        case "kitsuden_rename_symbol": {
+          const { name: symName, newName, apply = false } = args as any;
+          const data = await apiRequest("/code-graph/edit/rename", "POST", {
+            name: symName,
+            newName,
+            apply,
+          });
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_replace_symbol_body": {
+          const { name: symName, code, apply = false } = args as any;
+          const data = await apiRequest("/code-graph/edit/replace", "POST", {
+            name: symName,
+            code,
+            apply,
+          });
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_safe_delete_symbol": {
+          const { name: symName, apply = false } = args as any;
+          const data = await apiRequest("/code-graph/edit/delete", "POST", {
+            name: symName,
+            apply,
+          });
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        // ── Mail ──
+        case "kitsuden_list_mailables": {
+          const data = await apiRequest("/mail");
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case "kitsuden_preview_mail": {
+          const { name: mailName, data: mailData, locale } = args as any;
+          const data = await apiRequest("/mail/preview", "POST", {
+            name: mailName,
+            data: mailData ?? {},
+            locale,
+          });
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        // ── Tree retrieval ──
+        case "kitsuden_document_index": {
+          const { content, title, depth } = args as any;
+          const data = await apiRequest("/brain/tree", "POST", { content, title, depth });
+          // Solo el índice: devolver el árbol entero derrotaría el propósito
+          // (el índice cabe en contexto, el documento no).
+          return {
+            content: [
+              {
+                type: "text",
+                text: `${data.title} — ${data.nodeCount} secciones\n\n${data.index}`,
+              },
+            ],
+          };
+        }
+
+        case "kitsuden_read_sections": {
+          const { content, query, sections, maxSections } = args as any;
+          const data = await apiRequest("/brain/tree/retrieve", "POST", {
+            content,
+            query,
+            sections,
+            maxSections,
+          });
+          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+        }
+
+        default: {
+          const deDominio = await runDomainTool(
+            name,
+            (args ?? {}) as Record<string, unknown>,
+            (path, method, body) => apiRequest(path, method, body)
+          );
+          if (deDominio) return deDominio;
           throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+        }
       }
     } catch (error: any) {
       return {
@@ -649,9 +981,9 @@ app.get("/ide-config/:ide", (c) => {
       filename: ".cursor/mcp.json",
       config: {
         mcpServers: {
-          gremius: {
+          kitsuden: {
             url: sseUrl,
-            env: { GREMIUS_API_TOKEN: API_TOKEN || "<your-api-key>" },
+            env: { KITSUDEN_API_TOKEN: API_TOKEN || "<your-api-key>" },
           },
         },
       },
@@ -660,12 +992,12 @@ app.get("/ide-config/:ide", (c) => {
       filename: "claude_desktop_config.json",
       config: {
         mcpServers: {
-          gremius: {
+          kitsuden: {
             command: "npx",
-            args: ["-y", "@gremius/mcp-server"],
+            args: ["-y", "@kitsuden/mcp-server"],
             env: {
-              GREMIUS_API_URL: API_URL,
-              GREMIUS_API_TOKEN: API_TOKEN || "<your-api-key>",
+              KITSUDEN_API_URL: API_URL,
+              KITSUDEN_API_TOKEN: API_TOKEN || "<your-api-key>",
             },
           },
         },
@@ -675,7 +1007,7 @@ app.get("/ide-config/:ide", (c) => {
       filename: ".vscode/settings.json (merge into existing)",
       config: {
         "mcp.servers": {
-          gremius: {
+          kitsuden: {
             url: sseUrl,
           },
         },
@@ -685,7 +1017,7 @@ app.get("/ide-config/:ide", (c) => {
       filename: "~/.codeium/windsurf/mcp_config.json",
       config: {
         mcpServers: {
-          gremius: {
+          kitsuden: {
             serverUrl: sseUrl,
           },
         },
@@ -727,12 +1059,12 @@ app.get("/ide-config", (c) => {
 
 console.log(`
 ╔══════════════════════════════════════════════╗
-║   🧙 Gremius MCP Server v${SERVER_VERSION}            ║
+║   🧙 Kitsuden MCP Server v${SERVER_VERSION}            ║
 ║   Enterprise AI Agent Integration            ║
 ╚══════════════════════════════════════════════╝
 
   API URL:      ${API_URL}
-  Auth:         ${API_TOKEN ? "✅ API Key configured" : "⚠️  No API key (set GREMIUS_API_TOKEN)"}
+  Auth:         ${API_TOKEN ? "✅ API Key configured" : "⚠️  No API key (set KITSUDEN_API_TOKEN)"}
   Port:         ${PORT}
 
   Endpoints:

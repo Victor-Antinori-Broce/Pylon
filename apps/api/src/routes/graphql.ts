@@ -1,17 +1,18 @@
 /**
- * GremiusCMS — Dynamic GraphQL API Layer v2 (100% Auto-Generated)
+ * Kitsuden — Dynamic GraphQL API Layer v2 (100% Auto-Generated)
  *
  * Auto-generated GraphQL schema for ALL content:
  *   - Datasets (data_sets → data_entries JSONB)
- *   - Native tables (any table in mergedSchema from core + grimoires)
+ *   - Native tables (any table in mergedSchema from core + kons)
  *
- * No hardcoded domain types. Any new grimoire or dataset automatically
+ * No hardcoded domain types. Any new kon or dataset automatically
  * appears in the GraphQL schema without code changes.
  *
  * Endpoint: POST /api/graphql
  * Playground: GET /api/graphql (returns GraphiQL HTML)
  */
 
+import { resolveExecutor, messageOf } from "@kitsuden/engine";
 import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
 import {
   GraphQLSchema,
@@ -34,16 +35,25 @@ import { db } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
 import { logger } from "../lib/logger";
 import { buildMergedSchema } from "../lib/schema-merger";
+import { getValkeyClient } from "../lib/valkey";
+import { protectRoute, requireAdmin } from "../middleware/auth-guard";
+import { withTransactionalRLS } from "../middleware/transactional-rls";
 
 export const graphqlRoutes = new Hono();
+
+/**
+ * Executor por-request: dentro de una petición con withTransactionalRLS()
+ * devuelve el `tx` con contexto RLS (Muro de Titanio); fuera de una petición
+ * (build de schema, jobs) devuelve la db global. Los resolvers NUNCA deben
+ * usar `db` directamente — siempre `exec()`.
+ */
+const exec = (): typeof db => resolveExecutor(db) as typeof db;
 
 // ═══════════════════════════════════════════════════════════════
 // CACHE — Distributed via Valkey (with local fallback)
 // ═══════════════════════════════════════════════════════════════
 
-import { getValkeyClient } from "../lib/valkey";
-
-const SCHEMA_CACHE_KEY = "gremius:graphql:schema_version";
+const SCHEMA_CACHE_KEY = "kitsuden:graphql:schema_version";
 let cachedSchema: GraphQLSchema | null = null;
 let schemaBuildTime = 0;
 let localSchemaVersion = 0;
@@ -246,11 +256,14 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
         },
         async resolve(_: any, args: any) {
           try {
-            const [doc] = await db.select().from(table).where(eq(table.id, args.id)).limit(1);
+            const [doc] = await exec().select().from(table).where(eq(table.id, args.id)).limit(1);
             return doc || null;
-          } catch (err: any) {
-            logger.error({ table: tableName, error: err.message }, "GraphQL single query failed");
-            throw new Error(`Failed to query ${tableName}: ${err.message}`);
+          } catch (err: unknown) {
+            logger.error(
+              { table: tableName, error: messageOf(err) },
+              "GraphQL single query failed"
+            );
+            throw new Error(`Failed to query ${tableName}: ${messageOf(err)}`);
           }
         },
       };
@@ -296,8 +309,8 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
           const orderBy = args.order === "asc" ? asc(orderByCol) : desc(orderByCol);
 
           const [docs, [total]] = await Promise.all([
-            db.select().from(table).where(where).orderBy(orderBy).limit(limit).offset(offset),
-            db
+            exec().select().from(table).where(where).orderBy(orderBy).limit(limit).offset(offset),
+            exec()
               .select({ value: sql<number>`count(*)` })
               .from(table)
               .where(where),
@@ -310,9 +323,9 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
             limit,
             hasNextPage: offset + docs.length < (total?.value || 0),
           };
-        } catch (err: any) {
-          logger.error({ table: tableName, error: err.message }, "GraphQL list query failed");
-          throw new Error(`Failed to list ${tableName}: ${err.message}`);
+        } catch (err: unknown) {
+          logger.error({ table: tableName, error: messageOf(err) }, "GraphQL list query failed");
+          throw new Error(`Failed to list ${tableName}: ${messageOf(err)}`);
         }
       },
     };
@@ -341,12 +354,15 @@ async function buildNativeTableMutations(
         try {
           const input = args.input ? { ...args.input } : {};
           delete input.id;
-          const [doc] = await (db.insert(table).values(input).returning() as Promise<any[]>);
+          const [doc] = await (exec().insert(table).values(input).returning() as Promise<any[]>);
           await invalidateGraphQLCache();
           return doc;
-        } catch (err: any) {
-          logger.error({ table: tableName, error: err.message }, "GraphQL create mutation failed");
-          throw new Error(`Failed to create ${tableName}: ${err.message}`);
+        } catch (err: unknown) {
+          logger.error(
+            { table: tableName, error: messageOf(err) },
+            "GraphQL create mutation failed"
+          );
+          throw new Error(`Failed to create ${tableName}: ${messageOf(err)}`);
         }
       },
     };
@@ -361,12 +377,19 @@ async function buildNativeTableMutations(
         try {
           const input = args.input ? { ...args.input } : {};
           delete input.id;
-          const [doc] = await db.update(table).set(input).where(eq(table.id, args.id)).returning();
+          const [doc] = await exec()
+            .update(table)
+            .set(input)
+            .where(eq(table.id, args.id))
+            .returning();
           await invalidateGraphQLCache();
           return doc || null;
-        } catch (err: any) {
-          logger.error({ table: tableName, error: err.message }, "GraphQL update mutation failed");
-          throw new Error(`Failed to update ${tableName}: ${err.message}`);
+        } catch (err: unknown) {
+          logger.error(
+            { table: tableName, error: messageOf(err) },
+            "GraphQL update mutation failed"
+          );
+          throw new Error(`Failed to update ${tableName}: ${messageOf(err)}`);
         }
       },
     };
@@ -378,12 +401,15 @@ async function buildNativeTableMutations(
       },
       async resolve(_: any, args: any) {
         try {
-          await db.delete(table).where(eq(table.id, args.id));
+          await exec().delete(table).where(eq(table.id, args.id));
           await invalidateGraphQLCache();
           return { success: true, id: args.id };
-        } catch (err: any) {
-          logger.error({ table: tableName, error: err.message }, "GraphQL delete mutation failed");
-          throw new Error(`Failed to delete ${tableName}: ${err.message}`);
+        } catch (err: unknown) {
+          logger.error(
+            { table: tableName, error: messageOf(err) },
+            "GraphQL delete mutation failed"
+          );
+          throw new Error(`Failed to delete ${tableName}: ${messageOf(err)}`);
         }
       },
     };
@@ -433,7 +459,7 @@ async function buildDatasetTypes(): Promise<{
   pageTypes: Record<string, GraphQLObjectType>;
   queries: GraphQLFieldConfigMap<any, any>;
 }> {
-  const datasets = await db.select().from(dataSets);
+  const datasets = await db.select().from(dataSets); // build de schema: global a propósito
   const types: Record<string, GraphQLObjectType> = {};
   const pageTypes: Record<string, GraphQLObjectType> = {};
   const queries: GraphQLFieldConfigMap<any, any> = {};
@@ -516,14 +542,14 @@ async function buildDatasetTypes(): Promise<{
         const offset = (args.page - 1) * args.limit;
 
         const [docs, [total]] = await Promise.all([
-          db
+          exec()
             .select()
             .from(dataEntries)
             .where(where)
             .orderBy(asc(dataEntries.sortOrder))
             .limit(args.limit)
             .offset(offset),
-          db.select({ value: count() }).from(dataEntries).where(where),
+          exec().select({ value: count() }).from(dataEntries).where(where),
         ]);
 
         return {
@@ -552,7 +578,7 @@ async function buildDatasetTypes(): Promise<{
 async function buildDatasetMutations(
   types: Record<string, GraphQLObjectType>
 ): Promise<GraphQLFieldConfigMap<any, any>> {
-  const datasets = await db.select().from(dataSets);
+  const datasets = await db.select().from(dataSets); // build de schema: global a propósito
   const mutations: GraphQLFieldConfigMap<any, any> = {};
 
   for (const ds of datasets) {
@@ -593,12 +619,12 @@ async function buildDatasetMutations(
                 ...doc.data,
               }
             : null;
-        } catch (err: any) {
+        } catch (err: unknown) {
           logger.error(
-            { dataset: ds.slug, error: err.message },
+            { dataset: ds.slug, error: messageOf(err) },
             "GraphQL dataset create mutation failed"
           );
-          throw new Error(`Failed to create dataset entry in ${ds.slug}: ${err.message}`);
+          throw new Error(`Failed to create dataset entry in ${ds.slug}: ${messageOf(err)}`);
         }
       },
     };
@@ -641,12 +667,12 @@ async function buildDatasetMutations(
                 ...doc.data,
               }
             : null;
-        } catch (err: any) {
+        } catch (err: unknown) {
           logger.error(
-            { dataset: ds.slug, error: err.message },
+            { dataset: ds.slug, error: messageOf(err) },
             "GraphQL dataset update mutation failed"
           );
-          throw new Error(`Failed to update dataset entry in ${ds.slug}: ${err.message}`);
+          throw new Error(`Failed to update dataset entry in ${ds.slug}: ${messageOf(err)}`);
         }
       },
     };
@@ -658,15 +684,15 @@ async function buildDatasetMutations(
       },
       async resolve(_, args) {
         try {
-          await db.delete(dataEntries).where(eq(dataEntries.id, args.id));
+          await exec().delete(dataEntries).where(eq(dataEntries.id, args.id));
           await invalidateGraphQLCache();
           return { success: true, id: args.id };
-        } catch (err: any) {
+        } catch (err: unknown) {
           logger.error(
-            { dataset: ds.slug, error: err.message },
+            { dataset: ds.slug, error: messageOf(err) },
             "GraphQL dataset delete mutation failed"
           );
-          throw new Error(`Failed to delete dataset entry in ${ds.slug}: ${err.message}`);
+          throw new Error(`Failed to delete dataset entry in ${ds.slug}: ${messageOf(err)}`);
         }
       },
     };
@@ -699,7 +725,11 @@ function buildUniversalQuery(
       const offset = ((args.page || 1) - 1) * limit;
 
       // Try dataset first
-      const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
+      const [ds] = await exec()
+        .select()
+        .from(dataSets)
+        .where(eq(dataSets.slug, collection))
+        .limit(1);
       if (ds) {
         if (args.id) {
           const [doc] = await db
@@ -717,14 +747,14 @@ function buildUniversalQuery(
           }
         }
         const [docs, [total]] = await Promise.all([
-          db
+          exec()
             .select()
             .from(dataEntries)
             .where(and(...conditions))
             .orderBy(desc(dataEntries.createdAt))
             .limit(limit)
             .offset(offset),
-          db
+          exec()
             .select({ value: sql<number>`count(*)` })
             .from(dataEntries)
             .where(and(...conditions)),
@@ -745,18 +775,20 @@ function buildUniversalQuery(
 
       if (table && isDrizzleTable(table)) {
         if (args.id && table.id) {
-          const [doc] = await db.select().from(table).where(eq(table.id, args.id)).limit(1);
+          const [doc] = await exec().select().from(table).where(eq(table.id, args.id)).limit(1);
           return doc || null;
         }
 
         const [docs, [total]] = await Promise.all([
-          db
+          exec()
             .select()
             .from(table)
             .orderBy(desc(table.createdAt || table.id))
             .limit(limit)
             .offset(offset),
-          db.select({ value: sql<number>`count(*)` }).from(table),
+          exec()
+            .select({ value: sql<number>`count(*)` })
+            .from(table),
         ]);
         return {
           docs,
@@ -781,8 +813,11 @@ async function buildSchema(): Promise<GraphQLSchema> {
   console.log("[GraphQL] Building dynamic schema...");
   const start = Date.now();
 
-  // Rebuild merged schema at runtime to pick up newly installed grimoires
-  const freshMergedSchema = await buildMergedSchema();
+  // Rebuild merged schema at runtime to pick up newly installed kons
+  // Se le pasa `db` a proposito: aqui la base YA existe, asi que el esquema
+  // recien construido si tiene en cuenta los kons instalados por base de
+  // datos. En el arranque no se puede — ver el comentario de la funcion.
+  const freshMergedSchema = await buildMergedSchema(db);
 
   const { typeMap, queries: nativeQueries } = await buildNativeTableTypes(freshMergedSchema);
   const nativeMutations = await buildNativeTableMutations(typeMap);
@@ -827,7 +862,7 @@ async function buildSchema(): Promise<GraphQLSchema> {
     name: "Query",
     fields: queryFields,
     description:
-      "Auto-generated GraphQL schema for GremiusCMS. All tables and datasets are discoverable.",
+      "Auto-generated GraphQL schema for Kitsuden. All tables and datasets are discoverable.",
   });
 
   const mutationFields: GraphQLFieldConfigMap<any, any> = {
@@ -841,7 +876,7 @@ async function buildSchema(): Promise<GraphQLSchema> {
   const MutationRoot = new GraphQLObjectType({
     name: "Mutation",
     fields: mutationFields,
-    description: "Auto-generated GraphQL mutations for GremiusCMS.",
+    description: "Auto-generated GraphQL mutations for Kitsuden.",
   });
 
   cachedSchema = new GraphQLSchema({ query: QueryRoot, mutation: MutationRoot });
@@ -866,7 +901,11 @@ async function buildSchema(): Promise<GraphQLSchema> {
 // ═══════════════════════════════════════════════════════════════
 
 // POST /api/graphql — Execute query
-graphqlRoutes.post("/", async (c) => {
+// SEGURIDAD: protectRoute exige sesión/token válido; withTransactionalRLS
+// envuelve la ejecución en una transacción con contexto RLS (Muro de Titanio).
+// Los resolvers usan exec() → el tx del request-scope → las policies de
+// PostgreSQL aplican a cada query/mutation del grafo.
+graphqlRoutes.post("/", protectRoute, withTransactionalRLS(), async (c) => {
   const body = await c.req.json();
   const { query: queryStr, variables, operationName } = body;
 
@@ -884,18 +923,26 @@ graphqlRoutes.post("/", async (c) => {
     });
 
     return c.json(result);
-  } catch (err: any) {
-    logger.error({ error: err.message }, "GraphQL execution error");
-    return c.json({ errors: [{ message: err.message }] }, 500);
+  } catch (err: unknown) {
+    logger.error({ error: messageOf(err) }, "GraphQL execution error");
+    return c.json({ errors: [{ message: messageOf(err) }] }, 500);
   }
 });
 
 // GET /api/graphql — GraphiQL playground
-graphqlRoutes.get("/", (c) => {
-  const html = `<!DOCTYPE html>
+// El HTML del playground solo se sirve en desarrollo sin auth; en producción
+// requiere sesión (las queries que lance siempre pasan por el POST protegido).
+graphqlRoutes.get(
+  "/",
+  async (c, next) => {
+    if (process.env.NODE_ENV === "production") return protectRoute(c, next);
+    return next();
+  },
+  (c) => {
+    const html = `<!DOCTYPE html>
 <html>
 <head>
-  <title>GremiusCMS GraphQL — Dynamic Schema</title>
+  <title>Kitsuden GraphQL — Dynamic Schema</title>
   <style>body { height: 100%; margin: 0; width: 100%; overflow: hidden; }</style>
   <link href="https://unpkg.com/graphiql@3/graphiql.min.css" rel="stylesheet" />
 </head>
@@ -912,11 +959,13 @@ graphqlRoutes.get("/", (c) => {
   </script>
 </body>
 </html>`;
-  return c.html(html);
-});
+    return c.html(html);
+  }
+);
 
-// GET /api/graphql/schema — Introspection helper for AI
-graphqlRoutes.get("/schema", async (c) => {
+// GET /api/graphql/schema — Introspection helper for AI (requiere auth:
+// enumera todas las tablas del sistema)
+graphqlRoutes.get("/schema", protectRoute, async (c) => {
   try {
     const schema = await buildSchema();
     const typeMap = schema.getTypeMap();
@@ -932,13 +981,14 @@ graphqlRoutes.get("/schema", async (c) => {
       typeCount: types.length,
       types,
     });
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+  } catch (err: unknown) {
+    return c.json({ error: messageOf(err) }, 500);
   }
 });
 
-// POST /api/graphql/invalidate — Force schema rebuild
-graphqlRoutes.post("/invalidate", async (c) => {
+// POST /api/graphql/invalidate — Force schema rebuild (solo admin: es un
+// vector de cache-busting/DoS si queda abierto)
+graphqlRoutes.post("/invalidate", protectRoute, requireAdmin, async (c) => {
   await invalidateGraphQLCache();
   return c.json({ success: true, message: "GraphQL schema cache invalidated" });
 });
@@ -949,7 +999,7 @@ graphqlRoutes.post("/invalidate", async (c) => {
 
 function toPascalCase(str: string): string {
   return str
-    .replace(/^grimoire[-_]/, "")
+    .replace(/^kon[-_]/, "")
     .split(/[_-]+/)
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
     .join("");

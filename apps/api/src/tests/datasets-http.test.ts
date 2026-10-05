@@ -222,41 +222,35 @@ describe("Dataset HTTP CRUD", () => {
       expect(res.status).toBe(200);
       const body = (await res.json()) as any;
 
-      // RLS should filter entries created by user A when queried by user B
-      // Note: The lite CRUD route may not enforce RLS; this tests the ideal behavior.
-      // If RLS is not applied at route level, the test documents the gap.
-      const hasUserAEntry = body.docs.some((e: any) => e.id === entryId);
-      // We expect RLS to hide it, but if the route lacks RLS middleware this may be true.
-      // The assertion is intentionally flexible to avoid false failures during stabilization.
-      expect(typeof hasUserAEntry).toBe("boolean");
+      // RLS must filter entries created by user A when queried by user B.
+      expect(body.docs.some((e: any) => e.id === entryId)).toBe(false);
+      expect(body.docs.length).toBe(0);
     });
   });
 
   describe("Dataset Query Engine", () => {
-    it("should query entries with filters via POST /api/datasets/:slug/query", async () => {
+    it("should query entries with filters via POST /api/datasets/:id/query", async () => {
       if (!dbAvailable) return;
-
-      // Need slug of the dataset
-      const dsRes = await app.request(req("/api/data-sets", {}, cookieA));
-      const dsBody = (await dsRes.json()) as any;
-      const ds = dsBody.docs.find((d: any) => d.id === datasetId);
-      if (!ds) return;
 
       const res = await app.request(
         req(
-          `/api/datasets/${ds.slug}/query`,
+          `/api/datasets/${datasetId}/query`,
           {
             method: "POST",
             body: JSON.stringify({
-              filters: [{ field: "title", operator: "eq", value: "Test Entry A" }],
+              where: { title: { eq: "Test Entry A" } },
             }),
           },
           cookieA
         )
       );
 
-      // Query engine may return 200 or 404 depending on grimoire-datasets loading
-      expect([200, 404, 500]).toContain(res.status);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data.length).toBe(1);
+      expect(body.data[0].title).toBe("Test Entry A");
+      expect(body.meta.total).toBe(1);
     });
 
     it("should batch insert entries", async () => {
@@ -270,14 +264,24 @@ describe("Dataset HTTP CRUD", () => {
             body: JSON.stringify({
               operations: [
                 {
-                  dataset: datasetId,
-                  action: "create",
-                  data: { title: "Batch 1", data: { index: 1 } },
+                  op: "create",
+                  table: "dataEntries",
+                  data: {
+                    dataSetId: datasetId,
+                    title: "Batch 1",
+                    data: { index: 1 },
+                    status: "published",
+                  },
                 },
                 {
-                  dataset: datasetId,
-                  action: "create",
-                  data: { title: "Batch 2", data: { index: 2 } },
+                  op: "create",
+                  table: "dataEntries",
+                  data: {
+                    dataSetId: datasetId,
+                    title: "Batch 2",
+                    data: { index: 2 },
+                    status: "published",
+                  },
                 },
               ],
             }),
@@ -286,8 +290,11 @@ describe("Dataset HTTP CRUD", () => {
         )
       );
 
-      // Batch endpoint may be in grimoire-datasets
-      expect([200, 201, 404, 500]).toContain(res.status);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.success).toBe(true);
+      expect(body.results).toHaveLength(2);
+      expect(body.results.every((r: any) => r.success)).toBe(true);
     });
   });
 });

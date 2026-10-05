@@ -10,33 +10,35 @@
 
 import { join } from "node:path";
 
+import { messageOf } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import type { Context } from "hono";
 
 import { db } from "../db";
 import { siteSettings, modules } from "../db/schema";
 import { protectRoute } from "../middleware/auth-guard";
 import { CORE_MODULES, CORE_MODULE_KEYS } from "../services/module-registry";
-import { scanPackages, scanPackages as scanRealms } from "../services/scanner";
+import { scanPackages, scanPackages as scanGrimoires } from "../services/scanner";
 
 export const systemRoutes = new Hono();
 
 /**
- * Get all grimoires (both required and optional) for a realm
+ * Get all kons (both required and optional) for a grimoire
  */
-async function getRealmGrimoires(
-  realmId: string
+async function getGrimoireKons(
+  grimoireId: string
 ): Promise<{ required: string[]; optional: string[] }> {
-  const realms = await scanRealms("realms");
-  const realm = realms.find((r) => r.id === realmId);
+  const grimoires = await scanGrimoires("grimoires");
+  const grimoire = grimoires.find((r) => r.id === grimoireId);
 
-  if (!realm) {
+  if (!grimoire) {
     return { required: [], optional: [] };
   }
 
   return {
-    required: realm.grimoires || [],
-    optional: realm.optional_grimoires || [],
+    required: grimoire.kons || [],
+    optional: grimoire.optional_kons || [],
   };
 }
 
@@ -61,10 +63,10 @@ async function getEnabledModuleKeys(): Promise<Set<string>> {
 }
 
 // ── GET /themes — List installed themes (with module awareness) ──
-systemRoutes.get("/themes", async (c) => {
+export async function listThemesHandler(c: any) {
   const themes = await scanPackages("themes");
   const [settings] = await db.select().from(siteSettings).limit(1);
-  const activeId = settings?.activeTheme || "gremius-default";
+  const activeId = settings?.activeTheme || "kitsuden-default";
   const enabledKeys = await getEnabledModuleKeys();
 
   return c.json({
@@ -88,32 +90,59 @@ systemRoutes.get("/themes", async (c) => {
       };
     }),
   });
-});
+}
+systemRoutes.get("/themes", listThemesHandler);
 
-// ── GET /realms — List installed realms with detailed grimoire info ──
-systemRoutes.get("/realms", async (c) => {
-  const realms = await scanPackages("realms");
+/**
+ * GET /auth-providers — qué OAuth está REALMENTE configurado.
+ *
+ * Sin esto, una pantalla de login solo puede hacer dos cosas malas: pintar
+ * botones de proveedores que nadie ha configurado (y que llevan a un 404 tras
+ * el redirect), o llevarlos escritos a mano y desincronizarse del servidor.
+ *
+ * Devuelve SOLO los identificadores. Que un proveedor esté activo no es
+ * secreto —se ve en el propio botón— pero las credenciales no salen de aquí,
+ * y por eso se leen y se descartan en la misma línea.
+ */
+export function listAuthProvidersHandler(c: Context) {
+  const configured: Array<{ id: string; label: string }> = [];
+  const add = (id: string, label: string, ...required: Array<string | undefined>) => {
+    if (required.every(Boolean)) configured.push({ id, label });
+  };
+
+  add("github", "GitHub", process.env.GITHUB_CLIENT_ID, process.env.GITHUB_CLIENT_SECRET);
+  add("google", "Google", process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET);
+  add("microsoft", "Microsoft", process.env.AZURE_AD_CLIENT_ID, process.env.AZURE_AD_CLIENT_SECRET);
+  add("discord", "Discord", process.env.DISCORD_CLIENT_ID, process.env.DISCORD_CLIENT_SECRET);
+
+  return c.json({ emailAndPassword: true, social: configured });
+}
+systemRoutes.get("/auth-providers", listAuthProvidersHandler);
+
+// ── GET /grimoires — List installed grimoires with detailed kon info ──
+export async function listGrimoiresHandler(c: any) {
+  const grimoires = await scanPackages("grimoires");
   const [settings] = await db.select().from(siteSettings).limit(1);
   const allModules = await db.select().from(modules);
   const modulesMap = new Map(allModules.map((m) => [m.key, m]));
 
-  // Support both legacy activeTheme and new activeRealm
-  const activeId = (settings as any)?.activeRealm || settings?.activeTheme || null;
+  // Support both legacy activeTheme and new activeGrimoire
+  const activeId = (settings as any)?.activeGrimoire || settings?.activeTheme || null;
 
   const result = await Promise.all(
-    realms.map(async (r) => {
-      const required = r.grimoires || [];
-      const optional = r.optional_grimoires || [];
+    grimoires.map(async (r) => {
+      const required = r.kons || [];
+      const optional = r.optional_kons || [];
 
-      // Get detailed info for each grimoire
-      const grimoireDetails = [...required, ...optional].map((gId) => {
+      // Get detailed info for each kon
+      const konDetails = [...required, ...optional].map((gId) => {
         const mod = modulesMap.get(gId);
         return {
           key: gId,
           name: mod?.name || gId,
           installed: !!mod,
           enabled: mod?.enabled || false,
-          isRealmLinked: mod?.realmId === r.id,
+          isGrimoireLinked: mod?.grimoireId === r.id,
           category: mod?.category || "optional",
         };
       });
@@ -124,75 +153,76 @@ systemRoutes.get("/realms", async (c) => {
         description: r.description,
         version: r.version,
         isActive: r.id === activeId,
-        grimoires: {
+        kons: {
           required,
           optional,
-          details: grimoireDetails,
-          installedCount: grimoireDetails.filter((g) => g.installed).length,
-          enabledCount: grimoireDetails.filter((g) => g.enabled).length,
+          details: konDetails,
+          installedCount: konDetails.filter((g) => g.installed).length,
+          enabledCount: konDetails.filter((g) => g.enabled).length,
         },
-        canDelete: r.id !== activeId, // Cannot delete active realm
+        canDelete: r.id !== activeId, // Cannot delete active grimoire
       };
     })
   );
 
   return c.json(result);
-});
+}
+systemRoutes.get("/grimoires", listGrimoiresHandler);
 
-// ── GET /realms/:id — Get detailed info about a specific realm ──
-systemRoutes.get("/realms/:id", async (c) => {
-  const realmId = c.req.param("id");
-  const realms = await scanPackages("realms");
-  const realm = realms.find((r) => r.id === realmId);
+// ── GET /grimoires/:id — Get detailed info about a specific grimoire ──
+export async function getGrimoireHandler(c: any) {
+  const grimoireId = c.req.param("id");
+  const grimoires = await scanPackages("grimoires");
+  const grimoire = grimoires.find((r) => r.id === grimoireId);
 
-  if (!realm) {
-    return c.json({ error: `Realm '${realmId}' not found` }, 404);
+  if (!grimoire) {
+    return c.json({ error: `Grimoire '${grimoireId}' not found` }, 404);
   }
 
   const [settings] = await db.select().from(siteSettings).limit(1);
   const allModules = await db.select().from(modules);
   const modulesMap = new Map(allModules.map((m) => [m.key, m]));
 
-  const activeId = (settings as any)?.activeRealm || settings?.activeTheme || null;
-  const isActive = realmId === activeId;
+  const activeId = (settings as any)?.activeGrimoire || settings?.activeTheme || null;
+  const isActive = grimoireId === activeId;
 
-  const required = realm.grimoires || [];
-  const optional = realm.optional_grimoires || [];
+  const required = grimoire.kons || [];
+  const optional = grimoire.optional_kons || [];
 
-  const grimoireDetails = [...required, ...optional].map((gId) => {
+  const konDetails = [...required, ...optional].map((gId) => {
     const mod = modulesMap.get(gId);
     return {
       key: gId,
       name: mod?.name || gId,
       installed: !!mod,
       enabled: mod?.enabled || false,
-      isRealmLinked: mod?.realmId === realmId,
-      realmId: mod?.realmId || null,
+      isGrimoireLinked: mod?.grimoireId === grimoireId,
+      grimoireId: mod?.grimoireId || null,
       category: mod?.category || "optional",
       canDelete: !mod?.enabled, // Can only delete if not enabled
     };
   });
 
   return c.json({
-    id: realm.id,
-    name: realm.name,
-    description: realm.description,
-    version: realm.version,
+    id: grimoire.id,
+    name: grimoire.name,
+    description: grimoire.description,
+    version: grimoire.version,
     isActive,
-    grimoires: {
+    kons: {
       required,
       optional,
-      details: grimoireDetails,
-      installedCount: grimoireDetails.filter((g) => g.installed).length,
-      enabledCount: grimoireDetails.filter((g) => g.enabled).length,
+      details: konDetails,
+      installedCount: konDetails.filter((g) => g.installed).length,
+      enabledCount: konDetails.filter((g) => g.enabled).length,
     },
     canDelete: !isActive,
     canDeactivate: isActive,
   });
-});
+}
+systemRoutes.get("/grimoires/:id", getGrimoireHandler);
 
-// ── GET /themes/:id/check — Pre-activation check ──
-systemRoutes.get("/themes/:id/check", protectRoute, async (c) => {
+export async function themeCheckHandler(c: Context) {
   const themeId = c.req.param("id");
   const themes = await scanPackages("themes");
   const theme = themes.find((t) => t.id === themeId);
@@ -227,9 +257,10 @@ systemRoutes.get("/themes/:id/check", protectRoute, async (c) => {
     optional: missingOptional.map(resolveModule),
     allSatisfied: missingRequired.length === 0 && missingOptional.length === 0,
   });
-});
+}
+systemRoutes.get("/themes/:id/check", protectRoute, themeCheckHandler);
 
-// ── PATCH /active-theme — Activate theme (with auto realm grimoires activation) ──
+// ── PATCH /active-theme — Activate theme (with auto grimoire kons activation) ──
 systemRoutes.patch("/active-theme", protectRoute, async (c) => {
   const body = await c.req.json();
   const { themeId, enableModules } = body;
@@ -241,71 +272,71 @@ systemRoutes.patch("/active-theme", protectRoute, async (c) => {
   const theme = themes.find((t) => t.id === themeId);
   if (!theme) return c.json({ error: "Theme not found" }, 404);
 
-  // Get all grimoires from the realm (required + optional)
-  const { required, optional } = await getRealmGrimoires(themeId);
-  const allRealmGrimoires = [...required, ...optional];
+  // Get all kons from the grimoire (required + optional)
+  const { required, optional } = await getGrimoireKons(themeId);
+  const allGrimoireKons = [...required, ...optional];
 
   console.log(
-    `[Realm Activation] Realm ${themeId} has ${required.length} required and ${optional.length} optional grimoires`
+    `[Grimoire Activation] Grimoire ${themeId} has ${required.length} required and ${optional.length} optional kons`
   );
 
-  // Auto-install and auto-enable all realm grimoires
+  // Auto-install and auto-enable all grimoire kons
   const installedModules: string[] = [];
   const activatedModules: string[] = [];
 
-  for (const grimoireId of allRealmGrimoires) {
-    // Find grimoire info from scanner (filesystem grimoires)
-    const grimoires = await scanPackages("grimoires");
-    const grimoire = grimoires.find((g) => g.id === grimoireId);
+  for (const konId of allGrimoireKons) {
+    // Find kon info from scanner (filesystem kons)
+    const kons = await scanPackages("kons");
+    const kon = kons.find((g) => g.id === konId);
 
     // Also check hardcoded registry
-    const registryDef = CORE_MODULES.find((m) => m.key === grimoireId);
+    const registryDef = CORE_MODULES.find((m) => m.key === konId);
 
-    const [existing] = await db.select().from(modules).where(eq(modules.key, grimoireId)).limit(1);
+    const [existing] = await db.select().from(modules).where(eq(modules.key, konId)).limit(1);
 
     if (existing) {
-      // Update realmId to link to this realm and ensure enabled
-      if (!existing.enabled || existing.realmId !== themeId) {
+      // Update grimoireId to link to this grimoire and ensure enabled
+      if (!existing.enabled || existing.grimoireId !== themeId) {
         await db
           .update(modules)
           .set({
             enabled: true,
-            realmId: themeId,
+            grimoireId: themeId,
           })
-          .where(eq(modules.key, grimoireId));
-        activatedModules.push(grimoireId);
+          .where(eq(modules.key, konId));
+        activatedModules.push(konId);
       }
     } else {
-      // Insert new module record linked to this realm
+      // Insert new module record linked to this grimoire
       await db.insert(modules).values({
-        key: grimoireId,
-        name: grimoire?.name || registryDef?.name || grimoireId,
-        description: grimoire?.description || registryDef?.description,
-        icon: grimoire?.icon || registryDef?.icon || "📦",
-        category: "realm",
+        key: konId,
+        name: kon?.name || registryDef?.name || konId,
+        description: kon?.description || registryDef?.description,
+        icon: kon?.icon || registryDef?.icon || "📦",
+        category: "grimoire",
         enabled: true,
-        realmId: themeId,
+        grimoireId: themeId,
         settings: {},
-        sidebarBadge: "Active by Realm",
+        sidebarBadge: "Active by Grimoire",
       });
-      installedModules.push(grimoireId);
-      activatedModules.push(grimoireId);
+      installedModules.push(konId);
+      activatedModules.push(konId);
     }
 
     // Run migrations if needed
     try {
       const { runModuleMigrations } = await import("../services/scanner");
-      await runModuleMigrations(grimoireId);
+      await runModuleMigrations(konId);
     } catch (err) {
-      console.error(`[Realm Activation] Migration error for grimoire ${grimoireId}:`, err);
+      console.error(`[Grimoire Activation] Migration error for kon ${konId}:`, err);
     }
   }
 
   // Also handle any manually specified modules (backward compatibility)
   if (enableModules && Array.isArray(enableModules) && enableModules.length > 0) {
     for (const moduleKey of enableModules) {
-      // Skip if already processed as realm grimoire
-      if (allRealmGrimoires.includes(moduleKey)) continue;
+      // Skip if already processed as grimoire kon
+      if (allGrimoireKons.includes(moduleKey)) continue;
 
       const registryDef = CORE_MODULES.find((m) => m.key === moduleKey);
       const [existing] = await db.select().from(modules).where(eq(modules.key, moduleKey)).limit(1);
@@ -350,7 +381,7 @@ systemRoutes.patch("/active-theme", protectRoute, async (c) => {
   }
 
   console.log(
-    `[Realm Activation] Realm ${themeId} activated with ${installedModules.length} new grimoires installed and ${activatedModules.length} total activated`
+    `[Grimoire Activation] Grimoire ${themeId} activated with ${installedModules.length} new kons installed and ${activatedModules.length} total activated`
   );
 
   return c.json({
@@ -358,45 +389,39 @@ systemRoutes.patch("/active-theme", protectRoute, async (c) => {
     activeTheme: themeId,
     installedModules,
     activatedModules,
-    realmGrimoires: allRealmGrimoires,
+    grimoireKons: allGrimoireKons,
     message:
       installedModules.length > 0
-        ? `Realm activated. Installed ${installedModules.length} new grimoires and activated ${activatedModules.length} total.`
-        : `Realm activated. ${activatedModules.length} grimoires active.`,
+        ? `Grimoire activated. Installed ${installedModules.length} new kons and activated ${activatedModules.length} total.`
+        : `Grimoire activated. ${activatedModules.length} kons active.`,
   });
 });
 
-// ── DELETE /active-theme — Deactivate current realm (disable all realm grimoires) ──
-systemRoutes.delete("/active-theme", protectRoute, async (c) => {
-  // Get current active realm
+export async function deactivateThemeHandler(c: Context) {
   const [settings] = await db.select().from(siteSettings).limit(1);
-  const currentRealmId = settings?.activeTheme || null;
+  const currentGrimoireId = settings?.activeTheme || null;
 
-  if (!currentRealmId) {
+  if (!currentGrimoireId) {
     return c.json({
       success: true,
-      message: "No realm currently active.",
+      message: "No grimoire currently active.",
       deactivatedModules: [],
     });
   }
 
-  // Deactivate all grimoires linked to this realm
   const deactivatedModules: string[] = [];
-
-  // Get all modules linked to this realm
-  const realmModulesList = await db
+  const grimoireModulesList = await db
     .select()
     .from(modules)
-    .where(eq(modules.realmId, currentRealmId));
+    .where(eq(modules.grimoireId, currentGrimoireId));
 
-  for (const mod of realmModulesList) {
+  for (const mod of grimoireModulesList) {
     if (mod.enabled) {
       await db.update(modules).set({ enabled: false }).where(eq(modules.key, mod.key));
       deactivatedModules.push(mod.key);
     }
   }
 
-  // Clear active theme/realm
   if (settings) {
     await db
       .update(siteSettings)
@@ -404,67 +429,64 @@ systemRoutes.delete("/active-theme", protectRoute, async (c) => {
       .where(eq(siteSettings.id, settings.id));
   }
 
-  console.log(
-    `[Realm Deactivation] Realm ${currentRealmId} deactivated. Disabled ${deactivatedModules.length} grimoires.`
-  );
-
   return c.json({
     success: true,
-    deactivatedRealm: currentRealmId,
+    deactivatedGrimoire: currentGrimoireId,
     deactivatedModules,
     message:
       deactivatedModules.length > 0
-        ? `Realm ${currentRealmId} deactivated. Disabled ${deactivatedModules.length} grimoires.`
-        : `Realm ${currentRealmId} deactivated.`,
+        ? `Grimoire ${currentGrimoireId} deactivated. Disabled ${deactivatedModules.length} kons.`
+        : `Grimoire ${currentGrimoireId} deactivated.`,
   });
-});
+}
+systemRoutes.delete("/active-theme", protectRoute, deactivateThemeHandler);
 
-// ── POST /realm-state — Activate or deactivate a realm with full control ──
-systemRoutes.post("/realm-state", protectRoute, async (c) => {
+// ── POST /grimoire-state — Activate or deactivate a grimoire with full control ──
+systemRoutes.post("/grimoire-state", protectRoute, async (c) => {
   const body = await c.req.json();
-  const { action, realmId, options = {} } = body;
+  const { action, grimoireId, options = {} } = body;
 
   if (!action || !["activate", "deactivate"].includes(action)) {
     return c.json({ error: "action must be 'activate' or 'deactivate'" }, 400);
   }
 
-  // Get current active realm
+  // Get current active grimoire
   const [settings] = await db.select().from(siteSettings).limit(1);
-  const currentActiveRealm = settings?.activeTheme || null;
+  const currentActiveGrimoire = settings?.activeTheme || null;
 
   if (action === "deactivate") {
-    // If realmId specified, only deactivate if it matches current
-    if (realmId && realmId !== currentActiveRealm) {
+    // If grimoireId specified, only deactivate if it matches current
+    if (grimoireId && grimoireId !== currentActiveGrimoire) {
       return c.json(
         {
           error: "Cannot deactivate",
-          message: `Realm ${realmId} is not currently active. Active realm is: ${currentActiveRealm || "none"}.`,
+          message: `Grimoire ${grimoireId} is not currently active. Active grimoire is: ${currentActiveGrimoire || "none"}.`,
         },
         400
       );
     }
 
-    // Deactivate current realm
-    const targetRealm = currentActiveRealm;
-    if (!targetRealm) {
+    // Deactivate current grimoire
+    const targetGrimoire = currentActiveGrimoire;
+    if (!targetGrimoire) {
       return c.json({
         success: true,
-        message: "No realm currently active.",
+        message: "No grimoire currently active.",
         deactivatedModules: [],
       });
     }
 
     const deactivatedModules: string[] = [];
-    const keepEnabled = options.keepGrimoiresEnabled || false;
+    const keepEnabled = options.keepKonsEnabled || false;
 
     if (!keepEnabled) {
-      // Get all modules linked to this realm and disable them
-      const realmModulesList = await db
+      // Get all modules linked to this grimoire and disable them
+      const grimoireModulesList = await db
         .select()
         .from(modules)
-        .where(eq(modules.realmId, targetRealm));
+        .where(eq(modules.grimoireId, targetGrimoire));
 
-      for (const mod of realmModulesList) {
+      for (const mod of grimoireModulesList) {
         if (mod.enabled) {
           await db.update(modules).set({ enabled: false }).where(eq(modules.key, mod.key));
           deactivatedModules.push(mod.key);
@@ -472,7 +494,7 @@ systemRoutes.post("/realm-state", protectRoute, async (c) => {
       }
     }
 
-    // Clear active theme/realm
+    // Clear active theme/grimoire
     if (settings) {
       await db
         .update(siteSettings)
@@ -483,30 +505,30 @@ systemRoutes.post("/realm-state", protectRoute, async (c) => {
     return c.json({
       success: true,
       action: "deactivate",
-      deactivatedRealm: targetRealm,
+      deactivatedGrimoire: targetGrimoire,
       deactivatedModules,
       keptEnabled: keepEnabled,
       message: keepEnabled
-        ? `Realm ${targetRealm} deactivated. Grimoires kept enabled.`
-        : `Realm ${targetRealm} deactivated. Disabled ${deactivatedModules.length} grimoires.`,
+        ? `Grimoire ${targetGrimoire} deactivated. Kons kept enabled.`
+        : `Grimoire ${targetGrimoire} deactivated. Disabled ${deactivatedModules.length} kons.`,
     });
   }
 
   // action === "activate"
-  if (!realmId) {
-    return c.json({ error: "realmId is required for activation" }, 400);
+  if (!grimoireId) {
+    return c.json({ error: "grimoireId is required for activation" }, 400);
   }
 
-  // If there's an active realm, deactivate it first
-  if (currentActiveRealm && currentActiveRealm !== realmId) {
-    // Optionally disable its grimoires
-    const disablePrevious = options.disablePreviousRealm !== false; // default true
+  // If there's an active grimoire, deactivate it first
+  if (currentActiveGrimoire && currentActiveGrimoire !== grimoireId) {
+    // Optionally disable its kons
+    const disablePrevious = options.disablePreviousGrimoire !== false; // default true
 
     if (disablePrevious) {
       const previousModules = await db
         .select()
         .from(modules)
-        .where(eq(modules.realmId, currentActiveRealm));
+        .where(eq(modules.grimoireId, currentActiveGrimoire));
 
       for (const mod of previousModules) {
         if (mod.enabled) {
@@ -516,119 +538,119 @@ systemRoutes.post("/realm-state", protectRoute, async (c) => {
     }
   }
 
-  // Validate realm exists
-  const realms = await scanPackages("realms");
-  const realm = realms.find((r) => r.id === realmId);
-  if (!realm) return c.json({ error: "Realm not found" }, 404);
+  // Validate grimoire exists
+  const grimoires = await scanPackages("grimoires");
+  const grimoire = grimoires.find((r) => r.id === grimoireId);
+  if (!grimoire) return c.json({ error: "Grimoire not found" }, 404);
 
-  // Get all grimoires from the realm
-  const { required, optional } = await getRealmGrimoires(realmId);
-  const allRealmGrimoires = [...required, ...optional];
+  // Get all kons from the grimoire
+  const { required, optional } = await getGrimoireKons(grimoireId);
+  const allGrimoireKons = [...required, ...optional];
 
-  // Auto-install and auto-enable all realm grimoires
+  // Auto-install and auto-enable all grimoire kons
   const installedModules: string[] = [];
   const activatedModules: string[] = [];
 
-  for (const grimoireId of allRealmGrimoires) {
-    const grimoires = await scanPackages("grimoires");
-    const grimoire = grimoires.find((g) => g.id === grimoireId);
-    const registryDef = CORE_MODULES.find((m) => m.key === grimoireId);
+  for (const konId of allGrimoireKons) {
+    const kons = await scanPackages("kons");
+    const kon = kons.find((g) => g.id === konId);
+    const registryDef = CORE_MODULES.find((m) => m.key === konId);
 
-    const [existing] = await db.select().from(modules).where(eq(modules.key, grimoireId)).limit(1);
+    const [existing] = await db.select().from(modules).where(eq(modules.key, konId)).limit(1);
 
     if (existing) {
-      if (!existing.enabled || existing.realmId !== realmId) {
+      if (!existing.enabled || existing.grimoireId !== grimoireId) {
         await db
           .update(modules)
           .set({
             enabled: true,
-            realmId,
+            grimoireId,
           })
-          .where(eq(modules.key, grimoireId));
-        activatedModules.push(grimoireId);
+          .where(eq(modules.key, konId));
+        activatedModules.push(konId);
       }
     } else {
       await db.insert(modules).values({
-        key: grimoireId,
-        name: grimoire?.name || registryDef?.name || grimoireId,
-        description: grimoire?.description || registryDef?.description,
-        icon: grimoire?.icon || registryDef?.icon || "📦",
-        category: "realm",
+        key: konId,
+        name: kon?.name || registryDef?.name || konId,
+        description: kon?.description || registryDef?.description,
+        icon: kon?.icon || registryDef?.icon || "📦",
+        category: "grimoire",
         enabled: true,
-        realmId,
+        grimoireId,
         settings: {},
-        sidebarBadge: "Active by Realm",
+        sidebarBadge: "Active by Grimoire",
       });
-      installedModules.push(grimoireId);
-      activatedModules.push(grimoireId);
+      installedModules.push(konId);
+      activatedModules.push(konId);
     }
 
     // Run migrations
     try {
       const { runModuleMigrations } = await import("../services/scanner");
-      await runModuleMigrations(grimoireId);
+      await runModuleMigrations(konId);
     } catch (err) {
-      console.error(`[Realm Activation] Migration error for grimoire ${grimoireId}:`, err);
+      console.error(`[Grimoire Activation] Migration error for kon ${konId}:`, err);
     }
   }
 
-  // Activate the realm
+  // Activate the grimoire
   if (settings) {
     await db
       .update(siteSettings)
-      .set({ activeTheme: realmId })
+      .set({ activeTheme: grimoireId })
       .where(eq(siteSettings.id, settings.id));
   } else {
-    await db.insert(siteSettings).values({ activeTheme: realmId });
+    await db.insert(siteSettings).values({ activeTheme: grimoireId });
   }
 
   return c.json({
     success: true,
     action: "activate",
-    activeRealm: realmId,
+    activeGrimoire: grimoireId,
     installedModules,
     activatedModules,
-    realmGrimoires: allRealmGrimoires,
-    previousRealm: currentActiveRealm,
+    grimoireKons: allGrimoireKons,
+    previousGrimoire: currentActiveGrimoire,
     message:
       installedModules.length > 0
-        ? `Realm ${realmId} activated. Installed ${installedModules.length} new grimoires and activated ${activatedModules.length} total.`
-        : `Realm ${realmId} activated. ${activatedModules.length} grimoires active.`,
+        ? `Grimoire ${grimoireId} activated. Installed ${installedModules.length} new kons and activated ${activatedModules.length} total.`
+        : `Grimoire ${grimoireId} activated. ${activatedModules.length} kons active.`,
   });
 });
 
-// ── DELETE /realms/:id — Delete/Uninstall a realm ──
-systemRoutes.delete("/realms/:id", protectRoute, async (c) => {
-  const realmId = c.req.param("id");
-  const deleteGrimoires = c.req.query("deleteGrimoires") === "true";
+// ── DELETE /grimoires/:id — Delete/Uninstall a grimoire ──
+systemRoutes.delete("/grimoires/:id", protectRoute, async (c) => {
+  const grimoireId = c.req.param("id");
+  const deleteKons = c.req.query("deleteKons") === "true";
   const force = c.req.query("force") === "true";
 
-  // Check if realm exists
-  const realms = await scanPackages("realms");
-  const realm = realms.find((r) => r.id === realmId);
+  // Check if grimoire exists
+  const grimoires = await scanPackages("grimoires");
+  const grimoire = grimoires.find((r) => r.id === grimoireId);
 
-  if (!realm) {
-    return c.json({ error: `Realm '${realmId}' not found` }, 404);
+  if (!grimoire) {
+    return c.json({ error: `Grimoire '${grimoireId}' not found` }, 404);
   }
 
-  // Get current active realm
+  // Get current active grimoire
   const [settings] = await db.select().from(siteSettings).limit(1);
-  const isCurrentlyActive = settings?.activeTheme === realmId;
+  const isCurrentlyActive = settings?.activeTheme === grimoireId;
 
-  // Get all grimoires linked to this realm
-  const realmGrimoires = await db.select().from(modules).where(eq(modules.realmId, realmId));
+  // Get all kons linked to this grimoire
+  const grimoireKons = await db.select().from(modules).where(eq(modules.grimoireId, grimoireId));
 
-  const enabledGrimoires = realmGrimoires.filter((g) => g.enabled);
+  const enabledKons = grimoireKons.filter((g) => g.enabled);
 
-  // If realm is active or has enabled grimoires, require force
-  if ((isCurrentlyActive || enabledGrimoires.length > 0) && !force) {
+  // If grimoire is active or has enabled kons, require force
+  if ((isCurrentlyActive || enabledKons.length > 0) && !force) {
     return c.json(
       {
-        error: "Cannot delete realm",
-        message: `Realm ${realmId} is currently active or has enabled grimoires. Deactivate it first or use ?force=true to force deletion.`,
+        error: "Cannot delete grimoire",
+        message: `Grimoire ${grimoireId} is currently active or has enabled kons. Deactivate it first or use ?force=true to force deletion.`,
         isActive: isCurrentlyActive,
-        enabledGrimoires: enabledGrimoires.map((g) => g.key),
-        totalGrimoires: realmGrimoires.length,
+        enabledKons: enabledKons.map((g) => g.key),
+        totalKons: grimoireKons.length,
       },
       409
     );
@@ -636,45 +658,45 @@ systemRoutes.delete("/realms/:id", protectRoute, async (c) => {
 
   const result: any = {
     success: true,
-    deletedRealm: realmId,
-    realmName: realm.name,
+    deletedGrimoire: grimoireId,
+    grimoireName: grimoire.name,
     wasActive: isCurrentlyActive,
   };
 
-  if (deleteGrimoires) {
-    // Delete all grimoires linked to this realm
-    const deletedGrimoires: string[] = [];
+  if (deleteKons) {
+    // Delete all kons linked to this grimoire
+    const deletedKons: string[] = [];
 
-    for (const grimoire of realmGrimoires) {
-      await db.delete(modules).where(eq(modules.key, grimoire.key));
-      deletedGrimoires.push(grimoire.key);
+    for (const kon of grimoireKons) {
+      await db.delete(modules).where(eq(modules.key, kon.key));
+      deletedKons.push(kon.key);
     }
 
-    result.deletedGrimoires = deletedGrimoires;
-    result.grimoiresKept = [];
-    result.message = `Realm ${realmId} deleted along with ${deletedGrimoires.length} grimoires.`;
+    result.deletedKons = deletedKons;
+    result.konsKept = [];
+    result.message = `Grimoire ${grimoireId} deleted along with ${deletedKons.length} kons.`;
   } else {
-    // Keep grimoires but convert to standalone (remove realmId)
-    const keptGrimoires: string[] = [];
+    // Keep kons but convert to standalone (remove grimoireId)
+    const keptKons: string[] = [];
 
-    for (const grimoire of realmGrimoires) {
+    for (const kon of grimoireKons) {
       await db
         .update(modules)
         .set({
-          realmId: null,
+          grimoireId: null,
           category: "optional",
           sidebarBadge: null,
         })
-        .where(eq(modules.key, grimoire.key));
-      keptGrimoires.push(grimoire.key);
+        .where(eq(modules.key, kon.key));
+      keptKons.push(kon.key);
     }
 
-    result.deletedGrimoires = [];
-    result.grimoiresKept = keptGrimoires;
-    result.message = `Realm ${realmId} deleted. ${keptGrimoires.length} grimoires converted to standalone.`;
+    result.deletedKons = [];
+    result.konsKept = keptKons;
+    result.message = `Grimoire ${grimoireId} deleted. ${keptKons.length} kons converted to standalone.`;
   }
 
-  // If this realm was active, clear the active theme
+  // If this grimoire was active, clear the active theme
   if (isCurrentlyActive && settings) {
     await db
       .update(siteSettings)
@@ -684,17 +706,17 @@ systemRoutes.delete("/realms/:id", protectRoute, async (c) => {
   }
 
   console.log(
-    `[Realm Deletion] Realm ${realmId} deleted. deleteGrimoires=${deleteGrimoires}, grimoires affected: ${realmGrimoires.length}`
+    `[Grimoire Deletion] Grimoire ${grimoireId} deleted. deleteKons=${deleteKons}, kons affected: ${grimoireKons.length}`
   );
 
   return c.json(result);
 });
 
 // ── GET /active-theme-config — Returns parsed theme JSON for the Theme Engine ──
-systemRoutes.get("/active-theme-config", async (c) => {
+export async function getActiveThemeConfigHandler(c: any) {
   try {
     const [settings] = await db.select().from(siteSettings).limit(1);
-    const activeId = settings?.activeTheme || "gremius-default";
+    const activeId = settings?.activeTheme || "kitsuden-default";
 
     const themes = await scanPackages("themes");
     const theme = themes.find((t) => t.id === activeId);
@@ -704,7 +726,7 @@ systemRoutes.get("/active-theme-config", async (c) => {
     }
 
     // Try to read a theme.json with color/logo overrides
-    const themeConfig: Record<string, any> = {
+    const themeConfig: Record<string, unknown> = {
       id: theme.id,
       name: theme.name,
     };
@@ -712,7 +734,7 @@ systemRoutes.get("/active-theme-config", async (c) => {
     // Parse variables.css to extract color definitions
     const cssPath = join(
       process.cwd(),
-      "../../packages/realms",
+      "../../packages/grimoires",
       activeId,
       theme.css_entry || "variables.css"
     );
@@ -721,8 +743,8 @@ systemRoutes.get("/active-theme-config", async (c) => {
       if (await cssFile.exists()) {
         const cssContent = await cssFile.text();
         const colors: Record<string, string> = {};
-        // Extract --gremius-* variables from CSS
-        const varRegex = /--gremius-([\w-]+)\s*:\s*([^;]+)/g;
+        // Extract --kitsuden-* variables from CSS
+        const varRegex = /--kitsuden-([\w-]+)\s*:\s*([^;]+)/g;
         let match;
         while ((match = varRegex.exec(cssContent)) !== null) {
           const key = match[1].trim();
@@ -758,7 +780,7 @@ systemRoutes.get("/active-theme-config", async (c) => {
     }
 
     // Also try to read a dedicated theme.json if it exists
-    const themeJsonPath = join(process.cwd(), "../../packages/realms", activeId, "theme.json");
+    const themeJsonPath = join(process.cwd(), "../../packages/grimoires", activeId, "theme.json");
     try {
       const jsonFile = Bun.file(themeJsonPath);
       if (await jsonFile.exists()) {
@@ -777,13 +799,14 @@ systemRoutes.get("/active-theme-config", async (c) => {
       theme: themeConfig,
       branding: settings?.branding || null,
     });
-  } catch (err: any) {
-    return c.json({ theme: null, branding: null, error: err.message }, 500);
+  } catch (err: unknown) {
+    return c.json({ theme: null, branding: null, error: messageOf(err) }, 500);
   }
-});
+}
+systemRoutes.get("/active-theme-config", getActiveThemeConfigHandler);
 
 // ── GET /theme-css/:themeId — Serve theme CSS variables ──
-systemRoutes.get("/theme-css/:themeId", async (c) => {
+export async function getThemeCssHandler(c: any) {
   const themeId = c.req.param("themeId");
 
   if (themeId.includes("..") || themeId.includes("/") || themeId.includes("\\")) {
@@ -796,7 +819,7 @@ systemRoutes.get("/theme-css/:themeId", async (c) => {
   if (!theme) return c.text("/* Theme not found */", 404);
 
   const cssFile = theme.css_entry || "variables.css";
-  const cssPath = join(process.cwd(), "../../packages/realms", themeId, cssFile);
+  const cssPath = join(process.cwd(), "../../packages/grimoires", themeId, cssFile);
 
   try {
     const file = Bun.file(cssPath);
@@ -810,4 +833,5 @@ systemRoutes.get("/theme-css/:themeId", async (c) => {
   }
 
   return c.text(`/* CSS not found for ${themeId} */`, 404);
-});
+}
+systemRoutes.get("/theme-css/:themeId", getThemeCssHandler);

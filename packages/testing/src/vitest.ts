@@ -12,10 +12,10 @@ import type { SandboxConfig, TestSandbox } from "./types.js";
  *
  * Usage:
  * ```typescript
- * import { describeGrimoire } from "@gremius/testing/vitest";
+ * import { describeKon } from "@kitsuden/testing/vitest";
  *
- * describeGrimoire("grimoire-blog", {
- *   grimoires: ["grimoire-blog"],
+ * describeKon("kon-blog", {
+ *   kons: ["kon-blog"],
  *   fixtures: "blog-seed"
  * }, (sandbox) => {
  *
@@ -27,7 +27,7 @@ import type { SandboxConfig, TestSandbox } from "./types.js";
  * });
  * ```
  */
-export function describeGrimoire(
+export function describeKon(
   name: string,
   config: SandboxConfig,
   fn: (sandbox: TestSandbox) => void
@@ -66,28 +66,28 @@ export function describeGrimoire(
  * Usage in vitest.config.ts:
  * ```typescript
  * import { defineConfig } from "vitest/config";
- * import { gremiusTesting } from "@gremius/testing/vitest";
+ * import { kitsudenTesting } from "@kitsuden/testing/vitest";
  *
  * export default defineConfig({
- *   plugins: [gremiusTesting()]
+ *   plugins: [kitsudenTesting()]
  * });
  * ```
  */
-export function gremiusTesting() {
+export function kitsudenTesting() {
   return {
-    name: "gremius-testing",
+    name: "kitsuden-testing",
 
     config: () => ({
       test: {
-        // Global setup for Gremius testing
+        // Global setup for Kitsuden testing
         globalSetup: [],
 
         // Environment setup
         setupFiles: [],
 
-        // Alias for @gremius/testing
+        // Alias for @kitsuden/testing
         alias: {
-          "@gremius/testing": "@gremius/testing/dist/index.js",
+          "@kitsuden/testing": "@kitsuden/testing/dist/index.js",
         },
       },
     }),
@@ -95,10 +95,10 @@ export function gremiusTesting() {
 }
 
 /**
- * Type-safe helper for writing grimoire tests
+ * Type-safe helper for writing kon tests
  */
-export function createGrimoireTest<T extends Record<string, any>>(
-  grimoireId: string,
+export function createKonTest<T extends Record<string, any>>(
+  konId: string,
   options: {
     fixtures?: string;
     beforeEach?: (sandbox: TestSandbox) => Promise<void>;
@@ -117,10 +117,10 @@ export function createGrimoireTest<T extends Record<string, any>>(
     ) => {
       let sandbox: TestSandbox;
 
-      (globalThis as any).describe(`${grimoireId} - ${name}`, () => {
+      (globalThis as any).describe(`${konId} - ${name}`, () => {
         (globalThis as any).beforeAll(async () => {
           sandbox = await createTestSandbox({
-            grimoires: [grimoireId],
+            kons: [konId],
             fixtures: options.fixtures,
           });
           await sandbox.setup();
@@ -152,4 +152,4 @@ export function createGrimoireTest<T extends Record<string, any>>(
   };
 }
 
-export default { describeGrimoire, gremiusTesting, createGrimoireTest };
+export default { describeKon, kitsudenTesting, createKonTest };

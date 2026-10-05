@@ -11,58 +11,58 @@ import { Hono } from "hono";
 // the heavy module which triggers DB side effects on load.
 
 describe("Module Loader Logic", () => {
-  describe("Grimoire path resolution", () => {
-    it("should map grimoire name to directory name", () => {
+  describe("Kon path resolution", () => {
+    it("should map kon name to directory name", () => {
       const cases = [
-        { name: "games", expected: "grimoire-games" },
-        { name: "blog", expected: "grimoire-blog" },
-        { name: "academy", expected: "grimoire-academy-lms" },
-        { name: "gremius-crm", expected: "grimoire-crm" },
-        { name: "media", expected: "grimoire-media" },
+        { name: "games", expected: "kon-games" },
+        { name: "blog", expected: "kon-blog" },
+        { name: "academy", expected: "kon-academy-lms" },
+        { name: "kitsuden-crm", expected: "kon-crm" },
+        { name: "media", expected: "kon-media" },
       ];
 
       for (const { name, expected } of cases) {
-        const cleanName = name.replace(/^grimoire-/, "");
+        const cleanName = name.replace(/^kon-/, "");
         const dirMap: Record<string, string> = {
-          academy: "grimoire-academy-lms",
-          "gremius-crm": "grimoire-crm",
+          academy: "kon-academy-lms",
+          "kitsuden-crm": "kon-crm",
         };
-        const dirName = dirMap[name] || `grimoire-${cleanName}`;
+        const dirName = dirMap[name] || `kon-${cleanName}`;
         expect(dirName).toBe(expected);
       }
     });
 
     it("should handle scoped npm packages", () => {
-      const scopes = ["@gremius/grimoire-games", "@scope/grimoire-custom"];
+      const scopes = ["@kitsuden/kon-games", "@scope/kon-custom"];
       for (const pkg of scopes) {
-        expect(pkg).toMatch(/^@[a-z0-9-]+\/grimoire-[a-z0-9-]+$/);
+        expect(pkg).toMatch(/^@[a-z0-9-]+\/kon-[a-z0-9-]+$/);
       }
     });
 
     it("should handle community package names", () => {
-      const pkg = "grimoire-games";
-      expect(pkg.startsWith("grimoire-")).toBe(true);
+      const pkg = "kon-games";
+      expect(pkg.startsWith("kon-")).toBe(true);
     });
   });
 
   describe("Dependency ordering", () => {
-    it("should sort grimoires with no dependencies in original order", () => {
-      const grimoires = [
+    it("should sort kons with no dependencies in original order", () => {
+      const kons = [
         { id: "a", dependsOn: [] },
         { id: "b", dependsOn: [] },
         { id: "c", dependsOn: [] },
       ];
-      const sorted = [...grimoires]; // No deps = same order
+      const sorted = [...kons]; // No deps = same order
       expect(sorted.map((g) => g.id)).toEqual(["a", "b", "c"]);
     });
 
     it("should place dependencies before dependents", () => {
-      const grimoires = [
+      const kons = [
         { id: "blog", dependsOn: ["media"] },
         { id: "media", dependsOn: [] },
       ];
       // Simulate a topological sort
-      const byDeps = [...grimoires].sort((a, b) => {
+      const byDeps = [...kons].sort((a, b) => {
         if (a.dependsOn.includes(b.id)) return 1;
         if (b.dependsOn.includes(a.id)) return -1;
         return 0;
@@ -72,17 +72,17 @@ describe("Module Loader Logic", () => {
     });
 
     it("should handle transitive dependencies with topological sort", () => {
-      const grimoires = [
+      const kons = [
         { id: "esports", dependsOn: ["games"] },
         { id: "games", dependsOn: ["media"] },
         { id: "media", dependsOn: [] },
       ];
 
       // Simple topological sort via iteration
-      const sorted: typeof grimoires = [];
-      const remaining = new Set(grimoires.map((g) => g.id));
+      const sorted: typeof kons = [];
+      const remaining = new Set(kons.map((g) => g.id));
       while (remaining.size > 0) {
-        for (const g of grimoires) {
+        for (const g of kons) {
           if (!remaining.has(g.id)) continue;
           const depsSatisfied = g.dependsOn.every((d) => !remaining.has(d));
           if (depsSatisfied) {
@@ -113,8 +113,8 @@ describe("Module Loader Logic", () => {
     });
   });
 
-  describe("Grimoire validation", () => {
-    it("should validate a well-formed grimoire definition", () => {
+  describe("Kon validation", () => {
+    it("should validate a well-formed kon definition", () => {
       const def = {
         id: "test",
         name: "Test",
@@ -125,7 +125,7 @@ describe("Module Loader Logic", () => {
       expect(typeof def.createRouter).toBe("function");
     });
 
-    it("should reject invalid grimoire definitions", () => {
+    it("should reject invalid kon definitions", () => {
       const invalid = [{}, { id: "x" }, { createRouter: () => {} }, null, "string"];
       for (const def of invalid) {
         const isValid =

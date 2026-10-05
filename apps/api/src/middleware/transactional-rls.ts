@@ -56,10 +56,16 @@
  * @see https://www.postgresql.org/docs/current/ddl-rowsecurity.html
  */
 
+// Deep import del submódulo puro (NO la fachada @kitsuden/engine): el index del
+// engine re-exporta este mismo archivo (withTransactionalRLS), así que
+// importar la fachada desde aquí crearía un ciclo.
 import { sql } from "drizzle-orm";
 import type { Context, Next } from "hono";
 
+import { setRequestTx, clearRequestTx } from "../../../../packages/engine/src/request-scope";
 import { db, type DatabaseTransaction } from "../db";
+// Logger LOCAL, no el de la fachada: mismo motivo que el deep import de arriba.
+import { logger } from "../lib/logger";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -113,12 +119,23 @@ export async function setRLSContext(tx: TransactionType, user: RLSUser | null): 
   const userId = user?.id ?? "";
   const userRole = user?.role ?? "anonymous";
 
-  // Inyectar user_id en la variable de sesión
-  // FALSE = persiste solo durante la transacción actual
-  await tx.execute(sql`SELECT set_config('app.current_user_id', ${userId}, false)`);
-
-  // Inyectar rol para políticas de admin
-  await tx.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, false)`);
+  /**
+   * El tercer argumento es `is_local`, y tiene que ser TRUE.
+   *
+   * Con `true` el valor vive lo que vive la transacción y Postgres lo deshace
+   * solo al terminarla. Con `false` —que es lo que había, con un comentario
+   * que decía justo lo contrario— el valor se queda en la SESIÓN, y las
+   * sesiones aquí son conexiones de un pool que se reparten entre peticiones
+   * de gente distinta.
+   *
+   * El síntoma no es un error: es que la petición siguiente que toque esa
+   * conexión y NO pase por este middleware hereda el usuario de la anterior.
+   * Un lector anónimo veía cero filas de un dataset público porque la conexión
+   * venía marcada con el id de otro; el mismo GET, repetido, devolvía cosas
+   * distintas según qué conexión le tocara.
+   */
+  await tx.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
+  await tx.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, true)`);
 }
 
 /**
@@ -130,8 +147,10 @@ export async function setRLSContext(tx: TransactionType, user: RLSUser | null): 
  * @param tx - Transacción de Drizzle
  */
 export async function clearRLSContext(tx: TransactionType): Promise<void> {
-  await tx.execute(sql`SELECT set_config('app.current_user_id', '', false)`);
-  await tx.execute(sql`SELECT set_config('app.current_user_role', '', false)`);
+  // Local, como al ponerlo: si no, «limpiar» dejaría la conexión marcada como
+  // anónima para todo el que la use después, que es el mismo fallo al revés.
+  await tx.execute(sql`SELECT set_config('app.current_user_id', '', true)`);
+  await tx.execute(sql`SELECT set_config('app.current_user_role', '', true)`);
 }
 
 /**
@@ -209,10 +228,12 @@ export function withTransactionalRLS() {
     const userId = user?.id ?? null;
     const userRole = user?.role ?? "anonymous";
 
-    // Log de seguridad en modo debug
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[RLS] Iniciando transacción para usuario: ${userId ?? "anon"}`);
-    }
+    // Log de seguridad. Va por el logger y NO por `console.log`: esto corre en
+    // CADA petición, y una línea suelta en stdout sale sin `trace_id` ni
+    // `request_id`, así que no se puede cruzar con el access-log ni con el
+    // error que venga después. Justo en el middleware de aislamiento, que es
+    // donde uno mira cuando algo se ve que no debería verse.
+    logger.debug({ userId, userRole }, "[RLS] abriendo transacción");
 
     try {
       // Envolvente de transacción con RLS
@@ -227,18 +248,23 @@ export function withTransactionalRLS() {
         c.set("tx", tx);
         c.set("rlsUser", { id: userId, role: userRole });
 
-        // Continuar con el siguiente middleware/handler
-        await next();
+        // Publicar el tx en el request-scope: repo() y cualquier código que use
+        // resolveExecutor() correrán bajo RLS automáticamente durante next().
+        setRequestTx(tx);
+        try {
+          // Continuar con el siguiente middleware/handler
+          await next();
+        } finally {
+          clearRequestTx();
+        }
 
         // La transacción se comite automáticamente si next() no lanza error
       });
 
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[RLS] Transacción completada: ${userId ?? "anon"}`);
-      }
+      logger.debug({ userId }, "[RLS] transacción confirmada");
     } catch (error) {
       // El error ya causó rollback automático de la transacción
-      console.error(`[RLS] Error en transacción para ${userId ?? "anon"}:`, error);
+      logger.error({ err: error, userId, userRole }, "[RLS] transacción revertida");
 
       // Re-lanzar el error para que Hono lo maneje
       throw error;
@@ -261,7 +287,13 @@ export function withRLSContextOnly() {
   return async (c: Context, next: Next) => {
     const user = c.get("user") as RLSUser | undefined;
 
-    // Establecer contexto RLS (sin transacción)
+    /**
+     * Sin transacción no hay ámbito local: aquí el contexto es de SESIÓN por
+     * fuerza, y la sesión es una conexión del pool que se presta a la petición
+     * siguiente. Por eso se borra pase lo que pase: dejarlo puesto convierte
+     * al usuario de esta petición en el de la próxima que reutilice la
+     * conexión y no fije el suyo.
+     */
     await db.execute(sql`SELECT set_config('app.current_user_id', ${user?.id ?? ""}, false)`);
     await db.execute(
       sql`SELECT set_config('app.current_user_role', ${user?.role ?? "anonymous"}, false)`
@@ -269,7 +301,12 @@ export function withRLSContextOnly() {
 
     c.set("rlsUser", { id: user?.id ?? null, role: user?.role ?? "anonymous" });
 
-    await next();
+    try {
+      await next();
+    } finally {
+      await db.execute(sql`SELECT set_config('app.current_user_id', '', false)`);
+      await db.execute(sql`SELECT set_config('app.current_user_role', '', false)`);
+    }
   };
 }
 

@@ -1,4 +1,4 @@
-// spec: specs/gremius-full-coverage.md
+// spec: specs/kitsuden-full-coverage.md
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
@@ -22,8 +22,8 @@ test("seed — bootstrap admin panel", async ({ page }) => {
   }
 
   // 4. Login as admin
-  await page.locator('input[type="email"]').fill("admin@gremius.gg");
-  await page.locator('input[type="password"]').fill("gremius123");
+  await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+  await page.locator('input[type="password"]').fill("kitsuden123");
   await page.locator('button[type="submit"]').click();
 
   // 5. Should arrive at dashboard

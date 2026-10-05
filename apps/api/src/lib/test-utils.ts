@@ -1,5 +1,5 @@
 /**
- * Test Utilities for Gremius API
+ * Test Utilities for Kitsuden API
  *
  * Helper functions for testing with Bun
  */
@@ -16,7 +16,7 @@ export async function resetTestDatabase() {
     "data_entries",
     "data_sets",
     "api_keys",
-    "gremius_functions",
+    "kitsuden_functions",
     "function_executions",
   ];
 

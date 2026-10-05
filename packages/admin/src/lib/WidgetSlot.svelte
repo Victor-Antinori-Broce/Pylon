@@ -40,8 +40,8 @@
   // Configuración de wrappers
   const wrapperClasses = {
     none: "",
-    card: "bg-gremius-card border border-gremius-border rounded-xl p-4",
-    border: "border-b border-gremius-border last:border-b-0 py-4",
+    card: "bg-kitsuden-card border border-kitsuden-border rounded-xl p-4",
+    border: "border-b border-kitsuden-border last:border-b-0 py-4",
   };
 </script>
 

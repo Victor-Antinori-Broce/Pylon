@@ -37,17 +37,17 @@
 </script>
 
 <div class="flex items-center gap-2">
-  <Link2 class="w-3.5 h-3.5 text-gremius-subtle shrink-0" />
+  <Link2 class="w-3.5 h-3.5 text-kitsuden-subtle shrink-0" />
 
   {#if items.length === 0}
-    <span class="text-xs text-gremius-subtle italic">—</span>
+    <span class="text-xs text-kitsuden-subtle italic">—</span>
   {:else}
     <div class="flex items-center gap-1 flex-wrap">
       {#each visibleItems as item}
         {#if item.href}
           <a
             href={item.href}
-            class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-md bg-gremius-cyan-10 text-gremius-cyan border border-gremius-cyan-20 hover:bg-gremius-cyan-20 transition-colors"
+            class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-md bg-kitsuden-accent-10 text-kitsuden-accent border border-kitsuden-accent-20 hover:bg-kitsuden-accent-20 transition-colors"
             onclick={(e) => {
               e.stopPropagation();
               handleClick(item);
@@ -58,7 +58,7 @@
           </a>
         {:else}
           <button
-            class="inline-flex items-center px-2 py-0.5 text-xs rounded-md bg-gremius-cyan-10 text-gremius-cyan border border-gremius-cyan-20 hover:bg-gremius-cyan-20 transition-colors"
+            class="inline-flex items-center px-2 py-0.5 text-xs rounded-md bg-kitsuden-accent-10 text-kitsuden-accent border border-kitsuden-accent-20 hover:bg-kitsuden-accent-20 transition-colors"
             onclick={() => handleClick(item)}
           >
             {item.label}
@@ -67,7 +67,7 @@
       {/each}
 
       {#if remainingCount > 0}
-        <span class="text-xs text-gremius-subtle">
+        <span class="text-xs text-kitsuden-subtle">
           +{remainingCount} more
         </span>
       {/if}

@@ -241,9 +241,9 @@ export class GrimoireConfigStore {
       storage: {
         provider: "minio",
         endpoint: "http://localhost:9000",
-        bucket: "gremius-media",
+        bucket: "kitsuden-media",
         useSSL: false,
-        publicUrl: "http://localhost:9000/gremius-media",
+        publicUrl: "http://localhost:9000/kitsuden-media",
       },
       features: {
         thumbnails: true,

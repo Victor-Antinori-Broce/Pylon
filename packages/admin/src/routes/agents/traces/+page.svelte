@@ -24,9 +24,8 @@
     try {
       loading = true;
       error = null;
-      const result = await listTraces({ limit, offset });
-      traces = result.traces;
-      total = result.total;
+      traces = await listTraces({ limit, offset });
+      total = traces.length;
     } catch (e) {
       error = e instanceof Error ? e.message : "Error cargando traces";
     } finally {

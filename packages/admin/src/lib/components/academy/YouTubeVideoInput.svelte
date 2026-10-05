@@ -90,7 +90,7 @@
 </script>
 
 <div class="space-y-3">
-  <label class="block text-sm font-medium text-gremius-text">
+  <label class="block text-sm font-medium text-kitsuden-text">
     {label}
     {#if required}
       <span class="text-red-400">*</span>
@@ -98,7 +98,7 @@
   </label>
 
   <div class="relative">
-    <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gremius-subtle">
+    <div class="absolute left-3 top-1/2 -translate-y-1/2 text-kitsuden-subtle">
       <Video class="w-5 h-5" />
     </div>
     <input
@@ -107,11 +107,11 @@
       oninput={handleInput}
       onblur={handleValidate}
       placeholder="https://www.youtube.com/watch?v=..."
-      class="w-full pl-10 pr-10 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan/50"
+      class="w-full pl-10 pr-10 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent/50"
     />
     {#if loading}
       <div class="absolute right-3 top-1/2 -translate-y-1/2">
-        <Loader2 class="w-4 h-4 animate-spin text-gremius-cyan" />
+        <Loader2 class="w-4 h-4 animate-spin text-kitsuden-accent" />
       </div>
     {:else if videoInfo}
       <div class="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">
@@ -129,23 +129,23 @@
 
   <!-- Preview del video -->
   {#if videoInfo}
-    <div class="card p-3 border-gremius-cyan/20">
+    <div class="card p-3 border-kitsuden-accent/20">
       <div class="flex gap-3">
-        <div class="w-32 h-20 bg-gremius-surface rounded-lg overflow-hidden flex-shrink-0">
+        <div class="w-32 h-20 bg-kitsuden-surface rounded-lg overflow-hidden flex-shrink-0">
           <img src={videoInfo.thumbnailUrl} alt="Thumbnail" class="w-full h-full object-cover" />
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gremius-text truncate">
+          <p class="text-sm font-medium text-kitsuden-text truncate">
             {videoInfo.titulo || "Video de YouTube"}
           </p>
-          <p class="text-xs text-gremius-subtle mt-1">
+          <p class="text-xs text-kitsuden-subtle mt-1">
             ID: {videoInfo.videoId}
           </p>
           <a
             href={inputValue}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-xs text-gremius-cyan hover:underline mt-2"
+            class="inline-flex items-center gap-1 text-xs text-kitsuden-accent hover:underline mt-2"
           >
             <ExternalLink class="w-3 h-3" />
             Ver en YouTube
@@ -158,6 +158,6 @@
 
 <style>
   .card {
-    @apply bg-gremius-card border border-gremius-border rounded-xl;
+    @apply bg-kitsuden-card border border-kitsuden-border rounded-xl;
   }
 </style>

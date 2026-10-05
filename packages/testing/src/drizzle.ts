@@ -14,7 +14,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { newDb, DataType } from "pg-mem";
 
-import type { TestGrimoireContext } from "./types.js";
+import type { TestKonContext } from "./types.js";
 
 export interface DrizzleTestConfig {
   strategy: "memory" | "postgres";
@@ -137,7 +137,7 @@ async function createPostgresTestDatabase(config: DrizzleTestConfig) {
   const connectionString =
     config.connectionString ||
     process.env.TEST_DATABASE_URL ||
-    "postgres://postgres:postgres@localhost:5432/gremius_test";
+    "postgres://postgres:postgres@localhost:5432/kitsuden_test";
 
   const pool = new Pool({ connectionString });
 
@@ -171,7 +171,7 @@ async function createPostgresTestDatabase(config: DrizzleTestConfig) {
 export async function createDrizzleTestContext(
   sandboxId: string,
   drizzleConfig: DrizzleTestConfig
-): Promise<TestGrimoireContext> {
+): Promise<TestKonContext> {
   const { db, cleanup: _cleanup, transaction } = await createDrizzleTestDb(drizzleConfig);
 
   const { createTestContext } = await import("./context.js");
@@ -200,7 +200,7 @@ export async function createDrizzleTestContext(
     },
 
     $transaction: transaction,
-  } as TestGrimoireContext;
+  } as TestKonContext;
 }
 
 export default { createDrizzleTestDb, createDrizzleTestContext };

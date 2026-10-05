@@ -1,21 +1,25 @@
 /**
  * MCP Server HTTP Tests
  *
- * Tests the Model Context Protocol endpoints.
+ * Tests the Model Context Protocol endpoints using a real Agent NHI token.
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
+import { eq } from "drizzle-orm";
 
+import { db } from "../db";
+import { agentIdentities, authUsers } from "../db/schema";
 import { app } from "../index";
 
 import { isDatabaseAvailable, generateTestId } from "./setup";
 
 let dbAvailable = false;
 
-function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
+function req(path: string, opts: RequestInit = {}, cookie?: string, bearer?: string): Request {
   const headers = new Headers(opts.headers);
   if (cookie) headers.set("Cookie", cookie);
-  headers.set("Content-Type", "application/json");
+  if (bearer) headers.set("Authorization", `Bearer ${bearer}`);
+  if (opts.body) headers.set("Content-Type", "application/json");
   return new Request(`http://localhost:3000${path}`, { ...opts, headers });
 }
 
@@ -29,58 +33,143 @@ describe("MCP Server", () => {
     dbAvailable = await isDatabaseAvailable();
   });
 
-  const email = `mcp-${generateTestId()}@example.com`;
+  const adminEmail = `mcp-admin-${generateTestId()}@example.com`;
   const password = "TestPassword123!";
-  let cookie = "";
+  let cookieAdmin = "";
+  let agentToken = "";
+  let datasetId = "";
   let sessionId = "";
 
   describe("Setup", () => {
-    it("creates and signs in a user", async () => {
+    it("creates an admin user and signs in", async () => {
       if (!dbAvailable) return;
 
       await app.request(
         req("/api/auth/sign-up/email", {
           method: "POST",
-          body: JSON.stringify({ email, password, name: "MCP User" }),
+          body: JSON.stringify({
+            email: adminEmail,
+            password,
+            name: "MCP Admin",
+          }),
         })
       );
       const res = await app.request(
         req("/api/auth/sign-in/email", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email: adminEmail, password }),
         })
       );
-      cookie = extractCookie(res.headers);
+      cookieAdmin = extractCookie(res.headers);
+
+      // Promote user to admin so they can create API keys.
+      const session = await app.request(req("/api/auth/get-session", {}, cookieAdmin));
+      const sessionBody = (await session.json()) as any;
+      await db
+        .update(authUsers)
+        .set({ role: "admin" })
+        .where(eq(authUsers.id, sessionBody.user.id));
+    });
+
+    it("creates a dataset with sample data for tool tests", async () => {
+      if (!dbAvailable) return;
+
+      const dsRes = await app.request(
+        req(
+          "/api/data-sets",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              name: `MCP Test Dataset ${generateTestId()}`,
+              slug: `mcp-ds-${generateTestId()}`,
+              description: "Dataset for MCP tool test",
+              schema: {
+                fields: [{ id: "f1", key: "title", type: "text", label: "Title", required: true }],
+                version: "2.0",
+              },
+            }),
+          },
+          cookieAdmin
+        )
+      );
+      expect(dsRes.status).toBe(201);
+      const dsBody = (await dsRes.json()) as any;
+      datasetId = dsBody.id;
+
+      const entryRes = await app.request(
+        req(
+          `/api/data-sets/${datasetId}/entries`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              title: "MCP Entry",
+              data: { note: "sample" },
+              status: "published",
+            }),
+          },
+          cookieAdmin
+        )
+      );
+      expect(entryRes.status).toBe(201);
+    });
+
+    it("creates an Agent NHI token with MCP scope", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(
+        req(
+          "/api/keys",
+          {
+            method: "POST",
+            body: JSON.stringify({ name: "MCP Test Agent" }),
+          },
+          cookieAdmin
+        )
+      );
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      agentToken = body.token;
+      expect(agentToken).toMatch(/^kitsuden_agent_/);
+
+      // Grant the MCP connection scope required by the MCP auth middleware.
+      await db
+        .update(agentIdentities)
+        .set({ scopes: ["admin", "mcp:connect"] })
+        .where(eq(agentIdentities.id, body.id));
     });
   });
 
   describe("SSE Endpoint", () => {
-    it("should establish SSE connection", async () => {
+    it("should establish SSE connection with a valid agent token", async () => {
       if (!dbAvailable) return;
 
-      const res = await app.request(req("/api/mcp", {}, cookie));
+      const res = await app.request(req("/api/mcp", {}, undefined, agentToken));
+      expect(res.status).toBe(200);
 
-      // MCP may be disabled (404) or enabled (200 with text/event-stream)
-      expect([200, 404]).toContain(res.status);
+      const contentType = res.headers.get("content-type") || "";
+      expect(contentType).toContain("text/event-stream");
 
-      if (res.status === 200) {
-        const contentType = res.headers.get("content-type") || "";
-        expect(contentType).toContain("text/event-stream");
+      const body = await res.text();
+      expect(body).toContain("event: endpoint");
+      expect(body).toContain("/api/mcp?sessionId=");
 
-        const body = await res.text();
-        expect(body).toContain("event: endpoint");
-        expect(body).toContain("/api/mcp?sessionId=");
+      const match = body.match(/sessionId=([a-zA-Z0-9-]+)/);
+      expect(match).not.toBeNull();
+      sessionId = match![1];
+    });
 
-        // Extract sessionId from SSE response
-        const match = body.match(/sessionId=([a-zA-Z0-9-]+)/);
-        if (match) sessionId = match[1];
-      }
+    it("should reject SSE connection without auth", async () => {
+      if (!dbAvailable) return;
+
+      const res = await app.request(req("/api/mcp"));
+      expect(res.status).toBe(401);
     });
   });
 
   describe("JSON-RPC Endpoint", () => {
     it("should respond to initialize", async () => {
-      if (!dbAvailable || !sessionId) return;
+      if (!dbAvailable) return;
+      expect(sessionId).not.toBe("");
 
       const res = await app.request(
         req(
@@ -98,41 +187,47 @@ describe("MCP Server", () => {
               },
             }),
           },
-          cookie
+          undefined,
+          agentToken
         )
       );
 
-      expect([200, 404]).toContain(res.status);
-      if (res.status === 200) {
-        const body = (await res.json()) as any;
-        expect(body.jsonrpc).toBe("2.0");
-        expect(body.id).toBe(1);
-      }
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.jsonrpc).toBe("2.0");
+      expect(body.id).toBe(1);
+      expect(body.result.protocolVersion).toBe("2024-11-05");
+      expect(body.result.serverInfo.name).toBe("kitsuden-mcp-server");
     });
 
     it("should reject requests without sessionId", async () => {
       if (!dbAvailable) return;
 
       const res = await app.request(
-        req("/api/mcp", {
-          method: "POST",
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "initialize",
-            params: {},
-          }),
-        })
+        req(
+          "/api/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "initialize",
+              params: {},
+            }),
+          },
+          undefined,
+          agentToken
+        )
       );
 
-      // Without sessionId should return error
-      expect([400, 404, 200]).toContain(res.status);
+      expect(res.status).toBe(400);
     });
   });
 
-  describe("Tool: gremius_query_dataset", () => {
+  describe("Tool: kitsuden_query_dataset", () => {
     it("should query dataset via MCP tool", async () => {
-      if (!dbAvailable || !sessionId) return;
+      if (!dbAvailable) return;
+      expect(sessionId).not.toBe("");
 
       const res = await app.request(
         req(
@@ -144,34 +239,34 @@ describe("MCP Server", () => {
               id: 2,
               method: "tools/call",
               params: {
-                name: "gremius_query_dataset",
+                name: "kitsuden_query_dataset",
                 arguments: {
-                  datasetSlug: "data_sets",
+                  datasetId,
                   limit: 5,
                 },
               },
             }),
           },
-          cookie
+          undefined,
+          agentToken
         )
       );
 
-      expect([200, 404]).toContain(res.status);
-      if (res.status === 200) {
-        const body = (await res.json()) as any;
-        expect(body.jsonrpc).toBe("2.0");
-      }
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.jsonrpc).toBe("2.0");
+      expect(body.id).toBe(2);
+      expect(body.result).toBeDefined();
+      expect(body.result.content).toBeDefined();
     });
   });
 
   describe("RLS via MCP", () => {
-    it("should not leak data across sessions", async () => {
+    it("should require auth for all MCP endpoints", async () => {
       if (!dbAvailable) return;
 
-      // This is a conceptual test: MCP sessions are isolated by sessionId.
-      // We verify the endpoint exists and requires auth/session.
       const res = await app.request(req("/api/mcp"));
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(401);
     });
   });
 });

@@ -83,10 +83,10 @@
       <!-- Header -->
       <div class="flex items-center justify-between mb-3 px-1">
         <div class="flex items-center gap-2">
-          <h3 class="font-semibold text-gremius-text text-sm uppercase tracking-wide">
+          <h3 class="font-semibold text-kitsuden-text text-sm uppercase tracking-wide">
             {group.label}
           </h3>
-          <span class="bg-gremius-border text-[10px] px-1.5 rounded-full text-gremius-text-dim">
+          <span class="bg-kitsuden-border text-[10px] px-1.5 rounded-full text-kitsuden-text-dim">
             {group.entries.length}
           </span>
         </div>
@@ -94,7 +94,7 @@
 
       <!-- Column (Drop Zone) -->
       <div
-        class="flex-1 bg-gremius-card/30 rounded-xl p-2 overflow-y-auto space-y-2 border border-transparent transition-colors"
+        class="flex-1 bg-kitsuden-card/30 rounded-xl p-2 overflow-y-auto space-y-2 border border-transparent transition-colors"
         ondragover={(e) => e.preventDefault()}
         ondrop={(e) => onDrop(e, group.key)}
         role="region"
@@ -103,7 +103,7 @@
         <!-- Cards -->
         {#each group.entries as entry (entry.id)}
           <div
-            class="bg-gremius-card border border-gremius-border rounded-lg p-3 shadow-sm hover:border-gremius-cyan/50 cursor-grab active:cursor-grabbing group transition-all"
+            class="bg-kitsuden-card border border-kitsuden-border rounded-lg p-3 shadow-sm hover:border-kitsuden-accent/50 cursor-grab active:cursor-grabbing group transition-all"
             draggable="true"
             ondragstart={(e) => onDragStart(e, entry)}
             onclick={() => onEdit?.(entry)}
@@ -115,21 +115,21 @@
             {#if (entry as any).thumbnailId}
               <div class="mb-2 rounded overflow-hidden h-24 bg-black/20">
                 <div
-                  class="w-full h-full flex items-center justify-center text-xs text-gremius-text-dim"
+                  class="w-full h-full flex items-center justify-center text-xs text-kitsuden-text-dim"
                 >
                   Image
                 </div>
               </div>
             {/if}
 
-            <h4 class="font-medium text-gremius-text text-sm mb-1 line-clamp-2">
+            <h4 class="font-medium text-kitsuden-text text-sm mb-1 line-clamp-2">
               {entry.data.title || "Untitled"}
             </h4>
 
             <!-- Fields Preview -->
             <div class="space-y-1">
               {#each previewFields as field (field.key)}
-                <div class="text-[10px] text-gremius-text-dim flex justify-between">
+                <div class="text-[10px] text-kitsuden-text-dim flex justify-between">
                   <span class="opacity-70">{field.label}:</span>
                   <span class="truncate ml-2 max-w-[120px]">{entry.data[field.key]}</span>
                 </div>
@@ -139,7 +139,7 @@
             <!-- Actions on Hover -->
             <div class="mt-2 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
               <button
-                class="p-1 hover:text-gremius-danger"
+                class="p-1 hover:text-kitsuden-danger"
                 onclick={(e) => {
                   e.stopPropagation();
                   onDelete?.(entry);
@@ -154,7 +154,7 @@
         <!-- Empty state for column -->
         {#if group.entries.length === 0}
           <div
-            class="h-24 border-2 border-dashed border-gremius-border/50 rounded-lg flex items-center justify-center text-xs text-gremius-text-dim/50"
+            class="h-24 border-2 border-dashed border-kitsuden-border/50 rounded-lg flex items-center justify-center text-xs text-kitsuden-text-dim/50"
           >
             Empty
           </div>
@@ -167,19 +167,19 @@
   {#if ungroupedEntries.length > 0}
     <div class="w-72 shrink-0 flex flex-col">
       <div class="flex items-center gap-2 mb-3 px-1">
-        <h3 class="font-semibold text-gremius-text-dim text-sm uppercase tracking-wide">
+        <h3 class="font-semibold text-kitsuden-text-dim text-sm uppercase tracking-wide">
           Unassigned
         </h3>
-        <span class="bg-gremius-border text-[10px] px-1.5 rounded-full text-gremius-text-dim"
+        <span class="bg-kitsuden-border text-[10px] px-1.5 rounded-full text-kitsuden-text-dim"
           >{ungroupedEntries.length}</span
         >
       </div>
       <div
-        class="flex-1 bg-gremius-card/10 rounded-xl p-2 overflow-y-auto space-y-2 border border-dashed border-gremius-border/30"
+        class="flex-1 bg-kitsuden-card/10 rounded-xl p-2 overflow-y-auto space-y-2 border border-dashed border-kitsuden-border/30"
       >
         {#each ungroupedEntries as entry (entry.id)}
           <div
-            class="bg-gremius-card/50 border border-gremius-border/50 rounded-lg p-3 opacity-70 hover:opacity-100"
+            class="bg-kitsuden-card/50 border border-kitsuden-border/50 rounded-lg p-3 opacity-70 hover:opacity-100"
             draggable="true"
             ondragstart={(e) => onDragStart(e, entry)}
           >

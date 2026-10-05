@@ -1,5 +1,5 @@
 # ===================================================================
-# GremiusCMS - Development Image with Auto-Setup
+# Kitsuden - Development Image with Auto-Setup
 #
 # NOTE: For local development, prefer running apps locally with:
 #   pnpm dev:infra   (starts DB, MinIO, Valkey in Docker)
@@ -23,10 +23,10 @@ COPY packages/admin/package.json ./packages/admin/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/engine/package.json ./packages/engine/
 COPY packages/core/package.json ./packages/core/
-COPY packages/grimoires/package.json ./packages/grimoires/
+COPY packages/kons/package.json ./packages/kons/
 COPY packages/mcp-server/package.json ./packages/mcp-server/
 COPY packages/sdk/package.json ./packages/sdk/
-COPY packages/realms/package.json ./packages/realms/
+COPY packages/grimoires/package.json ./packages/grimoires/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile

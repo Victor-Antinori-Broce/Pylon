@@ -1,6 +1,13 @@
 import pg from "pg";
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error("Error: DATABASE_URL is not set. Configure your .env file.");
+  process.exit(1);
+}
+
 const pool = new pg.Pool({
-  connectionString: "postgres://gremius:gremiuspassword@localhost:5432/gremius_prod",
+  connectionString,
   connectionTimeoutMillis: 5000,
 });
 try {

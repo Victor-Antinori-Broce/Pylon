@@ -21,6 +21,7 @@
  * }
  */
 
+import { messageOf } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 
@@ -177,7 +178,7 @@ async function resolveCollection(collectionSlug: string): Promise<CollectionInfo
 
 function toHumanName(slug: string): string {
   return slug
-    .replace(/^grimoire[-_]/, "")
+    .replace(/^kon[-_]/, "")
     .replace(/_/g, " ")
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (s) => s.toUpperCase())
@@ -235,9 +236,9 @@ codegenRoutes.post("/", async (c) => {
       fileCount: files.length,
       files,
     });
-  } catch (err: any) {
-    logger.error({ error: err.message }, "Code generation failed");
-    return c.json({ error: "Code generation failed", details: err.message }, 500);
+  } catch (err: unknown) {
+    logger.error({ error: messageOf(err) }, "Code generation failed");
+    return c.json({ error: "Code generation failed", details: messageOf(err) }, 500);
   }
 });
 
@@ -259,8 +260,8 @@ codegenRoutes.get("/collections", async (c) => {
       datasets: datasets.map((d) => ({ slug: d.slug, name: d.name, kind: "dataset" })),
       nativeTables,
     });
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+  } catch (err: unknown) {
+    return c.json({ error: messageOf(err) }, 500);
   }
 });
 
@@ -273,8 +274,8 @@ codegenRoutes.get("/:collection", async (c) => {
       return c.json({ error: `Collection '${slug}' not found` }, 404);
     }
     return c.json(info);
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+  } catch (err: unknown) {
+    return c.json({ error: messageOf(err) }, 500);
   }
 });
 

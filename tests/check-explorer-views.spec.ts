@@ -5,7 +5,7 @@ const ADMIN = process.env.ADMIN_URL || "http://localhost:5173";
 test.describe("Data Explorer Views Verification", () => {
   test.setTimeout(60000);
 
-  test("Verify Grid and Kanban views on Grimoire", async ({ page }) => {
+  test("Verify Grid and Kanban views on Kon", async ({ page }) => {
     // 1. Log in to the admin panel
     await page.goto(ADMIN);
 
@@ -14,26 +14,26 @@ test.describe("Data Explorer Views Verification", () => {
     if (page.url().includes("/setup")) {
       await page.waitForSelector('input[type="text"]', { timeout: 20000 });
       await page.locator('input[type="text"]').fill("Admin ExplorerTest");
-      await page.locator('input[type="email"]').fill("explorer@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("explorer@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
       await page.waitForURL(/\/$/, { timeout: 20_000 });
     } else if (page.url().includes("/login")) {
       await page.waitForSelector('input[type="email"]');
-      await page.locator('input[type="email"]').fill("admin@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
 
       try {
         await page.waitForURL(/\/$/, { timeout: 15_000 });
       } catch (e) {
-        await page.locator('input[type="email"]').fill("explorer@gremius.gg");
+        await page.locator('input[type="email"]').fill("explorer@kitsuden.gg");
         await page.locator('button[type="submit"]').click();
         await page.waitForURL(/\/$/, { timeout: 15_000 });
       }
     }
 
-    // 2. Go to tags grimoire (which we now mocked with a kanban config)
+    // 2. Go to tags kon (which we now mocked with a kanban config)
     await page.goto(`${ADMIN}/g/tags`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
 
@@ -45,7 +45,7 @@ test.describe("Data Explorer Views Verification", () => {
     expect(hasTable || hasSearch).toBeTruthy();
 
     // Verify view tabs exist
-    // Grimoire-games/grimoire.json defines: "All Games" (grid) and "By Status" (kanban)
+    // Kon-games/kon.json defines: "All Games" (grid) and "By Status" (kanban)
     const allGamesTab = page.locator("button", { hasText: "All Games" });
     const byStatusTab = page.locator("button", { hasText: "By Status" });
 
@@ -80,7 +80,7 @@ test.describe("Data Explorer Views Verification", () => {
       expect(hasRevertedTable).toBeTruthy();
       console.log("Successfully switched back to Grid view.");
     } else {
-      console.warn("View tabs not found. Grimoire might be using defaults or Custom UI took over.");
+      console.warn("View tabs not found. Kon might be using defaults or Custom UI took over.");
     }
   });
 });

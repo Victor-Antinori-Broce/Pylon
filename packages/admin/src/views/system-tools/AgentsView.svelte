@@ -196,8 +196,9 @@
     }}
   >
     <div>
-      <label class="block text-sm font-medium text-zinc-300 mb-1.5">Nombre</label>
+      <label for="name" class="block text-sm font-medium text-zinc-300 mb-1.5">Nombre</label>
       <input
+        id="name"
         type="text"
         bind:value={formData.name}
         placeholder="Mi Agente"
@@ -207,8 +208,11 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-zinc-300 mb-1.5">Descripción</label>
+      <label for="description" class="block text-sm font-medium text-zinc-300 mb-1.5"
+        >Descripción</label
+      >
       <textarea
+        id="description"
         bind:value={formData.description}
         placeholder="Describe el propósito de este agente..."
         rows={3}
@@ -217,8 +221,9 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-zinc-300 mb-1.5">Modelo</label>
+      <label for="model" class="block text-sm font-medium text-zinc-300 mb-1.5">Modelo</label>
       <select
+        id="model"
         bind:value={formData.model}
         class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
       >

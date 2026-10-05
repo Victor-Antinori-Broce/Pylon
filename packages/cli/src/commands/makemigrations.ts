@@ -11,25 +11,25 @@ import { findProjectRoot } from "../utils/project.js";
 const execAsync = promisify(exec);
 
 export async function makemigrationsCommand(options: { name?: string; dryRun?: boolean }) {
-  console.log(chalk.blue("🔍 Detectando schemas de grimoires...\n"));
+  console.log(chalk.blue("🔍 Detectando schemas de kons...\n"));
 
   try {
     const projectRoot = await findProjectRoot();
-    const grimoiresPath = path.join(projectRoot, "packages", "grimoires");
-    const grimoires = await fs.readdir(grimoiresPath);
+    const konsPath = path.join(projectRoot, "packages", "kons");
+    const kons = await fs.readdir(konsPath);
     let totalChanges = 0;
 
-    for (const grimoire of grimoires) {
-      const grimoirePath = path.join(grimoiresPath, grimoire);
-      const stat = await fs.stat(grimoirePath).catch(() => null);
+    for (const kon of kons) {
+      const konPath = path.join(konsPath, kon);
+      const stat = await fs.stat(konPath).catch(() => null);
       if (!stat || !stat.isDirectory()) continue;
 
-      // Buscar schema.ts o [grimoire].schema.ts
+      // Buscar schema.ts o [kon].schema.ts
       let schemaPath: string | null = null;
       const candidates = [
-        path.join(grimoirePath, "schema.ts"),
-        path.join(grimoirePath, `${grimoire.replace(/^grimoire-/, "")}.schema.ts`),
-        path.join(grimoirePath, `${grimoire}.schema.ts`),
+        path.join(konPath, "schema.ts"),
+        path.join(konPath, `${kon.replace(/^kon-/, "")}.schema.ts`),
+        path.join(konPath, `${kon}.schema.ts`),
       ];
 
       for (const candidate of candidates) {
@@ -43,16 +43,16 @@ export async function makemigrationsCommand(options: { name?: string; dryRun?: b
       }
 
       if (!schemaPath) {
-        console.log(chalk.gray(`  ${grimoire}: No schema found`));
+        console.log(chalk.gray(`  ${kon}: No schema found`));
         continue;
       }
 
       console.log(
-        chalk.yellow(`  ${grimoire}: Schema found at ${path.relative(process.cwd(), schemaPath)}`)
+        chalk.yellow(`  ${kon}: Schema found at ${path.relative(process.cwd(), schemaPath)}`)
       );
 
       // Generar SQL usando drizzle-kit export
-      const sql = await generateSqlWithDrizzleKit(grimoirePath, schemaPath);
+      const sql = await generateSqlWithDrizzleKit(konPath, schemaPath);
       if (!sql || !sql.trim()) {
         console.log(chalk.gray(`    → No SQL generated`));
         continue;
@@ -68,7 +68,7 @@ export async function makemigrationsCommand(options: { name?: string; dryRun?: b
       }
 
       // Guardar archivo
-      const migrationsDir = path.join(grimoirePath, "migrations");
+      const migrationsDir = path.join(konPath, "migrations");
       await fs.mkdir(migrationsDir, { recursive: true });
 
       const timestamp = Date.now();
@@ -84,7 +84,7 @@ export async function makemigrationsCommand(options: { name?: string; dryRun?: b
       console.log(chalk.green("\n✅ No schemas with changes found."));
     } else {
       console.log(chalk.green(`\n✅ Created ${totalChanges} migration file(s).`));
-      console.log(chalk.gray('Run "gremius migrate" to apply them.'));
+      console.log(chalk.gray('Run "kitsuden migrate" to apply them.'));
     }
   } catch (error) {
     console.error(chalk.red("❌ Error:"), error);
@@ -92,14 +92,11 @@ export async function makemigrationsCommand(options: { name?: string; dryRun?: b
   }
 }
 
-async function generateSqlWithDrizzleKit(
-  grimoirePath: string,
-  schemaPath: string
-): Promise<string> {
-  const tempSchema = path.join(grimoirePath, "__drizzle_schema.ts");
-  const tempConfig = path.join(grimoirePath, "__drizzle_config.ts");
+async function generateSqlWithDrizzleKit(konPath: string, schemaPath: string): Promise<string> {
+  const tempSchema = path.join(konPath, "__drizzle_schema.ts");
+  const tempConfig = path.join(konPath, "__drizzle_config.ts");
 
-  const relativeSchema = path.relative(grimoirePath, schemaPath).replace(/\\/g, "/");
+  const relativeSchema = path.relative(konPath, schemaPath).replace(/\\/g, "/");
 
   try {
     await fs.writeFile(tempSchema, `export * from './${relativeSchema.replace(/\.ts$/, "")}';\n`);
@@ -110,7 +107,7 @@ export default defineConfig({
   out: './__drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || 'postgres://localhost/gremius'
+    url: process.env.DATABASE_URL || 'postgres://localhost/kitsuden'
   }
 });
 `;
@@ -119,7 +116,7 @@ export default defineConfig({
     const { stdout, stderr } = await execAsync(
       "npx drizzle-kit export --config __drizzle_config.ts --sql",
       {
-        cwd: grimoirePath,
+        cwd: konPath,
         env: { ...process.env, NODE_ENV: "development" },
         timeout: 60000,
       }
@@ -132,7 +129,7 @@ export default defineConfig({
     return stdout.trim();
   } catch (error: any) {
     console.error(
-      chalk.red(`    drizzle-kit export failed for ${path.basename(grimoirePath)}:`),
+      chalk.red(`    drizzle-kit export failed for ${path.basename(konPath)}:`),
       error?.stderr || error?.message || error
     );
     return "";
@@ -140,8 +137,6 @@ export default defineConfig({
     // Limpiar temporales
     await fs.unlink(tempSchema).catch(() => {});
     await fs.unlink(tempConfig).catch(() => {});
-    await fs
-      .rm(path.join(grimoirePath, "__drizzle"), { recursive: true, force: true })
-      .catch(() => {});
+    await fs.rm(path.join(konPath, "__drizzle"), { recursive: true, force: true }).catch(() => {});
   }
 }

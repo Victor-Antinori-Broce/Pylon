@@ -34,8 +34,8 @@ test.describe("Academy LMS Integration", () => {
     // Login and get auth cookie
     const loginRes = await request.post(`${API}/api/auth/sign-in/email`, {
       data: {
-        email: "admin@gremius.gg",
-        password: "gremius123",
+        email: "admin@kitsuden.gg",
+        password: "kitsuden123",
       },
     });
 

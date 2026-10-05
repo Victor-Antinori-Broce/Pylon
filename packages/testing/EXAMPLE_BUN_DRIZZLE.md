@@ -1,18 +1,18 @@
 # Testing with Bun + Drizzle + Hono
 
-Since Gremius uses **Bun** as runtime, **Drizzle ORM** for database, and **Hono** for API, here's the optimal testing setup:
+Since Kitsuden uses **Bun** as runtime, **Drizzle ORM** for database, and **Hono** for API, here's the optimal testing setup:
 
 ## Option 1: Bun Test Runner (Recommended)
 
 Bun has a built-in test runner that's faster than Vitest for Bun projects.
 
 ```typescript
-// packages/grimoires/grimoire-blog/blog.test.ts
+// packages/kons/kon-blog/blog.test.ts
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "bun:test";
-import { createTestSandbox } from "@gremius/testing/bun";
+import { createTestSandbox } from "@kitsuden/testing/bun";
 
 const sandbox = await createTestSandbox({
-  grimoires: ["grimoire-blog"],
+  kons: ["kon-blog"],
   database: "postgres", // Uses real PostgreSQL with transactions
   fixtures: {
     users: [{ id: "admin-1", email: "admin@test.com", role: "admin" }],
@@ -23,7 +23,7 @@ beforeAll(() => sandbox.setup());
 afterAll(() => sandbox.teardown());
 afterEach(() => sandbox.reset());
 
-describe("grimoire-blog", () => {
+describe("kon-blog", () => {
   it("creates post with Drizzle ORM", async () => {
     const response = await sandbox.http.asUser("admin-1").post("/api/blog/posts", {
       title: "Test Post",
@@ -52,7 +52,7 @@ For unit tests that don't need real PostgreSQL:
 
 ```typescript
 import { describe, it, expect } from "bun:test";
-import { createDrizzleTestDb } from "@gremius/testing/drizzle";
+import { createDrizzleTestDb } from "@kitsuden/testing/drizzle";
 import { postsTable } from "./schema";
 
 // Create in-memory PostgreSQL
@@ -88,7 +88,7 @@ await cleanup();
 For integration tests:
 
 ```typescript
-import { createDrizzleTestDb } from "@gremius/testing/drizzle";
+import { createDrizzleTestDb } from "@kitsuden/testing/drizzle";
 
 const { db, transaction } = await createDrizzleTestDb({
   strategy: "postgres",
@@ -131,7 +131,7 @@ it("creates post with relations", async () => {
 import { Hono } from "hono";
 import { describe, it, expect } from "bun:test";
 
-// Your grimoire router
+// Your kon router
 const app = new Hono();
 app.get("/api/posts", async (c) => {
   const posts = await db.select().from(postsTable);
@@ -179,15 +179,15 @@ it("renders post editor", () => {
 ## Complete Example with YOUR Stack
 
 ```typescript
-// grimoire-blog.test.ts
+// kon-blog.test.ts
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { eq } from "drizzle-orm";
-import { createTestSandbox } from "@gremius/testing/bun";
+import { createTestSandbox } from "@kitsuden/testing/bun";
 import { postsTable } from "./schema";
 
 // Setup with YOUR stack
 const sandbox = await createTestSandbox({
-  grimoires: ["grimoire-blog"],
+  kons: ["kon-blog"],
   database: "postgres", // Real PostgreSQL with transactions
   fixtures: {
     admin: { id: "1", email: "admin@test.com", role: "admin" },
@@ -232,7 +232,7 @@ describe("Blog API", () => {
 
 ```bash
 # 1. Install dependencies
-bun add -d @gremius/testing pg-mem
+bun add -d @kitsuden/testing pg-mem
 
 # 2. Add to package.json scripts
 {
@@ -245,7 +245,7 @@ bun add -d @gremius/testing pg-mem
 
 # 3. Environment variables
 # .env.test
-TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/gremius_test
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/kitsuden_test
 ```
 
 ## Key Points

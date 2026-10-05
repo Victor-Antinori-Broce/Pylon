@@ -10,9 +10,10 @@
  * - Auditoría de uso
  */
 
-import { createHash, randomBytes } from "crypto";
+import { createHash } from "crypto";
 
-import { eq, and, sql } from "drizzle-orm";
+import { verify as argon2Verify } from "@node-rs/argon2";
+import { eq } from "drizzle-orm";
 
 import { db } from "../db";
 import { agentIdentities, agentApiKeys } from "../db/schema";
@@ -51,7 +52,22 @@ const rateLimitCache = new Map<string, RateLimitEntry>();
 // GENERACIÓN DE API KEYS (CON TIPO)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const API_KEY_PREFIX = "grm_agent_";
+/** Prefijo canónico de las Agent NHI keys. */
+const API_KEY_PREFIX = "kitsuden_agent_";
+
+/**
+ * Prefijos legacy aceptados SOLO al autenticar keys ya emitidas (nunca al
+ * generar). Sunset 2026-08-01, alineado con las keys `kitsuden_sk_*`.
+ */
+const LEGACY_API_KEY_PREFIXES = ["grm_agent_"] as const;
+
+/** Todos los prefijos que el parser acepta durante la migración. */
+export const ACCEPTED_API_KEY_PREFIXES = [API_KEY_PREFIX, ...LEGACY_API_KEY_PREFIXES] as const;
+
+/** True si el token tiene forma de Agent NHI key (canónica o legacy). */
+export function isAgentApiKey(token: string): boolean {
+  return ACCEPTED_API_KEY_PREFIXES.some((p) => token.startsWith(p));
+}
 
 // Re-exportar tipos y constantes para conveniencia
 export { AGENT_TYPES, type AgentType, getAgentTypeFromApiKey } from "../utils/id-generator";
@@ -66,38 +82,72 @@ export { AGENT_TYPES, type AgentType, getAgentTypeFromApiKey } from "../utils/id
  * @example
  * ```typescript
  * const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey('claude-desktop');
- * // plainKey: "grm_agent_claude-desktop_a1b2c3..."
+ * // plainKey: "kitsuden_agent_claude-desktop_a1b2c3..."
  * ```
  */
 export async function generateAgentApiKey(type?: string): Promise<{
   plainKey: string;
   keyHash: string;
+  keyId: string;
+  algorithm: "argon2id";
   keyPrefix: string;
 }> {
   // Si se proporciona un tipo, usar el generador tipificado
   if (type) {
-    const result = generateTypedAgentApiKey({ type });
+    const result = await generateTypedAgentApiKey({ type });
     return {
       plainKey: result.plainKey,
       keyHash: result.keyHash,
+      keyId: result.keyId,
+      algorithm: result.algorithm,
       keyPrefix: result.keyPrefix,
     };
   }
 
-  // Fallback: generar sin tipo (legacy format)
-  const randomPart = randomBytes(32).toString("base64url");
-  const plainKey = `${API_KEY_PREFIX}_${randomPart}`;
-  const keyHash = createHash("sha256").update(plainKey).digest("hex");
-  const keyPrefix = `${API_KEY_PREFIX}_****${randomPart.slice(-8)}`;
-
-  return { plainKey, keyHash, keyPrefix };
+  // Fallback: generar sin tipo (legacy format migrado a Argon2id)
+  return generateTypedAgentApiKey({ type: "legacy" });
 }
 
 /**
- * Hashea una API key existente (para verificación)
+ * Hashea una API key legacy con SHA-256 (solo para backward compatibility).
+ * Las nuevas keys usan Argon2id del secret.
  */
-export function hashApiKey(plainKey: string): string {
+export function hashApiKeyLegacy(plainKey: string): string {
   return createHash("sha256").update(plainKey).digest("hex");
+}
+
+/**
+ * Parsea una API key en sus componentes.
+ * Formato nuevo: kitsuden_agent_{type}_{keyId}_{secret}
+ * Formato legacy: kitsuden_agent_{type}_{secret} o kitsuden_agent_{secret}
+ *
+ * Acepta también el prefijo `grm_agent_` de keys emitidas antes del rebrand
+ * (sunset 2026-08-01); el resto del parseo es idéntico porque el prefijo solo
+ * marca el inicio — el keyId y el secret van por posición.
+ */
+function parseAgentApiKey(
+  apiKey: string
+): { type: string; keyId?: string; secret: string; isLegacy: boolean } | null {
+  const prefix = ACCEPTED_API_KEY_PREFIXES.find((p) => apiKey.startsWith(p));
+  if (!prefix) return null;
+
+  const rest = apiKey.slice(prefix.length);
+  const parts = rest.split("_");
+
+  // El secret siempre es la última parte (base64url)
+  const secret = parts[parts.length - 1];
+  if (!secret) return null;
+
+  // Detectar formato nuevo: penúltima parte es keyId de 16 hex
+  const maybeKeyId = parts[parts.length - 2];
+  if (maybeKeyId && /^[a-f0-9]{16}$/.test(maybeKeyId)) {
+    const type = parts.slice(0, parts.length - 2).join("_");
+    return { type, keyId: maybeKeyId, secret, isLegacy: false };
+  }
+
+  // Formato legacy
+  const type = parts.slice(0, parts.length - 1).join("_");
+  return { type, secret: rest.slice(type ? type.length + 1 : 0), isLegacy: true };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -121,8 +171,9 @@ export async function authenticateAgent(
   metadata?: { ipAddress?: string; userAgent?: string }
 ): Promise<AgentAuthResult> {
   try {
-    // 1. Validar formato de la key
-    if (!apiKey.startsWith(API_KEY_PREFIX)) {
+    // 1. Validar y parsear formato de la key
+    const parsed = parseAgentApiKey(apiKey);
+    if (!parsed) {
       logAuthFailure("unknown", "Invalid API key format", metadata?.ipAddress, metadata?.userAgent);
       return {
         success: false,
@@ -131,27 +182,29 @@ export async function authenticateAgent(
       };
     }
 
-    // 2. Hashear la key para buscarla
-    const keyHash = hashApiKey(apiKey);
+    // 2. Buscar key en DB según formato
+    let keyRow: typeof agentApiKeys.$inferSelect | undefined;
+    if (!parsed.isLegacy && parsed.keyId) {
+      // Formato Argon2id: buscar por keyId público
+      const [found] = await db
+        .select()
+        .from(agentApiKeys)
+        .where(eq(agentApiKeys.keyId, parsed.keyId))
+        .limit(1);
+      keyRow = found;
+    } else {
+      // Formato legacy SHA-256: buscar por hash de la key completa
+      const legacyHash = hashApiKeyLegacy(apiKey);
+      const [found] = await db
+        .select()
+        .from(agentApiKeys)
+        .where(eq(agentApiKeys.keyHash, legacyHash))
+        .limit(1);
+      keyRow = found;
+    }
 
-    // 3. Buscar en DB con join al agente
-    const result = await db
-      .select({
-        key: agentApiKeys,
-        agent: agentIdentities,
-      })
-      .from(agentApiKeys)
-      .innerJoin(agentIdentities, eq(agentApiKeys.agentId, agentIdentities.id))
-      .where(
-        and(
-          eq(agentApiKeys.keyHash, keyHash),
-          // Verificar que no esté expirada
-          sql`${agentApiKeys.expiresAt} IS NULL OR ${agentApiKeys.expiresAt} > NOW()`
-        )
-      )
-      .limit(1);
-
-    if (result.length === 0) {
+    // 3. Verificar hash y expiración con join al agente
+    if (!keyRow) {
       logAuthFailure(
         "unknown",
         "Invalid or expired API key",
@@ -165,7 +218,50 @@ export async function authenticateAgent(
       };
     }
 
-    const { key, agent } = result[0];
+    const isValid =
+      keyRow.algorithm === "argon2id"
+        ? await argon2Verify(keyRow.keyHash, parsed.secret)
+        : keyRow.keyHash === hashApiKeyLegacy(apiKey);
+
+    if (!isValid) {
+      logAuthFailure(
+        "unknown",
+        "Invalid or expired API key",
+        metadata?.ipAddress,
+        metadata?.userAgent
+      );
+      return {
+        success: false,
+        error: "Invalid or expired API key",
+        code: "INVALID_KEY",
+      };
+    }
+
+    if (keyRow.expiresAt && keyRow.expiresAt < new Date()) {
+      logAuthFailure("unknown", "API key expired", metadata?.ipAddress, metadata?.userAgent);
+      return {
+        success: false,
+        error: "API key expired",
+        code: "INVALID_KEY",
+      };
+    }
+
+    const [agent] = await db
+      .select()
+      .from(agentIdentities)
+      .where(eq(agentIdentities.id, keyRow.agentId))
+      .limit(1);
+
+    if (!agent) {
+      logAuthFailure(keyRow.agentId, "Agent not found", metadata?.ipAddress, metadata?.userAgent);
+      return {
+        success: false,
+        error: "Agent not found",
+        code: "AGENT_NOT_FOUND",
+      };
+    }
+
+    const key = keyRow;
 
     // 4. Verificar que el agente esté activo
     if (!agent.isActive) {
@@ -386,8 +482,8 @@ export async function createAgent(params: {
     expiresInDays,
   } = params;
 
-  // Generar API key con tipo incluido
-  const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey(type);
+  // Generar API key con tipo incluido (Argon2id)
+  const { plainKey, keyHash, keyId, algorithm, keyPrefix } = await generateAgentApiKey(type);
 
   // Crear agente con nuevos campos de persona
   const [agent] = await db
@@ -411,8 +507,10 @@ export async function createAgent(params: {
 
   await db.insert(agentApiKeys).values({
     agentId: agent.id,
+    keyId,
     keyHash,
     keyPrefix,
+    algorithm,
     expiresAt,
   });
 
@@ -499,7 +597,7 @@ export function requireAgentAuth(options?: {
       );
     }
 
-    // Formato: "Bearer grm_agent_xxxxx"
+    // Formato: "Bearer kitsuden_agent_xxxxx"
     const [scheme, apiKey] = authHeader.split(" ");
 
     if (scheme !== "Bearer" || !apiKey) {

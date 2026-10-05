@@ -9,7 +9,7 @@
 <button
   type="button"
   {onclick}
-  class="block w-full px-4 py-2 text-left text-sm hover:bg-gremius-bg hover:text-gremius-cyan {className}"
+  class="block w-full px-4 py-2 text-left text-sm hover:bg-kitsuden-bg hover:text-kitsuden-accent {className}"
 >
   {@render children?.()}
 </button>

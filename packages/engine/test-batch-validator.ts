@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * TESTS - Batch API + Validator Engine (El Muro de Titanio)

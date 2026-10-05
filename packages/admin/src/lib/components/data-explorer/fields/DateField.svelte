@@ -24,15 +24,16 @@
 </script>
 
 {#if mode === "view" || mode === "inline"}
-  <span class="inline-flex items-center gap-1.5 text-gremius-text-dim">
+  <span class="inline-flex items-center gap-1.5 text-kitsuden-text-dim">
     <Calendar class="w-3.5 h-3.5" />
-    {formattedDate()}
+    <!-- Sin paréntesis: `$derived.by` ya guarda el valor. Ver CalculatedField. -->
+    {formattedDate}
   </span>
 {:else}
   <input
     type="date"
     value={inputValue}
-    class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan"
+    class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
     oninput={(e) => {
       const date = e.currentTarget.valueAsDate;
       onChange?.(date ? date.toISOString() : null);

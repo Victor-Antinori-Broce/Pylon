@@ -17,7 +17,7 @@ export default defineConfig({
     alias: {
       "@admin": path.resolve(__dirname, "../../../packages/admin/src"),
       "@api": path.resolve(__dirname, "../../../apps/api/src"),
-      "@grimoires": path.resolve(__dirname, "../../../packages/grimoires"),
+      "@kons": path.resolve(__dirname, "../../../packages/kons"),
     },
   },
 });

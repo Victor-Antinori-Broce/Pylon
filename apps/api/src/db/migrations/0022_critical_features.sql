@@ -65,10 +65,27 @@ CREATE TABLE IF NOT EXISTS vector_documents (
 );
 
 -- Índice HNSW para búsqueda vectorial eficiente (muy rápido para similitud)
-CREATE INDEX IF NOT EXISTS vector_documents_embedding_idx 
-ON vector_documents 
-USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 64);
+--
+-- Va detrás de una guarda porque HNSW llegó en pgvector 0.5: con una versión
+-- anterior la extensión EXISTE pero el método de acceso no, y `USING hnsw`
+-- aborta la migración entera con "access method hnsw does not exist".
+-- Comprobar `pg_extension` no basta — hay que mirar `pg_am`.
+--
+-- Si no está, la tabla queda igual de usable: solo se busca sin índice, más
+-- lento. Perder velocidad es mejor que no poder desplegar.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_am WHERE amname = 'hnsw') THEN
+    EXECUTE $IDX$
+      CREATE INDEX IF NOT EXISTS vector_documents_embedding_idx
+      ON vector_documents
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64)
+    $IDX$;
+  ELSE
+    RAISE NOTICE 'hnsw no disponible (pgvector < 0.5): vector_documents queda sin índice vectorial';
+  END IF;
+END $$;
 
 -- Índices adicionales
 CREATE INDEX IF NOT EXISTS vector_documents_dataset_idx ON vector_documents(dataset_id);

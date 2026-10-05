@@ -35,7 +35,7 @@ export function createTestEvents(): TestEvents {
       });
     },
 
-    last: <T = any>(name: string): EmittedEvent | undefined => {
+    last: <_T = any>(name: string): EmittedEvent | undefined => {
       return [...events].reverse().find((e) => e.name === name);
     },
 

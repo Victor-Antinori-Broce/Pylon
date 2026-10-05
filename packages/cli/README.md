@@ -1,39 +1,39 @@
-# @gremius/cli
+# @kitsuden/cli
 
-GremiusCMS CLI - Manage plugins, starters, and deployments
+Kitsuden CLI - Manage plugins, starters, and deployments
 
 ## Installation
 
 ```bash
-npm install -g @gremius/cli
+npm install -g @kitsuden/cli
 # or
-pnpm add -g @gremius/cli
+pnpm add -g @kitsuden/cli
 ```
 
 Or use without installing:
 
 ```bash
-npx @gremius/cli <command>
+npx @kitsuden/cli <command>
 ```
 
 ## Commands
 
-### `gremius new <name>`
+### `kitsuden new <name>`
 
-Create a new GremiusCMS project from a starter/realm.
+Create a new Kitsuden project from a starter/grimoire.
 
 ```bash
 # Create project with default starter
-gremius new my-website
+kitsuden new my-website
 
-# Create project with specific realm
-gremius new my-game --realm esports
+# Create project with specific grimoire
+kitsuden new my-game --grimoire esports
 
-# Create project with additional grimoires
-gremius new my-shop --realm ecommerce --grimoires stripe payments
+# Create project with additional kons
+kitsuden new my-shop --grimoire ecommerce --kons stripe payments
 ```
 
-**Available Realms (Starters):**
+**Available Grimoires (Starters):**
 
 - `default` - Core functionality (datasets, media, blocks)
 - `esports` - Gaming platform with tournaments, teams, matches
@@ -41,147 +41,147 @@ gremius new my-shop --realm ecommerce --grimoires stripe payments
 - `corporate` - Company website with team/services
 - `lms` - Learning Management System with courses
 
-### `gremius plugin install <package>`
+### `kitsuden plugin install <package>`
 
-Install a grimoire plugin from npm or marketplace.
+Install a kon plugin from npm or marketplace.
 
 ```bash
-# Install official grimoire (auto-resolves @gremius/grimoire-xxx)
-gremius plugin install blog
-gremius plugin install stripe
-gremius plugin install shopify
+# Install official kon (auto-resolves @kitsuden/kon-xxx)
+kitsuden plugin install blog
+kitsuden plugin install stripe
+kitsuden plugin install shopify
 
 # Install with specific version
-gremius plugin install blog --version 1.2.0
+kitsuden plugin install blog --version 1.2.0
 
 # Install from scoped package
-gremius plugin install @mycompany/grimoire-custom
+kitsuden plugin install @mycompany/kon-custom
 
 # Install from GitHub
-gremius plugin install owner/repo --source github
+kitsuden plugin install owner/repo --source github
 ```
 
-### `gremius plugin uninstall <package>`
+### `kitsuden plugin uninstall <package>`
 
-Uninstall a grimoire plugin.
+Uninstall a kon plugin.
 
 ```bash
-gremius plugin uninstall blog
+kitsuden plugin uninstall blog
 
 # Uninstall and remove all data
-gremius plugin uninstall blog --purge
+kitsuden plugin uninstall blog --purge
 ```
 
-### `gremius plugin list`
+### `kitsuden plugin list`
 
-List installed grimoires.
+List installed kons.
 
 ```bash
 # List installed
-gremius plugin list
+kitsuden plugin list
 
 # List all (including available)
-gremius plugin list --all
+kitsuden plugin list --all
 
 # Output as JSON
-gremius plugin list --json
+kitsuden plugin list --json
 ```
 
-### `gremius plugin search <query>`
+### `kitsuden plugin search <query>`
 
-Search for grimoires in npm registry.
+Search for kons in npm registry.
 
 ```bash
-gremius plugin search payment
-gremius plugin search ecommerce --limit 10
+kitsuden plugin search payment
+kitsuden plugin search ecommerce --limit 10
 ```
 
-### `gremius plugin enable|disable <package>`
+### `kitsuden plugin enable|disable <package>`
 
-Enable or disable a grimoire without uninstalling.
+Enable or disable a kon without uninstalling.
 
 ```bash
-gremius plugin enable blog
-gremius plugin disable blog
+kitsuden plugin enable blog
+kitsuden plugin disable blog
 ```
 
-### `gremius plugin update [package]`
+### `kitsuden plugin update [package]`
 
-Update grimoire(s) to latest version.
+Update kon(s) to latest version.
 
 ```bash
-# Update specific grimoire
-gremius plugin update blog
+# Update specific kon
+kitsuden plugin update blog
 
-# Update all grimoires
-gremius plugin update --all
+# Update all kons
+kitsuden plugin update --all
 ```
 
-### `gremius dev`
+### `kitsuden dev`
 
 Start development server.
 
 ```bash
 # Start all services
-gremius dev
+kitsuden dev
 
 # Start only API
-gremius dev --api-only
+kitsuden dev --api-only
 
 # Start only Admin
-gremius dev --admin-only
+kitsuden dev --admin-only
 
 # Custom port
-gremius dev --port 4000
+kitsuden dev --port 4000
 ```
 
-### `gremius build`
+### `kitsuden build`
 
 Build for production.
 
 ```bash
-gremius build
+kitsuden build
 
 # Analyze bundle
-gremius build --analyze
+kitsuden build --analyze
 ```
 
-### `gremius deploy`
+### `kitsuden deploy`
 
-Deploy to Gremius Cloud.
+Deploy to Kitsuden Cloud.
 
 ```bash
 # Deploy preview
-gremius deploy --preview
+kitsuden deploy --preview
 
 # Deploy to production
-gremius deploy --prod
+kitsuden deploy --prod
 ```
 
-### `gremius realm list`
+### `kitsuden grimoire list`
 
-List available realms (starters).
+List available grimoires (starters).
 
 ```bash
-gremius realm list
+kitsuden grimoire list
 ```
 
-### `gremius realm switch <realm>`
+### `kitsuden grimoire switch <grimoire>`
 
-Switch to a different realm.
+Switch to a different grimoire.
 
 ```bash
-gremius realm switch esports
+kitsuden grimoire switch esports
 ```
 
-## Creating a Grimoire Plugin
+## Creating a Kon Plugin
 
-A grimoire is an npm package with a special structure:
+A kon is an npm package with a special structure:
 
 ```
-my-grimoire/
-├── package.json          # Must have "gremius.type": "grimoire"
-├── grimoire.json         # Grimoire metadata
+my-kon/
+├── package.json          # Must have "kitsuden.type": "kon"
+├── kon.json         # Kon metadata
 ├── index.ts              # Entry point
 ├── schema.ts             # Database schema (optional)
 └── migrations/
@@ -194,24 +194,24 @@ my-grimoire/
 
 ```json
 {
-  "name": "@myscope/grimoire-myfeature",
+  "name": "@myscope/kon-myfeature",
   "version": "1.0.0",
-  "gremius": {
-    "type": "grimoire",
-    "id": "grimoire-myfeature",
+  "kitsuden": {
+    "type": "kon",
+    "id": "kon-myfeature",
     "minVersion": "2.0.0"
   },
   "peerDependencies": {
-    "@gremius/engine": "^2.0.0"
+    "@kitsuden/engine": "^2.0.0"
   }
 }
 ```
 
-### grimoire.json
+### kon.json
 
 ```json
 {
-  "id": "grimoire-myfeature",
+  "id": "kon-myfeature",
   "name": "My Feature",
   "description": "Adds awesome functionality",
   "version": "1.0.0",
@@ -226,10 +226,10 @@ my-grimoire/
 ### index.ts
 
 ```typescript
-import { defineGrimoire, createGrimoireRouter } from "@gremius/shared";
+import { defineKon, createKonRouter } from "@kitsuden/shared";
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-myfeature",
+export const kon = defineKon({
+  id: "kon-myfeature",
   name: "My Feature",
   version: "1.0.0",
 
@@ -246,30 +246,30 @@ export const grimoire = defineGrimoire({
 
   hooks: {
     onStartup: async (ctx) => {
-      ctx.logger.info("MyFeature grimoire started!");
+      ctx.logger.info("MyFeature kon started!");
     },
   },
 });
 ```
 
-## Publishing Grimoires
+## Publishing Kons
 
 ```bash
-# Build your grimoire
+# Build your kon
 npm run build
 
 # Publish to npm
 npm publish --access public
 
-# Or publish to Gremius Marketplace (coming soon)
-gremius publish
+# Or publish to Kitsuden Marketplace (coming soon)
+kitsuden publish
 ```
 
 ## Environment Variables
 
-- `GREMIUS_TOKEN` - Auth token for cloud deployments
-- `GREMIUS_API_URL` - Custom API endpoint
-- `GREMIUS_MARKETPLACE_URL` - Custom marketplace endpoint
+- `KITSUDEN_TOKEN` - Auth token for cloud deployments
+- `KITSUDEN_API_URL` - Custom API endpoint
+- `KITSUDEN_MARKETPLACE_URL` - Custom marketplace endpoint
 
 ## License
 

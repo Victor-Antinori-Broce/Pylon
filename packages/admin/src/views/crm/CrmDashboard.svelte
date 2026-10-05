@@ -97,17 +97,17 @@
   }
 
   const dCols: Record<string, string> = {
-    open: "bg-gremius-cyan/10 text-gremius-cyan border-gremius-cyan/20",
-    won: "bg-gremius-green/10 text-gremius-green border-gremius-green/20",
-    lost: "bg-gremius-pink/10 text-gremius-pink border-gremius-pink/20",
-    paused: "bg-gremius-amber/10 text-gremius-amber border-gremius-amber/20",
+    open: "bg-kitsuden-accent/10 text-kitsuden-accent border-kitsuden-accent/20",
+    won: "bg-kitsuden-green/10 text-kitsuden-green border-kitsuden-green/20",
+    lost: "bg-kitsuden-accent-2/10 text-kitsuden-accent-2 border-kitsuden-accent-2/20",
+    paused: "bg-kitsuden-amber/10 text-kitsuden-amber border-kitsuden-amber/20",
   };
   const cCols: Record<string, string> = {
-    lead: "bg-gremius-cyan/10 text-gremius-cyan border-gremius-cyan/20",
-    prospect: "bg-gremius-amber/10 text-gremius-amber border-gremius-amber/20",
-    customer: "bg-gremius-green/10 text-gremius-green border-gremius-green/20",
-    churned: "bg-gremius-pink/10 text-gremius-pink border-gremius-pink/20",
-    archived: "bg-gremius-subtle/10 text-gremius-subtle border-gremius-subtle/20",
+    lead: "bg-kitsuden-accent/10 text-kitsuden-accent border-kitsuden-accent/20",
+    prospect: "bg-kitsuden-amber/10 text-kitsuden-amber border-kitsuden-amber/20",
+    customer: "bg-kitsuden-green/10 text-kitsuden-green border-kitsuden-green/20",
+    churned: "bg-kitsuden-accent-2/10 text-kitsuden-accent-2 border-kitsuden-accent-2/20",
+    archived: "bg-kitsuden-subtle/10 text-kitsuden-subtle border-kitsuden-subtle/20",
   };
 
   async function loadStats() {
@@ -353,20 +353,20 @@
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-kitsuden-accent/20 to-kitsuden-purple/20 border border-kitsuden-accent/20 flex items-center justify-center"
         >
-          <Briefcase class="w-5 h-5 text-gremius-cyan" />
+          <Briefcase class="w-5 h-5 text-kitsuden-accent" />
         </div>
         CRM Dashboard
       </h1>
-      <p class="text-sm text-gremius-subtle mt-1">
+      <p class="text-sm text-kitsuden-subtle mt-1">
         Manage deals, contacts, companies and pipelines
       </p>
     </div>
     <button
-      onclick={() => goto("/crm/deals/new")}
+      onclick={() => goto("/g/kon-crm/deals")}
       class="btn-primary inline-flex items-center gap-2 text-sm"
       ><Plus class="w-4 h-4" /> Add Deal</button
     >
@@ -378,10 +378,10 @@
       {#each [1, 2, 3, 4] as _}
         <div class="card p-5 animate-pulse">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-gremius-bg"></div>
+            <div class="w-10 h-10 rounded-lg bg-kitsuden-bg"></div>
             <div class="space-y-2">
-              <div class="h-3 w-20 bg-gremius-bg rounded"></div>
-              <div class="h-6 w-24 bg-gremius-bg rounded"></div>
+              <div class="h-3 w-20 bg-kitsuden-bg rounded"></div>
+              <div class="h-6 w-24 bg-kitsuden-bg rounded"></div>
             </div>
           </div>
         </div>
@@ -410,7 +410,7 @@
           label: "Pipeline Value",
           value: fmtCur(stats.deals.values.total),
           icon: TrendingUp,
-          cls: "bg-cyan-500/10 text-cyan-400",
+          cls: "bg-kitsuden-accent/10 text-kitsuden-accent",
         },
       ]}
       {#each cards as c}
@@ -422,8 +422,8 @@
               <c.icon class="w-5 h-5 {c.cls.split(' ')[1]}" />
             </div>
             <div>
-              <p class="text-xs text-gremius-subtle uppercase tracking-wider">{c.label}</p>
-              <p class="text-xl font-bold text-gremius-text">{c.value}</p>
+              <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{c.label}</p>
+              <p class="text-xl font-bold text-kitsuden-text">{c.value}</p>
             </div>
           </div>
         </div>
@@ -432,7 +432,7 @@
   </div>
 
   <!-- Tabs -->
-  <div class="border-b border-gremius-border">
+  <div class="border-b border-kitsuden-border">
     <nav class="flex gap-1 -mb-px">
       {#each [{ id: "overview", l: "Overview" }, { id: "deals", l: "Deals" }, { id: "contacts", l: "Contacts" }, { id: "companies", l: "Companies" }, { id: "pipelines", l: "Pipelines" }] as { id, l }}
         <button
@@ -441,8 +441,8 @@
           }}
           class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer {activeTab ===
           id
-            ? 'border-gremius-cyan text-gremius-cyan'
-            : 'border-transparent text-gremius-subtle hover:text-gremius-text'}">{l}</button
+            ? 'border-kitsuden-accent text-kitsuden-accent'
+            : 'border-transparent text-kitsuden-subtle hover:text-kitsuden-text'}">{l}</button
         >
       {/each}
     </nav>
@@ -452,32 +452,32 @@
   {#if activeTab === "overview"}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
       <section class="card">
-        <div class="p-4 border-b border-gremius-border flex items-center justify-between">
-          <h3 class="font-semibold text-gremius-text text-sm">Recent Deals</h3>
+        <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
+          <h3 class="font-semibold text-kitsuden-text text-sm">Recent Deals</h3>
           <button
             onclick={() => (activeTab = "deals")}
-            class="text-xs text-gremius-cyan hover:underline">View all</button
+            class="text-xs text-kitsuden-accent hover:underline">View all</button
           >
         </div>
-        <div class="divide-y divide-gremius-border">
+        <div class="divide-y divide-kitsuden-border">
           {#if overviewLoading}
             {#each [1, 2, 3] as _}
               <div class="p-3 animate-pulse flex justify-between">
-                <div class="h-4 w-32 bg-gremius-bg rounded"></div>
-                <div class="h-4 w-16 bg-gremius-bg rounded"></div>
+                <div class="h-4 w-32 bg-kitsuden-bg rounded"></div>
+                <div class="h-4 w-16 bg-kitsuden-bg rounded"></div>
               </div>
             {/each}
           {:else if !recentDeals.length}
-            <div class="p-8 text-center text-gremius-subtle text-sm">No deals yet</div>
+            <div class="p-8 text-center text-kitsuden-subtle text-sm">No deals yet</div>
           {:else}
             {#each recentDeals as d}
-              <div class="p-3 flex justify-between hover:bg-gremius-bg/40 transition-colors">
+              <div class="p-3 flex justify-between hover:bg-kitsuden-bg/40 transition-colors">
                 <div class="min-w-0">
-                  <p class="text-sm text-gremius-text truncate font-medium">{d.title}</p>
-                  <p class="text-xs text-gremius-subtle">{d.source || "No source"}</p>
+                  <p class="text-sm text-kitsuden-text truncate font-medium">{d.title}</p>
+                  <p class="text-xs text-kitsuden-subtle">{d.source || "No source"}</p>
                 </div>
                 <div class="text-right flex-shrink-0 ml-3">
-                  <p class="text-sm font-semibold text-gremius-text">
+                  <p class="text-sm font-semibold text-kitsuden-text">
                     {fmtCur(d.value, d.currency)}
                   </p>
                   <span
@@ -493,32 +493,32 @@
       </section>
 
       <section class="card">
-        <div class="p-4 border-b border-gremius-border flex items-center justify-between">
-          <h3 class="font-semibold text-gremius-text text-sm">Recent Contacts</h3>
+        <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
+          <h3 class="font-semibold text-kitsuden-text text-sm">Recent Contacts</h3>
           <button
             onclick={() => (activeTab = "contacts")}
-            class="text-xs text-gremius-cyan hover:underline">View all</button
+            class="text-xs text-kitsuden-accent hover:underline">View all</button
           >
         </div>
-        <div class="divide-y divide-gremius-border">
+        <div class="divide-y divide-kitsuden-border">
           {#if overviewLoading}
             {#each [1, 2, 3] as _}
               <div class="p-3 animate-pulse flex justify-between">
-                <div class="h-4 w-32 bg-gremius-bg rounded"></div>
-                <div class="h-4 w-16 bg-gremius-bg rounded"></div>
+                <div class="h-4 w-32 bg-kitsuden-bg rounded"></div>
+                <div class="h-4 w-16 bg-kitsuden-bg rounded"></div>
               </div>
             {/each}
           {:else if !recentContacts.length}
-            <div class="p-8 text-center text-gremius-subtle text-sm">No contacts yet</div>
+            <div class="p-8 text-center text-kitsuden-subtle text-sm">No contacts yet</div>
           {:else}
             {#each recentContacts as c}
-              <div class="p-3 flex justify-between hover:bg-gremius-bg/40 transition-colors">
+              <div class="p-3 flex justify-between hover:bg-kitsuden-bg/40 transition-colors">
                 <div class="min-w-0">
-                  <p class="text-sm text-gremius-text truncate font-medium">
+                  <p class="text-sm text-kitsuden-text truncate font-medium">
                     {c.firstName}
                     {c.lastName}
                   </p>
-                  <p class="text-xs text-gremius-subtle">{c.email}</p>
+                  <p class="text-xs text-kitsuden-subtle">{c.email}</p>
                 </div>
                 <div class="text-right flex-shrink-0 ml-3">
                   <span
@@ -526,7 +526,7 @@
                       c.status
                     ] || cCols.lead}">{c.status}</span
                   >
-                  {#if c.score}<p class="text-xs text-gremius-subtle mt-0.5">
+                  {#if c.score}<p class="text-xs text-kitsuden-subtle mt-0.5">
                       Score {c.score}
                     </p>{/if}
                 </div>
@@ -537,20 +537,20 @@
       </section>
 
       <section class="card p-4 lg:col-span-2">
-        <h3 class="font-semibold text-gremius-text text-sm mb-3">Quick Actions</h3>
+        <h3 class="font-semibold text-kitsuden-text text-sm mb-3">Quick Actions</h3>
         <div class="flex flex-wrap gap-2">
           <button
-            onclick={() => goto("/crm/deals/new")}
+            onclick={() => goto("/g/kon-crm/deals")}
             class="btn-primary inline-flex items-center gap-2 text-sm"
             ><Plus class="w-4 h-4" /> Add Deal</button
           >
           <button
-            onclick={() => goto("/crm/contacts/new")}
+            onclick={() => goto("/g/kon-crm/contacts")}
             class="btn-secondary inline-flex items-center gap-2 text-sm"
             ><Plus class="w-4 h-4" /> Add Contact</button
           >
           <button
-            onclick={() => goto("/crm/companies/new")}
+            onclick={() => goto("/g/kon-crm/companies")}
             class="btn-secondary inline-flex items-center gap-2 text-sm"
             ><Plus class="w-4 h-4" /> Add Company</button
           >
@@ -566,7 +566,7 @@
         <div class="flex flex-col sm:flex-row gap-2 flex-1">
           <div class="relative flex-1 max-w-sm">
             <Search
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle"
             /><input
               bind:value={dealsSearch}
               oninput={() => {
@@ -574,7 +574,7 @@
                 loadDeals();
               }}
               placeholder="Search deals..."
-              class="w-full pl-9 pr-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan"
+              class="w-full pl-9 pr-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
           </div>
           <select
@@ -583,7 +583,7 @@
               dealsPag.offset = 0;
               loadDeals();
             }}
-            class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan"
+            class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
             ><option value="">All statuses</option><option value="open">Open</option><option
               value="won">Won</option
             ><option value="lost">Lost</option><option value="paused">Paused</option></select
@@ -594,7 +594,7 @@
               dealsPag.offset = 0;
               loadDeals();
             }}
-            class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan"
+            class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
             ><option value="">All pipelines</option>{#each pipelines as p}<option value={p.id}
                 >{p.name}</option
               >{/each}</select
@@ -611,19 +611,19 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead
-              ><tr class="border-b border-gremius-border bg-gremius-bg/50">
+              ><tr class="border-b border-kitsuden-border bg-kitsuden-bg/50">
                 <th class="px-4 py-3 text-left w-10"
                   ><button
                     onclick={() => (selDeals = toggleAll(deals, selDeals))}
-                    class="text-gremius-subtle hover:text-gremius-text"
+                    class="text-kitsuden-subtle hover:text-kitsuden-text"
                     >{#if deals.length && deals.every((r) => selDeals.has(r.id))}<CheckSquare
                         class="w-4 h-4"
                       />{:else}<Square class="w-4 h-4" />{/if}</button
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Title</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Title</th>
                 <th
-                  class="px-4 py-3 text-left font-medium text-gremius-subtle cursor-pointer select-none"
+                  class="px-4 py-3 text-left font-medium text-kitsuden-subtle cursor-pointer select-none"
                   onclick={() => setDealSort("value")}
                   ><span class="flex items-center gap-1"
                     >Value {#if dealsSortField === "value"}{#if dealsSortDir === "asc"}<ArrowUp
@@ -633,10 +633,10 @@
                       />{/if}</span
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Status</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Probability</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Status</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Probability</th>
                 <th
-                  class="px-4 py-3 text-left font-medium text-gremius-subtle cursor-pointer select-none"
+                  class="px-4 py-3 text-left font-medium text-kitsuden-subtle cursor-pointer select-none"
                   onclick={() => setDealSort("expectedCloseDate")}
                   ><span class="flex items-center gap-1"
                     >Expected Close {#if dealsSortField === "expectedCloseDate"}{#if dealsSortDir === "asc"}<ArrowUp
@@ -646,35 +646,35 @@
                       />{/if}</span
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Source</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Tags</th>
-                <th class="px-4 py-3 text-right font-medium text-gremius-subtle">Actions</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Source</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Tags</th>
+                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">Actions</th>
               </tr></thead
             >
-            <tbody class="divide-y divide-gremius-border">
+            <tbody class="divide-y divide-kitsuden-border">
               {#if dealsLoading}{#each [1, 2, 3, 4] as _}<tr class="animate-pulse"
                     ><td colspan={9} class="px-4 py-3"
-                      ><div class="h-4 bg-gremius-bg rounded w-full"></div></td
+                      ><div class="h-4 bg-kitsuden-bg rounded w-full"></div></td
                     ></tr
                   >{/each}
               {:else if !deals.length}<tr
-                  ><td colspan={9} class="px-4 py-12 text-center text-gremius-subtle"
+                  ><td colspan={9} class="px-4 py-12 text-center text-kitsuden-subtle"
                     ><Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p class="text-sm">No deals found</p></td
                   ></tr
                 >
-              {:else}{#each deals as d}<tr class="hover:bg-gremius-bg/30 transition-colors">
+              {:else}{#each deals as d}<tr class="hover:bg-kitsuden-bg/30 transition-colors">
                     <td class="px-4 py-3"
                       ><button
                         onclick={() => (selDeals = toggleOne(selDeals, d.id))}
-                        class="text-gremius-subtle hover:text-gremius-text"
+                        class="text-kitsuden-subtle hover:text-kitsuden-text"
                         >{#if selDeals.has(d.id)}<CheckSquare class="w-4 h-4" />{:else}<Square
                             class="w-4 h-4"
                           />{/if}</button
                       ></td
                     >
-                    <td class="px-4 py-3 text-gremius-text font-medium">{d.title}</td>
-                    <td class="px-4 py-3 text-gremius-text">{fmtCur(d.value, d.currency)}</td>
+                    <td class="px-4 py-3 text-kitsuden-text font-medium">{d.title}</td>
+                    <td class="px-4 py-3 text-kitsuden-text">{fmtCur(d.value, d.currency)}</td>
                     <td class="px-4 py-3"
                       ><span
                         class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border {dCols[
@@ -682,16 +682,16 @@
                         ] || dCols.open}">{d.status}</span
                       ></td
                     >
-                    <td class="px-4 py-3 text-gremius-text">{d.probability ?? 0}%</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{fmtDate(d.expectedCloseDate)}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{d.source || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-text">{d.probability ?? 0}%</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{fmtDate(d.expectedCloseDate)}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{d.source || "—"}</td>
                     <td class="px-4 py-3"
                       ><div class="flex flex-wrap gap-1">
                         {#each (d.tags ?? []).slice(0, 3) as t}<span
-                            class="px-1.5 py-0.5 text-[10px] rounded bg-gremius-bg border border-gremius-border text-gremius-subtle"
+                            class="px-1.5 py-0.5 text-[10px] rounded bg-kitsuden-bg border border-kitsuden-border text-kitsuden-subtle"
                             >{t}</span
                           >{/each}{#if (d.tags ?? []).length > 3}<span
-                            class="px-1.5 py-0.5 text-[10px] rounded bg-gremius-bg border border-gremius-border text-gremius-subtle"
+                            class="px-1.5 py-0.5 text-[10px] rounded bg-kitsuden-bg border border-kitsuden-border text-kitsuden-subtle"
                             >+{(d.tags ?? []).length - 3}</span
                           >{/if}
                       </div></td
@@ -700,11 +700,11 @@
                       ><div class="flex justify-end gap-1">
                         <button
                           onclick={() => goto(`/crm/deals/${d.id}`)}
-                          class="p-1.5 rounded-lg hover:bg-gremius-bg text-gremius-subtle hover:text-gremius-cyan transition-colors"
+                          class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
                           title="Edit"><Edit2 class="w-3.5 h-3.5" /></button
                         ><button
                           onclick={() => delDeal(d.id)}
-                          class="p-1.5 rounded-lg hover:bg-gremius-bg text-gremius-subtle hover:text-gremius-pink transition-colors"
+                          class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent-2 transition-colors"
                           title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
                         >
                       </div></td
@@ -713,20 +713,20 @@
             </tbody>
           </table>
         </div>
-        <div class="px-4 py-3 border-t border-gremius-border flex items-center justify-between">
-          <p class="text-xs text-gremius-subtle">{dealsPag.total} deals total</p>
+        <div class="px-4 py-3 border-t border-kitsuden-border flex items-center justify-between">
+          <p class="text-xs text-kitsuden-subtle">{dealsPag.total} deals total</p>
           <div class="flex items-center gap-2">
             <button
               onclick={() => pg("deals", -1)}
               disabled={dealsPag.offset === 0}
-              class="p-1.5 rounded-lg border border-gremius-border text-gremius-subtle hover:text-gremius-text disabled:opacity-30 disabled:cursor-not-allowed"
+              class="p-1.5 rounded-lg border border-kitsuden-border text-kitsuden-subtle hover:text-kitsuden-text disabled:opacity-30 disabled:cursor-not-allowed"
               ><ChevronLeft class="w-4 h-4" /></button
             >
-            <span class="text-xs text-gremius-subtle">{pageLabel(dealsPag)}</span>
+            <span class="text-xs text-kitsuden-subtle">{pageLabel(dealsPag)}</span>
             <button
               onclick={() => pg("deals", 1)}
               disabled={dealsPag.offset + dealsPag.limit >= dealsPag.total}
-              class="p-1.5 rounded-lg border border-gremius-border text-gremius-subtle hover:text-gremius-text disabled:opacity-30 disabled:cursor-not-allowed"
+              class="p-1.5 rounded-lg border border-kitsuden-border text-kitsuden-subtle hover:text-kitsuden-text disabled:opacity-30 disabled:cursor-not-allowed"
               ><ChevronRight class="w-4 h-4" /></button
             >
           </div>
@@ -742,7 +742,7 @@
         <div class="flex flex-col sm:flex-row gap-2 flex-1">
           <div class="relative flex-1 max-w-sm">
             <Search
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle"
             /><input
               bind:value={contactsSearch}
               oninput={() => {
@@ -750,7 +750,7 @@
                 loadContacts();
               }}
               placeholder="Search contacts..."
-              class="w-full pl-9 pr-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan"
+              class="w-full pl-9 pr-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
           </div>
           <select
@@ -759,7 +759,7 @@
               contactsPag.offset = 0;
               loadContacts();
             }}
-            class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan"
+            class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
             ><option value="">All statuses</option><option value="lead">Lead</option><option
               value="prospect">Prospect</option
             ><option value="customer">Customer</option><option value="churned">Churned</option
@@ -776,52 +776,52 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead
-              ><tr class="border-b border-gremius-border bg-gremius-bg/50">
+              ><tr class="border-b border-kitsuden-border bg-kitsuden-bg/50">
                 <th class="px-4 py-3 text-left w-10"
                   ><button
                     onclick={() => (selContacts = toggleAll(contacts, selContacts))}
-                    class="text-gremius-subtle hover:text-gremius-text"
+                    class="text-kitsuden-subtle hover:text-kitsuden-text"
                     >{#if contacts.length && contacts.every( (r) => selContacts.has(r.id) )}<CheckSquare
                         class="w-4 h-4"
                       />{:else}<Square class="w-4 h-4" />{/if}</button
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Name</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Email</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Status</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Company</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Job Title</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Score</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Last Contacted</th>
-                <th class="px-4 py-3 text-right font-medium text-gremius-subtle">Actions</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Name</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Email</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Status</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Company</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Job Title</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Score</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Last Contacted</th>
+                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">Actions</th>
               </tr></thead
             >
-            <tbody class="divide-y divide-gremius-border">
+            <tbody class="divide-y divide-kitsuden-border">
               {#if contactsLoading}{#each [1, 2, 3, 4] as _}<tr class="animate-pulse"
                     ><td colspan={9} class="px-4 py-3"
-                      ><div class="h-4 bg-gremius-bg rounded w-full"></div></td
+                      ><div class="h-4 bg-kitsuden-bg rounded w-full"></div></td
                     ></tr
                   >{/each}
               {:else if !contacts.length}<tr
-                  ><td colspan={9} class="px-4 py-12 text-center text-gremius-subtle"
+                  ><td colspan={9} class="px-4 py-12 text-center text-kitsuden-subtle"
                     ><Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p class="text-sm">No contacts found</p></td
                   ></tr
                 >
-              {:else}{#each contacts as c}<tr class="hover:bg-gremius-bg/30 transition-colors">
+              {:else}{#each contacts as c}<tr class="hover:bg-kitsuden-bg/30 transition-colors">
                     <td class="px-4 py-3"
                       ><button
                         onclick={() => (selContacts = toggleOne(selContacts, c.id))}
-                        class="text-gremius-subtle hover:text-gremius-text"
+                        class="text-kitsuden-subtle hover:text-kitsuden-text"
                         >{#if selContacts.has(c.id)}<CheckSquare class="w-4 h-4" />{:else}<Square
                             class="w-4 h-4"
                           />{/if}</button
                       ></td
                     >
-                    <td class="px-4 py-3 text-gremius-text font-medium"
+                    <td class="px-4 py-3 text-kitsuden-text font-medium"
                       >{c.firstName} {c.lastName}</td
                     >
-                    <td class="px-4 py-3 text-gremius-subtle">{c.email}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.email}</td>
                     <td class="px-4 py-3"
                       ><span
                         class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border {cCols[
@@ -829,19 +829,19 @@
                         ] || cCols.lead}">{c.status}</span
                       ></td
                     >
-                    <td class="px-4 py-3 text-gremius-subtle">{c.company?.name || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{c.jobTitle || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-text">{c.score ?? "—"}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{ago(c.lastContactedAt)}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.company?.name || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.jobTitle || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-text">{c.score ?? "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{ago(c.lastContactedAt)}</td>
                     <td class="px-4 py-3 text-right"
                       ><div class="flex justify-end gap-1">
                         <button
                           onclick={() => goto(`/crm/contacts/${c.id}`)}
-                          class="p-1.5 rounded-lg hover:bg-gremius-bg text-gremius-subtle hover:text-gremius-cyan transition-colors"
+                          class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
                           title="Edit"><Edit2 class="w-3.5 h-3.5" /></button
                         ><button
                           onclick={() => delContact(c.id)}
-                          class="p-1.5 rounded-lg hover:bg-gremius-bg text-gremius-subtle hover:text-gremius-pink transition-colors"
+                          class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent-2 transition-colors"
                           title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
                         >
                       </div></td
@@ -850,20 +850,20 @@
             </tbody>
           </table>
         </div>
-        <div class="px-4 py-3 border-t border-gremius-border flex items-center justify-between">
-          <p class="text-xs text-gremius-subtle">{contactsPag.total} contacts total</p>
+        <div class="px-4 py-3 border-t border-kitsuden-border flex items-center justify-between">
+          <p class="text-xs text-kitsuden-subtle">{contactsPag.total} contacts total</p>
           <div class="flex items-center gap-2">
             <button
               onclick={() => pg("contacts", -1)}
               disabled={contactsPag.offset === 0}
-              class="p-1.5 rounded-lg border border-gremius-border text-gremius-subtle hover:text-gremius-text disabled:opacity-30 disabled:cursor-not-allowed"
+              class="p-1.5 rounded-lg border border-kitsuden-border text-kitsuden-subtle hover:text-kitsuden-text disabled:opacity-30 disabled:cursor-not-allowed"
               ><ChevronLeft class="w-4 h-4" /></button
             >
-            <span class="text-xs text-gremius-subtle">{pageLabel(contactsPag)}</span>
+            <span class="text-xs text-kitsuden-subtle">{pageLabel(contactsPag)}</span>
             <button
               onclick={() => pg("contacts", 1)}
               disabled={contactsPag.offset + contactsPag.limit >= contactsPag.total}
-              class="p-1.5 rounded-lg border border-gremius-border text-gremius-subtle hover:text-gremius-text disabled:opacity-30 disabled:cursor-not-allowed"
+              class="p-1.5 rounded-lg border border-kitsuden-border text-kitsuden-subtle hover:text-kitsuden-text disabled:opacity-30 disabled:cursor-not-allowed"
               ><ChevronRight class="w-4 h-4" /></button
             >
           </div>
@@ -879,7 +879,7 @@
         <div class="flex flex-col sm:flex-row gap-2 flex-1">
           <div class="relative flex-1 max-w-sm">
             <Search
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle"
             /><input
               bind:value={companiesSearch}
               oninput={() => {
@@ -887,7 +887,7 @@
                 loadCompanies();
               }}
               placeholder="Search companies..."
-              class="w-full pl-9 pr-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan"
+              class="w-full pl-9 pr-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
           </div>
           <select
@@ -896,7 +896,7 @@
               companiesPag.offset = 0;
               loadCompanies();
             }}
-            class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan"
+            class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
             ><option value="">All industries</option>{#each [...new Set(companies
                   .map((c) => c.industry)
                   .filter(Boolean))] as i}<option value={i}>{i}</option>{/each}</select
@@ -912,64 +912,64 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead
-              ><tr class="border-b border-gremius-border bg-gremius-bg/50">
+              ><tr class="border-b border-kitsuden-border bg-kitsuden-bg/50">
                 <th class="px-4 py-3 text-left w-10"
                   ><button
                     onclick={() => (selCompanies = toggleAll(companies, selCompanies))}
-                    class="text-gremius-subtle hover:text-gremius-text"
+                    class="text-kitsuden-subtle hover:text-kitsuden-text"
                     >{#if companies.length && companies.every( (r) => selCompanies.has(r.id) )}<CheckSquare
                         class="w-4 h-4"
                       />{:else}<Square class="w-4 h-4" />{/if}</button
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Name</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Industry</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Domain</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Size</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">City</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Country</th>
-                <th class="px-4 py-3 text-left font-medium text-gremius-subtle">Deals</th>
-                <th class="px-4 py-3 text-right font-medium text-gremius-subtle">Actions</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Name</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Industry</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Domain</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Size</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">City</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Country</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Deals</th>
+                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">Actions</th>
               </tr></thead
             >
-            <tbody class="divide-y divide-gremius-border">
+            <tbody class="divide-y divide-kitsuden-border">
               {#if companiesLoading}{#each [1, 2, 3, 4] as _}<tr class="animate-pulse"
                     ><td colspan={9} class="px-4 py-3"
-                      ><div class="h-4 bg-gremius-bg rounded w-full"></div></td
+                      ><div class="h-4 bg-kitsuden-bg rounded w-full"></div></td
                     ></tr
                   >{/each}
               {:else if !companies.length}<tr
-                  ><td colspan={9} class="px-4 py-12 text-center text-gremius-subtle"
+                  ><td colspan={9} class="px-4 py-12 text-center text-kitsuden-subtle"
                     ><Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p class="text-sm">No companies found</p></td
                   ></tr
                 >
-              {:else}{#each companies as c}<tr class="hover:bg-gremius-bg/30 transition-colors">
+              {:else}{#each companies as c}<tr class="hover:bg-kitsuden-bg/30 transition-colors">
                     <td class="px-4 py-3"
                       ><button
                         onclick={() => (selCompanies = toggleOne(selCompanies, c.id))}
-                        class="text-gremius-subtle hover:text-gremius-text"
+                        class="text-kitsuden-subtle hover:text-kitsuden-text"
                         >{#if selCompanies.has(c.id)}<CheckSquare class="w-4 h-4" />{:else}<Square
                             class="w-4 h-4"
                           />{/if}</button
                       ></td
                     >
-                    <td class="px-4 py-3 text-gremius-text font-medium">{c.name}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{c.industry || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{c.domain || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{c.size || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{c.city || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-subtle">{c.country || "—"}</td>
-                    <td class="px-4 py-3 text-gremius-text">—</td>
+                    <td class="px-4 py-3 text-kitsuden-text font-medium">{c.name}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.industry || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.domain || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.size || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.city || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{c.country || "—"}</td>
+                    <td class="px-4 py-3 text-kitsuden-text">—</td>
                     <td class="px-4 py-3 text-right"
                       ><div class="flex justify-end gap-1">
                         <button
                           onclick={() => goto(`/crm/companies/${c.id}`)}
-                          class="p-1.5 rounded-lg hover:bg-gremius-bg text-gremius-subtle hover:text-gremius-cyan transition-colors"
+                          class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
                           title="Edit"><Edit2 class="w-3.5 h-3.5" /></button
                         ><button
                           onclick={() => delCompany(c.id)}
-                          class="p-1.5 rounded-lg hover:bg-gremius-bg text-gremius-subtle hover:text-gremius-pink transition-colors"
+                          class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent-2 transition-colors"
                           title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
                         >
                       </div></td
@@ -978,20 +978,20 @@
             </tbody>
           </table>
         </div>
-        <div class="px-4 py-3 border-t border-gremius-border flex items-center justify-between">
-          <p class="text-xs text-gremius-subtle">{companiesPag.total} companies total</p>
+        <div class="px-4 py-3 border-t border-kitsuden-border flex items-center justify-between">
+          <p class="text-xs text-kitsuden-subtle">{companiesPag.total} companies total</p>
           <div class="flex items-center gap-2">
             <button
               onclick={() => pg("companies", -1)}
               disabled={companiesPag.offset === 0}
-              class="p-1.5 rounded-lg border border-gremius-border text-gremius-subtle hover:text-gremius-text disabled:opacity-30 disabled:cursor-not-allowed"
+              class="p-1.5 rounded-lg border border-kitsuden-border text-kitsuden-subtle hover:text-kitsuden-text disabled:opacity-30 disabled:cursor-not-allowed"
               ><ChevronLeft class="w-4 h-4" /></button
             >
-            <span class="text-xs text-gremius-subtle">{pageLabel(companiesPag)}</span>
+            <span class="text-xs text-kitsuden-subtle">{pageLabel(companiesPag)}</span>
             <button
               onclick={() => pg("companies", 1)}
               disabled={companiesPag.offset + companiesPag.limit >= companiesPag.total}
-              class="p-1.5 rounded-lg border border-gremius-border text-gremius-subtle hover:text-gremius-text disabled:opacity-30 disabled:cursor-not-allowed"
+              class="p-1.5 rounded-lg border border-kitsuden-border text-kitsuden-subtle hover:text-kitsuden-text disabled:opacity-30 disabled:cursor-not-allowed"
               ><ChevronRight class="w-4 h-4" /></button
             >
           </div>
@@ -1006,11 +1006,11 @@
       {#if pipelinesLoading}
         <div class="space-y-3">
           {#each [1, 2, 3] as _}<div class="card p-4 animate-pulse">
-              <div class="h-4 w-48 bg-gremius-bg rounded"></div>
+              <div class="h-4 w-48 bg-kitsuden-bg rounded"></div>
             </div>{/each}
         </div>
       {:else if !pipelines.length}
-        <div class="card p-12 text-center text-gremius-subtle">
+        <div class="card p-12 text-center text-kitsuden-subtle">
           <Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p class="text-sm">No pipelines found</p>
         </div>
@@ -1021,57 +1021,57 @@
             <div class="card overflow-hidden">
               <button
                 onclick={() => togglePipeline(pl.id)}
-                class="w-full px-5 py-4 flex items-center justify-between hover:bg-gremius-bg/30 transition-colors text-left"
+                class="w-full px-5 py-4 flex items-center justify-between hover:bg-kitsuden-bg/30 transition-colors text-left"
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-9 h-9 rounded-lg bg-gremius-cyan/10 flex items-center justify-center"
+                    class="w-9 h-9 rounded-lg bg-kitsuden-accent/10 flex items-center justify-center"
                   >
-                    <Kanban class="w-4 h-4 text-gremius-cyan" />
+                    <Kanban class="w-4 h-4 text-kitsuden-accent" />
                   </div>
                   <div>
-                    <p class="text-sm font-semibold text-gremius-text">{pl.name}</p>
-                    <p class="text-xs text-gremius-subtle">
+                    <p class="text-sm font-semibold text-kitsuden-text">{pl.name}</p>
+                    <p class="text-xs text-kitsuden-subtle">
                       {stages.length || "?"} stages • {pl.currency}
                     </p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
                   {#if pl.isDefault}<span
-                      class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-gremius-green/10 text-gremius-green border border-gremius-green/20"
+                      class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-kitsuden-green/10 text-kitsuden-green border border-kitsuden-green/20"
                       >Default</span
                     >{/if}
                   {#if expandedPipelineId === pl.id}<ChevronUp
-                      class="w-4 h-4 text-gremius-subtle"
-                    />{:else}<ChevronDown class="w-4 h-4 text-gremius-subtle" />{/if}
+                      class="w-4 h-4 text-kitsuden-subtle"
+                    />{:else}<ChevronDown class="w-4 h-4 text-kitsuden-subtle" />{/if}
                 </div>
               </button>
               {#if expandedPipelineId === pl.id}
-                <div class="border-t border-gremius-border px-5 py-4">
-                  {#if !stages.length}<p class="text-sm text-gremius-subtle">No stages loaded</p>
+                <div class="border-t border-kitsuden-border px-5 py-4">
+                  {#if !stages.length}<p class="text-sm text-kitsuden-subtle">No stages loaded</p>
                   {:else}
                     <div
                       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
                     >
                       {#each stages as s}
-                        <div class="p-3 rounded-lg border border-gremius-border bg-gremius-bg/30">
+                        <div class="p-3 rounded-lg border border-kitsuden-border bg-kitsuden-bg/30">
                           <div class="flex items-center gap-2 mb-2">
                             <span class="w-3 h-3 rounded-full" style="background-color: {s.color}"
-                            ></span><span class="text-sm font-medium text-gremius-text"
+                            ></span><span class="text-sm font-medium text-kitsuden-text"
                               >{s.name}</span
                             >
                           </div>
                           <div
-                            class="flex items-center justify-between text-xs text-gremius-subtle"
+                            class="flex items-center justify-between text-xs text-kitsuden-subtle"
                           >
-                            <span>Probability</span><span class="text-gremius-text font-medium"
+                            <span>Probability</span><span class="text-kitsuden-text font-medium"
                               >{s.probability}%</span
                             >
                           </div>
                           {#if s.wipLimit}<div
-                              class="flex items-center justify-between text-xs text-gremius-subtle mt-1"
+                              class="flex items-center justify-between text-xs text-kitsuden-subtle mt-1"
                             >
-                              <span>WIP Limit</span><span class="text-gremius-text font-medium"
+                              <span>WIP Limit</span><span class="text-kitsuden-text font-medium"
                                 >{s.wipLimit}</span
                               >
                             </div>{/if}
@@ -1091,6 +1091,6 @@
 
 <style>
   .btn-danger {
-    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium bg-gremius-pink/10 text-gremius-pink border border-gremius-pink/20 hover:bg-gremius-pink/20 transition-colors;
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium bg-kitsuden-accent-2/10 text-kitsuden-accent-2 border border-kitsuden-accent-2/20 hover:bg-kitsuden-accent-2/20 transition-colors;
   }
 </style>

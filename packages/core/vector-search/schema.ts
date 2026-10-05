@@ -1,7 +1,7 @@
 /**
  * Vector Search Schema — Unified vector storage for all datasets
  *
- * Replaces: ai-memories grimoire tables
+ * Replaces: ai-memories kon tables
  * Schema: Single table stores vectors from ANY dataset
  */
 
@@ -122,7 +122,7 @@ export interface VectorSearchResult {
   content: string;
   similarity: number;
   fieldName?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   chunks?: VectorChunk[];
 }
 

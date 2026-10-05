@@ -3,7 +3,7 @@
   Panel de chat interactivo para probar agentes
 -->
 <script lang="ts">
-  import { Send, Bot, User, Loader2 } from "lucide-svelte";
+  import { Send, Bot, User, Loader2, Wrench, Sparkles } from "lucide-svelte";
   import { tick } from "svelte";
 
   import Button from "$lib/components/ui/Button.svelte";
@@ -17,9 +17,12 @@
     metadata?: {
       tokensIn?: number;
       tokensOut?: number;
-      duration?: number;
-      toolCalls?: string[];
+      durationMs?: number;
+      provider?: string;
+      model?: string;
+      cached?: boolean;
     };
+    toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: string }>;
   }
 
   interface Props {
@@ -138,18 +141,52 @@
 
             <!-- Metadata -->
             {#if message.metadata && message.role === "assistant"}
-              <div class="flex items-center gap-2 text-xs text-zinc-600">
+              <div class="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
                 <span>{formatTime(message.timestamp)}</span>
-                {#if message.metadata.tokensOut}
-                  <span>• {message.metadata.tokensOut} tokens</span>
+                {#if message.metadata.provider}
+                  <span class="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">
+                    {message.metadata.provider}/{message.metadata.model}
+                  </span>
                 {/if}
-                {#if message.metadata.duration}
-                  <span>• {(message.metadata.duration / 1000).toFixed(2)}s</span>
+                {#if message.metadata.tokensOut}
+                  <span>{message.metadata.tokensIn}/{message.metadata.tokensOut} tokens</span>
+                {/if}
+                {#if message.metadata.durationMs}
+                  <span>{(message.metadata.durationMs / 1000).toFixed(2)}s</span>
+                {/if}
+                {#if message.metadata.cached}
+                  <span
+                    class="flex items-center gap-1 text-amber-400"
+                    title="Respuesta desde caché"
+                  >
+                    <Sparkles size={10} />
+                    cached
+                  </span>
                 {/if}
               </div>
             {:else}
               <div class="text-xs text-zinc-600">
                 {formatTime(message.timestamp)}
+              </div>
+            {/if}
+
+            <!-- Tool calls -->
+            {#if message.toolCalls && message.toolCalls.length > 0}
+              <div class="mt-2 space-y-1.5">
+                {#each message.toolCalls as tool}
+                  <div class="text-xs bg-zinc-900/80 border border-zinc-800 rounded-lg p-2">
+                    <div class="flex items-center gap-1.5 text-indigo-400 mb-1">
+                      <Wrench size={12} />
+                      <span class="font-medium">{tool.name}</span>
+                    </div>
+                    <div class="text-zinc-500 font-mono truncate">
+                      {JSON.stringify(tool.arguments)}
+                    </div>
+                    <div class="mt-1 text-zinc-400 line-clamp-3">
+                      {tool.result}
+                    </div>
+                  </div>
+                {/each}
               </div>
             {/if}
           </div>

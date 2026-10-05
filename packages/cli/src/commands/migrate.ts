@@ -9,7 +9,7 @@ import { findProjectRoot } from "../utils/project.js";
 
 interface Migration {
   id: string;
-  grimoire: string;
+  kon: string;
   name: string;
   timestamp: number;
   up: (db: any) => Promise<void>;
@@ -53,7 +53,7 @@ async function ensureMigrationsTable(db: any) {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS _migrations (
       id SERIAL PRIMARY KEY,
-      grimoire TEXT NOT NULL,
+      kon TEXT NOT NULL,
       name TEXT NOT NULL,
       applied_at TIMESTAMP DEFAULT NOW(),
       checksum TEXT NOT NULL
@@ -65,11 +65,11 @@ async function showStatus(db: any) {
   console.log(chalk.blue("📊 Migration Status\n"));
 
   const projectRoot = await findProjectRoot();
-  const grimoiresPath = path.join(projectRoot, "packages", "grimoires");
-  const grimoires = await fs.readdir(grimoiresPath);
+  const konsPath = path.join(projectRoot, "packages", "kons");
+  const kons = await fs.readdir(konsPath);
 
-  for (const grimoire of grimoires) {
-    const migrationsDir = path.join(grimoiresPath, grimoire, "migrations");
+  for (const kon of kons) {
+    const migrationsDir = path.join(konsPath, kon, "migrations");
 
     try {
       await fs.access(migrationsDir);
@@ -77,11 +77,11 @@ async function showStatus(db: any) {
       continue;
     }
 
-    console.log(chalk.yellow(`${grimoire}:`));
+    console.log(chalk.yellow(`${kon}:`));
 
     const applied = await db.execute(sql`
       SELECT name, applied_at FROM _migrations 
-      WHERE grimoire = ${grimoire}
+      WHERE kon = ${kon}
       ORDER BY applied_at
     `);
 
@@ -109,12 +109,12 @@ async function applyMigrations(db: any, fake: boolean = false) {
   console.log(chalk.blue("🚀 Applying migrations...\n"));
 
   const projectRoot = await findProjectRoot();
-  const grimoiresPath = path.join(projectRoot, "packages", "grimoires");
-  const grimoires = await fs.readdir(grimoiresPath);
+  const konsPath = path.join(projectRoot, "packages", "kons");
+  const kons = await fs.readdir(konsPath);
   let appliedCount = 0;
 
-  for (const grimoire of grimoires) {
-    const migrationsDir = path.join(grimoiresPath, grimoire, "migrations");
+  for (const kon of kons) {
+    const migrationsDir = path.join(konsPath, kon, "migrations");
 
     try {
       await fs.access(migrationsDir);
@@ -124,7 +124,7 @@ async function applyMigrations(db: any, fake: boolean = false) {
 
     const applied = await db.execute(sql`
       SELECT name FROM _migrations 
-      WHERE grimoire = ${grimoire}
+      WHERE kon = ${kon}
     `);
     const appliedNames = new Set(applied.map((m: any) => m.name));
 
@@ -138,7 +138,7 @@ async function applyMigrations(db: any, fake: boolean = false) {
       const filepath = path.join(migrationsDir, file);
       const name = file.replace(/\.(sql|ts)$/, "");
 
-      console.log(chalk.gray(`  Applying ${grimoire}/${name}...`));
+      console.log(chalk.gray(`  Applying ${kon}/${name}...`));
 
       if (!fake) {
         if (file.endsWith(".sql")) {
@@ -152,8 +152,8 @@ async function applyMigrations(db: any, fake: boolean = false) {
 
         const checksum = await calculateChecksum(filepath);
         await db.execute(sql`
-          INSERT INTO _migrations (grimoire, name, checksum)
-          VALUES (${grimoire}, ${name}, ${checksum})
+          INSERT INTO _migrations (kon, name, checksum)
+          VALUES (${kon}, ${name}, ${checksum})
         `);
       }
 
@@ -173,7 +173,7 @@ async function rollbackLastMigration(db: any) {
   console.log(chalk.blue("⏪ Rolling back last migration...\n"));
 
   const lastMigration = await db.execute(sql`
-    SELECT grimoire, name FROM _migrations
+    SELECT kon, name FROM _migrations
     ORDER BY applied_at DESC
     LIMIT 1
   `);
@@ -183,38 +183,24 @@ async function rollbackLastMigration(db: any) {
     return;
   }
 
-  const { grimoire, name } = lastMigration[0];
+  const { kon, name } = lastMigration[0];
 
   // Intentar .ts primero, luego .sql (los .sql no tienen rollback automático)
   const projectRoot = await findProjectRoot();
-  let filepath = path.join(
-    projectRoot,
-    "packages",
-    "grimoires",
-    grimoire,
-    "migrations",
-    `${name}.ts`
-  );
+  let filepath = path.join(projectRoot, "packages", "kons", kon, "migrations", `${name}.ts`);
   try {
     await fs.access(filepath);
   } catch {
-    filepath = path.join(
-      projectRoot,
-      "packages",
-      "grimoires",
-      grimoire,
-      "migrations",
-      `${name}.sql`
-    );
+    filepath = path.join(projectRoot, "packages", "kons", kon, "migrations", `${name}.sql`);
     try {
       await fs.access(filepath);
     } catch {
-      console.log(chalk.red(`Migration file not found for ${grimoire}/${name}`));
+      console.log(chalk.red(`Migration file not found for ${kon}/${name}`));
       return;
     }
   }
 
-  console.log(chalk.gray(`  Rolling back ${grimoire}/${name}...`));
+  console.log(chalk.gray(`  Rolling back ${kon}/${name}...`));
 
   if (filepath.endsWith(".sql")) {
     console.log(
@@ -230,7 +216,7 @@ async function rollbackLastMigration(db: any) {
 
   await db.execute(sql`
     DELETE FROM _migrations 
-    WHERE grimoire = ${grimoire} AND name = ${name}
+    WHERE kon = ${kon} AND name = ${name}
   `);
 
   console.log(chalk.green(`  ✓ Rolled back`));

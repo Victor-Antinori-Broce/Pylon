@@ -18,7 +18,7 @@
 - Modal centrado con búsqueda instantánea
 - Categorías de resultados:
   - **Actions:** New Post, New Dataset, Go to Media, Go to Dashboard
-  - **Navigation:** Todas las rutas del sidebar (incluyendo grimoires dinámicos)
+  - **Navigation:** Todas las rutas del sidebar (incluyendo kons dinámicos)
   - **Recent:** Mocked datasets populares (Users, Blog Posts, Media Assets, etc.)
 - Navegación con teclado: `↑↓` + `Enter`
 - Cierre con `Escape`

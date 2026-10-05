@@ -2,7 +2,7 @@
   /**
    * DMSView - Document Management System (Django Admin Style)
    *
-   * Comprehensive admin screen for Gremius DMS with:
+   * Comprehensive admin screen for Kitsuden DMS with:
    * - Category tree sidebar
    * - Document table with sorting, filtering, pagination, bulk actions
    * - Detail drawer with tabs: Metadata, Content, Versions, Comments,
@@ -468,7 +468,7 @@
       const result = await apiFetch(`/api/dms/render/${slug}`);
       renderedHtml = result.content || result.html || result;
     } catch {
-      renderedHtml = '<p class="text-gremius-subtle">Preview not available</p>';
+      renderedHtml = '<p class="text-kitsuden-subtle">Preview not available</p>';
     }
   }
 
@@ -1081,8 +1081,8 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <!-- HEADER -->
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
-<div class="h-full flex flex-col bg-gremius-bg">
-  <div class="border-b border-gremius-border bg-gremius-card px-6 py-4 shrink-0">
+<div class="h-full flex flex-col bg-kitsuden-bg">
+  <div class="border-b border-kitsuden-border bg-kitsuden-card px-6 py-4 shrink-0">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div
@@ -1091,8 +1091,8 @@
           <FileStack class="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 class="text-xl font-bold text-gremius-text">Document Management</h1>
-          <p class="text-sm text-gremius-subtle">
+          <h1 class="text-xl font-bold text-kitsuden-text">Document Management</h1>
+          <p class="text-sm text-kitsuden-subtle">
             Versioned document storage with approval workflows
           </p>
         </div>
@@ -1118,13 +1118,13 @@
     </div>
 
     <!-- Section Tabs -->
-    <div class="flex items-center gap-1 mt-4 border-t border-gremius-border pt-3">
+    <div class="flex items-center gap-1 mt-4 border-t border-kitsuden-border pt-3">
       {#each ["documents", "categories", "templates", "notifications", "stats"] as const as sec}
         <button
           class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 {activeSection ===
           sec
-            ? 'bg-gremius-cyan/10 text-gremius-cyan'
-            : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-bg'}"
+            ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
+            : 'text-kitsuden-subtle hover:text-kitsuden-text hover:bg-kitsuden-bg'}"
           onclick={() => {
             activeSection = sec;
             selectedIds = new Set();
@@ -1137,7 +1137,7 @@
             <Bell class="w-4 h-4" />
             {#if unreadCount > 0}
               <span
-                class="ml-0.5 px-1.5 py-0.5 rounded-full bg-gremius-pink text-white text-[10px] leading-none"
+                class="ml-0.5 px-1.5 py-0.5 rounded-full bg-kitsuden-accent-2 text-white text-[10px] leading-none"
                 >{unreadCount}</span
               >
             {/if}
@@ -1150,14 +1150,14 @@
 
     <!-- Stats Row (visible on documents/templates tabs) -->
     {#if stats && (activeSection === "documents" || activeSection === "templates")}
-      <div class="grid grid-cols-5 gap-4 mt-3 pt-3 border-t border-gremius-border">
+      <div class="grid grid-cols-5 gap-4 mt-3 pt-3 border-t border-kitsuden-border">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
             <FileText class="w-4 h-4 text-blue-500" />
           </div>
           <div>
-            <p class="text-lg font-bold text-gremius-text">{stats.documents?.total || 0}</p>
-            <p class="text-[11px] text-gremius-subtle">Total Documents</p>
+            <p class="text-lg font-bold text-kitsuden-text">{stats.documents?.total || 0}</p>
+            <p class="text-[11px] text-kitsuden-subtle">Total Documents</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1165,8 +1165,8 @@
             <CheckCircle class="w-4 h-4 text-green-500" />
           </div>
           <div>
-            <p class="text-lg font-bold text-gremius-text">{stats.documents?.published || 0}</p>
-            <p class="text-[11px] text-gremius-subtle">Published</p>
+            <p class="text-lg font-bold text-kitsuden-text">{stats.documents?.published || 0}</p>
+            <p class="text-[11px] text-kitsuden-subtle">Published</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1174,8 +1174,8 @@
             <Clock class="w-4 h-4 text-yellow-500" />
           </div>
           <div>
-            <p class="text-lg font-bold text-gremius-text">{stats.documents?.draft || 0}</p>
-            <p class="text-[11px] text-gremius-subtle">Drafts</p>
+            <p class="text-lg font-bold text-kitsuden-text">{stats.documents?.draft || 0}</p>
+            <p class="text-[11px] text-kitsuden-subtle">Drafts</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1183,19 +1183,21 @@
             <AlertCircle class="w-4 h-4 text-purple-500" />
           </div>
           <div>
-            <p class="text-lg font-bold text-gremius-text">{stats.upcomingReviews?.length || 0}</p>
-            <p class="text-[11px] text-gremius-subtle">Up for Review</p>
+            <p class="text-lg font-bold text-kitsuden-text">
+              {stats.upcomingReviews?.length || 0}
+            </p>
+            <p class="text-[11px] text-kitsuden-subtle">Up for Review</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-            <Inbox class="w-4 h-4 text-cyan-500" />
+          <div class="w-9 h-9 rounded-lg bg-kitsuden-accent/10 flex items-center justify-center">
+            <Inbox class="w-4 h-4 text-kitsuden-accent" />
           </div>
           <div>
-            <p class="text-lg font-bold text-gremius-text">
+            <p class="text-lg font-bold text-kitsuden-text">
               {stats.pendingApprovals || unreadCount || 0}
             </p>
-            <p class="text-[11px] text-gremius-subtle">Pending</p>
+            <p class="text-[11px] text-kitsuden-subtle">Pending</p>
           </div>
         </div>
       </div>
@@ -1208,9 +1210,9 @@
   <div class="flex-1 flex overflow-hidden">
     <!-- ───────────────────────────── Sidebar (Categories) ───────────────────────────── -->
     {#if activeSection === "documents" || activeSection === "templates"}
-      <div class="w-64 border-r border-gremius-border bg-gremius-card flex flex-col shrink-0">
-        <div class="p-4 border-b border-gremius-border">
-          <h3 class="font-semibold text-gremius-text flex items-center gap-2 text-sm">
+      <div class="w-64 border-r border-kitsuden-border bg-kitsuden-card flex flex-col shrink-0">
+        <div class="p-4 border-b border-kitsuden-border">
+          <h3 class="font-semibold text-kitsuden-text flex items-center gap-2 text-sm">
             <FolderTree class="w-4 h-4" />
             Categories
           </h3>
@@ -1219,8 +1221,8 @@
           <button
             class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 {selectedCategory ===
             null
-              ? 'bg-gremius-cyan/10 text-gremius-cyan'
-              : 'text-gremius-text hover:bg-gremius-bg'}"
+              ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
+              : 'text-kitsuden-text hover:bg-kitsuden-bg'}"
             onclick={() => selectCategory(null)}
           >
             <FileText class="w-4 h-4" />
@@ -1231,13 +1233,13 @@
               <div class="group flex items-center gap-1">
                 {#if category.children && category.children.length > 0}
                   <button
-                    class="p-1 hover:bg-gremius-bg rounded shrink-0"
+                    class="p-1 hover:bg-kitsuden-bg rounded shrink-0"
                     onclick={() => toggleCategory(category)}
                   >
                     {#if expandedCategories.has(category.id)}
-                      <ChevronDown class="w-3.5 h-3.5 text-gremius-text-dim" />
+                      <ChevronDown class="w-3.5 h-3.5 text-kitsuden-text-dim" />
                     {:else}
-                      <ChevronRight class="w-3.5 h-3.5 text-gremius-text-dim" />
+                      <ChevronRight class="w-3.5 h-3.5 text-kitsuden-text-dim" />
                     {/if}
                   </button>
                 {:else}
@@ -1246,25 +1248,25 @@
                 <button
                   class="flex-1 text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 {selectedCategory?.id ===
                   category.id
-                    ? 'bg-gremius-cyan/10 text-gremius-cyan'
-                    : 'text-gremius-text hover:bg-gremius-bg'}"
+                    ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
+                    : 'text-kitsuden-text hover:bg-kitsuden-bg'}"
                   onclick={() => selectCategory(category)}
                 >
                   <span class="text-lg shrink-0">{category.icon || "📁"}</span>
                   <span class="truncate">{category.name}</span>
-                  <span class="ml-auto text-xs text-gremius-subtle shrink-0"
+                  <span class="ml-auto text-xs text-kitsuden-subtle shrink-0"
                     >{category.documentCount || 0}</span
                   >
                 </button>
               </div>
               {#if expandedCategories.has(category.id) && category.children && category.children.length > 0}
-                <div class="ml-4 pl-2 border-l border-gremius-border">
+                <div class="ml-4 pl-2 border-l border-kitsuden-border">
                   {#each category.children as child}
                     <button
                       class="w-full text-left px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 mt-0.5 {selectedCategory?.id ===
                       child.id
-                        ? 'bg-gremius-cyan/10 text-gremius-cyan'
-                        : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-bg'}"
+                        ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
+                        : 'text-kitsuden-subtle hover:text-kitsuden-text hover:bg-kitsuden-bg'}"
                       onclick={() => selectCategory(child)}
                     >
                       <span class="text-sm">{child.icon || "📂"}</span>
@@ -1283,16 +1285,16 @@
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
       {#if activeSection === "documents" || activeSection === "templates"}
         <!-- Filters Bar -->
-        <div class="p-4 border-b border-gremius-border bg-gremius-card shrink-0">
+        <div class="p-4 border-b border-kitsuden-border bg-kitsuden-card shrink-0">
           <div class="flex items-center gap-3 flex-wrap">
             <div class="relative flex-1 min-w-[200px] max-w-md">
               <Search
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim"
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-text-dim"
               />
               <input
                 type="text"
                 placeholder="Search documents..."
-                class="w-full pl-10 pr-4 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-text-dim focus:outline-none focus:border-gremius-cyan/50"
+                class="w-full pl-10 pr-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-text-dim focus:outline-none focus:border-kitsuden-accent/50"
                 bind:value={searchQuery}
                 oninput={() => {
                   currentPage = 1;
@@ -1301,7 +1303,7 @@
               />
             </div>
             <select
-              class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50"
+              class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent/50"
               bind:value={statusFilter}
               onchange={() => {
                 currentPage = 1;
@@ -1314,7 +1316,7 @@
               {/each}
             </select>
             <select
-              class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50"
+              class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent/50"
               bind:value={typeFilter}
               onchange={() => {
                 currentPage = 1;
@@ -1328,7 +1330,7 @@
             </select>
             {#if selectedIds.size > 0}
               <div class="flex items-center gap-2 ml-auto">
-                <span class="text-xs text-gremius-subtle">{selectedIds.size} selected</span>
+                <span class="text-xs text-kitsuden-subtle">{selectedIds.size} selected</span>
                 <button class="btn-danger btn-sm" onclick={promptBulkDelete}>
                   <Trash2 class="w-3.5 h-3.5" />
                   Delete
@@ -1343,18 +1345,18 @@
           {#if loading}
             <div class="flex items-center justify-center h-full">
               <div
-                class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+                class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
               ></div>
             </div>
           {:else if filteredDocuments.length === 0}
             <div class="flex flex-col items-center justify-center h-full text-center">
               <div
-                class="w-16 h-16 rounded-full bg-gremius-bg flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-full bg-kitsuden-bg flex items-center justify-center mb-4"
               >
-                <FileText class="w-8 h-8 text-gremius-text-dim" />
+                <FileText class="w-8 h-8 text-kitsuden-text-dim" />
               </div>
-              <h3 class="text-lg font-semibold text-gremius-text mb-1">No documents found</h3>
-              <p class="text-sm text-gremius-subtle">
+              <h3 class="text-lg font-semibold text-kitsuden-text mb-1">No documents found</h3>
+              <p class="text-sm text-kitsuden-subtle">
                 {selectedCategory
                   ? "This category is empty"
                   : "Get started by creating your first document"}
@@ -1362,12 +1364,12 @@
             </div>
           {:else}
             <table class="w-full text-left text-sm">
-              <thead class="bg-gremius-bg sticky top-0 z-10">
-                <tr class="border-b border-gremius-border">
+              <thead class="bg-kitsuden-bg sticky top-0 z-10">
+                <tr class="border-b border-kitsuden-border">
                   <th class="px-4 py-3 w-10">
                     <input
                       type="checkbox"
-                      class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan/30"
+                      class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent/30"
                       checked={allSelected}
                       indeterminate={someSelected}
                       onchange={toggleSelectAll}
@@ -1375,18 +1377,18 @@
                   </th>
                   {#each sortableColumns as col}
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none hover:text-gremius-text"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none hover:text-kitsuden-text"
                       onclick={() => toggleSort(col.key)}
                     >
                       <div class="flex items-center gap-1">
                         {col.label}
                         {#if sortKey === col.key}
-                          <span class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span>
+                          <span class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span>
                         {/if}
                       </div>
                     </th>
                   {/each}
-                  <th class="px-4 py-3 font-medium text-gremius-subtle">Actions</th>
+                  <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1394,17 +1396,17 @@
                   {@const status = getStatusConfig(doc.status)}
                   {@const type = getTypeConfig(doc.type)}
                   <tr
-                    class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors group"
+                    class="border-b border-kitsuden-border hover:bg-kitsuden-bg/50 transition-colors group"
                   >
                     <td class="px-4 py-3">
                       <input
                         type="checkbox"
-                        class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan/30"
+                        class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent/30"
                         checked={selectedIds.has(doc.id)}
                         onchange={() => toggleSelect(doc.id)}
                       />
                     </td>
-                    <td class="px-4 py-3 font-mono text-gremius-subtle">{doc.code}</td>
+                    <td class="px-4 py-3 font-mono text-kitsuden-subtle">{doc.code}</td>
                     <td class="px-4 py-3">
                       <div class="flex items-center gap-2">
                         {#if doc.requiresReview || isOverdue(doc.reviewDueDate)}
@@ -1412,7 +1414,7 @@
                             ><AlertCircle class="w-3.5 h-3.5 text-red-500 shrink-0" /></span
                           >
                         {/if}
-                        <span class="font-medium text-gremius-text">{doc.title}</span>
+                        <span class="font-medium text-kitsuden-text">{doc.title}</span>
                       </div>
                     </td>
                     <td class="px-4 py-3">
@@ -1434,17 +1436,17 @@
                         {status.label}
                       </span>
                     </td>
-                    <td class="px-4 py-3 text-gremius-subtle">{doc.categoryName || "—"}</td>
-                    <td class="px-4 py-3 font-mono text-gremius-subtle"
+                    <td class="px-4 py-3 text-kitsuden-subtle">{doc.categoryName || "—"}</td>
+                    <td class="px-4 py-3 font-mono text-kitsuden-subtle"
                       >v{doc.currentVersionNumber}</td
                     >
-                    <td class="px-4 py-3 text-gremius-subtle">{formatDate(doc.updatedAt)}</td>
+                    <td class="px-4 py-3 text-kitsuden-subtle">{formatDate(doc.updatedAt)}</td>
                     <td class="px-4 py-3">
                       <div
                         class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <button
-                          class="p-1.5 hover:bg-gremius-card rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                          class="p-1.5 hover:bg-kitsuden-card rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
                           title="Edit"
                           onclick={() => openDrawer(doc)}
                         >
@@ -1452,7 +1454,7 @@
                         </button>
                         {#if doc.isTemplate}
                           <button
-                            class="p-1.5 hover:bg-gremius-card rounded-lg text-gremius-text-dim hover:text-gremius-cyan"
+                            class="p-1.5 hover:bg-kitsuden-card rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent"
                             title="Clone"
                             onclick={() => cloneFromTemplate(doc.id)}
                           >
@@ -1460,7 +1462,7 @@
                           </button>
                         {/if}
                         <button
-                          class="p-1.5 hover:bg-gremius-card rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                          class="p-1.5 hover:bg-kitsuden-card rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
                           title="Delete"
                           onclick={() => {
                             deleteTargetIds = [doc.id];
@@ -1481,14 +1483,14 @@
         <!-- Pagination -->
         {#if totalPages > 1}
           <div
-            class="p-3 border-t border-gremius-border bg-gremius-card shrink-0 flex items-center justify-between"
+            class="p-3 border-t border-kitsuden-border bg-kitsuden-card shrink-0 flex items-center justify-between"
           >
-            <span class="text-xs text-gremius-subtle">
+            <span class="text-xs text-kitsuden-subtle">
               {totalDocs} total · Page {currentPage} of {totalPages}
             </span>
             <div class="flex items-center gap-2">
               <button
-                class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                 disabled={currentPage === 1}
                 onclick={() => {
                   currentPage = 1;
@@ -1498,7 +1500,7 @@
                 <ChevronFirst class="w-3.5 h-3.5" />
               </button>
               <button
-                class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                 disabled={currentPage === 1}
                 onclick={() => {
                   currentPage--;
@@ -1507,9 +1509,9 @@
               >
                 <ChevronLeft class="w-3.5 h-3.5" />
               </button>
-              <span class="text-xs text-gremius-subtle px-2">{currentPage} / {totalPages}</span>
+              <span class="text-xs text-kitsuden-subtle px-2">{currentPage} / {totalPages}</span>
               <button
-                class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                 disabled={currentPage === totalPages}
                 onclick={() => {
                   currentPage++;
@@ -1519,7 +1521,7 @@
                 <ChevronRight class="w-3.5 h-3.5" />
               </button>
               <button
-                class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                 disabled={currentPage === totalPages}
                 onclick={() => {
                   currentPage = totalPages;
@@ -1536,11 +1538,11 @@
       {#if activeSection === "categories"}
         <div class="flex-1 overflow-auto p-6">
           <div class="max-w-4xl mx-auto">
-            <h2 class="text-lg font-semibold text-gremius-text mb-4">Category Tree</h2>
+            <h2 class="text-lg font-semibold text-kitsuden-text mb-4">Category Tree</h2>
             {#if categories.length === 0}
               <div class="card p-12 text-center">
-                <FolderTree class="w-10 h-10 text-gremius-text-dim mx-auto mb-3" />
-                <p class="text-gremius-text-dim">No categories yet.</p>
+                <FolderTree class="w-10 h-10 text-kitsuden-text-dim mx-auto mb-3" />
+                <p class="text-kitsuden-text-dim">No categories yet.</p>
                 <button class="btn-primary mt-4" onclick={() => (showCreateCatModal = true)}>
                   <Plus class="w-4 h-4" />
                   Create Category
@@ -1554,8 +1556,8 @@
                       <div class="flex items-center gap-3">
                         <span class="text-2xl">{cat.icon || "📁"}</span>
                         <div>
-                          <h3 class="font-semibold text-gremius-text">{cat.name}</h3>
-                          <p class="text-xs text-gremius-subtle">
+                          <h3 class="font-semibold text-kitsuden-text">{cat.name}</h3>
+                          <p class="text-xs text-kitsuden-subtle">
                             {cat.description || "No description"} · {cat.documentCount || 0} docs
                           </p>
                         </div>
@@ -1569,13 +1571,15 @@
                       <div class="mt-3 ml-8 space-y-2">
                         {#each cat.children as child}
                           <div
-                            class="flex items-center justify-between p-3 rounded-lg bg-gremius-bg border border-gremius-border"
+                            class="flex items-center justify-between p-3 rounded-lg bg-kitsuden-bg border border-kitsuden-border"
                           >
                             <div class="flex items-center gap-3">
                               <span class="text-lg">{child.icon || "📂"}</span>
                               <div>
-                                <h4 class="font-medium text-gremius-text text-sm">{child.name}</h4>
-                                <p class="text-xs text-gremius-subtle">
+                                <h4 class="font-medium text-kitsuden-text text-sm">
+                                  {child.name}
+                                </h4>
+                                <p class="text-xs text-kitsuden-subtle">
                                   {child.description || ""} · {child.documentCount || 0} docs
                                 </p>
                               </div>
@@ -1600,7 +1604,7 @@
         <div class="flex-1 overflow-auto p-6">
           <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-gremius-text">Notification Inbox</h2>
+              <h2 class="text-lg font-semibold text-kitsuden-text">Notification Inbox</h2>
               {#if unreadCount > 0}
                 <button class="btn-secondary btn-sm" onclick={markAllRead}>
                   <CheckCheck class="w-3.5 h-3.5" />
@@ -1610,29 +1614,29 @@
             </div>
             {#if notifications.length === 0}
               <div class="card p-12 text-center">
-                <Inbox class="w-10 h-10 text-gremius-text-dim mx-auto mb-3" />
-                <p class="text-gremius-text-dim">No notifications.</p>
+                <Inbox class="w-10 h-10 text-kitsuden-text-dim mx-auto mb-3" />
+                <p class="text-kitsuden-text-dim">No notifications.</p>
               </div>
             {:else}
               <div class="space-y-2">
                 {#each notifications as n}
                   <div class="card p-4 flex items-start gap-3 {n.read ? 'opacity-70' : ''}">
                     <div
-                      class="w-9 h-9 rounded-lg bg-gremius-bg flex items-center justify-center shrink-0"
+                      class="w-9 h-9 rounded-lg bg-kitsuden-bg flex items-center justify-center shrink-0"
                     >
-                      <Bell class="w-4 h-4 text-gremius-cyan" />
+                      <Bell class="w-4 h-4 text-kitsuden-accent" />
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
-                        <h3 class="font-medium text-gremius-text text-sm">{n.title}</h3>
-                        <span class="text-xs text-gremius-subtle"
+                        <h3 class="font-medium text-kitsuden-text text-sm">{n.title}</h3>
+                        <span class="text-xs text-kitsuden-subtle"
                           >{formatDateTime(n.createdAt)}</span
                         >
                       </div>
-                      <p class="text-xs text-gremius-subtle mt-0.5">{n.message || ""}</p>
+                      <p class="text-xs text-kitsuden-subtle mt-0.5">{n.message || ""}</p>
                       {#if n.documentId}
                         <button
-                          class="text-xs text-gremius-cyan hover:underline mt-1"
+                          class="text-xs text-kitsuden-accent hover:underline mt-1"
                           onclick={() =>
                             openDrawer({
                               id: n.documentId!,
@@ -1652,7 +1656,7 @@
                     </div>
                     {#if !n.read}
                       <button
-                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                        class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
                         onclick={() => markNotificationRead(n.id)}
                         title="Mark read"
                       >
@@ -1665,7 +1669,7 @@
               {#if notifTotalPages > 1}
                 <div class="flex items-center justify-center gap-2 mt-4">
                   <button
-                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                     disabled={notifPage === 1}
                     onclick={() => {
                       notifPage--;
@@ -1674,9 +1678,9 @@
                   >
                     Prev
                   </button>
-                  <span class="text-xs text-gremius-subtle">{notifPage} / {notifTotalPages}</span>
+                  <span class="text-xs text-kitsuden-subtle">{notifPage} / {notifTotalPages}</span>
                   <button
-                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                     disabled={notifPage === notifTotalPages}
                     onclick={() => {
                       notifPage++;
@@ -1700,8 +1704,8 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-gremius-subtle">Total Documents</p>
-                      <p class="text-3xl font-bold text-gremius-text mt-1">
+                      <p class="text-sm text-kitsuden-subtle">Total Documents</p>
+                      <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.total || 0}
                       </p>
                     </div>
@@ -1715,8 +1719,8 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-gremius-subtle">Published</p>
-                      <p class="text-3xl font-bold text-gremius-text mt-1">
+                      <p class="text-sm text-kitsuden-subtle">Published</p>
+                      <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.published || 0}
                       </p>
                     </div>
@@ -1730,8 +1734,8 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-gremius-subtle">Drafts</p>
-                      <p class="text-3xl font-bold text-gremius-text mt-1">
+                      <p class="text-sm text-kitsuden-subtle">Drafts</p>
+                      <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.draft || 0}
                       </p>
                     </div>
@@ -1745,8 +1749,8 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-gremius-subtle">In Review</p>
-                      <p class="text-3xl font-bold text-gremius-text mt-1">
+                      <p class="text-sm text-kitsuden-subtle">In Review</p>
+                      <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.review_pending || 0}
                       </p>
                     </div>
@@ -1760,8 +1764,8 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-gremius-subtle">Archived</p>
-                      <p class="text-3xl font-bold text-gremius-text mt-1">
+                      <p class="text-sm text-kitsuden-subtle">Archived</p>
+                      <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.archived || 0}
                       </p>
                     </div>
@@ -1775,8 +1779,8 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-gremius-subtle">Upcoming Reviews</p>
-                      <p class="text-3xl font-bold text-gremius-text mt-1">
+                      <p class="text-sm text-kitsuden-subtle">Upcoming Reviews</p>
+                      <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.upcomingReviews?.length || 0}
                       </p>
                     </div>
@@ -1792,13 +1796,13 @@
               <!-- Status Distribution Bar -->
               {#if stats.statusDistribution}
                 <div class="card p-5">
-                  <h3 class="font-semibold text-gremius-text mb-4">Status Distribution</h3>
+                  <h3 class="font-semibold text-kitsuden-text mb-4">Status Distribution</h3>
                   <div class="space-y-3">
                     {#each Object.entries(stats.statusDistribution) as [status, count]}
                       {@const cfg = getStatusConfig(status)}
                       <div class="flex items-center gap-3">
-                        <span class="w-24 text-xs text-gremius-subtle truncate">{cfg.label}</span>
-                        <div class="flex-1 h-2 bg-gremius-bg rounded-full overflow-hidden">
+                        <span class="w-24 text-xs text-kitsuden-subtle truncate">{cfg.label}</span>
+                        <div class="flex-1 h-2 bg-kitsuden-bg rounded-full overflow-hidden">
                           <div
                             class="h-full rounded-full"
                             style="width: {Math.min(
@@ -1807,7 +1811,7 @@
                             )}%; background-color: {cfg.color}"
                           ></div>
                         </div>
-                        <span class="w-8 text-xs text-gremius-text text-right">{count}</span>
+                        <span class="w-8 text-xs text-kitsuden-text text-right">{count}</span>
                       </div>
                     {/each}
                   </div>
@@ -1816,7 +1820,7 @@
             {:else}
               <div class="flex items-center justify-center h-64">
                 <div
-                  class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+                  class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
                 ></div>
               </div>
             {/if}
@@ -1834,15 +1838,15 @@
   <div class="fixed inset-0 z-40 flex justify-end">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick={closeDrawer}></div>
     <div
-      class="relative w-full max-w-[60%] bg-gremius-card border-l border-gremius-border h-full flex flex-col shadow-2xl"
+      class="relative w-full max-w-[60%] bg-kitsuden-card border-l border-kitsuden-border h-full flex flex-col shadow-2xl"
     >
       <!-- Drawer Header -->
       <div
-        class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0"
+        class="flex items-center justify-between px-6 py-4 border-b border-kitsuden-border shrink-0"
       >
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span class="text-xs font-mono text-gremius-subtle">{drawerDoc?.code || "—"}</span>
+            <span class="text-xs font-mono text-kitsuden-subtle">{drawerDoc?.code || "—"}</span>
             {#if drawerDoc?.isTemplate}
               <span
                 class="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 text-[10px] font-medium"
@@ -1855,7 +1859,7 @@
               >
             {/if}
           </div>
-          <h2 class="text-lg font-bold text-gremius-text truncate">
+          <h2 class="text-lg font-bold text-kitsuden-text truncate">
             {drawerDoc?.title || "Document"}
           </h2>
         </div>
@@ -1889,7 +1893,7 @@
             <Trash2 class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-2 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+            class="p-2 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
             onclick={closeDrawer}
           >
             <X class="w-5 h-5" />
@@ -1899,14 +1903,14 @@
 
       <!-- Drawer Tabs -->
       <div
-        class="flex items-center gap-1 px-6 py-2 border-b border-gremius-border bg-gremius-bg/50 shrink-0 overflow-x-auto"
+        class="flex items-center gap-1 px-6 py-2 border-b border-kitsuden-border bg-kitsuden-bg/50 shrink-0 overflow-x-auto"
       >
         {#each ["metadata", "content", "versions", "comments", "diagrams", "audit", "backlinks"] as const as tab}
           <button
             class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 {drawerTab ===
             tab
-              ? 'bg-gremius-cyan/10 text-gremius-cyan'
-              : 'text-gremius-subtle hover:text-gremius-text hover:bg-gremius-bg'}"
+              ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
+              : 'text-kitsuden-subtle hover:text-kitsuden-text hover:bg-kitsuden-bg'}"
             onclick={() => (drawerTab = tab)}
           >
             {#if tab === "metadata"}<Settings class="w-3.5 h-3.5" />{/if}
@@ -1918,12 +1922,14 @@
             {#if tab === "backlinks"}<Link2 class="w-3.5 h-3.5" />{/if}
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
             {#if tab === "comments" && comments.length > 0}
-              <span class="px-1 py-0 rounded-full bg-gremius-cyan/20 text-gremius-cyan text-[9px]"
+              <span
+                class="px-1 py-0 rounded-full bg-kitsuden-accent/20 text-kitsuden-accent text-[9px]"
                 >{comments.length}</span
               >
             {/if}
             {#if tab === "versions" && versions.length > 0}
-              <span class="px-1 py-0 rounded-full bg-gremius-cyan/20 text-gremius-cyan text-[9px]"
+              <span
+                class="px-1 py-0 rounded-full bg-kitsuden-accent/20 text-kitsuden-accent text-[9px]"
                 >{versions.length}</span
               >
             {/if}
@@ -1936,46 +1942,56 @@
         {#if drawerLoading}
           <div class="flex items-center justify-center h-full">
             <div
-              class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+              class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
             ></div>
           </div>
         {:else if !drawerDoc}
-          <div class="text-center text-gremius-subtle">No document selected</div>
+          <div class="text-center text-kitsuden-subtle">No document selected</div>
         {:else if drawerTab === "metadata"}
           <!-- Metadata Tab -->
           <div class="max-w-2xl space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Title</label>
-                <input class="gremius-input w-full" bind:value={formDoc.title} />
+                <label for="title" class="block text-xs text-kitsuden-subtle mb-1">Title</label>
+                <input id="title" class="kitsuden-input w-full" bind:value={formDoc.title} />
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Code</label>
-                <input class="gremius-input w-full font-mono" bind:value={formDoc.code} />
+                <label for="code" class="block text-xs text-kitsuden-subtle mb-1">Code</label>
+                <input
+                  id="code"
+                  class="kitsuden-input w-full font-mono"
+                  bind:value={formDoc.code}
+                />
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Slug</label>
-                <input class="gremius-input w-full" bind:value={formDoc.slug} />
+                <label for="slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label>
+                <input id="slug" class="kitsuden-input w-full" bind:value={formDoc.slug} />
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Type</label>
-                <select class="gremius-input w-full" bind:value={formDoc.type}>
+                <label for="type" class="block text-xs text-kitsuden-subtle mb-1">Type</label>
+                <select id="type" class="kitsuden-input w-full" bind:value={formDoc.type}>
                   {#each documentTypes as t}
                     <option value={t.id}>{t.label}</option>
                   {/each}
                 </select>
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Status</label>
-                <select class="gremius-input w-full" bind:value={formDoc.status}>
+                <label for="status" class="block text-xs text-kitsuden-subtle mb-1">Status</label>
+                <select id="status" class="kitsuden-input w-full" bind:value={formDoc.status}>
                   {#each workflowStatuses as s}
                     <option value={s.id}>{s.label}</option>
                   {/each}
                 </select>
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Category</label>
-                <select class="gremius-input w-full" bind:value={formDoc.categoryId}>
+                <label for="categoryid" class="block text-xs text-kitsuden-subtle mb-1"
+                  >Category</label
+                >
+                <select
+                  id="categoryid"
+                  class="kitsuden-input w-full"
+                  bind:value={formDoc.categoryId}
+                >
                   <option value="">None</option>
                   {#each categories as c}
                     <option value={c.id}>{c.name}</option>
@@ -1986,36 +2002,51 @@
                 </select>
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Visibility</label>
-                <select class="gremius-input w-full" bind:value={formDoc.visibility}>
+                <label for="visibility" class="block text-xs text-kitsuden-subtle mb-1"
+                  >Visibility</label
+                >
+                <select
+                  id="visibility"
+                  class="kitsuden-input w-full"
+                  bind:value={formDoc.visibility}
+                >
                   {#each visibilityOptions as v}
                     <option value={v.id}>{v.label}</option>
                   {/each}
                 </select>
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Effective Date</label>
+                <label for="effectivedate" class="block text-xs text-kitsuden-subtle mb-1"
+                  >Effective Date</label
+                >
                 <input
+                  id="effectivedate"
                   type="date"
-                  class="gremius-input w-full"
+                  class="kitsuden-input w-full"
                   bind:value={formDoc.effectiveDate}
                 />
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Review Due Date</label>
+                <label for="reviewduedate" class="block text-xs text-kitsuden-subtle mb-1"
+                  >Review Due Date</label
+                >
                 <input
+                  id="reviewduedate"
                   type="date"
-                  class="gremius-input w-full {isOverdue(formDoc.reviewDueDate)
+                  class="kitsuden-input w-full {isOverdue(formDoc.reviewDueDate)
                     ? 'border-red-500/50 text-red-400'
                     : ''}"
                   bind:value={formDoc.reviewDueDate}
                 />
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1">Expiration Date</label>
+                <label for="expirationdate" class="block text-xs text-kitsuden-subtle mb-1"
+                  >Expiration Date</label
+                >
                 <input
+                  id="expirationdate"
                   type="date"
-                  class="gremius-input w-full"
+                  class="kitsuden-input w-full"
                   bind:value={formDoc.expirationDate}
                 />
               </div>
@@ -2023,22 +2054,32 @@
                 <input
                   type="checkbox"
                   id="reqAck"
-                  class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan/30"
+                  class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent/30"
                   bind:checked={formDoc.requiresAcknowledgment}
                 />
-                <label for="reqAck" class="text-sm text-gremius-text">Requires Acknowledgment</label
+                <label for="reqAck" class="text-sm text-kitsuden-text"
+                  >Requires Acknowledgment</label
                 >
               </div>
             </div>
             <div>
-              <label class="block text-xs text-gremius-subtle mb-1">Description</label>
-              <textarea rows="3" class="gremius-input w-full" bind:value={formDoc.description}
+              <label for="description" class="block text-xs text-kitsuden-subtle mb-1"
+                >Description</label
+              >
+              <textarea
+                id="description"
+                rows="3"
+                class="kitsuden-input w-full"
+                bind:value={formDoc.description}
               ></textarea>
             </div>
             <div>
-              <label class="block text-xs text-gremius-subtle mb-1">Tags (comma separated)</label>
+              <label for="tags-comma-separated" class="block text-xs text-kitsuden-subtle mb-1"
+                >Tags (comma separated)</label
+              >
               <input
-                class="gremius-input w-full"
+                id="tags-comma-separated"
+                class="kitsuden-input w-full"
                 value={Array.isArray(formDoc.tags) ? formDoc.tags.join(", ") : formDoc.tags}
                 oninput={(e) => {
                   formDoc.tags = (e.target as HTMLInputElement).value
@@ -2050,11 +2091,11 @@
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1"
+                <label for="title-2" class="block text-xs text-kitsuden-subtle mb-1"
                   >Allowed User IDs (comma separated)</label
                 >
                 <input
-                  class="gremius-input w-full"
+                  class="kitsuden-input w-full"
                   value={Array.isArray(formDoc.allowedUserIds)
                     ? formDoc.allowedUserIds.join(", ")
                     : ""}
@@ -2067,11 +2108,11 @@
                 />
               </div>
               <div>
-                <label class="block text-xs text-gremius-subtle mb-1"
+                <label class="block text-xs text-kitsuden-subtle mb-1"
                   >Allowed Role IDs (comma separated)</label
                 >
                 <input
-                  class="gremius-input w-full"
+                  class="kitsuden-input w-full"
                   value={Array.isArray(formDoc.allowedRoleIds)
                     ? formDoc.allowedRoleIds.join(", ")
                     : ""}
@@ -2084,7 +2125,7 @@
                 />
               </div>
             </div>
-            <div class="flex items-center gap-3 pt-4 border-t border-gremius-border">
+            <div class="flex items-center gap-3 pt-4 border-t border-kitsuden-border">
               <button class="btn-primary" onclick={updateDocument} disabled={saving}>
                 {#if saving}
                   <Loader2 class="w-4 h-4 animate-spin" />
@@ -2101,7 +2142,7 @@
           <!-- Content Tab -->
           <div class="h-full flex flex-col gap-3">
             <div class="flex items-center gap-3 shrink-0">
-              <select class="gremius-input w-32" bind:value={contentFormat}>
+              <select class="kitsuden-input w-32" bind:value={contentFormat}>
                 <option value="markdown">Markdown</option>
                 <option value="html">HTML</option>
               </select>
@@ -2129,21 +2170,21 @@
               <div class="flex-1 flex flex-col min-h-0 relative">
                 <textarea
                   id="content-editor"
-                  class="flex-1 gremius-input font-mono text-xs resize-none"
+                  class="flex-1 kitsuden-input font-mono text-xs resize-none"
                   bind:value={contentEditor}
                   oninput={onContentInput}
                   placeholder="Write your content here..."
                 ></textarea>
                 {#if showWikiDropdown && wikiSuggestions.length > 0}
                   <div
-                    class="absolute left-4 bottom-4 w-64 max-h-48 overflow-y-auto bg-gremius-card border border-gremius-border rounded-xl shadow-xl z-10"
+                    class="absolute left-4 bottom-4 w-64 max-h-48 overflow-y-auto bg-kitsuden-card border border-kitsuden-border rounded-xl shadow-xl z-10"
                   >
                     {#each wikiSuggestions as s}
                       <button
-                        class="w-full text-left px-3 py-2 text-sm text-gremius-text hover:bg-gremius-bg flex items-center gap-2"
+                        class="w-full text-left px-3 py-2 text-sm text-kitsuden-text hover:bg-kitsuden-bg flex items-center gap-2"
                         onclick={() => insertWikiLink(s)}
                       >
-                        <span class="font-mono text-xs text-gremius-subtle">{s.code}</span>
+                        <span class="font-mono text-xs text-kitsuden-subtle">{s.code}</span>
                         <span class="truncate">{s.title}</span>
                       </button>
                     {/each}
@@ -2151,9 +2192,9 @@
                 {/if}
               </div>
               <div
-                class="flex-1 bg-gremius-bg border border-gremius-border rounded-xl overflow-auto p-4"
+                class="flex-1 bg-kitsuden-bg border border-kitsuden-border rounded-xl overflow-auto p-4"
               >
-                <div class="text-xs text-gremius-subtle mb-2 flex items-center gap-1">
+                <div class="text-xs text-kitsuden-subtle mb-2 flex items-center gap-1">
                   <Eye class="w-3 h-3" />
                   Preview
                 </div>
@@ -2162,19 +2203,19 @@
                     {@html renderedHtml}
                   </div>
                 {:else}
-                  <p class="text-sm text-gremius-subtle">
+                  <p class="text-sm text-kitsuden-subtle">
                     Preview will appear here after saving or when render is available.
                   </p>
                 {/if}
               </div>
             </div>
-            <div class="flex items-center gap-3 shrink-0 pt-2 border-t border-gremius-border">
+            <div class="flex items-center gap-3 shrink-0 pt-2 border-t border-kitsuden-border">
               <input
-                class="gremius-input flex-1 text-sm"
+                class="kitsuden-input flex-1 text-sm"
                 placeholder="Changelog for this edit..."
                 bind:value={changelogInput}
               />
-              <select class="gremius-input w-28 text-sm" bind:value={changeTypeInput}>
+              <select class="kitsuden-input w-28 text-sm" bind:value={changeTypeInput}>
                 <option value="major">Major</option>
                 <option value="minor">Minor</option>
                 <option value="patch">Patch</option>
@@ -2193,27 +2234,28 @@
           <!-- Versions Tab -->
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold text-gremius-text">Version History</h3>
+              <h3 class="font-semibold text-kitsuden-text">Version History</h3>
               <button class="btn-primary btn-sm" onclick={() => (showCreateVersionModal = true)}>
                 <Plus class="w-3.5 h-3.5" />
                 Create Version
               </button>
             </div>
             {#if versions.length === 0}
-              <div class="card p-8 text-center text-gremius-subtle text-sm">No versions yet.</div>
+              <div class="card p-8 text-center text-kitsuden-subtle text-sm">No versions yet.</div>
             {:else}
               <div class="space-y-2">
                 {#each versions as v}
                   <div class="card p-4 flex items-start gap-4">
                     <div
-                      class="w-10 h-10 rounded-lg bg-gremius-bg flex items-center justify-center shrink-0"
+                      class="w-10 h-10 rounded-lg bg-kitsuden-bg flex items-center justify-center shrink-0"
                     >
-                      <GitCommit class="w-5 h-5 text-gremius-cyan" />
+                      <GitCommit class="w-5 h-5 text-kitsuden-accent" />
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                          <span class="font-mono text-sm text-gremius-text">v{v.versionNumber}</span
+                          <span class="font-mono text-sm text-kitsuden-text"
+                            >v{v.versionNumber}</span
                           >
                           <span
                             class="px-2 py-0.5 rounded-full text-[10px] font-medium {statusBadgeClass(
@@ -2221,14 +2263,14 @@
                             )}">{getStatusConfig(v.status).label}</span
                           >
                         </div>
-                        <span class="text-xs text-gremius-subtle"
+                        <span class="text-xs text-kitsuden-subtle"
                           >{formatDateTime(v.createdAt)}</span
                         >
                       </div>
-                      <p class="text-xs text-gremius-subtle mt-1">
+                      <p class="text-xs text-kitsuden-subtle mt-1">
                         {v.changelog || "No changelog"}
                       </p>
-                      <p class="text-xs text-gremius-text-dim">
+                      <p class="text-xs text-kitsuden-text-dim">
                         By {v.createdBy?.name || "Unknown"}
                       </p>
                       <div class="flex items-center gap-2 mt-2">
@@ -2256,7 +2298,7 @@
                             Request Changes
                           </button>
                           <input
-                            class="gremius-input w-48 text-xs"
+                            class="kitsuden-input w-48 text-xs"
                             placeholder="Review notes..."
                             bind:value={reviewNotes}
                           />
@@ -2281,26 +2323,26 @@
         {:else if drawerTab === "comments"}
           <!-- Comments Tab -->
           <div class="space-y-4">
-            <h3 class="font-semibold text-gremius-text">Comments</h3>
+            <h3 class="font-semibold text-kitsuden-text">Comments</h3>
             <div class="flex gap-3">
               <div
-                class="w-8 h-8 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-xs font-bold shrink-0"
+                class="w-8 h-8 rounded-full bg-kitsuden-accent/20 flex items-center justify-center text-kitsuden-accent text-xs font-bold shrink-0"
               >
                 {getInitials("You")}
               </div>
               <div class="flex-1">
                 {#if replyToId}
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs text-gremius-cyan">Replying to comment</span>
+                    <span class="text-xs text-kitsuden-accent">Replying to comment</span>
                     <button
-                      class="text-xs text-gremius-subtle hover:text-gremius-text"
+                      class="text-xs text-kitsuden-subtle hover:text-kitsuden-text"
                       onclick={() => (replyToId = null)}>Cancel</button
                     >
                   </div>
                 {/if}
                 <textarea
                   rows="2"
-                  class="gremius-input w-full text-sm"
+                  class="kitsuden-input w-full text-sm"
                   placeholder="Add a comment..."
                   bind:value={commentInput}
                 ></textarea>
@@ -2321,23 +2363,23 @@
                 <div class="card p-4">
                   <div class="flex items-start gap-3">
                     <div
-                      class="w-8 h-8 rounded-full bg-gremius-bg border border-gremius-border flex items-center justify-center text-gremius-text text-xs font-bold shrink-0"
+                      class="w-8 h-8 rounded-full bg-kitsuden-bg border border-kitsuden-border flex items-center justify-center text-kitsuden-text text-xs font-bold shrink-0"
                     >
                       {getInitials(comment.createdBy?.name)}
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gremius-text"
+                        <span class="text-sm font-medium text-kitsuden-text"
                           >{comment.createdBy?.name || "Unknown"}</span
                         >
-                        <span class="text-xs text-gremius-subtle"
+                        <span class="text-xs text-kitsuden-subtle"
                           >{formatDateTime(comment.createdAt)}</span
                         >
                       </div>
-                      <p class="text-sm text-gremius-subtle mt-1">{comment.content}</p>
+                      <p class="text-sm text-kitsuden-subtle mt-1">{comment.content}</p>
                       <div class="flex items-center gap-2 mt-2">
                         <button
-                          class="text-xs text-gremius-subtle hover:text-gremius-cyan flex items-center gap-1"
+                          class="text-xs text-kitsuden-subtle hover:text-kitsuden-accent flex items-center gap-1"
                           onclick={() => (replyToId = comment.id)}
                         >
                           <Reply class="w-3 h-3" />
@@ -2345,7 +2387,7 @@
                         </button>
                         {#if !comment.resolved}
                           <button
-                            class="text-xs text-gremius-subtle hover:text-green-400 flex items-center gap-1"
+                            class="text-xs text-kitsuden-subtle hover:text-green-400 flex items-center gap-1"
                             onclick={() => resolveComment(comment.id)}
                           >
                             <Check class="w-3 h-3" />
@@ -2358,7 +2400,7 @@
                           </span>
                         {/if}
                         <button
-                          class="text-xs text-gremius-subtle hover:text-gremius-pink flex items-center gap-1"
+                          class="text-xs text-kitsuden-subtle hover:text-kitsuden-accent-2 flex items-center gap-1"
                           onclick={() => deleteComment(comment.id)}
                         >
                           <Trash2 class="w-3 h-3" />
@@ -2366,24 +2408,24 @@
                         </button>
                       </div>
                       {#if comment.replies && comment.replies.length > 0}
-                        <div class="mt-3 ml-4 pl-3 border-l border-gremius-border space-y-2">
+                        <div class="mt-3 ml-4 pl-3 border-l border-kitsuden-border space-y-2">
                           {#each comment.replies as reply}
                             <div class="flex items-start gap-2">
                               <div
-                                class="w-6 h-6 rounded-full bg-gremius-bg border border-gremius-border flex items-center justify-center text-gremius-text text-[10px] font-bold shrink-0"
+                                class="w-6 h-6 rounded-full bg-kitsuden-bg border border-kitsuden-border flex items-center justify-center text-kitsuden-text text-[10px] font-bold shrink-0"
                               >
                                 {getInitials(reply.createdBy?.name)}
                               </div>
                               <div class="flex-1">
                                 <div class="flex items-center gap-2">
-                                  <span class="text-xs font-medium text-gremius-text"
+                                  <span class="text-xs font-medium text-kitsuden-text"
                                     >{reply.createdBy?.name || "Unknown"}</span
                                   >
-                                  <span class="text-[10px] text-gremius-subtle"
+                                  <span class="text-[10px] text-kitsuden-subtle"
                                     >{formatDateTime(reply.createdAt)}</span
                                   >
                                 </div>
-                                <p class="text-xs text-gremius-subtle mt-0.5">{reply.content}</p>
+                                <p class="text-xs text-kitsuden-subtle mt-0.5">{reply.content}</p>
                               </div>
                             </div>
                           {/each}
@@ -2394,7 +2436,7 @@
                 </div>
               {/each}
               {#if comments.length === 0}
-                <div class="text-center text-gremius-subtle text-sm py-8">No comments yet.</div>
+                <div class="text-center text-kitsuden-subtle text-sm py-8">No comments yet.</div>
               {/if}
             </div>
           </div>
@@ -2402,14 +2444,14 @@
           <!-- Diagrams Tab -->
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold text-gremius-text">Diagrams</h3>
+              <h3 class="font-semibold text-kitsuden-text">Diagrams</h3>
               <button class="btn-primary btn-sm" onclick={() => (showCreateDiagramModal = true)}>
                 <Plus class="w-3.5 h-3.5" />
                 Add Diagram
               </button>
             </div>
             {#if diagrams.length === 0}
-              <div class="card p-8 text-center text-gremius-subtle text-sm">
+              <div class="card p-8 text-center text-kitsuden-subtle text-sm">
                 No diagrams for this version.
               </div>
             {:else}
@@ -2417,9 +2459,9 @@
                 {#each diagrams as d}
                   <div class="card p-4">
                     <div class="flex items-center justify-between mb-2">
-                      <h4 class="font-medium text-gremius-text text-sm">{d.name}</h4>
+                      <h4 class="font-medium text-kitsuden-text text-sm">{d.name}</h4>
                       <button
-                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                        class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
                         onclick={() => deleteDiagram(d.id)}
                       >
                         <Trash2 class="w-3.5 h-3.5" />
@@ -2431,12 +2473,12 @@
                       </div>
                     {:else if d.sourceXml}
                       <pre
-                        class="text-xs text-gremius-subtle bg-gremius-bg p-3 rounded-lg overflow-auto max-h-40">{d.sourceXml.slice(
+                        class="text-xs text-kitsuden-subtle bg-kitsuden-bg p-3 rounded-lg overflow-auto max-h-40">{d.sourceXml.slice(
                           0,
                           500
                         )}{d.sourceXml.length > 500 ? "..." : ""}</pre>
                     {:else}
-                      <p class="text-xs text-gremius-subtle">No preview available</p>
+                      <p class="text-xs text-kitsuden-subtle">No preview available</p>
                     {/if}
                   </div>
                 {/each}
@@ -2446,29 +2488,29 @@
         {:else if drawerTab === "audit"}
           <!-- Audit Tab -->
           <div class="space-y-4">
-            <h3 class="font-semibold text-gremius-text">Audit Log</h3>
+            <h3 class="font-semibold text-kitsuden-text">Audit Log</h3>
             {#if auditEntries.length === 0}
-              <div class="card p-8 text-center text-gremius-subtle text-sm">No audit entries.</div>
+              <div class="card p-8 text-center text-kitsuden-subtle text-sm">No audit entries.</div>
             {:else}
-              <div class="relative pl-4 border-l border-gremius-border space-y-4">
+              <div class="relative pl-4 border-l border-kitsuden-border space-y-4">
                 {#each auditEntries as entry}
                   <div class="relative">
                     <div
-                      class="absolute -left-[21px] top-0 w-2.5 h-2.5 rounded-full bg-gremius-cyan border-2 border-gremius-card"
+                      class="absolute -left-[21px] top-0 w-2.5 h-2.5 rounded-full bg-kitsuden-accent border-2 border-kitsuden-card"
                     ></div>
                     <div class="card p-3">
                       <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gremius-text">{entry.action}</span>
-                        <span class="text-xs text-gremius-subtle"
+                        <span class="text-sm font-medium text-kitsuden-text">{entry.action}</span>
+                        <span class="text-xs text-kitsuden-subtle"
                           >{formatDateTime(entry.createdAt)}</span
                         >
                       </div>
-                      <p class="text-xs text-gremius-subtle mt-1">
+                      <p class="text-xs text-kitsuden-subtle mt-1">
                         By {entry.user?.name || "System"}
                       </p>
                       {#if entry.details}
                         <pre
-                          class="text-[10px] text-gremius-text-dim bg-gremius-bg p-2 rounded mt-2 overflow-auto">{JSON.stringify(
+                          class="text-[10px] text-kitsuden-text-dim bg-kitsuden-bg p-2 rounded mt-2 overflow-auto">{JSON.stringify(
                             entry.details,
                             null,
                             2
@@ -2483,17 +2525,17 @@
         {:else if drawerTab === "backlinks"}
           <!-- Backlinks Tab -->
           <div class="space-y-4">
-            <h3 class="font-semibold text-gremius-text">Backlinks</h3>
-            <p class="text-sm text-gremius-subtle">Documents that link to this document.</p>
+            <h3 class="font-semibold text-kitsuden-text">Backlinks</h3>
+            <p class="text-sm text-kitsuden-subtle">Documents that link to this document.</p>
             {#if backlinks.length === 0}
-              <div class="card p-8 text-center text-gremius-subtle text-sm">
+              <div class="card p-8 text-center text-kitsuden-subtle text-sm">
                 No backlinks found.
               </div>
             {:else}
               <div class="space-y-2">
                 {#each backlinks as bl}
                   <button
-                    class="w-full text-left card p-3 hover:border-gremius-cyan/30 transition-colors"
+                    class="w-full text-left card p-3 hover:border-kitsuden-accent/30 transition-colors"
                     onclick={() =>
                       openDrawer({
                         id: bl.id,
@@ -2508,10 +2550,10 @@
                       })}
                   >
                     <div class="flex items-center gap-3">
-                      <Link2 class="w-4 h-4 text-gremius-cyan" />
+                      <Link2 class="w-4 h-4 text-kitsuden-accent" />
                       <div>
-                        <p class="text-sm font-medium text-gremius-text">{bl.title}</p>
-                        <p class="text-xs font-mono text-gremius-subtle">{bl.code}</p>
+                        <p class="text-sm font-medium text-kitsuden-text">{bl.title}</p>
+                        <p class="text-xs font-mono text-kitsuden-subtle">{bl.code}</p>
                       </div>
                     </div>
                   </button>
@@ -2537,13 +2579,13 @@
       onclick={() => (showCreateDocModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
     >
-      <div class="flex items-center justify-between p-6 border-b border-gremius-border">
-        <h3 class="text-lg font-semibold text-gremius-text">New Document</h3>
+      <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
+        <h3 class="text-lg font-semibold text-kitsuden-text">New Document</h3>
         <button
           onclick={() => (showCreateDocModal = false)}
-          class="p-2 rounded-xl text-gremius-text-dim hover:text-gremius-text hover:bg-gremius-bg transition-all"
+          class="p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-bg transition-all"
         >
           <X class="w-5 h-5" />
         </button>
@@ -2551,18 +2593,19 @@
       <form onsubmit={createDocument} class="p-6 space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Title *</label>
+            <label class="block text-xs text-kitsuden-subtle mb-1">Title *</label>
             <input
+              id="title-2"
               bind:value={formDoc.title}
               type="text"
               placeholder="Document title"
-              class="gremius-input w-full"
+              class="kitsuden-input w-full"
               required
             />
           </div>
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Type</label>
-            <select bind:value={formDoc.type} class="gremius-input w-full">
+            <label for="type-2" class="block text-xs text-kitsuden-subtle mb-1">Type</label>
+            <select id="type-2" bind:value={formDoc.type} class="kitsuden-input w-full">
               {#each documentTypes as t}
                 <option value={t.id}>{t.label}</option>
               {/each}
@@ -2570,26 +2613,31 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Description</label>
+          <label for="description-2" class="block text-xs text-kitsuden-subtle mb-1"
+            >Description</label
+          >
           <textarea
+            id="description-2"
             bind:value={formDoc.description}
             rows="3"
             placeholder="Short description"
-            class="gremius-input w-full"
+            class="kitsuden-input w-full"
           ></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Status</label>
-            <select bind:value={formDoc.status} class="gremius-input w-full">
+            <label for="status-2" class="block text-xs text-kitsuden-subtle mb-1">Status</label>
+            <select id="status-2" bind:value={formDoc.status} class="kitsuden-input w-full">
               {#each workflowStatuses as s}
                 <option value={s.id}>{s.label}</option>
               {/each}
             </select>
           </div>
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Category</label>
-            <select bind:value={formDoc.categoryId} class="gremius-input w-full">
+            <label for="categoryid-2" class="block text-xs text-kitsuden-subtle mb-1"
+              >Category</label
+            >
+            <select id="categoryid-2" bind:value={formDoc.categoryId} class="kitsuden-input w-full">
               <option value="">No category</option>
               {#each categories as cat}
                 <option value={cat.id}>{cat.name}</option>
@@ -2602,19 +2650,24 @@
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Visibility</label>
-            <select bind:value={formDoc.visibility} class="gremius-input w-full">
+            <label for="visibility-2" class="block text-xs text-kitsuden-subtle mb-1"
+              >Visibility</label
+            >
+            <select id="visibility-2" bind:value={formDoc.visibility} class="kitsuden-input w-full">
               {#each visibilityOptions as v}
                 <option value={v.id}>{v.label}</option>
               {/each}
             </select>
           </div>
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Tags (comma separated)</label>
+            <label for="tags-comma-separated-2" class="block text-xs text-kitsuden-subtle mb-1"
+              >Tags (comma separated)</label
+            >
             <input
+              id="tags-comma-separated-2"
               type="text"
               placeholder="policy, hr, 2025"
-              class="gremius-input w-full"
+              class="kitsuden-input w-full"
               oninput={(e) => {
                 formDoc.tags = (e.target as HTMLInputElement).value
                   .split(",")
@@ -2624,7 +2677,7 @@
             />
           </div>
         </div>
-        <div class="flex justify-end gap-3 pt-4 border-t border-gremius-border">
+        <div class="flex justify-end gap-3 pt-4 border-t border-kitsuden-border">
           <button type="button" onclick={() => (showCreateDocModal = false)} class="btn-secondary"
             >Cancel</button
           >
@@ -2653,66 +2706,82 @@
       onclick={() => (showCreateCatModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
     >
-      <div class="flex items-center justify-between p-6 border-b border-gremius-border">
-        <h3 class="text-lg font-semibold text-gremius-text">New Category</h3>
+      <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
+        <h3 class="text-lg font-semibold text-kitsuden-text">New Category</h3>
         <button
           onclick={() => (showCreateCatModal = false)}
-          class="p-2 rounded-xl text-gremius-text-dim hover:text-gremius-text hover:bg-gremius-bg transition-all"
+          class="p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-bg transition-all"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
       <form onsubmit={saveCategory} class="p-6 space-y-4">
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Name *</label>
+          <label for="newcategoryname" class="block text-xs text-kitsuden-subtle mb-1">Name *</label
+          >
           <input
+            id="newcategoryname"
             bind:value={newCategoryName}
             type="text"
             placeholder="Category name"
-            class="gremius-input w-full"
+            class="kitsuden-input w-full"
             required
           />
         </div>
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Description</label>
+          <label for="newcategorydescription" class="block text-xs text-kitsuden-subtle mb-1"
+            >Description</label
+          >
           <textarea
+            id="newcategorydescription"
             bind:value={newCategoryDescription}
             rows="2"
             placeholder="Short description"
-            class="gremius-input w-full"
+            class="kitsuden-input w-full"
           ></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Icon</label>
+            <label for="newcategoryicon" class="block text-xs text-kitsuden-subtle mb-1">Icon</label
+            >
             <input
+              id="newcategoryicon"
               bind:value={newCategoryIcon}
               type="text"
               placeholder="📁"
-              class="gremius-input w-full"
+              class="kitsuden-input w-full"
             />
           </div>
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Color</label>
+            <label for="newcategorycolor" class="block text-xs text-kitsuden-subtle mb-1"
+              >Color</label
+            >
             <input
+              id="newcategorycolor"
               bind:value={newCategoryColor}
               type="color"
-              class="w-full h-10 bg-gremius-bg border border-gremius-border rounded-lg px-2 py-1"
+              class="w-full h-10 bg-kitsuden-bg border border-kitsuden-border rounded-lg px-2 py-1"
             />
           </div>
         </div>
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Parent Category</label>
-          <select bind:value={newCategoryParentId} class="gremius-input w-full">
+          <label for="newcategoryparentid" class="block text-xs text-kitsuden-subtle mb-1"
+            >Parent Category</label
+          >
+          <select
+            id="newcategoryparentid"
+            bind:value={newCategoryParentId}
+            class="kitsuden-input w-full"
+          >
             <option value="">None (root)</option>
             {#each categories as cat}
               <option value={cat.id}>{cat.name}</option>
             {/each}
           </select>
         </div>
-        <div class="flex justify-end gap-3 pt-4 border-t border-gremius-border">
+        <div class="flex justify-end gap-3 pt-4 border-t border-kitsuden-border">
           <button type="button" onclick={() => (showCreateCatModal = false)} class="btn-secondary"
             >Cancel</button
           >
@@ -2741,15 +2810,17 @@
       onclick={() => (showConfirmDeleteModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6"
     >
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-full bg-gremius-pink/10 flex items-center justify-center">
-          <AlertCircle class="w-5 h-5 text-gremius-pink" />
+        <div
+          class="w-10 h-10 rounded-full bg-kitsuden-accent-2/10 flex items-center justify-center"
+        >
+          <AlertCircle class="w-5 h-5 text-kitsuden-accent-2" />
         </div>
-        <h3 class="text-lg font-semibold text-gremius-text">Confirm Deletion</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text">Confirm Deletion</h3>
       </div>
-      <p class="text-sm text-gremius-subtle mb-6">
+      <p class="text-sm text-kitsuden-subtle mb-6">
         Are you sure you want to delete {deleteTargetIds.length} document(s)? This action cannot be undone.
       </p>
       <div class="flex justify-end gap-3">
@@ -2773,23 +2844,28 @@
       onclick={() => (showCreateVersionModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6"
     >
-      <h3 class="text-lg font-semibold text-gremius-text mb-4">Create New Version</h3>
+      <h3 class="text-lg font-semibold text-kitsuden-text mb-4">Create New Version</h3>
       <div class="space-y-4">
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Change Type</label>
-          <select class="gremius-input w-full" bind:value={changeTypeInput}>
+          <label for="changetypeinput" class="block text-xs text-kitsuden-subtle mb-1"
+            >Change Type</label
+          >
+          <select id="changetypeinput" class="kitsuden-input w-full" bind:value={changeTypeInput}>
             <option value="major">Major</option>
             <option value="minor">Minor</option>
             <option value="patch">Patch</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Changelog</label>
+          <label for="changeloginput" class="block text-xs text-kitsuden-subtle mb-1"
+            >Changelog</label
+          >
           <textarea
+            id="changeloginput"
             rows="3"
-            class="gremius-input w-full"
+            class="kitsuden-input w-full"
             placeholder="Describe what changed..."
             bind:value={changelogInput}
           ></textarea>
@@ -2820,25 +2896,29 @@
       onclick={() => (showCreateDiagramModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6"
     >
-      <h3 class="text-lg font-semibold text-gremius-text mb-4">Add Diagram</h3>
+      <h3 class="text-lg font-semibold text-kitsuden-text mb-4">Add Diagram</h3>
       <form onsubmit={createDiagram} class="space-y-4">
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Name</label>
+          <label for="newdiagramname" class="block text-xs text-kitsuden-subtle mb-1">Name</label>
           <input
+            id="newdiagramname"
             type="text"
-            class="gremius-input w-full"
+            class="kitsuden-input w-full"
             bind:value={newDiagramName}
             placeholder="Diagram name"
             required
           />
         </div>
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Source XML / JSON</label>
+          <label for="newdiagramsource" class="block text-xs text-kitsuden-subtle mb-1"
+            >Source XML / JSON</label
+          >
           <textarea
+            id="newdiagramsource"
             rows="6"
-            class="gremius-input w-full font-mono text-xs"
+            class="kitsuden-input w-full font-mono text-xs"
             bind:value={newDiagramSource}
             placeholder="Paste diagram source XML or JSON..."
           ></textarea>
@@ -2867,10 +2947,10 @@
     <div
       class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm font-medium min-w-[280px] transition-all duration-300
       {toast.type === 'success'
-        ? 'bg-gremius-card border-green-500/30 text-green-400'
+        ? 'bg-kitsuden-card border-green-500/30 text-green-400'
         : toast.type === 'error'
-          ? 'bg-gremius-card border-red-500/30 text-red-400'
-          : 'bg-gremius-card border-gremius-cyan/30 text-gremius-cyan'}"
+          ? 'bg-kitsuden-card border-red-500/30 text-red-400'
+          : 'bg-kitsuden-card border-kitsuden-accent/30 text-kitsuden-accent'}"
     >
       {#if toast.type === "success"}<CheckCircle class="w-4 h-4 shrink-0" />{/if}
       {#if toast.type === "error"}<AlertCircle class="w-4 h-4 shrink-0" />{/if}
@@ -2882,18 +2962,18 @@
 
 <style>
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-gremius-cyan text-gremius-bg rounded-lg font-medium hover:bg-gremius-cyan-dim active:scale-[0.98] transition-all disabled:opacity-50;
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-kitsuden-accent text-kitsuden-bg rounded-lg font-medium hover:bg-kitsuden-accent-dim active:scale-[0.98] transition-all disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-gremius-card border border-gremius-border text-gremius-text rounded-lg hover:bg-gremius-muted/30 transition-all disabled:opacity-50;
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-kitsuden-card border border-kitsuden-border text-kitsuden-text rounded-lg hover:bg-kitsuden-muted/30 transition-all disabled:opacity-50;
   }
   .btn-danger {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-gremius-pink/10 text-gremius-pink border border-gremius-pink/20 rounded-lg hover:bg-gremius-pink/20 transition-all disabled:opacity-50;
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-kitsuden-accent-2/10 text-kitsuden-accent-2 border border-kitsuden-accent-2/20 rounded-lg hover:bg-kitsuden-accent-2/20 transition-all disabled:opacity-50;
   }
   .btn-sm {
     @apply px-3 py-1.5 text-xs gap-1.5;
   }
-  .gremius-input {
-    @apply bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50 focus:border-gremius-cyan/50 transition-all duration-150;
+  .kitsuden-input {
+    @apply bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50 focus:border-kitsuden-accent/50 transition-all duration-150;
   }
 </style>

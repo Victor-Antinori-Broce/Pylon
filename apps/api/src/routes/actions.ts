@@ -5,7 +5,9 @@
  * Replaces /functions and /webhooks endpoints.
  */
 
+import { messageOf, eqEnum } from "@kitsuden/engine";
 import { eq, desc, and, count } from "drizzle-orm";
+import type { Context } from "hono";
 import { Hono } from "hono";
 
 import { db } from "../db";
@@ -29,7 +31,7 @@ actionsRoutes.use("/*", protectRoute);
 // List Actions
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.get("/", async (c) => {
+export async function listActionsHandler(c: Context) {
   const limit = Math.min(Number(c.req.query("limit")) || 50, 200);
   const type = c.req.query("type") as any;
   const trigger = c.req.query("trigger") as any;
@@ -38,13 +40,14 @@ actionsRoutes.get("/", async (c) => {
   const docs = await listActions({ type, trigger, status, limit });
 
   return c.json({ docs, totalDocs: docs.length });
-});
+}
+actionsRoutes.get("/", listActionsHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Create Action
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.post("/", async (c) => {
+export async function createActionHandler(c: Context) {
   const body = await c.req.json();
 
   // Validate required fields
@@ -102,16 +105,17 @@ actionsRoutes.post("/", async (c) => {
     });
 
     return c.json(action, 201);
-  } catch (err: any) {
-    return c.json({ error: err.message || "Failed to create action" }, 500);
+  } catch (err: unknown) {
+    return c.json({ error: messageOf(err) || "Failed to create action" }, 500);
   }
-});
+}
+actionsRoutes.post("/", createActionHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Get Single Action
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.get("/:id", async (c) => {
+export async function getActionHandler(c: Context) {
   const action = await getAction(c.req.param("id"));
 
   if (!action) {
@@ -119,13 +123,14 @@ actionsRoutes.get("/:id", async (c) => {
   }
 
   return c.json(action);
-});
+}
+actionsRoutes.get("/:id", getActionHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Update Action
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.patch("/:id", async (c) => {
+export async function updateActionHandler(c: Context) {
   const body = await c.req.json();
 
   try {
@@ -144,16 +149,17 @@ actionsRoutes.patch("/:id", async (c) => {
     }
 
     return c.json(updated);
-  } catch (err: any) {
-    return c.json({ error: err.message || "Failed to update action" }, 500);
+  } catch (err: unknown) {
+    return c.json({ error: messageOf(err) || "Failed to update action" }, 500);
   }
-});
+}
+actionsRoutes.patch("/:id", updateActionHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Delete Action
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.delete("/:id", async (c) => {
+export async function deleteActionHandler(c: Context) {
   const deleted = await deleteAction(c.req.param("id"));
 
   if (!deleted) {
@@ -161,13 +167,14 @@ actionsRoutes.delete("/:id", async (c) => {
   }
 
   return c.json({ success: true });
-});
+}
+actionsRoutes.delete("/:id", deleteActionHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Execute Action
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.post("/:id/execute", async (c) => {
+export async function executeActionHandler(c: Context) {
   const body = await c.req.json().catch(() => ({}));
   const actionId = c.req.param("id");
 
@@ -200,13 +207,14 @@ actionsRoutes.post("/:id/execute", async (c) => {
     durationMs: result.durationMs,
     httpResponse: result.httpResponse,
   });
-});
+}
+actionsRoutes.post("/:id/execute", executeActionHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Get Action Executions
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.get("/:id/executions", async (c) => {
+export async function listActionExecutionsHandler(c: Context) {
   const actionId = c.req.param("id");
   const limit = Math.min(Number(c.req.query("limit")) || 25, 100);
   const status = c.req.query("status");
@@ -218,7 +226,9 @@ actionsRoutes.get("/:id/executions", async (c) => {
   }
 
   const conditions = [eq(actionExecutions.actionId, actionId)];
-  if (status) conditions.push(eq(actionExecutions.status, status as any));
+  // `eqEnum` devuelve undefined si el valor no pertenece al enum.
+  const filtro228 = eqEnum(actionExecutions.status, status);
+  if (filtro228) conditions.push(filtro228);
 
   const docs = await db
     .select()
@@ -228,13 +238,14 @@ actionsRoutes.get("/:id/executions", async (c) => {
     .limit(limit);
 
   return c.json({ docs, totalDocs: docs.length });
-});
+}
+actionsRoutes.get("/:id/executions", listActionExecutionsHandler);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Stats
 // ═══════════════════════════════════════════════════════════════════════════
 
-actionsRoutes.get("/stats/overview", async (c) => {
+export async function getActionStatsHandler(c: Context) {
   const [totalResult] = await db.select({ count: count() }).from(actions);
 
   const [activeResult] = await db
@@ -261,4 +272,5 @@ actionsRoutes.get("/stats/overview", async (c) => {
       {} as Record<string, number>
     ),
   });
-});
+}
+actionsRoutes.get("/stats/overview", getActionStatsHandler);

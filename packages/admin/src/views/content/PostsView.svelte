@@ -39,6 +39,24 @@
         },
       },
     },
+    /**
+     * El idioma, para poder distinguir las versiones de un mismo articulo.
+     *
+     * Sin esta columna, un articulo y su traduccion son dos filas con titulos
+     * distintos y ninguna pista de que son el mismo: la lista parece llena de
+     * duplicados y no hay forma de saber cual editar.
+     */
+    {
+      field: "locale",
+      label: "Idioma",
+      width: "90px",
+      fieldConfig: {
+        type: "calculated",
+        options: {
+          calculate: (row: any) => (row.locale || "es").toUpperCase(),
+        },
+      },
+    },
     {
       field: "author",
       label: "Author",
@@ -163,21 +181,21 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-kitsuden-accent/20 to-kitsuden-purple/20 border border-kitsuden-accent/20 flex items-center justify-center"
         >
-          <FileText class="w-5 h-5 text-gremius-cyan" />
+          <FileText class="w-5 h-5 text-kitsuden-accent" />
         </div>
         Blog Posts
       </h1>
-      <p class="text-sm text-gremius-subtle mt-1">
+      <p class="text-sm text-kitsuden-subtle mt-1">
         Manage your content with rich text editing, SEO, and scheduling
       </p>
     </div>
     <a
       href="/content/edit?collection=blog-posts"
-      class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+      class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
     >
       <Plus class="w-4 h-4" />
       <span>Nuevo Post</span>
@@ -185,5 +203,26 @@
   </div>
 
   <!-- DataExplorer -->
-  <DataExplorer table="blog_posts" {config} apiEndpoint="/api/blog" onRowClick={handleRowClick} />
+  <!--
+    ── POR QUE `status: "all"` ────────────────────────────────────────────────
+
+    Esta pantalla se llama «All Posts» y no enseñaba todos: `GET /api/blog`
+    tiene `status` por defecto en `published`, así que la lista de una
+    instalación con un borrador y ningún publicado salía VACIA. Y no había
+    forma de pedir el resto — el parámetro solo cambiaba de un estado a otro,
+    nunca los quitaba.
+
+    Desde fuera se lee como «no hay posts», que es exactamente lo contrario de
+    lo que pasa. Por eso «Borradores» sí enseñaba el post y «All Posts» no.
+
+    `all` solo lo atiende la API para `admin` y `editor`; a quien no tenga
+    sesión le sigue devolviendo lo publicado y nada más.
+  -->
+  <DataExplorer
+    table="blog_posts"
+    {config}
+    apiEndpoint="/api/blog"
+    queryParams={{ status: "all" }}
+    onRowClick={handleRowClick}
+  />
 </div>

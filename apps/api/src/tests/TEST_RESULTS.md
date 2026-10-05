@@ -1,4 +1,4 @@
-# GremiusCMS Test Results
+# Kitsuden Test Results
 
 **Date:** 2026-03-06  
 **Status:** ✅ All Tests Passing
@@ -25,65 +25,65 @@
 
 ## Test Suites
 
-### 1. Grimoire Registry Tests (`modules.test.ts`)
+### 1. Kon Registry Tests (`modules.test.ts`)
 
 **Status:** ✅ Passing (39 tests)
 
 ```
 ✓ Registry Structure (3 tests)
-  ✓ should have grimoires registered
+  ✓ should have kons registered
   ✓ should have unique keys
-  ✓ should have all required fields for each grimoire
+  ✓ should have all required fields for each kon
 
 ✓ Categories (2 tests)
-  ✓ should categorize grimoires correctly
-  ✓ should have realm grimoires with realmId
+  ✓ should categorize kons correctly
+  ✓ should have grimoire kons with grimoireId
 
 ✓ Dependencies (2 tests)
   ✓ should track dependencies when present
   ✓ should track references when present
 
-✓ Grimoire Definitions (28 tests)
+✓ Kon Definitions (28 tests)
   ✓ should have media-library as core
-  ✓ should have promote as grimoire-core
+  ✓ should have promote as core-den
   ✓ should have webhooks as core
   ✓ should have connectors as core
-  ✓ should have blocks as grimoire-core
-  ✓ should have formulas as grimoire-core
+  ✓ should have blocks as core-den
+  ✓ should have formulas as core-den
   ✓ should have academy as optional
   ✓ should have dms as optional
   ✓ should have booking as optional
   ✓ should have directory as optional
-  ✓ should have gremius-crm as optional
+  ✓ should have kitsuden-crm as optional
   ✓ should have blog as optional
-  ✓ should have games as realm
-  ✓ should have streamers as realm
-  ✓ should have platforms as realm
-  ✓ should have tags as realm
-  ✓ should have collections as realm
-  ✓ should have matches as realm
-  ✓ should have players as realm
-  ✓ should have teams as realm
-  ✓ should have tournaments as realm
+  ✓ should have games as grimoire
+  ✓ should have streamers as grimoire
+  ✓ should have platforms as grimoire
+  ✓ should have tags as grimoire
+  ✓ should have collections as grimoire
+  ✓ should have matches as grimoire
+  ✓ should have players as grimoire
+  ✓ should have teams as grimoire
+  ✓ should have tournaments as grimoire
 
 ✓ Icons and Colors (2 tests)
-  ✓ should have icons for all grimoires
+  ✓ should have icons for all kons
   ✓ should have valid hex colors
 
-✓ Grimoire Loader (1 test)
+✓ Kon Loader (1 test)
   ✓ should resolve directory paths correctly
 
-✓ Grimoire Registry Helpers (6 tests)
-  ✓ getCoreGrimoires should return only core category
-  ✓ getOptionalGrimoires should return only optional category
-  ✓ getRealmGrimoires should return only realm category
-  ✓ getGrimoireCoreGrimoires should return only grimoire-core category
-  ✓ getRealmGrimoires should filter by realmId
-  ✓ getRealmGrimoires without filter should return all realm grimoires
+✓ Kon Registry Helpers (6 tests)
+  ✓ getCoreKons should return only core category
+  ✓ getOptionalKons should return only optional category
+  ✓ getGrimoireKons should return only grimoire category
+  ✓ getCoreDenKons should return only core-den category
+  ✓ getGrimoireKons should filter by grimoireId
+  ✓ getGrimoireKons without filter should return all grimoire kons
 
 ✓ Registry Counts (2 tests)
-  ✓ should have expected number of grimoires
-  ✓ should have more realm grimoires than core
+  ✓ should have expected number of kons
+  ✓ should have more grimoire kons than core
 ```
 
 **Database Required:** No  
@@ -237,14 +237,14 @@ Provides:
 
 ### By Module
 
-| Module            | Tests  | DB Required | Status      |
-| ----------------- | ------ | ----------- | ----------- |
-| Grimoire Registry | 39     | No          | ✅ 100%     |
-| Auth              | 10     | Yes         | ✅ Passing  |
-| Datasets          | 12     | Yes         | ✅ Passing  |
-| RLS               | 10     | Yes         | ✅ Passing  |
-| Real-time         | -      | Yes         | ✅ Included |
-| **Total**         | **71** | -           | **✅ 100%** |
+| Module       | Tests  | DB Required | Status      |
+| ------------ | ------ | ----------- | ----------- |
+| Kon Registry | 39     | No          | ✅ 100%     |
+| Auth         | 10     | Yes         | ✅ Passing  |
+| Datasets     | 12     | Yes         | ✅ Passing  |
+| RLS          | 10     | Yes         | ✅ Passing  |
+| Real-time    | -      | Yes         | ✅ Included |
+| **Total**    | **71** | -           | **✅ 100%** |
 
 ### Test Categories
 
@@ -298,7 +298,7 @@ Tests are automatically run in GitHub Actions CI pipeline:
 
 4. **Add end-to-end tests:**
    - Full user flows
-   - Grimoire lifecycle
+   - Kon lifecycle
    - Import/export functionality
 
 ---
@@ -307,7 +307,7 @@ Tests are automatically run in GitHub Actions CI pipeline:
 
 All 71 tests are passing successfully. The test suite covers:
 
-- ✅ Grimoire registry functionality
+- ✅ Kon registry functionality
 - ✅ Authentication and authorization
 - ✅ Dataset CRUD operations
 - ✅ Row-level security

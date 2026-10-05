@@ -19,7 +19,7 @@
     AlertCircle,
     RefreshCw,
   } from "lucide-svelte";
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy } from "svelte";
 
   import { api } from "$lib/api";
   import Modal from "$lib/components/ui/Modal.svelte";
@@ -101,20 +101,51 @@
   const entriesPerPage = $state(20);
 
   // ─── Lifecycle ──────────────────────────────────────
-  onMount(async () => {
-    if (isOpen) {
-      await loadDatasets();
-    }
-  });
-
   onDestroy(() => {
     abortController?.abort();
   });
 
+  /**
+   * Se ha intentado ya cargar para esta apertura.
+   *
+   * `let` normal y NO `$state`: si fuera reactivo, leerlo dentro del efecto
+   * volvería a dispararlo y el problema seguiría igual.
+   */
+  let yaSeIntentoCargar = false;
+
+  /**
+   * Carga los datasets al ABRIR, una sola vez.
+   *
+   * ───────────────────────────────────────────────────────────────────────────
+   * ESTO ERA UN BUCLE INFINITO
+   *
+   * Antes era:
+   *
+   *     $effect(() => {
+   *       if (isOpen && datasets.length === 0 && !loading) loadDatasets();
+   *     });
+   *
+   * El efecto LEE `datasets` y `loading`, y `loadDatasets()` ESCRIBE los dos.
+   * Mientras la lista llegara con contenido, la condición dejaba de cumplirse y
+   * paraba. Pero si venía **vacía** —una instalación sin datasets, o un error
+   * de red— la condición seguía siendo cierta al terminar, el efecto se volvía
+   * a disparar, y de ahí no salía: peticiones sin fin, la pantalla congelada y
+   * el resto del admin muerto, porque un bucle de efectos en Svelte 5 se lleva
+   * por delante la aplicación entera.
+   *
+   * El caso vacío es justo el de una instalación nueva, que es cuando más
+   * duele.
+   * ───────────────────────────────────────────────────────────────────────────
+   */
   $effect(() => {
-    if (isOpen && datasets.length === 0 && !loading) {
-      loadDatasets();
+    if (!isOpen) {
+      // Al cerrar se rearma, para que la próxima apertura vuelva a mirar.
+      yaSeIntentoCargar = false;
+      return;
     }
+    if (yaSeIntentoCargar) return;
+    yaSeIntentoCargar = true;
+    void loadDatasets();
   });
 
   // ─── Data Loading ───────────────────────────────────
@@ -674,286 +705,285 @@
   }
 </script>
 
-{#if isOpen}
-  <Modal
-    title={step === "datasets"
-      ? "Create Page from Dataset"
-      : step === "entries"
-        ? `Select from ${selectedDataset?.name}`
-        : "Preview Blocks"}
-    onClose={handleClose}
-  >
-    <div class="w-[700px] max-h-[80vh] flex flex-col">
-      <!-- Navigation -->
-      <div class="flex items-center gap-2 px-4 py-3 border-b border-gremius-border">
-        {#if step !== "datasets"}
-          <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> ← Back </button>
-        {/if}
-
-        <div class="flex items-center gap-2 text-sm text-gremius-subtle">
-          <span class={step === "datasets" ? "text-gremius-cyan font-medium" : ""}>Datasets</span>
-          <ArrowRight class="w-4 h-4" />
-          <span class={step === "entries" ? "text-gremius-cyan font-medium" : ""}>Entries</span>
-          <ArrowRight class="w-4 h-4" />
-          <span class={step === "preview" ? "text-gremius-cyan font-medium" : ""}>Preview</span>
-        </div>
-      </div>
-
-      <!-- Search -->
-      <div class="p-4 border-b border-gremius-border">
-        <div class="relative">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle" />
-          <input
-            type="text"
-            bind:value={searchQuery}
-            onkeydown={handleKeyDown}
-            placeholder={step === "datasets" ? "Search datasets..." : "Search entries..."}
-            class="input w-full pl-10"
-            disabled={loading}
-          />
-          {#if searchQuery}
-            <button
-              onclick={() => {
-                searchQuery = "";
-                handleSearch();
-              }}
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-gremius-subtle hover:text-gremius-text"
-            >
-              <X class="w-4 h-4" />
-            </button>
-          {/if}
-        </div>
-        <div class="flex justify-between mt-2">
-          <span class="text-xs text-gremius-subtle">
-            {#if step === "datasets"}
-              {filteredDatasets.length} dataset{filteredDatasets.length !== 1 ? "s" : ""}
-            {:else if step === "entries"}
-              {entries.length} of {totalEntries} entries
-            {/if}
-          </span>
-          {#if step === "entries" && totalPages > 1}
-            <span class="text-xs text-gremius-subtle">
-              Page {currentPage} of {totalPages}
-            </span>
-          {/if}
-        </div>
-      </div>
-
-      <!-- Error Alert -->
-      {#if error}
-        <div
-          class="mx-4 mt-4 p-3 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-gremius-pink text-sm flex items-start gap-2"
-        >
-          <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
-          <div class="flex-1">
-            <p>{error}</p>
-            <button
-              onclick={() => {
-                error = null;
-                handleSearch();
-              }}
-              class="text-xs underline mt-1 hover:no-underline flex items-center gap-1"
-            >
-              <RefreshCw class="w-3 h-3" />
-              Retry
-            </button>
-          </div>
-        </div>
+<Modal
+  open={isOpen}
+  title={step === "datasets"
+    ? "Create Page from Dataset"
+    : step === "entries"
+      ? `Select from ${selectedDataset?.name}`
+      : "Preview Blocks"}
+  onClose={handleClose}
+>
+  <div class="w-[700px] max-h-[80vh] flex flex-col">
+    <!-- Navigation -->
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-kitsuden-border">
+      {#if step !== "datasets"}
+        <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> ← Back </button>
       {/if}
 
-      <!-- Content -->
-      <div class="flex-1 overflow-y-auto p-4">
-        {#if loading}
-          <div class="flex flex-col items-center justify-center py-12">
-            <Loader2 class="w-8 h-8 text-gremius-cyan animate-spin mb-3" />
-            <p class="text-gremius-subtle text-sm">Loading...</p>
-          </div>
-        {:else if step === "datasets"}
-          <!-- Datasets List -->
-          <div class="space-y-2">
-            {#each filteredDatasets as dataset}
-              <button
-                onclick={() => selectDataset(dataset)}
-                class="w-full p-4 rounded-xl border border-gremius-border hover:border-gremius-cyan/50 hover:bg-gremius-cyan/5 transition-all text-left group"
-                disabled={loading}
-              >
-                <div class="flex items-start gap-3">
-                  <div
-                    class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center shrink-0 group-hover:bg-gremius-cyan/20 transition-colors"
-                  >
-                    <Database class="w-5 h-5 text-gremius-cyan" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-medium text-gremius-text">{dataset.name}</h3>
-                    {#if dataset.description}
-                      <p class="text-sm text-gremius-subtle mt-1 line-clamp-2">
-                        {dataset.description}
-                      </p>
-                    {/if}
-                    <div class="flex items-center gap-3 mt-2">
-                      <span class="text-xs text-gremius-subtle/60">
-                        {dataset.entryCount || 0} entries
-                      </span>
-                      <span class="text-xs text-gremius-subtle/60">
-                        Updated {formatDate(dataset.updatedAt)}
-                      </span>
-                    </div>
-                  </div>
-                  <ArrowRight
-                    class="w-5 h-5 text-gremius-subtle shrink-0 group-hover:text-gremius-cyan transition-colors"
-                  />
-                </div>
-              </button>
-            {/each}
-
-            {#if filteredDatasets.length === 0}
-              <div class="text-center py-12">
-                <Database class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
-                <p class="text-gremius-subtle">
-                  {searchQuery ? "No datasets match your search" : "No datasets available"}
-                </p>
-              </div>
-            {/if}
-          </div>
-        {:else if step === "entries"}
-          <!-- Entries List -->
-          <div class="space-y-2">
-            {#each entries as entry}
-              {@const entryTitle = entry.data?.title || entry.data?.name || "Untitled"}
-              {@const entryDesc = entry.data?.description || entry.data?.summary || ""}
-              <button
-                onclick={() => selectEntry(entry)}
-                class="w-full p-4 rounded-xl border border-gremius-border hover:border-gremius-cyan/50 hover:bg-gremius-cyan/5 transition-all text-left group"
-                disabled={loading}
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-lg bg-gremius-purple/10 flex items-center justify-center shrink-0 group-hover:bg-gremius-purple/20 transition-colors"
-                  >
-                    <Layout class="w-5 h-5 text-gremius-purple" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-medium text-gremius-text truncate">{entryTitle}</h3>
-                    {#if entryDesc}
-                      <p class="text-sm text-gremius-subtle mt-1 line-clamp-2">{entryDesc}</p>
-                    {/if}
-                    <div class="flex items-center gap-3 mt-2">
-                      {#if entry.status}
-                        <span
-                          class="text-xs px-2 py-0.5 rounded-full bg-gremius-border/50 text-gremius-subtle capitalize"
-                        >
-                          {entry.status}
-                        </span>
-                      {/if}
-                      <span class="text-xs text-gremius-subtle/60">
-                        {formatDate(entry.updatedAt)}
-                      </span>
-                    </div>
-                  </div>
-                  <ArrowRight
-                    class="w-5 h-5 text-gremius-subtle shrink-0 group-hover:text-gremius-cyan transition-colors"
-                  />
-                </div>
-              </button>
-            {/each}
-
-            {#if entries.length === 0}
-              <div class="text-center py-12">
-                <Layout class="w-12 h-12 text-gremius-subtle mx-auto mb-3" />
-                <p class="text-gremius-subtle">
-                  {searchQuery ? "No entries match your search" : "No entries available"}
-                </p>
-              </div>
-            {/if}
-          </div>
-
-          <!-- Pagination -->
-          {#if totalPages > 1}
-            <div
-              class="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gremius-border"
-            >
-              <button
-                onclick={() => goToPage(currentPage - 1)}
-                disabled={!hasPrevPage || loading}
-                class="btn-ghost btn-sm disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span class="text-sm text-gremius-subtle px-3">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onclick={() => goToPage(currentPage + 1)}
-                disabled={!hasNextPage || loading}
-                class="btn-ghost btn-sm disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          {/if}
-        {:else if step === "preview" && selectedEntry}
-          {@const preview = transformEntryToPage(selectedEntry, selectedDataset!)}
-          <div class="space-y-4">
-            <div>
-              <label class="label text-xs uppercase text-gremius-subtle">Page Title</label>
-              <p class="text-lg font-medium text-gremius-text">{preview.title}</p>
-            </div>
-
-            <div>
-              <label class="label text-xs uppercase text-gremius-subtle">Slug</label>
-              <p class="text-sm text-gremius-cyan font-mono">/{preview.slug}</p>
-            </div>
-
-            <div>
-              <label class="label text-xs uppercase text-gremius-subtle flex items-center gap-1">
-                <Layout class="w-3 h-3" />
-                Generated Blocks ({preview.blocks.length})
-              </label>
-              <div class="mt-2 space-y-2">
-                {#each preview.blocks as block, index}
-                  <div
-                    class="flex items-center gap-2 p-2 rounded-lg bg-gremius-bg border border-gremius-border hover:border-gremius-cyan/30 transition-colors"
-                  >
-                    <span class="text-xs text-gremius-subtle w-6">{index + 1}.</span>
-                    <span class="text-base">{getBlockIcon(block.type)}</span>
-                    <span class="text-sm text-gremius-text capitalize">{block.type}</span>
-                    <span class="text-xs text-gremius-subtle ml-auto truncate max-w-[200px]">
-                      {block.name ||
-                        block.content.headline ||
-                        block.content.title ||
-                        block.content.text?.substring(0, 30) ||
-                        "..."}
-                    </span>
-                  </div>
-                {/each}
-              </div>
-            </div>
-
-            <div class="p-3 rounded-lg bg-gremius-cyan/5 border border-gremius-cyan/20">
-              <p class="text-xs text-gremius-cyan flex items-center gap-1">
-                <Check class="w-3 h-3" />
-                Source: {selectedDataset?.name} → {selectedEntry.id.substring(0, 8)}...
-              </p>
-            </div>
-          </div>
-        {/if}
+      <div class="flex items-center gap-2 text-sm text-kitsuden-subtle">
+        <span class={step === "datasets" ? "text-kitsuden-accent font-medium" : ""}>Datasets</span>
+        <ArrowRight class="w-4 h-4" />
+        <span class={step === "entries" ? "text-kitsuden-accent font-medium" : ""}>Entries</span>
+        <ArrowRight class="w-4 h-4" />
+        <span class={step === "preview" ? "text-kitsuden-accent font-medium" : ""}>Preview</span>
       </div>
+    </div>
 
-      <!-- Footer -->
-      <div class="flex justify-end gap-2 p-4 border-t border-gremius-border">
-        <button onclick={handleClose} class="btn-ghost" disabled={loading}> Cancel </button>
-        {#if step === "preview"}
-          <button onclick={handleConfirm} class="btn-primary gap-1.5" disabled={loading}>
-            {#if loading}
-              <Loader2 class="w-4 h-4 animate-spin" />
-              Processing...
-            {:else}
-              <Check class="w-4 h-4" />
-              Create Page
-            {/if}
+    <!-- Search -->
+    <div class="p-4 border-b border-kitsuden-border">
+      <div class="relative">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
+        <input
+          type="text"
+          bind:value={searchQuery}
+          onkeydown={handleKeyDown}
+          placeholder={step === "datasets" ? "Search datasets..." : "Search entries..."}
+          class="input w-full pl-10"
+          disabled={loading}
+        />
+        {#if searchQuery}
+          <button
+            onclick={() => {
+              searchQuery = "";
+              handleSearch();
+            }}
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-kitsuden-subtle hover:text-kitsuden-text"
+          >
+            <X class="w-4 h-4" />
           </button>
         {/if}
       </div>
+      <div class="flex justify-between mt-2">
+        <span class="text-xs text-kitsuden-subtle">
+          {#if step === "datasets"}
+            {filteredDatasets.length} dataset{filteredDatasets.length !== 1 ? "s" : ""}
+          {:else if step === "entries"}
+            {entries.length} of {totalEntries} entries
+          {/if}
+        </span>
+        {#if step === "entries" && totalPages > 1}
+          <span class="text-xs text-kitsuden-subtle">
+            Page {currentPage} of {totalPages}
+          </span>
+        {/if}
+      </div>
     </div>
-  </Modal>
-{/if}
+
+    <!-- Error Alert -->
+    {#if error}
+      <div
+        class="mx-4 mt-4 p-3 rounded-lg bg-kitsuden-accent-2/10 border border-kitsuden-accent-2/20 text-kitsuden-accent-2 text-sm flex items-start gap-2"
+      >
+        <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+        <div class="flex-1">
+          <p>{error}</p>
+          <button
+            onclick={() => {
+              error = null;
+              handleSearch();
+            }}
+            class="text-xs underline mt-1 hover:no-underline flex items-center gap-1"
+          >
+            <RefreshCw class="w-3 h-3" />
+            Retry
+          </button>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4">
+      {#if loading}
+        <div class="flex flex-col items-center justify-center py-12">
+          <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mb-3" />
+          <p class="text-kitsuden-subtle text-sm">Loading...</p>
+        </div>
+      {:else if step === "datasets"}
+        <!-- Datasets List -->
+        <div class="space-y-2">
+          {#each filteredDatasets as dataset}
+            <button
+              onclick={() => selectDataset(dataset)}
+              class="w-full p-4 rounded-xl border border-kitsuden-border hover:border-kitsuden-accent/50 hover:bg-kitsuden-accent/5 transition-all text-left group"
+              disabled={loading}
+            >
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-10 h-10 rounded-lg bg-kitsuden-accent/10 flex items-center justify-center shrink-0 group-hover:bg-kitsuden-accent/20 transition-colors"
+                >
+                  <Database class="w-5 h-5 text-kitsuden-accent" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-medium text-kitsuden-text">{dataset.name}</h3>
+                  {#if dataset.description}
+                    <p class="text-sm text-kitsuden-subtle mt-1 line-clamp-2">
+                      {dataset.description}
+                    </p>
+                  {/if}
+                  <div class="flex items-center gap-3 mt-2">
+                    <span class="text-xs text-kitsuden-subtle/60">
+                      {dataset.entryCount || 0} entries
+                    </span>
+                    <span class="text-xs text-kitsuden-subtle/60">
+                      Updated {formatDate(dataset.updatedAt)}
+                    </span>
+                  </div>
+                </div>
+                <ArrowRight
+                  class="w-5 h-5 text-kitsuden-subtle shrink-0 group-hover:text-kitsuden-accent transition-colors"
+                />
+              </div>
+            </button>
+          {/each}
+
+          {#if filteredDatasets.length === 0}
+            <div class="text-center py-12">
+              <Database class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
+              <p class="text-kitsuden-subtle">
+                {searchQuery ? "No datasets match your search" : "No datasets available"}
+              </p>
+            </div>
+          {/if}
+        </div>
+      {:else if step === "entries"}
+        <!-- Entries List -->
+        <div class="space-y-2">
+          {#each entries as entry}
+            {@const entryTitle = entry.data?.title || entry.data?.name || "Untitled"}
+            {@const entryDesc = entry.data?.description || entry.data?.summary || ""}
+            <button
+              onclick={() => selectEntry(entry)}
+              class="w-full p-4 rounded-xl border border-kitsuden-border hover:border-kitsuden-accent/50 hover:bg-kitsuden-accent/5 transition-all text-left group"
+              disabled={loading}
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-lg bg-kitsuden-purple/10 flex items-center justify-center shrink-0 group-hover:bg-kitsuden-purple/20 transition-colors"
+                >
+                  <Layout class="w-5 h-5 text-kitsuden-purple" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-medium text-kitsuden-text truncate">{entryTitle}</h3>
+                  {#if entryDesc}
+                    <p class="text-sm text-kitsuden-subtle mt-1 line-clamp-2">{entryDesc}</p>
+                  {/if}
+                  <div class="flex items-center gap-3 mt-2">
+                    {#if entry.status}
+                      <span
+                        class="text-xs px-2 py-0.5 rounded-full bg-kitsuden-border/50 text-kitsuden-subtle capitalize"
+                      >
+                        {entry.status}
+                      </span>
+                    {/if}
+                    <span class="text-xs text-kitsuden-subtle/60">
+                      {formatDate(entry.updatedAt)}
+                    </span>
+                  </div>
+                </div>
+                <ArrowRight
+                  class="w-5 h-5 text-kitsuden-subtle shrink-0 group-hover:text-kitsuden-accent transition-colors"
+                />
+              </div>
+            </button>
+          {/each}
+
+          {#if entries.length === 0}
+            <div class="text-center py-12">
+              <Layout class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
+              <p class="text-kitsuden-subtle">
+                {searchQuery ? "No entries match your search" : "No entries available"}
+              </p>
+            </div>
+          {/if}
+        </div>
+
+        <!-- Pagination -->
+        {#if totalPages > 1}
+          <div
+            class="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-kitsuden-border"
+          >
+            <button
+              onclick={() => goToPage(currentPage - 1)}
+              disabled={!hasPrevPage || loading}
+              class="btn-ghost btn-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span class="text-sm text-kitsuden-subtle px-3">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onclick={() => goToPage(currentPage + 1)}
+              disabled={!hasNextPage || loading}
+              class="btn-ghost btn-sm disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        {/if}
+      {:else if step === "preview" && selectedEntry}
+        {@const preview = transformEntryToPage(selectedEntry, selectedDataset!)}
+        <div class="space-y-4">
+          <div>
+            <label class="label text-xs uppercase text-kitsuden-subtle">Page Title</label>
+            <p class="text-lg font-medium text-kitsuden-text">{preview.title}</p>
+          </div>
+
+          <div>
+            <label class="label text-xs uppercase text-kitsuden-subtle">Slug</label>
+            <p class="text-sm text-kitsuden-accent font-mono">/{preview.slug}</p>
+          </div>
+
+          <div>
+            <label class="label text-xs uppercase text-kitsuden-subtle flex items-center gap-1">
+              <Layout class="w-3 h-3" />
+              Generated Blocks ({preview.blocks.length})
+            </label>
+            <div class="mt-2 space-y-2">
+              {#each preview.blocks as block, index}
+                <div
+                  class="flex items-center gap-2 p-2 rounded-lg bg-kitsuden-bg border border-kitsuden-border hover:border-kitsuden-accent/30 transition-colors"
+                >
+                  <span class="text-xs text-kitsuden-subtle w-6">{index + 1}.</span>
+                  <span class="text-base">{getBlockIcon(block.type)}</span>
+                  <span class="text-sm text-kitsuden-text capitalize">{block.type}</span>
+                  <span class="text-xs text-kitsuden-subtle ml-auto truncate max-w-[200px]">
+                    {block.name ||
+                      block.content.headline ||
+                      block.content.title ||
+                      block.content.text?.substring(0, 30) ||
+                      "..."}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-kitsuden-accent/5 border border-kitsuden-accent/20">
+            <p class="text-xs text-kitsuden-accent flex items-center gap-1">
+              <Check class="w-3 h-3" />
+              Source: {selectedDataset?.name} → {selectedEntry.id.substring(0, 8)}...
+            </p>
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-2 p-4 border-t border-kitsuden-border">
+      <button onclick={handleClose} class="btn-ghost" disabled={loading}> Cancel </button>
+      {#if step === "preview"}
+        <button onclick={handleConfirm} class="btn-primary gap-1.5" disabled={loading}>
+          {#if loading}
+            <Loader2 class="w-4 h-4 animate-spin" />
+            Processing...
+          {:else}
+            <Check class="w-4 h-4" />
+            Create Page
+          {/if}
+        </button>
+      {/if}
+    </div>
+  </div>
+</Modal>

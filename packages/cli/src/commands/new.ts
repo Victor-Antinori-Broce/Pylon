@@ -1,19 +1,27 @@
 /**
- * NEW Command - Create a new GremiusCMS project from a starter/realm
+ * NEW Command - Create a new Kitsuden project from a starter/grimoire
  *
  * Fase 3: CLI Mágica - Quickstart con rollback
  */
 
+import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile, readFile, cp, rmdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 
 import chalk from "chalk";
-// @ts-ignore
+// @ts-ignore -- `degit` no publica tipos y no existe @types/degit.
 import degit from "degit";
 import { execa } from "execa";
 import inquirer from "inquirer";
 import ora, { type Ora } from "ora";
+
+/**
+ * Generate a cryptographically secure random secret string.
+ */
+function generateSecret(length = 32): string {
+  return crypto.randomBytes(length).toString("hex");
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ESTADO PARA ROLLBACK
@@ -93,9 +101,9 @@ async function performRollback(state: QuickstartState, reason: string) {
 }
 
 interface NewOptions {
-  realm?: string;
+  grimoire?: string;
   template?: string;
-  grimoires?: string[];
+  kons?: string[];
   quickstart?: boolean;
   git?: boolean;
   install?: boolean;
@@ -103,30 +111,30 @@ interface NewOptions {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AVAILABLE REALMS (STARTERS)
+// AVAILABLE GRIMOIRES (STARTERS)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const OFFICIAL_REALMS: Record<
+const OFFICIAL_GRIMOIRES: Record<
   string,
   {
     name: string;
     description: string;
     repo?: string;
-    grimoires: string[];
+    kons: string[];
     tags: string[];
   }
 > = {
   default: {
     name: "Default",
-    description: "Standard GremiusCMS with core functionality",
-    grimoires: ["blog", "blocks", "media"],
+    description: "Standard Kitsuden with core functionality",
+    kons: ["blog", "blocks", "media"],
     tags: ["starter", "minimal"],
   },
   esports: {
     name: "Esports",
     description: "Gaming platform with tournaments, teams, and matches",
-    repo: "gremiuscms/realm-esports",
-    grimoires: [
+    repo: "kitsuden/grimoire-esports",
+    kons: [
       "games",
       "streamers",
       "platforms",
@@ -142,25 +150,25 @@ const OFFICIAL_REALMS: Record<
   blog: {
     name: "Blog",
     description: "Content-focused blog with SEO optimization",
-    grimoires: ["blog", "tags", "blocks"],
+    kons: ["blog", "tags", "blocks"],
     tags: ["content", "blog", "seo"],
   },
   ecommerce: {
     name: "E-Commerce",
     description: "Online store with products and payments (coming soon)",
-    grimoires: ["products", "orders", "payments", "inventory"],
+    kons: ["products", "orders", "payments", "inventory"],
     tags: ["commerce", "store", "payments"],
   },
   corporate: {
     name: "Corporate",
     description: "Company website with team and services",
-    grimoires: ["directory", "blog", "booking", "blocks"],
+    kons: ["directory", "blog", "booking", "blocks"],
     tags: ["business", "company", "services"],
   },
   lms: {
     name: "LMS",
     description: "Learning Management System with courses",
-    grimoires: ["academy", "blog", "progress", "certificates"],
+    kons: ["academy", "blog", "progress", "certificates"],
     tags: ["education", "courses", "learning"],
   },
 };
@@ -168,7 +176,7 @@ const OFFICIAL_REALMS: Record<
 export async function newCommand(projectName: string, options: NewOptions) {
   // Quickstart mode - skip all prompts
   if (options.quickstart) {
-    console.log(chalk.bold("\n🚀 GremiusCMS - Quick Start Mode\n"));
+    console.log(chalk.bold("\n🚀 Kitsuden - Quick Start Mode\n"));
     console.log(chalk.gray("Configurando todo automáticamente...\n"));
     console.log(chalk.gray("Tiempo estimado: ~3-5 minutos\n"));
 
@@ -197,10 +205,10 @@ export async function newCommand(projectName: string, options: NewOptions) {
       createdFiles: [],
     };
 
-    const realmInfo = OFFICIAL_REALMS["default"];
+    const grimoireInfo = OFFICIAL_GRIMOIRES["default"];
 
     try {
-      await createProjectQuickstart(projectName, targetDir, "default", realmInfo, currentState);
+      await createProjectQuickstart(projectName, targetDir, "default", grimoireInfo, currentState);
 
       console.log(chalk.bold("\n" + "=".repeat(60)));
       console.log(chalk.green.bold("✓ ¡Proyecto creado exitosamente!"));
@@ -224,7 +232,7 @@ export async function newCommand(projectName: string, options: NewOptions) {
   }
 
   // Interactive mode
-  console.log(chalk.bold("\n📦 GremiusCMS - Create New Project\n"));
+  console.log(chalk.bold("\n📦 Kitsuden - Create New Project\n"));
 
   const targetDir = join(process.cwd(), projectName);
 
@@ -245,46 +253,46 @@ export async function newCommand(projectName: string, options: NewOptions) {
     }
   }
 
-  // Select realm if not specified
-  let realm = options.realm || "default";
-  if (!options.realm) {
-    const { selectedRealm } = await inquirer.prompt([
+  // Select grimoire if not specified
+  let grimoire = options.grimoire || "default";
+  if (!options.grimoire) {
+    const { selectedGrimoire } = await inquirer.prompt([
       {
         type: "list",
-        name: "selectedRealm",
+        name: "selectedGrimoire",
         message: "Select a starter template:",
-        choices: Object.entries(OFFICIAL_REALMS).map(([key, info]) => ({
+        choices: Object.entries(OFFICIAL_GRIMOIRES).map(([key, info]) => ({
           name: `${chalk.bold(info.name)} ${chalk.gray(`- ${info.description}`)}`,
           value: key,
           short: info.name,
         })),
       },
     ]);
-    realm = selectedRealm;
+    grimoire = selectedGrimoire;
   }
 
-  const realmInfo = OFFICIAL_REALMS[realm];
-  if (!realmInfo) {
-    console.error(chalk.red(`\n✖ Unknown realm: ${realm}`));
-    console.log(chalk.gray(`Available realms: ${Object.keys(OFFICIAL_REALMS).join(", ")}`));
+  const grimoireInfo = OFFICIAL_GRIMOIRES[grimoire];
+  if (!grimoireInfo) {
+    console.error(chalk.red(`\n✖ Unknown grimoire: ${grimoire}`));
+    console.log(chalk.gray(`Available grimoires: ${Object.keys(OFFICIAL_GRIMOIRES).join(", ")}`));
     process.exit(1);
   }
 
   console.log(
     chalk.blue(
-      `\n🚀 Creating ${chalk.bold(projectName)} with ${chalk.bold(realmInfo.name)} realm...\n`
+      `\n🚀 Creating ${chalk.bold(projectName)} with ${chalk.bold(grimoireInfo.name)} grimoire...\n`
     )
   );
 
   // Create project
-  await createProject(projectName, targetDir, realm, realmInfo, options);
+  await createProject(projectName, targetDir, grimoire, grimoireInfo, options);
 }
 
 async function createProjectQuickstart(
   name: string,
   targetDir: string,
-  realm: string,
-  realmInfo: (typeof OFFICIAL_REALMS)[string],
+  grimoire: string,
+  grimoireInfo: (typeof OFFICIAL_GRIMOIRES)[string],
   state: QuickstartState
 ) {
   const spinner = ora("Creando directorio del proyecto...").start();
@@ -297,7 +305,7 @@ async function createProjectQuickstart(
 
     // 2. Copiar template
     spinner.text = "Descargando plantilla...";
-    await copyLocalTemplate(realm, targetDir);
+    await copyLocalTemplate(grimoire, targetDir);
     state.steps.templateCopied = true;
 
     // Registrar archivos creados
@@ -319,7 +327,7 @@ async function createProjectQuickstart(
     // 3. Configurar proyecto
     spinner.text = "Configurando proyecto...";
     await updatePackageJson(targetDir, name);
-    await updateGremiusConfig(targetDir, realmInfo.grimoires, []);
+    await updateKitsudenConfig(targetDir, grimoireInfo.kons, []);
     await updateEnvFiles(targetDir, name);
     state.steps.envGenerated = true;
 
@@ -328,7 +336,7 @@ async function createProjectQuickstart(
     try {
       await execa("git", ["init"], { cwd: targetDir, stdio: "ignore" });
       await execa("git", ["add", "."], { cwd: targetDir, stdio: "ignore" });
-      await execa("git", ["commit", "-m", "Initial commit from Gremius CLI"], {
+      await execa("git", ["commit", "-m", "Initial commit from Kitsuden CLI"], {
         cwd: targetDir,
         stdio: "ignore",
       });
@@ -402,7 +410,7 @@ async function waitForPostgresQuickstart(targetDir: string, spinner: Ora): Promi
   const maxAttempts = 30;
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      await execa("docker", ["compose", "exec", "-T", "postgres", "pg_isready", "-U", "gremius"], {
+      await execa("docker", ["compose", "exec", "-T", "postgres", "pg_isready", "-U", "kitsuden"], {
         cwd: targetDir,
         stdio: "ignore",
         timeout: 2000,
@@ -446,8 +454,8 @@ async function saveProgressToFile(projectName: string, success: boolean) {
 async function createProject(
   name: string,
   targetDir: string,
-  realm: string,
-  realmInfo: (typeof OFFICIAL_REALMS)[string],
+  grimoire: string,
+  grimoireInfo: (typeof OFFICIAL_GRIMOIRES)[string],
   options: NewOptions
 ) {
   const spinner = ora("Creating project directory...").start();
@@ -458,9 +466,9 @@ async function createProject(
     spinner.text = "Downloading starter template...";
 
     // Download from repo or use local template
-    if (realmInfo.repo) {
+    if (grimoireInfo.repo) {
       // Clone from GitHub
-      const emitter = degit(realmInfo.repo, {
+      const emitter = degit(grimoireInfo.repo, {
         cache: false,
         force: true,
         verbose: false,
@@ -469,7 +477,7 @@ async function createProject(
       await emitter.clone(targetDir);
     } else {
       // Use local template
-      await copyLocalTemplate(realm, targetDir);
+      await copyLocalTemplate(grimoire, targetDir);
     }
 
     spinner.text = "Configuring project...";
@@ -477,8 +485,8 @@ async function createProject(
     // Update package.json
     await updatePackageJson(targetDir, name);
 
-    // Update gremius.config.ts with grimoires
-    await updateGremiusConfig(targetDir, realmInfo.grimoires, options.grimoires);
+    // Update kitsuden.config.ts with kons
+    await updateKitsudenConfig(targetDir, grimoireInfo.kons, options.kons);
 
     // Update .env files
     await updateEnvFiles(targetDir, name);
@@ -545,11 +553,11 @@ async function createProject(
   }
 }
 
-async function copyLocalTemplate(realm: string, targetDir: string) {
+async function copyLocalTemplate(grimoire: string, targetDir: string) {
   // In development, copy from local packages/starters
   // In production, copy from bundled templates
-  const starterDir = join(__dirname, "../../../starters", `gremius-starter-${realm}`);
-  const templateDir = join(__dirname, "../../templates", realm);
+  const starterDir = join(__dirname, "../../../starters", `kitsuden-starter-${grimoire}`);
+  const templateDir = join(__dirname, "../../templates", grimoire);
 
   if (existsSync(starterDir)) {
     // Use official starter
@@ -564,13 +572,13 @@ async function copyLocalTemplate(realm: string, targetDir: string) {
     await cp(templateDir, targetDir, { recursive: true });
   } else {
     // Create minimal structure
-    await createMinimalTemplate(targetDir, realm);
+    await createMinimalTemplate(targetDir, grimoire);
   }
 }
 
-async function createMinimalTemplate(targetDir: string, _realm: string) {
+async function createMinimalTemplate(targetDir: string, _grimoire: string) {
   // Create basic project structure
-  const dirs = ["apps/api", "apps/admin", "apps/web", "packages/shared", "packages/grimoires"];
+  const dirs = ["apps/api", "apps/admin", "packages/shared", "packages/kons"];
 
   for (const dir of dirs) {
     await mkdir(join(targetDir, dir, "src"), { recursive: true });
@@ -581,7 +589,7 @@ async function createMinimalTemplate(targetDir: string, _realm: string) {
     join(targetDir, "package.json"),
     JSON.stringify(
       {
-        name: "gremius-project",
+        name: "kitsuden-project",
         private: true,
         type: "module",
         scripts: {
@@ -607,9 +615,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: gremius
-      POSTGRES_PASSWORD: gremius
-      POSTGRES_DB: gremius
+      POSTGRES_USER: kitsuden
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
+      POSTGRES_DB: kitsuden
     ports:
       - "5432:5432"
     volumes:
@@ -627,8 +635,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: \${S3_ACCESS_KEY:-kitsuden_minio}
+      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
 
 volumes:
   postgres_data:
@@ -649,20 +657,20 @@ async function updatePackageJson(targetDir: string, projectName: string) {
   }
 }
 
-async function updateGremiusConfig(
+async function updateKitsudenConfig(
   targetDir: string,
-  defaultGrimoires: string[],
-  extraGrimoires?: string[]
+  defaultKons: string[],
+  extraKons?: string[]
 ) {
-  const configPath = join(targetDir, "apps/api/gremius.config.ts");
+  const configPath = join(targetDir, "apps/api/kitsuden.config.ts");
 
-  const grimoires = [...defaultGrimoires];
-  if (extraGrimoires) {
-    grimoires.push(...extraGrimoires);
+  const kons = [...defaultKons];
+  if (extraKons) {
+    kons.push(...extraKons);
   }
 
   const configContent = `/**
- * GremiusCMS Configuration
+ * Kitsuden Configuration
  */
 
 const config = {
@@ -672,8 +680,8 @@ const config = {
     webhooks: { enabled: true },
     connectors: { enabled: true },
   },
-  grimoires: [
-${grimoires.map((g) => `    "${g}",`).join("\n")}
+  kons: [
+${kons.map((g) => `    "${g}",`).join("\n")}
   ],
 };
 
@@ -689,17 +697,18 @@ export default config;
 
 async function updateEnvFiles(targetDir: string, projectName: string) {
   const envContent = `# Database
-DATABASE_URL=postgres://gremius:gremius@localhost:5432/gremius
+DATABASE_URL=postgres://kitsuden:changeme@localhost:5432/kitsuden
 
 # Better Auth
-BETTER_AUTH_SECRET=generate-a-secure-secret-here
+# Generate a strong secret (min 32 chars), e.g.: openssl rand -base64 48
+BETTER_AUTH_SECRET=change-me-to-a-random-string-at-least-32-chars
 BETTER_AUTH_URL=http://localhost:3000
 
 # Storage (MinIO)
 S3_ENDPOINT=http://localhost:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET=gremius
+S3_ACCESS_KEY=kitsuden_minio
+S3_SECRET_KEY=changeme
+S3_BUCKET=kitsuden
 
 # Cache (Valkey)
 VALKEY_URL=redis://localhost:6379

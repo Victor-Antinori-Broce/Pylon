@@ -215,7 +215,7 @@ packages/core/src/types/
 ### Eliminados (Reemplazados)
 
 ```
-❌ packages/grimoires/grimoire-formulas/    ← Reemplazado por sistema integrado
+❌ packages/kons/kon-formulas/    ← Reemplazado por sistema integrado
 ❌ packages/admin/src/views/formulas/           ← Reemplazado por KpiCreator
 ```
 

@@ -4,7 +4,11 @@ set -e
 
 echo "Running database migrations..."
 
-DB_URL="${DATABASE_URL:-postgresql://gremius:gremiuspassword@gremius_db_prod:5432/gremius_prod}"
+DB_URL="${DATABASE_URL}"
+if [ -z "$DB_URL" ]; then
+    echo "ERROR: DATABASE_URL is not set. Configure it in your .env file."
+    exit 1
+fi
 
 # Extract host and port from DATABASE_URL
 DB_HOST=$(echo "$DB_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')

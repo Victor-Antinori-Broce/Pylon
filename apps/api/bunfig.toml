@@ -1,16 +1,4 @@
-# Bun Configuration for Testing
-
 [test]
-# Test file patterns
-testMatch = ["**/*.test.ts", "**/*.spec.ts"]
-
-# Setup files
-setupFiles = ["./src/tests/setup.ts"]
-
-# Timeout for tests
-timeout = 30000
-
-# Coverage settings
-[coverage]
-enabled = true
-reporter = ["text", "html"]
+exclude = [
+  "src/tests-unit/**",
+]

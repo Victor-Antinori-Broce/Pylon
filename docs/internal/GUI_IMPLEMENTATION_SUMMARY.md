@@ -2,7 +2,7 @@
 
 ## 📋 Resumen de Implementación
 
-Se han creado interfaces personalizadas para los grimoires **Booking** y **Directory** en el panel de administración de Gremius.
+Se han creado interfaces personalizadas para los kons **Booking** y **Directory** en el panel de administración de Kitsuden.
 
 ---
 
@@ -85,7 +85,7 @@ packages/admin/src/routes/directory/
 #### Directory Home (`/directory`)
 
 - ✅ Quick link al organigrama
-- ✅ Integración con GrimoirePage para grids estándar
+- ✅ Integración con KonPage para grids estándar
 
 ---
 
@@ -95,8 +95,8 @@ Todos los componentes utilizan el sistema de diseño existente:
 
 ```css
 /* Colores principales */
---gremius-cyan: #00d4ff --gremius-bg: #0a0a0a --gremius-card: #141414 --gremius-border: #2a2a2a
-  --gremius-subtle: #6b7280 /* Estados */ --status-pending: #f59e0b (amber)
+--kitsuden-cyan: #00d4ff --kitsuden-bg: #0a0a0a --kitsuden-card: #141414 --kitsuden-border: #2a2a2a
+  --kitsuden-subtle: #6b7280 /* Estados */ --status-pending: #f59e0b (amber)
   --status-confirmed: #10b981 (emerald) --status-checked_in: #06b6d4 (cyan)
   --status-checked_out: #6b7280 (zinc) --status-cancelled: #ef4444 (red);
 ```

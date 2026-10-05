@@ -13,6 +13,8 @@
  *   bun run apps/api/src/db/migrations/cleanup-legacy-actions.ts --execute
  */
 
+import { messageOf } from "@kitsuden/engine";
+
 import { db } from "../index";
 
 interface CleanupResult {
@@ -21,7 +23,7 @@ interface CleanupResult {
   errors: string[];
 }
 
-const LEGACY_TABLES = ["gremius_functions", "function_executions", "webhooks"];
+const LEGACY_TABLES = ["kitsuden_functions", "function_executions", "webhooks"];
 
 const LEGACY_ENUMS = ["function_trigger", "function_status"];
 
@@ -56,7 +58,7 @@ async function verifyMigration(): Promise<{ success: boolean; issues: string[] }
   // Verify data integrity: compare counts
   try {
     const [legacyCount, newCount] = await Promise.all([
-      db.execute(`SELECT COUNT(*) FROM gremius_functions`).catch(() => ({ rows: [{ count: 0 }] })),
+      db.execute(`SELECT COUNT(*) FROM kitsuden_functions`).catch(() => ({ rows: [{ count: 0 }] })),
       db
         .execute(`SELECT COUNT(*) FROM actions WHERE legacy_type = 'function'`)
         .catch(() => ({ rows: [{ count: 0 }] })),
@@ -132,9 +134,9 @@ async function dropLegacyTables(dryRun: boolean): Promise<CleanupResult> {
         console.log(`  ✓ Dropped: ${table}`);
       }
       result.tablesDropped.push(table);
-    } catch (err: any) {
-      console.error(`  ✗ Failed to drop ${table}:`, err.message);
-      result.errors.push(`Failed to drop ${table}: ${err.message}`);
+    } catch (err: unknown) {
+      console.error(`  ✗ Failed to drop ${table}:`, messageOf(err));
+      result.errors.push(`Failed to drop ${table}: ${messageOf(err)}`);
     }
   }
 
@@ -158,9 +160,9 @@ async function dropLegacyEnums(dryRun: boolean): Promise<CleanupResult> {
         console.log(`  ✓ Dropped: ${enumName}`);
       }
       result.enumsDropped.push(enumName);
-    } catch (err: any) {
-      console.error(`  ✗ Failed to drop ${enumName}:`, err.message);
-      result.errors.push(`Failed to drop ${enumName}: ${err.message}`);
+    } catch (err: unknown) {
+      console.error(`  ✗ Failed to drop ${enumName}:`, messageOf(err));
+      result.errors.push(`Failed to drop ${enumName}: ${messageOf(err)}`);
     }
   }
 

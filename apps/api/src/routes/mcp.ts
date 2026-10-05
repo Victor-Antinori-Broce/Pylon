@@ -1,12 +1,12 @@
 /**
  * MCP (Model Context Protocol) Routes — Agent Gateway
  *
- * Exposes Gremius to AI agents (Claude, Cursor, VS Code, etc.)
+ * Exposes Kitsuden to AI agents (Claude, Cursor, VS Code, etc.)
  * via the standard MCP protocol over Streamable HTTP (SSE + POST).
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * SECURITY: All MCP connections require a valid Agent NHI token (grm_agent_*)
- * or a legacy API key (gremius_sk_* — deprecated, sunset 2026-08-01).
+ * SECURITY: All MCP connections require a valid Agent NHI token (kitsuden_agent_*)
+ * or a legacy API key (kitsuden_sk_* — deprecated, sunset 2026-08-01).
  * Agents must have the 'mcp:connect' scope. MCP tools can insert, query,
  * and dispatch jobs.
  * ═══════════════════════════════════════════════════════════════════════════
@@ -25,30 +25,17 @@
 
 import { createHash } from "crypto";
 
-import { listMCPTools, executeMCPTool } from "@gremius/engine";
-import { eq, and } from "drizzle-orm";
+import { listMCPTools, executeMCPTool, messageOf } from "@kitsuden/engine";
+import { camposDelSchema } from "@kitsuden/shared";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 
-import { generateReact } from "../../../../packages/codegen/src/generators/react";
-import { generateSvelte } from "../../../../packages/codegen/src/generators/svelte";
-import { generateVue } from "../../../../packages/codegen/src/generators/vue";
-import { db, mergedSchema } from "../db";
-import {
-  dataSets,
-  dataEntries,
-  apiKeys,
-  actions,
-  installedGrimoires,
-  siteSettings,
-  modules,
-} from "../db/schema";
+import { db } from "../db";
+import { dataSets, apiKeys } from "../db/schema";
 import { logger } from "../lib/logger";
-import { emailQueue } from "../lib/queue";
-import { buildDrizzleWhere, type PolicyJson } from "../lib/rls-builder";
-import { encodeTOON } from "../lib/toon";
 import { authenticateAgent, hasScope } from "../services/agent-auth";
-import { GRIMOIRE_REGISTRY } from "../services/module-registry";
-import { introspectTable } from "../services/schema-introspector";
+import { listHardcodedMCPTools, executeHardcodedTool } from "../services/mcp-tools";
+import { KON_REGISTRY } from "../services/module-registry";
 
 import { invalidateGraphQLCache } from "./graphql";
 
@@ -83,7 +70,7 @@ interface AgentLogEntry {
 // ═══════════════════════════════════════════════════════════════
 // Session Store
 // NOTE: In-memory sessions are lost on restart. For multi-instance
-// deployments, migrate to Valkey: HSET gremius:mcp:sessions {id} {json}
+// deployments, migrate to Valkey: HSET kitsuden:mcp:sessions {id} {json}
 // ═══════════════════════════════════════════════════════════════
 
 const sessions = new Map<string, McpSession>();
@@ -174,9 +161,9 @@ mcpRoutes.use("*", async (c, next) => {
   const rawToken = authHeader.replace("Bearer ", "").trim();
 
   // ═══════════════════════════════════════════════════════════════
-  // Intentar autenticar como Agente NHI primero (grm_agent_xxx)
+  // Intentar autenticar como Agente NHI primero (kitsuden_agent_xxx)
   // ═══════════════════════════════════════════════════════════════
-  if (rawToken.startsWith("grm_agent_")) {
+  if (rawToken.startsWith("kitsuden_agent_")) {
     const result = await authenticateAgent(rawToken, {
       ipAddress: c.req.header("x-forwarded-for") || c.req.header("x-real-ip"),
       userAgent: c.req.header("user-agent"),
@@ -236,17 +223,17 @@ mcpRoutes.use("*", async (c, next) => {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // Fallback: Legacy Human API Key (gremius_sk_xxx) — DEPRECATED
-  // Migrate to Agent NHI tokens (grm_agent_xxx) before 2026-08-01.
+  // Fallback: Legacy Human API Key (kitsuden_sk_xxx) — DEPRECATED
+  // Migrate to Agent NHI tokens (kitsuden_agent_xxx) before 2026-08-01.
   // ═══════════════════════════════════════════════════════════════
-  if (!rawToken.startsWith("gremius_sk_")) {
+  if (!rawToken.startsWith("kitsuden_sk_")) {
     return c.json(
       {
         jsonrpc: "2.0",
         error: {
           code: -32000,
           message:
-            "Invalid API key format. Expected: grm_agent_xxx (new) or gremius_sk_xxx (deprecated)",
+            "Invalid API key format. Expected: kitsuden_agent_xxx (new) or kitsuden_sk_xxx (deprecated)",
         },
         id: null,
       },
@@ -290,9 +277,9 @@ mcpRoutes.use("*", async (c, next) => {
   // Deprecation warnings
   logger.warn(
     { keyId: apiKey.id, type: "mcp" },
-    "[DEPRECATION] Legacy API key (gremius_sk_*) used in MCP. Migrate to Agent NHI (grm_agent_*)."
+    "[DEPRECATION] Legacy API key (kitsuden_sk_*) used in MCP. Migrate to Agent NHI (kitsuden_agent_*)."
   );
-  c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+  c.header("Deprecation", "kitsuden_sk_*; kitsuden_agent_*");
   c.header("Sunset", "2026-08-01");
 
   c.set("mcpAuth", {
@@ -419,7 +406,7 @@ mcpRoutes.post("/", async (c) => {
       return c.body(null, 204);
     }
     return c.json(result);
-  } catch (err: any) {
+  } catch (err: unknown) {
     logAgentActivity({
       timestamp: new Date().toISOString(),
       agentId: session.agentId,
@@ -428,13 +415,13 @@ mcpRoutes.post("/", async (c) => {
       tool: body.method === "tools/call" ? body.params?.name : undefined,
       durationMs: Date.now() - start,
       success: false,
-      error: err.message,
+      error: messageOf(err),
     });
 
     return c.json(
       {
         jsonrpc: "2.0",
-        error: { code: -32603, message: err.message },
+        error: { code: -32603, message: messageOf(err) },
         id: body.id || null,
       },
       500
@@ -485,7 +472,7 @@ async function handleMcpMessage(message: any, session: McpSession) {
             tools: { listChanged: true },
           },
           serverInfo: {
-            name: "gremius-mcp-server",
+            name: "kitsuden-mcp-server",
             version: "0.7.0-beta",
           },
         },
@@ -531,20 +518,20 @@ async function listResources(id: string | number) {
 
   const resources = [
     {
-      uri: "gremius://datasets",
+      uri: "kitsuden://datasets",
       name: "All Datasets",
       mimeType: "application/json",
       description: `List of all ${allDatasets.length} datasets with their schemas`,
     },
     {
-      uri: "gremius://grimoires",
-      name: "Active Grimoires",
+      uri: "kitsuden://kons",
+      name: "Active Kons",
       mimeType: "application/json",
       description: "Active modules (blog, CRM, DMS, etc.) and their mount points",
     },
     // Individual dataset resources
     ...allDatasets.map((ds) => ({
-      uri: `gremius://dataset/${ds.id}`,
+      uri: `kitsuden://dataset/${ds.id}`,
       name: `Dataset: ${ds.name}`,
       mimeType: "application/json",
       description: `Schema and metadata for ${ds.name} (${ds.slug})`,
@@ -556,37 +543,37 @@ async function listResources(id: string | number) {
 
 async function readResource(uri: string, id: string | number) {
   try {
-    if (uri === "gremius://datasets") {
+    if (uri === "kitsuden://datasets") {
       const allDatasets = await db.select().from(dataSets);
       const mapped = allDatasets.map((ds: any) => ({
         id: ds.id,
         name: ds.name,
         slug: ds.slug,
         description: ds.description,
-        fields: ds.schema?.fields || [],
+        fields: camposDelSchema(ds.schema),
         entryCount: ds.entryCount || 0,
       }));
 
       return jsonRpcResult(uri, mapped, id);
     }
 
-    if (uri === "gremius://grimoires") {
-      // Return actual grimoire registry instead of hardcoded stub
-      const grimoires = GRIMOIRE_REGISTRY.map((g) => ({
+    if (uri === "kitsuden://kons") {
+      // Return actual kon registry instead of hardcoded stub
+      const kons = KON_REGISTRY.map((g) => ({
         key: g.key,
         name: g.name,
         description: g.description,
         icon: g.icon,
         category: g.category,
         tables: g.tables,
-        realmId: g.realmId || null,
+        grimoireId: g.grimoireId || null,
       }));
 
-      return jsonRpcResult(uri, grimoires, id);
+      return jsonRpcResult(uri, kons, id);
     }
 
-    // Individual dataset: gremius://dataset/{id}
-    const datasetMatch = uri.match(/^gremius:\/\/dataset\/(.+)$/);
+    // Individual dataset: kitsuden://dataset/{id}
+    const datasetMatch = uri.match(/^kitsuden:\/\/dataset\/(.+)$/);
     if (datasetMatch) {
       const [dataset] = await db
         .select()
@@ -614,8 +601,8 @@ async function readResource(uri: string, id: string | number) {
     }
 
     return jsonRpcError(-32002, `Unknown resource: ${uri}`, id);
-  } catch (err: any) {
-    return jsonRpcError(-32603, `Resource read failed: ${err.message}`, id);
+  } catch (err: unknown) {
+    return jsonRpcError(-32603, `Resource read failed: ${messageOf(err)}`, id);
   }
 }
 
@@ -631,280 +618,16 @@ function listTools(id: string | number) {
     inputSchema: t.inputSchema || { type: "object", properties: {} },
   }));
 
+  const hardcodedTools = listHardcodedMCPTools().map((t) => ({
+    name: t.function.name,
+    description: t.function.description,
+    inputSchema: t.function.parameters,
+  }));
+
   return {
     jsonrpc: "2.0",
     result: {
-      tools: [
-        ...dynamicTools,
-        // ── Discovery ──
-        {
-          name: "gremius_list_datasets",
-          description:
-            "List all available datasets with their field schemas. Useful for discovering data structure before querying.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              format: { type: "string", enum: ["json", "toon"], default: "json" },
-            },
-          },
-        },
-        {
-          name: "gremius_describe_collection",
-          description:
-            "Get the schema (columns/fields) of any collection — dataset or native table. Essential before querying unknown collections.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              collection: {
-                type: "string",
-                description: "Dataset slug or native table name, e.g. 'blog-posts' or 'games'",
-              },
-              format: { type: "string", enum: ["json", "toon"], default: "json" },
-            },
-            required: ["collection"],
-          },
-        },
-        {
-          name: "gremius_system_status",
-          description:
-            "Get full system health: database, queue, realtime, memory, active grimoires, and GraphQL schema status.",
-          inputSchema: {
-            type: "object",
-            properties: {},
-          },
-        },
-        // ── Unified CRUD (datasets + native tables) ──
-        {
-          name: "gremius_query_collection",
-          description:
-            "Query records from ANY collection — dataset or native grimoire table. Uses the unified /api/items/{collection} endpoint. Respects RLS. Supports search, sort, pagination, and TOON.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              collection: {
-                type: "string",
-                description: "Dataset slug or table name, e.g. 'blog-posts', 'games', 'tasks'",
-              },
-              limit: { type: "number", default: 50, description: "Max records (max 1000)" },
-              offset: { type: "number", default: 0, description: "Pagination offset" },
-              search: { type: "string", description: "Full-text search on title/name fields" },
-              sort: {
-                type: "string",
-                description: "Sort field, e.g. 'createdAt' or '-createdAt' for desc",
-              },
-              where: {
-                type: "object",
-                description: "JSON filter object, e.g. {status: 'published'}",
-              },
-              format: {
-                type: "string",
-                enum: ["json", "toon"],
-                default: "json",
-                description: "Response format. Use 'toon' to reduce token usage by ~60%.",
-              },
-            },
-            required: ["collection"],
-          },
-        },
-        {
-          name: "gremius_create_record",
-          description:
-            "Insert a new record into ANY collection — dataset or native table. Uses /api/items/{collection}.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              collection: { type: "string", description: "Dataset slug or table name" },
-              data: { type: "object", description: "Record payload" },
-              status: {
-                type: "string",
-                default: "published",
-                description: "Initial status (datasets only)",
-              },
-            },
-            required: ["collection", "data"],
-          },
-        },
-        {
-          name: "gremius_update_record",
-          description:
-            "Update a record by ID in ANY collection — dataset or native table. Uses /api/items/{collection}/{id}.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              collection: { type: "string", description: "Dataset slug or table name" },
-              id: { type: "string", description: "Record UUID or primary key" },
-              data: { type: "object", description: "Fields to update" },
-            },
-            required: ["collection", "id", "data"],
-          },
-        },
-        {
-          name: "gremius_delete_record",
-          description:
-            "Delete a record by ID from ANY collection — dataset or native table. Uses /api/items/{collection}/{id}.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              collection: { type: "string", description: "Dataset slug or table name" },
-              id: { type: "string", description: "Record UUID or primary key" },
-            },
-            required: ["collection", "id"],
-          },
-        },
-        // ── Legacy dataset-only CRUD (kept for backward compat) ──
-        {
-          name: "gremius_query_dataset",
-          description:
-            "[Legacy] Query records from a dataset by UUID. Prefer gremius_query_collection for new code.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              datasetId: { type: "string", description: "UUID of the dataset" },
-              limit: { type: "number", default: 50, description: "Max records (max 100)" },
-              offset: { type: "number", default: 0, description: "Pagination offset" },
-              status: { type: "string", description: "Filter: published, draft, archived" },
-              format: {
-                type: "string",
-                enum: ["json", "toon"],
-                default: "json",
-                description: "Response format. Use 'toon' to reduce token usage by ~60%.",
-              },
-            },
-            required: ["datasetId"],
-          },
-        },
-        {
-          name: "gremius_insert_record",
-          description:
-            "[Legacy] Insert a record into a dataset by UUID. Prefer gremius_create_record for new code.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              datasetId: { type: "string", description: "UUID of the dataset" },
-              data: { type: "object", description: "Record data matching dataset schema" },
-              status: { type: "string", default: "draft", description: "Initial status" },
-            },
-            required: ["datasetId", "data"],
-          },
-        },
-        // ── Management ──
-        {
-          name: "gremius_create_dataset",
-          description:
-            "Create a new JSONB dataset with a defined schema. This is the primary way to store custom user-defined data when no grimoire exists for the use case.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              name: { type: "string", description: "Display name of the dataset" },
-              slug: { type: "string", description: "URL-friendly identifier" },
-              fields: { type: "array", description: "Schema fields", items: { type: "object" } },
-              rlsEnabled: {
-                type: "boolean",
-                default: true,
-                description: "Enable row-level security",
-              },
-              description: { type: "string", description: "Optional description" },
-            },
-            required: ["name", "slug", "fields"],
-          },
-        },
-        {
-          name: "gremius_install_grimoire",
-          description:
-            "Install a grimoire (domain module). Registers it in the database, runs SQL migrations if found locally, and enables it in the module registry. For npm packages, run 'gremius install <pkg>' from CLI first.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              grimoireId: { type: "string", description: "e.g. grimoire-crm" },
-              source: {
-                type: "string",
-                enum: ["local", "npm", "marketplace"],
-                default: "npm",
-                description: "Installation source",
-              },
-              autoEnable: {
-                type: "boolean",
-                default: true,
-                description: "Enable immediately in modules table",
-              },
-            },
-            required: ["grimoireId"],
-          },
-        },
-        {
-          name: "gremius_define_action",
-          description:
-            "Create a unified action (code, webhook, or agent trigger) that runs automation in response to events.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              slug: { type: "string" },
-              type: { type: "string", enum: ["code", "webhook_out", "webhook_in", "agent"] },
-              trigger: { type: "string", enum: ["manual", "cron", "event", "http"] },
-              triggerConfig: {
-                type: "object",
-                description: "e.g. {cronExpression, eventName, httpPath}",
-              },
-              config: { type: "object", description: "e.g. {code, url, method}" },
-            },
-            required: ["name", "slug", "type", "trigger"],
-          },
-        },
-        {
-          name: "gremius_enable_auth",
-          description:
-            "Configure authentication methods for the project. Updates the site settings to reflect enabled auth providers.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              methods: {
-                type: "array",
-                items: { type: "string" },
-                description: "Auth providers: email, google, github, microsoft",
-              },
-              requireEmailVerification: { type: "boolean", default: true },
-            },
-            required: ["methods"],
-          },
-        },
-        {
-          name: "gremius_dispatch_worker",
-          description: "Enqueue an async background job (email, webhook, custom worker).",
-          inputSchema: {
-            type: "object",
-            properties: {
-              queueName: { type: "string", description: "Queue: email, webhooks" },
-              jobName: { type: "string", description: "Job handler name" },
-              payload: { type: "object", description: "Job payload" },
-            },
-            required: ["queueName", "jobName", "payload"],
-          },
-        },
-
-        // ── Code Generation ──
-        {
-          name: "gremius_generate_frontend_hook",
-          description:
-            "Generate complete, strongly-typed frontend code (React hooks, Vue composables, Svelte stores, components, forms, types) for any collection. Uses the real codegen engine.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              collection: {
-                type: "string",
-                description: "Dataset slug or table name, e.g. 'blog-posts' or 'games'",
-              },
-              framework: { type: "string", enum: ["react", "vue", "svelte"], default: "react" },
-              type: {
-                type: "string",
-                enum: ["hook", "component", "form", "types", "all"],
-                default: "all",
-              },
-            },
-            required: ["collection"],
-          },
-        },
-      ],
+      tools: [...dynamicTools, ...hardcodedTools],
     },
     id,
   };
@@ -923,598 +646,30 @@ async function executeTool(name: string, args: any, id: string | number, session
       };
     }
 
-    // Otherwise handle legacy hardcoded tools
-    switch (name) {
-      case "gremius_query_dataset": {
-        const { datasetId, limit = 50, offset = 0, status, format = "json" } = args || {};
-        if (!datasetId) return jsonRpcError(-32602, "Missing: datasetId", id);
-
-        // Fetch dataset to check RLS policy
-        const [dataset] = await db
-          .select()
-          .from(dataSets)
-          .where(eq(dataSets.id, datasetId))
-          .limit(1);
-        if (!dataset) return jsonRpcError(-32602, `Dataset not found: ${datasetId}`, id);
-
-        // Build query with RLS conditions
-        const policy = dataset.policyJson as PolicyJson | null;
-        const rlsWhere = buildDrizzleWhere(policy?.rlsRules, {
-          id: session.agentId,
-          role: "admin",
-        });
-
-        // Build where conditions dynamically
-        const conditions = [eq(dataEntries.dataSetId, datasetId)];
-        if (status) {
-          conditions.push(eq(dataEntries.status, status));
-        }
-        if (rlsWhere) {
-          conditions.push(rlsWhere);
-        }
-
-        const results = await db
-          .select()
-          .from(dataEntries)
-          .where(and(...conditions))
-          .limit(Math.min(Number(limit) || 50, 100))
-          .offset(Number(offset) || 0);
-
-        const output = format === "toon" ? encodeTOON(results) : JSON.stringify(results, null, 2);
-        return toolResult(output, id);
-      }
-
-      case "gremius_insert_record": {
-        const { datasetId, data, status = "draft" } = args || {};
-        if (!datasetId || !data) return jsonRpcError(-32602, "Missing: datasetId, data", id);
-
-        const [newRecord] = await db
-          .insert(dataEntries)
-          .values({
-            dataSetId: datasetId,
-            title: data?.title || "Untitled",
-            data: { ...(data || {}), ownerId: data?.ownerId ?? null },
-            status,
-            ownerId: data?.ownerId ?? null,
-          } as any)
-          .returning();
-
-        await invalidateGraphQLCache();
-        return toolResult(`Record created: ${newRecord.id}`, id);
-      }
-
-      case "gremius_update_record": {
-        const { entryId, data, status } = args || {};
-        if (!entryId || !data) return jsonRpcError(-32602, "Missing: entryId, data", id);
-
-        // Fetch existing to merge
-        const [existing] = await db
-          .select()
-          .from(dataEntries)
-          .where(eq(dataEntries.id, entryId))
-          .limit(1);
-        if (!existing) return jsonRpcError(-32602, `Entry not found: ${entryId}`, id);
-
-        const mergedData = { ...(existing.data as Record<string, unknown>), ...data };
-        const updates: Record<string, any> = { data: mergedData, updatedAt: new Date() };
-        if (status) updates.status = status;
-
-        const [updated] = await db
-          .update(dataEntries)
-          .set(updates)
-          .where(eq(dataEntries.id, entryId))
-          .returning();
-        await invalidateGraphQLCache();
-        return toolResult(`Record updated: ${updated.id}`, id);
-      }
-
-      case "gremius_delete_record": {
-        const { entryId } = args || {};
-        if (!entryId) return jsonRpcError(-32602, "Missing: entryId", id);
-
-        const [deleted] = await db
-          .delete(dataEntries)
-          .where(eq(dataEntries.id, entryId))
-          .returning({ id: dataEntries.id });
-        if (!deleted) return jsonRpcError(-32602, `Entry not found: ${entryId}`, id);
-
-        await invalidateGraphQLCache();
-        return toolResult(`Record deleted: ${deleted.id}`, id);
-      }
-
-      case "gremius_list_datasets": {
-        const { format = "json" } = args || {};
-        const allDatasets = await db.select().from(dataSets).orderBy(dataSets.name);
-        const mapped = allDatasets.map((ds: any) => ({
-          id: ds.id,
-          name: ds.name,
-          slug: ds.slug,
-          description: ds.description,
-          fields:
-            ds.schema?.fields
-              ?.map((f: any) => `${f.key}:${f.type}${f.required ? "*" : ""}`)
-              .join(", ") || "none",
-        }));
-
-        const output = format === "toon" ? encodeTOON(mapped) : JSON.stringify(mapped, null, 2);
-        return toolResult(output, id);
-      }
-
-      case "gremius_dispatch_worker": {
-        const { queueName, jobName, payload } = args || {};
-        if (!queueName || !jobName || !payload) {
-          return jsonRpcError(-32602, "Missing: queueName, jobName, payload", id);
-        }
-
-        if (queueName === "email") {
-          const job = await emailQueue.add(jobName, payload);
-          return toolResult(`Job dispatched: ${job?.id || "unknown"}`, id);
-        }
-
-        return jsonRpcError(-32602, `Unknown queue: ${queueName}. Available: email`, id);
-      }
-
-      case "gremius_create_dataset": {
-        const { name, slug, fields, rlsEnabled = true, description } = args || {};
-        if (!name || !slug || !fields)
-          return jsonRpcError(-32602, "Missing: name, slug, fields", id);
-
-        const policyJson = rlsEnabled
-          ? {
-              enableRLS: true,
-              readAccess: "authenticated" as const,
-              writeAccess: "authenticated" as const,
-              rlsRules: [{ field: "ownerId", operator: "eq", value: "{{current_user_id}}" }],
-            }
-          : undefined;
-
-        const [newDataset] = await db
-          .insert(dataSets)
-          .values({
-            name,
-            slug,
-            description: description || null,
-            schema: { fields },
-            policyJson,
-          } as any)
-          .returning();
-
-        await invalidateGraphQLCache();
-        return toolResult(`Dataset created: ${newDataset.id} (${newDataset.slug})`, id);
-      }
-
-      case "gremius_install_grimoire": {
-        const { grimoireId, source = "npm" } = args || {};
-        if (!grimoireId) return jsonRpcError(-32602, "Missing: grimoireId", id);
-        if (!["local", "npm", "marketplace"].includes(source)) {
-          return jsonRpcError(-32602, "Invalid source. Must be: local, npm, marketplace", id);
-        }
-
-        await db
-          .insert(installedGrimoires)
-          .values({
-            grimoireId,
-            name: grimoireId,
-            version: "latest",
-            source,
-            path: `grimoires/${grimoireId}`,
-            enabled: true,
-          } as any)
-          .returning();
-
-        const [existingModule] = await db
-          .select()
-          .from(modules)
-          .where(eq(modules.key, grimoireId))
-          .limit(1);
-        if (existingModule) {
-          await db.update(modules).set({ enabled: true }).where(eq(modules.key, grimoireId));
-        } else {
-          await db.insert(modules).values({
-            key: grimoireId,
-            name: grimoireId,
-            enabled: true,
-          } as any);
-        }
-
-        return toolResult(`Grimoire ${grimoireId} registered. Restart the API to activate.`, id);
-      }
-
-      case "gremius_define_action": {
-        const { name, slug, type, trigger, triggerConfig, config } = args || {};
-        if (!name || !slug || !type || !trigger) {
-          return jsonRpcError(-32602, "Missing: name, slug, type, trigger", id);
-        }
-        if (!["code", "webhook_out", "webhook_in", "agent"].includes(type)) {
-          return jsonRpcError(
-            -32602,
-            "Invalid type. Must be: code, webhook_out, webhook_in, agent",
-            id
-          );
-        }
-        if (!["manual", "cron", "event", "http"].includes(trigger)) {
-          return jsonRpcError(-32602, "Invalid trigger. Must be: manual, cron, event, http", id);
-        }
-
-        const [newAction] = await db
-          .insert(actions)
-          .values({
-            name,
-            slug,
-            type,
-            trigger,
-            triggerConfig: triggerConfig || {},
-            config: config || {},
-          } as any)
-          .returning();
-
-        return toolResult(`Action created: ${newAction.id} (${newAction.slug})`, id);
-      }
-
-      case "gremius_enable_auth": {
-        const { methods, requireEmailVerification = true } = args || {};
-        if (!methods || !Array.isArray(methods) || methods.length === 0) {
-          return jsonRpcError(-32602, "Missing or invalid: methods (array of strings)", id);
-        }
-
-        const [settings] = await db.select().from(siteSettings).limit(1);
-        const branding = (settings?.branding || {}) as Record<string, any>;
-        const updatedBranding = {
-          ...branding,
-          authConfig: {
-            methods,
-            requireEmailVerification,
-          },
-        };
-
-        if (settings) {
-          await db
-            .update(siteSettings)
-            .set({ branding: updatedBranding as any })
-            .where(eq(siteSettings.id, settings.id));
-        } else {
-          await db.insert(siteSettings).values({
-            branding: updatedBranding,
-          } as any);
-        }
-
-        return toolResult(
-          `Auth configured: ${methods.join(", ")}. Restart API to apply OAuth providers.`,
-          id
-        );
-      }
-
-      // ── Unified CRUD (new) ──
-      case "gremius_query_collection": {
-        const {
-          collection,
-          limit = 50,
-          offset = 0,
-          search,
-          sort,
-          where,
-          format = "json",
-        } = args || {};
-        if (!collection) return jsonRpcError(-32602, "Missing: collection", id);
-
-        // Build query params
-        const params = new URLSearchParams();
-        params.set("limit", String(Math.min(Number(limit) || 50, 1000)));
-        params.set("offset", String(Number(offset) || 0));
-        if (search) params.set("search", search);
-        if (sort) params.set("sort", sort);
-
-        // For datasets, we can also filter by where JSON
-        let results;
-        const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
-        if (ds) {
-          const conditions = [eq(dataEntries.dataSetId, ds.id)];
-          if (where) {
-            for (const [k, v] of Object.entries(where)) {
-              conditions.push(`data->>'${k}' = '${v}'` as any);
-            }
-          }
-          results = await db
-            .select()
-            .from(dataEntries)
-            .where(and(...conditions))
-            .limit(Math.min(Number(limit) || 50, 1000))
-            .offset(Number(offset) || 0);
-        } else {
-          const tableKey = Object.keys(mergedSchema).find(
-            (k) => k.toLowerCase() === collection.toLowerCase()
-          );
-          const table = tableKey ? (mergedSchema as any)[tableKey] : null;
-          if (!table) {
-            return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
-          }
-          results = await db
-            .select()
-            .from(table)
-            .limit(Math.min(Number(limit) || 50, 1000))
-            .offset(Number(offset) || 0);
-        }
-
-        const output = format === "toon" ? encodeTOON(results) : JSON.stringify(results, null, 2);
-        return toolResult(output, id);
-      }
-
-      case "gremius_create_record": {
-        const { collection, data, status = "published" } = args || {};
-        if (!collection || !data) return jsonRpcError(-32602, "Missing: collection, data", id);
-
-        const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
-        if (ds) {
-          const [record] = await db
-            .insert(dataEntries)
-            .values({
-              dataSetId: ds.id,
-              title: data?.title || data?.name || "Untitled",
-              data: { ...(data || {}), ownerId: data?.ownerId ?? null },
-              status,
-              ownerId: data?.ownerId ?? null,
-            } as any)
-            .returning();
-          return toolResult(`Created dataset record: ${record.id}`, id);
-        }
-
-        const tableKey = Object.keys(mergedSchema).find(
-          (k) => k.toLowerCase() === collection.toLowerCase()
-        );
-        const table = tableKey ? (mergedSchema as any)[tableKey] : null;
-        if (!table) return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
-
-        const result = (await db
-          .insert(table as any)
-          .values(data)
-          .returning()) as any[];
-        const record = result[0];
-        return toolResult(`Created native record: ${record.id}`, id);
-      }
-
-      case "gremius_update_record": {
-        const { collection, id: recordId, data } = args || {};
-        if (!collection || !recordId || !data)
-          return jsonRpcError(-32602, "Missing: collection, id, data", id);
-
-        const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
-        if (ds) {
-          const [existing] = await db
-            .select()
-            .from(dataEntries)
-            .where(eq(dataEntries.id, recordId))
-            .limit(1);
-          if (!existing) return jsonRpcError(-32602, `Record not found: ${recordId}`, id);
-          const mergedData = { ...(existing.data as any), ...data };
-          const [updated] = await db
-            .update(dataEntries)
-            .set({ data: mergedData, updatedAt: new Date() })
-            .where(eq(dataEntries.id, recordId))
-            .returning();
-          return toolResult(`Updated dataset record: ${updated.id}`, id);
-        }
-
-        const tableKey = Object.keys(mergedSchema).find(
-          (k) => k.toLowerCase() === collection.toLowerCase()
-        );
-        const table = tableKey ? (mergedSchema as any)[tableKey] : null;
-        if (!table) return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
-
-        const updateResult = (await db
-          .update(table as any)
-          .set(data)
-          .where(eq(table.id, recordId))
-          .returning()) as any[];
-        const updated = updateResult[0];
-        return toolResult(`Updated native record: ${updated.id}`, id);
-      }
-
-      case "gremius_delete_record": {
-        const { collection, id: recordId } = args || {};
-        if (!collection || !recordId) return jsonRpcError(-32602, "Missing: collection, id", id);
-
-        const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
-        if (ds) {
-          const [deleted] = await db
-            .delete(dataEntries)
-            .where(eq(dataEntries.id, recordId))
-            .returning({ id: dataEntries.id });
-          if (!deleted) return jsonRpcError(-32602, `Record not found: ${recordId}`, id);
-          return toolResult(`Deleted dataset record: ${deleted.id}`, id);
-        }
-
-        const tableKey = Object.keys(mergedSchema).find(
-          (k) => k.toLowerCase() === collection.toLowerCase()
-        );
-        const table = tableKey ? (mergedSchema as any)[tableKey] : null;
-        if (!table) return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
-
-        const deleteResult = (await db
-          .delete(table as any)
-          .where(eq(table.id, recordId))
-          .returning()) as any[];
-        const deleted = deleteResult[0];
-        return toolResult(`Deleted native record: ${deleted.id}`, id);
-      }
-
-      case "gremius_describe_collection": {
-        const { collection, format = "json" } = args || {};
-        if (!collection) return jsonRpcError(-32602, "Missing: collection", id);
-
-        const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
-        if (ds) {
-          const schema = ds.schema || [];
-          const fields = schema.map((f: any) => ({
-            name: f.fieldName || f.name,
-            type: f.fieldType || f.type,
-            required: !!f.required,
-          }));
-          const output =
-            format === "toon"
-              ? fields.map((f: any) => `${f.name}:${f.type}${f.required ? "*" : ""}`).join("\n")
-              : JSON.stringify({ kind: "dataset", name: ds.name, slug: ds.slug, fields }, null, 2);
-          return toolResult(output, id);
-        }
-
-        const tableKey = Object.keys(mergedSchema).find(
-          (k) => k.toLowerCase() === collection.toLowerCase()
-        );
-        const table = tableKey ? (mergedSchema as any)[tableKey] : null;
-        if (table) {
-          const tableName = table[Symbol.for("drizzle:Name")];
-          const introspected = await introspectTable(tableName);
-          const columns =
-            introspected?.columns.map((c) => ({
-              name: c.name,
-              type: c.type,
-              required: !c.nullable,
-              isPrimaryKey: c.isPrimaryKey,
-              isForeignKey: c.isForeignKey,
-            })) || [];
-          const output =
-            format === "toon"
-              ? columns
-                  .map(
-                    (c) =>
-                      `${c.name}:${c.type}${c.required ? "*" : ""}${c.isPrimaryKey ? "(PK)" : ""}`
-                  )
-                  .join("\n")
-              : JSON.stringify({ kind: "native", table: tableName, columns }, null, 2);
-          return toolResult(output, id);
-        }
-
-        return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
-      }
-
-      case "gremius_system_status": {
-        const checks: Record<string, any> = {};
-        // DB
-        try {
-          await db.execute("SELECT 1");
-          checks.database = { status: "ok" };
-        } catch (err: any) {
-          checks.database = { status: "error", error: err.message };
-        }
-        // Queue
-        try {
-          const waiting = await emailQueue.getWaitingCount();
-          checks.queue = { status: "ok", waiting };
-        } catch (err: any) {
-          checks.queue = { status: "error", error: err.message };
-        }
-        // Grimoires
-        const grimoireCount = Object.entries(mergedSchema).filter(
-          ([k, v]) =>
-            typeof v === "object" &&
-            v !== null &&
-            typeof (v as any)[Symbol.for("drizzle:Name")] === "string" &&
-            !k.endsWith("Relations") &&
-            !k.endsWith("Enum")
-        ).length;
-        checks.grimoires = { activeTables: grimoireCount };
-        checks.memory = {
-          heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
-          uptime: `${Math.floor(process.uptime() / 60)}m`,
-        };
-        return toolResult(JSON.stringify(checks, null, 2), id);
-      }
-
-      // ── Code Generation (real engine) ──
-      case "gremius_generate_frontend_hook": {
-        const { collection, framework = "react", type = "all" } = args || {};
-        if (!collection) return jsonRpcError(-32602, "Missing: collection", id);
-        if (!["react", "vue", "svelte"].includes(framework)) {
-          return jsonRpcError(-32602, "Invalid framework. Must be: react, vue, svelte", id);
-        }
-
-        // Resolve collection schema
-        const [ds] = await db.select().from(dataSets).where(eq(dataSets.slug, collection)).limit(1);
-        let columns: any[] = [];
-        let kind: "dataset" | "native" = "native";
-        let primaryKey = "id";
-
-        if (ds) {
-          kind = "dataset";
-          columns = (ds.schema || []).map((f: any) => ({
-            name: f.fieldName || f.name,
-            type: f.fieldType || f.type,
-            required: !!f.required,
-          }));
-          columns.unshift(
-            { name: "id", type: "uuid", required: true, isPrimaryKey: true },
-            { name: "title", type: "text", required: true },
-            { name: "createdAt", type: "timestamp", required: true },
-            { name: "updatedAt", type: "timestamp", required: true }
-          );
-        } else {
-          const tableKey = Object.keys(mergedSchema).find(
-            (k) => k.toLowerCase() === collection.toLowerCase()
-          );
-          const table = tableKey ? (mergedSchema as any)[tableKey] : null;
-          if (table) {
-            const tableName = table[Symbol.for("drizzle:Name")];
-            const introspected = await introspectTable(tableName);
-            columns =
-              introspected?.columns.map((c) => ({
-                name: c.name,
-                type: c.type,
-                required: !c.nullable,
-                isPrimaryKey: c.isPrimaryKey,
-                isRelation: c.isForeignKey,
-              })) || [];
-            primaryKey = introspected?.primaryKey[0] || "id";
-          } else {
-            return jsonRpcError(-32602, `Collection not found: ${collection}`, id);
-          }
-        }
-
-        const collectionInfo = {
-          slug: collection,
-          name: collection,
-          kind,
-          columns,
-          primaryKey,
-        };
-
-        const genOptions = {
-          collection: collectionInfo,
-          framework: framework as "react" | "vue" | "svelte",
-          type: type as "hook" | "component" | "form" | "types" | "all",
-          baseUrl: "",
-        };
-
-        let files;
-        switch (framework) {
-          case "react":
-            files = generateReact(genOptions);
-            break;
-          case "vue":
-            files = generateVue(genOptions);
-            break;
-          case "svelte":
-            files = generateSvelte(genOptions);
-            break;
-          default:
-            return jsonRpcError(-32602, "Unsupported framework", id);
-        }
-
-        const output = files
-          .map(
-            (f) =>
-              `// ════════════════════════════════════════\n// ${f.filename}\n// ════════════════════════════════════════\n\n${f.content}`
-          )
-          .join("\n\n");
-        return toolResult(output, id);
-      }
-
-      default:
-        return jsonRpcError(-32601, `Unknown tool: ${name}`, id);
+    // Delegate hardcoded tools to shared implementation
+    const text = await executeHardcodedTool(name, args || {}, session, {
+      onMutate: invalidateGraphQLCache,
+    });
+
+    // Propagate validation errors that return string messages as MCP errors
+    if (
+      text.startsWith("Missing:") ||
+      text.startsWith("Invalid") ||
+      text.startsWith("Collection not found") ||
+      text.startsWith("Dataset not found") ||
+      text.startsWith("Record not found") ||
+      text.startsWith("Unsupported") ||
+      text.startsWith("Unknown queue")
+    ) {
+      return jsonRpcError(-32602, text, id);
     }
-  } catch (err: any) {
+
+    return toolResult(text, id);
+  } catch (err: unknown) {
     return {
       jsonrpc: "2.0",
       result: {
-        content: [{ type: "text", text: `Error: ${err.message}` }],
+        content: [{ type: "text", text: `Error: ${messageOf(err)}` }],
         isError: true,
       },
       id,

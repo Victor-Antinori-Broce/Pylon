@@ -39,6 +39,8 @@ import type { PgTable } from "drizzle-orm/pg-core";
 
 import { db } from "../../../apps/api/src/db";
 
+import { condicionDeEscritura } from "./db-conditions";
+import { messageOf } from "./errors";
 import { validate, type ValidationSchema } from "./validator";
 // import * as schema from "../../../apps/api/src/db/schema";
 
@@ -60,7 +62,7 @@ export interface BatchApiOperation<T = any> {
   /** ID para update/delete */
   id?: string;
   /** Condición where para update/delete */
-  where?: Record<string, any>;
+  where?: Record<string, unknown>;
   /** Schema de validación específico para esta operación */
   validation?: ValidationSchema;
   /** Descripción para logs */
@@ -82,7 +84,7 @@ export interface BatchOptions {
   /** Nivel de aislamiento de la transacción */
   isolationLevel?: "read uncommitted" | "read committed" | "repeatable read" | "serializable";
   /** Contexto para validaciones y transformaciones */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 /** Resultado de una operación individual (Batch API) */
@@ -152,6 +154,17 @@ interface BatchState {
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH PROCESSOR
 // ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Antes esto llamaba a `columna.eq(valor)` — un método que las columnas de
+ * Drizzle NO tienen (se usa `eq(columna, valor)`), así que lanzaba un
+ * TypeError; el `as any` de por medio es lo que dejaba compilarlo. En el
+ * `upsert`, además, un `try/catch` se lo tragaba y hacía el insert igualmente,
+ * duplicando filas en silencio.
+ *
+ * Ahora lo construye `condicionDeEscritura`, compartido con `batch.ts`.
+ */
+const condicionDe = condicionDeEscritura;
 
 /**
  * Procesador de operaciones batch con garantías ACID.
@@ -296,7 +309,7 @@ export class BatchProcessor {
           rollback: false,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const finishedAt = new Date().toISOString();
       const durationMs = performance.now() - startTime;
 
@@ -307,8 +320,10 @@ export class BatchProcessor {
           ...this.state.errors,
           {
             operationIndex: -1,
-            message: error.message || "Transaction failed",
-            code: error.code,
+            message: messageOf(error, "Transaction failed"),
+            // El código lo pone el driver y no siempre viene: se lee con
+            // cuidado en vez de dar por hecho que el error tiene forma.
+            code: (error as { code?: string })?.code,
             details: error,
           },
         ],
@@ -386,75 +401,52 @@ export class BatchProcessor {
           resultId = result.id;
           break;
 
-        case "update":
-          if (!id && !where) {
-            throw new Error("Update requires id or where clause");
-          }
-          let updateQuery = tx.update(table).set(resolvedData);
-          if (id) {
-            updateQuery = updateQuery.where((table as any).id.eq(id));
-          }
-          if (where) {
-            // Construir where dinámico
-            for (const [field, value] of Object.entries(where)) {
-              updateQuery = updateQuery.where((table as any)[field].eq(value));
-            }
-          }
-          const updateResult = await updateQuery.returning();
+        case "update": {
+          const updateResult = await tx
+            .update(table)
+            .set(resolvedData)
+            .where(condicionDe(table, id, where, "Update"))
+            .returning();
           result = updateResult[0];
           resultId = result?.id || id;
           break;
+        }
 
-        case "delete":
-          if (!id && !where) {
-            throw new Error("Delete requires id or where clause");
-          }
-          let deleteQuery = tx.delete(table);
-          if (id) {
-            deleteQuery = deleteQuery.where((table as any).id.eq(id));
-          }
-          if (where) {
-            for (const [field, value] of Object.entries(where)) {
-              deleteQuery = deleteQuery.where((table as any)[field].eq(value));
-            }
-          }
-          const deleteResult = await deleteQuery.returning();
+        case "delete": {
+          const deleteResult = await tx
+            .delete(table)
+            .where(condicionDe(table, id, where, "Delete"))
+            .returning();
           result = deleteResult[0];
           resultId = id;
           break;
+        }
 
-        case "upsert":
-          // Intentar update, si no existe insert
-          if (!id && !where) {
-            throw new Error("Upsert requires id or where clause");
-          }
-          try {
-            let upsertQuery = tx.update(table).set(resolvedData);
-            if (id) {
-              upsertQuery = upsertQuery.where((table as any).id.eq(id));
-            }
-            if (where) {
-              for (const [field, value] of Object.entries(where)) {
-                upsertQuery = upsertQuery.where((table as any)[field].eq(value));
-              }
-            }
-            const upsertResult = await upsertQuery.returning();
-            if (upsertResult.length > 0) {
-              result = upsertResult[0];
-              resultId = result.id;
-            } else {
-              // No existe, hacer insert
-              const insertResult = await tx.insert(table).values(resolvedData).returning();
-              result = insertResult[0];
-              resultId = result.id;
-            }
-          } catch (e) {
-            // Error en update, intentar insert
+        case "upsert": {
+          // "No existía" se decide por `length === 0`, no por que algo lance.
+          //
+          // Esto estaba envuelto en un `try/catch` que ante CUALQUIER error
+          // hacía el insert igualmente. Con la llamada rota de antes
+          // (`columna.eq(...)`, que no existe en Drizzle) el TypeError caía
+          // ahí: todos los upserts se convertían en altas, duplicando filas en
+          // silencio. Y con la llamada arreglada seguiría siendo trampa —una
+          // violación de unicidad o un campo inexistente en `where` acabarían
+          // insertando en vez de avisar.
+          const upsertResult = await tx
+            .update(table)
+            .set(resolvedData)
+            .where(condicionDe(table, id, where, "Upsert"))
+            .returning();
+
+          if (upsertResult.length > 0) {
+            result = upsertResult[0];
+          } else {
             const insertResult = await tx.insert(table).values(resolvedData).returning();
             result = insertResult[0];
-            resultId = result.id;
           }
+          resultId = result.id;
           break;
+        }
 
         default:
           throw new Error(`Unknown action: ${action}`);
@@ -467,12 +459,12 @@ export class BatchProcessor {
         index,
         description,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         index,
         description,
-        errors: [error.message || "Unknown error"],
+        errors: [messageOf(error) || "Unknown error"],
       };
     }
   }

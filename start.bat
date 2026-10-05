@@ -1,21 +1,24 @@
 @echo off
-:: GremiusCMS - Inicio RÁPIDO para PRODUCCIÓN
+:: Kitsuden - Inicio RÁPIDO para PRODUCCIÓN
 :: Este archivo inicia TODO el sistema con un solo comando
 ::
 :: USO: Simplemente haz doble clic en este archivo
 ::
 :: Accesos:
-::   • Admin Panel: http://localhost:3001/admin
+::   • Admin Panel: http://localhost:3001
 ::   • API:         http://localhost:3000
-::   • Web:         http://localhost:3002
-::   • MinIO:       http://localhost:9001
+::   • S3 (medios): http://localhost:9000  (SeaweedFS; crea su bucket solo)
+::
+:: Las cuatro webs NO van en Docker: se compilan y se sirven aparte
+::   cd packages\starters\kitsuden-blog-template && node build-all.mjs
+::   node start-all-webs.mjs        (todas en http://localhost:4321)
 
 chcp 65001 >nul
 cd /d "%~dp0"
 
 echo.
 echo ╔════════════════════════════════════════════════════════════════╗
-echo ║                🚀 GremiusCMS - PRODUCCIÓN                      ║
+echo ║                🚀 Kitsuden - PRODUCCIÓN                      ║
 echo ║                   docker compose up -d                         ║
 echo ╚════════════════════════════════════════════════════════════════╝
 echo.
@@ -56,20 +59,19 @@ echo.
 echo ╔════════════════════════════════════════════════════════════════╗
 echo ║                    ✅ SERVICIOS INICIADOS                      ║
 echo ╠════════════════════════════════════════════════════════════════╣
-echo ║  📊 Panel Admin:  http://localhost:3001/admin                  ║
+echo ║  📊 Panel Admin:  http://localhost:3001                        ║
 echo ║  🔌 API:          http://localhost:3000                        ║
-echo ║  🌐 Web:          http://localhost:3002                        ║
-echo ║  💾 MinIO:        http://localhost:9001                        ║
+echo ║  💾 S3 (medios):  http://localhost:9000                        ║
+echo ║  🌐 Webs:         node start-all-webs.mjs  (:4321)             ║
 echo ╠════════════════════════════════════════════════════════════════╣
 echo ║  Comandos útiles:                                              ║
 echo ║    docker compose logs -f     (Ver logs en tiempo real)        ║
 echo ║    docker compose down        (Detener todo)                   ║
 echo ╚════════════════════════════════════════════════════════════════╝
 echo.
-echo 💡 Primera vez? Crea el bucket en MinIO:
-echo    1. Ve a http://localhost:9001
-echo    2. Login con las credenciales de tu archivo .env
-echo    3. Crea el bucket "gremius-uploads"
+echo 💡 Las webs se compilan y sirven aparte:
+echo    cd packages\starters\kitsuden-blog-template ^&^& node build-all.mjs
+echo    node start-all-webs.mjs
 echo.
 
 pause

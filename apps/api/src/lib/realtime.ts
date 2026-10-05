@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Real-time WebSocket Server
+ * Kitsuden — Real-time WebSocket Server
  *
  * Provides WebSocket connections for Live Queries and Presence.
  * Uses Valkey Pub/Sub as the message broker for horizontal scaling.
@@ -37,6 +37,8 @@ import { subscribe, publish, getValkeyClient } from "./valkey";
 export interface WSClient {
   id: string;
   userId: string | null;
+  /** Rol del usuario — lo necesita la autorización de canales. */
+  userRole: string | null;
   socket: ServerWebSocket<WSClientData>;
   channels: Set<string>;
   rooms: Set<string>; // Presence rooms
@@ -45,6 +47,7 @@ export interface WSClient {
 export interface WSClientData {
   clientId: string;
   userId: string | null;
+  userRole?: string | null;
 }
 
 interface IncomingMessage {
@@ -100,11 +103,13 @@ class RealtimeManager {
   addClient(
     clientId: string,
     socket: ServerWebSocket<WSClientData>,
-    userId: string | null
+    userId: string | null,
+    userRole: string | null = null
   ): WSClient {
     const client: WSClient = {
       id: clientId,
       userId,
+      userRole,
       socket,
       channels: new Set(),
       rooms: new Set(),
@@ -138,13 +143,27 @@ class RealtimeManager {
   /**
    * Subscribe a client to a channel.
    */
-  subscribeToChannel(clientId: string, channel: string): void {
+  async subscribeToChannel(clientId: string, channel: string): Promise<void> {
     const client = this.clients.get(clientId);
     if (!client) return;
 
     // Validate channel format (table, entry, content channels)
     if (!channel.match(/^(table|entry|content):[a-zA-Z0-9_-]+$/)) {
       this.sendError(client.socket, `Invalid channel format: ${channel}`);
+      return;
+    }
+
+    // AUTORIZACIÓN — antes solo se validaba el FORMATO del canal, así que
+    // cualquier cliente conectado podía escuchar cualquier tabla. El
+    // autorizador lo inyecta el host (ver setSubscriptionAuthorizer) para no
+    // acoplar el transporte a las políticas ni crear un ciclo de imports.
+    // Sin autorizador registrado: deny-by-default salvo admin.
+    const user = { id: client.userId, role: client.userRole ?? null };
+    const allowed = _authorizer ? await _authorizer(channel, user) : client.userRole === "admin";
+
+    if (!allowed) {
+      this.sendError(client.socket, `Not authorized for channel: ${channel}`);
+      console.warn(`  🔒 [WS] ${clientId} DENIED on ${channel} (user: ${client.userId ?? "anon"})`);
       return;
     }
 
@@ -193,13 +212,24 @@ class RealtimeManager {
       data = message;
     }
 
-    const payload = { type: "message", channel, data };
-
     for (const clientId of subscribers) {
       const client = this.clients.get(clientId);
-      if (client) {
-        this.send(client.socket, payload);
-      }
+      if (!client) continue;
+
+      // FILTRADO POR SUSCRIPTOR — no un fan-out ciego.
+      // Entregar la misma fila a todos los suscritos al canal filtraría datos
+      // entre usuarios (el mismo bug que tuvimos en GraphQL y en las entries
+      // de datasets, pero en streaming). El filtro decide POR CLIENTE si esa
+      // fila concreta le corresponde; sin filtro registrado, solo se entrega
+      // a admins (deny-by-default).
+      const visible = _rowFilter
+        ? _rowFilter(channel, data, { id: client.userId, role: client.userRole ?? null })
+        : client.userRole === "admin"
+          ? data
+          : null;
+
+      if (visible === null || visible === undefined) continue;
+      this.send(client.socket, { type: "message", channel, data: visible });
     }
   }
 
@@ -276,12 +306,12 @@ class RealtimeManager {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // Public API for GrimoireContext
+  // Public API for KonContext
   // ═══════════════════════════════════════════════════════════
 
   /**
    * Broadcast a message to a channel.
-   * Used by GrimoireContext.realtime.broadcast()
+   * Used by KonContext.realtime.broadcast()
    */
   broadcast(channel: string, message: unknown): void {
     // Publish to Valkey for horizontal scaling (async, fire-and-forget)
@@ -303,7 +333,7 @@ class RealtimeManager {
 
   /**
    * Send a message to a specific user.
-   * Used by GrimoireContext.realtime.sendToUser()
+   * Used by KonContext.realtime.sendToUser()
    */
   sendToUser(userId: string, message: unknown): void {
     // Find all clients for this user
@@ -451,4 +481,47 @@ export async function broadcastMutation(
   if (entry.id) {
     await publish(`entry:${entry.id}`, payload);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTORIZACIÓN INYECTABLE (patrón de setTelemetryProvider)
+//
+// El transporte no debe conocer las políticas de datos: el host las cablea al
+// arrancar. Así realtime.ts no importa rls-builder ni la DB — evita el ciclo y
+// deja el módulo testeable en aislamiento.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Usuario mínimo que ve la capa de autorización del realtime. */
+export interface RealtimeUser {
+  id: string | null;
+  role: string | null;
+}
+
+/** ¿Puede este usuario suscribirse a este canal? */
+export type SubscriptionAuthorizer = (
+  channel: string,
+  user: RealtimeUser
+) => boolean | Promise<boolean>;
+
+/**
+ * Recorta un evento para un suscriptor concreto. Devuelve `null` para NO
+ * entregarlo (p.ej. la fila pertenece a otro usuario).
+ */
+export type RowFilter = (channel: string, data: unknown, user: RealtimeUser) => unknown | null;
+
+let _authorizer: SubscriptionAuthorizer | null = null;
+let _rowFilter: RowFilter | null = null;
+
+/**
+ * Registra quién puede suscribirse a qué. SIN esto, solo los admins pueden
+ * suscribirse (deny-by-default): preferimos un realtime que no funcione a uno
+ * que filtre datos entre usuarios.
+ */
+export function setSubscriptionAuthorizer(fn: SubscriptionAuthorizer | null): void {
+  _authorizer = fn;
+}
+
+/** Registra el filtro por fila que se aplica a cada suscriptor en el broadcast. */
+export function setRowFilter(fn: RowFilter | null): void {
+  _rowFilter = fn;
 }

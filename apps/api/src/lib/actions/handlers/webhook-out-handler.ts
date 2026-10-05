@@ -51,17 +51,17 @@ export async function executeWebhookOutAction(
   // Build headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "User-Agent": "Gremius-Actions/1.0",
-    "X-Gremius-Action-ID": context.actionId,
-    "X-Gremius-Execution-ID": context.executionId,
-    "X-Gremius-Timestamp": payload.timestamp,
+    "User-Agent": "Kitsuden-Actions/1.0",
+    "X-Kitsuden-Action-ID": context.actionId,
+    "X-Kitsuden-Execution-ID": context.executionId,
+    "X-Kitsuden-Timestamp": payload.timestamp,
     ...config.headers,
   };
 
   // Add signature if secret is configured
   if (config.secret) {
     const signature = createHmac("sha256", config.secret).update(body).digest("hex");
-    headers["X-Gremius-Signature"] = `sha256=${signature}`;
+    headers["X-Kitsuden-Signature"] = `sha256=${signature}`;
   }
 
   // Execute request with retry logic

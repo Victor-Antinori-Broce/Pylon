@@ -17,7 +17,7 @@ const allNavItems: NavItem[] = [
   // Dashboard: Sin order (siempre primero)
   { path: "/", label: "Dashboard", icon: BookOpen },
 
-  // ═══ CORE GRIMOIRES ═══
+  // ═══ CORE KONS ═══
   // DataSets: order: 0 (SIEMPRE segundo cuando está habilitado)
   { path: "/datasets", label: "DataSets", ..., order: 0, category: "core" },
 
@@ -28,8 +28,8 @@ const allNavItems: NavItem[] = [
   // ═══ OPTIONAL ═══
   { path: "/posts", label: "Blog Posts", ..., order: 10, category: "optional" },
 
-  // ═══ REALM ═══
-  { path: "/games", label: "Games", ..., order: 20, category: "realm" },
+  // ═══ GRIMOIRE ═══
+  { path: "/games", label: "Games", ..., order: 20, category: "grimoire" },
 ];
 ```
 
@@ -62,7 +62,7 @@ let visibleNavItems = $derived(
 ```
 Sidebar:
 1. Dashboard                    ← Siempre primero
-2. DataSets (order: 0)          ← PRIMER grimoire (después de Dashboard)
+2. DataSets (order: 0)          ← PRIMER kon (después de Dashboard)
 3. Media Library (order: 1)
 4. Page Builder (order: 2)
 5. ...
@@ -71,7 +71,7 @@ Sidebar:
 ### Escenario 2: Apagar DataSets
 
 ```bash
-PATCH /api/modules/grimoire-datasets
+PATCH /api/modules/kon-datasets
 { "enabled": false }
 ```
 
@@ -86,7 +86,7 @@ Sidebar:
 ### Escenario 3: Volver a Encender DataSets
 
 ```bash
-PATCH /api/modules/grimoire-datasets
+PATCH /api/modules/kon-datasets
 { "enabled": true }
 ```
 
@@ -105,14 +105,14 @@ Sidebar:
 
 ## 🛡️ Protecciones Implementadas
 
-### 1. Ningún Grimoire Puede Ir Arriba de DataSets
+### 1. Ningún Kon Puede Ir Arriba de DataSets
 
-Si DataSets está habilitado (`order: 0`), **ningún** otro grimoire puede ir arriba de él excepto Dashboard:
+Si DataSets está habilitado (`order: 0`), **ningún** otro kon puede ir arriba de él excepto Dashboard:
 
-- Core grimoires: `order: 1, 2, 3...` (mayor que 0)
-- Optional grimoires: `order: 10, 11, 12...` (mucho mayor)
-- Realm grimoires: `order: 20, 21, 22...` (mucho mayor)
-- Filesystem grimoires: `order: undefined` → se convierte a `999` (últimos)
+- Core kons: `order: 1, 2, 3...` (mayor que 0)
+- Optional kons: `order: 10, 11, 12...` (mucho mayor)
+- Grimoire kons: `order: 20, 21, 22...` (mucho mayor)
+- Filesystem kons: `order: undefined` → se convierte a `999` (últimos)
 
 ### 2. Persistencia del Orden
 
@@ -123,7 +123,7 @@ El orden no se almacena en la base de datos, se define en el código:
 // Este archivo es la fuente única de verdad para el orden del sidebar
 ```
 
-Cuando un grimoire se apaga:
+Cuando un kon se apaga:
 
 1. Se filtra del array (`filter`)
 2. El orden de los items restantes se mantiene
@@ -137,7 +137,7 @@ let visibleNavItems = $derived();
 ```
 
 - `$derived` recalcula automáticamente cuando `moduleStore.enabledKeys` cambia
-- El sidebar se actualiza instantáneamente al togglear un grimoire
+- El sidebar se actualiza instantáneamente al togglear un kon
 - No requiere refresh de página
 
 ---
@@ -162,12 +162,12 @@ Garantía: DataSets siempre tiene order: 0, por lo que siempre está después de
 
 ## 🎯 Reglas de Negocio Cumplidas
 
-| Requisito                                        | Implementación                                         | Estado |
-| ------------------------------------------------ | ------------------------------------------------------ | ------ |
-| DataSets debe estar abajo del Dashboard          | `order: 0` (Dashboard no tiene order, siempre primero) | ✅     |
-| Ningún otro grimoire puede ir arriba de DataSets | Todos los demás tienen `order >= 1`                    | ✅     |
-| Orden se mantiene al aprender/encender           | Lógica `$derived` con `sort()`                         | ✅     |
-| Orden persiste después de reinicio               | Hardcodeado en el código fuente                        | ✅     |
+| Requisito                                   | Implementación                                         | Estado |
+| ------------------------------------------- | ------------------------------------------------------ | ------ |
+| DataSets debe estar abajo del Dashboard     | `order: 0` (Dashboard no tiene order, siempre primero) | ✅     |
+| Ningún otro kon puede ir arriba de DataSets | Todos los demás tienen `order >= 1`                    | ✅     |
+| Orden se mantiene al aprender/encender      | Lógica `$derived` con `sort()`                         | ✅     |
+| Orden persiste después de reinicio          | Hardcodeado en el código fuente                        | ✅     |
 
 ---
 
@@ -180,8 +180,8 @@ Para verificar que el orden funciona correctamente, abrir DevTools en el navegad
 
 // Verificar que DataSets tiene order: 0
 const navItems = await (await fetch("/api/modules")).json();
-const dataSets = navItems.docs.find((m) => m.key === "grimoire-datasets");
-console.log(dataSets); // Debería mostrar el grimoire con su configuración
+const dataSets = navItems.docs.find((m) => m.key === "kon-datasets");
+console.log(dataSets); // Debería mostrar el kon con su configuración
 
 // El orden real se ve en el DOM
 const sidebarItems = document.querySelectorAll("aside nav a");
@@ -201,7 +201,7 @@ sidebarItems.forEach((item, index) => {
 
 - [x] DataSets tiene `order: 0` explícito
 - [x] Dashboard siempre aparece primero (sin order, lógica especial)
-- [x] Todos los demás grimoires tienen `order >= 1`
+- [x] Todos los demás kons tienen `order >= 1`
 - [x] Lógica de `sort()` por order implementada
 - [x] Reactividad con `$derived` garantizada
 - [x] Función de ordenamiento pura (mismo input = mismo output)
@@ -213,8 +213,8 @@ sidebarItems.forEach((item, index) => {
 **Sin importar cuántas veces se apague y encienda DataSets:**
 
 1. ✅ Siempre aparecerá después de Dashboard
-2. ✅ Siempre aparecerá antes que cualquier otro grimoire
+2. ✅ Siempre aparecerá antes que cualquier otro kon
 3. ✅ Siempre estará en la posición #2 del sidebar (índice 1)
 4. ✅ El orden nunca se "desordina" o mezcla
 
-**DataSets es y siempre será el primer grimoire del sidebar (después de Dashboard).**
+**DataSets es y siempre será el primer kon del sidebar (después de Dashboard).**

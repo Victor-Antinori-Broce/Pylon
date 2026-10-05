@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-Complete test suite for MCP (Model Context Protocol) and Vector Search integration in Gremius CMS.
+Complete test suite for MCP (Model Context Protocol) and Vector Search integration in Kitsuden CMS.
 
 ## 📁 Test Structure
 
@@ -51,7 +51,7 @@ tests/
 # Environment variables
 export DATABASE_URL="postgresql://..."
 export API_URL="http://localhost:3001"
-export TEST_MCP_TOKEN="grm_agent_..."  # From seed script
+export TEST_MCP_TOKEN="kitsuden_agent_..."  # From seed script
 ```
 
 ### Run All Tests
@@ -90,7 +90,7 @@ The seed script (`apps/api/scripts/seed-mcp-test.ts`) creates:
 
 - **Agent Identity**: `DevBot` (type: `claude-desktop`)
 - **Scopes**: `["read:issues", "write:intake"]`
-- **Token**: `grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g`
+- **Token**: `kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g`
 
 ## 📊 Test Scenarios Details
 
@@ -99,7 +99,7 @@ The seed script (`apps/api/scripts/seed-mcp-test.ts`) creates:
 ```
 Claude: "How do I change my password?"
    ↓
-MCP: tools/call gremius_search_entries
+MCP: tools/call kitsuden_search_entries
    ↓
 Vector Search: semantic query → returns password FAQ
    ↓
@@ -111,7 +111,7 @@ Claude receives relevant answer
 ```
 Claude: "What fields are indexed?"
    ↓
-MCP: tools/call gremius_get_dataset_schema
+MCP: tools/call kitsuden_get_dataset_schema
    ↓
 Returns: { vectorSearch: { enabled: true, fields: [...] } }
 ```
@@ -121,7 +121,7 @@ Returns: { vectorSearch: { enabled: true, fields: [...] } }
 ```
 Claude: Create new FAQ entry
    ↓
-MCP: tools/call gremius_create_entry
+MCP: tools/call kitsuden_create_entry
    ↓
 Auto-indexed (autoIndex: true)
    ↓

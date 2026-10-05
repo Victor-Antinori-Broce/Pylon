@@ -6,6 +6,7 @@
 
 import { randomBytes } from "crypto";
 
+import { messageOf } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 
 import { auth } from "../lib/auth";
@@ -14,9 +15,9 @@ import { authUsers as user } from "./schema";
 
 import { db } from "./index";
 
-const ADMIN_EMAIL = "admin@gremius.gg";
+const ADMIN_EMAIL = "admin@kitsuden.gg";
 const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD || randomBytes(16).toString("hex");
-const ADMIN_NAME = "Gremius Admin";
+const ADMIN_NAME = "Kitsuden Admin";
 
 async function seed() {
   console.log("🌱 Seeding superadmin user...");
@@ -55,7 +56,7 @@ async function seed() {
     console.log(`    Password: ${ADMIN_PASSWORD}`);
     console.log(`    ⚠ IMPORTANT: Save this password or set ADMIN_SEED_PASSWORD env var.`);
     console.log(`    Role: admin`);
-  } catch (err: any) {
+  } catch (err: unknown) {
     // If it failed but user might exist in auth tables but not checked above?
     // Retry finding user
     const [u] = await db.select().from(user).where(eq(user.email, ADMIN_EMAIL));
@@ -63,7 +64,7 @@ async function seed() {
       userId = u.id;
       console.log(`  ✓ Admin recovered: ${u.email}`);
     } else {
-      console.error("  ✗ Error creating admin:", err.message || err);
+      console.error("  ✗ Error creating admin:", messageOf(err) || err);
       process.exit(1);
     }
   }
@@ -130,7 +131,7 @@ async function seed() {
       metacriticScore: 96,
       developer: "Larian Studios",
       excerpt:
-        "Gather your party and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power.",
+        "Gather your party and return to the Forgotten Grimoires in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power.",
     },
     {
       title: "Cyberpunk 2077",
@@ -154,10 +155,10 @@ async function seed() {
   // 4. Blog Posts
   const postData = [
     {
-      title: "Welcome to GremiusCMS",
-      slug: "welcome-to-gremiuscms",
+      title: "Welcome to Kitsuden",
+      slug: "welcome-to-kitsuden",
       status: "published",
-      excerpt: "Introducing GremiusCMS — the high-performance gaming CMS.",
+      excerpt: "Introducing Kitsuden — the high-performance gaming CMS.",
       publishedAt: new Date(),
       authorId: userId,
     },
@@ -175,8 +176,8 @@ async function seed() {
   await db
     .insert(siteSettings)
     .values({
-      siteName: "GremiusCMS",
-      activeTheme: "gremio-cms",
+      siteName: "Kitsuden",
+      activeTheme: "kitsuden-cms",
       mainNav: [
         { label: "Home", url: "/" },
         { label: "Games", url: "/games" },

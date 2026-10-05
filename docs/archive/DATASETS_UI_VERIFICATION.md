@@ -1,23 +1,23 @@
-# ✅ Verificación: DataSets UI como Custom Grimoire View
+# ✅ Verificación: DataSets UI como Custom Kon View
 
 ## Estado: COMPLETO ✅
 
-El UI de DataSets está ahora correctamente reconocido como el **Custom UI de un Grimoire**.
+El UI de DataSets está ahora correctamente reconocido como el **Custom UI de un Kon**.
 
 ---
 
 ## 🔧 Cambios Realizados
 
-### 1. Frontend - Grimoire Loader (`packages/admin/src/lib/grimoire-loader.ts`)
+### 1. Frontend - Kon Loader (`packages/admin/src/lib/kon-loader.ts`)
 
 **Agregado al registro de vistas:**
 
 ```typescript
-export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Component }>> = {
-  // ═══ CORE GRIMOIRES ═══
-  // DataSets - Core grimoire for dynamic data collections
+export const KON_VIEW_REGISTRY: Record<string, () => Promise<{ default: Component }>> = {
+  // ═══ CORE KONS ═══
+  // DataSets - Core kon for dynamic data collections
   datasets: () => import("$views/DataSets.svelte"),
-  "grimoire-datasets": () => import("$views/DataSets.svelte"),
+  "kon-datasets": () => import("$views/DataSets.svelte"),
 
   // ... resto del registro
 };
@@ -25,9 +25,9 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
 
 **Esto permite que:**
 
-- El loader encuentre la vista custom para `grimoire-datasets`
-- Se cargue `DataSets.svelte` cuando se navegue al grimoire
-- El sistema reconozca que este grimoire tiene vista custom (no usa DataExplorer genérico)
+- El loader encuentre la vista custom para `kon-datasets`
+- Se cargue `DataSets.svelte` cuando se navegue al kon
+- El sistema reconozca que este kon tiene vista custom (no usa DataExplorer genérico)
 
 ---
 
@@ -41,7 +41,7 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
 const viewPaths = [
   // ... rutas existentes ...
 
-  // DataSets: maps to DataSets.svelte (Core grimoire)
+  // DataSets: maps to DataSets.svelte (Core kon)
   join(process.cwd(), "../admin/src/views/DataSets.svelte"),
   join(process.cwd(), "../admin/src/views/datasets/DataSetsView.svelte"),
   join(process.cwd(), "../admin/src/views/datasets/index.svelte"),
@@ -53,8 +53,8 @@ const viewPaths = [
 **Agregado a `getViewPath()`:**
 
 ```typescript
-// DataSets: Core grimoire - maps to DataSets.svelte
-if (grimoireId === "grimoire-datasets" || grimoireId === "datasets") {
+// DataSets: Core kon - maps to DataSets.svelte
+if (konId === "kon-datasets" || konId === "datasets") {
   return "DataSets.svelte";
 }
 ```
@@ -77,11 +77,11 @@ const icons: Record<string, string> = {
 ```
 Usuario navega a /datasets
     ↓
-SidebarLayout carga (usa GRIMOIRE_VIEW_REGISTRY)
+SidebarLayout carga (usa KON_VIEW_REGISTRY)
     ↓
-Detecta que "grimoire-datasets" tiene vista custom
+Detecta que "kon-datasets" tiene vista custom
     ↓
-GrimoirePage renderiza la vista
+KonPage renderiza la vista
     ↓
 Carga DataSets.svelte (no DataExplorer genérico)
     ↓
@@ -103,9 +103,9 @@ Cuando se llama `GET /api/admin/registry`:
 ```json
 {
   "success": true,
-  "grimoires": [
+  "kons": [
     {
-      "id": "grimoire-datasets",
+      "id": "kon-datasets",
       "name": "DataSets",
       "category": "core",
       "hasCustomView": true, // ← DETECTADO
@@ -130,16 +130,16 @@ Cuando se llama `GET /api/admin/registry`:
 }
 ```
 
-### En el Grimoire Loader (Frontend)
+### En el Kon Loader (Frontend)
 
 ```typescript
 // hasCustomView() detecta:
-if (grimoireId in GRIMOIRE_VIEW_REGISTRY) {
-  return true; // ← true para "grimoire-datasets"
+if (konId in KON_VIEW_REGISTRY) {
+  return true; // ← true para "kon-datasets"
 }
 
 // loadCustomView() carga:
-const legacyLoader = GRIMOIRE_VIEW_REGISTRY["grimoire-datasets"];
+const legacyLoader = KON_VIEW_REGISTRY["kon-datasets"];
 const mod = await legacyLoader(); // ← Carga DataSets.svelte
 return mod.default;
 ```
@@ -148,15 +148,15 @@ return mod.default;
 
 ## ✅ Verificación Checklist
 
-| Aspecto                 | Estado | Detalle                                       |
-| ----------------------- | ------ | --------------------------------------------- |
-| **Grimoire Registry**   | ✅     | `grimoire-datasets` en GRIMOIRE_REGISTRY      |
-| **Admin Config Export** | ✅     | `adminConfig` exportado desde `index.ts`      |
-| **Vista Custom**        | ✅     | `DataSets.svelte` detectada y cargable        |
-| **Icono**               | ✅     | `Database` icon mapeado                       |
-| **Ruta API**            | ✅     | `/api/datasets` montada por el grimoire       |
-| **Sidebar**             | ✅     | Aparece primero en categoría "Core"           |
-| **Toggleable**          | ✅     | Puede activarse/desactivarse desde /grimoires |
+| Aspecto                 | Estado | Detalle                                  |
+| ----------------------- | ------ | ---------------------------------------- |
+| **Kon Registry**        | ✅     | `kon-datasets` en KON_REGISTRY           |
+| **Admin Config Export** | ✅     | `adminConfig` exportado desde `index.ts` |
+| **Vista Custom**        | ✅     | `DataSets.svelte` detectada y cargable   |
+| **Icono**               | ✅     | `Database` icon mapeado                  |
+| **Ruta API**            | ✅     | `/api/datasets` montada por el kon       |
+| **Sidebar**             | ✅     | Aparece primero en categoría "Core"      |
+| **Toggleable**          | ✅     | Puede activarse/desactivarse desde /kons |
 
 ---
 
@@ -177,29 +177,29 @@ Para verificar que todo funciona:
    ```
 
 3. **Verificar sidebar:**
-   - DataSets debe aparecer primero en "Core Grimoires"
+   - DataSets debe aparecer primero en "Core Kons"
    - Icono: Database 🗃️
 
 4. **Clic en DataSets:**
    - Debe cargar `DataSets.svelte` (vista custom)
    - No debe usar DataExplorer genérico
 
-5. **Verificar en /grimoires:**
-   - DataSets debe aparecer como "Core" grimoire
+5. **Verificar en /kons:**
+   - DataSets debe aparecer como "Core" kon
    - Debe poder toggle on/off
 
 ---
 
 ## 📁 Archivos Involucrados
 
-### Grimoire Package
+### Kon Package
 
 ```
-packages/grimoires/grimoire-datasets/
-├── index.ts              # Exporta grimoire + adminConfig
+packages/kons/kon-datasets/
+├── index.ts              # Exporta kon + adminConfig
 ├── datasets.admin.ts     # AdminConfig con views y forms
 ├── datasets.routes.ts    # API REST
-└── grimoire.json         # Manifest con category: "core"
+└── kon.json         # Manifest con category: "core"
 ```
 
 ### Admin (Frontend)
@@ -207,7 +207,7 @@ packages/grimoires/grimoire-datasets/
 ```
 packages/admin/src/
 ├── views/DataSets.svelte            # Vista custom
-├── lib/grimoire-loader.ts           # Registra datasets
+├── lib/kon-loader.ts           # Registra datasets
 └── lib/components/layout/SidebarLayout.svelte  # Sidebar config
 ```
 
@@ -216,15 +216,15 @@ packages/admin/src/
 ```
 apps/api/src/
 ├── services/admin-registry.ts       # Detecta custom view
-├── services/module-registry.ts      # Grimoire metadata
-└── gremius.config.ts                # Config con grimoire-datasets
+├── services/module-registry.ts      # Kon metadata
+└── kitsuden.config.ts                # Config con kon-datasets
 ```
 
 ---
 
 ## 🎉 Resultado Final
 
-**DataSets es ahora un Grimoire Core con Custom UI:**
+**DataSets es ahora un Kon Core con Custom UI:**
 
 ✅ Viene encendido por defecto  
 ✅ Puede apagarse (toggleable)  
@@ -233,4 +233,4 @@ apps/api/src/
 ✅ Tiene su propia vista custom (DataSets.svelte)  
 ✅ Expone AdminConfig para el sistema
 
-**El sistema reconoce DataSets como un grimoire de primera clase, igual que Blog, Games, o cualquier otro.**
+**El sistema reconoce DataSets como un kon de primera clase, igual que Blog, Games, o cualquier otro.**

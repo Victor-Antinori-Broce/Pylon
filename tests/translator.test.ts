@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Tests para Gremius QL Engine (translator.ts)
+ * Tests para Kitsuden QL Engine (translator.ts)
  *
  * Verifica:
  * - Mapeo de operadores Prisma a Drizzle
@@ -14,13 +14,13 @@ import { describe, it, expect } from "vitest";
 
 import { agentIdentities, agentTraces, dataSets } from "../apps/api/src/db/schema";
 import {
-  validateGremiusQuery,
+  validateKitsudenQuery,
   getAvailableRelations,
   debugQuery,
-  GremiusQLError,
+  KitsudenQLError,
 } from "../packages/engine/src/translator";
 
-describe("Gremius QL Engine - translator.ts", () => {
+describe("Kitsuden QL Engine - translator.ts", () => {
   describe("Operadores de Comparación", () => {
     it("debe traducir eq (igualdad)", () => {
       const debug = debugQuery(agentIdentities, {
@@ -134,7 +134,7 @@ describe("Gremius QL Engine - translator.ts", () => {
         debugQuery(agentIdentities, {
           where: { nonExistentField: { eq: "value" } },
         });
-      }).toThrow(GremiusQLError);
+      }).toThrow(KitsudenQLError);
     });
 
     it("debe lanzar error por operador no soportado", () => {
@@ -142,7 +142,7 @@ describe("Gremius QL Engine - translator.ts", () => {
         debugQuery(agentIdentities, {
           where: { name: { invalidOp: "value" } as any },
         });
-      }).toThrow(GremiusQLError);
+      }).toThrow(KitsudenQLError);
     });
 
     it("debe lanzar error por valor inválido para 'in'", () => {
@@ -150,7 +150,7 @@ describe("Gremius QL Engine - translator.ts", () => {
         debugQuery(agentIdentities, {
           where: { type: { in: "not-an-array" } as any },
         });
-      }).toThrow(GremiusQLError);
+      }).toThrow(KitsudenQLError);
     });
 
     it("debe lanzar error por relación inexistente en expand", () => {
@@ -159,13 +159,13 @@ describe("Gremius QL Engine - translator.ts", () => {
           where: {},
           expand: ["nonExistentRelation"],
         });
-      }).toThrow(GremiusQLError);
+      }).toThrow(KitsudenQLError);
     });
   });
 
   describe("Validación sin Ejecución", () => {
     it("debe validar consulta correcta", () => {
-      const { valid, errors } = validateGremiusQuery(agentIdentities, {
+      const { valid, errors } = validateKitsudenQuery(agentIdentities, {
         where: { isActive: true },
         expand: ["traces"],
       });
@@ -174,7 +174,7 @@ describe("Gremius QL Engine - translator.ts", () => {
     });
 
     it("debe detectar columnas inválidas", () => {
-      const { valid, errors } = validateGremiusQuery(agentIdentities, {
+      const { valid, errors } = validateKitsudenQuery(agentIdentities, {
         where: { invalidField: { eq: "value" } },
       });
       expect(valid).toBe(false);
@@ -182,7 +182,7 @@ describe("Gremius QL Engine - translator.ts", () => {
     });
 
     it("debe detectar relaciones inválidas", () => {
-      const { valid, errors } = validateGremiusQuery(agentIdentities, {
+      const { valid, errors } = validateKitsudenQuery(agentIdentities, {
         expand: ["invalidRelation"],
       });
       expect(valid).toBe(false);
@@ -190,7 +190,7 @@ describe("Gremius QL Engine - translator.ts", () => {
     });
 
     it("debe detectar límites inválidos", () => {
-      const { valid, errors } = validateGremiusQuery(agentIdentities, {
+      const { valid, errors } = validateKitsudenQuery(agentIdentities, {
         limit: 5000,
       });
       expect(valid).toBe(false);

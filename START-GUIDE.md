@@ -1,6 +1,6 @@
-# 🚀 Guía de Inicio - Gremius
+# 🚀 Guía de Inicio - Kitsuden
 
-> **Elige tu camino.** Gremius puede usarse de dos formas: como backend instantáneo que tu IA configura, o como framework que modificas a tu gusto.
+> **Elige tu camino.** Kitsuden puede usarse de dos formas: como backend instantáneo que tu IA configura, o como framework que modificas a tu gusto.
 
 ---
 
@@ -9,7 +9,7 @@
 |                 🎮 **Vibecoder**                  |                    🛠️ **Developer**                    |
 | :-----------------------------------------------: | :----------------------------------------------------: |
 | Uso Cursor, Bolt, v0 o Replit para construir apps | Sé TypeScript y quiero entender/modificar el framework |
-|        No quiero tocar SQL ni migraciones         |   Quiero crear grimoires propios o modificar el core   |
+|        No quiero tocar SQL ni migraciones         |     Quiero crear kons propios o modificar el core      |
 |     Quiero un backend funcional en 5 minutos      |        Necesito hot-reload, breakpoints y tests        |
 |   Mi IA (Claude/Cursor) configura todo por MCP    |   Quiero entender cómo funciona el engine por dentro   |
 |               **→ Modo Vibecoder**                |                  **→ Modo Developer**                  |
@@ -28,8 +28,8 @@
 ### Paso 1: Crear proyecto
 
 ```bash
-npx gremius init my-app
-# o con template: npx gremius init my-app --template blog
+npx kitsuden init my-app
+# o con template: npx kitsuden init my-app --template blog
 ```
 
 ### Paso 2: Iniciar todo
@@ -40,25 +40,23 @@ cd my-app
 init.bat         # Windows
 ```
 
-La primera vez clona el código fuente de Gremius y compila (~2-3 minutos).
+La primera vez clona el código fuente de Kitsuden y compila (~2-3 minutos).
 
 ### Paso 3: Acceder
 
-| Servicio  | URL                               | Para qué sirve              |
-| --------- | --------------------------------- | --------------------------- |
-| **API**   | http://localhost:3000             | Tu backend (REST API + MCP) |
-| **Admin** | http://localhost:3001/admin       | Panel de gestión            |
-| **Docs**  | http://localhost:3000/api/swagger | Documentación OpenAPI       |
+| Servicio  | URL                            | Para qué sirve                     |
+| --------- | ------------------------------ | ---------------------------------- |
+| **API**   | http://localhost:3000          | Tu backend (REST API + MCP)        |
+| **Admin** | http://localhost:3001/admin    | Panel de gestión                   |
+| **Docs**  | http://localhost:3000/api/docs | Documentación OpenAPI (Swagger UI) |
 
 ### ✅ Listo
 
 Tu backend está corriendo. Ahora puedes:
 
-| Servicio  | URL                            | Para qué sirve              |
-| --------- | ------------------------------ | --------------------------- |
-| **API**   | http://localhost:3000          | Tu backend (REST API + MCP) |
-| **Admin** | http://localhost:3001/admin    | Panel de gestión            |
-| **Docs**  | http://localhost:3001/api/docs | Documentación OpenAPI       |
+- Conectar **Cursor/Claude** vía MCP: [docs/vibecoder/MCP_SETUP_GUIDE.md](docs/vibecoder/MCP_SETUP_GUIDE.md)
+- Crear datasets desde el admin sin escribir SQL
+- Consumir la API REST desde tu frontend
 
 ### Paso 3: Crear tu primer usuario
 
@@ -85,14 +83,14 @@ docker compose down
 docker compose down -v
 
 # Cambiar template después de crear
-# Edita realm.json y reinicia: docker compose up -d --build
+# Edita grimoire.json y reinicia: docker compose up -d --build
 ```
 
 ---
 
 ## 🛠️ Modo Developer (Control Total)
 
-> Quieres modificar grimoires, crear features, o contribuir al core. Necesitas el stack completo.
+> Quieres modificar kons, crear features, o contribuir al core. Necesitas el stack completo.
 
 ### Requisitos
 
@@ -104,11 +102,11 @@ docker compose down -v
 ### Paso 1: Crear proyecto developer
 
 ```bash
-npx gremius init my-app --mode developer
-# o con template: npx gremius init my-app --mode developer --template saas
+npx kitsuden init my-app --mode developer
+# o con template: npx kitsuden init my-app --mode developer --template saas
 ```
 
-Esto genera una estructura de monorepo con `docker-compose.yml` (solo infra), `schemas/`, `grimoires/`, etc.
+Esto genera una estructura de monorepo con `docker-compose.yml` (solo infra), `schemas/`, `kons/`, etc.
 
 ### Paso 2: Iniciar stack
 
@@ -139,9 +137,11 @@ pnpm dev:start:simple
 1. `pnpm install`
 2. `docker compose -f docker-compose.dev.yml up -d` (solo infra: PostgreSQL, MinIO, Valkey)
 3. Espera 20s a que la DB esté lista
-4. Build de `@gremius/shared`
+4. Build de `@kitsuden/shared`
 5. `db:push` con confirmación automática
 6. `pnpm dev` (hot-reload de API + Admin)
+
+> **Puertos en modo Developer:** La API corre en `http://localhost:3000` y el Admin (Vite) en `http://localhost:5173`. En modo Vibecoder (Docker) el Admin se sirve en `http://localhost:3001`.
 
 ### Opción B: Script Completo (con healthchecks)
 
@@ -173,7 +173,7 @@ sleep 20
 
 # 3. Dependencias y build
 pnpm install
-pnpm --filter @gremius/shared build
+pnpm --filter @kitsuden/shared build
 
 # 4. Migraciones
 cd apps/api
@@ -188,16 +188,16 @@ pnpm dev
 
 ## 🔄 Diferencias entre modos
 
-| Aspecto             | 🎮 Vibecoder                     | 🛠️ Developer                               |
-| ------------------- | -------------------------------- | ------------------------------------------ |
-| **Inicio**          | `npx gremius init my-app`        | `npx gremius init my-app --mode developer` |
-| **Comando**         | `./init.sh`                      | `pnpm dev:start:simple`                    |
-| **Código**          | Build desde fuente en Docker     | Hot-reload local                           |
-| **Infra**           | Todo en contenedores             | Solo DB/Cache en Docker. Apps locales      |
-| **Debug**           | ⚠️ Requiere entrar al contenedor | ✅ Breakpoints, logs fácil                 |
-| **Modificar core**  | ❌ No                            | ✅ Sí                                      |
-| **Crear grimoires** | ⚠️ Solo instalar existentes      | ✅ Desarrollar nuevos                      |
-| **Ideal para**      | Probar, MVP, side-projects       | Contribuir, extender, enterprise           |
+| Aspecto            | 🎮 Vibecoder                     | 🛠️ Developer                                |
+| ------------------ | -------------------------------- | ------------------------------------------- |
+| **Inicio**         | `npx kitsuden init my-app`       | `npx kitsuden init my-app --mode developer` |
+| **Comando**        | `./init.sh`                      | `pnpm dev:start:simple`                     |
+| **Código**         | Build desde fuente en Docker     | Hot-reload local                            |
+| **Infra**          | Todo en contenedores             | Solo DB/Cache en Docker. Apps locales       |
+| **Debug**          | ⚠️ Requiere entrar al contenedor | ✅ Breakpoints, logs fácil                  |
+| **Modificar core** | ❌ No                            | ✅ Sí                                       |
+| **Crear kons**     | ⚠️ Solo instalar existentes      | ✅ Desarrollar nuevos                       |
+| **Ideal para**     | Probar, MVP, side-projects       | Contribuir, extender, enterprise            |
 
 ---
 
@@ -212,7 +212,6 @@ netstat -ano | findstr :3000
 # Cambiar en .env
 API_PORT=3003
 ADMIN_PORT=3004
-WEB_PORT=3005
 ```
 
 ### "Database does not exist"
@@ -249,7 +248,7 @@ pnpm test
 pnpm test:all
 
 # Para usar pg-mem en memoria (más rápido pero menos compatible)
-GREMIUS_TEST_DB=memory pnpm test
+KITSUDEN_TEST_DB=memory pnpm test
 
 # Bajar PostgreSQL de tests
 pnpm test:db:down
@@ -262,7 +261,7 @@ pnpm test:db:down
 
 ```bash
 # Ver logs del contenedor
-docker compose logs -f gremius_api
+docker compose logs -f kitsuden_api
 
 # Reconstruir imágenes
 docker compose up -d --build
@@ -272,9 +271,9 @@ docker compose up -d --build
 
 ## 🔐 Autenticación y Agentes (NHI)
 
-GremiusCMS v0.8.0+ utiliza un sistema de identidades no humanas (**Agents NHI**) con tokens `grm_agent_*`.
+Kitsuden v0.8.0+ utiliza un sistema de identidades no humanas (**Agents NHI**) con tokens `kitsuden_agent_*`.
 
-- **Legacy API Keys**: Los tokens `gremius_sk_*` están **deprecados** y dejarán de funcionar el **2026-08-01**.
+- **Legacy API Keys**: Los tokens `kitsuden_sk_*` están **deprecados** y dejarán de funcionar el **2026-08-01**.
 - **Migración**: Ejecuta `pnpm auth:migrate` para convertir tus llaves legacy en Agentes.
 - **RBAC granular**: Los agentes usan _scopes_ para limitar su acceso:
   - `admin:*`: Super-usuario (acceso total).
@@ -299,15 +298,15 @@ POST /api/admin/agents
 
 ```bash
 # === 🎮 MODO VIBECODER ===
-npx gremius init my-app           # Crear proyecto
-npx gremius init my-app --template blog --start  # Crear y arrancar
+npx kitsuden init my-app           # Crear proyecto
+npx kitsuden init my-app --template blog --start  # Crear y arrancar
 ./init.sh                         # Clonar fuente e iniciar
 docker compose up -d --build      # Reconstruir y arrancar
 docker compose down               # Detener
 docker compose logs -f            # Ver logs
 
 # === 🛠️ MODO DEVELOPER ===
-npx gremius init my-app --mode developer         # Crear proyecto
+npx kitsuden init my-app --mode developer         # Crear proyecto
 pnpm dev:start:simple             # Script simple (recomendado)
 pnpm dev:start                    # Script con healthchecks
 pnpm dev:infra                    # Solo infraestructura Docker
@@ -319,20 +318,20 @@ pnpm test:db:up                   # Levantar PostgreSQL de tests (puerto 5433)
 pnpm test:db:down                 # Bajar PostgreSQL de tests
 pnpm test:all                     # Tests con PostgreSQL real (cierra DB al final)
 cd apps/api && pnpm test          # Tests rápidos (asume DB levantada)
-GREMIUS_TEST_DB=memory pnpm test  # Tests con pg-mem (sin Docker)
+KITSUDEN_TEST_DB=memory pnpm test  # Tests con pg-mem (sin Docker)
 ```
 
 ---
 
 ## 🎯 Próximos pasos
 
-| Si eres...                                           | Ve a...                                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 🎮 **Vibecoder** con Cursor/Claude                   | [docs/vibecoder/MCP_SETUP_GUIDE.md](docs/vibecoder/MCP_SETUP_GUIDE.md)         |
-| 🎮 **Vibecoder** que quiere templates                | `npx gremius init my-app --template blog` (también: saas, ecommerce)           |
-| 🛠️ **Developer** que quiere entender la arquitectura | [ARCHITECTURE.md](ARCHITECTURE.md)                                             |
-| 🛠️ **Developer** que quiere crear grimoires          | [docs/internal/GRIMOIRE_ZERO_CONFIG.md](docs/internal/GRIMOIRE_ZERO_CONFIG.md) |
-| 🛠️ **Developer** que quiere el roadmap técnico       | [backendbaas.md](backendbaas.md)                                               |
+| Si eres...                                           | Ve a...                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| 🎮 **Vibecoder** con Cursor/Claude                   | [docs/vibecoder/MCP_SETUP_GUIDE.md](docs/vibecoder/MCP_SETUP_GUIDE.md) |
+| 🎮 **Vibecoder** que quiere templates                | `npx kitsuden init my-app --template blog` (también: saas, ecommerce)  |
+| 🛠️ **Developer** que quiere entender la arquitectura | [ARCHITECTURE.md](ARCHITECTURE.md)                                     |
+| 🛠️ **Developer** que quiere crear kons               | [docs/internal/KON_ZERO_CONFIG.md](docs/internal/KON_ZERO_CONFIG.md)   |
+| 🛠️ **Developer** que quiere el roadmap técnico       | [backendbaas.md](backendbaas.md)                                       |
 
 ---
 
@@ -340,7 +339,7 @@ GREMIUS_TEST_DB=memory pnpm test  # Tests con pg-mem (sin Docker)
 
 > No necesitas entender qué es `pnpm`, `db:push`, o `drizzle-orm`.
 >
-> Si tu IA (Cursor/Claude) te pide un backend, dale la URL `http://localhost:3001/api/mcp` y deja que configure todo por ti.
+> Si tu IA (Cursor/Claude) te pide un backend, dale la URL `http://localhost:3000/api/mcp` y deja que configure todo por ti.
 >
 > Si algo falla, usa **Modo Vibecoder** → `docker compose down -v` → `docker compose up -d`. Eso reinicia todo a cero.
 

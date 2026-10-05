@@ -66,10 +66,27 @@
   type DefaultStat = Omit<StatItem, "value" | "hasData"> & { key: string };
 
   const defaultStats: DefaultStat[] = [
-    { key: "users", label: "Usuarios", icon: Users, color: "cyan", href: "/users" },
-    { key: "posts", label: "Posts", icon: FileText, color: "green", href: "/posts" },
+    {
+      key: "users",
+      label: "Usuarios",
+      icon: Users,
+      color: "cyan",
+      /**
+       * SIN enlace, a proposito.
+       *
+       * Este contador ha llevado a dos sitios equivocados. Primero a `/users`,
+       * que no existe (404). Luego lo mandé yo a `/data-viewer`, que es peor:
+       * esa pantalla llama a SEIS endpoints bajo `/api/data-visualizer/*` y
+       * NINGUNO existe en la API, asi que se queda vacia tragandose el error.
+       *
+       * El panel no tiene pantalla de usuarios. Mientras no la tenga, el
+       * numero se enseña y ya: una cifra honesta es mejor que un enlace que
+       * promete una pantalla y entrega otra cosa.
+       */
+    },
+    { key: "posts", label: "Posts", icon: FileText, color: "green", href: "/g/kon-blog" },
     { key: "datasets", label: "Datasets", icon: Database, color: "amber", href: "/datasets" },
-    { key: "media", label: "Media", icon: Image, color: "purple", href: "/media" },
+    { key: "media", label: "Media", icon: Image, color: "purple", href: "/g/kon-media" },
   ];
 
   onMount(async () => {
@@ -80,7 +97,7 @@
     loadingStats = true;
     try {
       const results = await Promise.allSettled([
-        fetch(`${API_URL}/api/auth/users/count`, { credentials: "include" }),
+        fetch(`${API_URL}/api/users/count`, { credentials: "include" }),
         fetch(`${API_URL}/api/blog/posts/count`, { credentials: "include" }),
         fetch(`${API_URL}/api/datasets/count`, { credentials: "include" }),
         fetch(`${API_URL}/api/media/count`, { credentials: "include" }),
@@ -145,7 +162,10 @@
               color: log.success ? "cyan" : "pink",
               text: `Agent executed: ${log.action || "action"}`,
               time: formatTimeAgo(log.createdAt),
-              href: `/agents/logs`,
+              // `/agents/logs` NO es una ruta: encaja con `/agents/[id]` y abre la ficha
+              // de un agente llamado "logs", que no existe. Resolvía en la sonda de
+              // enlaces por eso mismo, y fallaba igual al hacer clic.
+              href: `/agents/traces`,
             }))
           );
         }
@@ -239,7 +259,7 @@
   const quickActions = [
     {
       label: "New Post",
-      href: "/posts/new",
+      href: "/g/kon-blog",
       icon: PenTool,
       color: "green",
       description: "Create a blog post",
@@ -253,14 +273,14 @@
     },
     {
       label: "New Page",
-      href: "/blocks/new",
+      href: "/g/kon-blocks",
       icon: Blocks,
       color: "pink",
       description: "Build a page",
     },
     {
       label: "Upload Media",
-      href: "/media",
+      href: "/g/kon-media",
       icon: Image,
       color: "purple",
       description: "Add files",
@@ -283,7 +303,7 @@
       description: "Posts & articles",
       icon: FileText,
       color: "green",
-      href: "/posts",
+      href: "/g/kon-blog",
     },
     {
       id: "pages",
@@ -291,7 +311,7 @@
       description: "Page builder",
       icon: Blocks,
       color: "pink",
-      href: "/blocks",
+      href: "/g/kon-blocks",
     },
     {
       id: "media",
@@ -299,7 +319,7 @@
       description: "File library",
       icon: Image,
       color: "purple",
-      href: "/media",
+      href: "/g/kon-media",
     },
     {
       id: "actions",
@@ -314,7 +334,7 @@
   // Helper function to get border color class
   function getBorderHoverClass(color: string): string {
     const map: Record<string, string> = {
-      cyan: "hover:border-cyan-500/30",
+      cyan: "hover:border-kitsuden-accent/30",
       green: "hover:border-green-500/30",
       amber: "hover:border-amber-500/30",
       purple: "hover:border-purple-500/30",
@@ -326,12 +346,12 @@
   // Helper function to get text hover class
   function getTextHoverClass(color: string): string {
     const map: Record<string, string> = {
-      cyan: "group-hover:text-gremius-cyan",
-      green: "group-hover:text-gremius-green",
-      amber: "group-hover:text-gremius-amber",
-      purple: "group-hover:text-gremius-purple",
-      pink: "group-hover:text-gremius-pink",
-      subtle: "group-hover:text-gremius-subtle",
+      cyan: "group-hover:text-kitsuden-accent",
+      green: "group-hover:text-kitsuden-green",
+      amber: "group-hover:text-kitsuden-amber",
+      purple: "group-hover:text-kitsuden-purple",
+      pink: "group-hover:text-kitsuden-accent-2",
+      subtle: "group-hover:text-kitsuden-subtle",
     };
     return map[color] || "";
   }
@@ -339,12 +359,12 @@
   // Helper function to get background class
   function getBgClass(color: string): string {
     const map: Record<string, string> = {
-      cyan: "bg-gremius-cyan/10",
-      green: "bg-gremius-green/10",
-      amber: "bg-gremius-amber/10",
-      purple: "bg-gremius-purple/10",
-      pink: "bg-gremius-pink/10",
-      subtle: "bg-gremius-subtle/10",
+      cyan: "bg-kitsuden-accent/10",
+      green: "bg-kitsuden-green/10",
+      amber: "bg-kitsuden-amber/10",
+      purple: "bg-kitsuden-purple/10",
+      pink: "bg-kitsuden-accent-2/10",
+      subtle: "bg-kitsuden-subtle/10",
     };
     return map[color] || "";
   }
@@ -352,12 +372,12 @@
   // Helper function to get text color class
   function getTextClass(color: string): string {
     const map: Record<string, string> = {
-      cyan: "text-gremius-cyan",
-      green: "text-gremius-green",
-      amber: "text-gremius-amber",
-      purple: "text-gremius-purple",
-      pink: "text-gremius-pink",
-      subtle: "text-gremius-subtle",
+      cyan: "text-kitsuden-accent",
+      green: "text-kitsuden-green",
+      amber: "text-kitsuden-amber",
+      purple: "text-kitsuden-purple",
+      pink: "text-kitsuden-accent-2",
+      subtle: "text-kitsuden-subtle",
     };
     return map[color] || "";
   }
@@ -367,18 +387,18 @@
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-kitsuden-accent/20 to-kitsuden-purple/20 border border-kitsuden-accent/20 flex items-center justify-center"
         >
-          <LayoutDashboard class="w-5 h-5 text-gremius-cyan" />
+          <LayoutDashboard class="w-5 h-5 text-kitsuden-accent" />
         </div>
         Dashboard
       </h1>
-      <p class="text-sm text-gremius-subtle mt-1">Overview of your Gremius CMS instance</p>
+      <p class="text-sm text-kitsuden-subtle mt-1">Overview of your Kitsuden CMS instance</p>
     </div>
     <div class="flex items-center gap-2">
-      <span class="text-xs text-gremius-subtle px-2 py-1 bg-gremius-surface rounded-full">
+      <span class="text-xs text-kitsuden-subtle px-2 py-1 bg-kitsuden-surface rounded-full">
         {new Date().toLocaleDateString("en-US", {
           weekday: "long",
           month: "short",
@@ -391,11 +411,11 @@
   <!-- Stats Grid - Always visible -->
   <section>
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-sm font-medium text-gremius-subtle uppercase tracking-wider">Overview</h2>
+      <h2 class="text-sm font-medium text-kitsuden-subtle uppercase tracking-wider">Overview</h2>
       {#if !loadingStats}
         <button
           onclick={loadStats}
-          class="text-xs text-gremius-cyan hover:underline flex items-center gap-1 cursor-pointer"
+          class="text-xs text-kitsuden-accent hover:underline flex items-center gap-1 cursor-pointer"
         >
           <Clock class="w-3 h-3" />
           Refresh
@@ -409,10 +429,10 @@
           <div class="card p-4 animate-pulse">
             <div class="flex items-start justify-between">
               <div class="space-y-2">
-                <div class="h-3 w-16 bg-gremius-bg rounded"></div>
-                <div class="h-8 w-12 bg-gremius-bg rounded"></div>
+                <div class="h-3 w-16 bg-kitsuden-bg rounded"></div>
+                <div class="h-8 w-12 bg-kitsuden-bg rounded"></div>
               </div>
-              <div class="w-10 h-10 rounded-lg bg-gremius-bg"></div>
+              <div class="w-10 h-10 rounded-lg bg-kitsuden-bg"></div>
             </div>
           </div>
         {/each}
@@ -420,21 +440,31 @@
     {:else}
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {#each stats as stat}
-          <a
-            href={stat.href || "#"}
+          <!--
+            Sin destino, no es un enlace.
+
+            Era `href={stat.href || "#"}`: la tarjeta se veia y se comportaba
+            como pulsable y no llevaba a ninguna parte. Un `#` es un enlace que
+            miente. Con `svelte:element` la tarjeta es `<a>` solo cuando de
+            verdad hay adonde ir.
+          -->
+          <svelte:element
+            this={stat.href ? "a" : "div"}
+            href={stat.href}
             class="card p-4 transition-all hover:shadow-lg group {getBorderHoverClass(stat.color)}"
             class:opacity-60={!stat.hasData}
+            class:cursor-default={!stat.href}
           >
             <div class="flex items-start justify-between">
               <div>
-                <p class="text-xs text-gremius-subtle uppercase tracking-wider">{stat.label}</p>
+                <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{stat.label}</p>
                 <p
-                  class="text-2xl font-bold text-gremius-text mt-1 {getTextHoverClass(stat.color)}"
+                  class="text-2xl font-bold text-kitsuden-text mt-1 {getTextHoverClass(stat.color)}"
                 >
                   {stat.value}
                 </p>
                 {#if !stat.hasData}
-                  <p class="text-xs text-gremius-subtle/60 mt-1">No data</p>
+                  <p class="text-xs text-kitsuden-subtle/60 mt-1">No data</p>
                 {/if}
               </div>
               <div
@@ -445,7 +475,7 @@
                 <stat.icon class="w-5 h-5 {getTextClass(stat.color)}" />
               </div>
             </div>
-          </a>
+          </svelte:element>
         {/each}
       </div>
     {/if}
@@ -457,15 +487,15 @@
     <div class="lg:col-span-2 space-y-6">
       <!-- Recent Activity -->
       <section class="card">
-        <div class="p-4 border-b border-gremius-border flex items-center justify-between">
-          <h3 class="font-semibold text-gremius-text flex items-center gap-2">
-            <Activity class="w-4 h-4 text-gremius-cyan" />
+        <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
+          <h3 class="font-semibold text-kitsuden-text flex items-center gap-2">
+            <Activity class="w-4 h-4 text-kitsuden-accent" />
             Recent Activity
           </h3>
           {#if recentActivity.length > 0}
             <a
               href="/actions"
-              class="text-xs text-gremius-cyan hover:underline flex items-center gap-1"
+              class="text-xs text-kitsuden-accent hover:underline flex items-center gap-1"
             >
               View all
               <ChevronRight class="w-3 h-3" />
@@ -478,10 +508,10 @@
             <div class="space-y-4">
               {#each [1, 2, 3] as i}
                 <div class="flex items-center gap-3 animate-pulse">
-                  <div class="w-8 h-8 rounded-full bg-gremius-bg"></div>
+                  <div class="w-8 h-8 rounded-full bg-kitsuden-bg"></div>
                   <div class="flex-1 space-y-2">
-                    <div class="h-4 bg-gremius-bg rounded w-3/4"></div>
-                    <div class="h-3 bg-gremius-bg rounded w-1/4"></div>
+                    <div class="h-4 bg-kitsuden-bg rounded w-3/4"></div>
+                    <div class="h-3 bg-kitsuden-bg rounded w-1/4"></div>
                   </div>
                 </div>
               {/each}
@@ -491,7 +521,7 @@
               {#each recentActivity as activity}
                 <a
                   href={activity.href || "#"}
-                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-gremius-bg/50 transition-colors group"
+                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-kitsuden-bg/50 transition-colors group"
                 >
                   <div
                     class="w-8 h-8 rounded-full {getBgClass(
@@ -502,14 +532,14 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <p
-                      class="text-sm text-gremius-text truncate group-hover:text-gremius-cyan transition-colors"
+                      class="text-sm text-kitsuden-text truncate group-hover:text-kitsuden-accent transition-colors"
                     >
                       {activity.text}
                     </p>
-                    <p class="text-xs text-gremius-subtle">{activity.time}</p>
+                    <p class="text-xs text-kitsuden-subtle">{activity.time}</p>
                   </div>
                   <ChevronRight
-                    class="w-4 h-4 text-gremius-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+                    class="w-4 h-4 text-kitsuden-subtle opacity-0 group-hover:opacity-100 transition-opacity"
                   />
                 </a>
               {/each}
@@ -518,12 +548,12 @@
             <!-- Empty State -->
             <div class="text-center py-8">
               <div
-                class="w-16 h-16 mx-auto mb-4 rounded-full bg-gremius-bg flex items-center justify-center"
+                class="w-16 h-16 mx-auto mb-4 rounded-full bg-kitsuden-bg flex items-center justify-center"
               >
-                <Inbox class="w-8 h-8 text-gremius-subtle" />
+                <Inbox class="w-8 h-8 text-kitsuden-subtle" />
               </div>
-              <h4 class="text-sm font-medium text-gremius-text mb-1">No recent activity</h4>
-              <p class="text-xs text-gremius-subtle mb-4">
+              <h4 class="text-sm font-medium text-kitsuden-text mb-1">No recent activity</h4>
+              <p class="text-xs text-kitsuden-subtle mb-4">
                 Start creating content to see activity here
               </p>
               <div class="flex items-center justify-center gap-2">
@@ -548,15 +578,15 @@
     <div class="space-y-6">
       <!-- Quick Actions -->
       <section class="card p-4">
-        <h3 class="font-semibold text-gremius-text mb-4 flex items-center gap-2">
-          <Zap class="w-4 h-4 text-gremius-cyan" />
+        <h3 class="font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
+          <Zap class="w-4 h-4 text-kitsuden-accent" />
           Quick Actions
         </h3>
         <div class="space-y-2">
           {#each quickActions as action}
             <a
               href={action.href}
-              class="group flex items-center gap-3 p-3 rounded-lg hover:bg-gremius-bg transition-all border border-transparent {getBorderHoverClass(
+              class="group flex items-center gap-3 p-3 rounded-lg hover:bg-kitsuden-bg transition-all border border-transparent {getBorderHoverClass(
                 action.color
               )}"
             >
@@ -568,13 +598,13 @@
                 <action.icon class="w-5 h-5 {getTextClass(action.color)}" />
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-gremius-text {getTextHoverClass(action.color)}">
+                <p class="text-sm font-medium text-kitsuden-text {getTextHoverClass(action.color)}">
                   {action.label}
                 </p>
-                <p class="text-xs text-gremius-subtle">{action.description}</p>
+                <p class="text-xs text-kitsuden-subtle">{action.description}</p>
               </div>
               <ArrowRight
-                class="w-4 h-4 text-gremius-subtle opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1"
+                class="w-4 h-4 text-kitsuden-subtle opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1"
               />
             </a>
           {/each}
@@ -583,15 +613,15 @@
 
       <!-- Core Grimoires -->
       <section class="card p-4">
-        <h3 class="font-semibold text-gremius-text mb-4 flex items-center gap-2">
-          <Layers class="w-4 h-4 text-gremius-cyan" />
+        <h3 class="font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
+          <Layers class="w-4 h-4 text-kitsuden-accent" />
           Core Grimoires
         </h3>
         <div class="space-y-1">
           {#each coreGrimoires as grimoire}
             <a
               href={grimoire.href}
-              class="group flex items-center gap-3 p-2 rounded-lg hover:bg-gremius-bg transition-colors"
+              class="group flex items-center gap-3 p-2 rounded-lg hover:bg-kitsuden-bg transition-colors"
             >
               <div
                 class="w-8 h-8 rounded-lg {getBgClass(
@@ -602,14 +632,14 @@
               </div>
               <div class="flex-1">
                 <p
-                  class="text-sm font-medium text-gremius-text {getTextHoverClass(grimoire.color)}"
+                  class="text-sm font-medium text-kitsuden-text {getTextHoverClass(grimoire.color)}"
                 >
                   {grimoire.label}
                 </p>
-                <p class="text-xs text-gremius-subtle">{grimoire.description}</p>
+                <p class="text-xs text-kitsuden-subtle">{grimoire.description}</p>
               </div>
               <ChevronRight
-                class="w-4 h-4 text-gremius-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+                class="w-4 h-4 text-kitsuden-subtle opacity-0 group-hover:opacity-100 transition-opacity"
               />
             </a>
           {/each}
@@ -618,28 +648,28 @@
 
       <!-- System Status -->
       <section class="card p-4">
-        <h3 class="font-semibold text-gremius-text mb-3 flex items-center gap-2">
-          <Sparkles class="w-4 h-4 text-gremius-cyan" />
+        <h3 class="font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
+          <Sparkles class="w-4 h-4 text-kitsuden-accent" />
           System Status
         </h3>
         <div class="space-y-2">
           <div class="flex items-center justify-between text-sm">
-            <span class="text-gremius-subtle">API Status</span>
+            <span class="text-kitsuden-subtle">API Status</span>
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <span class="text-green-400 text-xs">Online</span>
             </span>
           </div>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-gremius-subtle">Database</span>
+            <span class="text-kitsuden-subtle">Database</span>
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               <span class="text-green-400 text-xs">Connected</span>
             </span>
           </div>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-gremius-subtle">Active Grimoires</span>
-            <span class="text-gremius-text font-medium">
+            <span class="text-kitsuden-subtle">Active Grimoires</span>
+            <span class="text-kitsuden-text font-medium">
               {#if loadingModules}
                 <span class="animate-pulse">—</span>
               {:else}
@@ -661,24 +691,24 @@
 
 <style>
   .card {
-    background-color: rgb(var(--gremius-card) / 1);
-    border: 1px solid rgb(var(--gremius-border) / 1);
+    background-color: rgb(var(--kitsuden-card) / 1);
+    border: 1px solid rgb(var(--kitsuden-border) / 1);
     border-radius: 0.75rem;
   }
 
   .btn-primary {
     padding: 0.5rem 0.75rem;
-    background-color: rgb(var(--gremius-cyan) / 1);
+    background-color: rgb(var(--kitsuden-accent) / 1);
     color: black;
     border-radius: 0.5rem;
     font-weight: 500;
   }
 
   .btn-primary:hover {
-    background-color: rgb(var(--gremius-cyan-hover) / 1);
+    background-color: rgb(var(--kitsuden-accent-hover) / 1);
   }
 
-  .hover\:border-cyan-500\/30:hover {
+  .hover\:border-kitsuden-accent\/30:hover {
     border-color: rgba(6, 182, 212, 0.3);
   }
 

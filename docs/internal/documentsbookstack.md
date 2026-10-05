@@ -1,10 +1,10 @@
-# Roadmap Backend: Mejoras al Grimoire DMS inspiradas en BookStack
+# Roadmap Backend: Mejoras al Kon DMS inspiradas en BookStack
 
-> **Scope:** Este documento cubre **exclusivamente funciones backend** (API, schema, base de datos, lógica de negocio) para `grimoire-dms`.  
-> El grimoire es **headless**: cualquier experiencia visual (lectura, editor, tema oscuro, previews) es responsabilidad del frontend (`packages/admin` u otro consumidor de la API).
+> **Scope:** Este documento cubre **exclusivamente funciones backend** (API, schema, base de datos, lógica de negocio) para `kon-dms`.  
+> El kon es **headless**: cualquier experiencia visual (lectura, editor, tema oscuro, previews) es responsabilidad del frontend (`packages/admin` u otro consumidor de la API).
 >
 > **Estado:** Pendiente de priorización  
-> **Grimoire objetivo:** `packages/grimoires/grimoire-dms`  
+> **Kon objetivo:** `packages/kons/kon-dms`  
 > **Stack:** PostgreSQL + Drizzle ORM + Hono
 
 ---
@@ -97,7 +97,7 @@
 - [ ] **Menciones (`@usuario`)**
   - Parsear `content` al crear/actualizar: extraer `@username` o `@userId`.
   - Validar que los usuarios mencionados existen.
-  - Emitir evento de notificación (integrar con sistema de notificaciones de Gremius core o guardar en tabla de notificaciones propia).
+  - Emitir evento de notificación (integrar con sistema de notificaciones de Kitsuden core o guardar en tabla de notificaciones propia).
 - [ ] **Endpoints**
 
   ```
@@ -156,7 +156,7 @@
   source_xml text,   -- XML de draw.io
   source_json text,  -- JSON de excalidraw
   rendered_svg text, -- SVG string o referencia a file storage
-  media_id uuid,     -- referencia opcional a grimoire-media si se almacena como imagen
+  media_id uuid,     -- referencia opcional a kon-media si se almacena como imagen
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
   ```
@@ -220,7 +220,7 @@
   - Incluir `manifest.json` con versión del formato:
     ```json
     {
-      "format": "gremius-dms-export",
+      "format": "kitsuden-dms-export",
       "version": "1.0.0",
       "exportedAt": "2026-05-09T00:00:00Z",
       "category": { "id", "name", "slug" }
@@ -295,14 +295,14 @@
 
 ## Recordar: Frontend
 
-> Estas funcionalidades **no son responsabilidad del grimoire DMS** (backend headless), pero deben implementarse en el consumidor de la API (ej. `packages/admin` o un portal de documentación dedicado) para que las mejoras del backend tengan sentido de usuario.
+> Estas funcionalidades **no son responsabilidad del kon DMS** (backend headless), pero deben implementarse en el consumidor de la API (ej. `packages/admin` o un portal de documentación dedicado) para que las mejoras del backend tengan sentido de usuario.
 
 | #    | Función Frontend                               | Qué necesita del backend                                                                                                              |
 | ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | F.1  | **Vista de lectura / Document Reader**         | Consume `GET /api/dms/render/:slug`, muestra `content`, `toc`, `navigation`, `breadcrumb`.                                            |
 | F.2  | **Modo claro/oscuro**                          | Puramente CSS del frontend. El backend puede devolver `theme: null` (no aplica).                                                      |
 | F.3  | **Previsualización de Markdown en Admin**      | Preview del `content` antes de guardar. Puede hacerse 100% en cliente con librería JS.                                                |
-| F.4  | **Editor WYSIWYG / Rich Text**                 | El frontend envía HTML/Markdown al backend vía `POST/PATCH`. El grimoire solo recibe y almacena strings.                              |
+| F.4  | **Editor WYSIWYG / Rich Text**                 | El frontend envía HTML/Markdown al backend vía `POST/PATCH`. El kon solo recibe y almacena strings.                                   |
 | F.5  | **Editor de diagramas (Draw.io / Excalidraw)** | Iframe/componente que persiste `source_xml/json` vía endpoints de diagramas y deja un placeholder `[[diagram:uuid]]` en el `content`. |
 | F.6  | **Exportación a PDF (botón)**                  | Llama a `GET /api/dms/versions/:id/export/pdf` y descarga el archivo/stream.                                                          |
 | F.7  | **UI de comentarios**                          | Consume endpoints de comentarios. Renderiza hilos, botón de resolver, input con @mentions (autocomplete de usuarios).                 |
@@ -343,7 +343,7 @@
 - **Aditivo:** Todo el schema es aditivo. No se modifican tablas existentes, solo se añaden nuevas.
 - **Cache:** El renderizado de PDF y el endpoint `/render/:slug` deben cachearse (Redis/CDN) para no regenerar en cada request.
 - **Seguridad:** El render público debe respetar estrictamente el ACL del documento (`visibility`, `allowedRoles`, `departmentId`, `allowedUserIds`).
-- **Headless:** El grimoire nunca debe asumir cómo se ve el frontend. Devuelve datos estructurados y deja la presentación al consumidor.
+- **Headless:** El kon nunca debe asumir cómo se ve el frontend. Devuelve datos estructurados y deja la presentación al consumidor.
 
 ---
 

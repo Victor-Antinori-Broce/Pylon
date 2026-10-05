@@ -16,17 +16,17 @@ export async function startCommand(options: StartOptions) {
   const spinner = ora("Checking project...").start();
 
   try {
-    // Check if we're in a Gremius project
+    // Check if we're in a Kitsuden project
     const projectRoot = process.cwd();
     const hasDockerCompose = await fs.pathExists(path.join(projectRoot, "docker-compose.yml"));
-    const hasGremiusConfig = await fs.pathExists(path.join(projectRoot, "gremius.config.ts"));
+    const hasKitsudenConfig = await fs.pathExists(path.join(projectRoot, "kitsuden.config.ts"));
 
-    if (!hasDockerCompose && !hasGremiusConfig) {
-      spinner.fail(chalk.red('No Gremius project found. Run "gremius init" first.'));
+    if (!hasDockerCompose && !hasKitsudenConfig) {
+      spinner.fail(chalk.red('No Kitsuden project found. Run "kitsuden init" first.'));
       process.exit(1);
     }
 
-    spinner.text = "Starting Gremius services...";
+    spinner.text = "Starting Kitsuden services...";
 
     // Build the docker compose command
     const composeArgs = ["compose", "up"];
@@ -39,14 +39,14 @@ export async function startCommand(options: StartOptions) {
     const services: string[] = [];
 
     // Always start core services
-    services.push("gremius_db", "gremius_cache", "gremius_api");
+    services.push("kitsuden_db", "kitsuden_cache", "kitsuden_api");
 
     if (options.admin !== false) {
-      services.push("gremius_admin");
+      services.push("kitsuden_admin");
     }
 
     if (options.mcp || (await isMcpEnabled(projectRoot))) {
-      services.push("gremius_mcp");
+      services.push("kitsuden_mcp");
     }
 
     // Check if Docker is running
@@ -62,7 +62,7 @@ export async function startCommand(options: StartOptions) {
 
     spinner.stop();
 
-    console.log(chalk.cyan("\n🚀 Starting Gremius services:\n"));
+    console.log(chalk.cyan("\n🚀 Starting Kitsuden services:\n"));
 
     if (options.admin !== false) {
       console.log(chalk.green("  ✓ Admin Panel") + chalk.gray("   → http://localhost:3001"));
@@ -89,13 +89,13 @@ export async function startCommand(options: StartOptions) {
     if (options.detach) {
       console.log(chalk.green("✅ Services started in detached mode"));
       console.log(chalk.cyan("\n📋 Useful commands:"));
-      console.log(chalk.white("  gremius logs -f     # View logs"));
-      console.log(chalk.white("  gremius stop        # Stop services"));
-      console.log(chalk.white("  gremius status      # Check status\n"));
+      console.log(chalk.white("  kitsuden logs -f     # View logs"));
+      console.log(chalk.white("  kitsuden stop        # Stop services"));
+      console.log(chalk.white("  kitsuden status      # Check status\n"));
     } else {
       // Wait for startup
       setTimeout(async () => {
-        console.log(chalk.green("\n✅ Gremius is running!\n"));
+        console.log(chalk.green("\n✅ Kitsuden is running!\n"));
         console.log(chalk.cyan("🔗 Access your services:"));
         if (options.admin !== false) {
           console.log(chalk.white("  Admin:    http://localhost:3001"));
@@ -109,7 +109,7 @@ export async function startCommand(options: StartOptions) {
       }, 5000);
     }
   } catch (error) {
-    spinner.fail(chalk.red("Failed to start Gremius"));
+    spinner.fail(chalk.red("Failed to start Kitsuden"));
     console.error(error);
     process.exit(1);
   }
@@ -117,7 +117,7 @@ export async function startCommand(options: StartOptions) {
 
 async function isMcpEnabled(projectRoot: string): Promise<boolean> {
   try {
-    const configPath = path.join(projectRoot, "gremius.config.ts");
+    const configPath = path.join(projectRoot, "kitsuden.config.ts");
     if (!(await fs.pathExists(configPath))) return true; // Default to enabled
 
     const configContent = await fs.readFile(configPath, "utf-8");

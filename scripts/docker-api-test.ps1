@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 # ============================================================================
-# GremiusCMS - Docker Build Validation & API Deep Test Script
+# Kitsuden - Docker Build Validation & API Deep Test Script
 # ============================================================================
 # This script performs:
 #   1. Docker build validation
@@ -121,7 +121,7 @@ function Test-DockerBuild {
     Push-Location "$PSScriptRoot/.."
     
     try {
-        $buildOutput = docker build -f docker/Dockerfile.prod --target api -t gremius/api:test . 2>&1
+        $buildOutput = docker build -f docker/Dockerfile.prod --target api -t kitsuden/api:test . 2>&1
         $buildExitCode = $LASTEXITCODE
         
         if ($buildExitCode -eq 0) {
@@ -151,7 +151,7 @@ function Test-DockerBuild {
     Push-Location "$PSScriptRoot/.."
     
     try {
-        $buildOutput = docker build -f docker/Dockerfile.prod --target admin -t gremius/admin:test . 2>&1
+        $buildOutput = docker build -f docker/Dockerfile.prod --target admin -t kitsuden/admin:test . 2>&1
         $buildExitCode = $LASTEXITCODE
         
         if ($buildExitCode -eq 0) {
@@ -203,7 +203,7 @@ function Start-Infrastructure {
         Start-Sleep -Seconds 30
         
         # Check container status
-        $containers = @("gremius_db", "gremius_cache", "gremius_minio")
+        $containers = @("kitsuden_db", "kitsuden_cache", "kitsuden_minio")
         $allHealthy = $true
         
         foreach ($container in $containers) {
@@ -258,7 +258,7 @@ $script:RoutesToTest = @(
     @{ Method = "GET"; Path = "/api/settings"; ExpectedStatus = 401; Auth = $false }
     @{ Method = "GET"; Path = "/api/modules"; ExpectedStatus = 401; Auth = $false }
     @{ Method = "GET"; Path = "/api/system/themes"; ExpectedStatus = 401; Auth = $false }
-    @{ Method = "GET"; Path = "/api/system/realms"; ExpectedStatus = 401; Auth = $false }
+    @{ Method = "GET"; Path = "/api/system/grimoires"; ExpectedStatus = 401; Auth = $false }
     
     # MCP routes (protected)
     @{ Method = "GET"; Path = "/api/mcp"; ExpectedStatus = 401; Auth = $false }
@@ -294,9 +294,9 @@ $script:RoutesToTest = @(
     # Functions routes (protected - legacy)
     @{ Method = "GET"; Path = "/api/functions"; ExpectedStatus = 401; Auth = $false }
     
-    # Grimoire routes (should be 401 or 404 depending on grimoire loading)
-    @{ Method = "GET"; Path = "/api/custom/grimoire-datasets"; ExpectedStatus = @(200, 401, 404); Auth = $false }
-    @{ Method = "GET"; Path = "/api/custom/grimoire-media"; ExpectedStatus = @(200, 401, 404); Auth = $false }
+    # Kon routes (should be 401 or 404 depending on kon loading)
+    @{ Method = "GET"; Path = "/api/custom/kon-datasets"; ExpectedStatus = @(200, 401, 404); Auth = $false }
+    @{ Method = "GET"; Path = "/api/custom/kon-media"; ExpectedStatus = @(200, 401, 404); Auth = $false }
     
     # Non-existent routes (should be 404)
     @{ Method = "GET"; Path = "/api/nonexistent-route-12345"; ExpectedStatus = 404; Auth = $false }
@@ -446,7 +446,7 @@ function Export-TestReport {
     Write-Header "TEST REPORT"
     
     $report = @"
-# GremiusCMS Docker Build & API Test Report
+# Kitsuden Docker Build & API Test Report
 Generated: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 
 ## Summary
@@ -493,7 +493,7 @@ $(if ($script:TestResults.Routes.Failed -eq 0) { "✅ All tests passed! The Dock
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
-Write-Header "GremiusCMS Docker Build & API Test"
+Write-Header "Kitsuden Docker Build & API Test"
 Write-Status "Starting comprehensive test..." "Info"
 
 # Run all phases

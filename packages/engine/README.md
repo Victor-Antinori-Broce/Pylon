@@ -1,6 +1,6 @@
-# @gremius/engine - Core Framework
+# @kitsuden/engine - Core Framework
 
-Nivel 1 del framework Gremius - Motor infrahumano que nunca se apaga.
+Nivel 1 del framework Kitsuden - Motor infrahumano que nunca se apaga.
 
 ## Módulos
 
@@ -9,7 +9,7 @@ Nivel 1 del framework Gremius - Motor infrahumano que nunca se apaga.
 Sistema unificado de acciones que pueden ejecutarse vía HTTP, Eventos o Agentes MCP.
 
 ```typescript
-import { defineAction } from "@gremius/engine/actions";
+import { defineAction } from "@kitsuden/engine/actions";
 
 defineAction({
   trigger: "http.post:/webhooks/stripe",
@@ -17,18 +17,18 @@ defineAction({
 });
 ```
 
-### 2. Grimoire System (`src/grimoire.ts`)
+### 2. Kon System (`src/kon.ts`)
 
 Auto-API & MCP Generator - Transforma modelos Drizzle en APIs REST y tools MCP.
 
 ```typescript
-import { defineGrimoire, InferGrimoireSelect } from "@gremius/engine/grimoire";
+import { defineKon, InferKonSelect } from "@kitsuden/engine/kon";
 import { myTable } from "./schema";
 
-type MyRow = InferGrimoireSelect<typeof myTable>;
+type MyRow = InferKonSelect<typeof myTable>;
 
-const grimoire = defineGrimoire({
-  id: "my-grimoire",
+const kon = defineKon({
+  id: "my-kon",
   models: [myTable],
   actions: [
     {
@@ -38,7 +38,7 @@ const grimoire = defineGrimoire({
   ],
 });
 
-grimoire.initialize(ctx, hono, mcpServer);
+kon.initialize(ctx, hono, mcpServer);
 ```
 
 ## Convenciones
@@ -48,11 +48,11 @@ grimoire.initialize(ctx, hono, mcpServer);
 Por cada modelo se generan:
 
 ```
-GET    /api/{grimoire}/{table}       # Listar
-POST   /api/{grimoire}/{table}       # Crear
-GET    /api/{grimoire}/{table}/:id   # Leer
-PATCH  /api/{grimoire}/{table}/:id   # Actualizar
-DELETE /api/{grimoire}/{table}/:id   # Eliminar
+GET    /api/{kon}/{table}       # Listar
+POST   /api/{kon}/{table}       # Crear
+GET    /api/{kon}/{table}/:id   # Leer
+PATCH  /api/{kon}/{table}/:id   # Actualizar
+DELETE /api/{kon}/{table}/:id   # Eliminar
 ```
 
 ### Tools MCP Auto-generadas
@@ -60,8 +60,8 @@ DELETE /api/{grimoire}/{table}/:id   # Eliminar
 Por cada modelo se generan:
 
 ```
-{grimoire}_read_{table}     # Query con filtros
-{grimoire}_create_{table}   # Crear registro
+{kon}_read_{table}     # Query con filtros
+{kon}_create_{table}   # Crear registro
 ```
 
 ## Type Checking
@@ -79,10 +79,10 @@ npx tsc packages/engine/src/type-check.ts --noEmit --skipLibCheck
 - `initActions()` - Inicializar sistema
 - `parseTrigger()` - Parsear trigger string
 
-### Grimoire
+### Kon
 
-- `defineGrimoire()` - Definir grimoire
-- `registerGrimoire()` - Registrar globalmente
-- `initializeGrimoires()` - Inicializar todos
-- `InferGrimoireSelect<T>` - Inferir tipo Select
-- `InferGrimoireInsert<T>` - Inferir tipo Insert
+- `defineKon()` - Definir kon
+- `registerKon()` - Registrar globalmente
+- `initializeKons()` - Inicializar todos
+- `InferKonSelect<T>` - Inferir tipo Select
+- `InferKonInsert<T>` - Inferir tipo Insert

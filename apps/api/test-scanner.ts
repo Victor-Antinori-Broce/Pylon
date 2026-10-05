@@ -2,18 +2,18 @@
 import { scanPackages } from "./src/services/scanner";
 
 async function main() {
-  const realms = await scanPackages("themes");
-  console.log(
-    "Realms:",
-    realms.length,
-    realms.map((r) => r.name)
-  );
-
-  const grimoires = await scanPackages("modules");
+  const grimoires = await scanPackages("themes");
   console.log(
     "Grimoires:",
     grimoires.length,
-    grimoires.map((g) => g.name)
+    grimoires.map((r) => r.name)
+  );
+
+  const kons = await scanPackages("modules");
+  console.log(
+    "Kons:",
+    kons.length,
+    kons.map((g) => g.name)
   );
 }
 

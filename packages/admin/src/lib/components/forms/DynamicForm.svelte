@@ -5,6 +5,9 @@
    */
   import { Save, Loader2, Upload, X, ImageIcon } from "lucide-svelte";
 
+  import MediaPicker from "$lib/components/media/MediaPicker.svelte";
+  import { subirMedios } from "$lib/media/upload";
+
   import type { FieldDefinition } from "../../../types/datasets";
 
   import RelationshipField from "./RelationshipField.svelte";
@@ -32,7 +35,11 @@
   let submitting = $state(false);
   const uploadingStates = $state<Record<string, boolean>>({});
 
-  const API_URL = import.meta.env.VITE_API_URL ?? "";
+  /**
+   * Qué campo espera imagen. La CLAVE y no un booleano: un dataset puede tener
+   * varios campos de imagen, y con un booleano la elegida iría al primero.
+   */
+  let campoEligiendo = $state<string | null>(null);
 
   // Initialize form data with defaults
   function initFormData() {
@@ -79,25 +86,35 @@
   }
 
   // ─── Image Upload Handler ───────────────────────────
+  /**
+   * Sube una imagen a un campo del formulario.
+   *
+   * ─────────────────────────────────────────────────────────────────────────
+   * ESTO ESTABA ROTO DE DOS FORMAS A LA VEZ, Y NADIE LO VIO
+   *
+   *   · Mandaba el fichero como `file`, y el endpoint lee `files` (plural).
+   *     La subida moría antes de empezar con «No files provided».
+   *   · Leía `data.url`, que NUNCA existió en esa respuesta. Aunque la subida
+   *     hubiera funcionado, el campo se habría guardado con `undefined`.
+   *
+   * Ahora usa `subirMedios`, la misma función que el editor del blog, así que
+   * los dos caminos no pueden volver a divergir.
+   * ─────────────────────────────────────────────────────────────────────────
+   */
   async function handleImageUpload(fieldKey: string, file: File) {
     uploadingStates[fieldKey] = true;
 
     try {
-      const formDataPayload = new FormData();
-      formDataPayload.append("file", file);
-
-      const res = await fetch(`${API_URL}/api/media/upload`, {
-        method: "POST",
-        body: formDataPayload,
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-
-      setField(fieldKey, data.url);
+      const { subidos, errores } = await subirMedios([file]);
+      if (subidos[0]) {
+        setField(fieldKey, subidos[0].url);
+      } else {
+        // Se dice el motivo concreto que devolvió el servidor: «Failed to
+        // upload» a secas no distingue un fichero de 20 MB de un disco lleno.
+        alert(errores.join(" · ") || "No se pudo subir la imagen");
+      }
     } catch (err: any) {
-      alert(err.message || "Failed to upload image");
+      alert(err?.message || "No se pudo subir la imagen");
     } finally {
       uploadingStates[fieldKey] = false;
     }
@@ -242,7 +259,7 @@
       {#if field.type === "text"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <input
           value={formData[field.key] || ""}
@@ -250,7 +267,7 @@
           type="text"
           placeholder={field.helpText || `Enter ${field.label.toLowerCase()}`}
           class="input {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         />
       {/if}
@@ -259,7 +276,7 @@
       {#if field.type === "number"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <input
           value={formData[field.key] || ""}
@@ -269,7 +286,7 @@
           max={field.maxValue}
           placeholder={field.helpText || "0"}
           class="input {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         />
       {/if}
@@ -278,20 +295,20 @@
       {#if field.type === "boolean"}
         <div class="flex items-center justify-between py-1">
           <div>
-            <label class="text-sm font-medium text-gremius-text">
+            <label class="text-sm font-medium text-kitsuden-text">
               {field.label}
-              {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+              {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
             </label>
             {#if field.helpText}
-              <p class="text-[10px] text-gremius-subtle">{field.helpText}</p>
+              <p class="text-[10px] text-kitsuden-subtle">{field.helpText}</p>
             {/if}
           </div>
           <button
             type="button"
             onclick={() => setField(field.key, !formData[field.key])}
             class="relative w-10 h-6 rounded-full transition-colors {formData[field.key]
-              ? 'bg-gremius-cyan'
-              : 'bg-gremius-border'}"
+              ? 'bg-kitsuden-accent'
+              : 'bg-kitsuden-border'}"
           >
             <span
               class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform {formData[
@@ -308,14 +325,14 @@
       {#if field.type === "date"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <input
           value={formData[field.key] || ""}
           oninput={(e) => setField(field.key, e.currentTarget.value)}
           type="date"
           class="input {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         />
       {/if}
@@ -324,7 +341,7 @@
       {#if field.type === "url"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <input
           value={formData[field.key] || ""}
@@ -332,7 +349,7 @@
           type="url"
           placeholder="https://"
           class="input {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         />
       {/if}
@@ -341,7 +358,7 @@
       {#if field.type === "email"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <input
           value={formData[field.key] || ""}
@@ -349,7 +366,7 @@
           type="email"
           placeholder={field.helpText || "email@example.com"}
           class="input {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         />
       {/if}
@@ -359,14 +376,14 @@
         {@const uploadingKey = field.key + "_uploading"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
 
         {#if formData[field.key]}
           <!-- Preview Mode -->
           <div class="relative group">
             <div
-              class="relative w-full h-40 rounded-xl border border-gremius-border overflow-hidden bg-gremius-bg"
+              class="relative w-full h-40 rounded-xl border border-kitsuden-border overflow-hidden bg-kitsuden-bg"
             >
               <!-- Checkerboard background for transparency -->
               <div
@@ -384,13 +401,13 @@
               <div
                 class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between"
               >
-                <span class="text-xs text-gremius-text truncate max-w-[200px]"
+                <span class="text-xs text-kitsuden-text truncate max-w-[200px]"
                   >{formData[field.key].split("/").pop()}</span
                 >
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
-                    class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gremius-text transition-colors"
+                    class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-kitsuden-text transition-colors"
                     onclick={() => {
                       const input = document.createElement("input");
                       input.type = "file";
@@ -421,16 +438,16 @@
         {:else if uploadingStates[field.key]}
           <!-- Uploading State -->
           <div
-            class="w-full h-40 rounded-xl border-2 border-dashed border-gremius-cyan/30 bg-gremius-cyan/5 flex flex-col items-center justify-center gap-3"
+            class="w-full h-40 rounded-xl border-2 border-dashed border-kitsuden-accent/30 bg-kitsuden-accent/5 flex flex-col items-center justify-center gap-3"
           >
-            <Loader2 class="w-8 h-8 text-gremius-cyan animate-spin" />
-            <span class="text-sm text-gremius-cyan">Uploading...</span>
+            <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin" />
+            <span class="text-sm text-kitsuden-accent">Uploading...</span>
           </div>
         {:else}
           <!-- Upload Zone -->
           <button
             type="button"
-            class="w-full h-40 rounded-xl border-2 border-dashed border-gremius-border bg-gremius-bg hover:border-gremius-cyan/50 hover:bg-gremius-cyan/5 transition-all flex flex-col items-center justify-center gap-3 group"
+            class="w-full h-40 rounded-xl border-2 border-dashed border-kitsuden-border bg-kitsuden-bg hover:border-kitsuden-accent/50 hover:bg-kitsuden-accent/5 transition-all flex flex-col items-center justify-center gap-3 group"
             onclick={() => {
               const input = document.createElement("input");
               input.type = "file";
@@ -444,16 +461,32 @@
             }}
           >
             <div
-              class="w-12 h-12 rounded-full bg-gremius-surface group-hover:bg-gremius-cyan/10 flex items-center justify-center transition-colors"
+              class="w-12 h-12 rounded-full bg-kitsuden-surface group-hover:bg-kitsuden-accent/10 flex items-center justify-center transition-colors"
             >
               <ImageIcon
-                class="w-6 h-6 text-gremius-subtle group-hover:text-gremius-cyan transition-colors"
+                class="w-6 h-6 text-kitsuden-subtle group-hover:text-kitsuden-accent transition-colors"
               />
             </div>
             <div class="text-center">
-              <p class="text-sm text-gremius-text font-medium">Click to upload image</p>
-              <p class="text-xs text-gremius-subtle mt-1">PNG, JPG, GIF up to 10MB</p>
+              <p class="text-sm text-kitsuden-text font-medium">Click to upload image</p>
+              <p class="text-xs text-kitsuden-subtle mt-1">PNG, JPG, GIF up to 10MB</p>
             </div>
+          </button>
+
+          <!--
+            Elegir una que YA está subida.
+
+            Sin esto, la única salida era volver a subir la misma imagen cada
+            vez que se usaba en otra entrada — y la biblioteca se llenaba de
+            copias del mismo logo con nombres distintos.
+          -->
+          <button
+            type="button"
+            class="btn-ghost btn-sm mt-2 w-full gap-1.5"
+            onclick={() => (campoEligiendo = field.key)}
+          >
+            <ImageIcon class="h-4 w-4" />
+            Elegir de la biblioteca
           </button>
         {/if}
 
@@ -465,13 +498,13 @@
       {#if field.type === "select"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <select
           value={formData[field.key] || ""}
           onchange={(e) => setField(field.key, e.currentTarget.value)}
           class="select {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         >
           <option value="">— Select —</option>
@@ -485,7 +518,7 @@
       {#if field.type === "json"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <textarea
           value={typeof formData[field.key] === "string"
@@ -495,16 +528,16 @@
           rows="4"
           placeholder={'{ "key": "value" }'}
           class="textarea font-mono text-xs {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
-        />
+        ></textarea>
       {/if}
 
       <!-- ── Rich Text ── -->
       {#if field.type === "richtext"}
         <label class="label block">
           {field.label}
-          {#if field.isRequired}<span class="text-gremius-pink">*</span>{/if}
+          {#if field.isRequired}<span class="text-kitsuden-accent-2">*</span>{/if}
         </label>
         <textarea
           value={formData[field.key] || ""}
@@ -512,9 +545,9 @@
           rows="5"
           placeholder={field.helpText || "Enter content (Markdown supported)"}
           class="textarea {fieldErrors[field.key]
-            ? 'border-gremius-pink-50 focus:ring-gremius-pink-30'
+            ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
-        />
+        ></textarea>
       {/if}
 
       <!-- ── Relation ── -->
@@ -536,20 +569,20 @@
       <!-- Error display (non-relation fields) -->
       {#if field.type !== "relation" && field.type !== "boolean"}
         {#if field.helpText && !fieldErrors[field.key]}
-          <p class="text-[10px] text-gremius-subtle">{field.helpText}</p>
+          <p class="text-[10px] text-kitsuden-subtle">{field.helpText}</p>
         {/if}
         {#if fieldErrors[field.key]}
-          <p class="text-[10px] text-gremius-pink">{fieldErrors[field.key]}</p>
+          <p class="text-[10px] text-kitsuden-accent-2">{fieldErrors[field.key]}</p>
         {/if}
       {/if}
     </div>
   {/each}
 
   <!-- ── Actions ── -->
-  <div class="flex items-center justify-between pt-4 border-t border-gremius-border">
+  <div class="flex items-center justify-between pt-4 border-t border-kitsuden-border">
     <div>
       {#if Object.keys(fieldErrors).length > 0}
-        <p class="text-xs text-gremius-pink">
+        <p class="text-xs text-kitsuden-accent-2">
           {Object.keys(fieldErrors).length} field(s) need attention
         </p>
       {/if}
@@ -568,8 +601,18 @@
   </div>
 </form>
 
+<MediaPicker
+  open={campoEligiendo !== null}
+  title="Elegir imagen"
+  onSelect={(media) => {
+    if (campoEligiendo) setField(campoEligiendo, media.url);
+    campoEligiendo = null;
+  }}
+  onClose={() => (campoEligiendo = null)}
+/>
+
 <style>
-  .border-gremius-pink-50 {
-    border-color: rgb(255 42 109 / 0.5);
+  .border-kitsuden-accent-2-50 {
+    border-color: rgb(255 45 111 / 0.5);
   }
 </style>

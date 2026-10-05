@@ -16,13 +16,13 @@ interface DevOptions {
 }
 
 export async function devCommand(options: DevOptions) {
-  console.log(chalk.blue("\n🚀 Starting Gremius development server...\n"));
+  console.log(chalk.blue("\n🚀 Starting Kitsuden development server...\n"));
 
   const projectRoot = process.cwd();
 
-  // Check if we're in a Gremius project
+  // Check if we're in a Kitsuden project
   if (!existsSync(join(projectRoot, "apps", "api"))) {
-    console.error(chalk.red("✖ Not in a Gremius project directory"));
+    console.error(chalk.red("✖ Not in a Kitsuden project directory"));
     process.exit(1);
   }
 

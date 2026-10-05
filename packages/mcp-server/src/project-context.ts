@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Provides AI agents with complete project understanding including:
- * - Active grimoires and their capabilities
+ * - Active kons and their capabilities
  * - Available endpoints and schemas
  * - Data relationships
  * - Event system
@@ -16,7 +16,7 @@ import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mc
 import type { McpServerDependencies } from "./index";
 
 export function registerProjectContext(server: McpServer, deps: McpServerDependencies) {
-  const { db, schema, grimoireRegistry } = deps;
+  const { db, schema, konRegistry } = deps;
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // FULL PROJECT CONTEXT
@@ -24,9 +24,9 @@ export function registerProjectContext(server: McpServer, deps: McpServerDepende
 
   server.registerResource(
     "project-context",
-    "gremius://project-context",
+    "kitsuden://project-context",
     {
-      title: "Gremius Project Context",
+      title: "Kitsuden Project Context",
       description: "Complete project structure and capabilities for AI understanding",
       mimeType: "application/json",
     },
@@ -35,13 +35,13 @@ export function registerProjectContext(server: McpServer, deps: McpServerDepende
         // Get all datasets
         const datasets = await db.select().from(schema.dataSets);
 
-        // Get active grimoires
-        const grimoires = Object.values(grimoireRegistry || {}).map((g: any) => ({
+        // Get active kons
+        const kons = Object.values(konRegistry || {}).map((g: any) => ({
           id: g.id,
           name: g.name,
           version: g.version,
           description: g.description,
-          mountPath: g.mountPath || `/api/${g.id.replace(/^grimoire-/, "")}`,
+          mountPath: g.mountPath || `/api/${g.id.replace(/^kon-/, "")}`,
           hasOpenApi: !!g.openApi,
           endpointCount: g.openApi?.paths?.length || 0,
           tables: g.tables || [],
@@ -57,19 +57,19 @@ export function registerProjectContext(server: McpServer, deps: McpServerDepende
           },
 
           architecture: {
-            type: "GremiusCMS",
-            engine: "@gremius/engine",
-            pattern: "Modular Grimoire System",
+            type: "Kitsuden",
+            engine: "@kitsuden/engine",
+            pattern: "Modular Kon System",
             layers: [
               { name: "Engine", level: 1, description: "Auth, DB, Cache, Queue - always active" },
               { name: "Core", level: 2, description: "Datasets, Media, Webhooks - toggleable" },
-              { name: "Grimoires", level: 3, description: "Business modules - dynamically loaded" },
+              { name: "Kons", level: 3, description: "Business modules - dynamically loaded" },
             ],
           },
 
-          grimoires: {
-            total: grimoires.length,
-            active: grimoires.map((g) => ({
+          kons: {
+            total: kons.length,
+            active: kons.map((g) => ({
               id: g.id,
               name: g.name,
               version: g.version,
@@ -108,7 +108,7 @@ export function registerProjectContext(server: McpServer, deps: McpServerDepende
 
           conventions: {
             naming: {
-              grimoires: "grimoire-{name}",
+              kons: "kon-{name}",
               tables: "snake_case",
               fields: "camelCase",
               apiEndpoints: "kebab-case",
@@ -122,12 +122,12 @@ export function registerProjectContext(server: McpServer, deps: McpServerDepende
           },
 
           codeGeneration: {
-            grimoireTemplate: `
+            konTemplate: `
 import { Hono } from "hono";
-import { defineGrimoire } from "@gremius/shared";
+import { defineKon } from "@kitsuden/shared";
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-{name}",
+export const kon = defineKon({
+  id: "kon-{name}",
   name: "{Name}",
   version: "1.0.0",
   openApi: {
@@ -178,12 +178,12 @@ export const grimoire = defineGrimoire({
 
   server.registerResource(
     "dataset-schema",
-    new ResourceTemplate("gremius://dataset/{id}/schema", {
+    new ResourceTemplate("kitsuden://dataset/{id}/schema", {
       list: async () => {
         const datasets = await db.select().from(schema.dataSets);
         return {
           resources: datasets.map((ds: any) => ({
-            uri: `gremius://dataset/${ds.id}/schema`,
+            uri: `kitsuden://dataset/${ds.id}/schema`,
             name: `Schema: ${ds.name}`,
           })),
         };
@@ -254,55 +254,55 @@ export const grimoire = defineGrimoire({
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // GRIMOIRE CAPABILITIES RESOURCE
+  // KON CAPABILITIES RESOURCE
   // ═══════════════════════════════════════════════════════════════════════════════
 
   server.registerResource(
-    "grimoire-capabilities",
-    new ResourceTemplate("gremius://grimoire/{id}/capabilities", {
+    "kon-capabilities",
+    new ResourceTemplate("kitsuden://kon/{id}/capabilities", {
       list: async () => {
-        const grimoires = Object.values(grimoireRegistry || {}).map((g: any) => ({
-          uri: `gremius://grimoire/${g.id}/capabilities`,
+        const kons = Object.values(konRegistry || {}).map((g: any) => ({
+          uri: `kitsuden://kon/${g.id}/capabilities`,
           name: g.name,
         }));
-        return { resources: grimoires };
+        return { resources: kons };
       },
     }),
     {
-      title: "Grimoire Capabilities",
-      description: "Available endpoints and operations for a grimoire",
+      title: "Kon Capabilities",
+      description: "Available endpoints and operations for a kon",
       mimeType: "application/json",
     },
     async (uri, { id }) => {
       try {
-        const grimoire = Object.values(grimoireRegistry || {}).find(
-          (g: any) => g.id === id || g.id === `grimoire-${id}`
+        const kon = Object.values(konRegistry || {}).find(
+          (g: any) => g.id === id || g.id === `kon-${id}`
         ) as any;
 
-        if (!grimoire) {
-          throw new Error(`Grimoire not found: ${id}`);
+        if (!kon) {
+          throw new Error(`Kon not found: ${id}`);
         }
 
         const capabilities = {
-          grimoire: {
-            id: grimoire.id,
-            name: grimoire.name,
-            version: grimoire.version,
-            description: grimoire.description,
-            mountPath: grimoire.mountPath || `/api/${grimoire.id.replace(/^grimoire-/, "")}`,
+          kon: {
+            id: kon.id,
+            name: kon.name,
+            version: kon.version,
+            description: kon.description,
+            mountPath: kon.mountPath || `/api/${kon.id.replace(/^kon-/, "")}`,
           },
           endpoints:
-            grimoire.openApi?.paths?.map((p: any) => ({
+            kon.openApi?.paths?.map((p: any) => ({
               method: p.method.toUpperCase(),
               path: p.path,
               summary: p.summary,
               tags: p.tags,
               requireAuth: p.requireAuth !== false,
             })) || [],
-          schemas: Object.keys(grimoire.openApi?.schemas || {}),
-          tables: grimoire.tables || [],
-          hooks: Object.keys(grimoire.hooks || {}),
-          admin: grimoire.admin || null,
+          schemas: Object.keys(kon.openApi?.schemas || {}),
+          tables: kon.tables || [],
+          hooks: Object.keys(kon.hooks || {}),
+          admin: kon.admin || null,
         };
 
         return {
@@ -332,34 +332,33 @@ export const grimoire = defineGrimoire({
 
   server.registerResource(
     "api-operations",
-    "gremius://api-operations",
+    "kitsuden://api-operations",
     {
       title: "All API Operations",
-      description: "Complete list of available API operations across all grimoires",
+      description: "Complete list of available API operations across all kons",
       mimeType: "application/json",
     },
     async (uri) => {
       try {
         const operations: any[] = [];
 
-        for (const grimoire of Object.values(grimoireRegistry || {}) as any[]) {
-          if (!grimoire.openApi?.paths) continue;
+        for (const kon of Object.values(konRegistry || {}) as any[]) {
+          if (!kon.openApi?.paths) continue;
 
-          const mountPath = grimoire.mountPath || `/api/${grimoire.id.replace(/^grimoire-/, "")}`;
+          const mountPath = kon.mountPath || `/api/${kon.id.replace(/^kon-/, "")}`;
 
-          for (const path of grimoire.openApi.paths) {
+          for (const path of kon.openApi.paths) {
             operations.push({
               operationId:
-                path.operationId ||
-                `${grimoire.id}_${path.method}_${path.path.replace(/\//g, "_")}`,
-              grimoire: grimoire.id,
-              grimoireName: grimoire.name,
+                path.operationId || `${kon.id}_${path.method}_${path.path.replace(/\//g, "_")}`,
+              kon: kon.id,
+              konName: kon.name,
               method: path.method.toUpperCase(),
               path: `${mountPath}${path.path}`,
               fullPath: `/api${mountPath}${path.path}`,
               summary: path.summary,
               description: path.description,
-              tags: path.tags || [grimoire.name],
+              tags: path.tags || [kon.name],
               requireAuth: path.requireAuth !== false,
             });
           }
@@ -373,7 +372,7 @@ export const grimoire = defineGrimoire({
                 {
                   totalOperations: operations.length,
                   operations: operations.sort(
-                    (a, b) => a.grimoire.localeCompare(b.grimoire) || a.path.localeCompare(b.path)
+                    (a, b) => a.kon.localeCompare(b.kon) || a.path.localeCompare(b.path)
                   ),
                 },
                 null,
@@ -401,61 +400,61 @@ export const grimoire = defineGrimoire({
 
   server.registerResource(
     "development-guide",
-    "gremius://dev-guide",
+    "kitsuden://dev-guide",
     {
       title: "Development Guide",
-      description: "Guide for AI agents working with Gremius",
+      description: "Guide for AI agents working with Kitsuden",
       mimeType: "text/markdown",
     },
     async (uri) => {
-      const guide = `# Gremius Development Guide for AI Agents
+      const guide = `# Kitsuden Development Guide for AI Agents
 
 ## Quick Start
 
 ### 1. Explore the Project
 \`\`\`
-Resource: gremius://project-context
-Resource: gremius://api-operations
+Resource: kitsuden://project-context
+Resource: kitsuden://api-operations
 \`\`\`
 
 ### 2. Check Available Datasets
 \`\`\`
-Tool: gremius_list_datasets
-Resource: gremius://dataset/{id}/schema
+Tool: kitsuden_list_datasets
+Resource: kitsuden://dataset/{id}/schema
 \`\`\`
 
 ### 3. Query Data
 \`\`\`
-Tool: gremius_intelligent_query
+Tool: kitsuden_intelligent_query
   dataset: "games"
   query: "games released in 2024 with rating above 8"
 \`\`\`
 
-## Creating a Grimoire
+## Creating a Kon
 
 ### Option 1: Generate Template
 \`\`\`
-Tool: gremius_generate_grimoire
+Tool: kitsuden_generate_kon
   name: "inventory-management"
   features: ["crud", "relations", "webhooks"]
   dataModel: "Products with categories, suppliers, and stock tracking"
 \`\`\`
 
 ### Option 2: Manual Creation
-Create files in \`packages/grimoires/grimoire-{name}/\`:
+Create files in \`packages/kons/kon-{name}/\`:
 
-1. **index.ts** - Main grimoire definition
+1. **index.ts** - Main kon definition
 2. **schema.ts** - Database schema
-3. **grimoire.json** - Metadata
+3. **kon.json** - Metadata
 4. **package.json** - Dependencies
 
-### Grimoire Structure
+### Kon Structure
 \`\`\`typescript
 import { Hono } from "hono";
-import { defineGrimoire } from "@gremius/shared";
+import { defineKon } from "@kitsuden/shared";
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-my-feature",
+export const kon = defineKon({
+  id: "kon-my-feature",
   name: "My Feature",
   version: "1.0.0",
   

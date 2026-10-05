@@ -2,7 +2,7 @@
  * Migration Script: Workers + Webhooks → Actions
  *
  * Run this script to migrate existing data from:
- * - gremius_functions table → actions table
+ * - kitsuden_functions table → actions table
  * - webhooks table → actions table (if webhooks table exists)
  *
  * Usage:
@@ -12,10 +12,11 @@
  * because it tracks legacyId and legacyType.
  */
 
+import { messageOf } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 
 import { db } from "../index";
-import { actions, gremiusFunctions } from "../schema";
+import { actions, kitsudenFunctions } from "../schema";
 
 interface MigrationStats {
   functionsMigrated: number;
@@ -34,7 +35,7 @@ async function migrateFunctions(): Promise<number> {
 
   const existingIds = new Set(existingLegacyIds.map((r) => r.legacyId).filter(Boolean));
 
-  const functions = await db.select().from(gremiusFunctions);
+  const functions = await db.select().from(kitsudenFunctions);
   const toMigrate = functions.filter((f) => !existingIds.has(f.id));
 
   if (toMigrate.length === 0) {
@@ -50,7 +51,7 @@ async function migrateFunctions(): Promise<number> {
     try {
       // Map trigger
       let trigger: "manual" | "cron" | "event" | "http" = "manual";
-      let triggerConfig: Record<string, any> = {};
+      let triggerConfig: Record<string, unknown> = {};
 
       if (fn.trigger === "cron") {
         trigger = "cron";
@@ -96,8 +97,8 @@ async function migrateFunctions(): Promise<number> {
       });
 
       migrated++;
-    } catch (err: any) {
-      console.error(`[Migration] Failed to migrate function "${fn.name}":`, err.message);
+    } catch (err: unknown) {
+      console.error(`[Migration] Failed to migrate function "${fn.name}":`, messageOf(err));
     }
   }
 
@@ -184,8 +185,8 @@ async function migrateWebhooks(): Promise<number> {
       });
 
       migrated++;
-    } catch (err: any) {
-      console.error(`[Migration] Failed to migrate webhook "${wh.name}":`, err.message);
+    } catch (err: unknown) {
+      console.error(`[Migration] Failed to migrate webhook "${wh.name}":`, messageOf(err));
     }
   }
 
@@ -223,12 +224,12 @@ async function runMigration(): Promise<MigrationStats> {
     console.log("  1. Update your UI to use the new /api/actions endpoints");
     console.log("  2. Test that all actions work correctly");
     console.log("  3. After verification, you can drop the old tables:");
-    console.log("     - gremius_functions (keep until fully verified)");
+    console.log("     - kitsuden_functions (keep until fully verified)");
     console.log("     - webhooks (keep until fully verified)");
     console.log("");
-  } catch (err: any) {
-    console.error("[Migration] Fatal error:", err.message);
-    stats.errors.push(err.message);
+  } catch (err: unknown) {
+    console.error("[Migration] Fatal error:", messageOf(err));
+    stats.errors.push(messageOf(err));
     throw err;
   }
 

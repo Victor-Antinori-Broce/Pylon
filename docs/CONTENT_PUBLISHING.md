@@ -1,6 +1,6 @@
 # Content Publishing API
 
-Sistema de publicación de contenido abstracto para GremiusCMS. Permite promover datos de cualquier fuente (datasets o grimoires) a **Content Targets** (Blog, Documentation, Shop, etc.) que son provistos por grimoires primarios.
+Sistema de publicación de contenido abstracto para Kitsuden. Permite promover datos de cualquier fuente (datasets o kons) a **Content Targets** (Blog, Documentation, Shop, etc.) que son provistos por kons primarios.
 
 ---
 
@@ -13,14 +13,14 @@ Sistema de publicación de contenido abstracto para GremiusCMS. Permite promover
 │  └── API: GET /api/content/targets                              │
 │           POST /api/content/promote                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  GRIMOIRE PRIMARIO (Opcional)                                   │
-│  └── Blog (grimoire-blog)                                       │
+│  KON PRIMARIO (Opcional)                                   │
+│  └── Blog (kon-blog)                                       │
 │       └── blogContentTarget                                     │
 │            ├── register() en onEnable()                         │
 │            └── unregister() en onDisable()                      │
 ├─────────────────────────────────────────────────────────────────┤
-│  GRIMOIRES REGULARES                                            │
-│  └── Cualquier grimoire puede usar:                             │
+│  KONS REGULARES                                            │
+│  └── Cualquier kon puede usar:                             │
 │       ctx.contentPublishing.promote('blog', {...})              │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -29,19 +29,19 @@ Sistema de publicación de contenido abstracto para GremiusCMS. Permite promover
 
 ## ✨ Características
 
-- **Desacoplado**: Los grimoires no dependen de Blog, usan una API abstracta
+- **Desacoplado**: Los kons no dependen de Blog, usan una API abstracta
 - **Extensible**: Puedes tener múltiples Content Targets (Blog, Docs, Shop)
-- **Opcional**: Blog puede desactivarse sin romper otros grimoires
+- **Opcional**: Blog puede desactivarse sin romper otros kons
 - **Type-safe**: Interfaces completamente tipadas
 
 ---
 
 ## 🚀 Uso
 
-### Para desarrolladores de grimoires (consumidores)
+### Para desarrolladores de kons (consumidores)
 
 ```typescript
-// En cualquier grimoire, promover contenido al Blog
+// En cualquier kon, promover contenido al Blog
 router.post("/promote", async (c) => {
   const game = await getGameById(c.req.param("id"));
 
@@ -53,8 +53,8 @@ router.post("/promote", async (c) => {
   // Promover
   const result = await ctx.contentPublishing.promote("blog", {
     source: {
-      type: "grimoire",
-      grimoireId: "games",
+      type: "kon",
+      konId: "games",
       table: "games",
       recordId: game.id,
       data: game,
@@ -76,14 +76,14 @@ router.post("/promote", async (c) => {
 });
 ```
 
-### Para desarrolladores de grimoires primarios (proveedores)
+### Para desarrolladores de kons primarios (proveedores)
 
 ```typescript
 // Crear un Content Target
 export const docsContentTarget: ContentTarget = {
   id: "docs",
   name: "Documentation",
-  grimoireId: "documentation",
+  konId: "documentation",
   capabilities: {
     supportsSeo: true,
     supportsScheduling: true,
@@ -111,8 +111,8 @@ export const docsContentTarget: ContentTarget = {
   },
 };
 
-// Registrar en el grimoire
-export const grimoire = defineGrimoire({
+// Registrar en el kon
+export const kon = defineKon({
   id: "documentation",
   primary: true,
   optional: true,
@@ -144,7 +144,7 @@ Listar todos los Content Targets disponibles.
     {
       "id": "blog",
       "name": "Blog Posts",
-      "grimoireId": "blog",
+      "konId": "blog",
       "capabilities": {
         "supportsSeo": true,
         "supportsScheduling": true,
@@ -168,8 +168,8 @@ Promover una entrada a contenido publicable.
 {
   "targetId": "blog",
   "source": {
-    "type": "grimoire",
-    "grimoireId": "games",
+    "type": "kon",
+    "konId": "games",
     "table": "games",
     "recordId": "abc-123"
   },
@@ -206,22 +206,22 @@ Promover una entrada a contenido publicable.
 
 ## 🎯 Content Targets Integrados
 
-| Target | Grimoire      | Capacidades                                 |
-| ------ | ------------- | ------------------------------------------- |
-| `blog` | grimoire-blog | SEO, Scheduling, Editorial, Taxonomy, Media |
+| Target | Kon      | Capacidades                                 |
+| ------ | -------- | ------------------------------------------- |
+| `blog` | kon-blog | SEO, Scheduling, Editorial, Taxonomy, Media |
 
 ---
 
 ## 🔌 Crear un Content Target
 
-Ver `packages/grimoires/grimoire-blog/src/content-target.ts` como referencia.
+Ver `packages/kons/kon-blog/src/content-target.ts` como referencia.
 
 Pasos:
 
 1. Implementar la interfaz `ContentTarget`
-2. Registrar en `onEnable()` del grimoire
+2. Registrar en `onEnable()` del kon
 3. Desregistrar en `onDisable()`
-4. Marcar grimoire como `primary: true, optional: true`
+4. Marcar kon como `primary: true, optional: true`
 
 ---
 

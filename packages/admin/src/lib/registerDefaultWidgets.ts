@@ -14,7 +14,7 @@ import { componentRegistry } from "./registry.svelte";
 // Widgets de ejemplo - documentación para implementación futura
 void {
   // GameStatsWidget
-  id: "gremio-game-stats",
+  id: "kitsuden-game-stats",
   slot: "dashboard:stats",
   component: null, // (await import("../components/widgets/GameStatsWidget.svelte")).default,
   order: 10,
@@ -24,7 +24,7 @@ void {
 
 void {
   // RecentActivityWidget
-  id: "gremio-recent-activity",
+  id: "kitsuden-recent-activity",
   slot: "dashboard:sidebar",
   component: null, // (await import("../components/widgets/RecentActivityWidget.svelte")).default,
   order: 10,
@@ -38,13 +38,9 @@ void {
 export async function registerDefaultWidgets() {
   // En una implementación real, cargaríamos esto desde la API
   // o desde módulos dinámicos
-
   // Por ahora, simulamos el registro
-  console.log("🧩 Registering default widgets...");
-
   // Ejemplo de cómo registrar un widget:
   // componentRegistry.registerWidget(GameStatsWidget);
-
   // Nota: La carga dinámica real requeriría import() dinámicos
   // que se resuelvan en tiempo de ejecución
 }
@@ -72,8 +68,6 @@ export async function registerWidgetsFromAPI() {
       // const component = await import(widget.componentUrl);
       // componentRegistry.registerWidget({ ...widget, component: component.default });
     }
-
-    console.log(`🧩 Registered ${widgets.length} widgets from API`);
   } catch (e) {
     console.warn("Failed to load widgets from API:", e);
   }

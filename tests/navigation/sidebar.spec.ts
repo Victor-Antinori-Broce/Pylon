@@ -1,4 +1,4 @@
-// spec: specs/gremius-full-coverage.md — Section 10: Sidebar Navigation
+// spec: specs/kitsuden-full-coverage.md — Section 10: Sidebar Navigation
 // seed: tests/seed.spec.ts
 
 import { test, expect, type Page } from "@playwright/test";
@@ -10,8 +10,8 @@ async function loginAsAdmin(page: Page): Promise<boolean> {
   await page.waitForURL(/\/(login|setup)/, { timeout: 15_000 });
   if (page.url().includes("/setup")) return false;
 
-  await page.locator('input[type="email"]').fill("admin@gremius.gg");
-  await page.locator('input[type="password"]').fill("gremius123");
+  await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+  await page.locator('input[type="password"]').fill("kitsuden123");
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/\/$/, { timeout: 15_000 });
   await expect(page.locator("text=Welcome back")).toBeVisible({ timeout: 10_000 });

@@ -106,7 +106,7 @@ GET /api/admin/metrics   → Métricas time-series (auth)
 
 ```json
 {
-  "message": "GremiusCMS API",
+  "message": "Kitsuden API",
   "version": "0.5.0",
   "status": "healthy",
   "stats": {
@@ -152,7 +152,7 @@ X-RateLimit-Reset: 1712345678
 
 ### Error Pre-existente en Proyecto
 
-El archivo `packages/grimoires/grimoire-academy-lms/academy-lms.schema.ts` tiene un error:
+El archivo `packages/kons/kon-academy-lms/academy-lms.schema.ts` tiene un error:
 
 ```
 TypeError: undefined is not an object (evaluating 'table.userId')

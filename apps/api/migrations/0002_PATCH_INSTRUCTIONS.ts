@@ -22,7 +22,7 @@
  *    }
  *
  * Alternatively, just run the migration SQL:
- *   psql -U gremius -d gremius_db -f migrations/0002_add_blocks_column.sql
+ *   psql -U kitsuden -d kitsuden_db -f migrations/0002_add_blocks_column.sql
  *
  * Then Drizzle will pick up the existing columns on next introspect/push.
  */

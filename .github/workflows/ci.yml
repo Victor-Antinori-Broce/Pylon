@@ -1,8 +1,19 @@
 name: CI - Quality Checks
 
+# ── CUANDO CORRE ────────────────────────────────────────────────────────────
+#
+# En CUALQUIER rama, no solo en main/develop.
+#
+# El filtro `branches: [main, develop]` hacia que todo esto —la cadena de
+# migraciones, las sondas del repo, el smoke test de rutas— no se ejecutara
+# NUNCA mientras el trabajo vivia en una rama, que es donde vive siempre. Las
+# comprobaciones existian y no comprobaban nada hasta el momento en que ya era
+# tarde para que salieran baratas.
+#
+# Una comprobacion que solo corre en la rama de destino no es una red: es un
+# informe post mortem.
 on:
   push:
-    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
@@ -69,9 +80,9 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: gremius
-          POSTGRES_PASSWORD: gremiuspassword
-          POSTGRES_DB: gremius_test
+          POSTGRES_USER: kitsuden
+          POSTGRES_PASSWORD: kitsudenpassword
+          POSTGRES_DB: kitsuden_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -103,13 +114,82 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+      # Bun NO viene en el runner y estos pasos lo invocan (`bun run`, `bun test`).
+      # Sin esto el job fallaba en el primer paso que lo usa, asi que la cadena
+      # de migraciones y la suite de la API no se ejecutaban en CI.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # El esquema se construye desde CERO en cada push, aplicando la cadena
+      # completa de migraciones contra Postgres de verdad.
+      #
+      # Antes no existía este paso: CI levantaba Postgres y lanzaba los tests
+      # sin crear el esquema, así que la cadena de migraciones no se validaba
+      # NUNCA. Se descubrió que estaba rota — la migración 0020 usaba una
+      # columna que ninguna migración creaba, porque los ficheros 0003-0019 no
+      # están en el repositorio.
+      #
+      # Este paso es el que impide que vuelva a pasar: si una migración no
+      # aplica sobre una base limpia, el push falla aquí y no en producción.
+      - name: Apply migrations + RLS
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
+          NODE_ENV: test
+        run: bun run scripts/migrate.ts
+
+      # Segunda pasada: una migración que no es idempotente rompe cualquier
+      # despliegue que se reintente. Aquí no debe aplicarse nada nuevo.
+      - name: Verify migrations are idempotent
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
+          NODE_ENV: test
+        run: |
+          salida=$(bun run scripts/migrate.ts)
+          echo "$salida"
+          if echo "$salida" | grep -q "Aplicando"; then
+            echo "::error::La segunda pasada aplicó migraciones: la cadena no es idempotente."
+            exit 1
+          fi
+
+      # Que las migraciones apliquen no significa que el esquema sea el que el
+      # codigo espera. `game_collections` existia y le faltaban dos columnas que
+      # su esquema Drizzle declara: la migracion pasaba, y `GET /api/games/
+      # collections` devolvia 500 en produccion.
+      - name: Verify declared schema exists
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
+          NODE_ENV: test
+        run: bun run scripts/verificar-esquema.ts
+
+      # Se piden TODAS las rutas GET registradas y se exige que ninguna devuelva
+      # 5xx. Un 401 o un 404 estan bien: significan «hace falta sesion» y «ese id
+      # no existe». Un 500 significa que el servidor no supo atender su propia
+      # ruta.
+      #
+      # Es lo que faltaba para ver `GET /api/games/collections`, que llevaba
+      # meses en 500 porque `/:id` estaba registrada antes y consultaba
+      # `WHERE id = 'collections'`. Ninguna prueba unitaria lo veia: el handler
+      # correcto estaba bien escrito, lo que fallaba era cual se ejecutaba.
+      - name: Smoke test de rutas (ninguna puede devolver 5xx)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+        run: bun run scripts/humo-rutas.ts
 
       - name: Run API tests
         working-directory: apps/api
         env:
-          DATABASE_URL: postgres://gremius:gremiuspassword@localhost:5432/gremius_test
+          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
           REDIS_URL: redis://localhost:6379
           NODE_ENV: test
         run: bun test
@@ -136,8 +216,118 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Vitest tests
-        working-directory: apps/admin
-        run: npm test
+        working-directory: packages/admin
+        run: pnpm test
+
+      # La suite de la RAIZ — `tests/unit/**` — no la ejecutaba ningun job.
+      # Ahi viven las pruebas de vigilancia que impiden que vuelvan clases
+      # enteras de fallo: rutas ensombrecidas por un comodin, tablas que un kon
+      # declara y ninguna migracion crea, enlaces del panel que llevan a un 404,
+      # modulos nativos empaquetados, scripts de arranque que no terminan.
+      #
+      # Estaban escritas y no gateaban nada.
+      - name: Run repo guard tests
+        run: pnpm run test:unit
+
+  migraciones-de-todos-los-kons:
+    name: Migraciones de TODOS los kons
+    runs-on: ubuntu-latest
+    # ═════════════════════════════════════════════════════════════════════════
+    # POR QUE EXISTE ESTE JOB
+    # ═════════════════════════════════════════════════════════════════════════
+    #
+    # El job `test-api` migra los kons HABILITADOS: seis de veintiocho. Los otros
+    # veintidos vienen apagados de fabrica, asi que su SQL no lo ejecutaba nadie
+    # — ni en CI ni en desarrollo — hasta que un usuario activaba uno desde el
+    # panel de un servidor. En ese momento, y solo entonces, se descubria en que
+    # estado estaban. Lo que se encontro al mirarlos por primera vez:
+    #
+    #   · kon-dms, kon-esports, kon-agile y kon-directory NO tenian migracion de
+    #     arranque. Sus ficheros empezaban por un ALTER o un RENAME contra tablas
+    #     que nada creaba. Cuarenta y una tablas sin una sola sentencia CREATE.
+    #   · kon-games y kon-esports usaban `ALTER TYPE IF EXISTS`, que no existe en
+    #     PostgreSQL. Error de SINTAXIS: la cadena entera caia en la linea 6.
+    #   · kon-booking se renombraba una tabla a su propio nombre. Postgres no lo
+    #     trata como no-op, y rompia toda instalacion nueva justo despues de
+    #     haberlo creado todo bien.
+    #   · kon-streamers llevaba seis columnas de deriva: la tabla existia y la
+    #     consulta fallaba en tiempo de ejecucion.
+    #
+    # Ninguna de las cuatro clases la detecta una prueba unitaria: hacen falta un
+    # Postgres de verdad y una base VACIA. Eso es este job.
+    #
+    # `--todos-los-kons` no se usa en un servidor: crearia tablas de kons que
+    # nadie ha pedido. Es exclusivamente una comprobacion.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kitsuden
+          POSTGRES_PASSWORD: kitsudenpassword
+          POSTGRES_DB: kitsuden_kons
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_kons
+      NODE_ENV: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Sobre una base VACIA: es la unica forma de ver que una cadena que solo
+      # renombra tablas heredadas no crea nada.
+      - name: Aplicar la cadena de todos los kons desde cero
+        working-directory: apps/api
+        run: bun run scripts/migrate.ts --todos-los-kons --no-rls
+
+      - name: Comprobar que la cadena es idempotente
+        working-directory: apps/api
+        run: |
+          salida=$(bun run scripts/migrate.ts --todos-los-kons --no-rls)
+          echo "$salida"
+          if echo "$salida" | grep -q "Aplicando"; then
+            echo "::error::La segunda pasada aplico migraciones: la cadena no es idempotente."
+            exit 1
+          fi
+
+      # Migrar sin error no significa que el esquema sea el que el codigo espera.
+      # Este paso compara CADA tabla y CADA columna que declara el fichero
+      # Drizzle de cada kon con lo que la base tiene de verdad.
+      - name: Verificar el esquema declarado por cada kon
+        working-directory: apps/api
+        run: bun run scripts/verificar-esquema.ts --todos-los-kons
+
+      # RLS al final y sobre el esquema completo: las politicas de propiedad se
+      # generan recorriendo las tablas que existen, asi que un tipo de columna
+      # inesperado en un kon solo se ve aqui. Fue exactamente el caso de
+      # `uuid = text`, que tumbaba el contenedor al arrancar.
+      - name: Aplicar RLS sobre el esquema completo
+        working-directory: apps/api
+        run: bun run scripts/migrate.ts --todos-los-kons
 
   build-docker:
     name: Docker Build Check

@@ -10,24 +10,19 @@
  * - DELETE /api/agent/memory/:id - Eliminar memoria
  * - POST /api/agent/memory/search - Búsqueda semántica (si pgvector disponible)
  *
- * @author Gremius Security Team
+ * @author Kitsuden Security Team
  * @version 1.0.0
  */
 
+import { eqEnum } from "@kitsuden/engine";
 import { eq, and, desc, sql, lt, gt, gte, lte, inArray, isNull, or } from "drizzle-orm";
 import { Hono } from "hono";
 
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { agentMemory } from "@/db/schema";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { logger } from "@/lib/logger";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { agentAuthWithRBAC, requireScope } from "@/middleware/agent-rbac";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import type { AgentAuthContext } from "@/services/agent-auth";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import type { AppVariables } from "@/types/hono";
 
 const agentMemoryRouter = new Hono<{ Variables: AppVariables }>();
@@ -107,11 +102,11 @@ function buildMemoryFilters(agentId: string, filters: MemorySearchRequest) {
   const conditions: any[] = [eq(agentMemory.agentId, agentId)];
 
   if (filters.memoryType) {
-    conditions.push(eq(agentMemory.memoryType, filters.memoryType as any));
+    conditions.push(eqEnum(agentMemory.memoryType, filters.memoryType));
   }
 
   if (filters.category) {
-    conditions.push(eq(agentMemory.category, filters.category as any));
+    conditions.push(eqEnum(agentMemory.category, filters.category));
   }
 
   if (filters.tags && filters.tags.length > 0) {
@@ -363,6 +358,92 @@ agentMemoryRouter.post(
     }
   }
 );
+
+// `/stats` va antes que `/:id`: registrada despues, Hono la resolvia por el
+// comodin con id="stats" y la consulta buscaba una memoria con ese UUID.
+// Lo vigila tests/unit/rutas-ensombrecidas.test.ts.
+/**
+ * GET /api/agent/memory/stats
+ * Estadísticas de uso de memoria del agente
+ */
+agentMemoryRouter.get("/stats", async (c) => {
+  const agent = c.get("agent")!;
+  const requestId = c.get("requestId");
+
+  try {
+    // Contar por tipo
+    const typeStats = await db
+      .select({
+        memoryType: agentMemory.memoryType,
+        count: sql<number>`COUNT(*)`,
+        avgImportance: sql<number>`AVG(${agentMemory.importance})`,
+        totalAccessCount: sql<number>`SUM(${agentMemory.accessCount})`,
+      })
+      .from(agentMemory)
+      .where(eq(agentMemory.agentId, agent.agentId))
+      .groupBy(agentMemory.memoryType);
+
+    // Contar por categoría
+    const categoryStats = await db
+      .select({
+        category: agentMemory.category,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(agentMemory)
+      .where(eq(agentMemory.agentId, agent.agentId))
+      .groupBy(agentMemory.category);
+
+    // Totales
+    const [{ totalMemories, expiredMemories }] = await db
+      .select({
+        totalMemories: sql<number>`COUNT(*)`,
+        expiredMemories: sql<number>`COUNT(CASE WHEN ${agentMemory.validUntil} < NOW() THEN 1 END)`,
+      })
+      .from(agentMemory)
+      .where(eq(agentMemory.agentId, agent.agentId));
+
+    // Memoria más accedida
+    const [mostAccessed] = await db
+      .select({
+        id: agentMemory.id,
+        key: agentMemory.key,
+        accessCount: agentMemory.accessCount,
+      })
+      .from(agentMemory)
+      .where(eq(agentMemory.agentId, agent.agentId))
+      .orderBy(desc(agentMemory.accessCount))
+      .limit(1);
+
+    logger.debug(
+      {
+        agentId: agent.agentId,
+        requestId,
+      },
+      "Agent memory stats retrieved"
+    );
+
+    return c.json({
+      success: true,
+      data: {
+        total: Number(totalMemories),
+        expired: Number(expiredMemories),
+        byType: typeStats,
+        byCategory: categoryStats,
+        mostAccessed: mostAccessed || null,
+      },
+    });
+  } catch (error) {
+    logger.error({ error, agentId: agent.agentId, requestId }, "Failed to get agent memory stats");
+    return c.json(
+      {
+        success: false,
+        error: "Failed to get memory stats",
+        code: "MEMORY_STATS_ERROR",
+      },
+      500
+    );
+  }
+});
 
 /**
  * GET /api/agent/memory/:id
@@ -870,88 +951,5 @@ agentMemoryRouter.post(
     }
   }
 );
-
-/**
- * GET /api/agent/memory/stats
- * Estadísticas de uso de memoria del agente
- */
-agentMemoryRouter.get("/stats", async (c) => {
-  const agent = c.get("agent")!;
-  const requestId = c.get("requestId");
-
-  try {
-    // Contar por tipo
-    const typeStats = await db
-      .select({
-        memoryType: agentMemory.memoryType,
-        count: sql<number>`COUNT(*)`,
-        avgImportance: sql<number>`AVG(${agentMemory.importance})`,
-        totalAccessCount: sql<number>`SUM(${agentMemory.accessCount})`,
-      })
-      .from(agentMemory)
-      .where(eq(agentMemory.agentId, agent.agentId))
-      .groupBy(agentMemory.memoryType);
-
-    // Contar por categoría
-    const categoryStats = await db
-      .select({
-        category: agentMemory.category,
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(agentMemory)
-      .where(eq(agentMemory.agentId, agent.agentId))
-      .groupBy(agentMemory.category);
-
-    // Totales
-    const [{ totalMemories, expiredMemories }] = await db
-      .select({
-        totalMemories: sql<number>`COUNT(*)`,
-        expiredMemories: sql<number>`COUNT(CASE WHEN ${agentMemory.validUntil} < NOW() THEN 1 END)`,
-      })
-      .from(agentMemory)
-      .where(eq(agentMemory.agentId, agent.agentId));
-
-    // Memoria más accedida
-    const [mostAccessed] = await db
-      .select({
-        id: agentMemory.id,
-        key: agentMemory.key,
-        accessCount: agentMemory.accessCount,
-      })
-      .from(agentMemory)
-      .where(eq(agentMemory.agentId, agent.agentId))
-      .orderBy(desc(agentMemory.accessCount))
-      .limit(1);
-
-    logger.debug(
-      {
-        agentId: agent.agentId,
-        requestId,
-      },
-      "Agent memory stats retrieved"
-    );
-
-    return c.json({
-      success: true,
-      data: {
-        total: Number(totalMemories),
-        expired: Number(expiredMemories),
-        byType: typeStats,
-        byCategory: categoryStats,
-        mostAccessed: mostAccessed || null,
-      },
-    });
-  } catch (error) {
-    logger.error({ error, agentId: agent.agentId, requestId }, "Failed to get agent memory stats");
-    return c.json(
-      {
-        success: false,
-        error: "Failed to get memory stats",
-        code: "MEMORY_STATS_ERROR",
-      },
-      500
-    );
-  }
-});
 
 export default agentMemoryRouter;

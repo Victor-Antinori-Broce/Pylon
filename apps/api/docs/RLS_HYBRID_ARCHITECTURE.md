@@ -2,14 +2,14 @@
 
 **Versión:** 1.0  
 **Fecha:** 2026-02-26  
-**Autor:** Gremius Team  
+**Autor:** Kitsuden Team  
 **Estado:** Implementado / Pendiente Activación
 
 ---
 
 ## Resumen Ejecutivo
 
-Gremius implementa una arquitectura de seguridad de **dos niveles** para Row Level Security (RLS):
+Kitsuden implementa una arquitectura de seguridad de **dos niveles** para Row Level Security (RLS):
 
 1. **Nivel 1 (Aplicación):** RLS via Drizzle WHERE - rendimiento óptimo
 2. **Nivel 2 (Base de Datos):** RLS Nativo PostgreSQL - seguridad absoluta
@@ -205,7 +205,7 @@ const result = await db.execute(sql.raw(sql));
 
 ```bash
 # Atacante obtiene acceso a PostgreSQL
-psql -h db.gremius.dev -U readonly
+psql -h db.kitsuden.dev -U readonly
 
 readonly=> SELECT * FROM data_entries;
 ```

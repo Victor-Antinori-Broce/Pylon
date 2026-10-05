@@ -46,14 +46,14 @@
   let isOpen = $state(false);
   let selectedIndex = $state(0);
   let searchInput: HTMLInputElement;
-  let dropdownEl: HTMLDivElement;
+  let dropdownEl = $state<HTMLDivElement | null>(null);
   let entryResults = $state<SearchResult[]>([]);
   let isSearchingEntries = $state(false);
   let recentItems = $state<SearchResult[]>([]);
   let abortController: AbortController | null = null;
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
-  const RECENT_STORAGE_KEY = "gremius-admin-recent-pages";
+  const RECENT_STORAGE_KEY = "kitsuden-admin-recent-pages";
   const MAX_RECENT = 5;
   const MAX_DATASET_ENTRIES = 8;
 
@@ -390,13 +390,13 @@
 <div class="relative w-full max-w-md" onkeydown={handleKeyDown}>
   <div class="relative">
     <Search
-      class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim pointer-events-none"
+      class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-text-dim pointer-events-none"
     />
     <input
       bind:this={searchInput}
       type="text"
       placeholder="Search..."
-      class="w-full h-9 pl-10 pr-4 text-sm rounded-lg border border-gremius-border bg-gremius-card text-gremius-text placeholder:text-gremius-text-dim/60 focus:outline-none focus:ring-2 focus:ring-gremius-cyan/30 focus:border-gremius-cyan/50 transition-all"
+      class="w-full h-9 pl-10 pr-4 text-sm rounded-lg border border-kitsuden-border bg-kitsuden-card text-kitsuden-text placeholder:text-kitsuden-text-dim/60 focus:outline-none focus:ring-2 focus:ring-kitsuden-accent/30 focus:border-kitsuden-accent/50 transition-all"
       bind:value={query}
       onfocus={handleInputFocus}
       onblur={handleBlur}
@@ -404,7 +404,7 @@
     {#if isSearchingEntries}
       <div class="absolute right-3 top-1/2 -translate-y-1/2">
         <div
-          class="w-3.5 h-3.5 rounded-full border-2 border-gremius-cyan/30 border-t-gremius-cyan animate-spin"
+          class="w-3.5 h-3.5 rounded-full border-2 border-kitsuden-accent/30 border-t-kitsuden-accent animate-spin"
         ></div>
       </div>
     {/if}
@@ -413,10 +413,10 @@
   {#if isOpen}
     <div
       bind:this={dropdownEl}
-      class="absolute left-0 right-0 top-full mt-2 bg-gremius-card border border-gremius-border rounded-lg shadow-2xl shadow-black/40 overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
+      class="absolute left-0 right-0 top-full mt-2 bg-kitsuden-card border border-kitsuden-border rounded-lg shadow-2xl shadow-black/40 overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
     >
       {#if flatResults.length === 0}
-        <div class="px-4 py-8 text-center text-sm text-gremius-text-dim">
+        <div class="px-4 py-8 text-center text-sm text-kitsuden-text-dim">
           {#if query.trim()}
             No results found for "{query}"
           {:else}
@@ -435,11 +435,11 @@
         {#each categories as cat}
           {#if cat.items.length > 0}
             <div
-              class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gremius-subtle bg-gremius-bg/50 border-b border-gremius-border/50"
+              class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-kitsuden-subtle bg-kitsuden-bg/50 border-b border-kitsuden-border/50"
             >
               {getCategoryLabel(cat.key)}
             </div>
-            <div class="divide-y divide-gremius-border/30">
+            <div class="divide-y divide-kitsuden-border/30">
               {#each cat.items as item}
                 {@const idx = renderedIndices.value++}
                 <button
@@ -447,26 +447,26 @@
                   data-index={idx}
                   class="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors {selectedIndex ===
                   idx
-                    ? 'bg-gremius-cyan/10'
-                    : 'hover:bg-gremius-bg/50'}"
+                    ? 'bg-kitsuden-accent/10'
+                    : 'hover:bg-kitsuden-bg/50'}"
                   onmouseenter={() => (selectedIndex = idx)}
                   onclick={() => handleSelect(item)}
                 >
                   <div
-                    class="w-7 h-7 rounded-md bg-gremius-bg border border-gremius-border flex items-center justify-center shrink-0"
+                    class="w-7 h-7 rounded-md bg-kitsuden-bg border border-kitsuden-border flex items-center justify-center shrink-0"
                   >
-                    <item.icon class="w-3.5 h-3.5 text-gremius-text-dim" />
+                    <item.icon class="w-3.5 h-3.5 text-kitsuden-text-dim" />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gremius-text truncate">
+                    <p class="text-sm font-medium text-kitsuden-text truncate">
                       {item.title}
                     </p>
                     {#if item.subtitle}
-                      <p class="text-xs text-gremius-subtle truncate">{item.subtitle}</p>
+                      <p class="text-xs text-kitsuden-subtle truncate">{item.subtitle}</p>
                     {/if}
                   </div>
                   <ArrowRight
-                    class="w-3.5 h-3.5 text-gremius-subtle opacity-0 {selectedIndex === idx
+                    class="w-3.5 h-3.5 text-kitsuden-subtle opacity-0 {selectedIndex === idx
                       ? 'opacity-100'
                       : ''} transition-opacity shrink-0"
                   />
@@ -477,7 +477,7 @@
         {/each}
 
         <div
-          class="px-3 py-1.5 text-[10px] text-gremius-subtle bg-gremius-bg/30 border-t border-gremius-border/50 flex items-center justify-between"
+          class="px-3 py-1.5 text-[10px] text-kitsuden-subtle bg-kitsuden-bg/30 border-t border-kitsuden-border/50 flex items-center justify-between"
         >
           <span>{flatResults.length} result{flatResults.length === 1 ? "" : "s"}</span>
           <span class="hidden sm:inline">↑↓ to navigate · Enter to select · Esc to close</span>

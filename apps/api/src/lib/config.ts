@@ -1,14 +1,11 @@
 /**
- * GremiusCMS - Centralized Configuration
+ * Kitsuden - Centralized Configuration
  *
  * Type-safe configuration management with validation
  * and environment-based defaults.
  */
 
 import { z } from "zod";
-
-// Detect environment early for conditional validation
-const isProduction = process.env.NODE_ENV === "production";
 
 // Environment schema validation
 const envSchema = z.object({
@@ -24,17 +21,14 @@ const envSchema = z.object({
 
   // Storage (S3/MinIO)
   S3_ENDPOINT: z.string().default("http://localhost:9000"),
-  S3_BUCKET: z.string().default("gremius-media"),
+  S3_BUCKET: z.string().default("kitsuden-media"),
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),
   S3_PUBLIC_URL: z.string().default("http://localhost:9000"),
   S3_REGION: z.string().default("us-east-1"),
 
-  // Auth — In production: NO default (must be explicitly set)
-  //        In development: allows a known dev secret for convenience
-  BETTER_AUTH_SECRET: isProduction
-    ? z.string().min(32)
-    : z.string().min(32).default("dev-better-auth-secret-gremiuscms-change-in-production-32"),
+  // Auth — No default in any environment; must be explicitly set.
+  BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().default("http://localhost:3001"),
 
   // URLs
@@ -58,6 +52,26 @@ const envSchema = z.object({
 
   // Logging
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+
+  // ═══════════════════════════════════════════════════════════════════
+  // LLM Providers (Agents Engine)
+  // ═══════════════════════════════════════════════════════════════════
+  // Al menos uno debe estar configurado para que el Agent Engine funcione.
+  // Prioridad por defecto: OpenAI > Anthropic > DeepSeek > Ollama.
+  KITSUDEN_LLM_PROVIDER: z.enum(["openai", "anthropic", "deepseek", "ollama"]).optional(),
+  KITSUDEN_LLM_MODEL: z.string().optional(),
+
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().optional(),
+
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().optional(),
+
+  DEEPSEEK_API_KEY: z.string().optional(),
+  DEEPSEEK_MODEL: z.string().optional(),
+
+  OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
+  OLLAMA_MODEL: z.string().default("llama3.2"),
 
   // Features
   ENABLE_SWAGGER: z
@@ -84,12 +98,10 @@ function loadConfig() {
       console.error(
         `\nConfiguration validation failed (NODE_ENV=${process.env.NODE_ENV || "undefined"}):\n${issues}\n`
       );
-      if (isProduction) {
-        console.error(
-          "HINT: In production, BETTER_AUTH_SECRET must be explicitly set (min 32 chars).\n" +
-            "Generate one with: openssl rand -base64 48\n"
-        );
-      }
+      console.error(
+        "HINT: BETTER_AUTH_SECRET must be explicitly set in your .env (min 32 chars).\n" +
+          "Generate one with: openssl rand -base64 48\n"
+      );
       process.exit(1);
     }
     throw error;

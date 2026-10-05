@@ -24,8 +24,8 @@ test.describe("Comprehensive E2E System Tests", () => {
     // code execution path, meaning the service does not return a 500 error on credentials check.
     const loginRes = await request.post(`${API}/api/auth/sign-in/email`, {
       data: {
-        email: "admin@gremius.gg", // the seeded admin email
-        password: "gremius123",
+        email: "admin@kitsuden.gg", // the seeded admin email
+        password: "kitsuden123",
       },
     });
 
@@ -34,23 +34,23 @@ test.describe("Comprehensive E2E System Tests", () => {
     expect([200, 400, 403]).toContain(loginRes.status());
   });
 
-  // 3. Auto-detector of Grimoires & Realms
-  test("Grimoire & Realm Auto-Detection API", async ({ request }) => {
+  // 3. Auto-detector of Kons & Grimoires
+  test("Kon & Grimoire Auto-Detection API", async ({ request }) => {
     const res = await request.get(`${API}/api/modules`);
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
 
-    // Should return arrays for grimoires and realms
-    expect(Array.isArray(data.grimoires)).toBeTruthy();
+    // Should return arrays for kons and grimoires
+    expect(Array.isArray(data.kons)).toBeTruthy();
 
-    // Ensure that expected modules are detected (even those loaded passively via gremius.config.ts)
-    const moduleIds = data.grimoires.map((m: any) => m.id);
+    // Ensure that expected modules are detected (even those loaded passively via kitsuden.config.ts)
+    const moduleIds = data.kons.map((m: any) => m.id);
     expect(moduleIds).toContain("tags");
     expect(moduleIds).toContain("blog");
-    expect(moduleIds).toContain("academy"); // Optional Grimoire loaded via config
+    expect(moduleIds).toContain("academy"); // Optional Kon loaded via config
 
-    // Verify active realm logic
-    expect(data.activeRealm).toBeDefined();
+    // Verify active grimoire logic
+    expect(data.activeGrimoire).toBeDefined();
   });
 
   // 4. Data Sets API
@@ -63,8 +63,8 @@ test.describe("Comprehensive E2E System Tests", () => {
   });
 
   // 5. Academy APIs Verification
-  test("Academy Grimoire APIs", async ({ request }) => {
-    // Test that the academy grimoire endpoints were successfully mounted by the module-loader
+  test("Academy Kon APIs", async ({ request }) => {
+    // Test that the academy kon endpoints were successfully mounted by the module-loader
     const coursesRes = await request.get(`${API}/api/academy/courses`);
     // Should be a 200 list or 401 unauthorized (but not 404 Not Found, indicating the route is mounted)
     expect([200, 401]).toContain(coursesRes.status());
@@ -85,8 +85,8 @@ test.describe("Comprehensive E2E System Tests", () => {
       // First boot: set up admin user
       await page.waitForSelector('input[type="text"]', { timeout: 20000 });
       await page.locator('input[type="text"]').fill("Admin E2E");
-      await page.locator('input[type="email"]').fill("admin@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
 
       // Wait for registration and auto-login to complete, routing to dashboard
@@ -94,8 +94,8 @@ test.describe("Comprehensive E2E System Tests", () => {
     } else {
       // Login flow
       await page.waitForSelector('input[type="email"]');
-      await page.locator('input[type="email"]').fill("admin@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
 
       // Await redirect to dashboard
@@ -106,12 +106,12 @@ test.describe("Comprehensive E2E System Tests", () => {
     const sidebar = page.locator("aside");
     await expect(sidebar.locator("text=Dashboard")).toBeVisible();
 
-    // Check if dynamic grimoires appear in the sidebar
+    // Check if dynamic kons appear in the sidebar
     await expect(sidebar.locator("text=Tags").first()).toBeVisible();
     await expect(sidebar.locator("text=Blog").first()).toBeVisible();
 
     // C. Grid View Fallback Test (e.g. Tags)
-    // Grimoires without custom Svelte files automatically fallback to DataExplorer
+    // Kons without custom Svelte files automatically fallback to DataExplorer
     await sidebar.locator("text=Tags").first().click();
     await page.waitForURL("**/g/tags", { timeout: 10_000 });
 

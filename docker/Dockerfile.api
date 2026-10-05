@@ -3,11 +3,11 @@
 #
 # This standalone API Dockerfile has known issues:
 #   1. Uses `bun install` but the project uses pnpm as package manager
-#   2. Missing workspace packages: engine, core, grimoires, realms
-#   3. Dynamic imports from grimoires will fail at runtime
+#   2. Missing workspace packages: engine, core, kons, grimoires
+#   3. Dynamic imports from kons will fail at runtime
 #
 # Use instead:
-#   docker build -f docker/Dockerfile.prod --target api -t gremius-api:latest .
+#   docker build -f docker/Dockerfile.prod --target api -t kitsuden-api:latest .
 #
 # See docker-compose.yml for the correct production setup.
 # ===================================================================
@@ -15,7 +15,7 @@
 # Keeping this file for reference only. Will be removed in a future version.
 #
 # Original build command was:
-#   docker build -f docker/Dockerfile.api -t gremius/api .
+#   docker build -f docker/Dockerfile.api -t kitsuden/api .
 # ===================================================================
 
 FROM oven/bun:1-alpine AS base
@@ -29,8 +29,8 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/mcp-server/package.json ./packages/mcp-server/
 COPY packages/engine/package.json ./packages/engine/
 COPY packages/core/package.json ./packages/core/
+COPY packages/kons/package.json ./packages/kons/
 COPY packages/grimoires/package.json ./packages/grimoires/
-COPY packages/realms/package.json ./packages/realms/
 
 RUN apk add --no-cache nodejs npm && npm install -g pnpm@9.15.4
 RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
@@ -40,11 +40,11 @@ COPY packages/shared ./packages/shared
 COPY packages/mcp-server ./packages/mcp-server
 COPY packages/engine ./packages/engine
 COPY packages/core ./packages/core
+COPY packages/kons ./packages/kons
 COPY packages/grimoires ./packages/grimoires
-COPY packages/realms ./packages/realms
 COPY docker ./docker
 
-RUN pnpm --filter @gremius/shared build
+RUN pnpm --filter @kitsuden/shared build
 WORKDIR /app/apps/api
 RUN bun run build
 

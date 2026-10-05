@@ -1,20 +1,20 @@
-# 📊 Análisis: ¿Qué tan cerca está Gremius de ser un Framework?
+# 📊 Análisis: ¿Qué tan cerca está Kitsuden de ser un Framework?
 
 **Fecha del análisis:** 29 de marzo de 2026  
-**Versión analizada:** GremiusCMS v0.8.0-beta
+**Versión analizada:** Kitsuden v0.8.0-beta
 
 ---
 
 ## 🎯 Resumen Ejecutivo
 
-GremiusCMS es un **BaaS híbrido extensible** con características sólidas de framework. Expone las herramientas subyacentes (Hono + Drizzle) pero tiene `defineAction` que abstrae la complejidad para casos comunes, ahora con telemetry integrada.
+Kitsuden es un **BaaS híbrido extensible** con características sólidas de framework. Expone las herramientas subyacentes (Hono + Drizzle) pero tiene `defineAction` que abstrae la complejidad para casos comunes, ahora con telemetry integrada.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  PUNTUACIÓN GLOBAL: 70% Framework                       │
 ├─────────────────────────────────────────────────────────┤
 │  ✅ Eres un BaaS completo                               │
-│  ✅ Tienes sistema de plugins (Grimoires)               │
+│  ✅ Tienes sistema de plugins (Kons)               │
 │  ✅ Tienes CLI y scaffolding                            │
 │  ✅ Tienes Actions Layer (defineAction)                 │
 │  ✅ Tienes Observabilidad integrada                     │
@@ -33,7 +33,7 @@ GremiusCMS es un **BaaS híbrido extensible** con características sólidas de f
 | -------------------------------- | --------------- | ---------- | ----------------------------------------------- |
 | **1. Routing y servidor**        | 🟡 **Parcial**  | 6/10       | Hono expuesto, pero `defineAction` abstrae HTTP |
 | **2. ORM y base de datos**       | 🟡 **Parcial**  | 5/10       | Drizzle expuesto; helpers CRUD en datasets      |
-| **3. Estructura y scaffolding**  | 🟢 **Cumplido** | 8/10       | CLI, realms, monorepo claro                     |
+| **3. Estructura y scaffolding**  | 🟢 **Cumplido** | 8/10       | CLI, grimoires, monorepo claro                  |
 | **4. Utilidades y convenciones** | 🟢 **Mejorado** | 8/10       | `defineAction` + Telemetry 🆕                   |
 | **5. Observabilidad**            | 🟢 **Cumplido** | 8/10       | Telemetry nativa tipo LangSmith 🆕              |
 | **6. Documentación**             | 🟡 **Parcial**  | 5/10       | Buena interna, falta guías externas             |
@@ -135,8 +135,8 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
 // Unified Context (framework-like)
 export interface ActionContext<TPayload = unknown> {
   payload: TPayload;
-  db: GrimoireDatabase;
-  grimoire: GrimoireRegistry;
+  db: KonDatabase;
+  kon: KonRegistry;
   logger: Logger;
   queue: Queue;
   cache: Cache;
@@ -184,7 +184,7 @@ function wrapWithTelemetry<TPayload, TResult>(
   return {
     ...definition,
     run: async (ctx: ActionContext<TPayload>): Promise<ActionResult<TResult> | TResult | void> => {
-      const traceId = (ctx.grimoire as any)?.telemetry?.traceId;
+      const traceId = (ctx.kon as any)?.telemetry?.traceId;
       const provider = globalTelemetryProvider;
 
       if (!traceId || !provider) {
@@ -241,7 +241,7 @@ Sin cambios significativos. Falta documentación externa completa.
 
 ## 🆕 Nuevo Patrón: Hybrid Approach
 
-Gremius ahora ofrece **dos modos** de desarrollo:
+Kitsuden ahora ofrece **dos modos** de desarrollo:
 
 ### Modo Framework (Nuevo - defineAction)
 
@@ -289,7 +289,7 @@ export const myActions = [
 
 import { Hono } from "hono";
 
-function createCustomRouter(ctx: GrimoireContext) {
+function createCustomRouter(ctx: KonContext) {
   const app = new Hono();
 
   app.use("*", customMiddleware);
@@ -306,16 +306,16 @@ function createCustomRouter(ctx: GrimoireContext) {
 
 ## 🆕 Comparativa: Antes vs Ahora
 
-| Aspecto              | Antes (v0.7)                      | Ahora (v0.8)                                   |
-| -------------------- | --------------------------------- | ---------------------------------------------- |
-| **HTTP Routes**      | Crear Hono manualmente            | `defineAction({ trigger: "http.get:/path" })`  |
-| **Event Handlers**   | BullMQ manual                     | `defineAction({ trigger: "event:name" })`      |
-| **MCP Tools**        | Registro manual en MCP server     | `defineAction({ trigger: "agent.tool:name" })` |
-| **Context**          | `HonoContext` + `GrimoireContext` | `ActionContext` unificado                      |
-| **Type Safety**      | Manual                            | `defineAction<Payload, Result>()`              |
-| **Telemetry**        | ❌ No existía                     | ✅ Automática en actions 🆕                    |
-| **Cron**             | ❌ No implementado                | ✅ `event.cron:` triggers 🆕                   |
-| **Agent Playground** | ❌ No existía                     | ✅ UI integrada 🆕                             |
+| Aspecto              | Antes (v0.7)                  | Ahora (v0.8)                                   |
+| -------------------- | ----------------------------- | ---------------------------------------------- |
+| **HTTP Routes**      | Crear Hono manualmente        | `defineAction({ trigger: "http.get:/path" })`  |
+| **Event Handlers**   | BullMQ manual                 | `defineAction({ trigger: "event:name" })`      |
+| **MCP Tools**        | Registro manual en MCP server | `defineAction({ trigger: "agent.tool:name" })` |
+| **Context**          | `HonoContext` + `KonContext`  | `ActionContext` unificado                      |
+| **Type Safety**      | Manual                        | `defineAction<Payload, Result>()`              |
+| **Telemetry**        | ❌ No existía                 | ✅ Automática en actions 🆕                    |
+| **Cron**             | ❌ No implementado            | ✅ `event.cron:` triggers 🆕                   |
+| **Agent Playground** | ❌ No existía                 | ✅ UI integrada 🆕                             |
 
 ---
 
@@ -326,7 +326,7 @@ function createCustomRouter(ctx: GrimoireContext) {
 ```
         ┌─────────────────────────────────────┐
         │                                     │
-   BaaS │    ★ GremiusCMS                    │ Framework
+   BaaS │    ★ Kitsuden                    │ Framework
    Puro │         (tú estás aquí)            │ Puro
         │              🎯                     │
         │    BaaS con Framework Features      │
@@ -371,7 +371,7 @@ Firebase/Supabase  +  Framework Actions  +  AI-Native (MCP)  +  Observabilidad
         ↓                    ↓                    ↓                    ↓
         └──────┬─────────────┴─────────────┬─────┴────────────────────┘
                ↓                           ↓
-           ★ GREMIOCMS v0.8 ★
+           ★ KITSUDEN v0.8 ★
    "BaaS extensible con defineAction, MCP y Telemetry"
 ```
 
@@ -387,18 +387,18 @@ Firebase/Supabase  +  Framework Actions  +  AI-Native (MCP)  +  Observabilidad
 
 ## 📊 Comparativa con Alternativas (Actualizada)
 
-| Producto         | Tipo                 | Flexibilidad | AI-Native   | Observabilidad | Curva de Aprendizaje |
-| ---------------- | -------------------- | ------------ | ----------- | -------------- | -------------------- |
-| **Firebase**     | BaaS                 | Baja         | ❌          | Básica         | Muy baja             |
-| **Supabase**     | BaaS                 | Media        | ❌          | Básica         | Baja                 |
-| **Directus**     | BaaS                 | Media        | ❌          | Básica         | Baja                 |
-| **Next.js**      | Framework            | Alta         | ⚠️ (AI SDK) | Manual         | Media                |
-| **Express**      | Framework            | Muy Alta     | ❌          | Manual         | Media                |
-| **LangSmith**    | Observabilidad       | N/A          | ✅          | ✅ Nativa      | Media                |
-| **Gremius v0.8** | **BaaS + Framework** | **Alta**     | ✅ **Sí**   | ✅ **Nativa**  | **Media**            |
+| Producto          | Tipo                 | Flexibilidad | AI-Native   | Observabilidad | Curva de Aprendizaje |
+| ----------------- | -------------------- | ------------ | ----------- | -------------- | -------------------- |
+| **Firebase**      | BaaS                 | Baja         | ❌          | Básica         | Muy baja             |
+| **Supabase**      | BaaS                 | Media        | ❌          | Básica         | Baja                 |
+| **Directus**      | BaaS                 | Media        | ❌          | Básica         | Baja                 |
+| **Next.js**       | Framework            | Alta         | ⚠️ (AI SDK) | Manual         | Media                |
+| **Express**       | Framework            | Muy Alta     | ❌          | Manual         | Media                |
+| **LangSmith**     | Observabilidad       | N/A          | ✅          | ✅ Nativa      | Media                |
+| **Kitsuden v0.8** | **BaaS + Framework** | **Alta**     | ✅ **Sí**   | ✅ **Nativa**  | **Media**            |
 
 **Tu diferenciador:** El único que es BaaS (zero-config) + Framework (defineAction) + AI-Native (MCP) + Observabilidad (Telemetry)
 
 ---
 
-_Documento actualizado - GremiusCMS v0.8.0-beta_
+_Documento actualizado - Kitsuden v0.8.0-beta_

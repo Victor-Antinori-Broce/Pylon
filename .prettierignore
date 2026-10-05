@@ -10,4 +10,36 @@ _legacy_*
 node_modules/.pnpm
 apps/api/tests.json
 packages/testing/diag.ts
-packages/grimoires/grimoire-blog/SEO_GUIDE.md
+packages/kons/kon-blog/SEO_GUIDE.md
+
+# Worktrees de Claude: son COPIAS COMPLETAS del repo dentro del repo. Git ya
+# las excluye (.git/info/exclude) y ESLint también, pero Prettier no, así que
+# un `prettier --write .` reformatearía miles de archivos de otra rama.
+.claude/
+
+# Generado por `sync-kon-schema`, y se REGENERA al correr los tests. El
+# generador no emite estilo Prettier, así que `format:check` lo marcaba justo
+# después de cada `pnpm test` y el gate de `qa` no podia quedarse verde. El
+# estilo de un fichero que nadie edita a mano no lo decide Prettier.
+*.generated.ts
+
+# Lo mismo, pero de KITSUDEN Brain: los reescribe al correr los tests y llevan
+# su propia cabecera de "auto-generated".
+.llms/
+
+# Python virtual environments
+.venv*
+packages/admin/.venv-admin/
+
+# Junk / diagnostic files
+tmp_*.py
+tserrors-*.txt
+build-diag*.txt
+kitsuden_progress.txt
+progress.txt
+tmp_labels.txt
+tmp_dep_analysis.json
+null
+api.err
+api.log
+*.test-results.*

@@ -49,7 +49,7 @@
 
 ## 🔒 Seguridad Implementada
 
-- Tokens formato `grm_agent_` + random
+- Tokens formato `kitsuden_agent_` + random
 - Almacenamiento como hash en DB
 - Modal de "copiar una vez" con checkbox de confirmación
 - Mascara de token en UI (solo muestra prefijo y últimos 4 caracteres)

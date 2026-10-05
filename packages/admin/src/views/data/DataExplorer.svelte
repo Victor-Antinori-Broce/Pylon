@@ -121,7 +121,7 @@
       if (!res.ok) {
         promoteError = data.error || "Failed to promote entry";
       } else {
-        promoteSuccess = `Post created successfully! <a href="/posts/${data.postId}" class="text-gremius-cyan hover:underline">View post</a>`;
+        promoteSuccess = `Post created successfully! <a href="/posts/${data.postId}" class="text-kitsuden-accent hover:underline">View post</a>`;
         setTimeout(() => {
           closePromoteModal();
         }, 3000);
@@ -144,20 +144,20 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-gremius-text">Data Explorer</h2>
-      <p class="text-sm text-gremius-text-dim mt-0.5">Browse and query game data</p>
+      <h2 class="text-xl font-bold text-kitsuden-text">Data Explorer</h2>
+      <p class="text-sm text-kitsuden-text-dim mt-0.5">Browse and query game data</p>
     </div>
   </div>
 
   <!-- Search and Actions -->
   <div class="flex items-center gap-3">
     <div class="relative flex-1 max-w-md">
-      <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle" />
+      <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
       <input
         type="text"
         placeholder="Search games..."
         bind:value={search}
-        class="w-full pl-10 pr-4 py-2 bg-gremius-card border border-gremius-border rounded-lg text-sm focus:outline-none focus:border-gremius-cyan"
+        class="w-full pl-10 pr-4 py-2 bg-kitsuden-card border border-kitsuden-border rounded-lg text-sm focus:outline-none focus:border-kitsuden-accent"
       />
     </div>
     <button class="btn-secondary">
@@ -168,50 +168,50 @@
   {#if loading}
     <div class="flex justify-center py-20">
       <div
-        class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-6 h-6 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
     </div>
   {:else}
     <div class="card overflow-hidden">
       <table class="w-full text-sm">
-        <thead class="bg-gremius-surface border-b border-gremius-border">
+        <thead class="bg-kitsuden-surface border-b border-kitsuden-border">
           <tr>
-            <th class="text-left px-4 py-3 font-medium text-gremius-text-dim">Title</th>
-            <th class="text-left px-4 py-3 font-medium text-gremius-text-dim">Genre</th>
-            <th class="text-left px-4 py-3 font-medium text-gremius-text-dim">Platform</th>
-            <th class="text-left px-4 py-3 font-medium text-gremius-text-dim">Rating</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Title</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Genre</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Platform</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Rating</th>
             {#if blogEnabled}
-              <th class="text-left px-4 py-3 font-medium text-gremius-text-dim w-10">Actions</th>
+              <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim w-10">Actions</th>
             {/if}
           </tr>
         </thead>
         <tbody>
           {#each filteredGames as game}
-            <tr class="border-b border-gremius-border/50 hover:bg-gremius-surface/50">
+            <tr class="border-b border-kitsuden-border/50 hover:bg-kitsuden-surface/50">
               <td class="px-4 py-3 font-medium">{game.title}</td>
-              <td class="px-4 py-3 text-gremius-text-dim">{game.genre || "—"}</td>
+              <td class="px-4 py-3 text-kitsuden-text-dim">{game.genre || "—"}</td>
               <td class="px-4 py-3">
                 {#if game.platform}
                   <div class="flex gap-1">
                     {#each game.platform as p}
-                      <span class="px-1.5 py-0.5 text-[10px] bg-gremius-surface rounded">{p}</span>
+                      <span class="px-1.5 py-0.5 text-[10px] bg-kitsuden-surface rounded">{p}</span>
                     {/each}
                   </div>
                 {:else}
-                  <span class="text-gremius-subtle">—</span>
+                  <span class="text-kitsuden-subtle">—</span>
                 {/if}
               </td>
               <td class="px-4 py-3">
                 {#if game.rating}
-                  <span class="text-gremius-cyan">{game.rating}/10</span>
+                  <span class="text-kitsuden-accent">{game.rating}/10</span>
                 {:else}
-                  <span class="text-gremius-subtle">—</span>
+                  <span class="text-kitsuden-subtle">—</span>
                 {/if}
               </td>
               {#if blogEnabled}
                 <td class="px-4 py-3">
                   <button
-                    class="p-1.5 rounded-lg hover:bg-gremius-cyan/10 text-gremius-subtle hover:text-gremius-cyan transition-colors"
+                    class="p-1.5 rounded-lg hover:bg-kitsuden-accent/10 text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
                     title="Promote to Content"
                     onclick={() => openPromoteModal(game)}
                   >
@@ -231,21 +231,21 @@
 {#if showPromoteModal && selectedEntry}
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div
-      class="bg-gremius-card border border-gremius-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto"
+      class="bg-kitsuden-card border border-kitsuden-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gremius-border">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-kitsuden-border">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
             <Megaphone class="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h3 class="text-lg font-bold text-gremius-text">Promote to Content</h3>
-            <p class="text-xs text-gremius-text-dim">Convert dataset entry to blog post</p>
+            <h3 class="text-lg font-bold text-kitsuden-text">Promote to Content</h3>
+            <p class="text-xs text-kitsuden-text-dim">Convert dataset entry to blog post</p>
           </div>
         </div>
         <button
-          class="p-2 rounded-lg hover:bg-gremius-surface text-gremius-subtle"
+          class="p-2 rounded-lg hover:bg-kitsuden-surface text-kitsuden-subtle"
           onclick={closePromoteModal}
         >
           <X class="w-5 h-5" />
@@ -255,40 +255,44 @@
       <!-- Content -->
       <div class="p-6 space-y-4">
         <!-- Source preview -->
-        <div class="rounded-lg bg-gremius-surface/50 border border-gremius-border p-4">
-          <p class="text-xs text-gremius-subtle mb-2">Source Entry</p>
-          <p class="text-sm font-medium text-gremius-text">
+        <div class="rounded-lg bg-kitsuden-surface/50 border border-kitsuden-border p-4">
+          <p class="text-xs text-kitsuden-subtle mb-2">Source Entry</p>
+          <p class="text-sm font-medium text-kitsuden-text">
             {selectedEntry.title || selectedEntry.name || "Untitled"}
           </p>
-          <p class="text-xs text-gremius-text-dim mt-1">ID: {selectedEntry.id}</p>
+          <p class="text-xs text-kitsuden-text-dim mt-1">ID: {selectedEntry.id}</p>
         </div>
 
         <!-- Form -->
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-1.5">
+            <label for="titletemplate" class="block text-sm font-medium text-kitsuden-text mb-1.5">
               Title Template
             </label>
             <input
+              id="titletemplate"
               type="text"
               bind:value={titleTemplate}
               placeholder="Analysis: $title"
-              class="w-full px-3 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-sm focus:outline-none focus:border-gremius-cyan"
+              class="w-full px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm focus:outline-none focus:border-kitsuden-accent"
             />
-            <p class="text-xs text-gremius-subtle mt-1">
+            <p class="text-xs text-kitsuden-subtle mt-1">
               Use {"{field}"} for dynamic values (e.g., {"{title}"}, {"{genre}"})
             </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-1.5"> Slug Prefix </label>
+            <label for="slugprefix" class="block text-sm font-medium text-kitsuden-text mb-1.5">
+              Slug Prefix
+            </label>
             <input
+              id="slugprefix"
               type="text"
               bind:value={slugPrefix}
               placeholder="analysis"
-              class="w-full px-3 py-2 bg-gremius-surface border border-gremius-border rounded-lg text-sm focus:outline-none focus:border-gremius-cyan"
+              class="w-full px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm focus:outline-none focus:border-kitsuden-accent"
             />
-            <p class="text-xs text-gremius-subtle mt-1">
+            <p class="text-xs text-kitsuden-subtle mt-1">
               Result: /blog/{slugPrefix || "entry"}/entry-slug
             </p>
           </div>
@@ -297,9 +301,9 @@
             <input
               type="checkbox"
               bind:checked={autoPublish}
-              class="w-4 h-4 rounded border-gremius-border bg-gremius-surface text-gremius-cyan focus:ring-gremius-cyan"
+              class="w-4 h-4 rounded border-kitsuden-border bg-kitsuden-surface text-kitsuden-accent focus:ring-kitsuden-accent"
             />
-            <span class="text-sm text-gremius-text">Auto-publish immediately</span>
+            <span class="text-sm text-kitsuden-text">Auto-publish immediately</span>
           </label>
         </div>
 
@@ -318,7 +322,7 @@
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gremius-border">
+      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-kitsuden-border">
         <button class="btn-secondary" onclick={closePromoteModal} disabled={promoteLoading}>
           Cancel
         </button>

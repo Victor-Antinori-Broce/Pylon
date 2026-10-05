@@ -1,4 +1,4 @@
-# Test Report - Gremius Core & Engine
+# Test Report - Kitsuden Core & Engine
 
 **Date:** 2026-04-12  
 **Command:** Manual verification of core systems
@@ -57,12 +57,12 @@
 
 ---
 
-## ✅ GRIMOIRE TESTS
+## ✅ KON TESTS
 
-### grimoire-blog
+### kon-blog
 
 ```
-📊 TEST RESULTS - Blog Grimoire
+📊 TEST RESULTS - Blog Kon
 ======================================================================
 ✅ Passed: 38
 ❌ Failed: 1 (pg-mem module not found - optional dependency)
@@ -78,7 +78,7 @@ Key tests passing:
 - ✅ Authentication middleware
 - ✅ Event emission
 - ✅ Content Publishing integration
-- ✅ Grimoire lifecycle hooks
+- ✅ Kon lifecycle hooks
 - ✅ Database integration
 - ✅ SEO Utilities
 - ✅ Content Utilities
@@ -92,9 +92,9 @@ Key tests passing:
 | **Actions Engine**  | ✅     | 4 actions registered, MCP tools working |
 | **Query Parser**    | ✅     | 19/19 tests passed                      |
 | **Batch Validator** | ✅     | 28/28 tests passed                      |
-| **Blog Grimoire**   | ✅     | 38/39 tests passed                      |
-| **Auto-discovery**  | ✅     | Grimoires auto-discovered correctly     |
-| **Schema Merging**  | ✅     | Multi-grimoire schema merging works     |
+| **Blog Kon**        | ✅     | 38/39 tests passed                      |
+| **Auto-discovery**  | ✅     | Kons auto-discovered correctly          |
+| **Schema Merging**  | ✅     | Multi-kon schema merging works          |
 
 ---
 
@@ -121,7 +121,7 @@ Key tests passing:
 
 ```
 Total Engine Tests:    47/47  ✅ 100%
-Total Grimoire Tests:  38/39  ✅  97%
+Total Kon Tests:  38/39  ✅  97%
 Overall Core:          85/86  ✅  99%
 ```
 
@@ -134,10 +134,10 @@ Overall Core:          85/86  ✅  99%
 1. ✅ **Actions System** - HTTP, Agent, Event, Cron triggers
 2. ✅ **Query Engine** - Parsing, validation, relations
 3. ✅ **Batch API** - Validator, rules engine
-4. ✅ **Grimoire Lifecycle** - Startup, enable, disable hooks
+4. ✅ **Kon Lifecycle** - Startup, enable, disable hooks
 5. ✅ **Router Factory** - Hono router generation
-6. ✅ **Schema Merging** - Multi-grimoire support
-7. ✅ **Auto-discovery** - Dynamic grimoire loading
+6. ✅ **Schema Merging** - Multi-kon support
+7. ✅ **Auto-discovery** - Dynamic kon loading
 8. ✅ **Content Publishing** - Promotion pipeline
 9. ✅ **SEO Utilities** - Metadata, validation, scoring
 10. ✅ **Event Emission** - Event tracking and handling

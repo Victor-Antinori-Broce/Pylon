@@ -41,8 +41,8 @@ app.route("/api/mcp", mcpRoutes);
 
 ### 2.1 API Key Format
 
-- **Format**: `gremius_sk_{64_char_hex}`
-- **Header**: `Authorization: Bearer gremius_sk_...`
+- **Format**: `kitsuden_sk_{64_char_hex}`
+- **Header**: `Authorization: Bearer kitsuden_sk_...`
 - **Validation**: Against database `api_keys` table
 
 ### 2.2 Session Flow
@@ -94,7 +94,7 @@ apps/api-client/src/utils/http.ts
 apps/api-client/test/setup.ts
 apps/api-client/test/client.test.ts
 packages/admin/src/routes/audit/+page.svelte
-packages/admin/src/routes/grimoires/+page.svelte
+packages/admin/src/routes/kons/+page.svelte
 packages/admin/src/routes/storage/+page.svelte
 packages/admin/src/routes/settings/+page.svelte
 packages/admin/src/routes/users/+page.svelte
@@ -104,7 +104,7 @@ packages/admin/src/routes/profile/+page.svelte
 packages/admin/src/routes/datasets/+page.svelte
 packages/admin/src/routes/datasets/[id]/table/+page.svelte
 packages/admin/src/routes/datasets/[id]/form/+page.svelte
-packages/admin/src/routes/grimoires/[id]/+page.svelte
+packages/admin/src/routes/kons/[id]/+page.svelte
 packages/admin/src/routes/workers/+page.svelte
 apps/website/src/hooks.server.ts
 ```
@@ -139,22 +139,22 @@ mcpEnabled: config.ENABLE_MCP,
 
 ### 5.1 Available Tools
 
-| Tool                      | Description                                     |
-| ------------------------- | ----------------------------------------------- |
-| `gremius_query_dataset`   | Query dataset with filters, pagination, sorting |
-| `gremius_insert_record`   | Insert record into dataset                      |
-| `gremius_update_record`   | Update record by ID                             |
-| `gremius_delete_record`   | Delete record by ID                             |
-| `gremius_list_datasets`   | List all accessible datasets                    |
-| `gremius_dispatch_worker` | Dispatch a Grimoire worker                      |
+| Tool                       | Description                                     |
+| -------------------------- | ----------------------------------------------- |
+| `kitsuden_query_dataset`   | Query dataset with filters, pagination, sorting |
+| `kitsuden_insert_record`   | Insert record into dataset                      |
+| `kitsuden_update_record`   | Update record by ID                             |
+| `kitsuden_delete_record`   | Delete record by ID                             |
+| `kitsuden_list_datasets`   | List all accessible datasets                    |
+| `kitsuden_dispatch_worker` | Dispatch a Kon worker                           |
 
 ### 5.2 Available Resources
 
-| Resource                 | Description               |
-| ------------------------ | ------------------------- |
-| `gremius://datasets`     | List of all datasets      |
-| `gremius://grimoires`    | List of all grimoires     |
-| `gremius://dataset/{id}` | Specific dataset metadata |
+| Resource                  | Description               |
+| ------------------------- | ------------------------- |
+| `kitsuden://datasets`     | List of all datasets      |
+| `kitsuden://kons`         | List of all kons          |
+| `kitsuden://dataset/{id}` | Specific dataset metadata |
 
 ### 5.3 Special Features
 
@@ -215,13 +215,13 @@ Client                                    Server
 
 ```bash
 # 1. Create SSE connection (returns stream with session endpoint)
-curl -N -H "Authorization: Bearer gremius_sk_your_key_here" \
+curl -N -H "Authorization: Bearer kitsuden_sk_your_key_here" \
   http://localhost:3001/api/mcp
 
 # 2. Send JSON-RPC message (use sessionId from SSE response)
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer gremius_sk_your_key_here" \
+  -H "Authorization: Bearer kitsuden_sk_your_key_here" \
   http://localhost:3001/api/mcp?sessionId=YOUR_SESSION_ID \
   -d '{
     "jsonrpc": "2.0",
@@ -249,7 +249,7 @@ curl -X POST \
   "result": {
     "protocolVersion": "2024-11-05",
     "serverInfo": {
-      "name": "gremius-mcp-server",
+      "name": "kitsuden-mcp-server",
       "version": "1.0.0"
     },
     "capabilities": {
@@ -288,7 +288,7 @@ curl -X POST \
 | Route mounting       | ✅ OK  | `/api/mcp` mounted in index.ts:424 |
 | SSE endpoint         | ✅ OK  | `GET /api/mcp`                     |
 | JSON-RPC endpoint    | ✅ OK  | `POST /api/mcp?sessionId=`         |
-| Authentication       | ✅ OK  | Bearer gremius*sk* required        |
+| Authentication       | ✅ OK  | Bearer kitsuden*sk* required       |
 | Frontend integration | ✅ OK  | All 22 files use :3001             |
 | Feature flag         | ✅ OK  | ENABLE_MCP defaults to true        |
 | Session management   | ⚠️ OK  | In-memory, 1h TTL                  |

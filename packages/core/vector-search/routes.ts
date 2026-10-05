@@ -4,7 +4,7 @@
  * Base path: /api/datasets/:datasetId/vector-*
  */
 
-import { eq, and, sql } from "drizzle-orm"; // desc, lt, isNotNull removed - unused
+import { eq, and, inArray, sql } from "drizzle-orm"; // desc, lt, isNotNull removed - unused
 import { Hono } from "hono";
 import { z } from "zod";
 
@@ -48,7 +48,10 @@ app.post("/datasets/:datasetId/vector-search", async (c) => {
   const conditions = [eq(vectorIndexTable.datasetId, datasetId)];
 
   if (fields?.length) {
-    conditions.push(sql`${vectorIndexTable.fieldName} = ANY(${fields})`);
+    // `= ANY(${array})` manda el array como UN parámetro escalar y Postgres
+    // responde «malformed array literal». Solo falla cuando alguien usa el
+    // filtro, así que sobrevive a cualquier prueba que no lo pase.
+    conditions.push(inArray(vectorIndexTable.fieldName, fields));
   }
 
   // Perform vector search using cosine similarity
@@ -237,7 +240,7 @@ app.post("/vector-search/global", async (c) => {
 
   const conditions = [];
   if (datasetIds?.length) {
-    conditions.push(sql`${vectorIndexTable.datasetId} = ANY(${datasetIds})`);
+    conditions.push(inArray(vectorIndexTable.datasetId, datasetIds));
   }
 
   const results = await db

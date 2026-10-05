@@ -1,5 +1,4 @@
 // Re-export from canonical location
-// @ts-ignore - Path alias resolution handled by tsconfig
 export {
   uploadFile,
   uploadBuffer,

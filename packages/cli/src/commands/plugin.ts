@@ -1,5 +1,5 @@
 /**
- * PLUGIN Command - Manage grimoire plugins
+ * PLUGIN Command - Manage kon plugins
  */
 
 import { existsSync } from "node:fs";
@@ -17,7 +17,7 @@ import ora from "ora";
 
 const NPM_REGISTRY = "https://registry.npmjs.org";
 
-interface GrimoireInfo {
+interface KonInfo {
   id: string;
   name: string;
   description: string;
@@ -93,16 +93,16 @@ export async function install(packageName: string, options: InstallOptions) {
       throw new Error("No package manager found (pnpm or npm required)");
     }
 
-    spinner.text = "Configuring grimoire...";
+    spinner.text = "Configuring kon...";
 
-    // Read grimoire manifest from node_modules
-    const manifest = await readGrimoireManifest(projectRoot, resolvedName);
+    // Read kon manifest from node_modules
+    const manifest = await readKonManifest(projectRoot, resolvedName);
 
     if (!manifest) {
-      spinner.warn("No grimoire.json found. Package might not be a valid grimoire.");
+      spinner.warn("No kon.json found. Package might not be a valid kon.");
     }
 
-    // Update gremius.config.ts if needed
+    // Update kitsuden.config.ts if needed
     if (options.save !== false && manifest) {
       await addToConfig(projectRoot, manifest.id || packageName);
     }
@@ -110,7 +110,7 @@ export async function install(packageName: string, options: InstallOptions) {
     // Register in database (if DB is available)
     try {
       await registerInDatabase(projectRoot, {
-        grimoireId: manifest?.id || packageName,
+        konId: manifest?.id || packageName,
         name: manifest?.name || packageName,
         version: manifest?.version || "1.0.0",
         source: "npm",
@@ -212,25 +212,25 @@ export async function list(options: ListOptions) {
   const projectRoot = findProjectRoot();
 
   // Read installed from DB
-  const installed = await getInstalledGrimoires(projectRoot);
+  const installed = await getInstalledKons(projectRoot);
 
   if (options.json) {
     console.log(JSON.stringify(installed, null, 2));
     return;
   }
 
-  console.log(chalk.bold("\n📦 Installed Grimoires\n"));
+  console.log(chalk.bold("\n📦 Installed Kons\n"));
 
   if (installed.length === 0) {
-    console.log(chalk.gray("  No grimoires installed.\n"));
-    console.log(chalk.gray("  Run 'gremius plugin install <package>' to add one.\n"));
+    console.log(chalk.gray("  No kons installed.\n"));
+    console.log(chalk.gray("  Run 'kitsuden plugin install <package>' to add one.\n"));
     return;
   }
 
   for (const g of installed) {
     const statusIcon = g.enabled ? chalk.green("●") : chalk.gray("○");
     const officialBadge =
-      g.source === "npm" && g.sourceUrl?.startsWith("@gremius/") ? chalk.blue("[official]") : "";
+      g.source === "npm" && g.sourceUrl?.startsWith("@kitsuden/") ? chalk.blue("[official]") : "";
 
     console.log(`  ${statusIcon} ${chalk.bold(g.name)} ${chalk.gray(g.version)} ${officialBadge}`);
     if (g.description) {
@@ -241,10 +241,10 @@ export async function list(options: ListOptions) {
 
   // Show available if --all
   if (options.all) {
-    console.log(chalk.bold("\n📦 Available Grimoires\n"));
+    console.log(chalk.bold("\n📦 Available Kons\n"));
 
-    const available = await searchNpm("grimoire");
-    const notInstalled = available.filter((a) => !installed.some((i) => i.grimoireId === a.id));
+    const available = await searchNpm("kon");
+    const notInstalled = available.filter((a) => !installed.some((i) => i.konId === a.id));
 
     for (const g of notInstalled.slice(0, 10)) {
       console.log(`  ${chalk.gray("○")} ${chalk.bold(g.name)} ${chalk.gray(g.version)}`);
@@ -278,7 +278,7 @@ export async function search(query: string, options: SearchOptions) {
     spinner.stop();
 
     if (npmResults.length === 0) {
-      console.log(chalk.yellow("  No grimoires found.\n"));
+      console.log(chalk.yellow("  No kons found.\n"));
       return;
     }
 
@@ -309,14 +309,14 @@ export async function search(query: string, options: SearchOptions) {
 export async function enable(packageName: string) {
   const projectRoot = findProjectRoot();
 
-  await updateGrimoireStatus(projectRoot, packageName, true);
+  await updateKonStatus(projectRoot, packageName, true);
   console.log(chalk.green(`✓ Enabled ${packageName}`));
 }
 
 export async function disable(packageName: string) {
   const projectRoot = findProjectRoot();
 
-  await updateGrimoireStatus(projectRoot, packageName, false);
+  await updateKonStatus(projectRoot, packageName, false);
   console.log(chalk.yellow(`✓ Disabled ${packageName}`));
 }
 
@@ -330,10 +330,10 @@ interface UpdateOptions {
 
 export async function update(packageName: string | undefined, options: UpdateOptions) {
   if (options.all) {
-    console.log(chalk.blue("\n🔄 Updating all grimoires...\n"));
+    console.log(chalk.blue("\n🔄 Updating all kons...\n"));
 
     const projectRoot = findProjectRoot();
-    const installed = await getInstalledGrimoires(projectRoot);
+    const installed = await getInstalledKons(projectRoot);
 
     for (const g of installed) {
       if (g.sourceUrl) {
@@ -353,12 +353,12 @@ export async function update(packageName: string | undefined, options: UpdateOpt
 
 function resolvePackageName(name: string): string {
   // If already scoped or prefixed, return as-is
-  if (name.startsWith("@") || name.startsWith("grimoire-")) {
+  if (name.startsWith("@") || name.startsWith("kon-")) {
     return name;
   }
 
-  // Try official @gremius scope first
-  return `@gremius/grimoire-${name}`;
+  // Try official @kitsuden scope first
+  return `@kitsuden/kon-${name}`;
 }
 
 function findProjectRoot(): string {
@@ -366,15 +366,15 @@ function findProjectRoot(): string {
 
   while (current !== "/") {
     if (
-      existsSync(join(current, "apps", "api", "gremius.config.ts")) ||
-      existsSync(join(current, "gremius.config.ts"))
+      existsSync(join(current, "apps", "api", "kitsuden.config.ts")) ||
+      existsSync(join(current, "kitsuden.config.ts"))
     ) {
       return current;
     }
     current = join(current, "..");
   }
 
-  throw new Error("Not in a Gremius project. Run from project root.");
+  throw new Error("Not in a Kitsuden project. Run from project root.");
 }
 
 function detectPackageManager(projectRoot: string): "pnpm" | "npm" | null {
@@ -393,40 +393,40 @@ async function checkInstalled(projectRoot: string, packageName: string): Promise
   return existsSync(nodeModulesPath);
 }
 
-async function readGrimoireManifest(projectRoot: string, packageName: string): Promise<any> {
+async function readKonManifest(projectRoot: string, packageName: string): Promise<any> {
   try {
-    const grimoireJsonPath = join(projectRoot, "node_modules", packageName, "grimoire.json");
-    const content = await readFile(grimoireJsonPath, "utf-8");
+    const konJsonPath = join(projectRoot, "node_modules", packageName, "kon.json");
+    const content = await readFile(konJsonPath, "utf-8");
     return JSON.parse(content);
   } catch {
     try {
       const pkgJsonPath = join(projectRoot, "node_modules", packageName, "package.json");
       const content = await readFile(pkgJsonPath, "utf-8");
       const pkg = JSON.parse(content);
-      return pkg.gremius;
+      return pkg.kitsuden;
     } catch {
       return null;
     }
   }
 }
 
-async function addToConfig(projectRoot: string, grimoireId: string) {
-  const configPath = join(projectRoot, "apps", "api", "gremius.config.ts");
+async function addToConfig(projectRoot: string, konId: string) {
+  const configPath = join(projectRoot, "apps", "api", "kitsuden.config.ts");
 
   try {
     let content = await readFile(configPath, "utf-8");
 
     // Simple regex-based addition (in production, use AST parsing)
-    const grimoiresMatch = content.match(/grimoires:\s*\[([^\]]*)\]/);
+    const konsMatch = content.match(/kons:\s*\[([^\]]*)\]/);
 
-    if (grimoiresMatch) {
-      const existing = grimoiresMatch[1];
-      if (!existing.includes(grimoireId)) {
-        const newGrimoires = existing.trim()
-          ? `${existing.trim()},\n    "${grimoireId}",`
-          : `\n    "${grimoireId}",`;
+    if (konsMatch) {
+      const existing = konsMatch[1];
+      if (!existing.includes(konId)) {
+        const newKons = existing.trim()
+          ? `${existing.trim()},\n    "${konId}",`
+          : `\n    "${konId}",`;
 
-        content = content.replace(/grimoires:\s*\[[^\]]*\]/, `grimoires: [${newGrimoires}\n  ]`);
+        content = content.replace(/kons:\s*\[[^\]]*\]/, `kons: [${newKons}\n  ]`);
 
         await writeFile(configPath, content);
       }
@@ -436,14 +436,14 @@ async function addToConfig(projectRoot: string, grimoireId: string) {
   }
 }
 
-async function removeFromConfig(projectRoot: string, grimoireId: string) {
-  const configPath = join(projectRoot, "apps", "api", "gremius.config.ts");
+async function removeFromConfig(projectRoot: string, konId: string) {
+  const configPath = join(projectRoot, "apps", "api", "kitsuden.config.ts");
 
   try {
     let content = await readFile(configPath, "utf-8");
 
-    // Remove from grimoires array
-    content = content.replace(new RegExp(`\\s*"${grimoireId}",?`, "g"), "");
+    // Remove from kons array
+    content = content.replace(new RegExp(`\\s*"${konId}",?`, "g"), "");
 
     await writeFile(configPath, content);
   } catch {
@@ -456,14 +456,14 @@ async function registerInDatabase(_projectRoot: string, _info: any) {
   // For now, just log it
 }
 
-async function unregisterFromDatabase(_projectRoot: string, _grimoireId: string) {
+async function unregisterFromDatabase(_projectRoot: string, _konId: string) {
   // This would make an API call
 }
 
-async function getInstalledGrimoires(projectRoot: string): Promise<any[]> {
+async function getInstalledKons(projectRoot: string): Promise<any[]> {
   // Try to read from API or fallback to reading node_modules
   try {
-    const response = await fetch("http://localhost:3000/api/admin/grimoires/installed");
+    const response = await fetch("http://localhost:3000/api/admin/kons/installed");
     if (response.ok) {
       const data = (await response.json()) as any[];
       return data;
@@ -472,8 +472,8 @@ async function getInstalledGrimoires(projectRoot: string): Promise<any[]> {
     // API not running, scan node_modules
   }
 
-  // Fallback: scan node_modules for @gremius packages
-  const grimoires: any[] = [];
+  // Fallback: scan node_modules for @kitsuden packages
+  const kons: any[] = [];
   const nodeModules = join(projectRoot, "node_modules");
 
   try {
@@ -481,11 +481,11 @@ async function getInstalledGrimoires(projectRoot: string): Promise<any[]> {
     const entries = await readdir(nodeModules);
 
     for (const entry of entries) {
-      if (entry.startsWith("grimoire-") || entry.startsWith("@")) {
-        const manifest = await readGrimoireManifest(projectRoot, entry);
+      if (entry.startsWith("kon-") || entry.startsWith("@")) {
+        const manifest = await readKonManifest(projectRoot, entry);
         if (manifest) {
-          grimoires.push({
-            grimoireId: manifest.id || entry,
+          kons.push({
+            konId: manifest.id || entry,
             name: manifest.name || entry,
             version: manifest.version || "unknown",
             description: manifest.description,
@@ -500,13 +500,13 @@ async function getInstalledGrimoires(projectRoot: string): Promise<any[]> {
     // Ignore
   }
 
-  return grimoires;
+  return kons;
 }
 
-async function updateGrimoireStatus(_projectRoot: string, grimoireId: string, enabled: boolean) {
+async function updateKonStatus(_projectRoot: string, konId: string, enabled: boolean) {
   // Make API call to update status
   try {
-    const response = await fetch(`http://localhost:3000/api/admin/grimoires/${grimoireId}/status`, {
+    const response = await fetch(`http://localhost:3000/api/admin/kons/${konId}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled }),
@@ -520,8 +520,8 @@ async function updateGrimoireStatus(_projectRoot: string, grimoireId: string, en
   }
 }
 
-async function searchNpm(query: string, limit = 20): Promise<GrimoireInfo[]> {
-  const searchQuery = query.includes("grimoire") ? query : `grimoire-${query}`;
+async function searchNpm(query: string, limit = 20): Promise<KonInfo[]> {
+  const searchQuery = query.includes("kon") ? query : `kon-${query}`;
 
   try {
     const response = await fetch(
@@ -535,13 +535,13 @@ async function searchNpm(query: string, limit = 20): Promise<GrimoireInfo[]> {
     const data = (await response.json()) as any;
 
     return data.objects.map((obj: any) => ({
-      id: obj.package.name.replace(/^@gremius\/grimoire-/, "").replace(/^grimoire-/, ""),
+      id: obj.package.name.replace(/^@kitsuden\/kon-/, "").replace(/^kon-/, ""),
       name: obj.package.name,
       description: obj.package.description,
       version: obj.package.version,
       author: obj.package.author?.name,
       downloads: obj.downloads?.weekly,
-      official: obj.package.name.startsWith("@gremius/"),
+      official: obj.package.name.startsWith("@kitsuden/"),
     }));
   } catch {
     return [];

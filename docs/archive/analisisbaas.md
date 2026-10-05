@@ -1,14 +1,14 @@
-# 🔋 Análisis BaaS: ¿Qué tan cerca está Gremius del "Django AI-Native"?
+# 🔋 Análisis BaaS: ¿Qué tan cerca está Kitsuden del "Django AI-Native"?
 
 **Fecha:** 29 de marzo de 2026  
-**Versión analizada:** GremiusCMS v0.8.0-beta  
+**Versión analizada:** Kitsuden v0.8.0-beta  
 **Framework de referencia:** Django (filosofía "batteries included")
 
 ---
 
 ## 🎯 Resumen Ejecutivo
 
-Gremius tiene **todos los componentes** de un BaaS AI-native excepcional. La arquitectura de 4 capas (Auth → Data → Admin → Actions) está completa y funcional. Los agentes son verdaderos first-class citizens con identidad NHI, scopes RBAC, y memoria persistente.
+Kitsuden tiene **todos los componentes** de un BaaS AI-native excepcional. La arquitectura de 4 capas (Auth → Data → Admin → Actions) está completa y funcional. Los agentes son verdaderos first-class citizens con identidad NHI, scopes RBAC, y memoria persistente.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -46,14 +46,14 @@ def my_view(request):
 
 **El diferenciador AI-native:** Los agentes no son "API keys genéricas", son **identidades reales** con permisos, historial, y capacidades.
 
-#### ✅ Lo que Gremius hace BIEN (98%) - IMPLEMENTADO
+#### ✅ Lo que Kitsuden hace BIEN (98%) - IMPLEMENTADO
 
 ```typescript
 // ✅ SISTEMA NHI (Non-Human Identity) COMPLETO
 // apps/api/src/services/agent-auth.ts
 
-// 1. Token format: grm_agent_{tipo}_{hash}
-const agentToken = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+// 1. Token format: kitsuden_agent_{tipo}_{hash}
+const agentToken = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
 
 // 2. Validación con hash SHA-256
 const authResult = await authenticateAgent(token, {
@@ -75,7 +75,7 @@ interface AgentAuthContext {
 **Implementado:**
 
 - ✅ **Agent Identities** - Tablas `agent_identities`, `agent_api_keys` con NHI
-- ✅ **Token NHI** - Formato `grm_agent_{tipo}_{hash}` con 43 chars de entropy
+- ✅ **Token NHI** - Formato `kitsuden_agent_{tipo}_{hash}` con 43 chars de entropy
 - ✅ **RBAC Middleware** - `requireScopes()`, `requireScope()`, `requireAnyScope()`
 - ✅ **Wildcard Scopes** - `read:*` matcha `read:database`, `read:files`
 - ✅ **Agent Memory** - Sistema LRU con 9 endpoints REST (`/api/agent/memory`)
@@ -113,10 +113,10 @@ export function requireScopes(options: RBACOptions): MiddlewareHandler {
 
 ### 2️⃣ Data Models → Auto AI-Ready
 
-#### ✅ Lo que Gremius hace BIEN (90%) - IMPLEMENTADO
+#### ✅ Lo que Kitsuden hace BIEN (90%) - IMPLEMENTADO
 
 ```typescript
-// ✅ VECTOR SEARCH EN CORE - Migrado de grimoire a core
+// ✅ VECTOR SEARCH EN CORE - Migrado de kon a core
 // packages/core/vector-search/index.ts
 
 export interface VectorSearchExtension {
@@ -143,10 +143,10 @@ const dataset = {
 
 **Implementado:**
 
-- ✅ **Vector Search Core** - Migrado desde `ai-memories` grimoire a `packages/core/vector-search/`
+- ✅ **Vector Search Core** - Migrado desde `ai-memories` kon a `packages/core/vector-search/`
 - ✅ **Tablas de Vector** - `vector_index`, `vector_chunks` con pgvector
 - ✅ **Auto-Indexing** - Configurable por dataset (`autoIndex: true`)
-- ✅ **MCP Integration** - Tool `gremius_search_entries` con búsqueda semántica
+- ✅ **MCP Integration** - Tool `kitsuden_search_entries` con búsqueda semántica
 - ✅ **Chunking** - Para documentos largos con overlap
 - ✅ **Dual Auth** - Soporta legacy API keys + NHI tokens
 - ✅ **Zero-Trust** - Validación obligatoria de token
@@ -155,7 +155,7 @@ const dataset = {
 ```typescript
 // apps/api/src/mcp-server.ts - Tool de búsqueda
 {
-  name: "gremius_search_entries",
+  name: "kitsuden_search_entries",
   description: "Search entries using semantic vector search",
   parameters: {
     datasetId: string,
@@ -168,7 +168,7 @@ const dataset = {
 
 #### ❌ Lo que le falta (10%)
 
-- ❌ Unificación DataSets vs Grimoires (dualidad persiste)
+- ❌ Unificación DataSets vs Kons (dualidad persiste)
 - ❌ Sugerencias de schema por AI
 - ❌ Visualización de embeddings en Admin (parcial)
 
@@ -178,7 +178,7 @@ const dataset = {
 
 ### 3️⃣ Admin Panel Brutal (Killer UX)
 
-#### ✅ Lo que Gremius hace BIEN (70%) 🆕 MEJORADO
+#### ✅ Lo que Kitsuden hace BIEN (70%) 🆕 MEJORADO
 
 - ✅ Admin panel moderno (Svelte 5)
 - ✅ Data Explorer visual
@@ -202,7 +202,7 @@ const dataset = {
 
 ### 4️⃣ Actions: No Workers Genéricos, sino Acciones Ejecutables
 
-#### ✅ Lo que Gremius hace (90%) - IMPLEMENTADO 🆕 MEJORADO
+#### ✅ Lo que Kitsuden hace (90%) - IMPLEMENTADO 🆕 MEJORADO
 
 ```typescript
 // ✅ SISTEMA DE ACTIONS UNIFICADO
@@ -214,7 +214,7 @@ const myAction = defineAction({
   // trigger: "event:payment.received",  // Evento
   // trigger: "agent.tool:process_payment", // MCP Tool
   run: async (ctx: ActionContext<StripeEvent>) => {
-    // Contexto unificado: payload, db, grimoire, logger, queue, cache
+    // Contexto unificado: payload, db, kon, logger, queue, cache
     const { payload, db } = ctx;
     await db.insert(payments).values(payload.data);
     return { success: true };
@@ -235,7 +235,7 @@ interface ActionAdapters {
 - ✅ **HTTP Triggers** - `http.get:/path`, `http.post:/path`, etc.
 - ✅ **Event Triggers** - `event:name` con BullMQ
 - ✅ **Agent Triggers** - `agent.tool:name` expuestos como MCP tools
-- ✅ **Unified Context** - `ActionContext` con `payload`, `db`, `grimoire`, `logger`, `queue`, `cache`
+- ✅ **Unified Context** - `ActionContext` con `payload`, `db`, `kon`, `logger`, `queue`, `cache`
 - ✅ **Type Safety** - `defineAction<Payload, Result>()`
 - ✅ **Trigger Parser** - Extrae `prefix`, `variant`, `path` de triggers
 - ✅ **Telemetry Integration** - Trazabilidad automática de ejecuciones 🆕
@@ -261,14 +261,14 @@ parseTrigger('agent.tool:query')          → { prefix: 'agent', variant: 'tool'
 
 ### 5️⃣ Batteries Included (pero Curado)
 
-#### ✅ Lo que Gremius tiene (60%)
+#### ✅ Lo que Kitsuden tiene (60%)
 
 Sin cambios significativos desde análisis anterior - sigue siendo extenso:
 
 ```
 Engine (Nivel 1):   Auth, Database, Cache, Workers, Actions, Telemetry
 Core (Nivel 2):     DataSets, Media, Webhooks, Connectors
-Grimoires (Nivel 3): Blog, Games, Academy, CRM, etc.
+Kons (Nivel 3): Blog, Games, Academy, CRM, etc.
 Protocolos:         REST, GraphQL, WebSockets, MCP
 ```
 
@@ -282,7 +282,7 @@ Protocolos:         REST, GraphQL, WebSockets, MCP
 
 #### ❌ El Problema persiste
 
-Demasiadas features diluyen la propuesta de valor. La recomendación de simplificación a **Gremius Core v2.0** (4 pilares) sigue vigente.
+Demasiadas features diluyen la propuesta de valor. La recomendación de simplificación a **Kitsuden Core v2.0** (4 pilares) sigue vigente.
 
 ---
 
@@ -306,7 +306,7 @@ Demasiadas features diluyen la propuesta de valor. La recomendación de simplifi
 ### ✅ Implementado y Funcional
 
 ```typescript
-// Gremius hoy puede decir:
+// Kitsuden hoy puede decir:
 
 "✅ Auth universal: Humanos y agentes (NHI) con RBAC y scopes
  ✅ Vector search: Auto-indexing en pgvector, búsqueda semántica
@@ -324,7 +324,7 @@ Demasiadas features diluyen la propuesta de valor. La recomendación de simplifi
 
 ```
 ❌ Visualización de embeddings 2D/3D
-❌ Unificación DataSets vs Grimoires
+❌ Unificación DataSets vs Kons
 ❌ Action Builder visual
 ❌ Simplificación de "Batteries Included"
 ```
@@ -332,7 +332,7 @@ Demasiadas features diluyen la propuesta de valor. La recomendación de simplifi
 ### El diferenciador que nadie más tiene
 
 ```typescript
-// Solo Gremius tiene esto HOY:
+// Solo Kitsuden tiene esto HOY:
 
 "Tu BaaS donde:
 - Los agentes son first-class citizens (NHI, no API keys genéricas)
@@ -354,10 +354,10 @@ Demasiadas features diluyen la propuesta de valor. La recomendación de simplifi
 | --------- | ---------------------------------------- | ------- | -------- |
 | P1        | Visualización de embeddings (t-SNE/UMAP) | Alto    | Medio    |
 | P2        | Documentación de MCP + Vector Search     | Alto    | Bajo     |
-| P3        | Unificación DataSets vs Grimoires        | Medio   | Alto     |
+| P3        | Unificación DataSets vs Kons             | Medio   | Alto     |
 | P4        | Simplificación "Batteries Included"      | Medio   | Medio    |
 | P5        | Action Builder visual                    | Bajo    | Alto     |
 
 ---
 
-_Documento actualizado - GremiusCMS v0.8.0-beta_
+_Documento actualizado - Kitsuden v0.8.0-beta_

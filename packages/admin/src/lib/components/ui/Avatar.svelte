@@ -6,7 +6,7 @@
 </script>
 
 <div
-  class="inline-flex items-center justify-center rounded-full bg-gremius-border text-gremius-text text-xs font-medium overflow-hidden {className}"
+  class="inline-flex items-center justify-center rounded-full bg-kitsuden-border text-kitsuden-text text-xs font-medium overflow-hidden {className}"
 >
   {@render children?.()}
 </div>

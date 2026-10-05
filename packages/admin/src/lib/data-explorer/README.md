@@ -1,6 +1,6 @@
 # DataExplorer Extensible
 
-Sistema de exploración de datos genérico para Gremius Admin con field types extensibles y campos calculados.
+Sistema de exploración de datos genérico para Kitsuden Admin con field types extensibles y campos calculados.
 
 ## Arquitectura
 

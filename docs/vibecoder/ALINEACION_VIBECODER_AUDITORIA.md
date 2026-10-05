@@ -10,36 +10,36 @@
 
 Estos documentos son **oro** para la visión vibecoder. El MCP es la interfaz principal.
 
-| Documento                    | Por qué alinea                               | Qué hacer                                                                             |
-| ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `MCP_SETUP_GUIDE.md`         | Configura Claude Desktop con Gremius vía MCP | **Convertir en tutorial vibecoder:** "Cómo conectar Cursor a tu backend en 5 minutos" |
-| `MCP_ENDPOINT_REPORT.md`     | Documenta endpoints MCP disponibles          | **Reformatear como "API Reference para IA"** en vez de reporte técnico                |
-| `MCP_SDK_AUDIT.md`           | Audita el SDK MCP                            | Útil para devs, mantener como referencia interna                                      |
-| `MCP_TESTING.md`             | Tests del MCP                                | Mantener, es infraestructura crítica                                                  |
-| `MCP_VECTOR_SEARCH_TESTS.md` | Tests de vector search para IA               | Mantener, diferenciador clave                                                         |
-| `MEJORAS_MCP.md`             | Roadmap de mejoras MCP                       | **Priorizar** items que faciliten la vida del vibecoder                               |
-| `AI_MEMORIES_ANALYSIS.md`    | Análisis de memoria de agentes               | Diferenciador único, mantener                                                         |
-| `AI_MEMORIES_COMPLETION.md`  | Implementación de memoria                    | Mantener como feature diferenciadora                                                  |
+| Documento                    | Por qué alinea                                | Qué hacer                                                                             |
+| ---------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `MCP_SETUP_GUIDE.md`         | Configura Claude Desktop con Kitsuden vía MCP | **Convertir en tutorial vibecoder:** "Cómo conectar Cursor a tu backend en 5 minutos" |
+| `MCP_ENDPOINT_REPORT.md`     | Documenta endpoints MCP disponibles           | **Reformatear como "API Reference para IA"** en vez de reporte técnico                |
+| `MCP_SDK_AUDIT.md`           | Audita el SDK MCP                             | Útil para devs, mantener como referencia interna                                      |
+| `MCP_TESTING.md`             | Tests del MCP                                 | Mantener, es infraestructura crítica                                                  |
+| `MCP_VECTOR_SEARCH_TESTS.md` | Tests de vector search para IA                | Mantener, diferenciador clave                                                         |
+| `MEJORAS_MCP.md`             | Roadmap de mejoras MCP                        | **Priorizar** items que faciliten la vida del vibecoder                               |
+| `AI_MEMORIES_ANALYSIS.md`    | Análisis de memoria de agentes                | Diferenciador único, mantener                                                         |
+| `AI_MEMORIES_COMPLETION.md`  | Implementación de memoria                     | Mantener como feature diferenciadora                                                  |
 
-### Grimoires / Zero Config / Plugin System
+### Kons / Zero Config / Plugin System
 
-El sistema de grimoires es la base del "backend modular que la IA activa".
+El sistema de kons es la base del "backend modular que la IA activa".
 
-| Documento                            | Por qué alinea                                 | Qué hacer                                                                              |
-| ------------------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `GRIMOIRE_ZERO_CONFIG.md`            | Grimoires sin boilerplate                      | **PERFECTO.** Es exactamente lo que el vibecoder necesita: activar features sin código |
-| `PLUGIN_SYSTEM.md`                   | Arquitectura de plugins + realms como starters | **PERFECTO.** `gremius new my-app --realm blog` es el flujo vibecoder ideal            |
-| `DATASETS_AS_GRIMOIRE.md`            | Datasets como grimoire core                    | Alinea. Datasets JSONB = schemas sin SQL                                               |
-| `GRIMOIRES_AND_REALMS_GUIDE.md`      | Guía de grimoires y realms                     | Reformatear como "Templates disponibles"                                               |
-| `GRIMOIRE_CORE_MIGRATION_PLAN.md`    | Migración de core a grimoires                  | Interno técnico, mantener                                                              |
-| `REALM_GRIMOIRES_AUTO_ACTIVATION.md` | Auto-activación de grimoires por realm         | Alinea. Realms = templates preconfigurados                                             |
+| Documento                          | Por qué alinea                                    | Qué hacer                                                                              |
+| ---------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `KON_ZERO_CONFIG.md`               | Kons sin boilerplate                              | **PERFECTO.** Es exactamente lo que el vibecoder necesita: activar features sin código |
+| `PLUGIN_SYSTEM.md`                 | Arquitectura de plugins + grimoires como starters | **PERFECTO.** `kitsuden new my-app --grimoire blog` es el flujo vibecoder ideal        |
+| `DATASETS_AS_KON.md`               | Datasets como kon core                            | Alinea. Datasets JSONB = schemas sin SQL                                               |
+| `KONS_AND_GRIMOIRES_GUIDE.md`      | Guía de kons y grimoires                          | Reformatear como "Templates disponibles"                                               |
+| `KON_CORE_MIGRATION_PLAN.md`       | Migración de core a kons                          | Interno técnico, mantener                                                              |
+| `GRIMOIRE_KONS_AUTO_ACTIVATION.md` | Auto-activación de kons por grimoire              | Alinea. Grimoires = templates preconfigurados                                          |
 
 ### Arquitectura General
 
-| Documento                    | Por qué alinea            | Qué hacer                                                                                            |
-| ---------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `ARCHITECTURE.md`            | Arquitectura de 3 niveles | **Reformatear:** menos "engine/core/grimoires", más "tu backend tiene capas que la IA maneja por ti" |
-| `ENGINE_CORE_INTEGRATION.md` | Integración del engine    | Interno técnico                                                                                      |
+| Documento                    | Por qué alinea            | Qué hacer                                                                                       |
+| ---------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------- |
+| `ARCHITECTURE.md`            | Arquitectura de 3 niveles | **Reformatear:** menos "engine/core/kons", más "tu backend tiene capas que la IA maneja por ti" |
+| `ENGINE_CORE_INTEGRATION.md` | Integración del engine    | Interno técnico                                                                                 |
 
 ---
 
@@ -59,12 +59,12 @@ Estos documentos son técnicamente correctos pero escritos para developers, no v
 
 ### Docker / Infra
 
-| Documento           | Problema                                                      | Qué hacer                                                                                                 |
-| ------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `DOCKER-SETUP.md`   | Requiere entender Docker                                      | **CRÍTICO:** El vibecoder NO quiere tocar Docker. Crear `START-GUIDE-VIBECODER.md` con `npx gremius init` |
-| `START-GUIDE.md`    | Demasiados pasos manuales (`pnpm install`, `db:push`, `.env`) | **Reemplazar** por flujo de 1 comando                                                                     |
-| `STARTUP_GUIDE.md`  | Similar al anterior                                           | Consolidar con START-GUIDE                                                                                |
-| `PGVECTOR_SETUP.md` | Setup manual de pgvector                                      | La IA debería hacer esto automáticamente. Archivar para devs avanzados                                    |
+| Documento           | Problema                                                      | Qué hacer                                                                                                  |
+| ------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `DOCKER-SETUP.md`   | Requiere entender Docker                                      | **CRÍTICO:** El vibecoder NO quiere tocar Docker. Crear `START-GUIDE-VIBECODER.md` con `npx kitsuden init` |
+| `START-GUIDE.md`    | Demasiados pasos manuales (`pnpm install`, `db:push`, `.env`) | **Reemplazar** por flujo de 1 comando                                                                      |
+| `STARTUP_GUIDE.md`  | Similar al anterior                                           | Consolidar con START-GUIDE                                                                                 |
+| `PGVECTOR_SETUP.md` | Setup manual de pgvector                                      | La IA debería hacer esto automáticamente. Archivar para devs avanzados                                     |
 
 ### Guías de Implementación
 
@@ -82,20 +82,20 @@ Estos documentos son técnicamente correctos pero escritos para developers, no v
 
 Estos documentos asumen que el usuario es un developer enterprise que compara frameworks. El vibecoder no compara frameworks, quiere que funcione.
 
-| Documento                          | Por qué NO alinea                        | Qué hacer                                     |
-| ---------------------------------- | ---------------------------------------- | --------------------------------------------- |
-| `DIRECTUS_ANALYSIS.md`             | Compara con Directus para CMS enterprise | **Archivar.** El vibecoder no conoce Directus |
-| `DJANGO_ANALYSIS.md`               | Compara con Django                       | **Archivar.** El vibecoder no conoce Django   |
-| `GREMIUS_DJANGO_TECHNICAL_GAPS.md` | Gaps técnicos vs Django                  | **Archivar.** Irrelevante para vibecoders     |
-| `gremiusdjango.md`                 | Análisis Django                          | **Archivar.**                                 |
-| `gremius.md`                       | Documento genérico de Gremius            | Revisar contenido. Probablemente obsoleto     |
-| `GremiusDataset.md`                | Dataset específico                       | Revisar. Si es técnico, archivar              |
-| `ANALISIS_PANEL_SVELTE.md`         | Análisis del panel admin Svelte          | Interno técnico. Archivar                     |
-| `analisisbaas.md`                  | Análisis BaaS genérico                   | Archivar                                      |
-| `analisisdevsec.md`                | Análisis DevSec                          | Archivar                                      |
-| `analisisenginecore.md`            | Análisis engine core                     | Mantener como referencia interna              |
-| `analisisframework.md`             | Análisis framework                       | Archivar                                      |
-| `analisisprod.md`                  | Análisis producción                      | Archivar                                      |
+| Documento                           | Por qué NO alinea                        | Qué hacer                                     |
+| ----------------------------------- | ---------------------------------------- | --------------------------------------------- |
+| `DIRECTUS_ANALYSIS.md`              | Compara con Directus para CMS enterprise | **Archivar.** El vibecoder no conoce Directus |
+| `DJANGO_ANALYSIS.md`                | Compara con Django                       | **Archivar.** El vibecoder no conoce Django   |
+| `KITSUDEN_DJANGO_TECHNICAL_GAPS.md` | Gaps técnicos vs Django                  | **Archivar.** Irrelevante para vibecoders     |
+| `vekdjango.md`                      | Análisis Django                          | **Archivar.**                                 |
+| `kitsuden.md`                       | Documento genérico de Kitsuden           | Revisar contenido. Probablemente obsoleto     |
+| `KitsudenDataset.md`                | Dataset específico                       | Revisar. Si es técnico, archivar              |
+| `ANALISIS_PANEL_SVELTE.md`          | Análisis del panel admin Svelte          | Interno técnico. Archivar                     |
+| `analisisbaas.md`                   | Análisis BaaS genérico                   | Archivar                                      |
+| `analisisdevsec.md`                 | Análisis DevSec                          | Archivar                                      |
+| `analisisenginecore.md`             | Análisis engine core                     | Mantener como referencia interna              |
+| `analisisframework.md`              | Análisis framework                       | Archivar                                      |
+| `analisisprod.md`                   | Análisis producción                      | Archivar                                      |
 
 ### Blog / Editor (CMS Gaming)
 
@@ -152,7 +152,7 @@ Demasiada documentación de testing escrita en lenguaje enterprise. El vibecoder
 | `CHANGELOG.md`                        | Changelog                           | Mantener actualizado, pero no es material de producto |
 | `KCD.md`                              | Documento interno (Kent C. Dodds?)  | Revisar. Probablemente **archivar**                   |
 | `legacyrefactor.md`                   | Refactor legacy                     | **Archivar.**                                         |
-| `admingrimoires.md`                   | Admin de grimoires                  | Revisar. Si es técnico, archivar                      |
+| `adminkons.md`                        | Admin de kons                       | Revisar. Si es técnico, archivar                      |
 | `TOON_PGVECTOR_AUDIT.md`              | Auditoría TOON + pgvector           | Mantener como referencia técnica                      |
 | `jiira.md`                            | Documento interno                   | Revisar. Probablemente **archivar**                   |
 
@@ -160,19 +160,19 @@ Demasiada documentación de testing escrita en lenguaje enterprise. El vibecoder
 
 ## 📊 Resumen por Categoría
 
-| Categoría                        | Cantidad | Alineación | Acción                                              |
-| -------------------------------- | -------- | ---------- | --------------------------------------------------- |
-| **MCP / AI**                     | 8        | 🟢 Alta    | Potenciar como material principal                   |
-| **Grimoires / Plugins / Realms** | 10       | 🟢 Alta    | Reformatear como "Templates" y "Features"           |
-| **Arquitectura**                 | 3        | 🟡 Media   | Simplificar lenguaje                                |
-| **Datasets / Data**              | 5        | 🟡 Media   | Archivar reportes, mantener guías                   |
-| **Docker / Infra**               | 5        | 🟡 Media   | Crear alternativa "1 comando" para vibecoders       |
-| **Guías**                        | 4        | 🟡 Media   | Simplificar drásticamente                           |
-| **Análisis Comparativos**        | 11       | 🔴 Baja    | **Archivar todos**                                  |
-| **Blog / Editor**                | 2        | 🔴 Baja    | **Archivar**                                        |
-| **Testing / QA / Auditoría**     | 15       | 🔴 Baja    | **Archivar** (mantener tests en código, no en docs) |
-| **Config / Audit / Progreso**    | 14       | 🔴 Baja    | **Archivar**                                        |
-| **Otros**                        | 7        | 🟡 Media   | Revisar caso por caso                               |
+| Categoría                      | Cantidad | Alineación | Acción                                              |
+| ------------------------------ | -------- | ---------- | --------------------------------------------------- |
+| **MCP / AI**                   | 8        | 🟢 Alta    | Potenciar como material principal                   |
+| **Kons / Plugins / Grimoires** | 10       | 🟢 Alta    | Reformatear como "Templates" y "Features"           |
+| **Arquitectura**               | 3        | 🟡 Media   | Simplificar lenguaje                                |
+| **Datasets / Data**            | 5        | 🟡 Media   | Archivar reportes, mantener guías                   |
+| **Docker / Infra**             | 5        | 🟡 Media   | Crear alternativa "1 comando" para vibecoders       |
+| **Guías**                      | 4        | 🟡 Media   | Simplificar drásticamente                           |
+| **Análisis Comparativos**      | 11       | 🔴 Baja    | **Archivar todos**                                  |
+| **Blog / Editor**              | 2        | 🔴 Baja    | **Archivar**                                        |
+| **Testing / QA / Auditoría**   | 15       | 🔴 Baja    | **Archivar** (mantener tests en código, no en docs) |
+| **Config / Audit / Progreso**  | 14       | 🔴 Baja    | **Archivar**                                        |
+| **Otros**                      | 7        | 🟡 Media   | Revisar caso por caso                               |
 
 **Total:** ~84 documentos  
 **🟢 Alineados:** ~21 (25%)  
@@ -191,9 +191,9 @@ Mover todos los documentos 🔴 **No Alineados** ahí. No los borres, pero sacal
 
 Los documentos que SÍ importan para el vibecoder:
 
-- Tutorial: "Tu primer backend con Cursor + Gremius"
+- Tutorial: "Tu primer backend con Cursor + Kitsuden"
 - MCP Setup simplificado
-- Templates disponibles (realms)
+- Templates disponibles (grimoires)
 - Code generation guides
 
 ### 3. Los documentos técnicos internos (`analisis*`, `AUDITORIA*`, `TEST*`) no deben estar en la raíz
@@ -205,8 +205,8 @@ Eso es deuda documental. Ponlos en `docs/internal/` o `docs/archive/`.
 ```
 README.md                    → "El backend que tu IA configura por ti"
 backendbaas.md               → Roadmap técnico (ya actualizado)
-gremius-para-vibecoders.md   → Visión y estrategia
-START-GUIDE.md               → 1 comando: npx gremius init
+kitsuden-para-vibecoders.md   → Visión y estrategia
+START-GUIDE.md               → 1 comando: npx kitsuden init
 CHANGELOG.md                 → Historial de cambios
 ```
 

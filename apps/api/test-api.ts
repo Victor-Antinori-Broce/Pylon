@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * GremiusCMS API - Endpoint Test Suite
+ * Kitsuden API - Endpoint Test Suite
  * Run: bun run test-api.ts
  */
 
@@ -59,14 +59,14 @@ async function del(path: string) {
 // Tests
 // ═══════════════════════════════════════════
 
-console.log("\n🧪 GremiusCMS API Test Suite\n");
+console.log("\n🧪 Kitsuden API Test Suite\n");
 console.log("── Health ──");
 
 await test("GET /health returns ok", async () => {
   const { status, data } = await get("/health");
   assert(status === 200, `Status ${status}`);
   assert(data.status === "ok", `Expected ok, got ${data.status}`);
-  assert(data.service === "gremius-api", `Wrong service: ${data.service}`);
+  assert(data.service === "kitsuden-api", `Wrong service: ${data.service}`);
 });
 
 console.log("\n── Games ──");
@@ -145,8 +145,8 @@ await test("GET /blog returns posts", async () => {
   assert(Array.isArray(data.docs), `Expected array, got ${typeof data.docs}`);
 });
 
-await test("GET /blog/slug/welcome-to-gremiuscms returns post (or 404 if not seeded)", async () => {
-  const { status, data } = await get("/blog/slug/welcome-to-gremiuscms");
+await test("GET /blog/slug/welcome-to-kitsuden returns post (or 404 if not seeded)", async () => {
+  const { status, data } = await get("/blog/slug/welcome-to-kitsuden");
   assert(status === 200 || status === 404, `Status ${status}`);
 });
 
@@ -214,7 +214,7 @@ console.log("\n── Auth ──");
 
 await test("POST /auth/sign-in/email with valid credentials (or 401 if no seeded user)", async () => {
   const { status, data } = await post("/auth/sign-in/email", {
-    email: "admin@gremiuscms.dev",
+    email: "admin@kitsuden.dev",
     password: "admin123",
   });
   // 200 if admin is seeded, 401 if not — both are valid
@@ -223,7 +223,7 @@ await test("POST /auth/sign-in/email with valid credentials (or 401 if no seeded
 
 await test("POST /auth/sign-in/email with wrong password returns 401 (or 403)", async () => {
   const { status } = await post("/auth/sign-in/email", {
-    email: "admin@gremiuscms.dev",
+    email: "admin@kitsuden.dev",
     password: "wrongpassword",
   });
   assert(status === 401 || status === 403, `Expected 401 or 403, got ${status}`);
@@ -231,7 +231,7 @@ await test("POST /auth/sign-in/email with wrong password returns 401 (or 403)", 
 
 await test("POST /auth/sign-up/email creates user", async () => {
   const { status, data } = await post("/auth/sign-up/email", {
-    email: `test-${Date.now()}@gremiuscms.dev`,
+    email: `test-${Date.now()}@kitsuden.dev`,
     password: "testpass123",
     name: "Test User",
   });
@@ -240,7 +240,7 @@ await test("POST /auth/sign-up/email creates user", async () => {
 
 await test("POST /auth/sign-up/email duplicate email returns 400ish", async () => {
   const { status } = await post("/auth/sign-up/email", {
-    email: "admin@gremiuscms.dev",
+    email: "admin@kitsuden.dev",
     password: "test",
     name: "Dup",
   });
@@ -259,7 +259,7 @@ await test("POST /media/upload with file", async () => {
   const data = await res.json();
   assert(res.status === 201, `Status ${res.status}: ${JSON.stringify(data)}`);
   assert(data.s3Key, `Missing s3Key`);
-  assert(data.url.includes("gremius-media"), `URL: ${data.url}`);
+  assert(data.url.includes("kitsuden-media"), `URL: ${data.url}`);
   assert(data.filename === "test-file.txt", `Filename: ${data.filename}`);
 });
 

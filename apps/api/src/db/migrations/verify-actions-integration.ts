@@ -12,6 +12,7 @@
  *   5. Event dispatch
  */
 
+import { messageOf } from "@kitsuden/engine";
 import { eq, desc } from "drizzle-orm";
 
 import {
@@ -61,11 +62,11 @@ async function testDatabaseConnection(): Promise<TestResult> {
       return { name: "Database Connection", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Unexpected result from database");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Database Connection",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -92,11 +93,11 @@ async function testSchemaExists(): Promise<TestResult> {
     if (!tableNames.includes("action_executions")) missing.push("action_executions");
 
     throw new Error(`Missing tables: ${missing.join(", ")}`);
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Schema Exists",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -121,11 +122,11 @@ async function testCreateAction(): Promise<TestResult> {
       return { name: "Create Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Action created but returned unexpected data");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Create Action",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -143,11 +144,11 @@ async function testListActions(): Promise<TestResult> {
       }
     }
     throw new Error("Test action not found in list");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "List Actions",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -170,11 +171,11 @@ async function testGetAction(): Promise<TestResult> {
       return { name: "Get Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Fetched action doesn't match");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Get Action",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -197,11 +198,11 @@ async function testExecuteCodeAction(): Promise<TestResult> {
       return { name: "Execute Code Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error(`Execution failed: ${result.error || "unknown error"}`);
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Execute Code Action",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -229,11 +230,11 @@ async function testCreateWebhookAction(): Promise<TestResult> {
       return { name: "Create Webhook Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Webhook action created but returned unexpected data");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Create Webhook Action",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -258,11 +259,11 @@ async function testUpdateAction(): Promise<TestResult> {
       return { name: "Update Action", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Update didn't apply correctly");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Update Action",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -291,11 +292,11 @@ async function testExecutionLogging(): Promise<TestResult> {
       return { name: "Execution Logging", passed: true, durationMs: Date.now() - start };
     }
     throw new Error("Execution not logged or incorrect status");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Execution Logging",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -324,11 +325,11 @@ async function testDeleteAction(): Promise<TestResult> {
       throw new Error("Action still exists after deletion");
     }
     throw new Error("Delete returned false");
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Delete Action",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }
@@ -362,11 +363,11 @@ async function testEventDispatch(): Promise<TestResult> {
     await db.delete(actions).where(eq(actions.id, action.id));
 
     return { name: "Event Dispatch", passed: true, durationMs: Date.now() - start };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       name: "Event Dispatch",
       passed: false,
-      error: err.message,
+      error: messageOf(err),
       durationMs: Date.now() - start,
     };
   }

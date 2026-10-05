@@ -1,26 +1,26 @@
 # Análisis del Panel de Administración en Svelte
 
 **Fecha:** 26 de abril de 2026  
-**Versión:** GremiusCMS v0.8.0-beta  
+**Versión:** Kitsuden v0.8.0-beta  
 **Estado:** ✅ Refactor de Hybrid Rendering COMPLETADO. Admin liviano y funcional.
 
 ---
 
 ## Resumen Ejecutivo
 
-| Área                                     | Estado            | Notas                                                                        |
-| ---------------------------------------- | ----------------- | ---------------------------------------------------------------------------- |
-| Nomenclatura (Grimoires/Realms/Actions)  | ✅ **ESTABLE**    | Sidebar alineado con la arquitectura de paquetes                             |
-| Hybrid Rendering (DataExplorer + Custom) | ✅ **COMPLETADO** | `GrimoirePage.svelte` carga DataExplorer o custom view según `grimoire.json` |
-| Grimoires View                           | ✅ **COMPLETO**   | Toggle, uninstall, delete permanente, confirmaciones, categorías             |
-| Actions (Workers + Webhooks unificados)  | ✅ **COMPLETO**   | `ActionsView.svelte` con fallback a legacy APIs                              |
-| AI Agents                                | ⚠️ **DUAL**       | Vista de ejecución (`/agents`) + gestión NHI (tab en Settings)               |
-| Settings General                         | ✅ **FUNCIONAL**  | `saveGeneralSettings` persiste vía `PATCH /api/settings`                     |
-| CRM Admin                                | ✅ **HYBRID**     | 2 custom views justificadas (CrmDashboard, DealForm) + DataExplorer          |
-| Conta Admin                              | ✅ **HYBRID**     | 4 custom views justificadas (forms + reports) + DataExplorer                 |
-| Agile Admin                              | ✅ **ELIMINADO**  | `AgileView.svelte` ya no existe. Puro DataExplorer (5 grids)                 |
-| Blog                                     | ✅ **GRIMOIRE**   | Carga vía `grimoire-loader` con `PostsView.svelte` o DataExplorer            |
-| Workers/Webhooks legacy                  | ✅ **ELIMINADOS** | Vistas y rutas eliminadas del filesystem                                     |
+| Área                                     | Estado            | Notas                                                               |
+| ---------------------------------------- | ----------------- | ------------------------------------------------------------------- |
+| Nomenclatura (Kons/Grimoires/Actions)    | ✅ **ESTABLE**    | Sidebar alineado con la arquitectura de paquetes                    |
+| Hybrid Rendering (DataExplorer + Custom) | ✅ **COMPLETADO** | `KonPage.svelte` carga DataExplorer o custom view según `kon.json`  |
+| Kons View                                | ✅ **COMPLETO**   | Toggle, uninstall, delete permanente, confirmaciones, categorías    |
+| Actions (Workers + Webhooks unificados)  | ✅ **COMPLETO**   | `ActionsView.svelte` con fallback a legacy APIs                     |
+| AI Agents                                | ⚠️ **DUAL**       | Vista de ejecución (`/agents`) + gestión NHI (tab en Settings)      |
+| Settings General                         | ✅ **FUNCIONAL**  | `saveGeneralSettings` persiste vía `PATCH /api/settings`            |
+| CRM Admin                                | ✅ **HYBRID**     | 2 custom views justificadas (CrmDashboard, DealForm) + DataExplorer |
+| Conta Admin                              | ✅ **HYBRID**     | 4 custom views justificadas (forms + reports) + DataExplorer        |
+| Agile Admin                              | ✅ **ELIMINADO**  | `AgileView.svelte` ya no existe. Puro DataExplorer (5 grids)        |
+| Blog                                     | ✅ **KON**        | Carga vía `kon-loader` con `PostsView.svelte` o DataExplorer        |
+| Workers/Webhooks legacy                  | ✅ **ELIMINADOS** | Vistas y rutas eliminadas del filesystem                            |
 
 ---
 
@@ -31,12 +31,12 @@
 ```
 routes/g/[id]/+page.svelte
         ↓
-   GrimoirePage.svelte
+   KonPage.svelte
         ↓
    ├─ hasCustomView()? ─→ loadCustomView() ─→ Componente Svelte Custom
    │                      (per-view registry)
    │
-   └─ else ─→ getGrimoireConfig() ─→ generateExplorerConfig()
+   └─ else ─→ getKonConfig() ─→ generateExplorerConfig()
                                           ↓
                                     DataExplorer.svelte
                                     ├─ type: "grid" → GridView
@@ -46,21 +46,21 @@ routes/g/[id]/+page.svelte
 
 **Archivos clave:**
 
-- `packages/admin/src/lib/components/admin/GrimoirePage.svelte` — Orquestador
-- `packages/admin/src/lib/grimoire-loader.ts` — Registro por vista (no por grimoire)
+- `packages/admin/src/lib/components/admin/KonPage.svelte` — Orquestador
+- `packages/admin/src/lib/kon-loader.ts` — Registro por vista (no por kon)
 - `packages/admin/src/lib/components/admin/DataExplorer.svelte` — Grid/Kanban/Calendar genérico
 - `packages/admin/src/lib/components/admin/AutoFormModal.svelte` — Formulario auto-generado
 
 ### 1.2 Registro de Vistas Custom (Nuevo sistema)
 
-`GRIMOIRE_VIEW_REGISTRY` ahora registra **vistas custom por ID**, no grimoires enteros:
+`KON_VIEW_REGISTRY` ahora registra **vistas custom por ID**, no kons enteros:
 
 ```ts
-// ✅ Sistema actual: Solo vistas que realmente necesitan custom
-"grimoire-crm-dashboard": () => import("$views/crm/CrmDashboard.svelte"),
-"grimoire-crm-deal-form": () => import("$views/crm/DealForm.svelte"),
-"grimoire-conta-journal-form": () => import("$views/conta/JournalForm.svelte"),
-"grimoire-conta-reports": () => import("$views/conta/ReportsView.svelte"),
+// ✅ Sistema actual: Solo vistas que grimoireente necesitan custom
+"kon-crm-dashboard": () => import("$views/crm/CrmDashboard.svelte"),
+"kon-crm-deal-form": () => import("$views/crm/DealForm.svelte"),
+"kon-conta-journal-form": () => import("$views/conta/JournalForm.svelte"),
+"kon-conta-reports": () => import("$views/conta/ReportsView.svelte"),
 ```
 
 Las vistas `type: "grid"` se renderizan vía DataExplorer consumiendo `/api/explorer/:table`.
@@ -72,22 +72,22 @@ Las vistas `type: "grid"` se renderizan vía DataExplorer consumiendo `/api/expl
 ```
 Sidebar Principal:
 ├── Dashboard
-├── Core Grimoires (ordenados)
-│   ├── DataSets        (grimoire-datasets)
-│   ├── Media Library   (grimoire-media)
-│   ├── Page Builder    (grimoire-blocks)
-│   ├── Blog Posts      (grimoire-blog)
-│   └── Data Visualizer (grimoire-data-visualizer)
-├── Optional Grimoires
+├── Core Kons (ordenados)
+│   ├── DataSets        (kon-datasets)
+│   ├── Media Library   (kon-media)
+│   ├── Page Builder    (kon-blocks)
+│   ├── Blog Posts      (kon-blog)
+│   └── Data Visualizer (kon-data-visualizer)
+├── Optional Kons
 │   ├── Academy, DMS, Booking, Directory
-│   ├── Gremius CRM     (grimoire-crm)
-│   └── Contabilidad    (grimoire-conta)
-├── Realm Grimoires (Esports/Gaming)
+│   ├── Kitsuden CRM     (kon-crm)
+│   └── Contabilidad    (kon-conta)
+├── Grimoire Kons (Esports/Gaming)
 │   ├── Games, Streamers, Platforms, Tags...
 │   └── Teams, Players, Matches, Tournaments
 └── System (bottom)
-    ├── Grimoires       (/grimoires)
-    ├── Realms          (/realms)
+    ├── Kons       (/kons)
+    ├── Grimoires          (/grimoires)
     ├── Actions         (/actions)
     ├── AI Agents       (/agents)
     └── Settings        (/settings)
@@ -97,7 +97,7 @@ Sidebar Principal:
 
 ---
 
-## 2. Estado por Grimoire (Actualizado)
+## 2. Estado por Kon (Actualizado)
 
 ### 2.1 CRM (`views/crm/`)
 
@@ -142,7 +142,7 @@ Sidebar Principal:
 | ------------------ | ------ | ---------------------------------------- |
 | `AgileView.svelte` | —      | ❌ **ELIMINADO** — ya no existe en disco |
 
-**Decisión ejecutada:** Agile es puro DataExplorer en el admin (5 grids: projects, issues, cycles, modules, intakes). La app de producto (Kanban board) vive en el realm si es necesario.
+**Decisión ejecutada:** Agile es puro DataExplorer en el admin (5 grids: projects, issues, cycles, modules, intakes). La app de producto (Kanban board) vive en el grimoire si es necesario.
 
 ---
 
@@ -170,7 +170,7 @@ Sin cambios desde versión anterior. Sigue vigente la dualidad:
 
 ### 4.2 Deuda técnica menor
 
-- **Tipos inline en Settings.svelte**: `Agent`, `AgentKey`, `AuditLog`, `DataSource` deberían moverse a `@gremius/shared`
+- **Tipos inline en Settings.svelte**: `Agent`, `AgentKey`, `AuditLog`, `DataSource` deberían moverse a `@kitsuden/shared`
 
 ---
 
@@ -204,20 +204,20 @@ Los directorios y archivos siguientes ya no existen:
 ### Prioridad Baja
 
 5. **i18n**: Multi-idioma en UI y contenido
-6. **Mover tipos inline** de Settings.svelte a `@gremius/shared`
+6. **Mover tipos inline** de Settings.svelte a `@kitsuden/shared`
 7. **Documentar la dualidad de Agents** (ejecución vs NHI)
 
 ---
 
 ## 7. Métricas de Éxito (Target vs Actual)
 
-| Métrica                         | Target | Actual                                    |
-| ------------------------------- | ------ | ----------------------------------------- |
-| % tablas usando DataExplorer    | > 70%  | **~75%** ✅                               |
-| Líneas por custom view          | < 200  | 97 max (DealForm) ✅                      |
-| Componentes custom por grimoire | 1-4    | CRM: **2**, Conta: **4**, Agile: **0** ✅ |
-| Tipos inline en custom views    | 0      | **~5 en Settings.svelte** ⚠️              |
-| Llamadas API con strings        | 0      | **0** ✅                                  |
+| Métrica                      | Target | Actual                                    |
+| ---------------------------- | ------ | ----------------------------------------- |
+| % tablas usando DataExplorer | > 70%  | **~75%** ✅                               |
+| Líneas por custom view       | < 200  | 97 max (DealForm) ✅                      |
+| Componentes custom por kon   | 1-4    | CRM: **2**, Conta: **4**, Agile: **0** ✅ |
+| Tipos inline en custom views | 0      | **~5 en Settings.svelte** ⚠️              |
+| Llamadas API con strings     | 0      | **0** ✅                                  |
 
 ---
 

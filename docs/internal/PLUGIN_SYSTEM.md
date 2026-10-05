@@ -1,6 +1,6 @@
-# Gremius Plugin System
+# Kitsuden Plugin System
 
-Documentación del sistema de plugins y CLI de GremiusCMS.
+Documentación del sistema de plugins y CLI de Kitsuden.
 
 ## 🏗️ Arquitectura
 
@@ -20,13 +20,13 @@ Documentación del sistema de plugins y CLI de GremiusCMS.
 │  ├── Webhooks                                                   │
 │  └── Connectors                                                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  NIVEL 3: GRIMOIRES (Plugins dinámicos)                         │
-│  ├── Locales: packages/grimoires/                               │
-│  ├── NPM: node_modules/@gremius/grimoire-*                      │
+│  NIVEL 3: KONS (Plugins dinámicos)                         │
+│  ├── Locales: packages/kons/                               │
+│  ├── NPM: node_modules/@kitsuden/kon-*                      │
 │  └── Marketplace: DB registry                                   │
 ├─────────────────────────────────────────────────────────────────┤
-│  NIVEL 4: REALMS (Starters/Templates)                           │
-│  ├── realm-default, realm-esports, realm-blog                   │
+│  NIVEL 4: GRIMOIRES (Starters/Templates)                           │
+│  ├── grimoire-default, grimoire-esports, grimoire-blog                   │
 │  └── Descargables como starters                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -36,82 +36,82 @@ Documentación del sistema de plugins y CLI de GremiusCMS.
 ### Desde NPM (Oficiales)
 
 ```bash
-gremius plugin install blog
-gremius plugin install stripe
-gremius plugin install shopify
+kitsuden plugin install blog
+kitsuden plugin install stripe
+kitsuden plugin install shopify
 ```
 
-Se resuelven automáticamente como `@gremius/grimoire-{name}`.
+Se resuelven automáticamente como `@kitsuden/kon-{name}`.
 
 ### Desde NPM (3rd Party)
 
 ```bash
 # Scoped
-gremius plugin install @company/grimoire-custom
+kitsuden plugin install @company/kon-custom
 
 # Community
-gremius plugin install grimoire-awesome-feature
+kitsuden plugin install kon-awesome-feature
 ```
 
 ### Desde GitHub
 
 ```bash
-gremius plugin install owner/repo --source github
+kitsuden plugin install owner/repo --source github
 ```
 
-## 🔧 Resolución de Grimoires
+## 🔧 Resolución de Kons
 
-El sistema busca grimoires en este orden:
+El sistema busca kons en este orden:
 
-1. **Local**: `packages/grimoires/grimoire-{name}/`
-2. **NPM Oficial**: `node_modules/@gremius/grimoire-{name}/`
-3. **NPM Shorthand**: `node_modules/@gremius/{name}/`
-4. **Community**: `node_modules/grimoire-{name}/`
-5. **Scoped 3rd Party**: `node_modules/@scope/grimoire-{name}/`
+1. **Local**: `packages/kons/kon-{name}/`
+2. **NPM Oficial**: `node_modules/@kitsuden/kon-{name}/`
+3. **NPM Shorthand**: `node_modules/@kitsuden/{name}/`
+4. **Community**: `node_modules/kon-{name}/`
+5. **Scoped 3rd Party**: `node_modules/@scope/kon-{name}/`
 6. **Legacy**: `apps/api/src/modules/{name}/`
 
-## 🏰 Realms como Starters
+## 🏰 Grimoires como Starters
 
-Los realms son plantillas completas que incluyen:
+Los grimoires son plantillas completas que incluyen:
 
 - Configuración predefinida
-- Grimoires recomendados
+- Kons recomendados
 - Estilos/CSS base
 - Estructura de datos inicial
 
-### Crear proyecto desde un realm:
+### Crear proyecto desde un grimoire:
 
 ```bash
-# Listar realms disponibles
-gremius realm list
+# Listar grimoires disponibles
+kitsuden grimoire list
 
 # Crear proyecto
-gremius new my-game --realm esports
-gremius new my-blog --realm blog
-gremius new my-store --realm ecommerce
+kitsuden new my-game --grimoire esports
+kitsuden new my-blog --grimoire blog
+kitsuden new my-store --grimoire ecommerce
 ```
 
-### Estructura de un Realm:
+### Estructura de un Grimoire:
 
 ```
-packages/realms/realm-esports/
-├── realm.json              # Manifest del realm
+packages/grimoires/grimoire-esports/
+├── grimoire.json              # Manifest del grimoire
 ├── variables.css           # Variables CSS del tema
-└── grimoires/              # Grimoires específicos (opcional)
-    └── custom-grimoire/
+└── kons/              # Kons específicos (opcional)
+    └── custom-kon/
 ```
 
-### realm.json:
+### grimoire.json:
 
 ```json
 {
-  "id": "realm-esports",
-  "name": "Esports Realm",
+  "id": "grimoire-esports",
+  "name": "Esports Grimoire",
   "description": "Gaming platform with tournaments",
   "version": "2.0.0",
-  "type": "realm",
-  "grimoires": ["grimoire-games", "grimoire-streamers", "grimoire-tournaments"],
-  "optional_grimoires": ["grimoire-crm"],
+  "type": "grimoire",
+  "kons": ["kon-games", "kon-streamers", "kon-tournaments"],
+  "optional_kons": ["kon-crm"],
   "config": {
     "theme": {
       "css_entry": "variables.css",
@@ -123,19 +123,19 @@ packages/realms/realm-esports/
 
 ## 🗄️ Base de Datos
 
-### Tabla: installed_grimoires
+### Tabla: installed_kons
 
 ```sql
-CREATE TABLE installed_grimoires (
+CREATE TABLE installed_kons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    grimoire_id VARCHAR(200) NOT NULL UNIQUE,
+    kon_id VARCHAR(200) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
     description TEXT,
     version VARCHAR(50) NOT NULL,
     source ENUM('local', 'npm', 'github', 'marketplace', 'legacy'),
     source_url TEXT,              -- npm package name
     path TEXT NOT NULL,           -- filesystem path
-    manifest JSONB,               -- grimoire.json content
+    manifest JSONB,               -- kon.json content
     config JSONB DEFAULT '{}',    -- plugin config
     enabled BOOLEAN DEFAULT true,
     installed_by_id TEXT REFERENCES auth_users(id),
@@ -145,14 +145,14 @@ CREATE TABLE installed_grimoires (
 );
 ```
 
-## 📝 Crear un Grimoire
+## 📝 Crear un Kon
 
 ### 1. Estructura mínima
 
 ```
-grimoire-myfeature/
+kon-myfeature/
 ├── package.json
-├── grimoire.json
+├── kon.json
 └── index.ts
 ```
 
@@ -160,26 +160,26 @@ grimoire-myfeature/
 
 ```json
 {
-  "name": "@gremius/grimoire-myfeature",
+  "name": "@kitsuden/kon-myfeature",
   "version": "1.0.0",
-  "description": "My awesome grimoire",
-  "gremius": {
-    "type": "grimoire",
-    "id": "grimoire-myfeature",
+  "description": "My awesome kon",
+  "kitsuden": {
+    "type": "kon",
+    "id": "kon-myfeature",
     "minVersion": "2.0.0"
   },
   "peerDependencies": {
-    "@gremius/engine": "^2.0.0"
+    "@kitsuden/engine": "^2.0.0"
   },
-  "keywords": ["gremius", "grimoire", "feature"]
+  "keywords": ["kitsuden", "kon", "feature"]
 }
 ```
 
-### 3. grimoire.json
+### 3. kon.json
 
 ```json
 {
-  "id": "grimoire-myfeature",
+  "id": "kon-myfeature",
   "name": "My Feature",
   "description": "Adds awesome functionality",
   "version": "1.0.0",
@@ -199,11 +199,11 @@ grimoire-myfeature/
 
 ```typescript
 import { Hono } from "hono";
-import { defineGrimoire } from "@gremius/shared";
+import { defineKon } from "@kitsuden/shared";
 import { myTable } from "./schema";
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-myfeature",
+export const kon = defineKon({
+  id: "kon-myfeature",
   name: "My Feature",
   version: "1.0.0",
   icon: "Star",
@@ -251,7 +251,7 @@ export const grimoire = defineGrimoire({
   },
 
   dependencies: {
-    grimoires: ["grimoire-media"], // Requires media grimoire
+    kons: ["kon-media"], // Requires media kon
     core: ["webhooks"], // Requires webhooks feature
   },
 });
@@ -270,7 +270,7 @@ export const myTable = pgTable("my_data", {
 });
 ```
 
-## 🚀 Publicar un Grimoire
+## 🚀 Publicar un Kon
 
 ```bash
 # 1. Build
@@ -278,34 +278,34 @@ npm run build
 
 # 2. Test locally
 npm link
-cd /path/to/gremius-project
-npm link @yourscope/grimoire-myfeature
+cd /path/to/kitsuden-project
+npm link @yourscope/kon-myfeature
 
 # 3. Publish to npm
 npm publish --access public
 
 # 4. Install via CLI
-gremius plugin install @yourscope/grimoire-myfeature
+kitsuden plugin install @yourscope/kon-myfeature
 ```
 
-## 🎯 Ciclo de Vida de un Grimoire
+## 🎯 Ciclo de Vida de un Kon
 
 ```
 Install
   ↓
-npm install @gremius/grimoire-xxx
+npm install @kitsuden/kon-xxx
   ↓
-Register in DB (installed_grimoires)
+Register in DB (installed_kons)
   ↓
 Load on Startup
   ↓
-Resolve path (node_modules → grimoire.json)
+Resolve path (node_modules → kon.json)
   ↓
 Import index.ts
   ↓
 Call createRouter(ctx) with injected dependencies
   ↓
-Mount routes at /api/{grimoire-id}
+Mount routes at /api/{kon-id}
   ↓
 Execute onStartup() hook
   ↓
@@ -314,30 +314,30 @@ Ready!
 
 ## 🔐 Seguridad
 
-- Los grimoires se ejecutan en el mismo proceso que la API
+- Los kons se ejecutan en el mismo proceso que la API
 - Usan el contexto inyectado (no pueden importar directamente de apps/api/)
 - Las migraciones SQL deben ser revisadas antes de ejecutarse
-- Los grimoires de 3rd party muestran warning antes de instalarse
+- Los kons de 3rd party muestran warning antes de instalarse
 
 ## 📊 API Endpoints (Admin)
 
 ```
-GET  /api/admin/grimoires           # List all available
-GET  /api/admin/grimoires/installed # List installed
-POST /api/admin/grimoires/install   # Install from npm
-POST /api/admin/grimoires/:id/enable
-POST /api/admin/grimoires/:id/disable
-DELETE /api/admin/grimoires/:id     # Uninstall
+GET  /api/admin/kons           # List all available
+GET  /api/admin/kons/installed # List installed
+POST /api/admin/kons/install   # Install from npm
+POST /api/admin/kons/:id/enable
+POST /api/admin/kons/:id/disable
+DELETE /api/admin/kons/:id     # Uninstall
 ```
 
 ## 🛣️ Roadmap
 
 - [x] Soporte node_modules en module-loader
-- [x] Tabla installed_grimoires
+- [x] Tabla installed_kons
 - [x] CLI básico (install, uninstall, list)
-- [x] Realms como starters
+- [x] Grimoires como starters
 - [ ] API del Marketplace
 - [ ] Sistema de reviews/ratings
 - [ ] Validación de seguridad automática
-- [ ] Firma digital de grimoires
-- [ ] Sandboxing de grimoires (VM2/QuickJS)
+- [ ] Firma digital de kons
+- [ ] Sandboxing de kons (VM2/QuickJS)

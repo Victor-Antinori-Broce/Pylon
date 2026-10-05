@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Real-time Test Suite
+ * Kitsuden — Real-time Test Suite
  *
  * Tests WebSocket connection, channel subscription, ping/pong,
  * presence system, and error handling.
@@ -68,33 +68,46 @@ describe("Real-time WebSocket", () => {
     expect(result).toBe(true);
   });
 
-  it("should subscribe to a channel", async () => {
+  it("un cliente anonimo NO puede suscribirse a un canal", async () => {
+    /**
+     * Esta prueba afirmaba lo contrario —que la suscripcion funcionaba— y por
+     * eso llevaba tiempo en rojo: describia el comportamiento de ANTES de que
+     * `subscribeToChannel` autorizara.
+     *
+     * Entonces solo se validaba el FORMATO del canal, asi que cualquiera con
+     * una conexion abierta podia escuchar los cambios de cualquier tabla. Hoy
+     * el autorizador deniega por defecto salvo admin, y eso es justo lo que hay
+     * que sostener: una prueba que exige que el fallo vuelva es peor que
+     * ninguna.
+     *
+     * La suscripcion CON permiso se cubre en las pruebas del autorizador, que
+     * no necesitan un servidor levantado.
+     */
     if (!wsAvailable) return;
     const ws = new WebSocket(WS_URL);
 
-    const result = await Promise.race([
-      new Promise<boolean>((resolve) => {
+    const respuesta = await Promise.race([
+      new Promise<string>((resolve) => {
         ws.onmessage = (event) => {
           const msg = JSON.parse(event.data as string);
           if (msg.type === "connected") {
             ws.send(JSON.stringify({ type: "subscribe", channel: "table:test-dataset" }));
+            return;
           }
-          if (msg.type === "subscribed" && msg.channel === "table:test-dataset") {
-            ws.close();
-            resolve(true);
-          }
+          ws.close();
+          resolve(msg.type as string);
         };
-        ws.onerror = () => resolve(false);
+        ws.onerror = () => resolve("error");
       }),
-      new Promise<boolean>((resolve) =>
+      new Promise<string>((resolve) =>
         setTimeout(() => {
           ws.close();
-          resolve(false);
+          resolve("timeout");
         }, 3000)
       ),
     ]);
 
-    expect(result).toBe(true);
+    expect(respuesta).toBe("error");
   });
 
   it("should handle ping/pong heartbeat", async () => {

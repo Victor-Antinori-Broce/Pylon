@@ -7,9 +7,40 @@
  * Soporta límites diferenciados por endpoint y tipo de autenticación.
  */
 
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import { getValkeyClient } from "./valkey";
 
 import type { Context, Next } from "hono";
+
+/**
+ * ── EL SITIO PÚBLICO NO ES UN CLIENTE, ES MUCHOS ───────────────────────────
+ *
+ * El servidor del sitio (Astro) pregunta a la API en nombre de cada visitante,
+ * desde SU propia IP y sin `x-forwarded-for`: todas las visitas caían en el
+ * mismo cubo («unknown»). A las 300 páginas por minuto de una ruta caliente
+ * (`/api/wiki/wikis`, `/api/settings`) la API contestaba 429 y el sitio servía
+ * 404 a todo el mundo.
+ *
+ * Con la clave compartida (`SITIO_API_CLAVE`, en el sitio y en la API) el
+ * sitio dice qué visitante hay detrás (`x-kitsuden-cliente`) y el cupo se
+ * cuenta por visitante. Sin la clave, esa cabecera se ignora: cualquiera
+ * podría escribir una IP distinta en cada petición para no agotar nunca nada.
+ *
+ * Devuelve el identificador del visitante, o `null` si la petición no viene
+ * firmada por el sitio (o no hay clave configurada).
+ */
+export function visitanteDelSitio(c: Context<any>): string | null {
+  const clave = process.env.SITIO_API_CLAVE ?? "";
+  const recibida = c.req.header("x-kitsuden-sitio") ?? "";
+  if (!clave || !recibida) return null;
+  // Comparación en tiempo constante sobre resúmenes de igual longitud
+  const a = createHash("sha256").update(clave).digest();
+  const b = createHash("sha256").update(recibida).digest();
+  if (!timingSafeEqual(a, b)) return null;
+  const cliente = (c.req.header("x-kitsuden-cliente") ?? "").trim().slice(0, 64);
+  return `sitio:${cliente || "sin-ip"}`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN
@@ -26,6 +57,19 @@ export interface RateLimitConfig {
   keyGenerator?: (c: Context<{ Variables: AppVariables }>) => string;
   /** Si debe saltarse el rate limiting */
   skip?: (c: Context<{ Variables: AppVariables }>) => boolean;
+  /**
+   * Denegar si el contador no está disponible (Valkey caído).
+   *
+   * Por defecto `false` — el limitador FALLA ABIERTO para que una caída de
+   * Valkey no tumbe la API entera. Es la elección correcta para el 99% de las
+   * rutas: servir de más es mejor que no servir.
+   *
+   * Pero hay endpoints donde no lo es. Uno que manda correo a direcciones sin
+   * verificar, o que cobra, prefiere rechazar la petición a quedarse sin
+   * ningún freno: con Valkey caído y fallo abierto, un atacante manda correos
+   * ilimitados desde tu dominio. Esos marcan `failClosed: true`.
+   */
+  failClosed?: boolean;
 }
 
 /** Configuración por defecto */
@@ -117,12 +161,13 @@ function generateKey(c: Context<{ Variables: AppVariables }>, config: RateLimitC
     return `ratelimit:${config.keyGenerator(c)}`;
   }
 
-  // Prioridad: API Key > User ID > IP
+  // Prioridad: API Key > User ID > visitante del sitio > IP
   const apiKey = c.req.header("authorization")?.replace("Bearer ", "").slice(0, 32);
   const userId = c.get("user")?.id;
+  const visitante = visitanteDelSitio(c);
   const ip = c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || "unknown";
 
-  const identifier = apiKey || userId || ip;
+  const identifier = apiKey || userId || visitante || ip;
   const route = c.req.path;
 
   return `ratelimit:${route}:${identifier}`;
@@ -142,8 +187,13 @@ export async function checkRateLimit(
 
   const valkey = await getValkeyClient();
 
-  // Si no hay Valkey, permitir (fail open para no bloquear)
+  // Sin Valkey no hay contador. Por defecto se permite (fail open) para que
+  // una caída del caché no tumbe la API; las rutas que marcan `failClosed`
+  // prefieren rechazar antes que quedarse sin freno.
   if (!valkey) {
+    if (config.failClosed) {
+      return { allowed: false, remaining: 0, reset, limit: config.limit, retryAfter: 30 };
+    }
     return { allowed: true, remaining: config.limit, reset, limit: config.limit };
   }
 
@@ -178,7 +228,10 @@ export async function checkRateLimit(
     };
   } catch (error) {
     console.error("Rate limiter error:", error);
-    // Fail open en caso de error
+    // Mismo criterio que arriba: abierto por defecto, cerrado si la ruta lo pide.
+    if (config.failClosed) {
+      return { allowed: false, remaining: 0, reset, limit: config.limit, retryAfter: 30 };
+    }
     return { allowed: true, remaining: config.limit, reset, limit: config.limit };
   }
 }

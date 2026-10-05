@@ -50,9 +50,12 @@
   let searchQuery = $state("");
   let fetching = $state(false);
   let items = $state<RelatedItem[]>([]);
-  let wrapperRef: HTMLElement;
-  let searchInputRef: HTMLInputElement;
-  let multiInputRef: HTMLInputElement;
+  // Referencias de `bind:this` como $state: en modo runes, un `let` normal no
+  // notifica el cambio y cualquier lectura reactiva se queda con el valor
+  // inicial (undefined).
+  let wrapperRef = $state<HTMLElement | null>(null);
+  let searchInputRef = $state<HTMLInputElement | null>(null);
+  let multiInputRef = $state<HTMLInputElement | null>(null);
 
   // ─── Computed ───────────────────────────────────────
   const selectedIds = $derived.by<string[]>(() => {
@@ -192,7 +195,7 @@
   {#if label}
     <label class="label block">
       {label}
-      {#if required}<span class="text-gremius-pink">*</span>{/if}
+      {#if required}<span class="text-kitsuden-accent-2">*</span>{/if}
     </label>
   {/if}
 
@@ -203,12 +206,12 @@
         type="button"
         onclick={toggleOpen}
         class="input flex items-center justify-between gap-2 text-left {!selectedItem
-          ? 'text-gremius-subtle'
+          ? 'text-kitsuden-subtle'
           : ''}"
       >
         <span class="truncate">{selectedItem ? getDisplayLabel(selectedItem!) : placeholder}</span>
         <ChevronDown
-          class="w-4 h-4 text-gremius-subtle transition-transform shrink-0 {open
+          class="w-4 h-4 text-kitsuden-subtle transition-transform shrink-0 {open
             ? 'rotate-180'
             : ''}"
         />
@@ -218,17 +221,17 @@
         <div
           class="absolute z-50 top-full mt-1 w-full card shadow-xl shadow-black/30 max-h-64 overflow-hidden"
         >
-          <div class="p-2 border-b border-gremius-border">
+          <div class="p-2 border-b border-kitsuden-border">
             <div class="relative">
               <Search
-                class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gremius-subtle"
+                class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-kitsuden-subtle"
               />
               <input
                 bind:this={searchInputRef}
                 bind:value={searchQuery}
                 type="text"
                 placeholder="Search..."
-                class="input pl-8 py-1.5 text-xs bg-gremius-bg"
+                class="input pl-8 py-1.5 text-xs bg-kitsuden-bg"
               />
             </div>
           </div>
@@ -236,17 +239,17 @@
             {#if fetching}
               <div class="flex justify-center py-4">
                 <div
-                  class="w-4 h-4 border-2 border-gremius-cyan-30 border-t-gremius-cyan rounded-full animate-spin"
+                  class="w-4 h-4 border-2 border-kitsuden-accent-30 border-t-kitsuden-accent rounded-full animate-spin"
                 ></div>
               </div>
             {:else if filteredItems.length === 0}
-              <div class="py-4 text-center text-xs text-gremius-subtle">No results found</div>
+              <div class="py-4 text-center text-xs text-kitsuden-subtle">No results found</div>
             {:else}
               {#if value}
                 <button
                   type="button"
                   onclick={() => selectSingle(null)}
-                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-xs text-gremius-subtle hover:bg-gremius-border/30 transition-colors border-b border-gremius-border/30"
+                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-xs text-kitsuden-subtle hover:bg-kitsuden-border/30 transition-colors border-b border-kitsuden-border/30"
                 >
                   <X class="w-3 h-3" /> Clear selection
                 </button>
@@ -255,9 +258,9 @@
                 <button
                   type="button"
                   onclick={() => selectSingle(item)}
-                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-gremius-border/30 transition-colors {value ===
+                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-kitsuden-border/30 transition-colors {value ===
                   item.id
-                    ? 'bg-gremius-cyan/[0.06] text-gremius-cyan'
+                    ? 'bg-kitsuden-accent/[0.06] text-kitsuden-accent'
                     : ''}"
                 >
                   {#if item.image}
@@ -270,11 +273,11 @@
                   <div class="min-w-0 flex-1">
                     <p class="truncate">{getDisplayLabel(item)}</p>
                     {#if item.subtitle}
-                      <p class="text-[10px] text-gremius-subtle truncate">{item.subtitle}</p>
+                      <p class="text-[10px] text-kitsuden-subtle truncate">{item.subtitle}</p>
                     {/if}
                   </div>
                   {#if value === item.id}
-                    <Check class="w-4 h-4 text-gremius-cyan shrink-0" />
+                    <Check class="w-4 h-4 text-kitsuden-accent shrink-0" />
                   {/if}
                 </button>
               {/each}
@@ -295,7 +298,7 @@
       >
         {#each selectedIds as id}
           <span
-            class="inline-flex items-center gap-1 rounded-md bg-gremius-cyan-10 border border-gremius-cyan-20 px-2 py-0.5 text-xs text-gremius-cyan"
+            class="inline-flex items-center gap-1 rounded-md bg-kitsuden-accent-10 border border-kitsuden-accent-20 px-2 py-0.5 text-xs text-kitsuden-accent"
           >
             {getDisplayById(id)}
             <span
@@ -303,7 +306,7 @@
                 e.stopPropagation();
                 removeId(id);
               }}
-              class="hover:text-gremius-pink transition-colors cursor-pointer"
+              class="hover:text-kitsuden-accent-2 transition-colors cursor-pointer"
             >
               <X class="w-3 h-3" />
             </span>
@@ -314,7 +317,7 @@
           bind:value={searchQuery}
           type="text"
           placeholder={selectedIds.length === 0 ? placeholder : ""}
-          class="flex-1 min-w-[60px] bg-transparent text-sm outline-none placeholder:text-gremius-subtle"
+          class="flex-1 min-w-[60px] bg-transparent text-sm outline-none placeholder:text-kitsuden-subtle"
           onfocus={() => (open = true)}
         />
       </button>
@@ -327,31 +330,31 @@
             {#if fetching}
               <div class="flex justify-center py-4">
                 <div
-                  class="w-4 h-4 border-2 border-gremius-cyan-30 border-t-gremius-cyan rounded-full animate-spin"
+                  class="w-4 h-4 border-2 border-kitsuden-accent-30 border-t-kitsuden-accent rounded-full animate-spin"
                 ></div>
               </div>
             {:else if filteredItems.length === 0}
-              <div class="py-4 text-center text-xs text-gremius-subtle">No results found</div>
+              <div class="py-4 text-center text-xs text-kitsuden-subtle">No results found</div>
             {:else}
               {#each filteredItems as item}
                 <button
                   type="button"
                   onclick={() => toggleMulti(item)}
-                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-gremius-border/30 transition-colors {selectedIds.includes(
+                  class="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-kitsuden-border/30 transition-colors {selectedIds.includes(
                     item.id
                   )
-                    ? 'bg-gremius-cyan/[0.06]'
+                    ? 'bg-kitsuden-accent/[0.06]'
                     : ''}"
                 >
                   <div
                     class="w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 {selectedIds.includes(
                       item.id
                     )
-                      ? 'bg-gremius-cyan border-gremius-cyan'
-                      : 'border-gremius-border'}"
+                      ? 'bg-kitsuden-accent border-kitsuden-accent'
+                      : 'border-kitsuden-border'}"
                   >
                     {#if selectedIds.includes(item.id)}
-                      <Check class="w-3 h-3 text-gremius-bg" />
+                      <Check class="w-3 h-3 text-kitsuden-bg" />
                     {/if}
                   </div>
                   {#if item.image}
@@ -364,7 +367,7 @@
                   <div class="min-w-0 flex-1">
                     <p class="truncate">{getDisplayLabel(item)}</p>
                     {#if item.subtitle}
-                      <p class="text-[10px] text-gremius-subtle truncate">{item.subtitle}</p>
+                      <p class="text-[10px] text-kitsuden-subtle truncate">{item.subtitle}</p>
                     {/if}
                   </div>
                 </button>
@@ -377,21 +380,21 @@
   {/if}
 
   {#if helpText}
-    <p class="text-[10px] text-gremius-subtle">{helpText}</p>
+    <p class="text-[10px] text-kitsuden-subtle">{helpText}</p>
   {/if}
   {#if error}
-    <p class="text-[10px] text-gremius-pink">{error}</p>
+    <p class="text-[10px] text-kitsuden-accent-2">{error}</p>
   {/if}
 </div>
 
 <style>
-  .border-gremius-cyan-30 {
-    border-color: rgb(0 229 255 / 0.3);
+  .border-kitsuden-accent-30 {
+    border-color: rgb(168 85 247 / 0.3);
   }
-  .bg-gremius-cyan-10 {
-    background-color: rgb(0 229 255 / 0.1);
+  .bg-kitsuden-accent-10 {
+    background-color: rgb(168 85 247 / 0.1);
   }
-  .border-gremius-cyan-20 {
-    border-color: rgb(0 229 255 / 0.2);
+  .border-kitsuden-accent-20 {
+    border-color: rgb(168 85 247 / 0.2);
   }
 </style>

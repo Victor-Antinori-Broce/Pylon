@@ -15,7 +15,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
-      "@gremius/shared": ["../../shared/src"]
+      "@kitsuden/shared": ["../../shared/src"]
     }
   },
   "include": ["*.ts"],

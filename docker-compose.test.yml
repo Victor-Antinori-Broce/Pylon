@@ -1,43 +1,48 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# GremiusCMS — PostgreSQL para TESTS
+# Kitsuden — PostgreSQL para TESTS
 #
 # Servicio:
-#   - PostgreSQL 16 + pgvector (puerto 5433)
+#   - PostgreSQL 16 + pgvector (puerto configurable, por defecto 5434)
 #
 # USO:
-#   docker compose -f docker-compose.test.yml up -d
+#   docker compose -f docker-compose.test.yml --env-file .env.test up -d
 #
 # NOTA: Esta DB es independiente de la DB de desarrollo (puerto 5432).
 #       Se destruye y recrea limpia en cada ejecución de tests.
+#
+# CONFIGURACIÓN:
+#   Las credenciales y el puerto se leen de .env.test (o usan los defaults
+#   de abajo para desarrollo local). NUNCA configures secrets reales aquí.
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
-  gremius_test_db:
+  kitsuden_test_db:
     image: pgvector/pgvector:pg16
-    container_name: gremius_test_db
+    container_name: kitsuden_test_db
     environment:
-      POSTGRES_USER: gremius
-      POSTGRES_PASSWORD: gremius_test_2025
-      POSTGRES_DB: gremius_test
+      POSTGRES_USER: ${POSTGRES_USER:-kitsuden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kitsuden_test_secure_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-kitsuden_test}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5434}:5432"
     volumes:
-      - gremius_test_postgres_data:/var/lib/postgresql/data
+      - kitsuden_test_postgres_data:/var/lib/postgresql/data
       - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gremius -d gremius_test"]
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kitsuden} -d ${POSTGRES_DB:-kitsuden_test}"]
       interval: 2s
       timeout: 3s
       retries: 10
     networks:
-      - gremius_net
+      - kitsuden_net
 
 volumes:
-  gremius_test_postgres_data:
-    name: gremius_test_postgres_data
+  kitsuden_test_postgres_data:
+    name: kitsuden_test_postgres_data
     driver: local
 
 networks:
-  gremius_net:
-    name: gremius_net
+  kitsuden_net:
+    name: kitsuden_net
     driver: bridge

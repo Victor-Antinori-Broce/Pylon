@@ -1,4 +1,4 @@
-# AI Memories Grimoire — Completion Report
+# AI Memories Kon — Completion Report
 
 **Date:** 2026-03-07  
 **Status:** ✅ COMPLETE
@@ -7,25 +7,25 @@
 
 ## Summary
 
-The **ai-memories** grimoire has been fully implemented with comprehensive API routes for AI memory management using pgvector.
+The **ai-memories** kon has been fully implemented with comprehensive API routes for AI memory management using pgvector.
 
 ---
 
 ## Files Created/Updated
 
-| File                 | Size   | Description                       |
-| -------------------- | ------ | --------------------------------- |
-| `memories.routes.ts` | 20 KB  | Full CRUD + semantic search API   |
-| `index.ts`           | 1.5 KB | Module exports & health check     |
-| `gremius.json`       | 2.7 KB | Grimoire metadata & configuration |
-| `README.md`          | 6.8 KB | Complete documentation            |
-| `schema.ts`          | 9.2 KB | Existing - pgvector schema        |
+| File                 | Size   | Description                     |
+| -------------------- | ------ | ------------------------------- |
+| `memories.routes.ts` | 20 KB  | Full CRUD + semantic search API |
+| `index.ts`           | 1.5 KB | Module exports & health check   |
+| `kitsuden.json`      | 2.7 KB | Kon metadata & configuration    |
+| `README.md`          | 6.8 KB | Complete documentation          |
+| `schema.ts`          | 9.2 KB | Existing - pgvector schema      |
 
 ### Configuration Updates
 
 | File                                       | Change                                |
 | ------------------------------------------ | ------------------------------------- |
-| `apps/api/gremius.config.ts`               | Added `"ai-memories"` to modules list |
+| `apps/api/kitsuden.config.ts`              | Added `"ai-memories"` to modules list |
 | `apps/api/src/services/module-registry.ts` | Added ai-memories to registry         |
 | `apps/api/src/lib/module-loader.ts`        | Added directory mapping               |
 
@@ -69,7 +69,7 @@ Search features:
 
 - `GET /api/ai-memories/stats/overview` - Memory statistics by type
 - `GET /api/ai-memories/health/embedding` - Check OpenAI configuration
-- `GET /api/ai-memories/health` - Grimoire health check
+- `GET /api/ai-memories/health` - Kon health check
 
 ### ✅ Chunk Management
 
@@ -193,8 +193,8 @@ curl -X POST http://localhost:3000/api/ai-memories/search \
 | ------------------ | ------------------------------------ |
 | pgvector Extension | ✅ Auto-installs with Docker         |
 | OpenAI Embeddings  | ✅ Configurable via env var          |
-| MCP Tool           | ✅ `gremius_encode_toon` available   |
-| Module Loader      | ✅ Registered in gremius.config.ts   |
+| MCP Tool           | ✅ `kitsuden_encode_toon` available  |
+| Module Loader      | ✅ Registered in kitsuden.config.ts  |
 | Health Checks      | ✅ `/health` and `/health/embedding` |
 | Caching            | ✅ Uses existing cache system        |
 
@@ -217,7 +217,7 @@ curl -X POST http://localhost:3000/api/ai-memories/search \
 
 ## Next Steps
 
-1. **Start the API** to load the new grimoire:
+1. **Start the API** to load the new kon:
 
    ```bash
    cd apps/api && bun run dev
@@ -237,7 +237,7 @@ curl -X POST http://localhost:3000/api/ai-memories/search \
 
 ## Notes
 
-- The grimoire is marked as OPTIONAL in the config, so it won't break if pgvector is not installed
+- The kon is marked as OPTIONAL in the config, so it won't break if pgvector is not installed
 - Embeddings are generated asynchronously during create/update operations
 - If OpenAI key is not set, memories are stored without embeddings (search won't work)
 - Chunking is automatic for content > 2000 characters but can be disabled with `chunking: false`

@@ -171,41 +171,41 @@
 </script>
 
 <div class="space-y-6 mt-6">
-  <div class="border-t border-gremius-border pt-4">
-    <h3 class="text-sm font-semibold text-gremius-text mb-4 flex items-center gap-2">
-      <span class="w-1.5 h-1.5 rounded-full bg-gremius-cyan"></span>
+  <div class="border-t border-kitsuden-border pt-4">
+    <h3 class="text-sm font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-kitsuden-accent"></span>
       Relaciones
     </h3>
 
     {#if inlineRelations.length === 0}
-      <p class="text-xs text-gremius-subtle">No se detectaron relaciones inline.</p>
+      <p class="text-xs text-kitsuden-subtle">No se detectaron relaciones inline.</p>
     {/if}
 
     {#each inlineRelations as rel}
       {@const data = relationData[rel.table] || []}
       {@const cols = getRelationColumns(rel)}
-      <div class="mb-4 border border-gremius-border rounded-lg bg-gremius-card overflow-hidden">
+      <div class="mb-4 border border-kitsuden-border rounded-lg bg-kitsuden-card overflow-hidden">
         <div
-          class="flex items-center justify-between px-4 py-2.5 bg-gremius-bg border-b border-gremius-border"
+          class="flex items-center justify-between px-4 py-2.5 bg-kitsuden-bg border-b border-kitsuden-border"
         >
           <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-gremius-text">{rel.title}</span>
+            <span class="text-sm font-medium text-kitsuden-text">{rel.title}</span>
             <span
-              class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gremius-surface text-gremius-subtle border border-gremius-border"
+              class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-kitsuden-surface text-kitsuden-subtle border border-kitsuden-border"
             >
               {data.length}
             </span>
           </div>
           <div class="flex items-center gap-1">
             <button
-              class="p-1.5 rounded-md hover:bg-gremius-border/30 text-gremius-text-dim transition-colors"
+              class="p-1.5 rounded-md hover:bg-kitsuden-border/30 text-kitsuden-text-dim transition-colors"
               title="Actualizar"
               onclick={() => loadRelation(rel)}
             >
               <RefreshCw class="w-3.5 h-3.5" />
             </button>
             <button
-              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-gremius-cyan/10 text-gremius-cyan hover:bg-gremius-cyan/20 transition-colors"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-kitsuden-accent/10 text-kitsuden-accent hover:bg-kitsuden-accent/20 transition-colors"
               onclick={() => createRelatedRecord(rel)}
             >
               <Plus class="w-3 h-3" />
@@ -217,21 +217,21 @@
         {#if loading[rel.table]}
           <div class="p-4 space-y-2">
             {#each Array(3) as _}
-              <div class="h-4 bg-gremius-border/30 rounded animate-pulse"></div>
+              <div class="h-4 bg-kitsuden-border/30 rounded animate-pulse"></div>
             {/each}
           </div>
         {:else if data.length === 0}
           <div class="p-4 text-center">
-            <p class="text-xs text-gremius-subtle">Sin registros relacionados</p>
+            <p class="text-xs text-kitsuden-subtle">Sin registros relacionados</p>
           </div>
         {:else}
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>
-                <tr class="border-b border-gremius-border bg-gremius-bg/50">
+                <tr class="border-b border-kitsuden-border bg-kitsuden-bg/50">
                   {#each cols as col}
                     <th
-                      class="px-3 py-2 text-left text-gremius-subtle font-medium uppercase tracking-wider"
+                      class="px-3 py-2 text-left text-kitsuden-subtle font-medium uppercase tracking-wider"
                     >
                       {humanize(col)}
                     </th>
@@ -241,10 +241,10 @@
               <tbody>
                 {#each data as record}
                   <tr
-                    class="border-b border-gremius-border/50 hover:bg-gremius-cyan/[0.02] transition-colors"
+                    class="border-b border-kitsuden-border/50 hover:bg-kitsuden-accent/[0.02] transition-colors"
                   >
                     {#each cols as col}
-                      <td class="px-3 py-2 text-gremius-text-dim">
+                      <td class="px-3 py-2 text-kitsuden-text-dim">
                         {formatCell(record[col])}
                       </td>
                     {/each}

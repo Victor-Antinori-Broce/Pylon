@@ -30,8 +30,15 @@ describe("Grimoire Loader", () => {
   describe("Custom View Detection", () => {
     it("should detect legacy registry entries", () => {
       expect(hasCustomView("games")).toBe(true);
-      expect(hasCustomView("crm")).toBe(true);
       expect(hasCustomView("academy")).toBe(true);
+      expect(hasCustomView("blog")).toBe(true);
+    });
+
+    it("should detect per-view entries only when a viewId is given", () => {
+      // crm is hybrid: no grimoire-level monolith, only per-view components
+      expect(hasCustomView("crm")).toBe(false);
+      expect(hasCustomView("crm", "dashboard")).toBe(true);
+      expect(hasCustomView("crm", "deal-form")).toBe(true);
     });
 
     it("should return false for unknown grimoires", () => {
@@ -74,7 +81,39 @@ describe("Grimoire Loader", () => {
       expect(config.icon).toBe("Test");
       expect(config.views).toHaveLength(1);
       expect(config.views[0].type).toBe("grid");
-      expect(config.apiEndpoint).toBe("/api/explorer/items");
+
+      /**
+       * Sin `apiBase` declarado NO hay `apiEndpoint`.
+       *
+       * Esta prueba exigía `"/api/explorer/items"` — la PRIMERA tabla del kon,
+       * fija — y estaba fijando un fallo real: DataExplorer trata una ruta de
+       * tres segmentos como definitiva, así que ese valor se usaba para TODAS
+       * las pestañas. En Academy, las once pedían `cursos`; pulsabas «Temas» y
+       * seguías viendo cursos.
+       *
+       * Omitirlo es lo que hace que el explorador construya
+       * `/api/explorer/<tabla de la vista activa>` y las pestañas funcionen.
+       */
+      expect(config.apiEndpoint).toBeUndefined();
+    });
+
+    it("respeta el apiBase que el kon declara", () => {
+      // Los cuatro kons que sí exponen una API CRUD por tabla (directory, dms,
+      // ocr-training, vekstudio) la declaran a propósito, y ahí el explorador
+      // añade la tabla: `/api/directory` + `/employees`.
+      const config = generateExplorerConfig({
+        id: "test",
+        name: "Test",
+        icon: "Test",
+        category: "data" as const,
+        hasCustomView: false,
+        tables: [{ name: "employees", label: "Empleados", primaryKey: "id" }],
+        views: [{ id: "grid", type: "grid" as const, title: "Empleados", table: "employees" }],
+        defaultView: "grid",
+        apiBase: "/api/directory",
+      });
+
+      expect(config.apiEndpoint).toBe("/api/directory");
     });
 
     it("should handle kanban views", () => {

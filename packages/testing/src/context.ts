@@ -1,19 +1,19 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * TEST CONTEXT - Creates isolated GrimoireContext for testing
+ * TEST CONTEXT - Creates isolated KonContext for testing
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { TestGrimoireContext } from "./types.js";
+import type { TestKonContext } from "./types.js";
 
 /**
- * Create a mock GrimoireContext for testing
+ * Create a mock KonContext for testing
  * This mimics the real context but with isolated/in-memory implementations
  */
 export async function createTestContext(
   sandboxId: string,
   _databaseStrategy: "memory" | "transaction" | "postgres" = "memory"
-): Promise<TestGrimoireContext> {
+): Promise<TestKonContext> {
   // In-memory storage for this sandbox
   const memoryStore = new Map<string, any>();
   const eventListeners = new Map<string, Array<(data: any) => void>>();
@@ -39,7 +39,7 @@ export async function createTestContext(
         const value = memoryStore.get(`cache:${key}`);
         return value ? JSON.parse(value) : null;
       },
-      set: async <T>(key: string, value: T, ttlSeconds?: number): Promise<void> => {
+      set: async <T>(key: string, value: T, _ttlSeconds?: number): Promise<void> => {
         memoryStore.set(`cache:${key}`, JSON.stringify(value));
       },
       invalidate: async (pattern: string): Promise<void> => {
@@ -68,10 +68,10 @@ export async function createTestContext(
 
     // Mock realtime
     realtime: {
-      broadcast: (channel: string, message: unknown): void => {
+      broadcast: (_channel: string, _message: unknown): void => {
         // No-op in tests
       },
-      sendToUser: (userId: string, message: unknown): void => {
+      sendToUser: (_userId: string, _message: unknown): void => {
         // No-op in tests
       },
     },
@@ -92,23 +92,23 @@ export async function createTestContext(
         }
         await next();
       },
-      optionalAuth: async (c: any, next: any) => {
+      optionalAuth: async (_c: any, next: any) => {
         await next();
       },
-      getSession: async (headers: Headers) => {
+      getSession: async (_headers: Headers) => {
         return null;
       },
     },
 
     // Mock storage
     storage: {
-      getSignedUploadUrl: async (key: string, contentType: string) => {
-        return `https://test-storage.gremius.local/upload/${key}`;
+      getSignedUploadUrl: async (key: string, _contentType: string) => {
+        return `https://test-storage.kitsuden.local/upload/${key}`;
       },
       getSignedDownloadUrl: async (key: string) => {
-        return `https://test-storage.gremius.local/download/${key}`;
+        return `https://test-storage.kitsuden.local/download/${key}`;
       },
-      delete: async (key: string) => {
+      delete: async (_key: string) => {
         // No-op
       },
     },
@@ -156,7 +156,7 @@ export async function createTestContext(
       siteUrl: "http://localhost:3001",
       environment: "test",
     },
-  } as TestGrimoireContext;
+  } as TestKonContext;
 
   return context;
 }
@@ -168,14 +168,14 @@ export async function createTestContext(
 function createMockDrizzle(memoryStore: Map<string, any>): any {
   return {
     select: () => ({
-      from: (table: any) => ({
-        where: (condition: any) => ({
-          limit: (n: number) => ({
+      from: (_table: any) => ({
+        where: (_condition: any) => ({
+          limit: (_n: number) => ({
             orderBy: () => Promise.resolve([]),
           }),
           orderBy: () => Promise.resolve([]),
         }),
-        limit: (n: number) => Promise.resolve([]),
+        limit: (_n: number) => Promise.resolve([]),
         orderBy: () => Promise.resolve([]),
       }),
     }),
@@ -195,15 +195,15 @@ function createMockDrizzle(memoryStore: Map<string, any>): any {
         },
       }),
     }),
-    update: (table: any) => ({
+    update: (_table: any) => ({
       set: (data: any) => ({
-        where: (condition: any) => ({
+        where: (_condition: any) => ({
           returning: () => Promise.resolve([{ id: "mock", ...data }]),
         }),
       }),
     }),
-    delete: (table: any) => ({
-      where: (condition: any) => Promise.resolve({ count: 1 }),
+    delete: (_table: any) => ({
+      where: (_condition: any) => Promise.resolve({ count: 1 }),
     }),
   };
 }

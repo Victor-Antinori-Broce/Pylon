@@ -12,5 +12,5 @@ import "./rls.test";
 console.log("Test suites loaded:");
 console.log("- Auth Module Tests");
 console.log("- Datasets Module Tests");
-console.log("- Modules (Grimoires) Tests");
+console.log("- Modules (Kons) Tests");
 console.log("- Row Level Security Tests");

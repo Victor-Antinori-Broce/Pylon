@@ -1,18 +1,18 @@
 /**
- * GremiusCMS — Dynamic Schema Merger (The Arcane Schema Weaver)
+ * Kitsuden — Dynamic Schema Merger (The Arcane Schema Weaver)
  *
- * Reads realm.json manifests and dynamically imports each grimoire's
+ * Reads grimoire.json manifests and dynamically imports each kon's
  * Drizzle schema file, merging all exports into a single object
  * alongside the core schema.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THE LORE REFACTOR: Jerarquía Mágica de Gremius
+ * THE LORE REFACTOR: Jerarquía Mágica de Kitsuden
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Schema sources:
  *   1. Core schema: ./src/db/schema.ts
- *   2. Grimoire schemas: packages/grimoires/{grimoire}/{grimoire}.schema.ts
- *   3. Legacy theme modules: packages/realms/{realm}/grimoires/... (fallback)
+ *   2. Kon schemas: packages/kons/{kon}/{kon}.schema.ts
+ *   3. Legacy theme modules: packages/grimoires/{grimoire}/kons/... (fallback)
  *
  * Used by db/index.ts to pass a complete schema to drizzle().
  * NOTE: schema-all.ts (static) is kept for drizzle-kit code generation.
@@ -23,145 +23,152 @@ import { join } from "node:path";
 
 import { eq } from "drizzle-orm";
 
-import { staticConfig as gremiusConfig } from "../../gremius.config";
-import { db } from "../db";
+import { staticConfig as kitsudenConfig } from "../../kitsuden.config";
+// `import type`, NO `import`: TypeScript lo borra al compilar, asi que no deja
+// arista de ejecucion hacia `../db`. Esa arista era el ciclo que bloqueaba el
+// arranque entero de la API (ver el comentario de `buildMergedSchema`).
+import type { Database } from "../db";
 import * as coreSchema from "../db/schema-core";
-import { installedGrimoires } from "../db/schema-core";
+import { installedKons } from "../db/schema-core";
+
+import { leerKonsDelGrimoire } from "./grimoire-manifest";
 
 /**
- * Grimoires that handle their own migrations (SQL files)
+ * Kons that handle their own migrations (SQL files)
  * These are excluded from schema merging to avoid conflicts
  */
-const SELF_MIGRATING_GRIMOIRES = new Set([
-  "grimoire-academy-lms",
-  "grimoire-booking",
-  "academy",
-  "booking",
-]);
+const SELF_MIGRATING_KONS = new Set(["kon-academy-lms", "kon-booking", "academy", "booking"]);
 
 /**
- * Get the currently active realm from environment (sync version for startup).
+ * Get the currently active grimoire from environment (sync version for startup).
  * Falls back to null if not available.
  */
-async function getActiveRealmSync(): Promise<string | null> {
+async function getActiveGrimoireSync(): Promise<string | null> {
   try {
     // Support both old and new env vars
-    return process.env.GREMIUS_ACTIVE_REALM || process.env.GREMIUS_ACTIVE_THEME || null;
+    return process.env.KITSUDEN_ACTIVE_GRIMOIRE || process.env.KITSUDEN_ACTIVE_THEME || null;
   } catch {
     return null;
   }
 }
 
 /**
- * Realm manifest interface (realm.json)
+ * Grimoire manifest interface (grimoire.json)
  */
-interface RealmManifest {
+interface GrimoireManifest {
   id: string;
   name: string;
-  grimoires: string[];
-  optional_grimoires?: string[];
+  kons: string[];
+  optional_kons?: string[];
   bundled_modules?: string[]; // Legacy support
 }
 
 /**
- * Get bundled grimoires for a realm by reading its realm.json manifest.
+ * Get bundled kons for a grimoire by reading its grimoire.json manifest.
  */
-async function getRealmGrimoires(realmId: string): Promise<string[]> {
+async function getGrimoireKons(grimoireId: string): Promise<string[]> {
   // Resolve workspace root
-  const cwdCheck = join(process.cwd(), "packages", "grimoires", "package.json");
+  const cwdCheck = join(process.cwd(), "packages", "kons", "package.json");
   const root = existsSync(cwdCheck) ? process.cwd() : join(process.cwd(), "../../");
 
-  try {
-    const realmJsonPath = join(root, "packages/realms", realmId, "realm.json");
-    if (existsSync(realmJsonPath)) {
-      const file = Bun.file(realmJsonPath);
-      const manifest: RealmManifest = await file.json();
-      return manifest.grimoires || [];
-    }
-
-    const legacyPath = join(root, "packages/realms", realmId, "gremius.json");
-    if (existsSync(legacyPath)) {
-      const file = Bun.file(legacyPath);
-      const manifest = await file.json();
-      return manifest.grimoires || manifest.bundled_modules || [];
-    }
-
-    return [];
-  } catch {
-    return [];
-  }
+  // El respaldo a kitsuden.json y la comprobación de que lo leído sea un
+  // grimoire (y no el TEMA que vive en el mismo directorio) están en
+  // leerKonsDelGrimoire.
+  return leerKonsDelGrimoire(join(root, "packages/grimoires", grimoireId));
 }
 
 /**
- * Dynamically build a merged schema object from core + active grimoires + realm grimoires.
+ * Dynamically build a merged schema object from core + active kons + grimoire kons.
  * Uses Bun's native dynamic import().
  */
-export async function buildMergedSchema(): Promise<Record<string, unknown>> {
+/**
+ * `consultas` es el acceso a base, y va como PARAMETRO en vez de importarse.
+ *
+ * Esto no es estilo: `apps/api/src/db/index.ts` termina con
+ * `export const db = await getDbInstance()` —un await de nivel superior— y esa
+ * inicializacion llama aqui. Si este modulo importara `db`, habria un ciclo con
+ * await de nivel superior, y en ESM eso se bloquea o no SEGUN POR DONDE ENTRES:
+ * entrando por `db` funcionaba, entrando por cualquier modulo que alcanzara
+ * este antes se colgaba para siempre, al 0% de CPU y sin un solo error.
+ *
+ * Se omite cuando lo llama la propia inicializacion de la base —ahi todavia no
+ * hay base— y se pasa desde `routes/graphql.ts`, que reconstruye el esquema en
+ * caliente y si la tiene.
+ *
+ * Antes esto funcionaba por accidente: durante la inicializacion, `db` estaba
+ * en zona muerta, la consulta lanzaba un ReferenceError y el `catch` de abajo
+ * —comentado como "la tabla puede no existir"— se lo tragaba. El efecto real
+ * era que los kons instalados por base NUNCA se tenian en cuenta al arrancar, y
+ * nadie podia verlo. Ahora eso es explicito.
+ */
+export async function buildMergedSchema(consultas?: Database): Promise<Record<string, unknown>> {
   // Start with all core schema exports
   const merged: Record<string, unknown> = { ...coreSchema };
 
-  const configGrimoires = gremiusConfig.grimoires ?? gremiusConfig.modules ?? [];
-  const activeRealm = await getActiveRealmSync();
-  const realmGrimoires = activeRealm ? await getRealmGrimoires(activeRealm) : [];
+  const configKons = kitsudenConfig.kons ?? kitsudenConfig.modules ?? [];
+  const activeGrimoire = await getActiveGrimoireSync();
+  const grimoireKons = activeGrimoire ? await getGrimoireKons(activeGrimoire) : [];
 
-  // Get grimoires installed via npm/marketplace from installed_grimoires table
+  // Get kons installed via npm/marketplace from installed_kons table
   let dbInstalledIds: string[] = [];
-  try {
-    const rows = await db
-      .select({ grimoireId: installedGrimoires.grimoireId })
-      .from(installedGrimoires)
-      .where(eq(installedGrimoires.enabled, true));
-    dbInstalledIds = rows.map((r) => r.grimoireId);
-  } catch {
-    // Table might not exist yet
+  if (consultas) {
+    try {
+      const rows = await consultas
+        .select({ konId: installedKons.konId })
+        .from(installedKons)
+        .where(eq(installedKons.enabled, true));
+      dbInstalledIds = rows.map((r) => r.konId);
+    } catch {
+      // La tabla puede no existir todavia: en un arranque limpio, el esquema se
+      // construye antes de que las migraciones la hayan creado.
+    }
   }
 
-  const allGrimoires = new Set([...configGrimoires, ...realmGrimoires, ...dbInstalledIds]);
+  const allKons = new Set([...configKons, ...grimoireKons, ...dbInstalledIds]);
 
   // Resolve workspace root (same logic as module-loader)
-  const cwdCheck = join(process.cwd(), "packages", "grimoires", "package.json");
+  const cwdCheck = join(process.cwd(), "packages", "kons", "package.json");
   const workspaceRoot = existsSync(cwdCheck)
-    ? process.cwd() // Docker: /app/packages/grimoires exists
+    ? process.cwd() // Docker: /app/packages/kons exists
     : join(process.cwd(), "../../"); // Dev: apps/api/../../
 
-  const grimoiresPath = join(workspaceRoot, "packages/grimoires");
+  const konsPath = join(workspaceRoot, "packages/kons");
   const legacyModulesPath = join(process.cwd(), "src/modules");
 
-  const GRIMOIRE_DIR_MAP: Record<string, string> = {
-    academy: "grimoire-academy-lms",
-    "gremius-crm": "grimoire-crm",
+  const KON_DIR_MAP: Record<string, string> = {
+    academy: "kon-academy-lms",
+    "kitsuden-crm": "kon-crm",
     "ai-memories": "ai-memories",
   };
 
-  for (const name of allGrimoires) {
-    // Skip grimoires that handle their own migrations
-    if (SELF_MIGRATING_GRIMOIRES.has(name)) {
+  for (const name of allKons) {
+    // Skip kons that handle their own migrations
+    if (SELF_MIGRATING_KONS.has(name)) {
       console.log(`  ⏩ ${name} → self-managing (skipped)`);
       continue;
     }
 
     let schemaLoaded = false;
 
-    // Try grimoires path first (new location)
+    // Try kons path first (new location)
     try {
-      const cleanName = name.replace(/^grimoire-/, "");
-      const dirName =
-        GRIMOIRE_DIR_MAP[name] || GRIMOIRE_DIR_MAP[cleanName] || `grimoire-${cleanName}`;
+      const cleanName = name.replace(/^kon-/, "");
+      const dirName = KON_DIR_MAP[name] || KON_DIR_MAP[cleanName] || `kon-${cleanName}`;
 
       const possiblePaths = [
-        join(grimoiresPath, name, `${name}.schema.ts`),
-        join(grimoiresPath, name, `${cleanName}.schema.ts`),
-        join(grimoiresPath, name, `schema.ts`),
-        join(grimoiresPath, name, `src`, `schema.ts`),
-        join(grimoiresPath, name, `src`, `${name}.schema.ts`),
-        join(grimoiresPath, name, `src`, `${cleanName}.schema.ts`),
-        join(grimoiresPath, dirName, `${cleanName}.schema.ts`),
-        join(grimoiresPath, dirName, `${name}.schema.ts`),
-        join(grimoiresPath, dirName, `${dirName}.schema.ts`),
-        join(grimoiresPath, dirName, `schema.ts`),
-        join(grimoiresPath, dirName, `src`, `schema.ts`),
-        join(grimoiresPath, dirName, `src`, `${cleanName}.schema.ts`),
-        join(grimoiresPath, dirName, `src`, `${dirName}.schema.ts`),
+        join(konsPath, name, `${name}.schema.ts`),
+        join(konsPath, name, `${cleanName}.schema.ts`),
+        join(konsPath, name, `schema.ts`),
+        join(konsPath, name, `src`, `schema.ts`),
+        join(konsPath, name, `src`, `${name}.schema.ts`),
+        join(konsPath, name, `src`, `${cleanName}.schema.ts`),
+        join(konsPath, dirName, `${cleanName}.schema.ts`),
+        join(konsPath, dirName, `${name}.schema.ts`),
+        join(konsPath, dirName, `${dirName}.schema.ts`),
+        join(konsPath, dirName, `schema.ts`),
+        join(konsPath, dirName, `src`, `schema.ts`),
+        join(konsPath, dirName, `src`, `${cleanName}.schema.ts`),
+        join(konsPath, dirName, `src`, `${dirName}.schema.ts`),
       ];
 
       let targetPath = null;
@@ -178,17 +185,17 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
           if (key === "default") continue;
           merged[key] = value;
         }
-        console.log(`  📜 ${name} → schema merged (grimoire)`);
+        console.log(`  📜 ${name} → schema merged (kon)`);
         schemaLoaded = true;
       }
     } catch {
       // Try legacy modules path
     }
 
-    // Try node_modules (npm-installed grimoires)
+    // Try node_modules (npm-installed kons)
     if (!schemaLoaded) {
       try {
-        const cleanName = name.replace(/^grimoire-/, "");
+        const cleanName = name.replace(/^kon-/, "");
         const nodeModulesPaths = [
           join(workspaceRoot, "node_modules"),
           join(process.cwd(), "node_modules"),
@@ -198,16 +205,16 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
         for (const nmPath of nodeModulesPaths) {
           const npmPaths = [
             // Scoped official
-            join(nmPath, "@gremius", `grimoire-${cleanName}`, `${cleanName}.schema.ts`),
-            join(nmPath, "@gremius", `grimoire-${cleanName}`, `schema.ts`),
-            join(nmPath, "@gremius", `grimoire-${cleanName}`, `src`, `schema.ts`),
-            join(nmPath, "@gremius", name, `${cleanName}.schema.ts`),
-            join(nmPath, "@gremius", name, `schema.ts`),
-            join(nmPath, "@gremius", name, `src`, `schema.ts`),
+            join(nmPath, "@kitsuden", `kon-${cleanName}`, `${cleanName}.schema.ts`),
+            join(nmPath, "@kitsuden", `kon-${cleanName}`, `schema.ts`),
+            join(nmPath, "@kitsuden", `kon-${cleanName}`, `src`, `schema.ts`),
+            join(nmPath, "@kitsuden", name, `${cleanName}.schema.ts`),
+            join(nmPath, "@kitsuden", name, `schema.ts`),
+            join(nmPath, "@kitsuden", name, `src`, `schema.ts`),
             // Community
-            join(nmPath, `grimoire-${cleanName}`, `${cleanName}.schema.ts`),
-            join(nmPath, `grimoire-${cleanName}`, `schema.ts`),
-            join(nmPath, `grimoire-${cleanName}`, `src`, `schema.ts`),
+            join(nmPath, `kon-${cleanName}`, `${cleanName}.schema.ts`),
+            join(nmPath, `kon-${cleanName}`, `schema.ts`),
+            join(nmPath, `kon-${cleanName}`, `src`, `schema.ts`),
             join(nmPath, name, `${cleanName}.schema.ts`),
             join(nmPath, name, `schema.ts`),
             join(nmPath, name, `src`, `schema.ts`),
@@ -228,13 +235,15 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
           if (schemaLoaded) break;
         }
 
-        // Fallback: use installed_grimoires.sourceUrl to resolve schema path
+        // Fallback: use installed_kons.sourceUrl to resolve schema path
         if (!schemaLoaded) {
           try {
-            const dbRows = await db
-              .select({ sourceUrl: installedGrimoires.sourceUrl, path: installedGrimoires.path })
-              .from(installedGrimoires)
-              .where(eq(installedGrimoires.grimoireId, name));
+            const dbRows = consultas
+              ? await consultas
+                  .select({ sourceUrl: installedKons.sourceUrl, path: installedKons.path })
+                  .from(installedKons)
+                  .where(eq(installedKons.konId, name))
+              : [];
 
             for (const row of dbRows) {
               const pkgName = row.sourceUrl;
@@ -245,7 +254,7 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
                 if (!existsSync(resolvedPkgPath)) continue;
 
                 const sourceUrlPaths = [
-                  join(resolvedPkgPath, `${name.replace(/^grimoire-/, "")}.schema.ts`),
+                  join(resolvedPkgPath, `${name.replace(/^kon-/, "")}.schema.ts`),
                   join(resolvedPkgPath, `schema.ts`),
                   join(resolvedPkgPath, `src`, `schema.ts`),
                   join(resolvedPkgPath, `${name}.schema.ts`),
@@ -290,11 +299,11 @@ export async function buildMergedSchema(): Promise<Record<string, unknown>> {
           schemaLoaded = true;
         }
       } catch {
-        // Grimoire may not have a schema file
+        // Kon may not have a schema file
       }
     }
 
-    // If still not loaded, it's okay — grimoire might use core schema only
+    // If still not loaded, it's okay — kon might use core schema only
     if (!schemaLoaded) {
       console.log(`  ⚠️  ${name} → no schema file found`);
     }

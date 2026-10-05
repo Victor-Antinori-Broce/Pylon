@@ -1,4 +1,5 @@
 import { execSync } from "child_process";
+import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -16,6 +17,13 @@ function getTemplatePath(templateName: string): string {
   return path.join(PACKAGE_ROOT, "templates", templateName);
 }
 
+/**
+ * Generate a cryptographically secure random secret string.
+ */
+function generateSecret(length = 32): string {
+  return crypto.randomBytes(length).toString("hex");
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TEMPLATES CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════
@@ -23,29 +31,29 @@ function getTemplatePath(templateName: string): string {
 interface TemplateConfig {
   name: string;
   description: string;
-  grimoires: string[];
+  kons: string[];
 }
 
 const TEMPLATES: Record<string, TemplateConfig> = {
   default: {
     name: "Default",
     description: "Core functionality: auth, datasets, media",
-    grimoires: ["grimoire-auth", "grimoire-datasets", "grimoire-media"],
+    kons: ["kon-auth", "kon-datasets", "kon-media"],
   },
   blog: {
     name: "Blog",
     description: "Content-focused blog with posts, tags, and SEO",
-    grimoires: ["grimoire-auth", "grimoire-datasets", "grimoire-media", "grimoire-blog"],
+    kons: ["kon-auth", "kon-datasets", "kon-media", "kon-blog"],
   },
   saas: {
     name: "SaaS",
     description: "Teams, subscriptions, and user management",
-    grimoires: ["grimoire-auth", "grimoire-datasets", "grimoire-media"],
+    kons: ["kon-auth", "kon-datasets", "kon-media"],
   },
   ecommerce: {
     name: "E-Commerce",
     description: "Online store with products, orders, inventory",
-    grimoires: ["grimoire-auth", "grimoire-datasets", "grimoire-media"],
+    kons: ["kon-auth", "kon-datasets", "kon-media"],
   },
 };
 
@@ -55,11 +63,13 @@ const TEMPLATES: Record<string, TemplateConfig> = {
 
 export interface InitOptions {
   template?: string;
-  mode?: "vibecoder" | "developer";
+  mode?: "vibecoder" | "developer" | "lite";
   database?: string;
   autoStart?: boolean;
   start?: boolean;
   headless?: boolean;
+  /** Modo lite: PostgreSQL embebido (PGlite), sin Docker. */
+  lite?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -71,7 +81,8 @@ export async function initCommand(name: string | undefined, options: InitOptions
 
   try {
     // ── Determine mode ──
-    const mode = options.mode || "vibecoder";
+    // `--lite` es un atajo de `--mode lite` (el flag gana sobre el default).
+    const mode = options.lite ? "lite" : options.mode || "vibecoder";
 
     // ── Ask for project name if not provided ──
     let projectName = name;
@@ -81,13 +92,13 @@ export async function initCommand(name: string | undefined, options: InitOptions
           type: "input",
           name: "name",
           message: mode === "vibecoder" ? "Project name:" : "Project name (monorepo):",
-          default: "my-gremius-app",
+          default: "my-kitsuden-app",
         },
       ]);
       projectName = answers.name;
     }
 
-    const projectPath = path.resolve(process.cwd(), projectName || "my-gremius-app");
+    const projectPath = path.resolve(process.cwd(), projectName || "my-kitsuden-app");
 
     // ── Check if directory exists ──
     if (await fs.pathExists(projectPath)) {
@@ -105,19 +116,19 @@ export async function initCommand(name: string | undefined, options: InitOptions
     const templateConfig = TEMPLATES[template];
 
     console.log(
-      chalk.cyan(
-        `\n🚀 GremiusCMS v0.8 — ${mode === "vibecoder" ? "Vibecoder" : "Developer"} Mode\n`
-      )
+      chalk.cyan(`\n🚀 Kitsuden v0.8 — ${mode === "vibecoder" ? "Vibecoder" : "Developer"} Mode\n`)
     );
     console.log(chalk.gray(`Template: ${templateConfig.name} — ${templateConfig.description}\n`));
 
     spinner.start("Creating project...");
     await fs.ensureDir(projectPath);
 
-    if (mode === "vibecoder") {
+    if (mode === "lite") {
+      await createLiteProject(projectPath, projectName || "my-kitsuden-app", spinner);
+    } else if (mode === "vibecoder") {
       await createVibecoderProject(
         projectPath,
-        projectName || "my-gremius-app",
+        projectName || "my-kitsuden-app",
         template,
         templateConfig,
         spinner,
@@ -126,7 +137,7 @@ export async function initCommand(name: string | undefined, options: InitOptions
     } else {
       await createDeveloperProject(
         projectPath,
-        projectName || "my-gremius-app",
+        projectName || "my-kitsuden-app",
         template,
         templateConfig,
         spinner
@@ -136,16 +147,114 @@ export async function initCommand(name: string | undefined, options: InitOptions
     spinner.succeed(chalk.green(`✅ Project "${projectName}" created successfully!`));
 
     // ── Post-creation output ──
-    if (mode === "vibecoder") {
-      printVibecoderOutput(projectPath, projectName || "my-gremius-app", options);
+    if (mode === "lite") {
+      printLiteOutput(projectName || "my-kitsuden-app");
+    } else if (mode === "vibecoder") {
+      printVibecoderOutput(projectPath, projectName || "my-kitsuden-app", options);
     } else {
-      printDeveloperOutput(projectPath, projectName || "my-gremius-app");
+      printDeveloperOutput(projectPath, projectName || "my-kitsuden-app");
     }
   } catch (error) {
     spinner.fail(chalk.red("Failed to initialize project"));
     console.error(error);
     process.exit(1);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LITE MODE — cero infraestructura (el "django-admin startproject" de Kitsuden)
+//
+// Genera un proyecto que corre con `kitsuden dev` sin Docker, sin Postgres
+// instalado y sin Valkey/MinIO: la DB es PGlite (PostgreSQL embebido en WASM),
+// así que el schema, las migraciones y las políticas RLS son las MISMAS que en
+// producción — migrar es solo cambiar DATABASE_URL.
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function createLiteProject(projectPath: string, projectName: string, spinner: Ora) {
+  spinner.text = "Generando proyecto lite (sin Docker)...";
+
+  await fs.ensureDir(projectPath);
+  await fs.ensureDir(path.join(projectPath, ".kitsuden"));
+  await fs.ensureDir(path.join(projectPath, "uploads"));
+
+  // .env con DATABASE_URL=lite
+  await fs.writeFile(path.join(projectPath, ".env"), generateLiteEnv(projectName));
+
+  // package.json mínimo: el runtime completo viene de @kitsuden/api
+  await fs.writeJSON(
+    path.join(projectPath, "package.json"),
+    {
+      name: projectName,
+      version: "0.1.0",
+      private: true,
+      type: "module",
+      scripts: {
+        dev: "kitsuden dev",
+        start: "kitsuden start",
+        migrate: "kitsuden migrate",
+        "make:kon": "kitsuden create-kon",
+      },
+      dependencies: {
+        "@kitsuden/api": "latest",
+        "@kitsuden/cli": "latest",
+      },
+    },
+    { spaces: 2 }
+  );
+
+  await fs.writeFile(
+    path.join(projectPath, ".gitignore"),
+    ["node_modules/", ".env", ".kitsuden/", "uploads/", "dist/", "*.log"].join("\n") + "\n"
+  );
+
+  await fs.writeFile(
+    path.join(projectPath, "README.md"),
+    `# ${projectName}
+
+Backend Kitsuden en **modo lite** — sin Docker, sin base de datos que instalar.
+
+## Arrancar
+
+\`\`\`bash
+npm install
+npm run dev          # API en http://localhost:3001
+\`\`\`
+
+La base de datos es **PostgreSQL embebido** (PGlite) y vive en \`.kitsuden/data\`.
+Es Postgres de verdad: el mismo schema, las mismas migraciones y las mismas
+políticas de Row-Level Security que usarías en producción.
+
+## Pasar a producción
+
+Cambia una sola línea en \`.env\`:
+
+\`\`\`bash
+DATABASE_URL=postgres://user:pass@host:5432/db
+KITSUDEN_LITE=false
+\`\`\`
+
+Nada más cambia: el código, el schema y las policies son idénticos.
+
+## Siguientes pasos
+
+\`\`\`bash
+npx kitsuden create-kon blog   # genera un módulo de dominio con CRUD + policies
+npx kitsuden graph open          # visualiza la arquitectura de tu backend
+npx kitsuden mcp --ide cursor    # conecta tu agente de IA
+\`\`\`
+`
+  );
+}
+
+function printLiteOutput(projectName: string) {
+  console.log(chalk.cyan("\n⚡ Modo lite — sin Docker, sin instalar Postgres\n"));
+  console.log(chalk.white("  cd " + projectName));
+  console.log(chalk.white("  npm install"));
+  console.log(chalk.white("  npm run dev\n"));
+  console.log(chalk.gray("  API:      http://localhost:3001"));
+  console.log(chalk.gray("  Admin:    http://localhost:3000"));
+  console.log(chalk.gray("  DB:       PostgreSQL embebido en .kitsuden/data\n"));
+  console.log(chalk.gray("  Para producción: cambia DATABASE_URL en .env por tu Postgres real.\n"));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -160,20 +269,20 @@ async function createVibecoderProject(
   spinner: Ora,
   headless: boolean = false
 ) {
-  // Detect if the project path would be inside the Gremius monorepo
+  // Detect if the project path would be inside the Kitsuden monorepo
   const monorepoRoot = findMonorepoRoot();
   const isDestInsideMonorepo = monorepoRoot
     ? projectPath.startsWith(path.resolve(monorepoRoot))
     : false;
 
   if (isDestInsideMonorepo) {
-    spinner.warn("Cannot create a vibecoder project inside the Gremius monorepo directory.");
+    spinner.warn("Cannot create a vibecoder project inside the Kitsuden monorepo directory.");
     console.log(chalk.yellow("\n💡 Choose a destination outside the monorepo:"));
-    console.log(chalk.white(`  cd .. && npx gremius init ${projectName} --mode vibecoder`));
+    console.log(chalk.white(`  cd .. && npx kitsuden init ${projectName} --mode vibecoder`));
     console.log(chalk.yellow("\nOr use the monorepo directly:"));
     console.log(chalk.white("  docker compose up -d --build"));
     console.log(chalk.white("  pnpm dev:start:simple"));
-    throw new Error("Cannot create vibecoder project inside the Gremius monorepo");
+    throw new Error("Cannot create vibecoder project inside the Kitsuden monorepo");
   }
 
   spinner.text = "Generating vibecoder project...";
@@ -183,7 +292,7 @@ async function createVibecoderProject(
   const hasSeedSql = await fs.pathExists(path.join(templateDir, "seed.sql"));
 
   if (await fs.pathExists(templateDir)) {
-    const templateFiles = ["realm.json", "seed.sql", "seed.ts"];
+    const templateFiles = ["grimoire.json", "seed.sql", "seed.ts"];
     for (const file of templateFiles) {
       const src = path.join(templateDir, file);
       if (await fs.pathExists(src)) {
@@ -197,16 +306,16 @@ async function createVibecoderProject(
   await fs.writeFile(path.join(projectPath, "docker-compose.yml"), dc);
   await fs.writeFile(path.join(projectPath, ".env"), generateVibecoderEnv(projectName, headless));
 
-  // Write realm.json if template didn't provide one
-  const realmPath = path.join(projectPath, "realm.json");
-  if (!(await fs.pathExists(realmPath))) {
-    const realmData = {
+  // Write grimoire.json if template didn't provide one
+  const grimoirePath = path.join(projectPath, "grimoire.json");
+  if (!(await fs.pathExists(grimoirePath))) {
+    const grimoireData = {
       name: templateConfig.name,
       template,
-      grimoires: templateConfig.grimoires,
+      kons: templateConfig.kons,
       createdAt: new Date().toISOString(),
     };
-    await fs.writeFile(realmPath, JSON.stringify(realmData, null, 2));
+    await fs.writeFile(grimoirePath, JSON.stringify(grimoireData, null, 2));
   }
 
   // Write railway.json for easy Railway deployment
@@ -226,13 +335,13 @@ set -e
 
 cd "$(dirname "$0")"
 
-GREMIUS_SOURCE="\${GREMIUS_SOURCE_PATH:-./gremius-source}"
-GREMIUS_REPO="\${GREMIUS_REPO_URL:-https://github.com/gremiuscms/gremius.git}"
+KITSUDEN_SOURCE="\${KITSUDEN_SOURCE_PATH:-./kitsuden-source}"
+KITSUDEN_REPO="\${KITSUDEN_REPO_URL:-https://github.com/kitsuden/kitsuden.git}"
 
-echo "🚀 GremiusCMS — Starting up..."
+echo "🚀 Kitsuden — Starting up..."
 
 # Option A: Try pre-built images first (fast)
-if docker pull gremius/api:latest >/dev/null 2>&1 && docker pull gremius/admin:latest >/dev/null 2>&1; then
+if docker pull kitsuden/api:latest >/dev/null 2>&1 && docker pull kitsuden/admin:latest >/dev/null 2>&1; then
   echo "✅ Using pre-built images from Docker Hub (fast mode)"
   docker compose up -d
 else
@@ -241,12 +350,12 @@ else
   echo ""
 
   # Option B: Build from source
-  if [ ! -d "$GREMIUS_SOURCE" ]; then
-    echo "📥 Cloning Gremius source from $GREMIUS_REPO..."
-    git clone "$GREMIUS_REPO" "$GREMIUS_SOURCE"
+  if [ ! -d "$KITSUDEN_SOURCE" ]; then
+    echo "📥 Cloning Kitsuden source from $KITSUDEN_REPO..."
+    git clone "$KITSUDEN_REPO" "$KITSUDEN_SOURCE"
   fi
 
-  export GREMIUS_SOURCE_PATH="$GREMIUS_SOURCE"
+  export KITSUDEN_SOURCE_PATH="$KITSUDEN_SOURCE"
   docker compose up -d --build
 fi
 
@@ -265,18 +374,18 @@ echo "💡 Next time, just run: ./start.sh"
     `@echo off
 setlocal EnableDelayedExpansion
 
-set GREMIUS_SOURCE=%GREMIUS_SOURCE_PATH%
-if "%GREMIUS_SOURCE%"=="" set GREMIUS_SOURCE=.\gremius-source
+set KITSUDEN_SOURCE=%KITSUDEN_SOURCE_PATH%
+if "%KITSUDEN_SOURCE%"=="" set KITSUDEN_SOURCE=.\\kitsuden-source
 
-set GREMIUS_REPO=%GREMIUS_REPO_URL%
-if "%GREMIUS_REPO%"=="" set GREMIUS_REPO=https://github.com/gremiuscms/gremius.git
+set KITSUDEN_REPO=%KITSUDEN_REPO_URL%
+if "%KITSUDEN_REPO%"=="" set KITSUDEN_REPO=https://github.com/kitsuden/kitsuden.git
 
-echo 🚀 GremiusCMS — Starting up...
+echo 🚀 Kitsuden — Starting up...
 
 :: Option A: Try pre-built images first
-docker pull gremius/api:latest >nul 2>&1
+docker pull kitsuden/api:latest >nul 2>&1
 if !errorlevel! equ 0 (
-  docker pull gremius/admin:latest >nul 2>&1
+  docker pull kitsuden/admin:latest >nul 2>&1
   if !errorlevel! equ 0 (
     echo ✅ Using pre-built images from Docker Hub (fast mode)
     docker compose up -d
@@ -289,12 +398,12 @@ echo    This will take 5-10 minutes on first run.
 echo.
 
 :: Option B: Build from source
-if not exist "%GREMIUS_SOURCE%" (
-  echo 📥 Cloning Gremius source from %GREMIUS_REPO%...
-  git clone %GREMIUS_REPO% %GREMIUS_SOURCE%
+if not exist "%KITSUDEN_SOURCE%" (
+  echo 📥 Cloning Kitsuden source from %KITSUDEN_REPO%...
+  git clone %KITSUDEN_REPO% %KITSUDEN_SOURCE%
 )
 
-set GREMIUS_SOURCE_PATH=%GREMIUS_SOURCE%
+set KITSUDEN_SOURCE_PATH=%KITSUDEN_SOURCE%
 docker compose up -d --build
 
 :done
@@ -325,7 +434,7 @@ echo 💡 Next time, just run: start.bat
   try {
     execSync("git init", { cwd: projectPath, stdio: "ignore" });
     execSync("git add .", { cwd: projectPath, stdio: "ignore" });
-    execSync('git commit -m "Initial commit from Gremius CLI"', {
+    execSync('git commit -m "Initial commit from Kitsuden CLI"', {
       cwd: projectPath,
       stdio: "ignore",
     });
@@ -341,7 +450,7 @@ function printVibecoderOutput(projectPath: string, projectName: string, options:
   console.log(`  ${projectName}/`);
   console.log("  ├── docker-compose.yml    # All services");
   console.log("  ├── .env                  # Configuration");
-  console.log("  ├── realm.json            # Active modules");
+  console.log("  ├── grimoire.json            # Active modules");
   console.log("  ├── start.sh / start.bat  # Quick start scripts");
   console.log("  └── README.md");
 
@@ -402,7 +511,7 @@ function printVibecoderOutput(projectPath: string, projectName: string, options:
   }
 
   console.log(chalk.cyan("\n📚 Documentation:"));
-  console.log(chalk.blue("  https://docs.gremius.gg/vibecoder\n"));
+  console.log(chalk.blue("  https://docs.kitsuden.gg/vibecoder\n"));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -419,7 +528,7 @@ async function createDeveloperProject(
   spinner.text = "Creating developer project structure...";
 
   // Create directory structure
-  await fs.ensureDir(path.join(projectPath, "grimoires"));
+  await fs.ensureDir(path.join(projectPath, "kons"));
   await fs.ensureDir(path.join(projectPath, "schemas"));
   await fs.ensureDir(path.join(projectPath, "migrations"));
   await fs.ensureDir(path.join(projectPath, "hooks"));
@@ -429,18 +538,18 @@ async function createDeveloperProject(
   const dockerComposeContent = generateDeveloperDockerCompose();
   await fs.writeFile(path.join(projectPath, "docker-compose.yml"), dockerComposeContent);
 
-  // Environment files
-  const envContent = generateDeveloperEnvFile();
-  await fs.writeFile(path.join(projectPath, ".env.example"), envContent);
-  await fs.writeFile(path.join(projectPath, ".env"), envContent);
+  // Environment files — example uses placeholders, .env uses generated secrets
+  const envExampleContent = generateDeveloperEnvExampleFile();
+  await fs.writeFile(path.join(projectPath, ".env.example"), envExampleContent);
+  await fs.writeFile(path.join(projectPath, ".env"), generateDeveloperEnvFile());
 
   // Schema file
   const schemaContent = generateDeveloperSchemaFile();
   await fs.writeFile(path.join(projectPath, "schemas", "index.ts"), schemaContent);
 
   // Config file
-  const configContent = generateDeveloperConfigFile(templateConfig.grimoires);
-  await fs.writeFile(path.join(projectPath, "gremius.config.ts"), configContent);
+  const configContent = generateDeveloperConfigFile(templateConfig.kons);
+  await fs.writeFile(path.join(projectPath, "kitsuden.config.ts"), configContent);
 
   // README
   const readmeContent = generateDeveloperReadme(projectName);
@@ -459,19 +568,22 @@ async function createDeveloperProject(
   // GitHub Actions
   const workflowContent = generateGitHubWorkflow();
   await fs.writeFile(
-    path.join(projectPath, ".github", "workflows", "gremius-deploy.yml"),
+    path.join(projectPath, ".github", "workflows", "kitsuden-deploy.yml"),
     workflowContent
   );
 
-  // Realm config
-  const realmData = {
+  // Grimoire config
+  const grimoireData = {
     name: templateConfig.name,
     template,
-    grimoires: templateConfig.grimoires,
+    kons: templateConfig.kons,
     mode: "developer",
     createdAt: new Date().toISOString(),
   };
-  await fs.writeFile(path.join(projectPath, "realm.json"), JSON.stringify(realmData, null, 2));
+  await fs.writeFile(
+    path.join(projectPath, "grimoire.json"),
+    JSON.stringify(grimoireData, null, 2)
+  );
 
   // Write railway.json for easy Railway deployment
   await fs.writeFile(path.join(projectPath, "railway.json"), generateRailwayJson());
@@ -480,7 +592,7 @@ async function createDeveloperProject(
   try {
     execSync("git init", { cwd: projectPath, stdio: "ignore" });
     execSync("git add .", { cwd: projectPath, stdio: "ignore" });
-    execSync('git commit -m "Initial commit from Gremius CLI"', {
+    execSync('git commit -m "Initial commit from Kitsuden CLI"', {
       cwd: projectPath,
       stdio: "ignore",
     });
@@ -493,9 +605,9 @@ function printDeveloperOutput(_projectPath: string, projectName: string) {
   console.log(chalk.cyan("\n📁 Project structure:"));
   console.log(`  ${projectName}/`);
   console.log("  ├── docker-compose.yml    # Infrastructure services");
-  console.log("  ├── gremius.config.ts     # Backend configuration");
+  console.log("  ├── kitsuden.config.ts     # Backend configuration");
   console.log("  ├── schemas/              # Database schemas");
-  console.log("  ├── grimoires/            # Custom modules");
+  console.log("  ├── kons/            # Custom modules");
   console.log("  ├── migrations/           # Database migrations");
   console.log("  ├── hooks/                # Event hooks");
   console.log("  └── .github/workflows/    # CI/CD");
@@ -531,7 +643,7 @@ function findMonorepoRoot(): string | null {
 // function customizeEnvForProject(envContent: string, projectName: string): string {
 //   return envContent
 //     .replace(/PUBLIC_SITE_NAME=.*/g, `PUBLIC_SITE_NAME=${projectName}`)
-//     .replace(/POSTGRES_DB=gremius_dev/g, `POSTGRES_DB=${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`);
+//     .replace(/POSTGRES_DB=kitsuden_dev/g, `POSTGRES_DB=${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}`);
 // }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -549,121 +661,121 @@ function generateVibecoderDockerCompose(
   # ═══════════════════════════════════════════════════════════════════════
   # Admin Panel — Dual mode: pre-built image OR build from source
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_admin:
-    image: \${GREMIUS_ADMIN_IMAGE:-gremius/admin:latest}
+  kitsuden_admin:
+    image: \${KITSUDEN_ADMIN_IMAGE:-kitsuden/admin:latest}
     build:
-      context: \${GREMIUS_SOURCE_PATH:-.}
+      context: \${KITSUDEN_SOURCE_PATH:-.}
       dockerfile: docker/Dockerfile.prod
       target: admin
-    container_name: gremius_admin
+    container_name: kitsuden_admin
     restart: unless-stopped
     depends_on:
-      - gremius_api
+      - kitsuden_api
     ports:
       - "\${ADMIN_PORT:-3001}:80"
     networks:
-      - gremius_net
+      - kitsuden_net
 `;
 
-  return `# GremiusCMS — Vibecoder Docker Compose
-# Generated by Gremius CLI
+  return `# Kitsuden — Vibecoder Docker Compose
+# Generated by Kitsuden CLI
 #
 # DUAL MODE:
 #   Option A (default): docker compose up -d
 #     Uses pre-built images from Docker Hub. Fast (~30s).
-#     Requires: images published (gremius/api:latest, gremius/admin:latest)
+#     Requires: images published (kitsuden/api:latest, kitsuden/admin:latest)
 #
 #   Option B (developer): docker compose up -d --build
 #     Builds from source. Slow first time (~5-10 min), fast on rebuilds.
-#     Requires: GREMIUS_SOURCE_PATH pointing to cloned repo
+#     Requires: KITSUDEN_SOURCE_PATH pointing to cloned repo
 #
 # Quick start:
 #   ./init.sh      (Linux/Mac)  — auto-detects best option
 #   init.bat       (Windows)    — auto-detects best option
 
 services:
-  gremius_db:
+  kitsuden_db:
     image: pgvector/pgvector:pg16
-    container_name: gremius_db
+    container_name: kitsuden_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: \${POSTGRES_USER:-gremius}
-      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-gremiuspassword}
-      POSTGRES_DB: \${POSTGRES_DB:-gremius}
+      POSTGRES_USER: \${POSTGRES_USER:-kitsuden}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
+      POSTGRES_DB: \${POSTGRES_DB:-kitsuden}
     volumes:
-      - gremius_postgres:/var/lib/postgresql/data${hasSeedSql ? "\n      - ./seed.sql:/docker-entrypoint-initdb.d/99_seed.sql:ro" : ""}
+      - kitsuden_postgres:/var/lib/postgresql/data${hasSeedSql ? "\n      - ./seed.sql:/docker-entrypoint-initdb.d/99_seed.sql:ro" : ""}
     ports:
       - "\${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER:-gremius}"]
+      test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER:-kitsuden}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - gremius_net
+      - kitsuden_net
 
-  gremius_state:
+  kitsuden_state:
     image: valkey/valkey:7-alpine
-    container_name: gremius_cache
+    container_name: kitsuden_cache
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
       - "\${CACHE_PORT:-6379}:6379"
     volumes:
-      - gremius_valkey:/data
+      - kitsuden_valkey:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
     networks:
-      - gremius_net
+      - kitsuden_net
 
-  gremius_minio:
+  kitsuden_minio:
     image: minio/minio:latest
-    container_name: gremius_minio
+    container_name: kitsuden_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: \${S3_ACCESS_KEY:-gremius_minio}
-      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:-gremius_minio_secret}
+      MINIO_ROOT_USER: \${S3_ACCESS_KEY:-kitsuden_minio}
+      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
     ports:
       - "\${MINIO_PORT:-9000}:9000"
       - "\${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - gremius_minio:/data
+      - kitsuden_minio:/data
     networks:
-      - gremius_net
+      - kitsuden_net
 
   # ═══════════════════════════════════════════════════════════════════════
   # API — Dual mode: pre-built image OR build from source
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_api:
-    image: \${GREMIUS_API_IMAGE:-gremius/api:latest}
+  kitsuden_api:
+    image: \${KITSUDEN_API_IMAGE:-kitsuden/api:latest}
     build:
-      context: \${GREMIUS_SOURCE_PATH:-.}
+      context: \${KITSUDEN_SOURCE_PATH:-.}
       dockerfile: docker/Dockerfile.prod
       target: api
-    container_name: gremius_api
+    container_name: kitsuden_api
     restart: unless-stopped
     depends_on:
-      gremius_db:
+      kitsuden_db:
         condition: service_healthy
-      gremius_state:
+      kitsuden_state:
         condition: service_healthy
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=postgresql://\${POSTGRES_USER:-gremius}:\${POSTGRES_PASSWORD:-gremiuspassword}@gremius_db:5432/\${POSTGRES_DB:-gremius}
-      - REDIS_URL=redis://gremius_state:6379
+      - DATABASE_URL=postgresql://\${POSTGRES_USER:-kitsuden}:\${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db:5432/\${POSTGRES_DB:-kitsuden}
+      - REDIS_URL=redis://kitsuden_state:6379
       - DEFAULT_STORAGE_PROVIDER=minio
-      - S3_ENDPOINT=http://gremius_minio:9000
+      - S3_ENDPOINT=http://kitsuden_minio:9000
       - S3_PUBLIC_URL=\${S3_PUBLIC_URL:-http://localhost:9000}
-      - S3_ACCESS_KEY=\${S3_ACCESS_KEY:-gremius_minio}
-      - S3_SECRET_KEY=\${S3_SECRET_KEY:-gremius_minio_secret}
-      - S3_BUCKET=\${S3_BUCKET:-gremius-media}
+      - S3_ACCESS_KEY=\${S3_ACCESS_KEY:-kitsuden_minio}
+      - S3_SECRET_KEY=\${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+      - S3_BUCKET=\${S3_BUCKET:-kitsuden-media}
       - S3_REGION=\${S3_REGION:-us-east-1}
-      - BETTER_AUTH_SECRET=\${BETTER_AUTH_SECRET:-change-me-in-production}
+      - BETTER_AUTH_SECRET=\${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required - set it in .env (min 32 chars)}
       - BETTER_AUTH_URL=http://localhost:\${API_PORT:-3000}
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
       - ADMIN_URL=http://localhost:3001
@@ -675,41 +787,76 @@ services:
     ports:
       - "\${API_PORT:-3000}:3000"
     networks:
-      - gremius_net
+      - kitsuden_net
 ${adminService}
 volumes:
-  gremius_postgres:
-  gremius_valkey:
-  gremius_minio:
+  kitsuden_postgres:
+  kitsuden_valkey:
+  kitsuden_minio:
 
 networks:
-  gremius_net:
+  kitsuden_net:
     driver: bridge
 `;
 }
 
-function generateVibecoderEnv(projectName: string, headless: boolean = false): string {
-  return `# GremiusCMS — Environment
+/**
+ * .env del MODO LITE — cero infraestructura externa.
+ *
+ * DATABASE_URL=lite activa PGlite (PostgreSQL embebido en WASM): mismo motor,
+ * mismo schema y mismas políticas RLS que producción, pero sin Docker.
+ * Valkey y MinIO se degradan solos (cache en memoria, storage local), así que
+ * no hace falta levantar nada.
+ *
+ * Para pasar a producción basta cambiar DATABASE_URL por tu Postgres real.
+ */
+function generateLiteEnv(projectName: string): string {
+  return `# Kitsuden — Modo Lite (sin Docker)
+# Generado por Kitsuden CLI. Rota los secretos antes de producción.
 PROJECT_NAME=${projectName}
 
-POSTGRES_USER=gremius
-POSTGRES_PASSWORD=gremiuspassword
-POSTGRES_DB=gremius
+# PostgreSQL EMBEBIDO (PGlite). Para producción, cámbialo por tu Postgres real:
+#   DATABASE_URL=postgres://user:pass@host:5432/db
+DATABASE_URL=lite
+KITSUDEN_LITE=true
+KITSUDEN_LITE_DIR=.kitsuden/data
+
+API_PORT=3001
+BETTER_AUTH_SECRET=${generateSecret(32)}
+BETTER_AUTH_URL=http://localhost:3001
+
+ADMIN_PORT=3000
+
+# Sin Valkey: el cache cae a memoria automáticamente.
+# Sin MinIO: el storage usa el disco local (uploads/).
+NODE_ENV=development
+LOG_LEVEL=info
+`;
+}
+
+function generateVibecoderEnv(projectName: string, headless: boolean = false): string {
+  return `# Kitsuden — Environment
+# Generated by Kitsuden CLI. Review and rotate secrets before production use.
+PROJECT_NAME=${projectName}
+
+POSTGRES_USER=kitsuden
+POSTGRES_PASSWORD=${generateSecret(16)}
+POSTGRES_DB=kitsuden
 DB_PORT=5432
 
 CACHE_PORT=6379
 
 API_PORT=3000
-BETTER_AUTH_SECRET=dev-secret-change-in-production-min-32-chars
+BETTER_AUTH_SECRET=${generateSecret(32)}
 BETTER_AUTH_URL=http://localhost:3000
 
 ADMIN_PORT=3001
 
 MINIO_PORT=9000
 MINIO_CONSOLE_PORT=9001
-S3_ACCESS_KEY=gremius_minio
-S3_SECRET_KEY=gremius_minio_secret
-S3_BUCKET=gremius-media
+S3_ACCESS_KEY=kitsuden_minio
+S3_SECRET_KEY=${generateSecret(16)}
+S3_BUCKET=kitsuden-media
 S3_REGION=us-east-1
 S3_PUBLIC_URL=http://localhost:9000
 
@@ -718,7 +865,7 @@ ENABLE_MCP=true
 HEADLESS=${headless ? "true" : "false"}
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Auth Providers (managed via CLI: gremius auth add <provider>)
+# Auth Providers (managed via CLI: kitsuden auth add <provider>)
 # ═══════════════════════════════════════════════════════════════════════════
 # Google OAuth — get credentials at https://console.cloud.google.com/
 # GOOGLE_CLIENT_ID=
@@ -738,7 +885,7 @@ HEADLESS=${headless ? "true" : "false"}
 function generateVibecoderReadme(projectName: string, template: string): string {
   return `# ${projectName}
 
-Powered by [GremiusCMS](https://gremius.gg) - AI-Native Backend
+Powered by [Kitsuden](https://kitsuden.gg) - AI-Native Backend
 
 ## 🚀 Quick Start
 
@@ -777,24 +924,24 @@ No backend knowledge needed. Connect Cursor/Claude and let AI do the work.
 
 - \`docker-compose.yml\` — All services (dual mode: image or build)
 - \`.env\` — Configuration
-- \`realm.json\` — Active modules
-- \`gremius-source/\` — Cloned source (only if building locally)
+- \`grimoire.json\` — Active modules
+- \`kitsuden-source/\` — Cloned source (only if building locally)
 
 ## 🔧 Customization
 
 Edit \`.env\` to change ports or passwords. Use environment variables to customize:
 
 \`\`\`bash
-# Use a local copy of Gremius instead of cloning
-export GREMIUS_SOURCE_PATH=/path/to/gremius
-export GREMIUS_REPO_URL=https://github.com/your-org/gremius-fork.git
+# Use a local copy of Kitsuden instead of cloning
+export KITSUDEN_SOURCE_PATH=/path/to/kitsuden
+export KITSUDEN_REPO_URL=https://github.com/your-org/kitsuden-fork.git
 ./init.sh
 \`\`\`
 
 ## 📚 Docs
 
-- [Vibecoder Guide](https://docs.gremius.gg/vibecoder)
-- [MCP Setup](https://docs.gremius.gg/mcp)
+- [Vibecoder Guide](https://docs.kitsuden.gg/vibecoder)
+- [MCP Setup](https://docs.kitsuden.gg/mcp)
 `;
 }
 
@@ -803,79 +950,83 @@ export GREMIUS_REPO_URL=https://github.com/your-org/gremius-fork.git
 // ═══════════════════════════════════════════════════════════════════════════
 
 function generateDeveloperDockerCompose(): string {
-  return `# GremiusCMS — Developer Infrastructure
+  return `# Kitsuden — Developer Infrastructure
 # Only starts Postgres, Valkey, and MinIO.
 # The API and Admin run via pnpm dev:start:simple for hot-reload.
+#
+# Copy .env.example to .env and configure strong secrets before starting.
 
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: gremius_postgres_dev
+    container_name: kitsuden_postgres_dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER: gremius
-      POSTGRES_PASSWORD: gremius
-      POSTGRES_DB: gremius
+      POSTGRES_USER: \${POSTGRES_USER:-kitsuden}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
+      POSTGRES_DB: \${POSTGRES_DB:-kitsuden}
     ports:
-      - "5432:5432"
+      - "\${DB_PORT:-5432}:5432"
     volumes:
-      - gremius_postgres_dev:/var/lib/postgresql/data
+      - kitsuden_postgres_dev:/var/lib/postgresql/data
 
   valkey:
     image: valkey/valkey:7-alpine
-    container_name: gremius_valkey_dev
+    container_name: kitsuden_valkey_dev
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
-      - "6379:6379"
+      - "\${CACHE_PORT:-6379}:6379"
     volumes:
-      - gremius_valkey_dev:/data
+      - kitsuden_valkey_dev:/data
 
   minio:
     image: minio/minio:latest
-    container_name: gremius_minio_dev
+    container_name: kitsuden_minio_dev
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: \${S3_ACCESS_KEY:-kitsuden_minio}
+      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "\${MINIO_PORT:-9000}:9000"
+      - "\${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - gremius_minio_dev:/data
+      - kitsuden_minio_dev:/data
 
 volumes:
-  gremius_postgres_dev:
-  gremius_valkey_dev:
-  gremius_minio_dev:
+  kitsuden_postgres_dev:
+  kitsuden_valkey_dev:
+  kitsuden_minio_dev:
 `;
 }
 
-function generateDeveloperEnvFile(): string {
-  return `# GremiusCMS — Developer Environment
-DATABASE_URL=postgres://gremius:gremius@localhost:5432/gremius
+function generateDeveloperEnvExampleFile(): string {
+  return `# Kitsuden — Developer Environment
+# Copy to .env and replace ALL placeholder values with strong secrets.
+DATABASE_URL=postgres://kitsuden:changeme@localhost:5432/kitsuden
 REDIS_URL=redis://localhost:6379
 
 API_PORT=3000
 PORT=3000
 NODE_ENV=development
 
-BETTER_AUTH_SECRET=dev-secret-change-in-production-min-32-chars
+# Generate a strong secret (min 32 chars), e.g.: openssl rand -base64 48
+BETTER_AUTH_SECRET=change-me-to-a-random-string-at-least-32-chars
 BETTER_AUTH_URL=http://localhost:3000
 
 ADMIN_URL=http://localhost:3001
 ADMIN_PORT=3001
 PUBLIC_API_URL=http://localhost:3000
-PUBLIC_SITE_NAME=GremiusCMS
+PUBLIC_SITE_NAME=Kitsuden
 
 DEFAULT_STORAGE_PROVIDER=local
 S3_ENDPOINT=http://localhost:9000
 S3_PUBLIC_URL=http://localhost:9000
-S3_BUCKET=gremius-media
+S3_BUCKET=kitsuden-media
 S3_REGION=us-east-1
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
+S3_ACCESS_KEY=kitsuden_minio
+S3_SECRET_KEY=changeme
 
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
 RATE_LIMIT_ENABLED=true
@@ -884,7 +1035,60 @@ ENABLE_SWAGGER=true
 ENABLE_MCP=true
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Auth Providers (managed via CLI: gremius auth add <provider>)
+# Auth Providers (managed via CLI: kitsuden auth add <provider>)
+# ═══════════════════════════════════════════════════════════════════════════
+# Google OAuth — get credentials at https://console.cloud.google.com/
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+#
+# GitHub OAuth — get credentials at https://github.com/settings/developers
+# GITHUB_CLIENT_ID=
+# GITHUB_CLIENT_SECRET=
+#
+# Microsoft/Azure AD OAuth
+# AZURE_AD_CLIENT_ID=
+# AZURE_AD_CLIENT_SECRET=
+# AZURE_AD_TENANT_ID=common
+`;
+}
+
+function generateDeveloperEnvFile(): string {
+  const postgresPassword = generateSecret(16);
+  const betterAuthSecret = generateSecret(32);
+  const s3SecretKey = generateSecret(16);
+  return `# Kitsuden — Developer Environment
+# Generated by Kitsuden CLI. Review and rotate secrets before production use.
+DATABASE_URL=postgres://kitsuden:${postgresPassword}@localhost:5432/kitsuden
+REDIS_URL=redis://localhost:6379
+
+API_PORT=3000
+PORT=3000
+NODE_ENV=development
+
+BETTER_AUTH_SECRET=${betterAuthSecret}
+BETTER_AUTH_URL=http://localhost:3000
+
+ADMIN_URL=http://localhost:3001
+ADMIN_PORT=3001
+PUBLIC_API_URL=http://localhost:3000
+PUBLIC_SITE_NAME=Kitsuden
+
+DEFAULT_STORAGE_PROVIDER=local
+S3_ENDPOINT=http://localhost:9000
+S3_PUBLIC_URL=http://localhost:9000
+S3_BUCKET=kitsuden-media
+S3_REGION=us-east-1
+S3_ACCESS_KEY=kitsuden_minio
+S3_SECRET_KEY=${s3SecretKey}
+
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
+RATE_LIMIT_ENABLED=true
+LOG_LEVEL=info
+ENABLE_SWAGGER=true
+ENABLE_MCP=true
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Auth Providers (managed via CLI: kitsuden auth add <provider>)
 # ═══════════════════════════════════════════════════════════════════════════
 # Google OAuth — get credentials at https://console.cloud.google.com/
 # GOOGLE_CLIENT_ID=
@@ -902,7 +1106,7 @@ ENABLE_MCP=true
 }
 
 function generateDeveloperSchemaFile(): string {
-  return `// GremiusCMS Schema Definition
+  return `// Kitsuden Schema Definition
 // Define your data models here
 
 export const schemas = {
@@ -953,15 +1157,15 @@ export default schemas;
 `;
 }
 
-function generateDeveloperConfigFile(grimoires: string[]): string {
-  return `// GremiusCMS Configuration
-// https://docs.gremius.gg/config
+function generateDeveloperConfigFile(kons: string[]): string {
+  return `// Kitsuden Configuration
+// https://docs.kitsuden.gg/config
 
 export default {
-  name: 'My Gremius App',
+  name: 'My Kitsuden App',
 
-  grimoires: [
-${grimoires.map((g) => `    '${g}',`).join("\n")}
+  kons: [
+${kons.map((g) => `    '${g}',`).join("\n")}
   ],
 
   auth: {
@@ -998,7 +1202,7 @@ ${grimoires.map((g) => `    '${g}',`).join("\n")}
 function generateDeveloperReadme(projectName: string): string {
   return `# ${projectName}
 
-Powered by [GremiusCMS](https://gremius.gg) — AI-Native Backend
+Powered by [Kitsuden](https://kitsuden.gg) — AI-Native Backend
 
 ## 🛠️ Developer Quick Start
 
@@ -1016,15 +1220,15 @@ pnpm dev:start:simple
 ## 📁 Project Structure
 
 - \`schemas/\` — Database schema definitions
-- \`grimoires/\` — Custom modules and extensions
+- \`kons/\` — Custom modules and extensions
 - \`migrations/\` — Database migrations
 - \`hooks/\` — Event hooks and automation
 
 ## 📚 Documentation
 
-- [Getting Started](https://docs.gremius.gg/getting-started)
-- [Schema Definition](https://docs.gremius.gg/schemas)
-- [Grimoires](https://docs.gremius.gg/grimoires)
+- [Getting Started](https://docs.kitsuden.gg/getting-started)
+- [Schema Definition](https://docs.kitsuden.gg/schemas)
+- [Kons](https://docs.kitsuden.gg/kons)
 `;
 }
 
@@ -1035,34 +1239,34 @@ function generateDeveloperPackageJson(projectName: string): object {
     private: true,
     type: "module",
     scripts: {
-      start: "gremius start",
-      dev: "gremius start --admin --mcp",
-      stop: "gremius stop",
-      logs: "gremius logs -f",
-      deploy: "gremius deploy",
-      "db:migrate": "gremius db migrate",
-      "db:generate": "gremius db generate",
+      start: "kitsuden start",
+      dev: "kitsuden start --admin --mcp",
+      stop: "kitsuden stop",
+      logs: "kitsuden logs -f",
+      deploy: "kitsuden deploy",
+      "db:migrate": "kitsuden db migrate",
+      "db:generate": "kitsuden db generate",
     },
     dependencies: {
-      "@gremius/cli": "^0.1.0",
+      "@kitsuden/cli": "^0.1.0",
     },
     devDependencies: {
-      "@gremius/sdk": "^1.0.0",
+      "@kitsuden/sdk": "^1.0.0",
       typescript: "^5.7.0",
     },
   };
 }
 
 function generateGitHubWorkflow(): string {
-  return `name: Gremius Deploy
+  return `name: Kitsuden Deploy
 
 on:
   push:
     branches: [main]
     paths:
       - 'schemas/**'
-      - 'grimoires/**'
-      - 'gremius.config.ts'
+      - 'kons/**'
+      - 'kitsuden.config.ts'
 
 jobs:
   deploy:
@@ -1070,8 +1274,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Gremius
-        uses: gremius/deploy-action@v1
+      - name: Deploy to Kitsuden
+        uses: kitsuden/deploy-action@v1
         with:
           token: \${{ secrets.GREM_TOKEN }}
           project: \${{ github.repository }}

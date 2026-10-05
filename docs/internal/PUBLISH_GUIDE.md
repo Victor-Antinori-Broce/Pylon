@@ -1,11 +1,11 @@
-# GremiusCMS - Package Publication Guide
+# Kitsuden - Package Publication Guide
 
 ## 🚀 Quick Start (Publish to NPM)
 
 ### Prerequisites
 
 1. **NPM Account** - Create at [npmjs.com](https://www.npmjs.com)
-2. **Join Organization** - Ask admin to add you to `@gremius` org
+2. **Join Organization** - Ask admin to add you to `@kitsuden` org
 3. **Login to NPM**:
 
    ```bash
@@ -24,10 +24,10 @@
 
 ## 📦 Package Status
 
-| Package           | Status   | Version            | Command   |
-| ----------------- | -------- | ------------------ | --------- |
-| `@gremius/sdk`    | ✅ Ready | 0.8.0-beta         | See below |
-| `@gremius/shared` | ✅ Ready | 0.7.0-beta → 0.7.0 | See below |
+| Package            | Status   | Version            | Command   |
+| ------------------ | -------- | ------------------ | --------- |
+| `@kitsuden/sdk`    | ✅ Ready | 0.8.0-beta         | See below |
+| `@kitsuden/shared` | ✅ Ready | 0.7.0-beta → 0.7.0 | See below |
 
 ---
 
@@ -133,7 +133,7 @@ GitHub Actions will automatically:
 
 ## 📋 Pre-Publication Checklist
 
-### For @gremius/sdk
+### For @kitsuden/sdk
 
 - [ ] Version updated (not `-beta`)
 - [ ] README.md complete with examples
@@ -145,7 +145,7 @@ GitHub Actions will automatically:
 - [ ] License specified
 - [ ] Dry run successful
 
-### For @gremius/shared
+### For @kitsuden/shared
 
 - [ ] `private: false` (removed)
 - [ ] `files: ["dist"]` added
@@ -167,8 +167,8 @@ npm whoami
 # If not, login
 npm login
 
-# Verify you're part of @gremius org
-npm org ls @gremius
+# Verify you're part of @kitsuden org
+npm org ls @kitsuden
 ```
 
 ### "Cannot publish over existing version"
@@ -185,9 +185,9 @@ npm version major  # 1.0.0 → 2.0.0
 ```bash
 # Before publishing, replace workspace deps
 # In packages/sdk/package.json, change:
-"@gremius/shared": "workspace:*"
+"@kitsuden/shared": "workspace:*"
 # To:
-"@gremius/shared": "^0.7.0"
+"@kitsuden/shared": "^0.7.0"
 ```
 
 ### "Build files not found"
@@ -208,13 +208,13 @@ ls packages/*/dist
 
 ```bash
 # View package on npm
-npm view @gremius/sdk
+npm view @kitsuden/sdk
 
 # Check specific version
-npm view @gremius/sdk versions
+npm view @kitsuden/sdk versions
 
 # Download stats (24h delay)
-npm view @gremius/sdk stats
+npm view @kitsuden/sdk stats
 ```
 
 ### Test Installation
@@ -225,18 +225,18 @@ mkdir test-sdk && cd test-sdk
 npm init -y
 
 # Install published package
-npm install @gremius/sdk
+npm install @kitsuden/sdk
 
 # Test import
-node -e "const {GremiusClient} = require('@gremius/sdk'); console.log('OK')"
+node -e "const {KitsudenClient} = require('@kitsuden/sdk'); console.log('OK')"
 ```
 
 ### Verify TypeScript
 
 ```bash
 # Create test.ts
-import { GremiusClient } from '@gremius/sdk';
-const client = new GremiusClient({ url: 'test' });
+import { KitsudenClient } from '@kitsuden/sdk';
+const client = new KitsudenClient({ url: 'test' });
 
 # Compile
 npx tsc test.ts --module commonjs --esModuleInterop
@@ -284,5 +284,5 @@ After publication:
 
 Packages will be available at:
 
-- https://www.npmjs.com/package/@gremius/sdk
-- https://www.npmjs.com/package/@gremius/shared
+- https://www.npmjs.com/package/@kitsuden/sdk
+- https://www.npmjs.com/package/@kitsuden/shared

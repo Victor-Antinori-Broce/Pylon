@@ -1,5 +1,6 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - "packages/grimoires/*"
+  - "packages/core/*"
+  - "packages/kons/*"
   - "packages/starters/*"

@@ -131,7 +131,7 @@ Después del deploy, monitorear por 24-48 horas:
 pm2 logs api
 
 # Verificar errores
-grep -i "error\|failed\|exception" /var/log/gremius/api.log
+grep -i "error\|failed\|exception" /var/log/kitsuden/api.log
 
 # Métricas de base de datos
 psql -c "SELECT type, status, COUNT(*) FROM actions GROUP BY type, status;"
@@ -162,7 +162,7 @@ bun run src/db/migrations/cleanup-legacy-actions.ts --execute --force
 
 Esto eliminará:
 
-- Tabla `gremius_functions`
+- Tabla `kitsuden_functions`
 - Tabla `function_executions`
 - Tabla `webhooks` (si existe)
 - Enums legacy
@@ -190,7 +190,7 @@ pm2 restart api
 
 ```bash
 # Restaurar desde backup
-pg_restore -d gremius backup-pre-actions-unification.dump
+pg_restore -d kitsuden backup-pre-actions-unification.dump
 ```
 
 **Nota:** Los datos nuevos creados en `actions` no se perderán, pero no serán accesibles por el código viejo.

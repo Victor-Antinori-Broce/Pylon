@@ -1,7 +1,7 @@
 # 🔧 Análisis Engine Core: ¿Está Completo?
 
 **Fecha:** 29 de marzo de 2026  
-**Versión:** GremiusCMS v0.8.0-beta  
+**Versión:** Kitsuden v0.8.0-beta  
 **Análisis:** Realidad vs Visión del "Engine Inapagable"
 
 ---
@@ -37,7 +37,7 @@
 // apps/api/src/services/agent-auth.ts (implementado)
 
 // Token format con hash seguro
-const token = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const token = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
 
 // Validación completa
 const authResult = await authenticateAgent(token, {
@@ -54,7 +54,7 @@ if (authResult.success) {
 **Implementado:**
 
 - ✅ **Tablas NHI** - `agent_identities`, `agent_api_keys` con hash SHA-256
-- ✅ **Token Format** - `grm_agent_{tipo}_{hash43}` con validación
+- ✅ **Token Format** - `kitsuden_agent_{tipo}_{hash43}` con validación
 - ✅ **Zero-Trust** - Cada request valida token
 - ✅ **RBAC Scopes** - `memory:read`, `memory:write`, wildcards `read:*`
 - ✅ **Rate Limiting** - Por agente (default 120 req/min) + global
@@ -166,7 +166,7 @@ export function defineAction<TPayload = unknown, TResult = unknown>(
 - ✅ **HTTP Triggers** - `http.get:/path`, `http.post:/path`, etc.
 - ✅ **Event Triggers** - `event:name` con BullMQ
 - ✅ **Agent Triggers** - `agent.tool:name` como MCP tools
-- ✅ **Unified Context** - `ActionContext` con `payload`, `db`, `grimoire`, `logger`, `queue`, `cache`
+- ✅ **Unified Context** - `ActionContext` con `payload`, `db`, `kon`, `logger`, `queue`, `cache`
 - ✅ **Trigger Parser** - Extrae `prefix`, `variant`, `path`
 - ✅ **Type Safety** - `defineAction<Payload, Result>()`
 - ✅ **Telemetry Integration** - Trazabilidad automática 🆕
@@ -294,12 +294,12 @@ class MCPAdapter {
 // ✅ MCP SERVER STANDALONE - Con Zero-Trust
 // apps/api/src/mcp-server.ts
 
-const server = new Server({ name: "gremius", version: "1.0.0" });
+const server = new Server({ name: "kitsuden", version: "1.0.0" });
 
 // Tools registradas
 const TOOLS = [
   {
-    name: "gremius_search_entries",
+    name: "kitsuden_search_entries",
     description: "Search entries using semantic vector search",
     inputSchema: {
       datasetId: { type: "string" },
@@ -308,7 +308,7 @@ const TOOLS = [
     },
   },
   {
-    name: "gremius_create_entry",
+    name: "kitsuden_create_entry",
     description: "Create a new entry in a dataset",
     inputSchema: {
       /* ... */
@@ -332,7 +332,7 @@ async function authenticateMCPRequest(token: string) {
 - ✅ **MCP Server** - Standalone con SSE
 - ✅ **7 Tools** - list_datasets, search_entries, create/read/update_entry, get_schema, health_check
 - ✅ **Zero-Trust Auth** - Validación de token en cada request
-- ✅ **Vector Search** - Tool `gremius_search_entries` con búsqueda semántica
+- ✅ **Vector Search** - Tool `kitsuden_search_entries` con búsqueda semántica
 - ✅ **Auto-Indexing** - Configurable por dataset
 - ✅ **Agent Playground** - UI para probar agentes 🆕
 
@@ -355,7 +355,7 @@ vectorIndexTable; // Embeddings de entries
 vectorChunksTable; // Chunks para documentos largos
 ```
 
-### ✅ Auto-Grimoires con MCP Proxy 🆕 NUEVO
+### ✅ Auto-Kons con MCP Proxy 🆕 NUEVO
 
 ```typescript
 // apps/api/src/index.ts
@@ -368,7 +368,7 @@ const autoMcpProxy = {
       description: toolDef.description,
       inputSchema: toolDef.inputSchema,
       run: async (ctx: any) => {
-        // Execute the native handler for this Auto-Grimoire tool
+        // Execute the native handler for this Auto-Kon tool
         return toolDef.handler(ctx.payload, {
           agentId: ctx.agent?.agentId,
           agentName: ctx.agent?.agentName,
@@ -380,7 +380,7 @@ const autoMcpProxy = {
   },
 };
 
-initializeGrimoires(createGrimoireContext(), app as any, autoMcpProxy);
+initializeKons(createKonContext(), app as any, autoMcpProxy);
 ```
 
 ### ⚠️ Lo que sigue pendiente (15%)
@@ -534,7 +534,7 @@ playgroundRouter.post("/:id/chat", async (c) => {
 | ------------------ | --------------- | ------------ | ------- | ------------------------------ |
 | **Auth Universal** | 95%             | **98%**      | +3%     | ✅ SÍ - NHI + RBAC + MCP       |
 | **Actions Layer**  | 80%             | **90%**      | +10%    | ✅ SÍ - Telemetry + Cron       |
-| **Auto-API & MCP** | 75%             | **85%**      | +10%    | ✅ SÍ - Auto-Grimoires proxy   |
+| **Auto-API & MCP** | 75%             | **85%**      | +10%    | ✅ SÍ - Auto-Kons proxy        |
 | **Observabilidad** | 80%             | **90%**      | +10%    | ✅ SÍ - Telemetry completo     |
 | **PROMEDIO**       | **82%**         | **91%**      | **+9%** | **✅ Engine Producción Ready** |
 
@@ -549,7 +549,7 @@ playgroundRouter.post("/:id/chat", async (c) => {
 ```
 ✅ Auth Universal (NHI + RBAC + Zero-Trust)
 ✅ Actions Layer (defineAction con HTTP/Event/Agent + Telemetry)
-✅ MCP Server (7 tools, Vector Search, Auto-Grimoires)
+✅ MCP Server (7 tools, Vector Search, Auto-Kons)
 ✅ Observabilidad (Audit, Logs, Telemetry, Playground)
 ```
 
@@ -591,4 +591,4 @@ El Engine Core es **funcional y listo para producción**. Los gaps restantes son
 
 ---
 
-_Análisis técnico actualizado - GremiusCMS v0.8.0-beta_
+_Análisis técnico actualizado - Kitsuden v0.8.0-beta_

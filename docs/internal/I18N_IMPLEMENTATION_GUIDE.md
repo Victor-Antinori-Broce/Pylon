@@ -28,7 +28,7 @@ Nivel 4: URLs slug (/en/products vs /es/productos)
 **Cambio en schema de datasets:**
 
 ```typescript
-// packages/grimoires/grimoire-datasets/datasets.schema.ts
+// packages/kons/kon-datasets/datasets.schema.ts
 
 export interface DataSetField {
   key: string;
@@ -239,7 +239,7 @@ interface FieldConfig {
 ### Configuración del Sistema
 
 ```typescript
-// gremius.config.ts
+// kitsuden.config.ts
 export default {
   i18n: {
     defaultLocale: "en",

@@ -5,13 +5,13 @@
  * (Blog, CMS, Email, etc.)
  */
 
-import type { GrimoireContext, ContentTarget } from "./grimoire-api";
+import type { KonContext, ContentTarget } from "./kon-api";
 
 export class ContentPublishingRegistry {
   private targets = new Map<string, ContentTarget>();
-  private ctx: GrimoireContext;
+  private ctx: KonContext;
 
-  constructor(ctx: GrimoireContext) {
+  constructor(ctx: KonContext) {
     this.ctx = ctx;
   }
 
@@ -54,4 +54,4 @@ export class ContentPublishingRegistry {
 }
 
 // Re-export types
-export type { ContentTarget } from "./grimoire-api";
+export type { ContentTarget } from "./kon-api";

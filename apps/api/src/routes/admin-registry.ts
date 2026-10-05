@@ -1,20 +1,21 @@
 /**
  * Admin Registry API
  *
- * Exposes auto-discovered grimoire admin configurations
+ * Exposes auto-discovered kon admin configurations
  * for the frontend to consume without hardcoding.
  *
- * GET /api/admin/registry — Get all grimoire admin configs
- * GET /api/admin/registry/:grimoireId — Get specific grimoire config
+ * GET /api/admin/registry — Get all kon admin configs
+ * GET /api/admin/registry/:konId — Get specific kon config
  * POST /api/admin/registry/refresh — Clear cache and rebuild
  */
 
+import { ADMIN_REGISTRY_VERSION, CONTRACT_HEADER } from "@kitsuden/shared";
 import { Hono } from "hono";
 
 import { requireAuth } from "../middleware/auth";
 import {
   buildAdminRegistry,
-  getGrimoireAdminConfig,
+  getKonAdminConfig,
   clearAdminRegistryCache,
 } from "../services/admin-registry";
 
@@ -23,16 +24,24 @@ export const adminRegistryRoutes = new Hono();
 // All routes require authentication
 adminRegistryRoutes.use("/*", requireAuth);
 
+// La versión del contrato también viaja en cabecera, para que un cliente pueda
+// decidir si sabe hablar con este servidor sin tener que parsear el cuerpo.
+adminRegistryRoutes.use("/*", async (c, next) => {
+  await next();
+  c.header(CONTRACT_HEADER, `admin-registry/v${ADMIN_REGISTRY_VERSION}`);
+});
+
 /**
  * GET /api/admin/registry
- * Returns admin configuration for all enabled grimoires
+ * Returns admin configuration for all enabled kons
  */
 adminRegistryRoutes.get("/", async (c) => {
   try {
     const registry = await buildAdminRegistry();
     return c.json({
       success: true,
-      grimoires: registry,
+      contract: ADMIN_REGISTRY_VERSION,
+      kons: registry,
       total: registry.length,
       withCustomViews: registry.filter((g) => g.hasCustomView).length,
       generatedAt: new Date().toISOString(),
@@ -51,20 +60,20 @@ adminRegistryRoutes.get("/", async (c) => {
 });
 
 /**
- * GET /api/admin/registry/:grimoireId
- * Returns admin config for a specific grimoire
+ * GET /api/admin/registry/:konId
+ * Returns admin config for a specific kon
  */
-adminRegistryRoutes.get("/:grimoireId", async (c) => {
-  const grimoireId = c.req.param("grimoireId");
+adminRegistryRoutes.get("/:konId", async (c) => {
+  const konId = c.req.param("konId");
 
   try {
-    const config = await getGrimoireAdminConfig(grimoireId);
+    const config = await getKonAdminConfig(konId);
 
     if (!config) {
       return c.json(
         {
           success: false,
-          error: `Grimoire '${grimoireId}' not found or has no admin configuration`,
+          error: `Kon '${konId}' not found or has no admin configuration`,
         },
         404
       );
@@ -72,14 +81,15 @@ adminRegistryRoutes.get("/:grimoireId", async (c) => {
 
     return c.json({
       success: true,
-      grimoire: config,
+      contract: ADMIN_REGISTRY_VERSION,
+      kon: config,
     });
   } catch (err) {
-    console.error(`[AdminRegistry] Failed to get config for ${grimoireId}:`, err);
+    console.error(`[AdminRegistry] Failed to get config for ${konId}:`, err);
     return c.json(
       {
         success: false,
-        error: "Failed to get grimoire config",
+        error: "Failed to get kon config",
         message: err instanceof Error ? err.message : String(err),
       },
       500
@@ -89,7 +99,7 @@ adminRegistryRoutes.get("/:grimoireId", async (c) => {
 
 /**
  * POST /api/admin/registry/refresh
- * Clears cache and rebuilds registry (useful after grimoire changes)
+ * Clears cache and rebuilds registry (useful after kon changes)
  */
 adminRegistryRoutes.post("/refresh", async (c) => {
   try {
@@ -98,8 +108,9 @@ adminRegistryRoutes.post("/refresh", async (c) => {
 
     return c.json({
       success: true,
+      contract: ADMIN_REGISTRY_VERSION,
       message: "Admin registry refreshed",
-      grimoires: registry,
+      kons: registry,
       total: registry.length,
     });
   } catch (err) {
@@ -116,11 +127,11 @@ adminRegistryRoutes.post("/refresh", async (c) => {
 });
 
 /**
- * GET /api/admin/registry/:grimoireId/schema/:table
+ * GET /api/admin/registry/:konId/schema/:table
  * Returns schema for a specific table (columns, types, etc.)
  */
-adminRegistryRoutes.get("/:grimoireId/schema/:table", async (c) => {
-  const { grimoireId: _grimoireId, table: _table } = c.req.param();
+adminRegistryRoutes.get("/:konId/schema/:table", async (c) => {
+  const { konId: _konId, table: _table } = c.req.param();
 
   // Delegate to existing data-explorer endpoint
   // This maintains backward compatibility

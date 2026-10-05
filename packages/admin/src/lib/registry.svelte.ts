@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Component Registry (Svelte Edition)
+ * Kitsuden — Component Registry (Svelte Edition)
  *
  * Sistema de registro dinámico de componentes para extensibilidad.
  * Reemplaza el PluginRegistry de Vue con una implementación nativa de Svelte.

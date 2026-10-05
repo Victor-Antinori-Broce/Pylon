@@ -18,7 +18,7 @@ export async function logsCommand(options: LogsOptions) {
     const hasDockerCompose = await fs.pathExists(path.join(projectRoot, "docker-compose.yml"));
 
     if (!hasDockerCompose) {
-      spinner.fail(chalk.red("No Gremius project found in current directory."));
+      spinner.fail(chalk.red("No Kitsuden project found in current directory."));
       process.exit(1);
     }
 
@@ -32,11 +32,11 @@ export async function logsCommand(options: LogsOptions) {
 
     if (options.service) {
       const serviceMap: Record<string, string> = {
-        api: "gremius_api",
-        mcp: "gremius_mcp",
-        admin: "gremius_admin",
-        db: "gremius_db",
-        cache: "gremius_cache",
+        api: "kitsuden_api",
+        mcp: "kitsuden_mcp",
+        admin: "kitsuden_admin",
+        db: "kitsuden_db",
+        cache: "kitsuden_cache",
       };
       args.push(serviceMap[options.service] || options.service);
     }

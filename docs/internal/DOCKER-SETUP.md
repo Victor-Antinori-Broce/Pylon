@@ -1,4 +1,4 @@
-# 🐳 GremiusCMS - Configuración Docker
+# 🐳 Kitsuden - Configuración Docker
 
 ## ✅ Archivos Actualizados
 
@@ -45,7 +45,7 @@ O simplemente haz doble clic en **`start.bat`** (Windows).
 ```bash
 # Abrir http://localhost:9001
 # Login con S3_ACCESS_KEY / S3_SECRET_KEY
-# Crear bucket: gremius-uploads (o el nombre que configuraste)
+# Crear bucket: kitsuden-uploads (o el nombre que configuraste)
 ```
 
 ### 4. Acceder
@@ -72,7 +72,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 # Dependencias y build
 pnpm install
-pnpm --filter @gremius/shared build
+pnpm --filter @kitsuden/shared build
 
 # Migraciones (con confirmación)
 cd apps/api
@@ -130,7 +130,7 @@ WEB_PORT=3005
 Las migraciones no se ejecutaron. En producción:
 
 ```bash
-docker compose exec gremius_api bun run db:migrate
+docker compose exec kitsuden_api bun run db:migrate
 ```
 
 ### Permisos de MinIO
@@ -160,14 +160,14 @@ docker compose ps
 
 # Ver logs
 docker compose logs -f
-docker compose logs -f gremius_api
+docker compose logs -f kitsuden_api
 
 # Reiniciar un servicio
-docker compose restart gremius_api
+docker compose restart kitsuden_api
 
 # Ejecutar comandos en un contenedor
-docker compose exec gremius_api sh
+docker compose exec kitsuden_api sh
 
 # Reconstruir imagen
-docker compose up -d --build gremius_api
+docker compose up -d --build kitsuden_api
 ```

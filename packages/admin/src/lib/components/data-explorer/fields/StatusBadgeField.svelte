@@ -18,7 +18,7 @@
   const statusColors = $derived({ ...defaultColors, ...config.options?.colors });
   const statusClass = $derived(
     statusColors[String(value)?.toLowerCase()] ||
-      "bg-gremius-surface text-gremius-text-dim border-gremius-border"
+      "bg-kitsuden-surface text-kitsuden-text-dim border-kitsuden-border"
   );
 </script>
 

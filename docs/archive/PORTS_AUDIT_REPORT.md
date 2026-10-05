@@ -117,7 +117,7 @@ PORT=3000
 
 ```bash
 # .env (root) - Change from 5433 to 5432
-DATABASE_URL=postgres://gremius:gremius_dev_2025@localhost:5432/gremiuscms
+DATABASE_URL=postgres://kitsuden:kitsuden_dev_2025@localhost:5432/kitsuden
 ```
 
 ---
@@ -176,11 +176,11 @@ VALKEY_URL=redis://localhost:6379
 
 ### Current Configuration
 
-| File                                          | Port     | Context                                                  |
-| --------------------------------------------- | -------- | -------------------------------------------------------- |
-| `.env` (root)                                 | **4321** | `PUBLIC_SITE_URL=http://localhost:4321`, `WEB_PORT=4321` |
-| `packages/starters/gremio-blog-template/.env` | **4321** | `PUBLIC_SITE_URL=http://localhost:4321`                  |
-| `apps/api/src/lib/config.ts`                  | **3002** | `WEB_URL: default("http://localhost:3002")`              |
+| File                                            | Port     | Context                                                  |
+| ----------------------------------------------- | -------- | -------------------------------------------------------- |
+| `.env` (root)                                   | **4321** | `PUBLIC_SITE_URL=http://localhost:4321`, `WEB_PORT=4321` |
+| `packages/starters/kitsuden-blog-template/.env` | **4321** | `PUBLIC_SITE_URL=http://localhost:4321`                  |
+| `apps/api/src/lib/config.ts`                    | **3002** | `WEB_URL: default("http://localhost:3002")`              |
 
 ### 🔴 INCONSISTENT Configuration
 
@@ -259,7 +259,7 @@ WEB_URL: z.string().default("http://localhost:4321"), // Change from 3002
 
 ```bash
 # .env line 5
-DATABASE_URL=postgres://gremius:gremius_dev_2025@localhost:5432/gremiuscms
+DATABASE_URL=postgres://kitsuden:kitsuden_dev_2025@localhost:5432/kitsuden
 # Changed from 5433 to 5432
 ```
 

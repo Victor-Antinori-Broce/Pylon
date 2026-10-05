@@ -1,6 +1,6 @@
-# 🚀 GremiusCMS — Guía de Configuración y Desarrollo
+# 🚀 Kitsuden — Guía de Configuración y Desarrollo
 
-Bienvenido al sistema GremiusCMS. Esta guía detalla los pasos para levantar el entorno completo, gestionar la arquitectura modular y validar las integraciones de infraestructura.
+Bienvenido al sistema Kitsuden. Esta guía detalla los pasos para levantar el entorno completo, gestionar la arquitectura modular y validar las integraciones de infraestructura.
 
 ---
 
@@ -15,7 +15,7 @@ Bienvenido al sistema GremiusCMS. Esta guía detalla los pasos para levantar el 
 
 ## 🏗️ Paso 1: Infraestructura Base
 
-GremiusCMS utiliza una infraestructura moderna basada en contenedores.
+Kitsuden utiliza una infraestructura moderna basada en contenedores.
 
 ```bash
 # Iniciar base de datos, almacenamiento S3 y cache
@@ -47,14 +47,14 @@ docker compose up -d
 
 ## 📦 Paso 3: Gestión de Arquitectura Modular
 
-GremiusCMS es **Modular por Diseño**. No necesitas cargar código que no usas.
+Kitsuden es **Modular por Diseño**. No necesitas cargar código que no usas.
 
 ### Habilitar Módulos
 
-Edita `apps/api/gremius.config.ts`:
+Edita `apps/api/kitsuden.config.ts`:
 
 ```typescript
-const config: GremiusConfig = {
+const config: KitsudenConfig = {
   modules: [
     "booking", // Sistema de Reservas
     "directory", // Directorio de Empleados
@@ -100,31 +100,31 @@ Desde la raíz o en `apps/api`:
 
 ```bash
 # Verificar conexión
-docker exec -it gremius-cache redis-cli ping
+docker exec -it kitsuden-cache redis-cli ping
 
 # Ver tareas pendientes en colas (BullMQ)
-docker exec -it gremius-cache redis-cli keys "bull:*"
+docker exec -it kitsuden-cache redis-cli keys "bull:*"
 ```
 
 ---
 
 ## 📊 Inventario de Módulos Core
 
-| Módulo        | Key           | Base URL                   | Rol                                     |
-| :------------ | :------------ | :------------------------- | :-------------------------------------- |
-| **Academy**   | `academy`     | `/api/custom/academy`      | Creador de cursos, tests y diplomas.    |
-| **DMS**       | `dms`         | `/api/custom/docs`         | Aprobación de manuales y documentos.    |
-| **Booking**   | `booking`     | `/api/custom/reservations` | Alquiler de espacios y recursos.        |
-| **Directory** | `directory`   | `/api/custom/directorio`   | Gestión de headcount y departamentos.   |
-| **Formulas**  | `formulas`    | `/api/custom/formulas`     | Generador dinámico de KPIs matemáticos. |
-| **CRM**       | `gremius-crm` | —                          | Automatización de pipeline de ventas.   |
+| Módulo        | Key            | Base URL                   | Rol                                     |
+| :------------ | :------------- | :------------------------- | :-------------------------------------- |
+| **Academy**   | `academy`      | `/api/custom/academy`      | Creador de cursos, tests y diplomas.    |
+| **DMS**       | `dms`          | `/api/custom/docs`         | Aprobación de manuales y documentos.    |
+| **Booking**   | `booking`      | `/api/custom/reservations` | Alquiler de espacios y recursos.        |
+| **Directory** | `directory`    | `/api/custom/directorio`   | Gestión de headcount y departamentos.   |
+| **Formulas**  | `formulas`     | `/api/custom/formulas`     | Generador dinámico de KPIs matemáticos. |
+| **CRM**       | `kitsuden-crm` | —                          | Automatización de pipeline de ventas.   |
 
 ---
 
 ## ❓ Troubleshooting Común
 
 **1. Error: "Valkey not available"**
-Verifica que el contenedor `gremius-cache` esté corriendo: `docker compose ps`. Asegúrate de que `VALKEY_URL` sea el puerto correcto.
+Verifica que el contenedor `kitsuden-cache` esté corriendo: `docker compose ps`. Asegúrate de que `VALKEY_URL` sea el puerto correcto.
 
 **2. Error de tipos en Drizzle**
 Si has habilitado un nuevo módulo, ejecuta `pnpm db:push` para que las tablas existan antes de que la API intente consultarlas.

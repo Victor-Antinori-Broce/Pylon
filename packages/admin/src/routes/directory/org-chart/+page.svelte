@@ -141,17 +141,17 @@
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
       <h1 class="text-2xl font-semibold text-white flex items-center gap-3">
-        <Building2 class="w-7 h-7 text-gremius-cyan" />
+        <Building2 class="w-7 h-7 text-kitsuden-accent" />
         Organigrama
       </h1>
-      <p class="text-gremius-subtle mt-1">Visualización jerárquica de la organización</p>
+      <p class="text-kitsuden-subtle mt-1">Visualización jerárquica de la organización</p>
     </div>
 
     <div class="flex items-center gap-3">
       <select
         bind:value={selectedOrg}
         onchange={loadOrgChart}
-        class="px-4 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-white focus:border-gremius-cyan/50 focus:outline-none"
+        class="px-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-white focus:border-kitsuden-accent/50 focus:outline-none"
       >
         {#each organizations as org}
           <option value={org.id}>{org.name}</option>
@@ -163,12 +163,12 @@
   <!-- Search -->
   <div class="card p-4">
     <div class="relative max-w-md">
-      <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle" />
+      <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
       <input
         type="text"
         placeholder="Buscar empleado..."
         bind:value={searchQuery}
-        class="w-full pl-10 pr-4 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-white placeholder:text-gremius-subtle focus:border-gremius-cyan/50 focus:outline-none"
+        class="w-full pl-10 pr-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-white placeholder:text-kitsuden-subtle focus:border-kitsuden-accent/50 focus:outline-none"
       />
     </div>
   </div>
@@ -177,13 +177,13 @@
   <div class="card p-6 min-h-[500px]">
     {#if loading}
       <div class="flex items-center justify-center h-64">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gremius-cyan"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-kitsuden-accent"></div>
       </div>
     {:else if organizations.length === 0}
       <div class="text-center py-12">
-        <Building2 class="w-16 h-16 text-gremius-subtle mx-auto mb-4" />
+        <Building2 class="w-16 h-16 text-kitsuden-subtle mx-auto mb-4" />
         <h3 class="text-lg font-medium text-white mb-2">No hay organizaciones</h3>
-        <p class="text-gremius-subtle mb-4">Crea una organización para ver el organigrama</p>
+        <p class="text-kitsuden-subtle mb-4">Crea una organización para ver el organigrama</p>
         <button
           class="btn btn-primary gap-2"
           onclick={() => {
@@ -197,9 +197,9 @@
       </div>
     {:else if orgData.length === 0}
       <div class="text-center py-12">
-        <Users class="w-16 h-16 text-gremius-subtle mx-auto mb-4" />
+        <Users class="w-16 h-16 text-kitsuden-subtle mx-auto mb-4" />
         <h3 class="text-lg font-medium text-white mb-2">No hay empleados</h3>
-        <p class="text-gremius-subtle">
+        <p class="text-kitsuden-subtle">
           La organización seleccionada no tiene empleados registrados
         </p>
       </div>
@@ -228,13 +228,13 @@
       ></div>
 
       <div
-        class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full"
+        class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-md w-full"
       >
         <div class="p-6">
           <!-- Header -->
           <div class="flex items-start gap-4 mb-6">
             <div
-              class="w-16 h-16 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-xl font-semibold"
+              class="w-16 h-16 rounded-full bg-kitsuden-accent/20 flex items-center justify-center text-kitsuden-accent text-xl font-semibold"
             >
               {getInitials(selectedEmployee.firstName, selectedEmployee.lastName)}
             </div>
@@ -243,8 +243,8 @@
                 {selectedEmployee.displayName ||
                   `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
               </h3>
-              <p class="text-gremius-cyan">{selectedEmployee.positionTitle || "Sin cargo"}</p>
-              <p class="text-sm text-gremius-subtle">{selectedEmployee.departmentName || ""}</p>
+              <p class="text-kitsuden-accent">{selectedEmployee.positionTitle || "Sin cargo"}</p>
+              <p class="text-sm text-kitsuden-subtle">{selectedEmployee.departmentName || ""}</p>
             </div>
           </div>
 
@@ -252,9 +252,9 @@
           <div class="space-y-3">
             <a
               href="mailto:{selectedEmployee.email}"
-              class="flex items-center gap-3 p-3 bg-gremius-bg rounded-lg hover:bg-white/5 transition-colors"
+              class="flex items-center gap-3 p-3 bg-kitsuden-bg rounded-lg hover:bg-white/5 transition-colors"
             >
-              <Mail class="w-5 h-5 text-gremius-cyan" />
+              <Mail class="w-5 h-5 text-kitsuden-accent" />
               <span class="text-white">{selectedEmployee.email}</span>
             </a>
           </div>
@@ -285,25 +285,28 @@
       onclick={() => (showCreateOrgModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-md w-full mx-4"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-md w-full mx-4"
     >
-      <div class="flex items-center justify-between p-6 border-b border-gremius-border">
+      <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
         <h3 class="text-lg font-semibold text-white">Nueva Organización</h3>
         <button
           onclick={() => (showCreateOrgModal = false)}
-          class="p-2 rounded-xl text-gremius-subtle hover:text-white hover:bg-white/5"
+          class="p-2 rounded-xl text-kitsuden-subtle hover:text-white hover:bg-white/5"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
       <form onsubmit={createOrganization} class="p-6 space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gremius-subtle mb-1.5">Nombre *</label>
+          <label for="neworgname" class="block text-sm font-medium text-kitsuden-subtle mb-1.5"
+            >Nombre *</label
+          >
           <input
+            id="neworgname"
             bind:value={newOrgName}
             type="text"
             placeholder="Ej. Acme Corp"
-            class="w-full px-4 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-white placeholder:text-gremius-subtle focus:border-gremius-cyan/50 focus:outline-none"
+            class="w-full px-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-white placeholder:text-kitsuden-subtle focus:border-kitsuden-accent/50 focus:outline-none"
             required
           />
         </div>
@@ -311,13 +314,13 @@
           <button
             type="button"
             onclick={() => (showCreateOrgModal = false)}
-            class="px-4 py-2 rounded-lg text-gremius-subtle hover:text-white hover:bg-white/5 transition-all"
+            class="px-4 py-2 rounded-lg text-kitsuden-subtle hover:text-white hover:bg-white/5 transition-all"
             >Cancelar</button
           >
           <button
             type="submit"
             disabled={savingOrg || !newOrgName.trim()}
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gremius-cyan text-gremius-bg hover:bg-gremius-cyan/90 transition-all disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-kitsuden-accent text-kitsuden-bg hover:bg-kitsuden-accent/90 transition-all disabled:opacity-50"
           >
             {#if savingOrg}
               <Loader2 class="w-4 h-4 animate-spin" />
@@ -366,9 +369,9 @@
           }}
         >
           {#if expandedNodes.has(node.id)}
-            <ChevronDown class="w-4 h-4 text-gremius-subtle" />
+            <ChevronDown class="w-4 h-4 text-kitsuden-subtle" />
           {:else}
-            <ChevronRight class="w-4 h-4 text-gremius-subtle" />
+            <ChevronRight class="w-4 h-4 text-kitsuden-subtle" />
           {/if}
         </button>
       {:else}
@@ -377,7 +380,7 @@
 
       <!-- Avatar -->
       <div
-        class="w-10 h-10 rounded-full bg-gremius-cyan/20 flex items-center justify-center text-gremius-cyan text-sm font-medium"
+        class="w-10 h-10 rounded-full bg-kitsuden-accent/20 flex items-center justify-center text-kitsuden-accent text-sm font-medium"
       >
         {getInitials(node.firstName, node.lastName)}
       </div>
@@ -387,14 +390,14 @@
         <p class="font-medium text-white truncate">
           {node.displayName || `${node.firstName} ${node.lastName}`}
         </p>
-        <p class="text-sm text-gremius-subtle truncate">
+        <p class="text-sm text-kitsuden-subtle truncate">
           {node.positionTitle || "Sin cargo"}
         </p>
       </div>
 
       <!-- Direct Reports Count -->
       {#if node.children && node.children.length > 0}
-        <div class="flex items-center gap-1 text-xs text-gremius-subtle">
+        <div class="flex items-center gap-1 text-xs text-kitsuden-subtle">
           <Users class="w-3 h-3" />
           {node.children.length}
         </div>
@@ -403,7 +406,7 @@
       <!-- View Button (visible on hover) -->
       <a
         href="/directory/employees/{node.id}"
-        class="opacity-0 group-hover:opacity-100 p-2 text-gremius-subtle hover:text-white transition-all"
+        class="opacity-0 group-hover:opacity-100 p-2 text-kitsuden-subtle hover:text-white transition-all"
         onclick={(e) => e.stopPropagation()}
       >
         <User class="w-4 h-4" />
@@ -415,7 +418,7 @@
       <div class="relative">
         <!-- Vertical line -->
         <div
-          class="absolute left-[{level * 24 + 27}px] top-0 bottom-0 w-px bg-gremius-border"
+          class="absolute left-[{level * 24 + 27}px] top-0 bottom-0 w-px bg-kitsuden-border"
         ></div>
 
         {#each node.children as child}
@@ -435,7 +438,7 @@
 
 <style>
   .card {
-    @apply bg-gremius-card border border-gremius-border rounded-xl;
+    @apply bg-kitsuden-card border border-kitsuden-border rounded-xl;
   }
 
   .btn {
@@ -443,10 +446,10 @@
   }
 
   .btn-primary {
-    @apply bg-gremius-cyan text-gremius-bg hover:bg-gremius-cyan/90;
+    @apply bg-kitsuden-accent text-kitsuden-bg hover:bg-kitsuden-accent/90;
   }
 
   .btn-ghost {
-    @apply text-gremius-subtle hover:text-white hover:bg-white/5;
+    @apply text-kitsuden-subtle hover:text-white hover:bg-white/5;
   }
 </style>

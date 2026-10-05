@@ -12,27 +12,18 @@
 import { eq, desc, sql, count, and, gte } from "drizzle-orm";
 import { Hono } from "hono";
 
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { db } from "@/db";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import {
   agentIdentities,
   agentApiKeys,
   agentAuditLogs,
-  // @ts-ignore - Path alias @/ not resolved by tsc
+  agentTraces,
+  agentTraceSteps,
 } from "@/db/schema";
-import { agentTraces, agentTraceSteps } from "@/db/schema";
 import { logger } from "@/lib/logger";
-import {
-  // @ts-ignore - Path alias @/ not resolved by tsc
-  generateAgentApiKey,
-  // @ts-ignore - Path alias @/ not resolved by tsc
-} from "@/services/agent-auth";
-// @ts-ignore - Path alias @/ not resolved by tsc
+import { generateAgentApiKey } from "@/services/agent-auth";
 
-// @ts-ignore - Path alias @/ not resolved by tsc
 import { requireAuth } from "../middleware/auth";
-// @ts-ignore - Path alias @/ not resolved by tsc
 import type { AppVariables } from "../types/hono";
 
 const agentsRouter = new Hono<{ Variables: AppVariables }>();
@@ -647,8 +638,6 @@ agentsRouter.get("/:id/stats", async (c) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // TRACES (TELEMETRY)
 // ═══════════════════════════════════════════════════════════════════════════
-
-// @ts-ignore - Path alias @/ not resolved by tsc
 
 /**
  * GET /api/admin/agents/:id/traces

@@ -1,8 +1,8 @@
-# @gremius/sdk
+# @kitsuden/sdk
 
-Official JavaScript/TypeScript SDK for GremiusCMS — The Modular BaaS/CMS.
+Official JavaScript/TypeScript SDK for Kitsuden — The Modular BaaS/CMS.
 
-[![npm version](https://badge.fury.io/js/@gremius%2Fsdk.svg)](https://www.npmjs.com/package/@gremius/sdk)
+[![npm version](https://badge.fury.io/js/@kitsuden%2Fsdk.svg)](https://www.npmjs.com/package/@kitsuden/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -12,38 +12,38 @@ Official JavaScript/TypeScript SDK for GremiusCMS — The Modular BaaS/CMS.
 - 📝 **Type-Safe** — Full TypeScript support with generic table types
 - 🚀 **Zero Dependencies** — Lightweight, only uses native `fetch` and `WebSocket`
 - ⚡ **Fast** — TOON format support for AI agents (60% fewer tokens)
-- 🔒 **Secure** — Agent NHI tokens (`grm_agent_*`) + Bearer auth
+- 🔒 **Secure** — Agent NHI tokens (`kitsuden_agent_*`) + Bearer auth
 - 🔄 **Real-time** — Live Query subscriptions via WebSocket
 
 ## Installation
 
 ```bash
 # npm
-npm install @gremius/sdk
+npm install @kitsuden/sdk
 
 # bun
-bun add @gremius/sdk
+bun add @kitsuden/sdk
 
 # pnpm
-pnpm add @gremius/sdk
+pnpm add @kitsuden/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { GremiusClient } from "@gremius/sdk";
+import { KitsudenClient } from "@kitsuden/sdk";
 
-const gremius = new GremiusClient({
+const kitsuden = new KitsudenClient({
   url: "https://api.yourgame.com",
-  apiKey: "grm_agent_your_agent_token",
+  apiKey: "kitsuden_agent_your_agent_token",
 });
 
 // Explorer API — primary way to interact with data
-const games = await gremius.from("games").list();
-const game = await gremius.from("games").get("uuid-123");
-const newGame = await gremius.from("games").create({ title: "New Game" });
-await gremius.from("games").update(newGame.id, { status: "published" });
-await gremius.from("games").delete(newGame.id);
+const games = await kitsuden.from("games").list();
+const game = await kitsuden.from("games").get("uuid-123");
+const newGame = await kitsuden.from("games").create({ title: "New Game" });
+await kitsuden.from("games").update(newGame.id, { status: "published" });
+await kitsuden.from("games").delete(newGame.id);
 ```
 
 ## Usage
@@ -51,12 +51,12 @@ await gremius.from("games").delete(newGame.id);
 ### Initialize Client
 
 ```typescript
-import { GremiusClient } from "@gremius/sdk";
+import { KitsudenClient } from "@kitsuden/sdk";
 
-const gremius = new GremiusClient({
+const kitsuden = new KitsudenClient({
   url: "https://api.yourgame.com",
   // Optional: Agent NHI token for authentication
-  apiKey: process.env.GREMIUS_API_KEY,
+  apiKey: process.env.KITSUDEN_API_KEY,
 });
 ```
 
@@ -67,12 +67,12 @@ The `.from(table)` method returns a `TableRef` with full CRUD capabilities:
 #### List with pagination, sorting, and filtering
 
 ```typescript
-const games = await gremius.from("games").list();
+const games = await kitsuden.from("games").list();
 console.log(games.data); // Array of records
 console.log(games.pagination); // { page, limit, total, totalPages, hasNextPage, hasPrevPage }
 
 // With options
-const filtered = await gremius.from("games").list({
+const filtered = await kitsuden.from("games").list({
   limit: 10,
   page: 1,
   sort: "title",
@@ -86,13 +86,13 @@ const filtered = await gremius.from("games").list({
 #### Get by ID
 
 ```typescript
-const game = await gremius.from("games").get("uuid-123");
+const game = await kitsuden.from("games").get("uuid-123");
 ```
 
 #### Create
 
 ```typescript
-const newGame = await gremius.from("games").create({
+const newGame = await kitsuden.from("games").create({
   title: "Elden Ring",
   slug: "elden-ring",
   platforms: ["ps5", "pc"],
@@ -102,7 +102,7 @@ const newGame = await gremius.from("games").create({
 #### Update
 
 ```typescript
-await gremius.from("games").update("uuid-123", {
+await kitsuden.from("games").update("uuid-123", {
   status: "published",
 });
 ```
@@ -110,13 +110,13 @@ await gremius.from("games").update("uuid-123", {
 #### Delete
 
 ```typescript
-await gremius.from("games").delete("uuid-123");
+await kitsuden.from("games").delete("uuid-123");
 ```
 
 #### Dropdown options (for foreign keys)
 
 ```typescript
-const platforms = await gremius.from("platforms").options();
+const platforms = await kitsuden.from("platforms").options();
 // [{ value: 'uuid-1', label: 'PlayStation 5' }, ...]
 ```
 
@@ -133,7 +133,7 @@ interface Game {
 }
 
 // Type-safe table reference
-const games = gremius.from<Game>("games");
+const games = kitsuden.from<Game>("games");
 const allGames = await games.list();
 // allGames.data is typed as Game[]
 ```
@@ -142,26 +142,26 @@ const allGames = await games.list();
 
 ```typescript
 // Get column types, editability, and relations for a table
-const schema = await gremius.schema("games");
+const schema = await kitsuden.schema("games");
 console.log(schema.columns);
 // [{ name: 'title', type: 'text', editable: true, nullable: false }, ...]
 
 // List all available tables
-const tables = await gremius.tables();
+const tables = await kitsuden.tables();
 // [{ key: 'games', label: 'Games', icon: 'gamepad', rowCount: 42 }, ...]
 ```
 
 ### Module Management
 
 ```typescript
-// List all grimoires (modules)
-const modules = await gremius.modules.list();
+// List all kons (modules)
+const modules = await kitsuden.modules.list();
 
-// Toggle a grimoire on/off
-await gremius.modules.toggle("academy");
+// Toggle a kon on/off
+await kitsuden.modules.toggle("academy");
 
 // Get only enabled modules
-const enabled = await gremius.modules.enabled();
+const enabled = await kitsuden.modules.enabled();
 ```
 
 ### TOON Format (for AI Agents)
@@ -169,9 +169,9 @@ const enabled = await gremius.modules.enabled();
 TOON reduces token usage by ~60% compared to JSON:
 
 ```typescript
-const agent = new GremiusClient({
+const agent = new KitsudenClient({
   url: "https://api.yourgame.com",
-  apiKey: "grm_agent_xxx",
+  apiKey: "kitsuden_agent_xxx",
   format: "toon",
 });
 
@@ -182,12 +182,12 @@ const toonData = await agent.from("games").list();
 ### Error Handling
 
 ```typescript
-import { GremiusClient, GremiusError } from "@gremius/sdk";
+import { KitsudenClient, KitsudenError } from "@kitsuden/sdk";
 
 try {
-  const games = await gremius.from("games").list();
+  const games = await kitsuden.from("games").list();
 } catch (error) {
-  if (error instanceof GremiusError) {
+  if (error instanceof KitsudenError) {
     console.error(`HTTP ${error.statusCode}:`, error.message);
   } else {
     console.error("Network or unknown error:", error);
@@ -198,7 +198,7 @@ try {
 ### Real-time Subscriptions
 
 ```typescript
-import { createRealtime } from "@gremius/sdk/realtime";
+import { createRealtime } from "@kitsuden/sdk/realtime";
 
 const rt = createRealtime("https://api.yourgame.com");
 
@@ -227,7 +227,7 @@ rt.disconnect();
 ### Health Check
 
 ```typescript
-const healthy = await gremius.ping();
+const healthy = await kitsuden.ping();
 console.log("API is", healthy ? "up" : "down");
 ```
 
@@ -239,12 +239,12 @@ Works in all edge runtimes with zero dependencies:
 // Cloudflare Workers
 export default {
   async fetch(request: Request, env: Env) {
-    const gremius = new GremiusClient({
-      url: env.GREMIUS_URL,
-      apiKey: env.GREMIUS_API_KEY,
+    const kitsuden = new KitsudenClient({
+      url: env.KITSUDEN_URL,
+      apiKey: env.KITSUDEN_API_KEY,
     });
 
-    const games = await gremius.from("games").list();
+    const games = await kitsuden.from("games").list();
     return Response.json(games);
   },
 };
@@ -253,12 +253,12 @@ export default {
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request) {
-  const gremius = new GremiusClient({
-    url: process.env.GREMIUS_URL!,
-    apiKey: process.env.GREMIUS_API_KEY,
+  const kitsuden = new KitsudenClient({
+    url: process.env.KITSUDEN_URL!,
+    apiKey: process.env.KITSUDEN_API_KEY,
   });
 
-  const games = await gremius.from("games").list();
+  const games = await kitsuden.from("games").list();
   return new Response(JSON.stringify(games));
 }
 ```
@@ -266,8 +266,8 @@ export default async function handler(req: Request) {
 ## Configuration Options
 
 ```typescript
-interface GremiusClientConfig {
-  /** Base URL of your Gremius API */
+interface KitsudenClientConfig {
+  /** Base URL of your Kitsuden API */
   url: string;
   /** Agent NHI token for authentication (optional) */
   apiKey?: string;
@@ -278,11 +278,11 @@ interface GremiusClientConfig {
 
 ## API Reference
 
-### GremiusClient
+### KitsudenClient
 
-Main class for interacting with GremiusCMS API.
+Main class for interacting with Kitsuden API.
 
-#### `new GremiusClient(config)`
+#### `new KitsudenClient(config)`
 
 Creates a new client instance.
 
@@ -319,10 +319,10 @@ Primary CRUD interface. Returned by `.from(table)`.
 | `delete`  | `(id: string) => Promise<void>`                       | Delete record                      |
 | `options` | `() => Promise<OptionItem[]>`                         | Get dropdown options for FKs       |
 
-### GremiusError
+### KitsudenError
 
 ```typescript
-class GremiusError extends Error {
+class KitsudenError extends Error {
   statusCode: number; // HTTP status code
 }
 ```
@@ -333,15 +333,15 @@ class GremiusError extends Error {
 
 ```typescript
 // app/games/page.tsx
-import { GremiusClient } from '@gremius/sdk';
+import { KitsudenClient } from '@kitsuden/sdk';
 
-const gremius = new GremiusClient({
-  url: process.env.GREMIUS_URL!,
-  apiKey: process.env.GREMIUS_API_KEY
+const kitsuden = new KitsudenClient({
+  url: process.env.KITSUDEN_URL!,
+  apiKey: process.env.KITSUDEN_API_KEY
 });
 
 export default async function GamesPage() {
-  const games = await gremius.from('games').list({ limit: 10 });
+  const games = await kitsuden.from('games').list({ limit: 10 });
 
   return (
     <ul>
@@ -357,14 +357,14 @@ export default async function GamesPage() {
 
 ```typescript
 ---
-import { GremiusClient } from '@gremius/sdk';
+import { KitsudenClient } from '@kitsuden/sdk';
 
-const gremius = new GremiusClient({
-  url: import.meta.env.GREMIUS_URL,
-  apiKey: import.meta.env.GREMIUS_API_KEY
+const kitsuden = new KitsudenClient({
+  url: import.meta.env.KITSUDEN_URL,
+  apiKey: import.meta.env.KITSUDEN_API_KEY
 });
 
-const games = await gremius.from('games').list();
+const games = await kitsuden.from('games').list();
 ---
 
 <ul>
@@ -378,29 +378,29 @@ const games = await gremius.from('games').list();
 
 ```typescript
 // +page.ts
-import { GremiusClient } from "@gremius/sdk";
+import { KitsudenClient } from "@kitsuden/sdk";
 
-const gremius = new GremiusClient({
-  url: import.meta.env.VITE_GREMIUS_URL,
-  apiKey: import.meta.env.VITE_GREMIUS_API_KEY,
+const kitsuden = new KitsudenClient({
+  url: import.meta.env.VITE_KITSUDEN_URL,
+  apiKey: import.meta.env.VITE_KITSUDEN_API_KEY,
 });
 
 export async function load() {
-  const games = await gremius.from("games").list();
+  const games = await kitsuden.from("games").list();
   return { games };
 }
 ```
 
 ## License
 
-MIT © GremiusCMS Contributors
+MIT © Kitsuden Contributors
 
 ## Links
 
-- [Documentation](https://docs.gremius.dev)
-- [GitHub](https://github.com/yourorg/gremius)
-- [npm](https://www.npmjs.com/package/@gremius/sdk)
-- [Issues](https://github.com/yourorg/gremius/issues)
+- [Documentation](https://docs.kitsuden.dev)
+- [GitHub](https://github.com/yourorg/kitsuden)
+- [npm](https://www.npmjs.com/package/@kitsuden/sdk)
+- [Issues](https://github.com/yourorg/kitsuden/issues)
 
 ---
 

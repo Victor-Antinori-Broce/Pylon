@@ -1,288 +1,67 @@
-# Reporte de Pruebas: Refactorización de Grimoires
+# Reporte de Pruebas — Kitsuden v0.9.0-beta
 
-**Fecha:** 2026-03-11  
-**Scope:** Desacoplamiento de grimoires blog y formulas  
-**Estado:** ✅ TODAS LAS PRUEBAS PASARON
+> **Fecha:** 2026-06-30
+> **Scope:** Estado completo de la suite de pruebas del monorepo
+> **Estado:** ✅ Tests críticos reescritos y pasando contra PostgreSQL real
 
 ---
 
 ## Resumen Ejecutivo
 
-| Categoría                   | Estado  | Detalles                                  |
-| --------------------------- | ------- | ----------------------------------------- |
-| Build de packages/shared    | ✅ PASS | Compilación exitosa, sin errores de tipo  |
-| Build de apps/api           | ✅ PASS | Bundle de 6.85MB generado correctamente   |
-| Type checking               | ✅ PASS | Sin errores de TypeScript                 |
-| Imports de grimoires        | ✅ PASS | No hay dependencias cruzadas inválidas    |
-| Carga de grimoires modernos | ✅ PASS | blog y formulas cargan con DI             |
-| Backward compatibility      | ✅ PASS | Grimoires legacy (games) funcionan        |
-| Exportación de schemas      | ✅ PASS | Todas las tablas exportadas correctamente |
+| Categoría                                        | Estado       | Detalles                                      |
+| ------------------------------------------------ | ------------ | --------------------------------------------- |
+| Tests API (`apps/api/src/tests/`)                | ✅ 416 pass  | PostgreSQL real (`KITSUDEN_TEST_DB=postgres`) |
+| Tests unitarios API (`apps/api/src/tests-unit/`) | ✅ 191 pass  | Sin dependencia de PostgreSQL real            |
+| Tests unitarios monorepo (`tests/unit/`)         | ✅ 137 pass  | Sin dependencia de PostgreSQL real            |
+| **Tests de RLS end-to-end**                      | ✅ Estrictos | Verifican aislamiento real entre usuarios     |
+| **Tests de MCP**                                 | ✅ Estrictos | Usan token Agent NHI real                     |
+| TypeScript strict                                | ✅ Limpio    | 0 errores, 71 warnings admin menores          |
+| Lint + Format                                    | ✅ Limpio    | 0 errores ESLint, format check pasa           |
 
 ---
 
-## Pruebas Detalladas
+## Hallazgos Críticos Resueltos
 
-### 1. Build de packages/shared
+### 1. Aserciones débiles reescritas
 
-**Comando:** `npm run build`  
-**Resultado:** ✅ EXITOSO
+Los siguientes tests ahora verifican comportamiento real en lugar de tipos o rangos de status:
 
-```
-> @gremius/shared@0.7.0-beta build
-> tsc
+- `rls-e2e.test.ts`: `expect(body.docs.some(...)).toBe(false)` y verificación de que admin ve ambos entries.
+- `datasets-http.test.ts`: RLS filtering usa `toBe(false)`; query engine y batch validan payloads y resultados correctos.
+- `critical-features.test.ts`: health check exige `200` con checks definidos; admin endpoints requieren auth (`401`); rate-limit test fuerza bloqueo real (`429`).
+- `mcp.test.ts`: ahora crea un agente NHI con scope `mcp:connect`, establece SSE, ejecuta JSON-RPC y tools con status `200`.
 
-(no errors)
-```
+### 2. PostgreSQL real forzado por defecto
 
-**Archivos generados:**
+`pnpm test:api` y `pnpm test:api:all` ahora setean `NODE_ENV=test KITSUDEN_TEST_DB=postgres` y leen `DATABASE_URL` desde `.env.test`.
+El contenedor de test usa puerto `5434` para evitar conflictos con PostgreSQL locales del host.
 
-- `packages/shared/dist/index.js`
-- `packages/shared/dist/*.d.ts` (declaraciones de tipos)
+### 3. Scripts de test robustos
 
-**Exports verificados:**
-
-- ✅ `defineGrimoire`
-- ✅ `createGrimoireRouter`
-- ✅ `GrimoireError`
-- ✅ `GrimoireContext` (type)
-- ✅ `GrimoireDefinition` (type)
-
----
-
-### 2. Build de apps/api
-
-**Comando:** `pnpm run build`  
-**Resultado:** ✅ EXITOSO
-
-```
-> bun build src/index.ts --outdir dist --target bun
-
-Bundled 2432 modules in 629ms
-  index.js  6.85 MB  (entry point)
-```
-
-**Observaciones:**
-
-- Todos los imports resueltos correctamente
-- No hay errores de bundling
-- Tamaño del bundle consistente con builds anteriores
-
----
-
-### 3. Verificación de Tipos TypeScript
-
-**Comando:** `npx tsc --noEmit`  
-**Resultado:** ✅ SIN ERRORES
-
-**Verificaciones:**
-
-- No hay errores de tipo en packages/shared
-- No hay errores de tipo en apps/api
-- Todos los imports tienen tipos correctos
-
----
-
-### 4. Validación de Imports en Grimoires
-
-**Búsqueda de imports prohibidos:**
-
-```bash
-findstr /s /i "apps.api" packages\grimoires\grimoire-blog\src\*.ts
-findstr /s /i "apps.api" packages\grimoires\grimoire-formulas\src\*.ts
-```
-
-**Resultado:** ✅ Solo referencias en comentarios y schemas
-
-Los únicos imports de `apps/api/src` son en los archivos de schema, que re-exportan desde el schema central (necesario para Drizzle ORM). Esto es aceptable y documentado.
-
----
-
-### 5. Test de Carga de Grimoires
-
-**Script:** `bun run scripts/test-grimoire-loading.ts`  
-**Resultado:** ✅ ALL TESTS PASSED
-
-#### Grimoires Modernos (Dependency Injection)
-
-**✅ blog**
-
-```
-ID: blog
-Name: Blog Posts
-Version: 1.0.0
-Has createRouter: true
-Tables: blog_posts, blog_posts_to_tags, blog_posts_to_games
-Mount: /api/blog
-```
-
-**✅ formulas**
-
-```
-ID: formulas
-Name: Fórmulas KPI
-Version: 1.0.0
-Has createRouter: true
-Tables: formulas
-Mount: /api/custom
-```
-
-#### Grimoires Legacy (Backward Compatibility)
-
-**✅ games**
-
-```
-Has router: true
-Has init: false
-Mode: Legacy (direct router export)
-```
-
-#### Schema Exports
-
-**✅ blog schema**
-
-- Exports: `blogPosts`, `blogPostsToTags`, `blogPostsToGames`
-
-**✅ formulas schema**
-
-- Exports: `formulas`
-
----
-
-### 6. Backward Compatibility
-
-**Verificación:** Los grimoires que NO fueron migrados siguen funcionando.
-
-**Grimoire Legacy de prueba:** `grimoire-games`
-
-**Estructura (sin cambios):**
-
-```typescript
-import { gamesRoutes } from "./games.routes";
-const app = new Hono();
-app.route("/", gamesRoutes);
-export const gamesModuleRoutes = app;
-```
-
-**Resultado:** ✅ El module loader detecta automáticamente el modo legacy y monta el router directamente.
-
----
-
-## Cobertura de Pruebas
-
-### Componentes Testeados
-
-| Componente        | Tipo        | Estado |
-| ----------------- | ----------- | ------ |
-| @gremius/shared   | Package     | ✅     |
-| grimoire-blog     | Modern      | ✅     |
-| grimoire-formulas | Modern      | ✅     |
-| grimoire-games    | Legacy      | ✅     |
-| module-loader.ts  | Core        | ✅     |
-| apps/api build    | Integration | ✅     |
-
-### APIs Verificadas
-
-**Grimoire Blog:**
-
-- ✅ `GET /api/blog` - Listar posts
-- ✅ `GET /api/blog/:id` - Obtener post
-- ✅ `GET /api/blog/slug/:slug` - Obtener por slug
-- ✅ `POST /api/blog` - Crear post
-- ✅ `PATCH /api/blog/:id` - Actualizar post
-- ✅ `DELETE /api/blog/:id` - Eliminar post
-- ✅ `POST /api/blog/:id/publish` - Publicar post
-
-**Grimoire Formulas:**
-
-- ✅ `GET /api/custom/formulas` - Listar fórmulas
-- ✅ `GET /api/custom/formulas/:id` - Obtener fórmula
-- ✅ `POST /api/custom/formulas` - Crear fórmula
-- ✅ `PATCH /api/custom/formulas/:id` - Actualizar fórmula
-- ✅ `DELETE /api/custom/formulas/:id` - Eliminar fórmula
-- ✅ `POST /api/custom/formulas/:id/evaluate` - Evaluar fórmula
+- `scripts/test-db-up.ps1` / `.sh`: levantan PostgreSQL en `5434`.
+- `scripts/test-db-down.ps1`: funciona desde cualquier CWD.
+- `pnpm test:api:all` ejecuta migraciones (`drizzle-kit migrate`) antes de los tests y detiene el contenedor al final.
 
 ---
 
 ## Métricas
 
-### Tamaños de Build
-
-| Componente      | Tamaño | Estado         |
-| --------------- | ------ | -------------- |
-| packages/shared | ~18KB  | ✅             |
-| apps/api bundle | 6.85MB | ✅ Consistente |
-
-### Tiempos de Build
-
-| Operación    | Tiempo | Estado    |
-| ------------ | ------ | --------- |
-| Build shared | ~2s    | ✅ Rápido |
-| Build API    | ~14s   | ✅ Normal |
-
-### Dependencias
-
-| Grimoire | Deps externas   | Estado            |
-| -------- | --------------- | ----------------- |
-| blog     | @gremius/shared | ✅ Solo contratos |
-| formulas | @gremius/shared | ✅ Solo contratos |
-| games    | N/A (legacy)    | ✅ No cambió      |
+| Métrica                        | Valor actual |
+| ------------------------------ | ------------ |
+| Total tests API pasando        | 416          |
+| Total tests unitarios API      | 191          |
+| Total tests unitarios monorepo | 137          |
+| Total combinado                | 744          |
+| Errores TypeScript             | 0            |
+| Warnings `svelte-check`        | 71           |
+| Warnings ESLint                | ~1742        |
 
 ---
 
-## Problemas Encontrados y Soluciones
+## Recomendaciones Cumplidas
 
-### Issue 1: Duplicado de PaginatedResponse
-
-**Problema:** `PaginatedResponse` estaba definido tanto en `types.ts` como en `grimoire-api.ts`
-
-**Solución:** Consolidado en `utils.ts` y re-exportado desde allí.
-
-**Estado:** ✅ Resuelto
-
-### Issue 2: Import type vs value de Hono
-
-**Problema:** `Hono` se importaba solo como tipo pero se usaba como valor
-
-**Solución:** Cambiado a `import { Hono } from "hono"` (no solo `import type`)
-
-**Estado:** ✅ Resuelto
-
----
-
-## Recomendaciones
-
-### Para Desarrollo Futuro
-
-1. **Migración gradual:** Los grimoires restantes pueden migrarse al nuevo patrón gradualmente sin romper nada.
-
-2. **Testing:** Crear utilidades de testing que faciliten la creación de `GrimoireContext` mocks.
-
-3. **Documentación:** Documentar la API de grimoires para desarrolladores externos.
-
-### Para Producción
-
-1. **Monitoreo:** El module loader ahora logea el modo de cada grimoire (modern/legacy).
-2. **Rendimiento:** No hay impacto de rendimiento; los grimoires modernos usan las mismas dependencias.
-
----
-
-## Conclusión
-
-✅ **La refactorización ha sido exitosa y no rompe ninguna funcionalidad existente.**
-
-Los grimoires `blog` y `formulas` ahora son:
-
-- Autocontenidos
-- Independientes de `apps/api/src`
-- Testeables con inyección de dependencias
-- Totalmente retrocompatibles con grimoires legacy
-
-El sistema está listo para producción.
-
----
-
-## Firmas
-
-**Test ejecutado por:** Kimi Code CLI  
-**Fecha de ejecución:** 2026-03-11 16:17 UTC  
-**Duración total:** ~5 minutos
+1. ✅ Forzar PostgreSQL real en scripts de test (`KITSUDEN_TEST_DB=postgres`).
+2. ✅ Reescribir tests de RLS con aserciones estrictas (`toBe(false)`, `toBe(0)`).
+3. ✅ Eliminar aserciones que aceptan múltiples status (ej. `[200, 404, 500]`).
+4. ✅ Documentar estado actual en este reporte.
+5. ⚠️ Los warnings de ESLint restantes son no bloqueantes (`no-console`, `no-explicit-any`, `import/order`).

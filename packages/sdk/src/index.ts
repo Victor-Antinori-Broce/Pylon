@@ -1,34 +1,34 @@
 /**
- * @gremius/sdk — Universal SDK for GremiusCMS
+ * @kitsuden/sdk — Universal SDK for Kitsuden
  *
- * The official JavaScript/TypeScript SDK for Gremius BaaS.
+ * The official JavaScript/TypeScript SDK for Kitsuden BaaS.
  * CRUD in 3 lines of code. Edge-ready. Type-safe. TOON-enabled.
  *
  * @example
  * ```typescript
- * import { GremiusClient } from '@gremius/sdk';
+ * import { KitsudenClient } from '@kitsuden/sdk';
  *
- * const gremius = new GremiusClient({
+ * const kitsuden = new KitsudenClient({
  *   url: 'https://api.example.com',
- *   apiKey: 'grm_agent_xxx'  // Agent NHI token (recommended)
+ *   apiKey: 'kitsuden_agent_xxx'  // Agent NHI token (recommended)
  * });
  *
  * // CRUD via Explorer
- * const games = await gremius.from('games').list();
- * const game = await gremius.from('games').create({ title: 'New Game' });
- * await gremius.from('games').update(game.id, { status: 'published' });
- * await gremius.from('games').delete(game.id);
+ * const games = await kitsuden.from('games').list();
+ * const game = await kitsuden.from('games').create({ title: 'New Game' });
+ * await kitsuden.from('games').update(game.id, { status: 'published' });
+ * await kitsuden.from('games').delete(game.id);
  *
  * // Modules
- * const modules = await gremius.modules.list();
- * await gremius.modules.toggle('academy');
+ * const modules = await kitsuden.modules.list();
+ * await kitsuden.modules.toggle('academy');
  *
  * // Schema
- * const schema = await gremius.schema('games');
+ * const schema = await kitsuden.schema('games');
  *
  * // TOON (for AI agents — 60% fewer tokens)
- * const toonGremius = new GremiusClient({ url: '...', apiKey: '...', format: 'toon' });
- * const toonData = await toonGremius.from('games').list(); // Returns raw TOON string
+ * const toonKitsuden = new KitsudenClient({ url: '...', apiKey: '...', format: 'toon' });
+ * const toonData = await toonKitsuden.from('games').list(); // Returns raw TOON string
  * ```
  */
 
@@ -36,8 +36,8 @@
 // Types & Configuration
 // ═══════════════════════════════════════════════════════════════
 
-export interface GremiusClientConfig {
-  /** Base URL of your Gremius API (e.g., https://api.example.com) */
+export interface KitsudenClientConfig {
+  /** Base URL of your Kitsuden API (e.g., https://api.example.com) */
   url: string;
   /** API Key for authentication (Bearer token) */
   apiKey?: string;
@@ -173,7 +173,7 @@ class HttpClient {
   private apiKey?: string;
   private format: "json" | "toon";
 
-  constructor(config: GremiusClientConfig) {
+  constructor(config: KitsudenClientConfig) {
     this.baseUrl = config.url.replace(/\/$/, "");
     this.apiKey = config.apiKey;
     this.format = config.format || "json";
@@ -214,7 +214,7 @@ class HttpClient {
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: res.statusText }));
-      throw new GremiusError(
+      throw new KitsudenError(
         error.error || error.message || `Request failed: ${res.status}`,
         res.status
       );
@@ -256,13 +256,13 @@ class HttpClient {
 // Error Class
 // ═══════════════════════════════════════════════════════════════
 
-export class GremiusError extends Error {
+export class KitsudenError extends Error {
   constructor(
     message: string,
     public statusCode: number
   ) {
     super(message);
-    this.name = "GremiusError";
+    this.name = "KitsudenError";
   }
 }
 
@@ -279,8 +279,8 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
   /**
    * List records with pagination, sorting, and filtering.
    * @example
-   * const games = await gremius.from('games').list();
-   * const filtered = await gremius.from('games').list({ limit: 10, sort: 'title', dir: 'asc' });
+   * const games = await kitsuden.from('games').list();
+   * const filtered = await kitsuden.from('games').list({ limit: 10, sort: 'title', dir: 'asc' });
    */
   async list(options: ListOptions = {}): Promise<ListResponse<T>> {
     const params = new URLSearchParams();
@@ -301,7 +301,7 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
   /**
    * Get a single record by ID.
    * @example
-   * const game = await gremius.from('games').get('uuid-123');
+   * const game = await kitsuden.from('games').get('uuid-123');
    */
   async get(id: string): Promise<T> {
     // Explorer doesn't have a single-record GET, so we use filter
@@ -312,14 +312,14 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
       limit: 1,
     });
     const record = result.data?.[0];
-    if (!record) throw new GremiusError("Record not found", 404);
+    if (!record) throw new KitsudenError("Record not found", 404);
     return record;
   }
 
   /**
    * Create a new record.
    * @example
-   * const newGame = await gremius.from('games').create({ title: 'New Game', slug: 'new-game' });
+   * const newGame = await kitsuden.from('games').create({ title: 'New Game', slug: 'new-game' });
    */
   async create(data: Partial<T>): Promise<T> {
     return this.client.post<T>(`/explorer/${this.tableName}`, data);
@@ -328,7 +328,7 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
   /**
    * Update an existing record.
    * @example
-   * await gremius.from('games').update('uuid-123', { status: 'published' });
+   * await kitsuden.from('games').update('uuid-123', { status: 'published' });
    */
   async update(id: string, data: Partial<T>): Promise<T> {
     return this.client.patch<T>(`/explorer/${this.tableName}/${id}`, data);
@@ -337,7 +337,7 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
   /**
    * Delete a record.
    * @example
-   * await gremius.from('games').delete('uuid-123');
+   * await kitsuden.from('games').delete('uuid-123');
    */
   async delete(id: string): Promise<void> {
     await this.client.del<void>(`/explorer/${this.tableName}/${id}`);
@@ -347,7 +347,7 @@ export class TableRef<T extends Record<string, unknown> = Record<string, unknown
    * Get dropdown options for this table (id → display name pairs).
    * Useful for FK resolution.
    * @example
-   * const options = await gremius.from('platforms').options();
+   * const options = await kitsuden.from('platforms').options();
    */
   async options(): Promise<OptionItem[]> {
     const result = await this.client.get<{ options: OptionItem[] }>(
@@ -415,34 +415,38 @@ class ModulesAPI {
 // Main SDK Class
 // ═══════════════════════════════════════════════════════════════
 
-export class GremiusClient {
+export class KitsudenClient {
   private httpClient: HttpClient;
 
   /** Module management API */
   public readonly modules: ModulesAPI;
 
+  /** Engine Graphify — APIs relacionales automáticas (/api/graph) */
+  public readonly graph: GraphAPI;
+
   /**
-   * Create a new Gremius SDK client.
+   * Create a new Kitsuden SDK client.
    *
    * @example
    * // JSON mode (default)
-   * const gremius = new GremiusClient({ url: 'http://localhost:3000', apiKey: 'grm_agent_xxx' });
+   * const kitsuden = new KitsudenClient({ url: 'http://localhost:3000', apiKey: 'kitsuden_agent_xxx' });
    *
    * // TOON mode (for AI agents — 60% fewer tokens)
-   * const agent = new GremiusClient({ url: 'http://localhost:3000', apiKey: 'grm_agent_xxx', format: 'toon' });
+   * const agent = new KitsudenClient({ url: 'http://localhost:3000', apiKey: 'kitsuden_agent_xxx', format: 'toon' });
    */
-  constructor(config: GremiusClientConfig) {
+  constructor(config: KitsudenClientConfig) {
     this.httpClient = new HttpClient(config);
     this.modules = new ModulesAPI(this.httpClient);
+    this.graph = new GraphAPI(this.httpClient);
   }
 
   /**
    * Access a table for CRUD operations via the Explorer API.
-   * This is the primary way to interact with Gremius data.
+   * This is the primary way to interact with Kitsuden data.
    *
    * @example
-   * const games = await gremius.from('games').list();
-   * const newGame = await gremius.from('games').create({ title: 'Hi' });
+   * const games = await kitsuden.from('games').list();
+   * const newGame = await kitsuden.from('games').create({ title: 'Hi' });
    */
   from<T extends Record<string, unknown> = Record<string, unknown>>(table: string): TableRef<T> {
     return new TableRef<T>(table, this.httpClient);
@@ -453,18 +457,18 @@ export class GremiusClient {
    * Returns column types, editability, and relation info.
    *
    * @example
-   * const schema = await gremius.schema('games');
+   * const schema = await kitsuden.schema('games');
    * console.log(schema.columns); // [{ name: 'title', type: 'text', editable: true }, ...]
    */
   async schema(table: string): Promise<SchemaInfo> {
-    return this.httpClient.get<SchemaInfo>(`/explorer/schema/grimoires/${table}`);
+    return this.httpClient.get<SchemaInfo>(`/explorer/schema/kons/${table}`);
   }
 
   /**
    * List all available tables.
    *
    * @example
-   * const tables = await gremius.tables();
+   * const tables = await kitsuden.tables();
    */
   async tables(): Promise<Array<{ key: string; label: string; icon: string; rowCount: number }>> {
     const result = await this.httpClient.get<{ tables: any[] }>("/explorer/tables");
@@ -487,7 +491,7 @@ export class GremiusClient {
    * Health check — verify the API is reachable.
    *
    * @example
-   * const healthy = await gremius.ping();
+   * const healthy = await kitsuden.ping();
    */
   async ping(): Promise<boolean> {
     try {
@@ -500,33 +504,101 @@ export class GremiusClient {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Graph API (Engine Graphify — arquitectura KITSUDEN §3)
+// ═══════════════════════════════════════════════════════════════
+
+export interface GraphInfo {
+  tables: string[];
+  edges: Array<{ from: string; fromColumn: string; to: string; toColumn: string }>;
+}
+
+export interface GraphListOptions {
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  order?: "asc" | "desc";
+  /** Filtros de igualdad columna=valor */
+  filters?: Record<string, string>;
+}
+
+/**
+ * Engine Graphify — endpoints relacionales automáticos.
+ * Los JOINs se resuelven en el servidor según las FKs reales de PostgreSQL.
+ *
+ * @example
+ * const proyectos = await kitsuden.graph.related('usuarios', '1', 'proyectos');
+ */
+export class GraphAPI {
+  constructor(private client: HttpClient) {}
+
+  private query(options: GraphListOptions = {}): string {
+    const params = new URLSearchParams();
+    if (options.limit) params.set("limit", String(options.limit));
+    if (options.offset) params.set("offset", String(options.offset));
+    if (options.orderBy) params.set("orderBy", options.orderBy);
+    if (options.order) params.set("order", options.order);
+    for (const [k, v] of Object.entries(options.filters ?? {})) params.set(k, v);
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }
+
+  /** Grafo completo: tablas expuestas + relaciones FK */
+  async info(): Promise<GraphInfo> {
+    return this.client.get<GraphInfo>("/graph");
+  }
+
+  /** Listado paginado de una tabla */
+  async list<T = Record<string, unknown>>(
+    table: string,
+    options: GraphListOptions = {}
+  ): Promise<{ rows: T[]; limit: number; offset: number }> {
+    return this.client.get(`/graph/${table}${this.query(options)}`);
+  }
+
+  /** Registro puntual por primary key */
+  async get<T = Record<string, unknown>>(table: string, id: string): Promise<{ row: T }> {
+    return this.client.get(`/graph/${table}/${id}`);
+  }
+
+  /** Filas relacionadas — JOIN automático (N:1, 1:N y N:M) */
+  async related<T = Record<string, unknown>>(
+    table: string,
+    id: string,
+    relation: string,
+    options: GraphListOptions = {}
+  ): Promise<{ kind: string; rows: T[]; limit: number; offset: number }> {
+    return this.client.get(`/graph/${table}/${id}/${relation}${this.query(options)}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Convenience Factory
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Create a Gremius client with a simple function call.
+ * Create a Kitsuden client with a simple function call.
  *
  * @example
- * const gremius = createClient('http://localhost:3000', 'grm_agent_xxx');
- * const toon = createClient('http://localhost:3000', 'grm_agent_xxx', 'toon');
+ * const kitsuden = createClient('http://localhost:3000', 'kitsuden_agent_xxx');
+ * const toon = createClient('http://localhost:3000', 'kitsuden_agent_xxx', 'toon');
  */
 export function createClient(
   url: string,
   apiKey?: string,
   format: "json" | "toon" = "json"
-): GremiusClient {
-  return new GremiusClient({ url, apiKey, format });
+): KitsudenClient {
+  return new KitsudenClient({ url, apiKey, format });
 }
 
 // ═══════════════════════════════════════════════════════════════
 // Backward Compatibility
 // ═══════════════════════════════════════════════════════════════
 
-/** @deprecated Use GremiusClient instead */
-export const Gremius = GremiusClient;
+/** @deprecated Use KitsudenClient instead */
+export const Kitsuden = KitsudenClient;
 
 // ═══════════════════════════════════════════════════════════════
 // Default Export
 // ═══════════════════════════════════════════════════════════════
 
-export default GremiusClient;
+export default KitsudenClient;

@@ -1,12 +1,12 @@
 ═══════════════════════════════════════════════════════════════════════════════
-  GREMiusCMS — ADMIN SVELTE / HYBRID RENDERING PROGRESS LOG
+  Kitsuden — ADMIN SVELTE / HYBRID RENDERING PROGRESS LOG
   Fecha: 2026-04-26
   Versión: 0.8.0-beta
 ═══════════════════════════════════════════════════════════════════════════════
 
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 1: BACKEND — Leer admin.views de grimoire.json                        │
+│  PASO 1: BACKEND — Leer admin.views de kon.json                        │
 │  Estado: ✅ COMPLETADO                                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -15,18 +15,18 @@ Archivo modificado: apps/api/src/services/admin-registry.ts
 Cambios:
   • AdminViewConfig extendida con groupBy, dateField, titleField, icon
   • Nueva función extractViewsFromManifest() — lee admin.views como fuente primaria
-  • buildGrimoireAdminConfig() ahora usa extractViewsFromManifest() + fallback legacy
-  • buildRealmGrimoireConfig() ahora usa extractViewsFromManifest() + fallback legacy
+  • buildKonAdminConfig() ahora usa extractViewsFromManifest() + fallback legacy
+  • buildGrimoireKonConfig() ahora usa extractViewsFromManifest() + fallback legacy
   • Normalización de tipos inválidos: "list" → "grid", "dashboard" → "custom"
   • hasCustomView ahora es inteligente: true solo si hay vistas type:"custom"
     declaradas, o si estamos en fallback legacy y detectamos archivo .svelte
-  • defaultView respeta grimoire.json admin.defaultView
+  • defaultView respeta kon.json admin.defaultView
   • detectCustomView() simplificada drásticamente — usa getViewPath() para evitar
     falsos positivos de archivos compartidos (PostsView.svelte, Media.svelte, etc.)
 
 Impacto:
-  • Backend ya no fuerza monolitos para grimoires que declaran admin.views
-  • Grimoires sin admin.views siguen funcionando con fallback legacy
+  • Backend ya no fuerza monolitos para kons que declaran admin.views
+  • Kons sin admin.views siguen funcionando con fallback legacy
   • Esports ya no reporta hasCustomView:true incorrectamente
 
 
@@ -35,51 +35,51 @@ Impacto:
 │  Estado: ✅ COMPLETADO                                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-Archivo modificado: packages/admin/src/lib/grimoire-loader.ts
+Archivo modificado: packages/admin/src/lib/kon-loader.ts
 
-Eliminados del GRIMOIRE_VIEW_REGISTRY:
-  • crm, grimoire-crm, gremius-crm (monolitos)
-  • conta, grimoire-conta (monolitos)
-  • agile, grimoire-agile (monolitos)
+Eliminados del KON_VIEW_REGISTRY:
+  • crm, kon-crm, kitsuden-crm (monolitos)
+  • conta, kon-conta (monolitos)
+  • agile, kon-agile (monolitos)
 
-Agregados al GRIMOIRE_VIEW_REGISTRY (vistas custom por ID):
-  • "grimoire-blog-posts" → PostsView.svelte
-  • "grimoire-blocks-pages" → BlocksView.svelte
-  • "grimoire-dms-dashboard" → DMSView.svelte
-  • "grimoire-academy-lms-dashboard" → AcademyView.svelte
-  • "grimoire-games-collections" → GamesView.svelte
+Agregados al KON_VIEW_REGISTRY (vistas custom por ID):
+  • "kon-blog-posts" → PostsView.svelte
+  • "kon-blocks-pages" → BlocksView.svelte
+  • "kon-dms-dashboard" → DMSView.svelte
+  • "kon-academy-lms-dashboard" → AcademyView.svelte
+  • "kon-games-collections" → GamesView.svelte
 
 Vistas custom preexistentes mantenidas:
-  • grimoire-crm-dashboard → CrmDashboard.svelte
-  • grimoire-crm-deal-form → DealForm.svelte
-  • grimoire-conta-journal-form → JournalForm.svelte
-  • grimoire-conta-reports → ReportsView.svelte
-  • grimoire-conta-disbursement-form → DisbursementForm.svelte
-  • grimoire-conta-template-form → TemplateForm.svelte
+  • kon-crm-dashboard → CrmDashboard.svelte
+  • kon-crm-deal-form → DealForm.svelte
+  • kon-conta-journal-form → JournalForm.svelte
+  • kon-conta-reports → ReportsView.svelte
+  • kon-conta-disbursement-form → DisbursementForm.svelte
+  • kon-conta-template-form → TemplateForm.svelte
 
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PASO 1c: GRIMOIRE.JSON — Correcciones de desalineación                     │
+│  PASO 1c: KON.JSON — Correcciones de desalineación                     │
 │  Estado: ✅ COMPLETADO                                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-grimoire-games/grimoire.json:
+kon-games/kon.json:
   • Agregada vista "collections" (type:"custom", icon:"Library")
 
-grimoire-conta/grimoire.json:
+kon-conta/kon.json:
   • Agregadas 4 vistas custom:
     - journal-form (Nuevo Asiento)
     - reports (Reportes)
     - disbursement-form (Gastos Reembolsables)
     - template-form (Nueva Plantilla)
 
-grimoire-datasets/grimoire.json:
+kon-datasets/kon.json:
   • Eliminado defaultView:"list" inválido (no tenía admin.views)
 
-grimoire-crm/grimoire.json:
+kon-crm/kon.json:
   • deals: agregado groupBy:"status", renombrado título "Deal Pipeline" → "Deals"
 
-grimoire-agile/grimoire.json:
+kon-agile/kon.json:
   • Eliminadas vistas board(kanban) y list(inválido)
   • Agregada vista issues(grid)
   • defaultView cambiado "board" → "projects"
@@ -101,7 +101,7 @@ Cobertura:
   • Agile: projects, issues, cycles, modules, intakes, comments
 
 Nota: Los strings sueltos tipo api.get("/agile/projects") fueron reemplazados
-por métodos tipados en todos los grimoires.
+por métodos tipados en todos los kons.
 
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -124,7 +124,7 @@ Cleanup realizado:
 
 Pendiente menor:
   • Mover tipos inline de Settings.svelte (Agent, AgentKey, AuditLog, DataSource)
-    a @gremius/shared
+    a @kitsuden/shared
 
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -132,22 +132,22 @@ Pendiente menor:
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────┬────────┬───────┬──────────────────────────────────────┐
-│ Grimoire            │ Custom │ Views │ Renderizado                          │
+│ Kon            │ Custom │ Views │ Renderizado                          │
 ├─────────────────────┼────────┼───────┼──────────────────────────────────────┤
-│ grimoire-academy-lms│ YES    │ 11    │ Hybrid — dashboard(custom) + grids   │
-│ grimoire-agile      │ no     │ 5     │ DataExplorer puro — 5 grids          │
-│ grimoire-blocks     │ YES    │ 2     │ Hybrid — pages(custom) + templates   │
-│ grimoire-blog       │ YES    │ 3     │ Hybrid — posts(custom) + grids       │
-│ grimoire-booking    │ no     │ 3     │ DataExplorer puro — 3 grids          │
-│ grimoire-conta      │ YES    │ 9     │ Hybrid — 5 grids + 4 custom forms    │
-│ grimoire-crm        │ no     │ 4     │ DataExplorer puro — 3 grids + kanban │
-│ grimoire-datasets   │ YES    │ 0     │ Legacy — DataSets.svelte             │
-│ grimoire-directory  │ no     │ 4     │ DataExplorer puro — 4 grids          │
-│ grimoire-dms        │ YES    │ 5     │ Hybrid — dashboard(custom) + grids   │
-│ grimoire-esports    │ no     │ 0     │ Auto-generated grids                 │
-│ grimoire-games      │ YES    │ 3     │ Hybrid — 2 DataExplorer + collections│
-│ grimoire-media      │ YES    │ 0     │ Legacy — Media.svelte                │
-│ grimoire-streamers  │ YES    │ 0     │ Legacy — StreamersView.svelte        │
+│ kon-academy-lms│ YES    │ 11    │ Hybrid — dashboard(custom) + grids   │
+│ kon-agile      │ no     │ 5     │ DataExplorer puro — 5 grids          │
+│ kon-blocks     │ YES    │ 2     │ Hybrid — pages(custom) + templates   │
+│ kon-blog       │ YES    │ 3     │ Hybrid — posts(custom) + grids       │
+│ kon-booking    │ no     │ 3     │ DataExplorer puro — 3 grids          │
+│ kon-conta      │ YES    │ 9     │ Hybrid — 5 grids + 4 custom forms    │
+│ kon-crm        │ no     │ 4     │ DataExplorer puro — 3 grids + kanban │
+│ kon-datasets   │ YES    │ 0     │ Legacy — DataSets.svelte             │
+│ kon-directory  │ no     │ 4     │ DataExplorer puro — 4 grids          │
+│ kon-dms        │ YES    │ 5     │ Hybrid — dashboard(custom) + grids   │
+│ kon-esports    │ no     │ 0     │ Auto-generated grids                 │
+│ kon-games      │ YES    │ 3     │ Hybrid — 2 DataExplorer + collections│
+│ kon-media      │ YES    │ 0     │ Legacy — Media.svelte                │
+│ kon-streamers  │ YES    │ 0     │ Legacy — StreamersView.svelte        │
 └─────────────────────┴────────┴───────┴──────────────────────────────────────┘
 
 Métricas actuales:
@@ -170,7 +170,7 @@ PASO 4: DataExplorer enhancements
 
 PASO 5: Testing
   • Cobertura actual ~15%, meta 60%
-  • Tests críticos: Auth, RLS, Datasets, Grimoires, MCP
+  • Tests críticos: Auth, RLS, Datasets, Kons, MCP
   • Tests E2E: Login → Crear dataset → Agregar entrada
   Estado: ❌ EN PROGRESO MUY TEMPRANO
 
@@ -210,7 +210,7 @@ Filosofía aplicada: "Django Admin pero más dinámico"
   • CRM: Puro DataExplorer. Kanban básico con groupBy:"status" (suficiente
     para operar). NO dashboards, NO timelines (eso es producto).
   • Agile: Puro DataExplorer en grids. Board kanban eliminado del admin
-    (es app de producto, debe ir al realm).
+    (es app de producto, debe ir al grimoire).
   • Conta: Hybrid. Grids para listados + custom forms para lógica de negocio
     (partida doble, reportes) que el DataExplorer no puede expresar.
 
@@ -223,18 +223,18 @@ Backend:
   apps/api/src/services/admin-registry.ts
 
 Frontend:
-  packages/admin/src/lib/grimoire-loader.ts
+  packages/admin/src/lib/kon-loader.ts
   packages/admin/src/lib/services/crm.ts
   packages/admin/src/lib/services/conta.ts
   packages/admin/src/lib/services/agile.ts
   packages/admin/src/views/Settings.svelte
 
-Grimoire manifests:
-  packages/grimoires/grimoire-crm/grimoire.json
-  packages/grimoires/grimoire-agile/grimoire.json
-  packages/grimoires/grimoire-conta/grimoire.json
-  packages/grimoires/grimoire-games/grimoire.json
-  packages/grimoires/grimoire-datasets/grimoire.json
+Kon manifests:
+  packages/kons/kon-crm/kon.json
+  packages/kons/kon-agile/kon.json
+  packages/kons/kon-conta/kon.json
+  packages/kons/kon-games/kon.json
+  packages/kons/kon-datasets/kon.json
 
 
 ═══════════════════════════════════════════════════════════════════════════════

@@ -1,32 +1,64 @@
 #!/bin/sh
 # ===================================================================
-# GremiusCMS Start Script with Auto-Setup
+# Kitsuden Start Script with Auto-Setup
 #
 # Estrategia de Migraciones:
 #   1. Migraciones Drizzle (core schema)
-#   2. Cada grimoire maneja sus propias tablas via SQL
+#   2. Cada kon maneja sus propias tablas via SQL
 # ===================================================================
 
 set -e
 
-DB_URL="${DATABASE_URL:-postgresql://gremius:gremiuspassword@gremius_db_prod:5432/gremius_prod}"
+# Dos conexiones, y la distincion es de seguridad, no de estilo:
+#
+#   DATABASE_ADMIN_URL  administrar: crear la base, instalar pgvector, migrar,
+#                       crear el rol de aplicacion. Necesita superusuario.
+#   DATABASE_URL        servir: lo que usa la API en caliente. Rol NORMAL.
+#
+# Postgres IGNORA las politicas RLS para un superusuario. Con una sola URL de
+# superusuario para todo, el aislamiento entre tenants no se aplicaba: las
+# politicas existian y eran decorativas. Esa es exactamente la clase de fallo
+# que no da error — funciona igual, solo que sin aislar nada.
+#
+# Si no se define DATABASE_ADMIN_URL se usa DATABASE_URL para ambas cosas, que
+# es el comportamiento antiguo. Sigue arrancando, pero el paso [4/6] avisa.
+DB_URL="${DATABASE_URL}"
+if [ -z "$DB_URL" ]; then
+    echo "ERROR: DATABASE_URL is not set. Configure it in your .env file."
+    exit 1
+fi
+DB_ADMIN_URL="${DATABASE_ADMIN_URL:-$DATABASE_URL}"
 API_URL="${BETTER_AUTH_URL:-http://localhost:3000}"
 
 echo "==================================================================="
-echo "  GremiusCMS Auto-Setup"
+echo "  Kitsuden Auto-Setup"
 echo "==================================================================="
 
-# Parse DATABASE_URL
-DB_HOST=$(echo "$DB_URL" | sed -n 's|.*@\([^:/]*\).*|\1|p')
-DB_PORT=$(echo "$DB_URL" | sed -n 's|.*@[^:]*:\([0-9]*\)/.*|\1|p')
-DB_NAME=$(echo "$DB_URL" | sed -n 's|.*/\([^?]*\)$|\1|p')
-DB_USER=$(echo "$DB_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
-DB_PASS=$(echo "$DB_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+# [0/6] Configuracion publica — ANTES de tocar la base.
+#
+# Una instalacion marcada como publica (overlay TLS, KITSUDEN_PUBLIC=true) no
+# arranca si alguna URL sigue en localhost, si el correo iria a la consola o si
+# el secreto de sesion es corto. Ninguna de las tres da error al arrancar:
+# fallan despues, delante de un usuario. Por eso se comprueban aqui.
+echo ""
+echo "[0/6] Checking public configuration..."
+if ! bun run /app/apps/api/scripts/verify-public-config.ts; then
+    echo ""
+    echo "   ABORTADO: la configuracion publica no esta lista (ver arriba)."
+    exit 1
+fi
+
+# Se parsea la URL de ADMIN: es la que usan los pasos 1-4.
+DB_HOST=$(echo "$DB_ADMIN_URL" | sed -n 's|.*@\([^:/]*\).*|\1|p')
+DB_PORT=$(echo "$DB_ADMIN_URL" | sed -n 's|.*@[^:]*:\([0-9]*\)/.*|\1|p')
+DB_NAME=$(echo "$DB_ADMIN_URL" | sed -n 's|.*/\([^?]*\)$|\1|p')
+DB_USER=$(echo "$DB_ADMIN_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+DB_PASS=$(echo "$DB_ADMIN_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
 
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-gremius_prod}"
-DB_USER="${DB_USER:-gremius}"
+DB_NAME="${DB_NAME:-kitsuden_prod}"
+DB_USER="${DB_USER:-kitsuden}"
 
 ADMIN_DB_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/postgres"
 
@@ -50,6 +82,46 @@ done
 
 echo "   OK - PostgreSQL ready"
 
+# `pg_isready` solo confirma que el servidor CONTESTA. No comprueba que podamos
+# autenticarnos, y ese es justo el fallo que se cuela hasta el paso [4/6] y
+# aparece disfrazado de "Failed query: CREATE TABLE kitsuden_migrations".
+#
+# La causa casi siempre es la misma y no la dice ningun mensaje de Postgres:
+# la imagen oficial ejecuta `initdb` —y crea POSTGRES_USER— UNA sola vez, cuando
+# el volumen esta vacio. Si despues cambias POSTGRES_USER o POSTGRES_PASSWORD en
+# el .env, el volumen conserva el usuario viejo, el nuevo no existe, y lo unico
+# que ves es `password authentication failed for user "..."`.
+if ! psql "$DB_ADMIN_URL" -c "SELECT 1" >/dev/null 2>&1; then
+    echo ""
+    echo "ERROR: PostgreSQL responde, pero no acepta al usuario '$DB_USER'."
+    echo ""
+    echo "  La imagen de Postgres crea POSTGRES_USER solo al inicializar un"
+    echo "  volumen VACIO. Si cambiaste POSTGRES_USER o POSTGRES_PASSWORD"
+    echo "  despues de la primera vez, el volumen sigue con el usuario anterior"
+    echo "  y el nuevo no existe."
+    echo ""
+    echo "  Opciones, de menos a mas destructiva:"
+    echo ""
+    echo "    1. Devuelve POSTGRES_USER/POSTGRES_PASSWORD a los valores con los"
+    echo "       que se creo el volumen."
+    echo ""
+    echo "    2. Crea el usuario nuevo en la base que ya existe, conectandote"
+    echo "       con el antiguo:"
+    echo "         docker exec -u postgres kitsuden_db_prod psql -d $DB_NAME -U <usuario-antiguo> \\"
+    echo "           -c \"CREATE ROLE $DB_USER LOGIN SUPERUSER PASSWORD '<contrasena>';\""
+    echo ""
+    echo "    3. Empieza de cero. BORRA TODOS LOS DATOS:"
+    echo "         docker compose down -v"
+    echo ""
+    echo "  Para ver que usuarios existen ahora mismo:"
+    echo "    docker exec -u postgres kitsuden_db_prod psql -d $DB_NAME -U <usuario-antiguo> \\"
+    echo "      -c \"SELECT rolname, rolsuper FROM pg_roles WHERE rolcanlogin\""
+    echo ""
+    exit 1
+fi
+
+echo "   OK - autenticacion correcta ($DB_USER)"
+
 # Auto-create database
 echo ""
 echo "[2/6] Checking database '$DB_NAME'..."
@@ -67,69 +139,170 @@ fi
 echo ""
 echo "[3/6] Checking pgvector..."
 
-PGVECTOR_CHECK=$(psql "$DB_URL" -t -A -c "SELECT 1 FROM pg_extension WHERE extname = 'vector'" 2>/dev/null || echo "")
+PGVECTOR_CHECK=$(psql "$DB_ADMIN_URL" -t -A -c "SELECT 1 FROM pg_extension WHERE extname = 'vector'" 2>/dev/null || echo "")
 
 if [ "$PGVECTOR_CHECK" = "1" ]; then
     echo "   OK - pgvector installed"
 else
     echo "   Installing pgvector..."
-    psql "$DB_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;" 2>&1 || echo "   WARN: Could not install pgvector"
+    psql "$DB_ADMIN_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;" 2>&1 || echo "   WARN: Could not install pgvector"
 fi
 
 # Database Migrations - SOLO CORE
 echo ""
 cd /app/apps/api
-echo "[4/6] Running core migrations..."
+echo "[4/6] Running core migrations + RLS..."
 
-# Solo aplicar migraciones existentes, NO push
-# Los grimoires opcionales manejan sus tablas via SQL
-bunx drizzle-kit migrate 2>&1 || echo "   INFO: No pending migrations"
+# Antes esto era `bunx drizzle-kit migrate || echo "No pending migrations"`, y
+# tenía DOS fallos graves:
+#
+#   1. drizzle-kit solo conoce las 2 migraciones de drizzle/. Las otras 29 de
+#      src/db/migrations/ no las aplicaba nadie — el esquema se mantenía a mano.
+#   2. El `|| echo` se tragaba el error. Una migración que reventaba imprimía
+#      "No pending migrations" y la API arrancaba igual, con el esquema a medias.
+#      Un fallo de migración tiene que PARAR el despliegue, no maquillarse.
+#
+# El runner aplica la cadena completa y, a continuación, las políticas RLS —
+# que también dependían de que alguien se acordara de ejecutar un script.
+#
+# Sin `||`: `set -e` está activo arriba, así que si esto falla el contenedor
+# no arranca. Es lo que queremos.
+# DATABASE_URL se sobreescribe SOLO para este comando: migrar es DDL y necesita
+# el superusuario. La API, mas abajo, arranca con la de servir.
+DATABASE_URL="$DB_ADMIN_URL" bun run scripts/migrate.ts
 
-echo "   Core migrations complete"
+echo "   Migrations + RLS complete"
 
-# Auto-Install Grimoires
+# Comprobar que lo que el codigo DECLARA existe de verdad en la base.
+#
+# Migrar sin errores no garantiza que el esquema este completo: una tabla puede
+# estar declarada en `schema-core.ts` y no tener migracion que la cree. Paso con
+# `auth_accounts`, y el sintoma fue que en una instalacion NUEVA era imposible
+# crear el primer administrador — 500 en «System Init» y, en el log,
+# `relation "auth_accounts" does not exist`. Peor: better-auth guarda el usuario
+# en `auth_users` y la credencial en `auth_accounts`, asi que se creaba el
+# usuario SIN contrasena y reintentar ya no arreglaba nada.
+#
+# Nadie lo vio en meses porque las instalaciones existentes ya tenian esas
+# tablas. Solo aparece en un servidor recien montado: justo el peor momento.
+#
+# Corre con la URL de ADMIN porque consulta el catalogo del sistema. Si falta
+# algo, `set -e` detiene el arranque: un despliegue que no arranca se arregla;
+# uno que arranca a medias se descubre cuando alguien no puede entrar.
 echo ""
-echo "[5/6] Installing grimoires..."
+echo "   Verificando esquema..."
+DATABASE_URL="$DB_ADMIN_URL" bun run scripts/verificar-esquema.ts
 
-bun run - << 'GRIMOIRE_SCRIPT'
+# ── Rol de aplicacion ──────────────────────────────────────────────────────
+#
+# Se crea DESPUES de migrar, porque los GRANT necesitan que las tablas existan.
+# Idempotente: se puede reejecutar en cada arranque sin efecto.
+#
+# `ALTER DEFAULT PRIVILEGES` es la parte que se olvida y luego duele: sin ella,
+# cada tabla nueva que cree una migracion futura nace sin permisos para el rol
+# de aplicacion, y la API empieza a dar "permission denied" en produccion por
+# una tabla que en desarrollo funcionaba.
+APP_USER=$(echo "$DB_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+APP_PASS=$(echo "$DB_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+
+if [ "$DB_ADMIN_URL" = "$DB_URL" ]; then
+    echo ""
+    echo "   AVISO: DATABASE_ADMIN_URL no esta definida, asi que la API correra"
+    echo "   con la MISMA cuenta que migra. Si es superusuario, Postgres ignora"
+    echo "   las politicas RLS y el aislamiento entre tenants NO se aplica."
+elif [ -n "$APP_USER" ] && [ -n "$APP_PASS" ]; then
+    echo ""
+    echo "   Rol de aplicacion: $APP_USER (sin superusuario)"
+    psql "$DB_ADMIN_URL" -v ON_ERROR_STOP=1 <<SQL
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${APP_USER}') THEN
+    CREATE ROLE "${APP_USER}" LOGIN PASSWORD '${APP_PASS}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+  ELSE
+    ALTER ROLE "${APP_USER}" WITH LOGIN PASSWORD '${APP_PASS}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+  END IF;
+END
+\$\$;
+
+GRANT CONNECT ON DATABASE "${DB_NAME}" TO "${APP_USER}";
+GRANT USAGE ON SCHEMA public TO "${APP_USER}";
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "${APP_USER}";
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "${APP_USER}";
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${APP_USER}";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO "${APP_USER}";
+SQL
+    echo "   Permisos concedidos (incluidas tablas futuras)"
+fi
+
+# ── El aislamiento se PRUEBA, no se declara ────────────────────────────────
+#
+# Hasta aqui todo lo que se ha comprobado son DECLARACIONES: que el rol existe,
+# que no es superusuario, que las politicas se crearon. Ninguna de esas cosas
+# demuestra que un usuario no vea las filas de otro.
+#
+# Y las cuatro formas de romper el aislamiento no dan error, dan datos: un rol
+# que resulta superusuario, un BYPASSRLS concedido para depurar y no retirado,
+# una tabla nueva con ENABLE pero sin FORCE, o una politica que siempre da
+# verdadero. El sistema sigue funcionando igual de bien, enseniando datos ajenos.
+#
+# Asi que se comprueba contra la base real, con el rol real, en el despliegue:
+# con el contexto fijado a un usuario que no existe, una tabla aislada tiene que
+# devolver CERO filas. Si alguna devuelve mas, el arranque para aqui.
+echo ""
+echo "[4.5/6] Verifying RLS isolation..."
+if ! bun run scripts/verify-rls.ts; then
+    echo ""
+    echo "   ABORTADO: el aislamiento entre usuarios no se esta aplicando."
+    echo "   Arrancar aqui serviria datos de unos usuarios a otros."
+    exit 1
+fi
+
+# Auto-Install Kons
+echo ""
+echo "[5/6] Installing kons..."
+
+bun run - << 'KON_SCRIPT'
 import { db } from "./src/db";
-import { installedGrimoires } from "./src/db/schema";
+import { installedKons } from "./src/db/schema";
 import { eq } from "drizzle-orm";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { readdir } from "fs/promises";
 
-const GRIMOIRE_CONFIG_PATH = "./gremius.config.ts";
+const KON_CONFIG_PATH = "./kitsuden.config.ts";
 
-async function scanLocalGrimoires() {
-  const grimoiresDir = "/app/packages/grimoires";
+async function scanLocalKons() {
+  const konsDir = "/app/packages/kons";
   const found = [];
 
   try {
-    const entries = await readdir(grimoiresDir, { withFileTypes: true });
+    const entries = await readdir(konsDir, { withFileTypes: true });
 
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
 
-      const grimoireJsonPath = join(grimoiresDir, entry.name, "grimoire.json");
-      const gremiusJsonPath = join(grimoiresDir, entry.name, "gremius.json");
+      const konJsonPath = join(konsDir, entry.name, "kon.json");
+      const kitsudenJsonPath = join(konsDir, entry.name, "kitsuden.json");
 
       let manifest = null;
 
-      if (existsSync(grimoireJsonPath)) {
-        manifest = JSON.parse(readFileSync(grimoireJsonPath, "utf-8"));
-      } else if (existsSync(gremiusJsonPath)) {
-        manifest = JSON.parse(readFileSync(gremiusJsonPath, "utf-8"));
+      if (existsSync(konJsonPath)) {
+        manifest = JSON.parse(readFileSync(konJsonPath, "utf-8"));
+      } else if (existsSync(kitsudenJsonPath)) {
+        manifest = JSON.parse(readFileSync(kitsudenJsonPath, "utf-8"));
       }
 
       if (manifest && manifest.id) {
         found.push({
-          grimoireId: manifest.id,
+          konId: manifest.id,
           name: manifest.name || manifest.id,
           description: manifest.description,
           version: manifest.version || "1.0.0",
           source: "local",
-          path: join(grimoiresDir, entry.name),
+          path: join(konsDir, entry.name),
           manifest,
           enabled: true,
         });
@@ -142,62 +315,78 @@ async function scanLocalGrimoires() {
   return found;
 }
 
-async function getConfigGrimoires() {
+async function getConfigKons() {
   try {
-    if (!existsSync(GRIMOIRE_CONFIG_PATH)) return [];
+    if (!existsSync(KON_CONFIG_PATH)) return [];
 
     // Import the static config directly instead of regex-parsing TS
-    const configModule = await import(GRIMOIRE_CONFIG_PATH);
+    const configModule = await import(KON_CONFIG_PATH);
     const staticConfig = configModule.staticConfig || configModule.default || configModule;
-    return staticConfig.grimoires || staticConfig.modules || [];
+    return staticConfig.kons || staticConfig.modules || [];
   } catch (err) {
-    console.log("   WARN: Could not import gremius.config.ts:", err.message);
+    console.log("   WARN: Could not import kitsuden.config.ts:", err.message);
     return [];
   }
 }
 
 async function main() {
-  const [localGrimoires, configIds] = await Promise.all([
-    scanLocalGrimoires(),
-    getConfigGrimoires(),
+  const [localKons, configIds] = await Promise.all([
+    scanLocalKons(),
+    getConfigKons(),
   ]);
 
   const toInstall = configIds.length > 0
-    ? localGrimoires.filter(g => configIds.includes(g.grimoireId))
-    : localGrimoires;
+    ? localKons.filter(g => configIds.includes(g.konId))
+    : localKons;
 
-  console.log("   Found " + localGrimoires.length + " grimoires (" + toInstall.length + " active)");
+  console.log("   Found " + localKons.length + " kons (" + toInstall.length + " active)");
 
-  const installed = await db.select().from(installedGrimoires);
-  const installedIds = new Set(installed.map(i => i.grimoireId));
+  const installed = await db.select().from(installedKons);
+  const installedIds = new Set(installed.map(i => i.konId));
 
-  for (const grimoire of toInstall) {
-    if (installedIds.has(grimoire.grimoireId)) {
-      console.log("   ✓ " + grimoire.grimoireId + " already registered");
+  for (const kon of toInstall) {
+    if (installedIds.has(kon.konId)) {
+      console.log("   ✓ " + kon.konId + " already registered");
       continue;
     }
 
     try {
-      await db.insert(installedGrimoires).values({
-        grimoireId: grimoire.grimoireId,
-        name: grimoire.name,
-        description: grimoire.description,
-        version: grimoire.version,
-        source: grimoire.source,
-        sourceUrl: grimoire.sourceUrl,
-        path: grimoire.path,
-        manifest: grimoire.manifest,
-        enabled: grimoire.enabled,
+      await db.insert(installedKons).values({
+        konId: kon.konId,
+        name: kon.name,
+        description: kon.description,
+        version: kon.version,
+        source: kon.source,
+        sourceUrl: kon.sourceUrl,
+        path: kon.path,
+        manifest: kon.manifest,
+        enabled: kon.enabled,
       });
-      console.log("   + " + grimoire.grimoireId + " registered");
+      console.log("   + " + kon.konId + " registered");
     } catch (err) {
-      console.log("   ✗ " + grimoire.grimoireId + ": " + err.message);
+      console.log("   ✗ " + kon.konId + ": " + err.message);
     }
   }
 }
 
-main().catch(() => process.exit(0));
-GRIMOIRE_SCRIPT
+// Salir SIEMPRE, no solo cuando hay error.
+//
+// Esto era `main().catch(() => process.exit(0))`, que solo termina por el
+// camino malo. Por el bueno, `main()` acababa su trabajo —registraba los kons
+// e imprimia cada linea— y el proceso NO salia: `db` deja abierto un pool de
+// Postgres, y mientras quede un handle vivo el runtime no termina.
+//
+// El efecto era que el arranque se paraba aqui para siempre: el paso [6/6]
+// nunca llegaba a ejecutar `bun run dist/index.js`, nada escuchaba en el 3000,
+// y `docker compose up` acababa diciendo solo que el contenedor estaba
+// 'unhealthy' — sin una sola linea de error, porque error no habia.
+//
+// El codigo de salida sigue siendo 0 tambien cuando falla, a proposito: que no
+// se pueda registrar un kon no debe impedir que la API arranque.
+main()
+  .catch((err) => console.log('   WARN: ' + err.message))
+  .finally(() => process.exit(0));
+KON_SCRIPT
 
 echo ""
 echo "==================================================================="

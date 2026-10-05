@@ -1,7 +1,7 @@
 # 🎯 ANÁLISIS: ¿Qué le falta al backend para ser un CMS excelente?
 
 > **Fecha:** 2026-04-26  
-> **Versión:** GremiusCMS v0.8.0-beta
+> **Versión:** Kitsuden v0.8.0-beta
 
 ---
 
@@ -27,7 +27,7 @@
 | **Datasets/Entries**  | ✅     | Core del BaaS                           |
 | **Auto-Join API**     | ✅     | `?expand` para relaciones               |
 | **Batch API**         | ✅     | Transaccional ACID                      |
-| **Query Language**    | ✅     | Gremius QL (JSON-based)                 |
+| **Query Language**    | ✅     | Kitsuden QL (JSON-based)                |
 | **Calculated Fields** | ✅     | Fórmulas dinámicas                      |
 | **Validation**        | ✅     | Zod schemas                             |
 | **Import/Export**     | ✅     | JSON/CSV/JSONL                          |
@@ -47,7 +47,7 @@
 | **Content Publishing**     | ✅     | Promote to Content           |
 | **Real-time**              | ✅     | WebSockets + Valkey Pub/Sub  |
 | **GraphQL**                | ✅     | Con GraphiQL playground      |
-| **Grimoires System**       | ✅     | 16+ grimoires                |
+| **Kons System**            | ✅     | 16+ kons                     |
 | **Admin Hybrid Rendering** | ✅     | DataExplorer + Custom views  |
 
 ### AI/Automation (Muy avanzado)
@@ -89,7 +89,7 @@ Fase 1: Tests críticos (1 semana)
 
 Fase 2: Tests de integración (2 semanas)
   - Flujo completo: crear dataset → agregar entry → publicar
-  - Grimoires lifecycle
+  - Kons lifecycle
   - MCP tools/resources
 
 Fase 3: Tests E2E (1 semana)
@@ -269,7 +269,7 @@ DRAFT → REVIEW → APPROVED → PUBLISHED
 1. ✅ **Headless CMS / BaaS** — Mejor que Strapi/Directus en muchos aspectos
 2. ✅ **Data-Intensive Apps** — El Query Language + Datasets es excelente
 3. ✅ **AI-Native Apps** — MCP + Agents es vanguardia
-4. ✅ **Gaming/Esports** — Realm system es único
+4. ✅ **Gaming/Esports** — Grimoire system es único
 
 ### Para ser un CMS "Enterprise-Grade" necesitas:
 
@@ -292,4 +292,4 @@ Con tests + backups: 9.5/10 🚀
 
 ---
 
-**Conclusión: El backend está muy avanzado y el refactor del admin se completó exitosamente. Los puntos realmente críticos son tests y backups. El resto es "nice to have" para escalar.**
+**Conclusión: El backend está muy avanzado y el refactor del admin se completó exitosamente. Los puntos grimoireente críticos son tests y backups. El resto es "nice to have" para escalar.**

@@ -4,6 +4,18 @@
 -- Created: 2026-03-19
 
 -- ============================================================================
+-- EXTENSIONES
+-- ============================================================================
+-- La tabla de abajo declara `embedding VECTOR(1536)`, pero `CREATE EXTENSION
+-- vector` vivía en la 0022 — es decir, DESPUÉS de su primer uso. Sobre una
+-- base creada desde cero la cadena moría aquí con `type "vector" does not
+-- exist`, y no se detectó nunca porque nadie la ejecutaba entera.
+--
+-- Se crea aquí, en la primera migración que la necesita: una migración no
+-- puede depender de otra posterior.
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- ============================================================================
 -- AGENT MEMORY TABLE
 -- ============================================================================
 
@@ -101,9 +113,17 @@ ON agent_memory(agent_id, key)
 WHERE key IS NOT NULL;
 
 -- Búsqueda temporal (memorias activas/válidas)
-CREATE INDEX idx_agent_memory_valid 
-ON agent_memory(valid_from, valid_until) 
-WHERE valid_until IS NULL OR valid_until > NOW();
+--
+-- El predicado era `WHERE valid_until IS NULL OR valid_until > NOW()`, y
+-- Postgres lo rechaza: `functions in index predicate must be marked IMMUTABLE`.
+-- No es una pega formal — un índice parcial se evalúa AL INSERTAR, así que
+-- `> NOW()` congelaría el instante de la escritura y el índice iría dejando
+-- fuera filas que siguen vigentes, en silencio.
+--
+-- El índice cubre las dos columnas; el filtro temporal lo pone la consulta,
+-- que es donde `NOW()` significa algo.
+CREATE INDEX IF NOT EXISTS idx_agent_memory_valid
+ON agent_memory(valid_from, valid_until);
 
 -- Índice GIN para búsquedas en contenido JSONB
 CREATE INDEX idx_agent_memory_content_gin 

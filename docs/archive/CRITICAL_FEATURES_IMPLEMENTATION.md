@@ -135,7 +135,7 @@ GET /api/admin/realtime  → WebSocket stats (auth)
 
 ```json
 {
-  "message": "GremiusCMS API",
+  "message": "Kitsuden API",
   "version": "0.5.0",
   "status": "healthy",
   "stats": {

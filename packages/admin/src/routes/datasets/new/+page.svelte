@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { DatasetDefinition } from "@gremius/shared";
+  import type { DatasetDefinition } from "@kitsuden/shared";
   import { ArrowLeft } from "lucide-svelte";
 
   import SchemaBuilder from "$lib/components/datasets/SchemaBuilder.svelte";
@@ -43,14 +43,14 @@
 <div class="space-y-6 animate-fade-in pb-20">
   <div class="flex items-center gap-4">
     <button
-      class="btn-icon p-2 hover:bg-gremius-surface rounded-lg transition-colors text-gremius-subtle"
+      class="btn-icon p-2 hover:bg-kitsuden-surface rounded-lg transition-colors text-kitsuden-subtle"
       onclick={handleCancel}
     >
       <ArrowLeft class="w-5 h-5" />
     </button>
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text">Create Dataset</h1>
-      <p class="text-sm text-gremius-text-dim mt-1">
+      <h1 class="text-2xl font-bold text-kitsuden-text">Create Dataset</h1>
+      <p class="text-sm text-kitsuden-text-dim mt-1">
         Define the schema and fields for your new data collection API.
       </p>
     </div>
@@ -62,7 +62,7 @@
     </div>
   {/if}
 
-  <div class="card p-6 border-gremius-cyan/20">
+  <div class="card p-6 border-kitsuden-accent/20">
     <SchemaBuilder definition={initialDatasetData} onSave={handleSave} onCancel={handleCancel} />
   </div>
 </div>

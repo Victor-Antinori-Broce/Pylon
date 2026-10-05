@@ -1,14 +1,14 @@
 /**
- * GremiusCMS - Core Database Schema (Domain-Agnostic)
+ * Kitsuden - Core Database Schema (Domain-Agnostic)
  *
  * Infrastructure tables only. No gaming/blog/streamer domain tables.
- * Domain tables live in their respective grimoires:
- *   - grimoire-games: games, platforms, tags, collections
- *   - grimoire-blog: blog_posts
- *   - grimoire-streamers: streamers
+ * Domain tables live in their respective kons:
+ *   - kon-games: games, platforms, tags, collections
+ *   - kon-blog: blog_posts
+ *   - kon-streamers: streamers
  *
  * This schema is the base for schema-merger.ts which combines it
- * with active grimoire schemas at runtime.
+ * with active kon schemas at runtime.
  */
 
 import { relations } from "drizzle-orm";
@@ -26,13 +26,14 @@ import {
   uniqueIndex,
   index,
   pgEnum,
+  customType,
 } from "drizzle-orm/pg-core";
 
 // ─── Block Type (shared with admin + web) ─────────────────────
 export interface PageBlock {
   id: string;
   type: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   order: number;
 }
 
@@ -107,7 +108,7 @@ export const apiKeys = pgTable("api_keys", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 200 }).notNull(),
   keyHash: text("key_hash").notNull(),
-  hint: varchar("hint", { length: 20 }).notNull(), // e.g. "gremius_sk_...xyz1"
+  hint: varchar("hint", { length: 20 }).notNull(), // e.g. "kitsuden_sk_...xyz1"
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   createdById: text("created_by_id")
@@ -120,109 +121,37 @@ export const apiKeys = pgTable("api_keys", {
 // Core Tables
 // ═══════════════════════════════════════════════
 
-// ── Media (S3/MinIO) ──
-export const media = pgTable(
-  "media",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    filename: varchar("filename", { length: 500 }).notNull(),
-    mimeType: varchar("mime_type", { length: 100 }).notNull(),
-    s3Key: varchar("s3_key", { length: 1000 }).notNull(),
-    url: text("url").notNull(),
-    alt: varchar("alt", { length: 500 }).default(""),
-    caption: text("caption"),
-    width: integer("width"),
-    height: integer("height"),
-    size: integer("size"), // bytes
-    uploadedById: text("uploaded_by_id").references(() => authUsers.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [uniqueIndex("media_s3key_idx").on(t.s3Key)]
-);
+// ── Media, DataSets y DataEntries ──
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// Estas tres tablas NO se declaran aquí: se reexportan desde packages/core.
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Antes estaban declaradas en los DOS sitios, y habían derivado. No en teoría:
+//
+//   · La migración 0031 renombró `url→public_url`, `alt→alt_text` y
+//     `uploaded_by_id→created_by_id` en `media`. `packages/core/media` se
+//     actualizó; ESTE fichero no. Su tabla `media` llevaba rota desde entonces:
+//     cualquier consulta a través de ella pedía columnas que ya no existen.
+//   · `data_sets.content_config` solo lo declaraba este fichero.
+//   · `data_entries.owner_id` —el que usa RLS— solo lo declaraba este fichero.
+//
+// O sea que cada mitad del código trabajaba con una tabla distinta, y ninguna
+// de las dos fallaba de forma visible: simplemente cada una veía columnas que
+// la otra ignoraba.
+//
+// Con un solo origen eso no puede volver a pasar. Las relaciones de más abajo
+// siguen funcionando porque referencian estos mismos objetos.
+export { media, mediaFolders } from "../../../../packages/core/media/media.schema";
+export { dataSets, dataEntries } from "../../../../packages/core/datasets/datasets.schema";
 
-// ── Data Sets ──
-export const dataSets = pgTable(
-  "data_sets",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: varchar("name", { length: 200 }).notNull(),
-    slug: varchar("slug", { length: 200 }).notNull(),
-    description: text("description"),
-    icon: varchar("icon", { length: 10 }), // Emoji
-    schema: jsonb("schema").notNull().$type<
-      Array<{
-        fieldName: string;
-        fieldType: string;
-        required?: boolean;
-        options?: string;
-        defaultValue?: string;
-      }>
-    >(),
-    displayConfig: jsonb("display_config").$type<{
-      titleField?: string;
-      sortField?: string;
-      sortDirection?: "asc" | "desc";
-    }>(),
-    // ── Enterprise (nullable = opt-in) ──
-    policyJson: jsonb("policy_json").$type<{
-      readAccess: "admin" | "public" | "authenticated";
-      writeAccess: "admin" | "authenticated";
-      enableRLS: boolean;
-      rlsRules?: { field: string; operator: string; value: string }[];
-    }>(),
-    workflowJson: jsonb("workflow_json").$type<{
-      requireApproval: boolean;
-      approverUserIds?: string[];
-    }>(),
-    // ── Content Promotion (Hybrid BaaS/CMS) ──
-    contentConfig: jsonb("content_config").$type<{
-      promoted: boolean;
-      promotedAt: string;
-      slugPrefix: string;
-      defaultSeoTemplate?: {
-        titleSuffix?: string;
-        descriptionField?: string;
-      };
-    } | null>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [uniqueIndex("datasets_slug_idx").on(t.slug)]
-);
-
-// ── Data Entries ──
-export const dataEntries = pgTable(
-  "data_entries",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    title: varchar("title", { length: 500 }).notNull(),
-    dataSetId: uuid("data_set_id")
-      .references(() => dataSets.id, { onDelete: "cascade" })
-      .notNull(),
-    // ═══ FASE AI-READY: Campo ownerId para RLS Nativo (Nivel 2) ═══
-    // Aunque owner_id puede estar en 'data', tenerlo como columna real
-    // permite índices y políticas RLS nativas de PostgreSQL eficientes
-    ownerId: text("owner_id").references(() => authUsers.id, { onDelete: "set null" }),
-    data: jsonb("data").notNull().$type<Record<string, unknown>>(),
-    thumbnailId: uuid("thumbnail_id").references(() => media.id, {
-      onDelete: "set null",
-    }),
-    sortOrder: integer("sort_order").default(0),
-    status: contentStatusEnum("status").default("published").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    index("entries_dataset_idx").on(t.dataSetId),
-    index("entries_sort_idx").on(t.sortOrder),
-    // ═══ Índice para RLS Nativo - Optimiza consultas por owner ═══
-    index("entries_owner_idx").on(t.ownerId),
-  ]
-);
+import { media, mediaFolders } from "../../../../packages/core/media/media.schema";
+import { dataSets, dataEntries } from "../../../../packages/core/datasets/datasets.schema";
 
 // ── Site Settings (singleton) ──
 export const siteSettings = pgTable("site_settings", {
   id: uuid("id").primaryKey().defaultRandom(),
-  siteName: varchar("site_name", { length: 200 }).default("GremiusCMS").notNull(),
+  siteName: varchar("site_name", { length: 200 }).default("Kitsuden").notNull(),
   siteDescription: text("site_description"),
   siteUrl: text("site_url").default("http://localhost:4321").notNull(),
   branding: jsonb("branding").$type<{
@@ -233,11 +162,38 @@ export const siteSettings = pgTable("site_settings", {
     accentColor?: string;
   }>(),
   mainNav: jsonb("main_nav").$type<Array<{ label: string; url: string; openInNewTab?: boolean }>>(),
+  /**
+   * Redes del GRUPO, configurables desde el panel: son el mismo juego en las
+   * tres webs (Cardback, TodoGachas…), así que viven aquí y no en el
+   * entorno de cada plantilla. Lo que el panel no tenga, cada web puede
+   * seguir supliendo por entorno (lee `lib/perfil.ts` del template).
+   *
+   *   · `twitch` es el LOGIN del canal (el de la URL), no la URL entera:
+   *     el endpoint de estado en vivo lo consulta directo en helix.
+   *   · Las credenciales de la API de Twitch NO van aquí: son secretos de
+   *     servidor y viven en `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`
+   *     (ver `src/services/twitch.ts`).
+   *   · `youtubeChannels` es la lista de canales del grupo: el id del canal
+   *     (el del feed RSS) y el nombre que se pinta en cada ficha. El
+   *     `youtube` suelto se mantiene por compatibilidad con lo ya guardado.
+   */
   social: jsonb("social").$type<{
     twitter?: string;
     discord?: string;
     youtube?: string;
+    youtubeChannels?: Array<{ id: string; nombre: string }>;
     twitch?: string;
+    instagram?: string;
+    tiktok?: string;
+    /** La segunda cuenta de TikTok del grupo */
+    tiktok2?: string;
+    facebook?: string;
+    /** El grupo de Facebook de la comunidad (se puede insertar como bloque en una entrada) */
+    facebookGroup?: string;
+    /** El grupo de WhatsApp (invitación chat.whatsapp.com), junto al de Facebook en las entradas */
+    whatsappGroup?: string;
+    pinterest?: string;
+    kofi?: string;
     github?: string;
   }>(),
   analytics: jsonb("analytics").$type<{
@@ -249,8 +205,21 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// ── Formulas (KPI) ──
-export const formulas = pgTable("formulas", {
+/**
+ * KPIs sobre datasets — NO son fórmulas de juego.
+ *
+ * Se llamaba `formulas`, y con la llegada de `kon-formulas` —el evaluador de
+ * fórmulas de juego que usan builders, calculadoras y simuladores— el nombre
+ * designaba dos cosas distintas. Renombrada en la migración 0030 a lo que de
+ * verdad es: los KPIs del DatasetCreator (`totals, averages, or custom
+ * formulas`, en sus propias palabras).
+ *
+ * ADVERTENCIA: la tabla está HUÉRFANA. Ningún código la lee ni la escribe;
+ * solo la declara este schema. Está aquí para no romper bases de datos que ya
+ * la tengan. Si el DatasetCreator nunca va a persistir sus KPIs aquí, lo
+ * honesto es borrarla — pero eso es una decisión de producto.
+ */
+export const datasetKpis = pgTable("dataset_kpis", {
   id: uuid("id").primaryKey().defaultRandom(),
   kpiName: varchar("kpi_name", { length: 200 }).notNull(),
   formulaType: varchar("formula_type", { length: 50 }).notNull().default("custom"),
@@ -263,11 +232,11 @@ export const formulas = pgTable("formulas", {
 });
 
 // ═══════════════════════════════════════════════
-// Grimoires & Realms (Module Registry)
+// Kons & Grimoires (Module Registry)
 // ═══════════════════════════════════════════════
 
-// ── Grimoire Source Enum ──
-export const grimoireSourceEnum = pgEnum("grimoire_source", [
+// ── Kon Source Enum ──
+export const konSourceEnum = pgEnum("kon_source", [
   "local",
   "npm",
   "github",
@@ -275,7 +244,7 @@ export const grimoireSourceEnum = pgEnum("grimoire_source", [
   "legacy",
 ]);
 
-// ── Modules (Plugin/Grimoire Registry) ──
+// ── Modules (Plugin/Kon Registry) ──
 export const modules = pgTable("modules", {
   key: varchar("key", { length: 100 }).primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
@@ -283,28 +252,28 @@ export const modules = pgTable("modules", {
   icon: varchar("icon", { length: 50 }),
   category: varchar("category", { length: 100 }),
   enabled: boolean("enabled").default(false).notNull(),
-  // Realm ID - null for standalone grimoires, set for realm-specific modules
-  realmId: varchar("realm_id", { length: 100 }),
-  settings: jsonb("settings").default({}).$type<Record<string, any>>(),
+  // Grimoire ID - null for standalone kons, set for grimoire-specific modules
+  grimoireId: varchar("grimoire_id", { length: 100 }),
+  settings: jsonb("settings").default({}).$type<Record<string, unknown>>(),
   sidebarPath: varchar("sidebar_path", { length: 200 }),
   sidebarIcon: varchar("sidebar_icon", { length: 50 }),
   sidebarBadge: varchar("sidebar_badge", { length: 50 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// ── Installed Grimoires (from npm/marketplace) ──
-export const installedGrimoires = pgTable(
-  "installed_grimoires",
+// ── Installed Kons (from npm/marketplace) ──
+export const installedKons = pgTable(
+  "installed_kons",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    grimoireId: varchar("grimoire_id", { length: 200 }).notNull(),
+    konId: varchar("kon_id", { length: 200 }).notNull(),
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description"),
     version: varchar("version", { length: 50 }).notNull(),
-    source: grimoireSourceEnum("source").notNull().default("local"),
+    source: konSourceEnum("source").notNull().default("local"),
     sourceUrl: text("source_url"), // npm package name, git url, etc.
     path: text("path").notNull(), // Filesystem path
-    manifest: jsonb("manifest"), // Full grimoire.json content
+    manifest: jsonb("manifest"), // Full kon.json content
     config: jsonb("config").default({}), // Plugin-specific config
     enabled: boolean("enabled").notNull().default(true),
     installedById: text("installed_by_id").references(() => authUsers.id, { onDelete: "set null" }),
@@ -312,11 +281,11 @@ export const installedGrimoires = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   },
-  (t) => [uniqueIndex("installed_grimoire_id_idx").on(t.grimoireId)]
+  (t) => [uniqueIndex("installed_kon_id_idx").on(t.konId)]
 );
 
 // ═══════════════════════════════════════════════
-// Gremius Workers (Cloud Functions / Serverless)
+// Kitsuden Workers (Cloud Functions / Serverless)
 // ═══════════════════════════════════════════════
 
 export const functionTriggerEnum = pgEnum("function_trigger", [
@@ -340,8 +309,8 @@ export const executionStatusEnum = pgEnum("execution_status", [
   "killed",
 ]);
 
-export const gremiusFunctions = pgTable(
-  "gremius_functions", // Legacy table name preserved for migration compat
+export const kitsudenFunctions = pgTable(
+  "kitsuden_functions", // Legacy table name preserved for migration compat
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 200 }).notNull(),
@@ -388,7 +357,7 @@ export const functionExecutions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     functionId: uuid("function_id")
-      .references(() => gremiusFunctions.id, { onDelete: "cascade" })
+      .references(() => kitsudenFunctions.id, { onDelete: "cascade" })
       .notNull(),
     status: executionStatusEnum("status").default("pending").notNull(),
     /** Trigger event that caused the execution */
@@ -417,19 +386,22 @@ export const functionExecutions = pgTable(
 );
 
 // Relations
-export const gremiusFunctionsRelations = relations(gremiusFunctions, ({ one, many }) => ({
-  createdBy: one(authUsers, { fields: [gremiusFunctions.createdById], references: [authUsers.id] }),
+export const kitsudenFunctionsRelations = relations(kitsudenFunctions, ({ one, many }) => ({
+  createdBy: one(authUsers, {
+    fields: [kitsudenFunctions.createdById],
+    references: [authUsers.id],
+  }),
   watchDataset: one(dataSets, {
-    fields: [gremiusFunctions.watchDatasetId],
+    fields: [kitsudenFunctions.watchDatasetId],
     references: [dataSets.id],
   }),
   executions: many(functionExecutions),
 }));
 
 export const functionExecutionsRelations = relations(functionExecutions, ({ one }) => ({
-  function: one(gremiusFunctions, {
+  function: one(kitsudenFunctions, {
     fields: [functionExecutions.functionId],
-    references: [gremiusFunctions.id],
+    references: [kitsudenFunctions.id],
   }),
 }));
 
@@ -512,6 +484,26 @@ export const actionExecutions = pgTable(
   ]
 );
 
+// Custom vector type for pgvector (used by agent_memory.embedding and brain_notes.embedding)
+export const vector = customType<{
+  data: number[];
+  driverData: string;
+  config: { dimension: number };
+}>({
+  dataType(config) {
+    return `vector(${config?.dimension ?? 1536})`;
+  },
+  toDriver(value) {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value) {
+    if (typeof value === "string") {
+      return value.slice(1, -1).split(",").map(Number);
+    }
+    return value as number[];
+  },
+});
+
 // ═══════════════════════════════════════════════
 // Agent System (NHI - Non-Human Identities)
 // ═══════════════════════════════════════════════
@@ -570,8 +562,10 @@ export const agentApiKeys = pgTable(
     agentId: text("agent_id")
       .references(() => agentIdentities.id, { onDelete: "cascade" })
       .notNull(),
+    keyId: text("key_id").unique(),
     keyHash: text("key_hash").notNull(),
     keyPrefix: text("key_prefix").notNull(),
+    algorithm: text("algorithm").default("argon2id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -579,6 +573,7 @@ export const agentApiKeys = pgTable(
   (t) => [
     index("agent_api_keys_agent_id_idx").on(t.agentId),
     uniqueIndex("agent_api_keys_hash_idx").on(t.keyHash),
+    uniqueIndex("agent_api_keys_key_id_idx").on(t.keyId),
     index("agent_api_keys_expires_at_idx").on(t.expiresAt),
   ]
 );
@@ -600,6 +595,7 @@ export const agentMemory = pgTable(
     source: text("source").default("agent"),
     relatedMemoryIds: jsonb("related_memory_ids").default([]),
     tags: jsonb("tags").default([]),
+    embedding: vector("embedding", { dimension: 1536 }),
     validFrom: timestamp("valid_from", { withTimezone: true }).defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
     accessCount: integer("access_count").default(0),
@@ -766,6 +762,107 @@ export const dataSources = pgTable(
 );
 
 // ═══════════════════════════════════════════════
+// KITSUDEN Brain (Self-Aware Knowledge Layer)
+// ═══════════════════════════════════════════════
+
+export const brainNoteSourceEnum = pgEnum("brain_note_source", [
+  "code",
+  "user",
+  "agent",
+  "system",
+  "insight",
+]);
+
+export const brainNoteCategoryEnum = pgEnum("brain_note_category", [
+  "schema",
+  "route",
+  "kon",
+  "agent",
+  "function",
+  "dataset",
+  "insight",
+  "connection",
+  "general",
+]);
+
+export const brainNotes = pgTable(
+  "brain_notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 500 }).notNull(),
+    content: text("content").notNull(),
+    source: brainNoteSourceEnum("source").notNull().default("system"),
+    sourcePath: text("source_path"),
+    category: brainNoteCategoryEnum("category").notNull().default("general"),
+    tags: jsonb("tags").default([]).$type<string[]>(),
+    // JSONB array of floats (384 dims). Migrated to VECTOR(384) in SQL when pgvector is present.
+    embedding: jsonb("embedding").default([]).$type<number[]>(),
+    importance: integer("importance").default(50).notNull(),
+    confidence: integer("confidence").default(80).notNull(),
+    metadata: jsonb("metadata").default({}).$type<Record<string, unknown>>(),
+    relatedNoteIds: jsonb("related_note_ids").default([]).$type<string[]>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("brain_notes_category_idx").on(t.category),
+    index("brain_notes_source_idx").on(t.source),
+    index("brain_notes_created_at_idx").on(t.createdAt),
+    index("brain_notes_importance_idx").on(t.importance),
+  ]
+);
+
+export const brainConnections = pgTable(
+  "brain_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceNoteId: uuid("source_note_id")
+      .references(() => brainNotes.id, { onDelete: "cascade" })
+      .notNull(),
+    targetNoteId: uuid("target_note_id")
+      .references(() => brainNotes.id, { onDelete: "cascade" })
+      .notNull(),
+    relationType: varchar("relation_type", { length: 100 }).notNull().default("related"),
+    strength: real("strength").default(0.5).notNull(),
+    metadata: jsonb("metadata").default({}).$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("brain_connections_source_idx").on(t.sourceNoteId),
+    index("brain_connections_target_idx").on(t.targetNoteId),
+    index("brain_connections_type_idx").on(t.relationType),
+    uniqueIndex("brain_connections_pair_idx").on(t.sourceNoteId, t.targetNoteId, t.relationType),
+  ]
+);
+
+// ── Brain Sources (Layer 1: raw, immutable corpus — Karpathy method) ──
+// Documentos crudos que la IA lee pero NUNCA edita. La wiki (brain_notes) es
+// interpretación derivada; las fuentes son la verdad auditable. Dedupe por hash.
+export const brainSources = pgTable(
+  "brain_sources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 500 }).notNull(),
+    // Contenido crudo, inmutable. No hay endpoint de update por diseño.
+    content: text("content").notNull(),
+    // SHA-256 del contenido: dedupe e detección de "fuente cambió" (staleness).
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    // Origen: 'url' | 'file' | 'text' | 'note'. String libre para extensibilidad.
+    sourceType: varchar("source_type", { length: 50 }).notNull().default("text"),
+    // URI opcional (URL, ruta de archivo, etc.).
+    uri: text("uri"),
+    tags: jsonb("tags").default([]).$type<string[]>(),
+    metadata: jsonb("metadata").default({}).$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("brain_sources_hash_idx").on(t.contentHash),
+    index("brain_sources_type_idx").on(t.sourceType),
+    index("brain_sources_created_at_idx").on(t.createdAt),
+  ]
+);
+
+// ═══════════════════════════════════════════════
 // Relations (Drizzle ORM)
 // ═══════════════════════════════════════════════
 
@@ -819,3 +916,59 @@ export const agentFeedbackRelations = relations(agentFeedback, ({ one }) => ({
   user: one(authUsers, { fields: [agentFeedback.userId], references: [authUsers.id] }),
   step: one(agentTraceSteps, { fields: [agentFeedback.stepId], references: [agentTraceSteps.id] }),
 }));
+
+// ═══════════════════════════════════════════════
+// Brain Relations
+// ═══════════════════════════════════════════════
+
+export const brainNotesRelations = relations(brainNotes, ({ many }) => ({
+  outgoingConnections: many(brainConnections, { relationName: "sourceNote" }),
+  incomingConnections: many(brainConnections, { relationName: "targetNote" }),
+}));
+
+export const brainConnectionsRelations = relations(brainConnections, ({ one }) => ({
+  sourceNote: one(brainNotes, {
+    fields: [brainConnections.sourceNoteId],
+    references: [brainNotes.id],
+    relationName: "sourceNote",
+  }),
+  targetNote: one(brainNotes, {
+    fields: [brainConnections.targetNoteId],
+    references: [brainNotes.id],
+    relationName: "targetNote",
+  }),
+}));
+
+// ═══════════════════════════════════════════════
+// KITSUDEN Secrets Manager (arquitectura KITSUDEN §7)
+// Prefect-style secrets: encriptados con AES-256-GCM e inyectados
+// en caliente en la memoria del proceso de Bun (sin depender de .env).
+// El servicio vive en services/secrets.ts; incluye bootstrap
+// CREATE TABLE IF NOT EXISTS para entornos sin migraciones aplicadas.
+// ═══════════════════════════════════════════════
+
+export const kitsudenSecrets = pgTable(
+  "kitsuden_secrets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Nombre de variable estilo env: KITSUDEN_OPENAI_API_KEY */
+    key: varchar("key", { length: 200 }).notNull(),
+    /** Valor cifrado (AES-256-GCM, hex) */
+    valueEncrypted: text("value_encrypted").notNull(),
+    /** IV del cifrado (hex, 12 bytes) */
+    iv: varchar("iv", { length: 32 }).notNull(),
+    /** Auth tag GCM (hex, 16 bytes) */
+    authTag: varchar("auth_tag", { length: 32 }).notNull(),
+    description: text("description"),
+    /** Agrupación en la UI: llm, storage, integrations, general... */
+    category: varchar("category", { length: 100 }).default("general").notNull(),
+    /** Si true, se inyecta en process.env al arrancar el servidor */
+    autoInject: boolean("auto_inject").default(true).notNull(),
+    lastRotatedAt: timestamp("last_rotated_at", { withTimezone: true }),
+    lastInjectedAt: timestamp("last_injected_at", { withTimezone: true }),
+    createdById: text("created_by_id").references(() => authUsers.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("kitsuden_secrets_key_unique").on(table.key)]
+);

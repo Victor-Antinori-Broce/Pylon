@@ -53,7 +53,7 @@ curl http://localhost:3000/api/datasets?format=toon
 
 ```
 Content-Type: application/vnd.toon
-X-Gremius-Format: toon
+X-Kitsuden-Format: toon
 ```
 
 ### Middleware Integration
@@ -68,11 +68,11 @@ app.use("/api/*", toonMiddleware());
 
 ### MCP Tool Available
 
-The `gremius_encode_toon` tool is available via MCP:
+The `kitsuden_encode_toon` tool is available via MCP:
 
 ```json
 {
-  "name": "gremius_encode_toon",
+  "name": "kitsuden_encode_toon",
   "description": "Encode arbitrary JSON data into TOON format"
 }
 ```
@@ -95,7 +95,7 @@ curl -X POST http://localhost:3000/api/mcp \
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
-      "name": "gremius_encode_toon",
+      "name": "kitsuden_encode_toon",
       "arguments": {
         "data": {"title": "Test", "items": [{"id": 1}, {"id": 2}]}
       }
@@ -124,7 +124,7 @@ pgvector is a PostgreSQL extension for vector similarity search, used for AI emb
 
 ## pgvector Fields in Code
 
-### 1. ai-memories Schema (`packages/grimoires/ai-memories/schema.ts`)
+### 1. ai-memories Schema (`packages/kons/ai-memories/schema.ts`)
 
 | Table              | Field       | Type           | Dimensions | Index                              |
 | ------------------ | ----------- | -------------- | ---------- | ---------------------------------- |
@@ -216,7 +216,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 **docker-compose.yml:**
 
 ```yaml
-gremius_db:
+kitsuden_db:
   image: pgvector/pgvector:pg16
   volumes:
     - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
@@ -237,7 +237,7 @@ pgvector supports these operators:
 
 ```typescript
 import { sql } from "drizzle-orm";
-import { aiMemories } from "@gremius/ai-memories";
+import { aiMemories } from "@kitsuden/ai-memories";
 
 // Search similar embeddings
 const results = await db
@@ -267,7 +267,7 @@ curl -H "Accept: application/vnd.toon" http://localhost:3000/api/health
 
 # Expected output:
 # status:ok
-# service:gremius-api
+# service:kitsuden-api
 # version:1.0.0
 # ...
 ```
@@ -286,7 +286,7 @@ curl http://localhost:3000/api/health/pgvector
 
 ```bash
 # Connect to database
-docker exec -it gremius_db_prod psql -U gremius -d gremius_prod
+docker exec -it kitsuden_db_prod psql -U kitsuden -d kitsuden_prod
 
 # Check extension
 SELECT * FROM pg_extension WHERE extname = 'vector';
@@ -361,7 +361,7 @@ To make ai-memories fully functional:
 - **Mime Type:** `application/vnd.toon`
 - **Query Param:** `?format=toon`
 - **Middleware:** Active on `/api/*`
-- **MCP Tool:** `gremius_encode_toon`
+- **MCP Tool:** `kitsuden_encode_toon`
 
 ### pgvector
 

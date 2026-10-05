@@ -34,10 +34,10 @@
 
   // Color basado en el score
   const colorClass = $derived.by(() => {
-    if (percentage >= 80) return "bg-gremius-green";
-    if (percentage >= 60) return "bg-gremius-cyan";
-    if (percentage >= 40) return "bg-gremius-amber";
-    return "bg-gremius-pink";
+    if (percentage >= 80) return "bg-kitsuden-green";
+    if (percentage >= 60) return "bg-kitsuden-accent";
+    if (percentage >= 40) return "bg-kitsuden-amber";
+    return "bg-kitsuden-accent-2";
   });
 
   const sizeClasses = {
@@ -50,7 +50,7 @@
 <div class="flex items-center gap-3 min-w-[120px]">
   <!-- Barra de progreso -->
   {#if showBar}
-    <div class="flex-1 bg-gremius-border rounded-full overflow-hidden {sizeClasses[size].bar}">
+    <div class="flex-1 bg-kitsuden-border rounded-full overflow-hidden {sizeClasses[size].bar}">
       <div
         class="h-full rounded-full transition-all duration-300 {colorClass}"
         style="width: {percentage}%"
@@ -61,19 +61,19 @@
   <!-- Valor numérico -->
   <div class="flex items-center gap-1.5 shrink-0">
     {#if trend === "up"}
-      <TrendingUp class="{sizeClasses[size].icon} text-gremius-green" />
+      <TrendingUp class="{sizeClasses[size].icon} text-kitsuden-green" />
     {:else if trend === "down"}
-      <TrendingDown class="{sizeClasses[size].icon} text-gremius-pink" />
+      <TrendingDown class="{sizeClasses[size].icon} text-kitsuden-accent-2" />
     {:else}
-      <Minus class="{sizeClasses[size].icon} text-gremius-subtle" />
+      <Minus class="{sizeClasses[size].icon} text-kitsuden-subtle" />
     {/if}
 
-    <span class="font-medium {sizeClasses[size].text} text-gremius-text">
+    <span class="font-medium {sizeClasses[size].text} text-kitsuden-text">
       {showPercentage ? `${percentage}%` : value}
     </span>
 
     {#if percentage >= 90}
-      <Star class="w-3 h-3 text-gremius-amber fill-gremius-amber" />
+      <Star class="w-3 h-3 text-kitsuden-amber fill-kitsuden-amber" />
     {/if}
   </div>
 </div>

@@ -6,7 +6,7 @@
 </script>
 
 <tr
-  class="border-b border-gremius-border transition-colors hover:bg-gremius-bg/50 data-[state=selected]:bg-gremius-bg {className}"
+  class="border-b border-kitsuden-border transition-colors hover:bg-kitsuden-bg/50 data-[state=selected]:bg-kitsuden-bg {className}"
 >
   {@render children?.()}
 </tr>

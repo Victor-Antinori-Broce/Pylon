@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Async Queue Infrastructure
+ * Kitsuden — Async Queue Infrastructure
  *
  * Powered by BullMQ + Valkey (Redis-compatible, open-source fork).
  *
@@ -12,6 +12,7 @@
 
 import { Queue, Worker, type Processor, type ConnectionOptions, type Job } from "bullmq";
 
+import { logger } from "./logger";
 import { valkeyConnection, isValkeyAvailable, VALKEY_URL } from "./valkey";
 
 const connection: ConnectionOptions = valkeyConnection;
@@ -56,7 +57,9 @@ export function createWorker<T = unknown>(
   });
 
   worker.on("completed", (job: Job<T>) => {
-    console.log(`  ✅ [${name}] Job ${job.id} (${job.name}) completed`);
+    // Por JOB, no por arranque: al logger, para que se pueda cruzar con el
+    // error de un job que falla y con la traza que lo encoló.
+    logger.info({ queue: name, jobId: job.id, jobName: job.name }, "job completado");
   });
 
   worker.on("failed", (job: Job<T> | undefined, err: Error) => {
@@ -111,7 +114,7 @@ export const emailQueue = {
       return null;
     }
     try {
-      const queue = getQueue<EmailJobData>("gremius-email");
+      const queue = getQueue<EmailJobData>("kitsuden-email");
       return await queue.add(name, data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -124,7 +127,7 @@ export const emailQueue = {
     const available = await checkRedis();
     if (!available) return 0;
     try {
-      const queue = getQueue<EmailJobData>("gremius-email");
+      const queue = getQueue<EmailJobData>("kitsuden-email");
       return await queue.getWaitingCount();
     } catch {
       return 0;
@@ -135,7 +138,7 @@ export const emailQueue = {
     const available = await checkRedis();
     if (!available) return 0;
     try {
-      const queue = getQueue<EmailJobData>("gremius-email");
+      const queue = getQueue<EmailJobData>("kitsuden-email");
       return await queue.getActiveCount();
     } catch {
       return 0;
@@ -164,6 +167,7 @@ export async function setupWorkers(): Promise<void> {
   }
 
   try {
+    // eslint-disable-next-line import/no-cycle -- lazy a propósito: rompe el ciclo queue↔email en carga estática
     const { registerEmailWorker } = await import("../jobs/email");
     registerEmailWorker();
     console.log("⚙️  All workers running.\n");

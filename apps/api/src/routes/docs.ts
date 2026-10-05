@@ -20,9 +20,9 @@ export const docsRoutes = new Hono<{ Variables: AppVariables }>();
 const openAPIConfig = {
   openapi: "3.0.0",
   info: {
-    title: "GremiusCMS API",
+    title: "Kitsuden API",
     version: "0.5.0",
-    description: `🚀 API oficial de GremiusCMS - Headless CMS + BaaS
+    description: `🚀 API oficial de Kitsuden - Headless CMS + BaaS
 
 ## Características Principales
 
@@ -36,8 +36,8 @@ const openAPIConfig = {
 
 Tres métodos soportados:
 1. **Session Cookie** (Better-Auth) - Para usuarios humanos
-2. **Agent Token** (grm_agent_*) - Para agents AI e integraciones máquina (recomendado)
-3. **Legacy API Key** (gremius_sk_*) - **DEPRECATED**, sunset 2026-08-01. Migrar a grm_agent_*
+2. **Agent Token** (kitsuden_agent_*) - Para agents AI e integraciones máquina (recomendado)
+3. **Legacy API Key** (kitsuden_sk_*) - **DEPRECATED**, sunset 2026-08-01. Migrar a kitsuden_agent_*
 
 \`\`\`
 Authorization: Bearer your_token_here
@@ -56,20 +56,20 @@ Headers incluidos:
 
 ## SDKs Oficiales
 
-- JavaScript/TypeScript: \`@gremius/sdk\`
-- Python: \`gremius-python\`
-- CLI: \`gremius-cli\`
+- JavaScript/TypeScript: \`@kitsuden/sdk\`
+- Python: \`kitsuden-python\`
+- CLI: \`kitsuden-cli\`
 
 ## Links
 
-- [Documentación](https://docs.gremius.dev)
-- [GitHub](https://github.com/gremius/gremius-cms)
-- [Support](https://discord.gg/gremius)
+- [Documentación](https://docs.kitsuden.dev)
+- [GitHub](https://github.com/kitsuden/kitsuden-cms)
+- [Support](https://discord.gg/kitsuden)
 `,
     contact: {
-      name: "Gremius Team",
-      url: "https://gremius.dev",
-      email: "support@gremius.dev",
+      name: "Kitsuden Team",
+      url: "https://kitsuden.dev",
+      email: "support@kitsuden.dev",
     },
     license: {
       name: "MIT",
@@ -86,7 +86,7 @@ Headers incluidos:
           default: "https",
         },
         host: {
-          default: "api.gremius.dev",
+          default: "api.kitsuden.dev",
         },
       },
     },
@@ -110,7 +110,7 @@ Headers incluidos:
     },
     {
       name: "Query",
-      description: "Búsquedas avanzadas con Gremius QL",
+      description: "Búsquedas avanzadas con Kitsuden QL",
     },
     {
       name: "Batch",
@@ -121,7 +121,7 @@ Headers incluidos:
       description: "Gestión de archivos y optimización",
     },
     {
-      name: "Grimoires",
+      name: "Kons",
       description: "Módulos funcionales del sistema",
     },
     {
@@ -151,7 +151,7 @@ const scalarHtml = `
 <!DOCTYPE html>
 <html>
   <head>
-    <title>GremiusCMS API Reference</title>
+    <title>Kitsuden API Reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -182,7 +182,7 @@ docsRoutes.get(
   "/",
   swaggerUI({
     url: "/api/docs/openapi.json",
-    title: "GremiusCMS API Documentation",
+    title: "Kitsuden API Documentation",
   })
 );
 
@@ -340,7 +340,7 @@ docsRoutes.get("/openapi.json", async (c) => {
       "/query": {
         post: {
           tags: ["Query"],
-          summary: "Gremius Query Language",
+          summary: "Kitsuden Query Language",
           description: "Ejecuta queries complejos con filtros, sorting y pagination",
           requestBody: {
             required: true,
@@ -525,8 +525,8 @@ docsRoutes.get("/swagger", (c) => c.redirect("/api/docs"));
 docsRoutes.get("/postman.json", (c) => {
   const collection = {
     info: {
-      name: "GremiusCMS API",
-      description: "Colección oficial de Postman para GremiusCMS",
+      name: "Kitsuden API",
+      description: "Colección oficial de Postman para Kitsuden",
       schema: "https://schema.getpostman.com/json/collection/v2.1.0/",
     },
     item: [
@@ -584,24 +584,24 @@ docsRoutes.get("/sdk", (c) => {
     sdks: [
       {
         name: "JavaScript / TypeScript",
-        package: "@gremius/sdk",
-        install: "npm install @gremius/sdk",
-        repo: "https://github.com/gremius/sdk-js",
-        docs: "https://docs.gremius.dev/sdks/javascript",
+        package: "@kitsuden/sdk",
+        install: "npm install @kitsuden/sdk",
+        repo: "https://github.com/kitsuden/sdk-js",
+        docs: "https://docs.kitsuden.dev/sdks/javascript",
       },
       {
         name: "Python",
-        package: "gremius",
-        install: "pip install gremius",
-        repo: "https://github.com/gremius/sdk-python",
-        docs: "https://docs.gremius.dev/sdks/python",
+        package: "kitsuden",
+        install: "pip install kitsuden",
+        repo: "https://github.com/kitsuden/sdk-python",
+        docs: "https://docs.kitsuden.dev/sdks/python",
       },
       {
         name: "CLI",
-        package: "@gremius/cli",
-        install: "npm install -g @gremius/cli",
-        repo: "https://github.com/gremius/cli",
-        docs: "https://docs.gremius.dev/cli",
+        package: "@kitsuden/cli",
+        install: "npm install -g @kitsuden/cli",
+        repo: "https://github.com/kitsuden/cli",
+        docs: "https://docs.kitsuden.dev/cli",
       },
     ],
   });

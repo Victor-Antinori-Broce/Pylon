@@ -1,9 +1,9 @@
 /**
- * Admin Registry Service — Zero Config Grimoire Registration
+ * Admin Registry Service — Zero Config Kon Registration
  *
- * Auto-discovers admin configuration from grimoires and realms:
- * 1. Scans grimoire.json for admin.tables[]
- * 2. Scans realm.json for realm-specific grimoires (DYNAMIC)
+ * Auto-discovers admin configuration from kons and grimoires:
+ * 1. Scans kon.json for admin.tables[]
+ * 2. Scans grimoire.json for grimoire-specific kons (DYNAMIC)
  * 3. Detects custom views by checking for .svelte files
  * 4. Generates default DataExplorer config for tables without custom UI
  * 5. Exposes unified registry at /api/admin/registry
@@ -13,12 +13,15 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { scanPackages, GremiusManifest } from "./scanner";
+import { leerManifiestoGrimoire } from "../lib/grimoire-manifest";
+import { logger } from "../lib/logger";
+
+import { scanPackages, KitsudenManifest } from "./scanner";
 import { introspectTable, type IntrospectedColumn } from "./schema-introspector";
 
 // Resolve workspace root (Docker vs dev)
 function getPackagesRoot(): string {
-  const cwdCheck = join(process.cwd(), "packages", "grimoires", "package.json");
+  const cwdCheck = join(process.cwd(), "packages", "kons", "package.json");
   const root = existsSync(cwdCheck) ? process.cwd() : join(process.cwd(), "../../");
   return join(root, "packages");
 }
@@ -27,16 +30,16 @@ function getPackagesRoot(): string {
 const _ADMIN_VIEWS_PATH = "../../../packages/admin/src/views";
 
 /**
- * Realm manifest structure
+ * Grimoire manifest structure
  */
-interface RealmManifest {
+interface GrimoireManifest {
   id: string;
   name: string;
   description?: string;
   version: string;
-  type: "realm";
-  grimoires: string[];
-  optional_grimoires?: string[];
+  type: "grimoire";
+  kons: string[];
+  optional_kons?: string[];
   config?: {
     theme?: {
       css_entry?: string;
@@ -44,15 +47,19 @@ interface RealmManifest {
       accent_color?: string;
     };
   };
-  /** Per-grimoire admin overrides */
-  grimoireConfig?: Record<
+  /** Per-kon admin overrides */
+  konConfig?: Record<
     string,
     {
       displayName?: string;
       hiddenTables?: string[];
       extraViews?: Array<{
         id: string;
-        type: "grid" | "kanban" | "calendar" | "custom";
+        type: "grid" | "kanban" | "calendar" | "custom" | "element";
+        /** Solo para `element`: nombre de la etiqueta del Web Component. */
+        element?: string;
+        /** Solo para `element`: ruta del script dentro del kon. */
+        src?: string;
         title: string;
         table?: string;
       }>;
@@ -68,14 +75,14 @@ interface RealmManifest {
 }
 
 /**
- * Dynamic realm info with its grimoires
+ * Dynamic grimoire info with its kons
  */
-interface RealmInfo {
+interface GrimoireInfo {
   id: string;
   name: string;
   description?: string;
-  grimoires: string[];
-  optionalGrimoires: string[];
+  kons: string[];
+  optionalKons: string[];
 }
 
 /** Admin table configuration */
@@ -90,23 +97,66 @@ export interface AdminTableConfig {
   readonly?: boolean;
 }
 
-/** Admin view configuration */
+/**
+ * Admin view configuration
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Sobre las vistas a medida y por qué hay dos mecanismos
+ *
+ * El admin sirve a DOS audiencias que no tienen por qué compartir framework:
+ *
+ *   1. El núcleo (page builder, kanban, knowledge graph) lo escribe el equipo
+ *      de Kitsuden en Svelte, y ahí Svelte gana por la forma de esa UI.
+ *   2. Las vistas de un kon de terceros las escribe otro — y en la práctica,
+ *      siendo esto un BaaS para vibecoders, las escribe su agente de IA.
+ *
+ * Obligar a (2) a escribir Svelte acopla el punto de extensión al framework
+ * interno del admin. La forma agnóstica (`type: "element"`) recibe un ARTEFACTO
+ * YA COMPILADO que se carga en runtime, no código fuente que entra en el build
+ * del admin: cada extensión trae su propio runtime dentro, aislada por Shadow
+ * DOM, y el bundler del admin nunca necesita entender JSX ni nada ajeno.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 export interface AdminViewConfig {
   id: string;
-  type: "grid" | "kanban" | "calendar" | "custom";
+  /**
+   * `element` es la forma recomendada para vistas a medida: un Web Component
+   * agnóstico. `custom` queda para el legacy de Svelte.
+   */
+  type: "grid" | "kanban" | "calendar" | "custom" | "element";
   title: string;
   table?: string;
-  component?: string; // For custom views: path to .svelte file
-  // Extra props forwarded from grimoire.json admin.views declarations
+  /**
+   * @deprecated Ruta a un `.svelte`, importado como FUENTE dentro del build del
+   * admin. Acopla la extensión al framework del host y mete el código de todos
+   * los kons en el bundle aunque nadie abra esa vista. Usa `element` + `src`.
+   */
+  component?: string;
+  /**
+   * Nombre del custom element que la vista registra, p. ej. `broadcast-scoreboard`.
+   * Debe llevar guion: lo exige la especificación de Custom Elements.
+   */
+  element?: string;
+  /**
+   * Ruta al bundle ESM ya compilado, relativa a la raíz del paquete del kon
+   * (`./admin/scoreboard.js`). La sirve la API bajo una URL estable; el admin
+   * la carga con `import(url)` en runtime, nunca en tiempo de build.
+   */
+  src?: string;
+  // Extra props forwarded from kon.json admin.views declarations
   groupBy?: string;
+  /** Filtro fijo de la vista: lo que la define. Ver el mapeo más abajo. */
+  defaultFilter?: Record<string, unknown>;
+  /** Nombre en singular para el botón de alta («Agregar torneo»). */
+  singularName?: string;
   dateField?: string;
   titleField?: string;
   icon?: string;
   [key: string]: any;
 }
 
-/** Grimoire admin configuration */
-export interface GrimoireAdminConfig {
+/** Kon admin configuration */
+export interface KonAdminConfig {
   id: string;
   name: string;
   icon?: string;
@@ -114,7 +164,8 @@ export interface GrimoireAdminConfig {
   hasCustomView: boolean;
   tables: AdminTableConfig[];
   views: AdminViewConfig[];
-  defaultView: string;
+  /** Vista inicial, o `null` si el kon no expone ninguna (no tiene datos). */
+  defaultView: string | null;
   /** Custom API base path (e.g., /api/directory) - if not set, uses /api/explorer */
   apiBase?: string;
 }
@@ -123,100 +174,124 @@ export interface GrimoireAdminConfig {
 interface CoreModuleWithView {
   id: string;
   name: string;
-  category: GrimoireAdminConfig["category"];
+  category: KonAdminConfig["category"];
   tables?: string[];
 }
 
 // Cache para evitar lecturas de disco frecuentes
-let registryCache: GrimoireAdminConfig[] | null = null;
+let registryCache: KonAdminConfig[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 60_000; // 1 minuto en desarrollo
 
 /**
  * Core modules with custom admin views
- * These are loaded from apps/api/src/modules/, not packages/grimoires/
+ * These are loaded from apps/api/src/modules/, not packages/kons/
  *
  * NOTE: Webhooks and Workers are part of the Actions Engine (framework level),
- * not Grimoires. They are managed through the Actions UI at /actions.
+ * not Kons. They are managed through the Actions UI at /actions.
  *
  * This list is intentionally empty as all current core features are either:
- * - Grimoires (DataSets, Media, Blocks)
+ * - Kons (DataSets, Media, Blocks)
  * - Engine features (Actions with Webhooks/Workers)
  * - Settings features (Connectors)
  */
 const CORE_MODULES_WITH_VIEWS: CoreModuleWithView[] = [
-  // Empty - all core features are now proper Grimoires or Engine features
+  // Empty - all core features are now proper Kons or Engine features
 ];
 
 /**
- * Scan all available realms and their grimoires
- * This is DYNAMIC - no hardcoded realm data needed
+ * Scan all available grimoires and their kons
+ * This is DYNAMIC - no hardcoded grimoire data needed
  */
-async function scanRealms(): Promise<RealmInfo[]> {
-  const realmsDir = join(getPackagesRoot(), "realms");
-  const realms: RealmInfo[] = [];
+async function scanGrimoires(): Promise<GrimoireInfo[]> {
+  const grimoiresDir = join(getPackagesRoot(), "grimoires");
+  const grimoires: GrimoireInfo[] = [];
 
   try {
-    const entries = await readdir(realmsDir, { withFileTypes: true });
-    const realmDirs = entries.filter(
+    const entries = await readdir(grimoiresDir, { withFileTypes: true });
+    const grimoireDirs = entries.filter(
       (e: { isDirectory: () => boolean; name: string }) =>
         e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules"
     );
 
-    for (const dir of realmDirs) {
-      // Try realm.json first, then legacy gremius.json
-      const realmJsonPath = join(realmsDir, dir.name, "realm.json");
-      const legacyPath = join(realmsDir, dir.name, "gremius.json");
-
-      let manifest: RealmManifest | null = null;
-
-      // Try realm.json
-      const realmFile = Bun.file(realmJsonPath);
-      if (await realmFile.exists()) {
-        try {
-          manifest = (await realmFile.json()) as RealmManifest;
-        } catch {
-          console.warn(`[AdminRegistry] Failed to parse ${realmJsonPath}`);
-        }
-      }
-
-      // Fallback to gremius.json
-      if (!manifest) {
-        const legacyFile = Bun.file(legacyPath);
-        if (await legacyFile.exists()) {
-          try {
-            manifest = (await legacyFile.json()) as RealmManifest;
-          } catch {
-            console.warn(`[AdminRegistry] Failed to parse ${legacyPath}`);
-          }
-        }
-      }
+    for (const dir of grimoireDirs) {
+      // grimoire.json, con respaldo a kitsuden.json SOLO si de verdad contiene
+      // un grimoire: en ese mismo directorio kitsuden.json es el tema.
+      const manifest = (await leerManifiestoGrimoire(
+        join(grimoiresDir, dir.name)
+      )) as GrimoireManifest | null;
 
       if (manifest && manifest.id) {
-        realms.push({
+        grimoires.push({
           id: manifest.id,
           name: manifest.name || manifest.id,
           description: manifest.description,
-          grimoires: manifest.grimoires || [],
-          optionalGrimoires: manifest.optional_grimoires || [],
+          kons: manifest.kons || [],
+          optionalKons: manifest.optional_kons || [],
         });
       }
     }
   } catch (err) {
-    // Realms directory might not exist
-    console.log("[AdminRegistry] No realms directory found or error scanning:", err);
+    // Esto era un `console.log` para un ERROR. Que la carpeta de grimoires no
+    // exista es normal y no merece ruido; que el escaneo falle por otra razón,
+    // sí — y con `console.log` las dos cosas eran la misma línea invisible.
+    logger.debug({ err }, "[AdminRegistry] no hay carpeta de grimoires o falló el escaneo");
   }
 
-  return realms;
+  return grimoires;
 }
 
 /**
- * Extract admin views from grimoire manifest (Hybrid Rendering support).
- * Reads grimoire.json `admin.views` as the primary source.
+ * La vista por defecto, comprobada contra las vistas que existen de verdad.
+ *
+ * ── POR QUE ES UNA SOLA FUNCION ────────────────────────────────────────────
+ *
+ * Porque `defaultView` se asignaba en TRES sitios —dos constructores y el
+ * parcheo por override— y solo uno comprobaba nada. Se corrigió el primero y
+ * `kon-esports` siguió anunciando `"grid"` con una sola vista llamada
+ * `to-panel`: el fallo entero, intacto, por la rama que no se tocó.
+ *
+ * Con una función, la pregunta es la misma en los tres sitios y el cuarto que
+ * alguien añada la encuentra escrita.
+ *
+ * ── QUE ROMPIA ─────────────────────────────────────────────────────────────
+ *
+ * Nueve kons declaran `admin.defaultView: "grid"`, que no es el id de ninguna
+ * vista: las generadas se llaman `grid-<tabla>`. El panel abría con ese id, el
+ * filtro por vista devolvía CERO vistas, sin vista no había tabla, y el modal
+ * de alta terminaba pidiendo el esquema de una tabla llamada como el kon:
+ *
+ *     Could not load schema for table "kon-character-builder"
+ *
+ * Cuatro capas entre la causa y el mensaje, y el mensaje acusa a una tabla que
+ * nunca existió.
+ */
+function vistaPorDefectoValida(
+  declarada: string | undefined | null,
+  views: { id: string }[],
+  konId: string
+): string | null {
+  if (declarada && views.some((v) => v.id === declarada)) return declarada;
+
+  if (declarada) {
+    console.warn(
+      `  ⚠️  ${konId}: admin.defaultView es "${declarada}" y no hay ninguna vista ` +
+        `con ese id (${views.map((v) => v.id).join(", ") || "ninguna"}). Se usa la primera.`
+    );
+  }
+
+  // `?? null` y no un id inventado: "este kon no expone vistas" es una
+  // respuesta válida, y fabricar una convierte eso en un error de tabla.
+  return views[0]?.id ?? null;
+}
+
+/**
+ * Extract admin views from kon manifest (Hybrid Rendering support).
+ * Reads kon.json `admin.views` as the primary source.
  * Returns empty array if no admin.views declared — caller should fallback.
  */
-function extractViewsFromManifest(grimoire: GremiusManifest): AdminViewConfig[] {
-  const adminConfig = (grimoire as any).admin;
+function extractViewsFromManifest(kon: KitsudenManifest): AdminViewConfig[] {
+  const adminConfig = (kon as any).admin;
   if (!adminConfig || !Array.isArray(adminConfig.views)) {
     return [];
   }
@@ -228,7 +303,15 @@ function extractViewsFromManifest(grimoire: GremiusManifest): AdminViewConfig[] 
 
     // Normalize unknown/invalid types to valid AdminViewConfig types
     let type = raw.type;
-    const validTypes = new Set(["grid", "kanban", "calendar", "custom"]);
+    // `element` es un tipo de PRIMERA CLASE, no una rareza: es como un kon
+    // aporta su propia pantalla sin compilarse contra el admin (un Web
+    // Component servido desde el propio kon).
+    //
+    // Faltaba en esta lista, asi que caia en la normalizacion de abajo y se
+    // convertia en "grid" sin avisar. Cuatro kons —tierlist, broadcast,
+    // broadcast-moba y esports— traian su vista, la API la servia
+    // correctamente, y el admin acababa pintando una rejilla en su lugar.
+    const validTypes = new Set(["grid", "kanban", "calendar", "custom", "element"]);
     const typeNormalization: Record<string, string> = {
       list: "grid",
       table: "grid",
@@ -248,7 +331,14 @@ function extractViewsFromManifest(grimoire: GremiusManifest): AdminViewConfig[] 
 
     // For custom views, derive component path if not explicitly set
     if (type === "custom") {
-      view.component = raw.component || `$views/${getViewPath(grimoire.id)}`;
+      view.component = raw.component || `$views/${getViewPath(kon.id)}`;
+    }
+
+    // Un Web Component necesita saber COMO se llama la etiqueta y DONDE esta el
+    // fichero; sin esos dos datos el admin no puede montarlo.
+    if (type === "element") {
+      view.element = raw.element;
+      view.src = raw.src;
     }
 
     // Pass through extra properties used by DataExplorer and UI
@@ -260,6 +350,34 @@ function extractViewsFromManifest(grimoire: GremiusManifest): AdminViewConfig[] 
     if (raw.rowActions !== undefined) view.rowActions = raw.rowActions;
     if (raw.bulkActions !== undefined) view.bulkActions = raw.bulkActions;
 
+    /**
+     * ── EL FILTRO DE LA VISTA, QUE SE PERDIA AQUI ──────────────────────────
+     *
+     * `defaultFilter` es lo que hace que «Publicados» enseñe los publicados y
+     * «Borradores» los borradores. Sin él, dos pestañas sobre la misma tabla
+     * piden lo mismo y enseñan lo mismo — un post en borrador aparecía bajo
+     * «Publicados».
+     *
+     * Ya se arregló una vez en el cliente (`generateExplorerConfig` no lo
+     * copiaba) y siguió sin funcionar, porque el dato NUNCA LLEGABA: este
+     * mapeo copia campo por campo y `defaultFilter` no estaba en la lista. Se
+     * arregló la segunda mitad del camino mientras la primera seguía cortada.
+     *
+     * Copiar campo a campo falla en silencio por diseño: lo que no se nombra
+     * desaparece sin un aviso. Por eso hay una prueba que compara las claves
+     * que usan los `kon.json` con las que este bloque reenvía.
+     */
+    if (raw.defaultFilter !== undefined) view.defaultFilter = raw.defaultFilter;
+
+    /**
+     * Nombre en singular para el botón «Agregar».
+     *
+     * Sustituye a la singularización por expresión regular que producía
+     * «Agregar All Gam»: ahora el kon lo declara y el panel lo usa tal cual.
+     * Si no llega, el botón dice «Agregar» a secas — feo pero nunca inventado.
+     */
+    if (raw.singularName !== undefined) view.singularName = raw.singularName;
+
     views.push(view);
   }
 
@@ -267,35 +385,61 @@ function extractViewsFromManifest(grimoire: GremiusManifest): AdminViewConfig[] 
 }
 
 /**
- * Build grimoire config as part of a realm (dynamic)
+ * Build kon config as part of a grimoire (dynamic)
  */
-async function buildRealmGrimoireConfig(
-  grimoire: GremiusManifest,
-  _realm: RealmInfo
-): Promise<GrimoireAdminConfig | null> {
+/**
+ * La base de API que el kon declara, o nada.
+ *
+ * ── POR QUÉ ES UNA FUNCIÓN Y NO DOS LÍNEAS ─────────────────────────────────
+ *
+ * Porque había dos constructores del mismo objeto —`buildKonAdminConfig` y
+ * `buildGrimoireKonConfig`— y solo uno rellenaba este campo. Un kon que
+ * perteneciera a un grimoire perdía su `apiBase` declarada sin que nada lo
+ * dijera: kon-dms declara `/api/dms` en su manifiesto y el registro devolvía
+ * `undefined`. Dos sitios calculando lo mismo divergen; uno no puede.
+ *
+ * ── POR QUÉ NO SE DEDUCE DE `mount.path` ───────────────────────────────────
+ *
+ * Aquí ponía `admin?.apiBase || mount?.path`, y eso es una promesa falsa:
+ * `mount.path` dice dónde se engancha el router del kon; `apiBase` promete que
+ * `<apiBase>/<tabla>` lista esa tabla. Academy monta en `/api/academy` y no
+ * sirve nada parecido a `/cursos`.
+ *
+ * Con la deducción, el panel fijaba un endpoint por kon y lo usaba en TODAS sus
+ * pestañas: en Academy las once pedían `cursos`. Era la causa de «no puedo
+ * moverme entre opciones dentro de cada kon».
+ */
+function apiBaseDeclarada(kon: KitsudenManifest): string | undefined {
+  return (kon as { admin?: { apiBase?: string } }).admin?.apiBase;
+}
+
+async function buildGrimoireKonConfig(
+  kon: KitsudenManifest,
+  _grimoire: GrimoireInfo
+): Promise<KonAdminConfig | null> {
   // Skip engine infrastructure
-  if (isEngineInfrastructure(grimoire.id)) {
+  if (isEngineInfrastructure(kon.id)) {
     return null;
   }
 
-  const grimoirePath = join(getPackagesRoot(), "grimoires", getGrimoireDirName(grimoire.id));
+  const konPath = join(getPackagesRoot(), "kons", getKonDirName(kon.id));
 
-  // Get tables from grimoire.json or infer from id
-  const tables = await detectTables(grimoire, grimoirePath);
+  // Get tables from kon.json or infer from id
+  const tables = await detectTables(kon, konPath);
 
-  // 1. Try to read admin.views from grimoire.json (Hybrid Rendering)
-  const views = extractViewsFromManifest(grimoire);
+  // 1. Try to read admin.views from kon.json (Hybrid Rendering)
+  const views = extractViewsFromManifest(kon);
 
   // 2. Fallback to legacy behavior if no admin.views declared
   let hasCustomViewLegacy = false;
   if (views.length === 0) {
-    hasCustomViewLegacy = await detectCustomView(grimoire.id);
+    hasCustomViewLegacy = await detectCustomView(kon.id);
     if (hasCustomViewLegacy) {
       views.push({
         id: "custom",
         type: "custom",
         title: "Overview",
-        component: `$views/${getViewPath(grimoire.id)}`,
+        component: `$views/${getViewPath(kon.id)}`,
       });
     }
     for (const table of tables) {
@@ -309,57 +453,49 @@ async function buildRealmGrimoireConfig(
   }
 
   const hasCustomView = views.some((v) => v.type === "custom") || hasCustomViewLegacy;
-  const defaultView = (grimoire as any).admin?.defaultView || views[0]?.id || "grid";
+  const defaultView = vistaPorDefectoValida((kon as any).admin?.defaultView, views, kon.id);
 
   return {
-    id: grimoire.id,
-    name: grimoire.name || grimoire.id,
-    icon: grimoire.icon || getDefaultIcon(grimoire.id),
-    category: "esports", // Realms are always esports category
+    id: kon.id,
+    name: kon.name || kon.id,
+    icon: kon.icon || getDefaultIcon(kon.id),
+    category: "esports", // Grimoires are always esports category
     hasCustomView,
     tables,
     views,
     defaultView,
+    // Faltaba: un kon de grimoire perdía su `apiBase` declarada.
+    apiBase: apiBaseDeclarada(kon),
   };
 }
 
 /**
- * Scan all grimoires and build admin registry
+ * Scan all kons and build admin registry
  */
 /**
- * Load the manifest of the currently active realm (realm.json).
+ * Load the manifest of the currently active grimoire (grimoire.json).
  */
-async function loadActiveRealmManifest(): Promise<RealmManifest | null> {
-  const activeRealmId =
-    process.env.GREMIUS_ACTIVE_REALM || process.env.GREMIUS_ACTIVE_THEME || null;
-  if (!activeRealmId) return null;
+async function loadActiveGrimoireManifest(): Promise<GrimoireManifest | null> {
+  const activeGrimoireId =
+    process.env.KITSUDEN_ACTIVE_GRIMOIRE || process.env.KITSUDEN_ACTIVE_THEME || null;
+  if (!activeGrimoireId) return null;
 
-  const realmJsonPath = join(getPackagesRoot(), "realms", activeRealmId, "realm.json");
-  const legacyPath = join(getPackagesRoot(), "realms", activeRealmId, "gremius.json");
-
-  for (const path of [realmJsonPath, legacyPath]) {
-    const file = Bun.file(path);
-    if (await file.exists()) {
-      try {
-        return (await file.json()) as RealmManifest;
-      } catch {
-        // ignore
-      }
-    }
-  }
-  return null;
+  const manifiesto = await leerManifiestoGrimoire(
+    join(getPackagesRoot(), "grimoires", activeGrimoireId)
+  );
+  return manifiesto as GrimoireManifest | null;
 }
 
 /**
- * Apply realm-level overrides to a grimoire admin config.
+ * Apply grimoire-level overrides to a kon admin config.
  */
-function applyRealmOverrides(
-  config: GrimoireAdminConfig,
-  realmManifest: RealmManifest | null
-): GrimoireAdminConfig {
-  if (!realmManifest?.grimoireConfig) return config;
+function applyGrimoireOverrides(
+  config: KonAdminConfig,
+  grimoireManifest: GrimoireManifest | null
+): KonAdminConfig {
+  if (!grimoireManifest?.konConfig) return config;
 
-  const override = realmManifest.grimoireConfig[config.id];
+  const override = grimoireManifest.konConfig[config.id];
   if (!override) return config;
 
   // Clone to avoid mutating original
@@ -370,9 +506,10 @@ function applyRealmOverrides(
     patched.name = override.displayName;
   }
 
-  // Override default view
+  // Override default view — comprobada igual que las otras dos: un override
+  // que apunta a una vista inexistente rompe lo mismo que un manifiesto.
   if (override.defaultView) {
-    patched.defaultView = override.defaultView;
+    patched.defaultView = vistaPorDefectoValida(override.defaultView, patched.views, patched.id);
   }
 
   // Hide tables
@@ -390,55 +527,97 @@ function applyRealmOverrides(
   return patched;
 }
 
-export async function buildAdminRegistry(): Promise<GrimoireAdminConfig[]> {
+export async function buildAdminRegistry(): Promise<KonAdminConfig[]> {
   // Check cache
   if (registryCache && Date.now() - cacheTimestamp < CACHE_TTL) {
     return registryCache;
   }
 
-  const grimoires = await scanPackages("grimoires");
-  const realms = await scanRealms();
-  const activeRealmManifest = await loadActiveRealmManifest();
-  const configs: GrimoireAdminConfig[] = [];
+  const kons = await scanPackages("kons");
+  const grimoires = await scanGrimoires();
+  const activeGrimoireManifest = await loadActiveGrimoireManifest();
+  const configs: KonAdminConfig[] = [];
 
-  // Build a set of grimoire IDs that belong to realms
-  const realmGrimoireIds = new Set<string>();
-  for (const realm of realms) {
-    for (const gId of realm.grimoires) {
-      realmGrimoireIds.add(gId);
-    }
-    for (const gId of realm.optionalGrimoires) {
-      realmGrimoireIds.add(gId);
+  /**
+   * Kons que construye el segundo bucle, para no construirlos dos veces.
+   *
+   * ── EL HUECO QUE ESTO CIERRA ─────────────────────────────────────────────
+   *
+   * Aquí se añadían también los `optionalKons`, y el segundo bucle solo recorre
+   * `grimoire.kons`. Resultado: un kon que solo aparezca como OPCIONAL de algún
+   * grimoire se saltaba aquí y no se añadía allí — desaparecía del registro sin
+   * que nada fallara.
+   *
+   * Eran TRECE de veintiséis: booking, members, payments, newsletter, wiki,
+   * maps, cardsim, tierlist, builder, formulas, directory, ocr-training y
+   * broadcast-moba. Todos listados como opcionales en grimoire-gremius,
+   * grimoire-viggo o grimoire-vekdocs.
+   *
+   * El síntoma no se parecía a esto: `/api/admin/registry/kon-booking` devolvía
+   * 404, el panel caía a su configuración por defecto —una sola vista con
+   * `table = <id del kon>`— y el formulario decía
+   *
+   *     Could not load schema for table "kon-booking"
+   *
+   * o sea, el id del kon disfrazado de tabla que falta. Las tres pestañas que
+   * declara su manifiesto no aparecían por ningún lado.
+   *
+   * Que un kon sea OPCIONAL de un grimoire no lo hace propiedad de ese
+   * grimoire: sigue siendo un kon suelto que se muestra por sí mismo. Solo se
+   * excluyen los que el segundo bucle va a construir de verdad.
+   */
+  const grimoireKonIds = new Set<string>();
+  for (const grimoire of grimoires) {
+    for (const gId of grimoire.kons) {
+      grimoireKonIds.add(gId);
     }
   }
 
-  // Scan standalone grimoires (not part of any realm)
-  for (const grimoire of grimoires) {
-    // Skip grimoires that belong to realms - they'll be handled separately
-    if (realmGrimoireIds.has(grimoire.id)) {
+  // Scan standalone kons (not part of any grimoire)
+  for (const kon of kons) {
+    // Skip kons that belong to grimoires - they'll be handled separately
+    if (grimoireKonIds.has(kon.id)) {
       continue;
     }
 
-    const config = await buildGrimoireAdminConfig(grimoire);
+    const config = await buildKonAdminConfig(kon);
     if (config) {
       configs.push(config);
     }
   }
 
-  // Scan realm grimoires dynamically
-  for (const realm of realms) {
-    for (const grimoireId of realm.grimoires) {
-      // Find the grimoire manifest
-      const grimoire = grimoires.find((g) => g.id === grimoireId);
-      if (grimoire) {
-        const config = await buildRealmGrimoireConfig(grimoire, realm);
+  /**
+   * ── UN KON, UNA ENTRADA ──────────────────────────────────────────────────
+   *
+   * Un mismo kon puede estar listado en VARIOS grimoires: `kon-dms` aparece en
+   * `grimoire-corporate`, `grimoire-sharepoint` y `grimoire-vekdocs`. Sin este
+   * control se empujaba una configuración por cada uno, y el registro devolvía
+   * TRES entradas idénticas con el mismo `id`.
+   *
+   * Lo que se ve en el panel: el kon repetido tres veces en la barra lateral.
+   * Y como Svelte indexa las listas por clave, un id duplicado es además la
+   * clase de cosa que rompe el renderizado entero de la lista, no solo su
+   * aspecto.
+   *
+   * Se queda el primero: es el mismo que ya se estaba usando —los tres
+   * generaban una configuración idéntica— y el orden de escaneo es estable.
+   */
+  const yaRegistrados = new Set(configs.map((c) => c.id));
+
+  for (const grimoire of grimoires) {
+    for (const konId of grimoire.kons) {
+      if (yaRegistrados.has(konId)) continue;
+
+      // Find the kon manifest
+      const kon = kons.find((g) => g.id === konId);
+      if (kon) {
+        const config = await buildGrimoireKonConfig(kon, grimoire);
         if (config) {
           configs.push(config);
+          yaRegistrados.add(config.id);
         }
       } else {
-        console.warn(
-          `[AdminRegistry] Realm ${realm.id} references unknown grimoire: ${grimoireId}`
-        );
+        console.warn(`[AdminRegistry] Grimoire ${grimoire.id} references unknown kon: ${konId}`);
       }
     }
   }
@@ -451,9 +630,9 @@ export async function buildAdminRegistry(): Promise<GrimoireAdminConfig[]> {
     }
   }
 
-  // Apply realm overrides (name changes, hidden tables, extra views)
+  // Apply grimoire overrides (name changes, hidden tables, extra views)
   for (let i = 0; i < configs.length; i++) {
-    configs[i] = applyRealmOverrides(configs[i], activeRealmManifest);
+    configs[i] = applyGrimoireOverrides(configs[i], activeGrimoireManifest);
   }
 
   // Sort: custom views first, then alphabetically
@@ -469,34 +648,32 @@ export async function buildAdminRegistry(): Promise<GrimoireAdminConfig[]> {
 }
 
 /**
- * Build admin config for a single grimoire
+ * Build admin config for a single kon
  */
-async function buildGrimoireAdminConfig(
-  grimoire: GremiusManifest
-): Promise<GrimoireAdminConfig | null> {
+async function buildKonAdminConfig(kon: KitsudenManifest): Promise<KonAdminConfig | null> {
   // Skip engine infrastructure (Level 1 - always active, not user-facing)
-  if (isEngineInfrastructure(grimoire.id)) {
+  if (isEngineInfrastructure(kon.id)) {
     return null;
   }
 
-  const grimoirePath = join(getPackagesRoot(), "grimoires", getGrimoireDirName(grimoire.id));
+  const konPath = join(getPackagesRoot(), "kons", getKonDirName(kon.id));
 
-  // 2. Get tables from grimoire.json or infer from id
-  const tables = await detectTables(grimoire, grimoirePath);
+  // 2. Get tables from kon.json or infer from id
+  const tables = await detectTables(kon, konPath);
 
-  // 3. Build views config — read admin.views from grimoire.json (Hybrid Rendering)
-  const views = extractViewsFromManifest(grimoire);
+  // 3. Build views config — read admin.views from kon.json (Hybrid Rendering)
+  const views = extractViewsFromManifest(kon);
 
   // Fallback to legacy behavior if no admin.views declared
   let hasCustomViewLegacy = false;
   if (views.length === 0) {
-    hasCustomViewLegacy = await detectCustomView(grimoire.id);
+    hasCustomViewLegacy = await detectCustomView(kon.id);
     if (hasCustomViewLegacy) {
       views.push({
         id: "custom",
         type: "custom",
         title: "Overview",
-        component: `$views/${getViewPath(grimoire.id)}`,
+        component: `$views/${getViewPath(kon.id)}`,
       });
     }
     for (const table of tables) {
@@ -511,16 +688,15 @@ async function buildGrimoireAdminConfig(
 
   const hasCustomView = views.some((v) => v.type === "custom") || hasCustomViewLegacy;
 
-  // Get apiBase from grimoire.json admin config or mount path
-  const apiBase = (grimoire as any).admin?.apiBase || (grimoire as any).mount?.path;
+  const apiBase = apiBaseDeclarada(kon);
 
-  const defaultView = (grimoire as any).admin?.defaultView || views[0]?.id || "grid";
+  const defaultView = vistaPorDefectoValida((kon as any).admin?.defaultView, views, kon.id);
 
   return {
-    id: grimoire.id,
-    name: grimoire.name || grimoire.id,
-    icon: grimoire.icon || getDefaultIcon(grimoire.id),
-    category: mapCategory(grimoire.category, grimoire.realmId),
+    id: kon.id,
+    name: kon.name || kon.id,
+    icon: kon.icon || getDefaultIcon(kon.id),
+    category: mapCategory(kon.category, kon.grimoireId),
     hasCustomView,
     tables,
     views,
@@ -534,7 +710,7 @@ async function buildGrimoireAdminConfig(
  */
 async function buildCoreModuleAdminConfig(
   coreModule: CoreModuleWithView
-): Promise<GrimoireAdminConfig | null> {
+): Promise<KonAdminConfig | null> {
   // 1. Detect custom view by convention
   const hasCustomView = await detectCustomView(coreModule.id);
 
@@ -588,18 +764,26 @@ async function buildCoreModuleAdminConfig(
     hasCustomView,
     tables,
     views,
-    defaultView: hasCustomView ? "custom" : views[0]?.id || "grid",
+    // Sin vistas NO se inventa ninguna.
+    //
+    // Esto acababa en `|| "grid"`, un identificador que no corresponde a nada.
+    // Un kon sin tablas ni vista propia —los hay que solo registran
+    // perfiles de juego en `kon-broadcast`— recibia asi una vista de rejilla
+    // inexistente, y el admin la abria como explorador de una tabla llamada
+    // igual que el kon. De ahi «Collection '<kon>' not found» y
+    // «0 columnas»: no faltaba nada, es que ese kon no tiene datos que mostrar.
+    defaultView: hasCustomView ? "custom" : (views[0]?.id ?? null),
   };
 }
 
 /**
- * Detect if grimoire has custom Svelte view by convention.
+ * Detect if kon has custom Svelte view by convention.
  * Uses getViewPath() which already handles all special mappings.
  * Avoids false positives from shared view files (e.g., PostsView.svelte
- * being incorrectly detected for every grimoire).
+ * being incorrectly detected for every kon).
  */
-async function detectCustomView(grimoireId: string): Promise<boolean> {
-  const viewPath = getViewPath(grimoireId);
+async function detectCustomView(konId: string): Promise<boolean> {
+  const viewPath = getViewPath(konId);
 
   // Primary: the mapped view path (handles all special cases)
   if (await Bun.file(join(process.cwd(), "../../packages/admin/src/views", viewPath)).exists()) {
@@ -611,7 +795,7 @@ async function detectCustomView(grimoireId: string): Promise<boolean> {
     ? viewPath.replace(/\/[^/]+\.svelte$/, "/index.svelte")
     : `${viewPath.replace(/\.svelte$/, "")}/index.svelte`;
 
-  if (await Bun.file(join(process.cwd(), "../admin/src/views", indexPath)).exists()) {
+  if (await Bun.file(join(process.cwd(), "../../packages/admin/src/views", indexPath)).exists()) {
     return true;
   }
 
@@ -619,9 +803,9 @@ async function detectCustomView(grimoireId: string): Promise<boolean> {
 }
 
 /**
- * Table config from grimoire manifest
+ * Table config from kon manifest
  */
-interface GrimoireTableConfig {
+interface KonTableConfig {
   name?: string;
   table?: string;
   label?: string;
@@ -634,18 +818,18 @@ interface GrimoireTableConfig {
 }
 
 /**
- * Detect tables for a grimoire
+ * Detect tables for a kon
  */
 async function detectTables(
-  grimoire: GremiusManifest,
+  kon: KitsudenManifest,
 
-  _grimoirePath: string
+  _konPath: string
 ): Promise<AdminTableConfig[]> {
-  // Priority 1: Tables defined in grimoire.json
-  if (grimoire.tables && Array.isArray(grimoire.tables)) {
+  // Priority 1: Tables defined in kon.json
+  if (kon.tables && Array.isArray(kon.tables)) {
     const configs: AdminTableConfig[] = [];
 
-    for (const t of grimoire.tables) {
+    for (const t of kon.tables) {
       if (typeof t === "string") {
         // Try to introspect from DB for extra metadata
         const introspected = await introspectTable(t);
@@ -663,7 +847,7 @@ async function detectTables(
             .map((c) => c.name),
         });
       } else {
-        const tableConfig = t as GrimoireTableConfig;
+        const tableConfig = t as KonTableConfig;
         const name = tableConfig.name || tableConfig.table || "";
         configs.push({
           name,
@@ -682,7 +866,7 @@ async function detectTables(
   }
 
   // Priority 2: Auto-detect table from DB introspection
-  const baseName = grimoire.id.replace(/^grimoire-/, "").replace(/-/g, "_");
+  const baseName = kon.id.replace(/^kon-/, "").replace(/-/g, "_");
 
   // Try to find table with same name or plural
   const introspected =
@@ -701,8 +885,8 @@ async function detectTables(
     return [
       {
         name: introspected.name,
-        label: grimoire.name || humanize(grimoire.id),
-        icon: getDefaultIcon(grimoire.id),
+        label: kon.name || humanize(kon.id),
+        icon: getDefaultIcon(kon.id),
         primaryKey: introspected.primaryKey[0] || "id",
         searchableFields,
         filterableFields,
@@ -714,8 +898,8 @@ async function detectTables(
   return [
     {
       name: baseName,
-      label: grimoire.name || humanize(grimoire.id),
-      icon: getDefaultIcon(grimoire.id),
+      label: kon.name || humanize(kon.id),
+      icon: getDefaultIcon(kon.id),
       primaryKey: "id",
     },
   ];
@@ -748,96 +932,96 @@ function isFilterableType(col: IntrospectedColumn): boolean {
 }
 
 /**
- * Get the directory name for a grimoire ID
+ * Get the directory name for a kon ID
  */
-function getGrimoireDirName(id: string): string {
+function getKonDirName(id: string): string {
   // Common patterns
-  if (id.startsWith("grimoire-")) return id;
+  if (id.startsWith("kon-")) return id;
   if (id.startsWith("core-")) return id.replace("core-", "core/");
-  return `grimoire-${id}`;
+  return `kon-${id}`;
 }
 
 /**
  * Get view path for custom component
- * Handles grimoire- prefix stripping for view paths
+ * Handles kon- prefix stripping for view paths
  */
-function getViewPath(grimoireId: string): string {
-  const shortId = grimoireId.replace(/^grimoire-/, "");
+function getViewPath(konId: string): string {
+  const shortId = konId.replace(/^kon-/, "");
   const pascal = pascalCase(shortId);
 
-  // Special cases for grimoire IDs that map to different view paths
+  // Special cases for kon IDs that map to different view paths
 
   // blog: stored in content/ folder with PostsView name
-  if (grimoireId === "grimoire-blog") {
+  if (konId === "kon-blog") {
     return "content/PostsView.svelte";
   }
 
   // Page Builder (Blocks): maps to blocks/ folder
-  if (grimoireId === "grimoire-blocks") {
+  if (konId === "kon-blocks") {
     return "blocks/BlocksView.svelte";
   }
 
   // Academy LMS: maps to academy/ folder
-  if (grimoireId === "grimoire-academy-lms") {
+  if (konId === "kon-academy-lms") {
     return "academy/AcademyView.svelte";
   }
 
-  // Games (esports realm): maps to games/ folder
-  if (grimoireId === "grimoire-games") {
+  // Games (esports grimoire): maps to games/ folder
+  if (konId === "kon-games") {
     return "games/GamesView.svelte";
   }
 
   // Streamers: maps to users/ folder
-  if (grimoireId === "grimoire-streamers") {
+  if (konId === "kon-streamers") {
     return "users/StreamersView.svelte";
   }
 
   // Webhooks: maps to webhooks/ folder
-  if (grimoireId === "grimoire-webhooks" || grimoireId === "webhooks") {
+  if (konId === "kon-webhooks" || konId === "webhooks") {
     return "webhooks/WebhooksView.svelte";
   }
 
   // Workers: maps to workers/ folder
-  if (grimoireId === "grimoire-workers" || grimoireId === "workers") {
+  if (konId === "kon-workers" || konId === "workers") {
     return "workers/WorkersView.svelte";
   }
 
   // Media Library: maps to Media.svelte
-  if (grimoireId === "media-library" || grimoireId === "media" || grimoireId === "grimoire-media") {
+  if (konId === "media-library" || konId === "media" || konId === "kon-media") {
     return "Media.svelte";
   }
 
-  // DataSets: Core grimoire - maps to DataSets.svelte
-  if (grimoireId === "grimoire-datasets" || grimoireId === "datasets") {
+  // DataSets: Core kon - maps to DataSets.svelte
+  if (konId === "kon-datasets" || konId === "datasets") {
     return "DataSets.svelte";
   }
 
   // Page Builder (Blocks): maps to blocks/BlocksView.svelte
-  if (grimoireId === "grimoire-blocks" || grimoireId === "blocks") {
+  if (konId === "kon-blocks" || konId === "blocks") {
     return "blocks/BlocksView.svelte";
   }
 
   // Blog: maps to content/PostsView.svelte
-  if (grimoireId === "grimoire-blog" || grimoireId === "blog") {
+  if (konId === "kon-blog" || konId === "blog") {
     return "content/PostsView.svelte";
   }
 
-  // Default: use short ID without grimoire- prefix
+  // Default: use short ID without kon- prefix
   return `${shortId}/${pascal}View.svelte`;
 }
 
 /**
- * Engine infrastructure grimoires that should be hidden from admin
+ * Engine infrastructure kons that should be hidden from admin
  * These are Level 1 - always active, not user-facing
  *
- * NOTE: Media Library is now a Core Grimoire (toggleable), not engine infrastructure.
+ * NOTE: Media Library is now a Core Kon (toggleable), not engine infrastructure.
  * The underlying MinIO storage service remains always-on as engine infrastructure,
- * but the API routes and UI are toggleable via grimoire system.
+ * but the API routes and UI are toggleable via kon system.
  */
 const ENGINE_INFRASTRUCTURE: string[] = [];
 
 /**
- * Check if grimoire is engine infrastructure (should be hidden)
+ * Check if kon is engine infrastructure (should be hidden)
  */
 function isEngineInfrastructure(id: string): boolean {
   return ENGINE_INFRASTRUCTURE.includes(id);
@@ -847,25 +1031,29 @@ function isEngineInfrastructure(id: string): boolean {
  * Map category to admin category
  *
  * Category mapping:
- * - "grimoire-core" | "core" → "core" (Level 2 - Core grimoires: blog, blocks, webhooks, connectors)
+ * - "core-den" | "core" → "core" (Level 2 - Core kons: blog, blocks, webhooks, connectors)
  * - "optional" → "content" or "data" (Level 3 - Optional features)
- * - "realm" | realmId present → "esports" (Level 4 - Realm-specific, dynamic)
+ * - "grimoire" | grimoireId present → "esports" (Level 4 - Grimoire-specific, dynamic)
  */
-function mapCategory(category?: string, realmId?: string): GrimoireAdminConfig["category"] {
-  // Realms are dynamic and separate from optional grimoires
-  if (realmId || category === "realm") return "esports";
-  // Core grimoires (both grimoire-core and core/system infrastructure)
-  if (category === "grimoire-core" || category === "core") return "core";
-  // Content grimoires
+function mapCategory(category?: string, grimoireId?: string): KonAdminConfig["category"] {
+  // Grimoires are dynamic and separate from optional kons
+  if (grimoireId || category === "grimoire") return "esports";
+  // Core kons (both core-den and core/system infrastructure)
+  if (category === "core-den" || category === "core") return "core";
+  // Content kons
   if (["blog", "media", "content"].includes(category || "")) return "content";
-  // System/Infrastructure grimoires also go to core
+  // System/Infrastructure kons also go to core
   if (["webhooks", "workers", "system"].includes(category || "")) return "core";
-  // Default to data for other optional grimoires
+  // La familia de herramientas (builders, wikis, mapas, simuladores) declara
+  // `tools`, que aún no existe en el contrato versionado del registry: viaja
+  // como `data` hasta que se suba la versión y el panel le dé sección propia.
+  if (category === "tools") return "data";
+  // Default to data for other optional kons
   return "data";
 }
 
 /**
- * Get default icon for grimoire/table
+ * Get default icon for kon/table
  */
 function getDefaultIcon(id: string): string {
   const icons: Record<string, string> = {
@@ -910,7 +1098,7 @@ function getTableIcon(tableName: string): string {
  */
 function humanize(str: string): string {
   return str
-    .replace(/^grimoire-/, "")
+    .replace(/^kon-/, "")
     .replace(/_/g, " ")
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (s) => s.toUpperCase())
@@ -922,14 +1110,14 @@ function humanize(str: string): string {
  */
 function pascalCase(str: string): string {
   return str
-    .replace(/^grimoire-/, "")
+    .replace(/^kon-/, "")
     .replace(/[-_]/g, " ")
     .replace(/(?:^|\s)(\w)/g, (_, c) => c.toUpperCase())
     .replace(/\s/g, "");
 }
 
 /**
- * Clear registry cache (useful after grimoire installation)
+ * Clear registry cache (useful after kon installation)
  */
 export function clearAdminRegistryCache() {
   registryCache = null;
@@ -937,11 +1125,9 @@ export function clearAdminRegistryCache() {
 }
 
 /**
- * Get admin config for a specific grimoire
+ * Get admin config for a specific kon
  */
-export async function getGrimoireAdminConfig(
-  grimoireId: string
-): Promise<GrimoireAdminConfig | null> {
+export async function getKonAdminConfig(konId: string): Promise<KonAdminConfig | null> {
   const registry = await buildAdminRegistry();
-  return registry.find((g) => g.id === grimoireId) || null;
+  return registry.find((g) => g.id === konId) || null;
 }

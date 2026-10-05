@@ -21,7 +21,7 @@
     ArrowUp,
     ArrowDown,
   } from "lucide-svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { toast } from "svelte-sonner";
 
   import { api } from "$lib/api";
@@ -39,9 +39,24 @@
     isFeaturedOnHome?: boolean;
     coverArtId?: string;
   }
+  /**
+   * ── EL CAMPO SE LLAMA `title`, NO `name` ─────────────────────────────────
+   *
+   * La columna de la base es `title` y el endpoint lee `body.title`. Aquí se
+   * mandaba `name`, así que al crear una colección llegaba `title: undefined`
+   * contra una columna `NOT NULL` y la petición reventaba: «Create failed».
+   *
+   * Y en la otra dirección igual: `GET /collections` devuelve `title` y esta
+   * interfaz leía `name`, así que las colecciones existentes salían con el
+   * nombre en blanco.
+   *
+   * Es el mismo fallo que `tags` frente a `tagIds` en el blog. El nombre del
+   * campo ES el contrato, y equivocarlo no da un error de tipos: da un 500 en
+   * un lado y un hueco vacío en el otro.
+   */
   interface Collection {
     id: string;
-    name: string;
+    title: string;
     slug: string;
     displayOrder?: number;
     games?: any[];
@@ -61,7 +76,54 @@
     category?: string;
   }
 
-  let activeTab = $state<"games" | "collections" | "platforms" | "tags">("games");
+  type Pestana = "games" | "collections" | "platforms" | "tags";
+
+  /**
+   * Qué vista del kon se ha pulsado en la barra de arriba.
+   *
+   * Este componente está registrado para DOS vistas —«All Games» y
+   * «Collections»— y tiene sus propias pestañas dentro. Sin esto abría siempre
+   * en «games», así que pulsar «Collections» enseñaba la lista de juegos: la
+   * pestaña se marcaba, el contenido era otro y no fallaba nada.
+   *
+   * Es opcional porque el componente también se usa desde rutas que no pasan
+   * nada; en ese caso se comporta como siempre.
+   */
+  const { viewId }: { viewId?: string } = $props();
+
+  /** `kon-games-collections`, `collections`, `grimoire-games-collections`… */
+  function pestanaDe(id: string | undefined): Pestana {
+    if (!id) return "games";
+    for (const p of ["collections", "platforms", "tags"] as const) {
+      if (id.endsWith(p)) return p;
+    }
+    return "games";
+  }
+
+  // `untrack` en la inicializacion: capturar aqui el valor inicial es
+  // DELIBERADO —el $effect de abajo se encarga de los cambios— y decirlo
+  // explicitamente evita que parezca el descuido que Svelte avisa.
+  let activeTab = $state<Pestana>(untrack(() => pestanaDe(viewId)));
+
+  /**
+   * Y si se cambia de vista sin remontar el componente, la pestaña sigue.
+   *
+   * El router del panel REUTILIZA el componente al navegar entre vistas del
+   * mismo kon, así que un valor calculado solo al inicializar se queda con el
+   * primero — el mismo fallo que dejó las pestañas del explorador sin recargar.
+   *
+   * `untrack` sobre la escritura: `activeTab` también lo cambia quien pulsa las
+   * pestañas de dentro, y leerlo aquí crearía un bucle que le desharía el clic.
+   */
+  let ultimaVistaAplicada = $state<string | undefined>(undefined);
+  $effect(() => {
+    const id = viewId;
+    if (id === ultimaVistaAplicada) return;
+    ultimaVistaAplicada = id;
+    untrack(() => {
+      activeTab = pestanaDe(id);
+    });
+  });
 
   // Games
   let games = $state<Game[]>([]),
@@ -254,7 +316,7 @@
     }
     try {
       await api.createGameCollection({
-        name: newCollectionName.trim(),
+        title: newCollectionName.trim(),
         slug: newCollectionSlug.trim(),
       } as any);
       toast.success("Collection created");
@@ -269,7 +331,7 @@
   async function updateCollection(c: Collection) {
     try {
       await api.updateGameCollection(c.id, {
-        name: editCollectionName,
+        title: editCollectionName,
         slug: editCollectionSlug,
         displayOrder: editCollectionOrder,
       } as any);
@@ -339,21 +401,21 @@
 
   function statusClasses(status: string) {
     return status === "published"
-      ? "bg-gremius-green/10 text-gremius-green border-gremius-green/20"
+      ? "bg-kitsuden-green/10 text-kitsuden-green border-kitsuden-green/20"
       : status === "draft"
-        ? "bg-gremius-amber/10 text-gremius-amber border-gremius-amber/20"
+        ? "bg-kitsuden-amber/10 text-kitsuden-amber border-kitsuden-amber/20"
         : status === "archived"
-          ? "bg-gremius-pink/10 text-gremius-pink border-gremius-pink/20"
-          : "bg-gremius-muted/20 text-gremius-text-dim border-gremius-border";
+          ? "bg-kitsuden-accent-2/10 text-kitsuden-accent-2 border-kitsuden-accent-2/20"
+          : "bg-kitsuden-muted/20 text-kitsuden-text-dim border-kitsuden-border";
   }
   function metacriticClass(s?: number) {
     return s == null
-      ? "bg-gremius-muted/20 text-gremius-text-dim"
+      ? "bg-kitsuden-muted/20 text-kitsuden-text-dim"
       : s >= 75
-        ? "bg-gremius-green/10 text-gremius-green"
+        ? "bg-kitsuden-green/10 text-kitsuden-green"
         : s >= 50
-          ? "bg-gremius-amber/10 text-gremius-amber"
-          : "bg-gremius-pink/10 text-gremius-pink";
+          ? "bg-kitsuden-amber/10 text-kitsuden-amber"
+          : "bg-kitsuden-accent-2/10 text-kitsuden-accent-2";
   }
   function formatDate(d?: string) {
     return d ? new Date(d).toLocaleDateString() : "-";
@@ -395,7 +457,7 @@
   }
   function startEditColl(c: Collection) {
     editingCollectionId = c.id;
-    editCollectionName = c.name;
+    editCollectionName = c.title;
     editCollectionSlug = c.slug;
     editCollectionOrder = c.displayOrder ?? 0;
   }
@@ -405,19 +467,27 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-kitsuden-accent/20 to-kitsuden-purple/20 border border-kitsuden-accent/20 flex items-center justify-center"
         >
-          <Gamepad2 class="w-5 h-5 text-gremius-cyan" />
+          <Gamepad2 class="w-5 h-5 text-kitsuden-accent" />
         </div>
         Game Library
       </h1>
-      <p class="text-sm text-gremius-subtle mt-1">
+      <p class="text-sm text-kitsuden-subtle mt-1">
         Manage games, collections, platforms &amp; tags
       </p>
     </div>
-    <a href="/games/new" class="btn-primary inline-flex items-center gap-2"
+    <!--
+      Antes esto llevaba a `/g/kon-games` a secas: navegabas a la pantalla del
+      kon y ahí se acababa. Ningún formulario, ningún aviso — desde fuera, un
+      botón que no hace nada.
+
+      `?crear=1` lo abre de verdad: el explorador lee ese parámetro al montar,
+      abre el alta y lo limpia de la URL para que recargar no lo repita.
+    -->
+    <a href="/g/kon-games?crear=1" class="btn-primary inline-flex items-center gap-2"
       ><Plus class="w-4 h-4" /> New Game</a
     >
   </div>
@@ -428,40 +498,40 @@
       {#each [1, 2, 3, 4] as _}
         <div class="card p-4 animate-pulse">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-gremius-muted/20"></div>
+            <div class="w-9 h-9 rounded-lg bg-kitsuden-muted/20"></div>
             <div class="space-y-2">
-              <div class="h-3 w-16 bg-gremius-muted/20 rounded"></div>
-              <div class="h-5 w-10 bg-gremius-muted/20 rounded"></div>
+              <div class="h-3 w-16 bg-kitsuden-muted/20 rounded"></div>
+              <div class="h-5 w-10 bg-kitsuden-muted/20 rounded"></div>
             </div>
           </div>
         </div>
       {/each}
     {:else}
       <div class="card p-4 flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-gremius-cyan/10 flex items-center justify-center">
-          <Gamepad2 class="w-4 h-4 text-gremius-cyan" />
+        <div class="w-9 h-9 rounded-lg bg-kitsuden-accent/10 flex items-center justify-center">
+          <Gamepad2 class="w-4 h-4 text-kitsuden-accent" />
         </div>
         <div>
-          <p class="text-xs text-gremius-subtle">Total Games</p>
-          <p class="text-xl font-semibold text-gremius-text">{totalGames.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">Total Games</p>
+          <p class="text-xl font-semibold text-kitsuden-text">{totalGames.toLocaleString()}</p>
         </div>
       </div>
       <div class="card p-4 flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-gremius-green/10 flex items-center justify-center">
-          <CheckCircle class="w-4 h-4 text-gremius-green" />
+        <div class="w-9 h-9 rounded-lg bg-kitsuden-green/10 flex items-center justify-center">
+          <CheckCircle class="w-4 h-4 text-kitsuden-green" />
         </div>
         <div>
-          <p class="text-xs text-gremius-subtle">Published</p>
-          <p class="text-xl font-semibold text-gremius-text">{publishedGames.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">Published</p>
+          <p class="text-xl font-semibold text-kitsuden-text">{publishedGames.toLocaleString()}</p>
         </div>
       </div>
       <div class="card p-4 flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-gremius-amber/10 flex items-center justify-center">
-          <FileEdit class="w-4 h-4 text-gremius-amber" />
+        <div class="w-9 h-9 rounded-lg bg-kitsuden-amber/10 flex items-center justify-center">
+          <FileEdit class="w-4 h-4 text-kitsuden-amber" />
         </div>
         <div>
-          <p class="text-xs text-gremius-subtle">Drafts</p>
-          <p class="text-xl font-semibold text-gremius-text">{draftGames.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">Drafts</p>
+          <p class="text-xl font-semibold text-kitsuden-text">{draftGames.toLocaleString()}</p>
         </div>
       </div>
       <div class="card p-4 flex items-center gap-3">
@@ -469,21 +539,23 @@
           <Layers class="w-4 h-4 text-purple-400" />
         </div>
         <div>
-          <p class="text-xs text-gremius-subtle">Collections</p>
-          <p class="text-xl font-semibold text-gremius-text">{totalCollections.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">Collections</p>
+          <p class="text-xl font-semibold text-kitsuden-text">
+            {totalCollections.toLocaleString()}
+          </p>
         </div>
       </div>
     {/if}
   </div>
 
   <!-- Tabs -->
-  <div class="flex items-center gap-1 border-b border-gremius-border pb-0">
+  <div class="flex items-center gap-1 border-b border-kitsuden-border pb-0">
     {#each [{ id: "games" as const, label: "Games" }, { id: "collections" as const, label: "Collections" }, { id: "platforms" as const, label: "Platforms" }, { id: "tags" as const, label: "Tags" }] as t}
       <button
         class="px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 {activeTab ===
         t.id
-          ? 'text-gremius-cyan border-gremius-cyan bg-gremius-cyan/5'
-          : 'text-gremius-text-dim border-transparent hover:text-gremius-text hover:bg-gremius-card'}"
+          ? 'text-kitsuden-accent border-kitsuden-accent bg-kitsuden-accent/5'
+          : 'text-kitsuden-text-dim border-transparent hover:text-kitsuden-text hover:bg-kitsuden-card'}"
         onclick={() => (activeTab = t.id)}>{t.label}</button
       >
     {/each}
@@ -493,11 +565,11 @@
     <div class="space-y-3 animate-fade-in">
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative flex-1 min-w-[12rem]">
-          <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gremius-subtle" />
+          <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-kitsuden-subtle" />
           <input
             type="text"
             placeholder="Search by title or developer..."
-            class="w-full bg-gremius-card border border-gremius-border rounded-lg pl-9 pr-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+            class="w-full bg-kitsuden-card border border-kitsuden-border rounded-lg pl-9 pr-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
             bind:value={gamesSearch}
             onkeydown={(e) => {
               if (e.key === "Enter") {
@@ -508,7 +580,7 @@
           />
         </div>
         <select
-          class="bg-gremius-card border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+          class="bg-kitsuden-card border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
           bind:value={gamesStatus}
           onchange={() => {
             gamesPage = 1;
@@ -528,11 +600,11 @@
         >
         {#if selectedGameIds.size > 0}
           <div class="flex items-center gap-2 ml-auto">
-            <span class="text-xs text-gremius-subtle">{selectedGameIds.size} selected</span>
-            <button class="btn-ghost text-sm text-gremius-amber" onclick={bulkToggleFeatured}
+            <span class="text-xs text-kitsuden-subtle">{selectedGameIds.size} selected</span>
+            <button class="btn-ghost text-sm text-kitsuden-amber" onclick={bulkToggleFeatured}
               ><Star class="w-3.5 h-3.5" /> Feature</button
             >
-            <button class="btn-ghost text-sm text-gremius-pink" onclick={bulkDeleteGames}
+            <button class="btn-ghost text-sm text-kitsuden-accent-2" onclick={bulkDeleteGames}
               ><Trash2 class="w-3.5 h-3.5" /> Delete</button
             >
           </div>
@@ -543,12 +615,12 @@
         <table class="w-full text-sm">
           <thead>
             <tr
-              class="border-b border-gremius-border text-left text-xs text-gremius-subtle uppercase tracking-wider"
+              class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
             >
               <th class="px-4 py-3 w-10"
                 ><input
                   type="checkbox"
-                  class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan/30"
+                  class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent/30"
                   checked={selectedGameIds.size === games.length && games.length > 0}
                   onchange={toggleAll}
                 /></th
@@ -596,32 +668,32 @@
           <tbody>
             {#if gamesLoading}
               <tr
-                ><td colspan="9" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="9" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><Loader2 class="w-6 h-6 animate-spin mx-auto" /></td
                 ></tr
               >
             {:else if sortedGames().length === 0}
               <tr
-                ><td colspan="9" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="9" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No games found.</td
                 ></tr
               >
             {:else}
               {#each sortedGames() as game (game.id)}
                 <tr
-                  class="border-b border-gremius-border/50 hover:bg-gremius-muted/10 transition-colors"
+                  class="border-b border-kitsuden-border/50 hover:bg-kitsuden-muted/10 transition-colors"
                 >
                   <td class="px-4 py-2.5"
                     ><input
                       type="checkbox"
-                      class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan/30"
+                      class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent/30"
                       checked={selectedGameIds.has(game.id)}
                       onchange={() => toggleSelection(game.id)}
                     /></td
                   >
                   <td class="px-4 py-2.5">
                     <div
-                      class="w-8 h-10 rounded bg-gremius-muted/20 overflow-hidden border border-gremius-border"
+                      class="w-8 h-10 rounded bg-kitsuden-muted/20 overflow-hidden border border-kitsuden-border"
                     >
                       {#if game.coverArtId}<img
                           src={`/api/media/preset/${game.coverArtId}/thumbnail`}
@@ -635,11 +707,28 @@
                         </div>{/if}
                     </div>
                   </td>
-                  <td class="px-4 py-2.5 font-medium text-gremius-text"
-                    ><a href={`/games/${game.id}`} class="hover:text-gremius-cyan transition-colors"
+                  <!--
+                    ── ESTOS DOS ENLACES APUNTABAN A `/games/<id>`, QUE NO EXISTE ──
+
+                    No hay ninguna ruta `/games` en el panel. Y no daba un 404
+                    visible porque nginx sirve el panel para CUALQUIER ruta
+                    —comprobado: `:3001/games/algo` responde 200—, así que se
+                    abría el admin en una ruta que su router no conoce.
+
+                    Es el mismo enlace muerto que dejaba `/games/new` en 404 al
+                    principio de todo esto: se arregló aquel y quedaron estos,
+                    uno por fila.
+
+                    No hay editor de juegos en el panel — los juegos se editan
+                    desde la rejilla del kon con el modal genérico—, así que se
+                    apunta a la pantalla del kon, que sí existe. Cuando haya un
+                    editor propio, estos son los enlaces que hay que cambiar.
+                  -->
+                  <td class="px-4 py-2.5 font-medium text-kitsuden-text"
+                    ><a href={"/g/kon-games"} class="hover:text-kitsuden-accent transition-colors"
                       >{game.title}</a
                     >
-                    <div class="text-[10px] text-gremius-subtle">/{game.slug}</div></td
+                    <div class="text-[10px] text-kitsuden-subtle">/{game.slug}</div></td
                   >
                   <td class="px-4 py-2.5"
                     ><span
@@ -648,8 +737,8 @@
                       )}">{game.status}</span
                     ></td
                   >
-                  <td class="px-4 py-2.5 text-gremius-text-dim">{game.developer || "-"}</td>
-                  <td class="px-4 py-2.5 text-gremius-text-dim">{formatDate(game.releaseDate)}</td>
+                  <td class="px-4 py-2.5 text-kitsuden-text-dim">{game.developer || "-"}</td>
+                  <td class="px-4 py-2.5 text-kitsuden-text-dim">{formatDate(game.releaseDate)}</td>
                   <td class="px-4 py-2.5"
                     ><span
                       class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold {metacriticClass(
@@ -660,17 +749,17 @@
                   <td class="px-4 py-2.5 text-center"
                     ><input
                       type="checkbox"
-                      class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan/30"
+                      class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent/30"
                       checked={!!game.isFeaturedOnHome}
                       onchange={() => toggleFeatured(game)}
                     /></td
                   >
                   <td class="px-4 py-2.5 text-right"
                     ><div class="flex items-center justify-end gap-1">
-                      <a href={`/games/${game.id}`} class="btn-ghost p-1.5" title="Edit"
+                      <a href={"/g/kon-games"} class="btn-ghost p-1.5" title="Edit"
                         ><Pencil class="w-3.5 h-3.5" /></a
                       ><button
-                        class="btn-ghost p-1.5 text-gremius-pink hover:text-gremius-pink"
+                        class="btn-ghost p-1.5 text-kitsuden-accent-2 hover:text-kitsuden-accent-2"
                         title="Delete"
                         onclick={() => deleteGame(game.id)}><Trash2 class="w-3.5 h-3.5" /></button
                       >
@@ -684,7 +773,7 @@
       </div>
 
       <div class="flex items-center justify-between">
-        <p class="text-xs text-gremius-subtle">
+        <p class="text-xs text-kitsuden-subtle">
           Page {gamesPage} of {gamesTotalPages} · {gamesTotal} total
         </p>
         <div class="flex items-center gap-2">
@@ -710,25 +799,27 @@
   {:else if activeTab === "collections"}
     <div class="space-y-4 animate-fade-in">
       <div class="card p-4">
-        <h3 class="text-sm font-semibold text-gremius-text mb-3 flex items-center gap-2">
-          <Layers class="w-4 h-4 text-gremius-cyan" /> New Collection
+        <h3 class="text-sm font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
+          <Layers class="w-4 h-4 text-kitsuden-accent" /> New Collection
         </h3>
         <div class="flex flex-wrap items-end gap-3">
           <div class="flex-1 min-w-[12rem]">
-            <label for="coll-name" class="block text-xs text-gremius-subtle mb-1">Name</label><input
+            <label for="coll-name" class="block text-xs text-kitsuden-subtle mb-1">Name</label
+            ><input
               id="coll-name"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. Indie Gems"
               value={newCollectionName}
               oninput={(e) => onCollName(e.currentTarget.value)}
             />
           </div>
           <div class="flex-1 min-w-[12rem]">
-            <label for="coll-slug" class="block text-xs text-gremius-subtle mb-1">Slug</label><input
+            <label for="coll-slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label
+            ><input
               id="coll-slug"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. indie-gems"
               bind:value={newCollectionSlug}
             />
@@ -743,7 +834,7 @@
         <table class="w-full text-sm">
           <thead
             ><tr
-              class="border-b border-gremius-border text-left text-xs text-gremius-subtle uppercase tracking-wider"
+              class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
               ><th class="px-4 py-3">Name</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3"
                 >Order</th
               ><th class="px-4 py-3">Games</th><th class="px-4 py-3 text-right">Actions</th></tr
@@ -751,45 +842,45 @@
           >
           <tbody>
             {#if collectionsLoading}<tr
-                ><td colspan="5" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><Loader2 class="w-6 h-6 animate-spin mx-auto" /></td
                 ></tr
               >
             {:else if collections.length === 0}<tr
-                ><td colspan="5" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No collections yet.</td
                 ></tr
               >
             {:else}
               {#each collections as c (c.id)}
                 <tr
-                  class="border-b border-gremius-border/50 hover:bg-gremius-muted/10 transition-colors"
+                  class="border-b border-kitsuden-border/50 hover:bg-kitsuden-muted/10 transition-colors"
                 >
                   {#if editingCollectionId === c.id}
                     <td class="px-4 py-2.5"
                       ><input
-                        class="w-full bg-gremius-bg border border-gremius-border rounded px-2 py-1 text-sm"
+                        class="w-full bg-kitsuden-bg border border-kitsuden-border rounded px-2 py-1 text-sm"
                         bind:value={editCollectionName}
                       /></td
                     >
                     <td class="px-4 py-2.5"
                       ><input
-                        class="w-full bg-gremius-bg border border-gremius-border rounded px-2 py-1 text-sm"
+                        class="w-full bg-kitsuden-bg border border-kitsuden-border rounded px-2 py-1 text-sm"
                         bind:value={editCollectionSlug}
                       /></td
                     >
                     <td class="px-4 py-2.5"
                       ><input
                         type="number"
-                        class="w-20 bg-gremius-bg border border-gremius-border rounded px-2 py-1 text-sm"
+                        class="w-20 bg-kitsuden-bg border border-kitsuden-border rounded px-2 py-1 text-sm"
                         bind:value={editCollectionOrder}
                       /></td
                     >
-                    <td class="px-4 py-2.5 text-gremius-text-dim">{c.games?.length ?? 0}</td>
+                    <td class="px-4 py-2.5 text-kitsuden-text-dim">{c.games?.length ?? 0}</td>
                     <td class="px-4 py-2.5 text-right"
                       ><div class="flex items-center justify-end gap-1">
                         <button
-                          class="btn-ghost p-1.5 text-gremius-green"
+                          class="btn-ghost p-1.5 text-kitsuden-green"
                           onclick={() => updateCollection(c)}><Save class="w-3.5 h-3.5" /></button
                         ><button
                           class="btn-ghost p-1.5"
@@ -799,16 +890,16 @@
                       </div></td
                     >
                   {:else}
-                    <td class="px-4 py-2.5 font-medium text-gremius-text">{c.name}</td>
-                    <td class="px-4 py-2.5 text-gremius-text-dim">/{c.slug}</td>
-                    <td class="px-4 py-2.5 text-gremius-text-dim">{c.displayOrder ?? 0}</td>
-                    <td class="px-4 py-2.5 text-gremius-text-dim">{c.games?.length ?? 0}</td>
+                    <td class="px-4 py-2.5 font-medium text-kitsuden-text">{c.title}</td>
+                    <td class="px-4 py-2.5 text-kitsuden-text-dim">/{c.slug}</td>
+                    <td class="px-4 py-2.5 text-kitsuden-text-dim">{c.displayOrder ?? 0}</td>
+                    <td class="px-4 py-2.5 text-kitsuden-text-dim">{c.games?.length ?? 0}</td>
                     <td class="px-4 py-2.5 text-right"
                       ><div class="flex items-center justify-end gap-1">
                         <button class="btn-ghost p-1.5" onclick={() => startEditColl(c)}
                           ><Pencil class="w-3.5 h-3.5" /></button
                         ><button
-                          class="btn-ghost p-1.5 text-gremius-pink hover:text-gremius-pink"
+                          class="btn-ghost p-1.5 text-kitsuden-accent-2 hover:text-kitsuden-accent-2"
                           onclick={() => deleteCollection(c.id)}
                           ><Trash2 class="w-3.5 h-3.5" /></button
                         >
@@ -825,45 +916,48 @@
   {:else if activeTab === "platforms"}
     <div class="space-y-4 animate-fade-in">
       <div class="card p-4">
-        <h3 class="text-sm font-semibold text-gremius-text mb-3 flex items-center gap-2">
-          <Monitor class="w-4 h-4 text-gremius-cyan" /> New Platform
+        <h3 class="text-sm font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
+          <Monitor class="w-4 h-4 text-kitsuden-accent" /> New Platform
         </h3>
         <div class="flex flex-wrap items-end gap-3">
           <div class="flex-1 min-w-[10rem]">
-            <label for="plat-name" class="block text-xs text-gremius-subtle mb-1">Name</label><input
+            <label for="plat-name" class="block text-xs text-kitsuden-subtle mb-1">Name</label
+            ><input
               id="plat-name"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. PlayStation 5"
               value={newPlatformName}
               oninput={(e) => onPlatName(e.currentTarget.value)}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="plat-slug" class="block text-xs text-gremius-subtle mb-1">Slug</label><input
+            <label for="plat-slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label
+            ><input
               id="plat-slug"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. ps5"
               bind:value={newPlatformSlug}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="plat-mfr" class="block text-xs text-gremius-subtle mb-1">Manufacturer</label
+            <label for="plat-mfr" class="block text-xs text-kitsuden-subtle mb-1"
+              >Manufacturer</label
             ><input
               id="plat-mfr"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. Sony"
               bind:value={newPlatformManufacturer}
             />
           </div>
           <div class="w-24">
-            <label for="plat-short" class="block text-xs text-gremius-subtle mb-1">Short</label
+            <label for="plat-short" class="block text-xs text-kitsuden-subtle mb-1">Short</label
             ><input
               id="plat-short"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="PS5"
               bind:value={newPlatformShort}
             />
@@ -878,7 +972,7 @@
         <table class="w-full text-sm">
           <thead
             ><tr
-              class="border-b border-gremius-border text-left text-xs text-gremius-subtle uppercase tracking-wider"
+              class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
               ><th class="px-4 py-3">Name</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3"
                 >Manufacturer</th
               ><th class="px-4 py-3">Short</th></tr
@@ -886,23 +980,23 @@
           >
           <tbody>
             {#if platformsLoading}<tr
-                ><td colspan="4" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><Loader2 class="w-6 h-6 animate-spin mx-auto" /></td
                 ></tr
               >
             {:else if platforms.length === 0}<tr
-                ><td colspan="4" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No platforms yet.</td
                 ></tr
               >
             {:else}
               {#each platforms as p (p.id)}
                 <tr
-                  class="border-b border-gremius-border/50 hover:bg-gremius-muted/10 transition-colors"
-                  ><td class="px-4 py-2.5 font-medium text-gremius-text">{p.name}</td><td
-                    class="px-4 py-2.5 text-gremius-text-dim">/{p.slug}</td
-                  ><td class="px-4 py-2.5 text-gremius-text-dim">{p.manufacturer || "-"}</td><td
-                    class="px-4 py-2.5 text-gremius-text-dim">{p.shortName || "-"}</td
+                  class="border-b border-kitsuden-border/50 hover:bg-kitsuden-muted/10 transition-colors"
+                  ><td class="px-4 py-2.5 font-medium text-kitsuden-text">{p.name}</td><td
+                    class="px-4 py-2.5 text-kitsuden-text-dim">/{p.slug}</td
+                  ><td class="px-4 py-2.5 text-kitsuden-text-dim">{p.manufacturer || "-"}</td><td
+                    class="px-4 py-2.5 text-kitsuden-text-dim">{p.shortName || "-"}</td
                   ></tr
                 >
               {/each}
@@ -914,45 +1008,45 @@
   {:else if activeTab === "tags"}
     <div class="space-y-4 animate-fade-in">
       <div class="card p-4">
-        <h3 class="text-sm font-semibold text-gremius-text mb-3 flex items-center gap-2">
-          <Tag class="w-4 h-4 text-gremius-cyan" /> New Tag
+        <h3 class="text-sm font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
+          <Tag class="w-4 h-4 text-kitsuden-accent" /> New Tag
         </h3>
         <div class="flex flex-wrap items-end gap-3">
           <div class="flex-1 min-w-[10rem]">
-            <label for="tag-name" class="block text-xs text-gremius-subtle mb-1">Name</label><input
+            <label for="tag-name" class="block text-xs text-kitsuden-subtle mb-1">Name</label><input
               id="tag-name"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. RPG"
               value={newTagName}
               oninput={(e) => onTagName(e.currentTarget.value)}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="tag-slug" class="block text-xs text-gremius-subtle mb-1">Slug</label><input
+            <label for="tag-slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label><input
               id="tag-slug"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. rpg"
               bind:value={newTagSlug}
             />
           </div>
           <div class="w-28">
-            <label for="tag-color" class="block text-xs text-gremius-subtle mb-1">Color</label
+            <label for="tag-color" class="block text-xs text-kitsuden-subtle mb-1">Color</label
             ><input
               id="tag-color"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="#ff00ff"
               bind:value={newTagColor}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="tag-cat" class="block text-xs text-gremius-subtle mb-1">Category</label
+            <label for="tag-cat" class="block text-xs text-kitsuden-subtle mb-1">Category</label
             ><input
               id="tag-cat"
               type="text"
-              class="w-full bg-gremius-bg border border-gremius-border rounded-lg px-3 py-2 text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:ring-1 focus:ring-gremius-cyan/50"
+              class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
               placeholder="e.g. genre"
               bind:value={newTagCategory}
             />
@@ -967,7 +1061,7 @@
         <table class="w-full text-sm">
           <thead
             ><tr
-              class="border-b border-gremius-border text-left text-xs text-gremius-subtle uppercase tracking-wider"
+              class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
               ><th class="px-4 py-3">Name</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3"
                 >Color</th
               ><th class="px-4 py-3">Category</th></tr
@@ -975,31 +1069,31 @@
           >
           <tbody>
             {#if tagsLoading}<tr
-                ><td colspan="4" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><Loader2 class="w-6 h-6 animate-spin mx-auto" /></td
                 ></tr
               >
             {:else if tags.length === 0}<tr
-                ><td colspan="4" class="px-4 py-12 text-center text-gremius-subtle"
+                ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-subtle"
                   ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No tags yet.</td
                 ></tr
               >
             {:else}
               {#each tags as t (t.id)}
                 <tr
-                  class="border-b border-gremius-border/50 hover:bg-gremius-muted/10 transition-colors"
+                  class="border-b border-kitsuden-border/50 hover:bg-kitsuden-muted/10 transition-colors"
                 >
-                  <td class="px-4 py-2.5 font-medium text-gremius-text">{t.name}</td>
-                  <td class="px-4 py-2.5 text-gremius-text-dim">/{t.slug}</td>
+                  <td class="px-4 py-2.5 font-medium text-kitsuden-text">{t.name}</td>
+                  <td class="px-4 py-2.5 text-kitsuden-text-dim">/{t.slug}</td>
                   <td class="px-4 py-2.5"
                     >{#if t.color}<span class="inline-flex items-center gap-1.5"
                         ><span
-                          class="w-3 h-3 rounded-full border border-gremius-border"
+                          class="w-3 h-3 rounded-full border border-kitsuden-border"
                           style={`background-color:${t.color}`}
-                        ></span><span class="text-gremius-text-dim">{t.color}</span></span
-                      >{:else}<span class="text-gremius-text-dim">-</span>{/if}</td
+                        ></span><span class="text-kitsuden-text-dim">{t.color}</span></span
+                      >{:else}<span class="text-kitsuden-text-dim">-</span>{/if}</td
                   >
-                  <td class="px-4 py-2.5 text-gremius-text-dim">{t.category || "-"}</td>
+                  <td class="px-4 py-2.5 text-kitsuden-text-dim">{t.category || "-"}</td>
                 </tr>
               {/each}
             {/if}

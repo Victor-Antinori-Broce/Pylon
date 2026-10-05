@@ -7,10 +7,10 @@
  *
  * ```typescript
  * import { describe, it, beforeAll, afterAll } from "bun:test";
- * import { createTestSandbox } from "@gremius/testing/bun";
+ * import { createTestSandbox } from "@kitsuden/testing/bun";
  *
  * const sandbox = createTestSandbox({
- *   grimoires: ["grimoire-blog"],
+ *   kons: ["kon-blog"],
  *   database: "postgres" // Uses real PostgreSQL with transactions
  * });
  *

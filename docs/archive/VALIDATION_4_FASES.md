@@ -1,4 +1,4 @@
-# Validación de las 4 Fases - Sistema de Agentes Gremius
+# Validación de las 4 Fases - Sistema de Agentes Kitsuden
 
 > **Fecha de validación:** 2026-03-19  
 > **Estado:** ✅ TODAS LAS FASES FUNCIONAN CORRECTAMENTE  
@@ -55,7 +55,7 @@ allowedTools: jsonb("allowed_tools").default([]),          // Tools permitidas
 
 ```typescript
 generateAgentId({ type: "claude-desktop" })
-// → { id: "grm_agent_claude-desktop_a1b2c3d4...", type, hash, prefix }
+// → { id: "kitsuden_agent_claude-desktop_a1b2c3d4...", type, hash, prefix }
 
 generateAgentApiKey({ type: "scraper" })
 // → { plainKey, keyHash, keyPrefix, components }
@@ -85,7 +85,7 @@ AGENT_TYPES = {
 ### Integración
 
 ✅ `agent-auth.ts` importa y usa `generateTypedAgentApiKey`  
-✅ Las API keys generadas incluyen el tipo: `grm_agent_{tipo}_{random}`  
+✅ Las API keys generadas incluyen el tipo: `kitsuden_agent_{tipo}_{random}`  
 ✅ Backward compatibility con formato legacy
 
 ---
@@ -273,12 +273,12 @@ enforceOwnership(agent: AgentAuthContext, memoryAgentId: string): boolean {
    Response:
    {
      "agent": { ... },
-     "apiKey": "grm_agent_claude-desktop_a1b2c3..."  ← Fase 2
+     "apiKey": "kitsuden_agent_claude-desktop_a1b2c3..."  ← Fase 2
    }
 
 2. ACCEDER A MEMORIA (Fase 3 + 4)
    GET /api/agent/memory
-   Headers: Authorization: Bearer grm_agent_claude-desktop_...
+   Headers: Authorization: Bearer kitsuden_agent_claude-desktop_...
 
    a) Middleware agentAuthWithRBAC verifica API key  ← Fase 2
    b) Se carga AgentAuthContext con scopes            ← Fase 3
@@ -353,7 +353,7 @@ curl -X POST /api/admin/agents \
   -d '{"name":"Test","type":"scraper","capabilities":["web"],"scopes":["memory:read","memory:write"]}'
 
 # Verificar que la API key incluye el tipo
-echo $API_KEY | grep "grm_agent_scraper"
+echo $API_KEY | grep "kitsuden_agent_scraper"
 
 # Intentar acceder sin scope (debe fallar con 403)
 curl /api/agent/memory \

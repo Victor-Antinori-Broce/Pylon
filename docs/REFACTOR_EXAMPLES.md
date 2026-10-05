@@ -1,11 +1,11 @@
 # Ejemplos de Refactorización
 
-## Ejemplo 1: Grimoire Blog Autocontenido
+## Ejemplo 1: Kon Blog Autocontenido
 
 ### Antes (Problemático)
 
 ```typescript
-// packages/grimoires/grimoire-blog/index.ts
+// packages/kons/kon-blog/index.ts
 export { blogRoutes } from "../../../apps/api/src/routes/blog";
 ```
 
@@ -23,14 +23,14 @@ import { broadcastContentUpdate } from "../lib/realtime"; // <-- acoplado
 ### Después (Desacoplado)
 
 ```typescript
-// packages/shared/src/grimoire-api.ts
+// packages/shared/src/kon-api.ts
 import { Hono } from "hono";
 import { DrizzleDmlBuilder } from "drizzle-orm";
 
 /**
- * Contexto inyectado a cada grimoire
+ * Contexto inyectado a cada kon
  */
-export interface GrimoireContext {
+export interface KonContext {
   db: any; // Drizzle instance
   cache: {
     get: (key: string) => Promise<any>;
@@ -53,11 +53,11 @@ export interface GrimoireContext {
 /**
  * Factory para crear routers con contexto inyectado
  */
-export function createGrimoireRouter(
+export function createKonRouter(
   name: string,
-  setup: (router: Hono, ctx: GrimoireContext) => void
-): (ctx: GrimoireContext) => Hono {
-  return (ctx: GrimoireContext) => {
+  setup: (router: Hono, ctx: KonContext) => void
+): (ctx: KonContext) => Hono {
+  return (ctx: KonContext) => {
     const router = new Hono();
     setup(router, ctx);
     return router;
@@ -66,12 +66,12 @@ export function createGrimoireRouter(
 ```
 
 ```typescript
-// packages/grimoires/grimoire-blog/src/routes.ts
-import { createGrimoireRouter } from "@gremius/shared/grimoire-api";
+// packages/kons/kon-blog/src/routes.ts
+import { createKonRouter } from "@kitsuden/shared/kon-api";
 import { blogPosts, blogPostsToTags, blogPostsToGames } from "./schema";
 import { eq, desc, sql } from "drizzle-orm";
 
-export const createBlogRouter = createGrimoireRouter("blog", (router, ctx) => {
+export const createBlogRouter = createKonRouter("blog", (router, ctx) => {
   const { db, cache, events, realtime, auth } = ctx;
 
   // List posts - with caching
@@ -130,14 +130,14 @@ export const createBlogRouter = createGrimoireRouter("blog", (router, ctx) => {
 ```
 
 ```typescript
-// packages/grimoires/grimoire-blog/src/index.ts
+// packages/kons/kon-blog/src/index.ts
 import { createBlogRouter } from "./routes";
 import { blogSchema } from "./schema";
 
 /**
- * Exportación del grimoire - self contained
+ * Exportación del kon - self contained
  */
-export const grimoire = {
+export const kon = {
   id: "blog",
   name: "Blog Posts",
   version: "1.0.0",
@@ -153,10 +153,10 @@ export const grimoire = {
     onEnable: async (ctx) => {
       // Run migrations
       await ctx.db.execute(/* migration SQL */);
-      console.log("✅ Blog grimoire enabled");
+      console.log("✅ Blog kon enabled");
     },
     onDisable: async (ctx) => {
-      console.log("⛔ Blog grimoire disabled");
+      console.log("⛔ Blog kon disabled");
     },
   },
 
@@ -170,19 +170,19 @@ export const grimoire = {
   },
 };
 
-export default grimoire;
+export default kon;
 ```
 
 ```typescript
 // apps/api/src/lib/module-loader.ts (actualizado)
 import type { Hono } from "hono";
-import type { GrimoireContext } from "@gremius/shared/grimoire-api";
+import type { KonContext } from "@kitsuden/shared/kon-api";
 
-export async function loadGrimoires(app: Hono) {
-  const enabledGrimoires = await getEnabledGrimoires();
+export async function loadKons(app: Hono) {
+  const enabledKons = await getEnabledKons();
 
   // Crear contexto base
-  const context: GrimoireContext = {
+  const context: KonContext = {
     db,
     cache: {
       get: (key) => cachedQuery(key, 0, () => null),
@@ -194,32 +194,32 @@ export async function loadGrimoires(app: Hono) {
     auth: { requireAuth, requireRole },
   };
 
-  for (const grimoireName of enabledGrimoires) {
+  for (const konName of enabledKons) {
     try {
-      // Importar el grimoire
-      const mod = await import(`@gremius/grimoire-${grimoireName}`);
-      const grimoire = mod.grimoire || mod.default;
+      // Importar el kon
+      const mod = await import(`@kitsuden/kon-${konName}`);
+      const kon = mod.kon || mod.default;
 
-      if (!grimoire?.createRouter) {
-        console.warn(`⚠️ Grimoire ${grimoireName} no exporta createRouter`);
+      if (!kon?.createRouter) {
+        console.warn(`⚠️ Kon ${konName} no exporta createRouter`);
         continue;
       }
 
       // Inyectar contexto y crear router
-      const router = grimoire.createRouter(context);
+      const router = kon.createRouter(context);
 
       // Montar en la API
-      const mountPath = grimoire.mountPath || `/api/${grimoire.id}`;
+      const mountPath = kon.mountPath || `/api/${kon.id}`;
       app.route(mountPath, router);
 
       // Ejecutar hooks
-      if (grimoire.hooks?.onEnable) {
-        await grimoire.hooks.onEnable(context);
+      if (kon.hooks?.onEnable) {
+        await kon.hooks.onEnable(context);
       }
 
-      console.log(`✅ ${grimoire.id} mounted at ${mountPath}`);
+      console.log(`✅ ${kon.id} mounted at ${mountPath}`);
     } catch (err) {
-      console.error(`❌ Failed to load ${grimoireName}:`, err);
+      console.error(`❌ Failed to load ${konName}:`, err);
     }
   }
 }
@@ -232,15 +232,12 @@ export async function loadGrimoires(app: Hono) {
 ### Antes (import.meta.glob)
 
 ```typescript
-// packages/admin/src/lib/grimoire-loader.ts
+// packages/admin/src/lib/kon-loader.ts
 const viewModules = import.meta.glob("/src/views/**/*.svelte");
 
-async function loadCustomView(grimoireId: string) {
-  const pascal = pascalCase(grimoireId);
-  const paths = [
-    `/src/views/${grimoireId}/${pascal}View.svelte`,
-    `/src/views/${grimoireId}/index.svelte`,
-  ];
+async function loadCustomView(konId: string) {
+  const pascal = pascalCase(konId);
+  const paths = [`/src/views/${konId}/${pascal}View.svelte`, `/src/views/${konId}/index.svelte`];
 
   for (const path of paths) {
     if (viewModules[path]) {
@@ -257,7 +254,7 @@ async function loadCustomView(grimoireId: string) {
 ### Después (Sistema de Slots + Registro)
 
 ```typescript
-// packages/admin/src/lib/grimoire-ui.ts
+// packages/admin/src/lib/kon-ui.ts
 import type { Component } from "svelte";
 
 export interface SlotDefinition {
@@ -276,7 +273,7 @@ export interface ViewDefinition {
   title: string;
 }
 
-class GrimoireUIRegistry {
+class KonUIRegistry {
   private slots = new Map<string, SlotDefinition[]>();
   private views = new Map<string, ViewDefinition[]>();
   private components = new Map<string, () => Promise<Component>>();
@@ -292,10 +289,10 @@ class GrimoireUIRegistry {
   }
 
   /**
-   * Registrar vistas para un grimoire
+   * Registrar vistas para un kon
    */
-  registerViews(grimoireId: string, views: ViewDefinition[]) {
-    this.views.set(grimoireId, views);
+  registerViews(konId: string, views: ViewDefinition[]) {
+    this.views.set(konId, views);
   }
 
   /**
@@ -325,17 +322,17 @@ class GrimoireUIRegistry {
     return this.slots.get(target) || [];
   }
 
-  getViews(grimoireId: string): ViewDefinition[] {
-    return this.views.get(grimoireId) || [];
+  getViews(konId: string): ViewDefinition[] {
+    return this.views.get(konId) || [];
   }
 }
 
-export const uiRegistry = new GrimoireUIRegistry();
+export const uiRegistry = new KonUIRegistry();
 ```
 
 ```typescript
-// packages/admin/src/lib/grimoire-loader.ts (refactorizado)
-import { uiRegistry } from "./grimoire-ui";
+// packages/admin/src/lib/kon-loader.ts (refactorizado)
+import { uiRegistry } from "./kon-ui";
 
 // 1. Registrar vistas locales (build-time)
 function registerLocalViews() {
@@ -358,35 +355,35 @@ function registerLocalViews() {
   uiRegistry.registerComponent("games/GamesView", () => import("$views/games/GamesView.svelte"));
 }
 
-// 2. Cargar vistas desde registro de grimoires
-export async function loadGrimoireViews(grimoireId: string) {
+// 2. Cargar vistas desde registro de kons
+export async function loadKonViews(konId: string) {
   // Intentar cargar desde registry
-  const views = uiRegistry.getViews(grimoireId);
+  const views = uiRegistry.getViews(konId);
   if (views.length > 0) {
     return views;
   }
 
   // Fallback: generar automáticamente desde API
-  const config = await fetchAdminConfig(grimoireId);
+  const config = await fetchAdminConfig(konId);
   return config.views.map((v) => ({
     id: v.id,
     type: v.type,
     title: v.title,
     table: v.table,
     // Componente se carga dinámicamente
-    loadComponent: () => uiRegistry.loadComponent(`${grimoireId}/${v.id}`),
+    loadComponent: () => uiRegistry.loadComponent(`${konId}/${v.id}`),
   }));
 }
 ```
 
 ```svelte
-<!-- packages/admin/src/lib/components/admin/GrimoirePage.svelte -->
+<!-- packages/admin/src/lib/components/admin/KonPage.svelte -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { uiRegistry } from "$lib/grimoire-ui";
+  import { uiRegistry } from "$lib/kon-ui";
   import DataExplorer from "./DataExplorer.svelte";
 
-  let { grimoireId }: { grimoireId: string } = $props();
+  let { konId }: { konId: string } = $props();
 
   let views = $state<ViewDefinition[]>([]);
   let activeView = $state<string>("");
@@ -398,15 +395,15 @@ export async function loadGrimoireViews(grimoireId: string) {
   });
 
   onMount(async () => {
-    // Cargar vistas del grimoire
-    views = await loadGrimoireViews(grimoireId);
+    // Cargar vistas del kon
+    views = await loadKonViews(konId);
     activeView = views[0]?.id || "default";
 
     // Cargar slots
     slots = {
-      headerActions: uiRegistry.getSlots(`${grimoireId}:header-actions`),
-      sidebar: uiRegistry.getSlots(`${grimoireId}:sidebar`),
-      bulkActions: uiRegistry.getSlots(`${grimoireId}:bulk-actions`),
+      headerActions: uiRegistry.getSlots(`${konId}:header-actions`),
+      sidebar: uiRegistry.getSlots(`${konId}:sidebar`),
+      bulkActions: uiRegistry.getSlots(`${konId}:bulk-actions`),
     };
 
     // Cargar componente custom si existe
@@ -428,10 +425,10 @@ export async function loadGrimoireViews(grimoireId: string) {
   }
 </script>
 
-<div class="grimoire-page">
+<div class="kon-page">
   <!-- Header con slots -->
   <header class="flex justify-between items-center mb-4">
-    <h1>{grimoireId}</h1>
+    <h1>{konId}</h1>
 
     <div class="flex gap-2">
       <!-- Slots de acciones -->
@@ -452,9 +449,9 @@ export async function loadGrimoireViews(grimoireId: string) {
 
   <!-- Content -->
   {#if CustomComponent}
-    <svelte:component this={CustomComponent} {grimoireId} />
+    <svelte:component this={CustomComponent} {konId} />
   {:else}
-    <DataExplorer {grimoireId} view={activeView} />
+    <DataExplorer {konId} view={activeView} />
   {/if}
 
   <!-- Sidebar con slots -->
@@ -469,9 +466,9 @@ export async function loadGrimoireViews(grimoireId: string) {
 ```
 
 ```typescript
-// Ejemplo: Un grimoire registrando slots
-// packages/grimoires/grimoire-blog/src/admin/slots.ts
-import { uiRegistry } from "@gremius/admin-ui";
+// Ejemplo: Un kon registrando slots
+// packages/kons/kon-blog/src/admin/slots.ts
+import { uiRegistry } from "@kitsuden/admin-ui";
 import RecentPostsWidget from "./RecentPostsWidget.svelte";
 import PostActions from "./PostActions.svelte";
 
@@ -501,8 +498,8 @@ export function registerBlogSlots() {
 ### 1. Desacoplamiento
 
 ```
-Antes:  grimoire-blog → ../../../apps/api/src/routes/blog
-Después: grimoire-blog → @gremius/shared (contratos estables)
+Antes:  kon-blog → ../../../apps/api/src/routes/blog
+Después: kon-blog → @kitsuden/shared (contratos estables)
 ```
 
 ### 2. Testabilidad
@@ -510,7 +507,7 @@ Después: grimoire-blog → @gremius/shared (contratos estables)
 ```typescript
 // Antes: Imposible testear sin la DB real
 // Después: Podemos mockear el contexto
-const mockContext: GrimoireContext = {
+const mockContext: KonContext = {
   db: createMockDb(),
   cache: createMockCache(),
   events: createMockEvents(),

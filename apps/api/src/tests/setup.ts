@@ -9,9 +9,13 @@ import { sql } from "drizzle-orm";
 
 import { db, isPgMem } from "../db";
 
-// Test database URL from environment or default
-export const TEST_DATABASE_URL =
-  process.env.DATABASE_URL || "postgres://gremius:gremiuspassword@localhost:5433/gremius_test";
+// Test database URL from environment
+export const TEST_DATABASE_URL = process.env.DATABASE_URL;
+if (!TEST_DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is not set. Copy apps/api/.env.example to apps/api/.env and configure your PostgreSQL test connection."
+  );
+}
 
 /**
  * Check if a REAL PostgreSQL database is available.

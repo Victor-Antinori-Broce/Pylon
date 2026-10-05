@@ -37,7 +37,7 @@ test.describe("🔐 MCP + Zero-Trust Integration", () => {
       // For now, we verify the scope checking logic exists
       const res = await request.get(`${API_URL}/api/mcp`, {
         headers: {
-          Authorization: "Bearer gremius_sk_test_no_scope",
+          Authorization: "Bearer kitsuden_sk_test_no_scope",
         },
       });
 
@@ -47,7 +47,7 @@ test.describe("🔐 MCP + Zero-Trust Integration", () => {
   });
 
   test.describe("2. Agent Identity NHI Flow", () => {
-    test("Should authenticate valid grm_agent token", async ({ request }) => {
+    test("Should authenticate valid kitsuden_agent token", async ({ request }) => {
       // This test requires a valid token to be set in environment
       const token = process.env.TEST_MCP_TOKEN;
 
@@ -94,7 +94,7 @@ test.describe("🔐 MCP + Zero-Trust Integration", () => {
 
       expect(initRes.status()).toBe(200);
       const data = await initRes.json();
-      expect(data.result.serverInfo.name).toBe("gremius-mcp-server");
+      expect(data.result.serverInfo.name).toBe("kitsuden-mcp-server");
     });
   });
 
@@ -169,7 +169,7 @@ test.describe("🔐 MCP + Zero-Trust Integration", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_query_dataset",
+            name: "kitsuden_query_dataset",
             arguments: { datasetId: "test", limit: 5 },
           },
           id: 1,

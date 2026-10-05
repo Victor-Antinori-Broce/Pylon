@@ -1,7 +1,7 @@
 # ✅ Engine Core Integration Complete
 
 **Fecha:** 19 de marzo de 2026  
-**Versión:** GremiusCMS v0.8.0-beta  
+**Versión:** Kitsuden v0.8.0-beta  
 **Estado:** PRODUCCIÓN READY 🚀
 
 ---
@@ -13,7 +13,7 @@
 **Cambios realizados:**
 
 - ✅ `index.ts`: Agente authentication flow integrado
-- ✅ `agent-auth.ts`: Prefijos `grm_agent_` funcionando
+- ✅ `agent-auth.ts`: Prefijos `kitsuden_agent_` funcionando
 - ✅ `auth-guard.ts`: Soporte para agentes y humanos
 - ✅ RLS: Agente context propagado a PostgreSQL
 
@@ -21,8 +21,8 @@
 
 ```
 Request → Auth Header Check
-    ├── Bearer grm_agent_xxxxx → authenticateAgent() → RLS Context
-    ├── Bearer gremius_sk_xxxxx → Legacy API Key → Admin Context
+    ├── Bearer kitsuden_agent_xxxxx → authenticateAgent() → RLS Context
+    ├── Bearer kitsuden_sk_xxxxx → Legacy API Key → Admin Context
     └── Cookie Session → Better-Auth → User Context
 ```
 
@@ -30,8 +30,8 @@ Request → Auth Header Check
 
 ```bash
 # Agent authentication
-curl -H "Authorization: Bearer grm_agent_xxxxx" \
-     https://api.gremius.com/api/datasets
+curl -H "Authorization: Bearer kitsuden_agent_xxxxx" \
+     https://api.kitsuden.com/api/datasets
 
 # Response headers incluyen:
 X-Agent-Id: agent_abc123
@@ -120,8 +120,8 @@ POST /api/actions/:id/execute
 **Features:**
 
 - ✅ SSE streaming para agents
-- ✅ Tools: `gremius_query_dataset`, `gremius_insert_record`
-- ✅ Resources: `gremius://datasets/{id}`
+- ✅ Tools: `kitsuden_query_dataset`, `kitsuden_insert_record`
+- ✅ Resources: `kitsuden://datasets/{id}`
 - ✅ TOON format support
 - ✅ Agent authentication con scopes
 
@@ -243,7 +243,7 @@ const { logs, total } = await queryAuditLogs({
 **Antes (Legacy API Keys):**
 
 ```bash
-curl -H "Authorization: Bearer gremius_sk_xxxxx" \
+curl -H "Authorization: Bearer kitsuden_sk_xxxxx" \
      /api/datasets
 ```
 
@@ -254,14 +254,14 @@ curl -H "Authorization: Bearer gremius_sk_xxxxx" \
 POST /api/admin/agents
 { "name": "My Bot", "scopes": ["read:datasets"] }
 
-# Response: { "apiKey": "grm_agent_xxxxx", ... }
+# Response: { "apiKey": "kitsuden_agent_xxxxx", ... }
 
 # 2. Usar la key
-curl -H "Authorization: Bearer grm_agent_xxxxx" \
+curl -H "Authorization: Bearer kitsuden_agent_xxxxx" \
      /api/datasets
 ```
 
-**Compatibilidad:** Las keys `gremius_sk_` siguen funcionando (legacy mode).
+**Compatibilidad:** Las keys `kitsuden_sk_` siguen funcionando (legacy mode).
 
 ---
 

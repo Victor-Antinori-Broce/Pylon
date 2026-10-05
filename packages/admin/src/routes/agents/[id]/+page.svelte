@@ -6,8 +6,13 @@
   import Timeline from "$lib/components/agents/Timeline.svelte";
   import Button from "$lib/components/ui/Button.svelte";
   import Card from "$lib/components/ui/Card.svelte";
-  import { getAgent, updateAgent, sendPlaygroundMessage } from "$lib/services/agents";
-  import type { PlaygroundMessage } from "$lib/services/agents";
+  import {
+    getAgent,
+    updateAgent,
+    sendPlaygroundMessage,
+    listTraces,
+    listTraceSteps,
+  } from "$lib/services/agents";
   import type { Agent, AgentTraceStep } from "$lib/types/agents";
 
   import { page } from "$app/stores";
@@ -30,11 +35,18 @@
       metadata?: {
         tokensIn?: number;
         tokensOut?: number;
-        duration?: number;
+        durationMs?: number;
+        provider?: string;
+        model?: string;
+        cached?: boolean;
       };
+      toolCalls?: Array<{ name: string; arguments: Record<string, unknown>; result: string }>;
     }>
   >([]);
+  let sessionId = $state<string | undefined>(undefined);
   let chatLoading = $state(false);
+  let tracesLoading = $state(false);
+  let traceSteps = $state<any[]>([]);
 
   // Settings form
   let formData = $state<Partial<Agent>>({});
@@ -68,9 +80,38 @@
     }
   }
 
-  async function handleSendMessage(content: string) {
-    const userMessage: PlaygroundMessage = { role: "user", content };
+  async function loadTraces() {
+    if (!agentId) return;
+    tracesLoading = true;
+    try {
+      const traces = await listTraces({ agentId, limit: 20 });
+      const allSteps: any[] = [];
+      for (const trace of traces) {
+        const steps = await listTraceSteps(trace.id);
+        for (const step of steps) {
+          allSteps.push({
+            ...step,
+            toolOutput: step.content,
+          });
+        }
+      }
+      traceSteps = allSteps.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    } catch (e) {
+      traceSteps = [];
+    } finally {
+      tracesLoading = false;
+    }
+  }
 
+  $effect(() => {
+    if (activeTab === "traces") {
+      loadTraces();
+    }
+  });
+
+  async function handleSendMessage(content: string) {
     messages = [
       ...messages,
       {
@@ -84,21 +125,25 @@
     chatLoading = true;
 
     try {
-      const history: PlaygroundMessage[] = messages.slice(-10).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      const response = await sendPlaygroundMessage(agentId, [...history, userMessage]);
+      const response = await sendPlaygroundMessage(agentId, content, sessionId);
+      sessionId = response.sessionId;
 
       messages = [
         ...messages,
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: response.message,
+          content: response.response,
           timestamp: new Date(),
-          metadata: response.metadata,
+          metadata: {
+            tokensIn: response.tokensIn,
+            tokensOut: response.tokensOut,
+            durationMs: response.durationMs,
+            provider: response.provider,
+            model: response.model,
+            cached: response.cached,
+          },
+          toolCalls: response.toolCalls,
         },
       ];
     } catch (e) {
@@ -115,47 +160,6 @@
       chatLoading = false;
     }
   }
-
-  // Mock trace steps for demo
-  const mockSteps: AgentTraceStep[] = [
-    {
-      id: "1",
-      traceId: "trace-1",
-      stepType: "thinking",
-      content: {
-        thought:
-          "El usuario quiere saber sobre el estado del servidor. Debo consultar las métricas actuales.",
-      },
-      tokensUsed: 45,
-      latencyMs: 120,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      traceId: "trace-1",
-      stepType: "tool_call",
-      content: {
-        tool: "get_server_metrics",
-        input: { server: "main" },
-      },
-      tokensUsed: 12,
-      latencyMs: 850,
-      createdAt: new Date(Date.now() + 120).toISOString(),
-    },
-    {
-      id: "3",
-      traceId: "trace-1",
-      stepType: "tool_result",
-      content: {
-        cpu: "45%",
-        memory: "68%",
-        uptime: "15d 4h 32m",
-      },
-      tokensUsed: 28,
-      latencyMs: 50,
-      createdAt: new Date(Date.now() + 970).toISOString(),
-    },
-  ];
 </script>
 
 <div class="h-full flex flex-col">
@@ -234,8 +238,10 @@
         <div class="p-6 max-w-2xl">
           <Card class="p-6 space-y-6">
             <div>
-              <label class="block text-sm font-medium text-zinc-300 mb-1.5">Nombre</label>
+              <label for="name" class="block text-sm font-medium text-zinc-300 mb-1.5">Nombre</label
+              >
               <input
+                id="name"
                 type="text"
                 bind:value={formData.name}
                 class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -243,8 +249,11 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-zinc-300 mb-1.5">Descripción</label>
+              <label for="description" class="block text-sm font-medium text-zinc-300 mb-1.5"
+                >Descripción</label
+              >
               <textarea
+                id="description"
                 bind:value={formData.description}
                 rows={3}
                 class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
@@ -252,8 +261,11 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-zinc-300 mb-1.5">Modelo</label>
+              <label for="model" class="block text-sm font-medium text-zinc-300 mb-1.5"
+                >Modelo</label
+              >
               <select
+                id="model"
                 bind:value={formData.model}
                 class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               >
@@ -279,7 +291,15 @@
         </div>
       {:else if activeTab === "traces"}
         <div class="p-6 space-y-6">
-          <Timeline steps={mockSteps} />
+          {#if tracesLoading}
+            <div class="flex items-center justify-center h-32">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            </div>
+          {:else if traceSteps.length === 0}
+            <div class="text-center text-zinc-500 py-12">No hay traces disponibles</div>
+          {:else}
+            <Timeline steps={traceSteps} />
+          {/if}
         </div>
       {/if}
     {/if}

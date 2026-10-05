@@ -24,10 +24,13 @@
  * ```
  */
 
-import { eq, and } from "drizzle-orm";
+import { type SQL } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 
 import { db } from "../../../apps/api/src/db";
+
+import { condicionDeEscritura } from "./db-conditions";
+import { messageOf } from "./errors";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS Y CONFIGURACIÓN
@@ -43,13 +46,13 @@ export interface BatchOperation {
   /** Tabla objetivo */
   table: PgTable;
   /** Datos para create/update/upsert */
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   /** ID para update/delete (puede ser @ref:alias.id) */
   id?: string;
   /** Alias para referenciar en operaciones posteriores */
   alias?: string;
   /** Condición where para update/delete múltiples */
-  where?: Record<string, any>;
+  where?: Record<string, unknown>;
   /** Validación Zod opcional */
   validation?: (data: any) => { success: boolean; errors?: string[] };
 }
@@ -70,7 +73,7 @@ export interface BatchOperationResult {
   error?: {
     message: string;
     code: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   };
 }
 
@@ -109,7 +112,7 @@ export class BatchProcessorError extends Error {
       | "TRANSACTION_FAILED"
       | "ROLLBACK_FAILED",
     public operationIndex?: number,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "BatchProcessorError";
@@ -324,7 +327,7 @@ export class BatchProcessor {
   private async executeCreate(
     tx: any,
     table: PgTable,
-    data: Record<string, any>,
+    data: Record<string, unknown>,
     alias: string | undefined,
     index: number
   ): Promise<BatchOperationResult> {
@@ -340,12 +343,35 @@ export class BatchProcessor {
     };
   }
 
+  /**
+   * WHERE de una escritura, con el error traducido al del procesador.
+   *
+   * Antes cada operación lo montaba a mano con un `if (id) / else if (where)`.
+   * Funcionaba salvo en un caso: con `where: {}` no quedaba ninguna condición
+   * y la sentencia salía SIN WHERE — un UPDATE, o peor, un DELETE, contra la
+   * tabla entera. `{}` es justo lo que llega cuando el cliente construye el
+   * filtro dinámicamente y no encuentra nada que poner.
+   */
+  private condicion(
+    table: PgTable,
+    id: string | undefined,
+    where: Record<string, unknown> | undefined,
+    operacion: string,
+    index: number
+  ): SQL {
+    try {
+      return condicionDeEscritura(table, id, where, operacion);
+    } catch (e) {
+      throw new BatchProcessorError(messageOf(e), "INVALID_OPERATION", index);
+    }
+  }
+
   private async executeUpdate(
     tx: any,
     table: PgTable,
     id: string | undefined,
-    data: Record<string, any> | undefined,
-    where: Record<string, any> | undefined,
+    data: Record<string, unknown> | undefined,
+    where: Record<string, unknown> | undefined,
     alias: string | undefined,
     index: number
   ): Promise<BatchOperationResult> {
@@ -353,25 +379,11 @@ export class BatchProcessor {
       throw new BatchProcessorError("Update requiere data", "INVALID_OPERATION", index);
     }
 
-    let query = tx.update(table).set(data);
-
-    if (id) {
-      query = query.where(eq((table as any).id, id));
-    } else if (where) {
-      // Construir where clause simple
-      const conditions = Object.entries(where).map(([key, value]) => {
-        return eq((table as any)[key], value);
-      });
-      if (conditions.length === 1) {
-        query = query.where(conditions[0]);
-      } else if (conditions.length > 1) {
-        query = query.where(and(...conditions));
-      }
-    } else {
-      throw new BatchProcessorError("Update requiere id o where", "INVALID_OPERATION", index);
-    }
-
-    const result = await query.returning();
+    const result = await tx
+      .update(table)
+      .set(data)
+      .where(this.condicion(table, id, where, "Update", index))
+      .returning();
     const updated = result[0];
 
     return {
@@ -387,28 +399,14 @@ export class BatchProcessor {
     tx: any,
     table: PgTable,
     id: string | undefined,
-    where: Record<string, any> | undefined,
+    where: Record<string, unknown> | undefined,
     alias: string | undefined,
     index: number
   ): Promise<BatchOperationResult> {
-    let query = tx.delete(table);
-
-    if (id) {
-      query = query.where(eq((table as any).id, id));
-    } else if (where) {
-      const conditions = Object.entries(where).map(([key, value]) => {
-        return eq((table as any)[key], value);
-      });
-      if (conditions.length === 1) {
-        query = query.where(conditions[0]);
-      } else if (conditions.length > 1) {
-        query = query.where(and(...conditions));
-      }
-    } else {
-      throw new BatchProcessorError("Delete requiere id o where", "INVALID_OPERATION", index);
-    }
-
-    const result = await query.returning();
+    const result = await tx
+      .delete(table)
+      .where(this.condicion(table, id, where, "Delete", index))
+      .returning();
 
     return {
       index,
@@ -422,25 +420,21 @@ export class BatchProcessor {
     tx: any,
     table: PgTable,
     id: string | undefined,
-    data: Record<string, any>,
+    data: Record<string, unknown>,
     alias: string | undefined,
     index: number
   ): Promise<BatchOperationResult> {
     // Intentar update primero si hay id
     if (id) {
-      const existing = await tx
-        .select()
-        .from(table)
-        .where(eq((table as any).id, id))
-        .limit(1);
+      // El mismo constructor de condiciones que el resto: valida que la tabla
+      // tenga columna `id` en vez de confiar en un `as any`.
+      const porId = this.condicion(table, id, undefined, "Upsert", index);
+
+      const existing = await tx.select().from(table).where(porId).limit(1);
 
       if (existing.length > 0) {
         // Update
-        const result = await tx
-          .update(table)
-          .set(data)
-          .where(eq((table as any).id, id))
-          .returning();
+        const result = await tx.update(table).set(data).where(porId).returning();
         return {
           index,
           status: "upserted",
@@ -465,14 +459,17 @@ export class BatchProcessor {
   /**
    * Resuelve referencias @ref:alias.key en el objeto data.
    */
-  private resolveReferences(data: Record<string, any>): Record<string, any> {
-    const resolved: Record<string, any> = {};
+  private resolveReferences(data: Record<string, unknown>): Record<string, unknown> {
+    const resolved: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === "string" && value.startsWith("@ref:")) {
         resolved[key] = this.resolveReferenceValue(value);
       } else if (typeof value === "object" && value !== null) {
-        resolved[key] = this.resolveReferences(value);
+        // `typeof x === "object"` estrecha a `object`, no a un diccionario:
+        // un array también lo cumple. La recursión solo tiene sentido sobre
+        // claves, así que se afirma esa forma aquí y no en la firma.
+        resolved[key] = this.resolveReferences(value as Record<string, unknown>);
       } else {
         resolved[key] = value;
       }
@@ -595,7 +592,7 @@ export function createBatchProcessor(): BatchProcessor {
 export async function executeSingle(
   table: PgTable,
   op: BatchOperationType,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   options?: {
     id?: string;
     validation?: (data: any) => { success: boolean; errors?: string[] };
@@ -639,10 +636,10 @@ export async function executeSingle(
  */
 export async function createWithChildren(
   parentTable: PgTable,
-  parentData: Record<string, any>,
+  parentData: Record<string, unknown>,
   children: Array<{
     table: PgTable;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     foreignKeyField: string;
   }>,
   options?: {

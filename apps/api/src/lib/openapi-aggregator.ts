@@ -1,20 +1,20 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * OPENAPI AGGREGATOR - Dynamic OpenAPI Spec Generation from Grimoires
+ * OPENAPI AGGREGATOR - Dynamic OpenAPI Spec Generation from Kons
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- * This module aggregates OpenAPI specifications from all loaded grimoires
+ * This module aggregates OpenAPI specifications from all loaded kons
  * into a single unified API specification.
  *
  * Features:
- * - Auto-generates OpenAPI 3.0.0 spec from grimoire definitions
+ * - Auto-generates OpenAPI 3.0.0 spec from kon definitions
  * - Converts Zod schemas to JSON Schema
- * - Prefixes schemas with grimoire ID to avoid conflicts
+ * - Prefixes schemas with kon ID to avoid conflicts
  * - Auto-generates operationIds for code generation
  * - Supports tags, webhooks, and reusable components
  */
 
-import type { GrimoireDefinition, GrimoireOpenApiPath, OpenApiMethod } from "@gremius/shared";
+import type { KonDefinition, KonOpenApiPath, OpenApiMethod } from "@kitsuden/shared";
 import type {
   OpenAPIObject,
   PathItemObject,
@@ -29,6 +29,7 @@ import { db } from "../db";
 import { dataSets } from "../db/schema";
 
 import { logger } from "./logger";
+import { rutasDeKons } from "./rutas-de-kons";
 
 /**
  * Options for generating OpenAPI specification
@@ -42,19 +43,19 @@ export interface OpenApiAggregatorOptions {
   description?: string;
   /** Server URLs */
   servers?: Array<{ url: string; description?: string }>;
-  /** Include only specific grimoires (default: all) */
-  includeGrimoires?: string[];
-  /** Exclude specific grimoires */
-  excludeGrimoires?: string[];
+  /** Include only specific kons (default: all) */
+  includeKons?: string[];
+  /** Exclude specific kons */
+  excludeKons?: string[];
 }
 
 /**
  * Default OpenAPI info
  */
 const DEFAULT_INFO = {
-  title: "GremiusCMS API",
+  title: "Kitsuden API",
   version: "0.8.0-beta",
-  description: `🚀 GremiusCMS - Auto-generated API from active grimoires
+  description: `🚀 Kitsuden - Auto-generated API from active kons
 
 ## Features
 
@@ -68,8 +69,8 @@ const DEFAULT_INFO = {
 
 Three methods supported:
 1. **Session Cookie** - For web users (Better-Auth)
-2. **Agent Token** - For AI agents and machine integrations (grm_agent_*) — recommended
-3. **Legacy API Key** - Bearer token (gremius_sk_*) — **DEPRECATED**, sunset 2026-08-01. Migrate to grm_agent_*
+2. **Agent Token** - For AI agents and machine integrations (kitsuden_agent_*) — recommended
+3. **Legacy API Key** - Bearer token (kitsuden_sk_*) — **DEPRECATED**, sunset 2026-08-01. Migrate to kitsuden_agent_*
 
 \`\`\`
 Authorization: Bearer your_token_here
@@ -98,19 +99,172 @@ function zodToOpenApiSchema(zodSchema: ZodTypeAny, name?: string): SchemaObject 
 }
 
 /**
- * Convert a grimoire path definition to OpenAPI PathItemObject
+ * Convierte un esquema zod a JSON Schema EN LÍNEA, sin `definitions` ni `$ref`.
+ *
+ * `zodToOpenApiSchema` pasa `name`, y con nombre `zod-to-json-schema` devuelve
+ * un `$ref` a `#/definitions/<name>` que en un OpenAPI no apunta a ninguna
+ * parte. Para los cuerpos descubiertos se quiere el esquema tal cual.
+ */
+function zodToOpenApiSchemaInline(schema: unknown): SchemaObject {
+  try {
+    const convertido = zodToJsonSchema(schema as ZodTypeAny, {
+      $refStrategy: "none",
+      target: "openApi3",
+    }) as Record<string, unknown>;
+    const { $schema: _s, definitions: _d, ...resto } = convertido;
+    return resto as SchemaObject;
+  } catch (error) {
+    logger.warn({ error }, "No se pudo convertir un esquema zod a JSON Schema");
+    return { type: "object", description: "No se pudo convertir el esquema de esta ruta." };
+  }
+}
+
+/**
+ * Añade al spec las rutas DESCUBIERTAS de los kons montados.
+ *
+ * ── POR QUE ────────────────────────────────────────────────────────────────
+ *
+ * Hasta ahora solo salía lo declarado a mano en `openApi.paths`, y ningún kon
+ * lo declaró: el contrato publicado tenía cero rutas de dominio. Esto las lee
+ * del router real (ver `rutas-de-kons.ts`), así que una ruta nueva se documenta
+ * sola.
+ *
+ * Los caminos se publican SIN el prefijo `/api`, porque la URL del servidor ya
+ * lo lleva: igual que `/items/...`. Con prefijo, un cliente generado llamaría a
+ * `/api/api/esports/...`.
+ */
+function añadirRutasDescubiertas(
+  spec: OpenAPIObject,
+  kons: KonDefinition[],
+  addedTags: Set<string>,
+  filtro: { includeKons?: string[]; excludeKons: string[] }
+): void {
+  const konPorId = new Map(kons.map((k) => [k.id, k]));
+  const usados = new Set<string>();
+
+  for (const ruta of rutasDeKons()) {
+    if (filtro.includeKons && !filtro.includeKons.includes(ruta.konId)) continue;
+    if (filtro.excludeKons.includes(ruta.konId)) continue;
+    // Un comodín (`/admin-asset/*`) no se puede expresar como camino OpenAPI.
+    if (ruta.path.includes("*")) continue;
+
+    const metodo = ruta.method.toLowerCase();
+    if (!["get", "post", "put", "patch", "delete"].includes(metodo)) continue;
+
+    const camino =
+      ruta.path.replace(/^\/api(?=\/|$)/, "").replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "{$1}") || "/";
+
+    const tag = ruta.konId;
+    if (!addedTags.has(tag)) {
+      const kon = konPorId.get(ruta.konId);
+      spec.tags!.push({ name: tag, description: kon?.description ?? kon?.name ?? ruta.konId });
+      addedTags.add(tag);
+    }
+
+    const base =
+      ruta.operationId ??
+      `${ruta.konId.replace(/^kon-/, "")}_${metodo}_${
+        ruta.relativePath.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "") || "root"
+      }`;
+    let operationId = base;
+    for (let n = 2; usados.has(operationId); n++) operationId = `${base}_${n}`;
+    usados.add(operationId);
+
+    const parameters: ParameterObject[] = [];
+    const deParams = ruta.validation.find((v) => v.target === "param");
+    const propsParams = deParams
+      ? (zodToOpenApiSchemaInline(deParams.schema).properties ?? {})
+      : {};
+    for (const [, nombre] of ruta.path.matchAll(/:([A-Za-z_][A-Za-z0-9_]*)/g)) {
+      parameters.push({
+        name: nombre,
+        in: "path",
+        required: true,
+        schema: (propsParams[nombre] as SchemaObject) ?? { type: "string" },
+      });
+    }
+    const deQuery = ruta.validation.find((v) => v.target === "query");
+    if (deQuery) {
+      const q = zodToOpenApiSchemaInline(deQuery.schema);
+      for (const [nombre, esquema] of Object.entries(q.properties ?? {})) {
+        parameters.push({
+          name: nombre,
+          in: "query",
+          required: q.required?.includes(nombre) ?? false,
+          schema: esquema as SchemaObject,
+        });
+      }
+    }
+
+    const operation: OperationObject = {
+      operationId,
+      summary: ruta.summary ?? `${ruta.method} ${camino}`,
+      tags: [tag, ...(ruta.tags ?? [])],
+      ...(parameters.length > 0 ? { parameters } : {}),
+      responses: { "200": { description: "OK" } },
+    };
+
+    const notas: string[] = [];
+    if (ruta.description) notas.push(ruta.description);
+
+    const cuerpo = ruta.validation.find((v) => v.target === "json" || v.target === "form");
+    if (cuerpo) {
+      operation.requestBody = {
+        required: true,
+        content: {
+          [cuerpo.target === "form" ? "multipart/form-data" : "application/json"]: {
+            schema: zodToOpenApiSchemaInline(cuerpo.schema),
+          },
+        },
+      };
+      operation.responses["422"] = {
+        description:
+          "Validación fallida o campos desconocidos. `error.details.unknownKeys` dice cuál " +
+          "sobra y `didYouMean` el nombre correcto.",
+      };
+      notas.push("Los campos que no están en el esquema se RECHAZAN con 422; no se ignoran.");
+    }
+
+    if (ruta.auth === "required") {
+      operation.security = [{ bearerAuth: [] }, { cookieAuth: [] }];
+      operation.responses["401"] = {
+        description:
+          "Falta credencial: cookie de sesión o `Authorization: Bearer kitsuden_agent_*`.",
+      };
+    } else if (ruta.auth === "optional") {
+      operation.security = [{}, { bearerAuth: [] }, { cookieAuth: [] }];
+    } else {
+      operation.security = [];
+    }
+
+    if (ruta.section) {
+      (operation as unknown as Record<string, unknown>)["x-kitsuden-section"] = ruta.section;
+      operation.responses["409"] = {
+        description: `La sección «${ruta.section}» del kon está apagada; la respuesta dice cómo encenderla.`,
+      };
+      notas.push(`Requiere la sección «${ruta.section}» encendida.`);
+    }
+
+    if (notas.length > 0) operation.description = notas.join("\n\n");
+
+    const item = (spec.paths![camino] ??= {}) as PathItemObject & Record<string, unknown>;
+    if (!item[metodo]) item[metodo] = operation;
+  }
+}
+
+/**
+ * Convert a kon path definition to OpenAPI PathItemObject
  */
 function convertPathToOpenApi(
-  grimoire: GrimoireDefinition,
-  pathDef: GrimoireOpenApiPath
+  kon: KonDefinition,
+  pathDef: KonOpenApiPath
 ): { method: OpenApiMethod; pathItem: OperationObject } {
   const method = pathDef.method.toLowerCase() as OpenApiMethod;
-  const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
+  const konPrefix = kon.id.replace(/^kon-/, "");
 
   // Generate operationId if not provided
   const operationId =
-    pathDef.operationId ||
-    `${grimoirePrefix}_${method}_${pathDef.path.replace(/[^a-zA-Z0-9]/g, "_")}`;
+    pathDef.operationId || `${konPrefix}_${method}_${pathDef.path.replace(/[^a-zA-Z0-9]/g, "_")}`;
 
   // Build parameters
   const parameters: ParameterObject[] = [];
@@ -177,7 +331,7 @@ function convertPathToOpenApi(
     operationId,
     summary: pathDef.summary,
     description: pathDef.description,
-    tags: pathDef.tags || [grimoire.name],
+    tags: pathDef.tags || [kon.name],
     parameters: parameters.length > 0 ? parameters : undefined,
     requestBody,
     responses,
@@ -195,10 +349,10 @@ function convertPathToOpenApi(
 }
 
 /**
- * Convert grimoire path to full API path
+ * Convert kon path to full API path
  */
-function getFullPath(grimoire: GrimoireDefinition, path: string): string {
-  const mountPath = grimoire.mountPath || `/api/${grimoire.id.replace(/^grimoire-/, "")}`;
+function getFullPath(kon: KonDefinition, path: string): string {
+  const mountPath = kon.mountPath || `/api/${kon.id.replace(/^kon-/, "")}`;
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   // Replace :param with {param} for OpenAPI
   const openApiPath = cleanPath.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, "{$1}");
@@ -206,10 +360,10 @@ function getFullPath(grimoire: GrimoireDefinition, path: string): string {
 }
 
 /**
- * Generate complete OpenAPI specification from grimoires
+ * Generate complete OpenAPI specification from kons
  */
 export async function generateOpenAPISpec(
-  grimoires: GrimoireDefinition[],
+  kons: KonDefinition[],
   options: OpenApiAggregatorOptions = {}
 ): Promise<OpenAPIObject> {
   const {
@@ -220,21 +374,21 @@ export async function generateOpenAPISpec(
       { url: "http://localhost:3001/api", description: "Local development" },
       { url: "{protocol}://{host}/api", description: "Production" },
     ],
-    includeGrimoires,
-    excludeGrimoires = [],
+    includeKons,
+    excludeKons = [],
   } = options;
 
-  // Filter grimoires
-  const filteredGrimoires = grimoires.filter((g) => {
-    if (includeGrimoires && !includeGrimoires.includes(g.id)) return false;
-    if (excludeGrimoires.includes(g.id)) return false;
+  // Filter kons
+  const filteredKons = kons.filter((g) => {
+    if (includeKons && !includeKons.includes(g.id)) return false;
+    if (excludeKons.includes(g.id)) return false;
     return g.openApi !== undefined;
   });
 
   logger.info(
     {
-      totalGrimoires: grimoires.length,
-      includedGrimoires: filteredGrimoires.length,
+      totalKons: kons.length,
+      includedKons: filteredKons.length,
     },
     "Generating OpenAPI spec"
   );
@@ -247,8 +401,8 @@ export async function generateOpenAPISpec(
       version,
       description,
       contact: {
-        name: "Gremius Team",
-        url: "https://gremius.dev",
+        name: "Kitsuden Team",
+        url: "https://kitsuden.dev",
       },
       license: {
         name: "MIT",
@@ -454,7 +608,7 @@ export async function generateOpenAPISpec(
   // ═══════════════════════════════════════════════════════════════════════════
   spec.tags!.push({
     name: "Unified Items",
-    description: "Standard REST interface for any collection (datasets or grimoire tables)",
+    description: "Standard REST interface for any collection (datasets or kon tables)",
   });
   addedTags.add("Unified Items");
 
@@ -464,7 +618,7 @@ export async function generateOpenAPISpec(
     get: {
       operationId: "items_list",
       summary: "List items in a collection",
-      description: "Works for both datasets (JSONB) and native grimoire tables.",
+      description: "Works for both datasets (JSONB) and native kon tables.",
       tags: [itemsTag],
       parameters: [
         {
@@ -557,16 +711,19 @@ export async function generateOpenAPISpec(
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Process each grimoire
+  // Process each kon
   // ═══════════════════════════════════════════════════════════════════════════
-  for (const grimoire of filteredGrimoires) {
-    if (!grimoire.openApi) continue;
+  // Las rutas que los kons tienen MONTADAS, se hayan declarado o no.
+  añadirRutasDescubiertas(spec, kons, addedTags, { includeKons, excludeKons });
 
-    const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
+  for (const kon of filteredKons) {
+    if (!kon.openApi) continue;
+
+    const konPrefix = kon.id.replace(/^kon-/, "");
 
     // Add tags
-    if (grimoire.openApi.tags) {
-      for (const tag of grimoire.openApi.tags) {
+    if (kon.openApi.tags) {
+      for (const tag of kon.openApi.tags) {
         if (!addedTags.has(tag.name)) {
           spec.tags!.push(tag);
           addedTags.add(tag.name);
@@ -574,27 +731,27 @@ export async function generateOpenAPISpec(
       }
     }
 
-    // Add default tag for grimoire
-    if (!addedTags.has(grimoire.name)) {
+    // Add default tag for kon
+    if (!addedTags.has(kon.name)) {
       spec.tags!.push({
-        name: grimoire.name,
-        description: grimoire.description || `${grimoire.name} endpoints`,
+        name: kon.name,
+        description: kon.description || `${kon.name} endpoints`,
       });
-      addedTags.add(grimoire.name);
+      addedTags.add(kon.name);
     }
 
-    // Register schemas (with grimoire prefix to avoid conflicts)
-    if (grimoire.openApi.schemas) {
-      for (const [schemaName, zodSchema] of Object.entries(grimoire.openApi.schemas)) {
-        const prefixedName = `${grimoirePrefix}_${schemaName}`;
+    // Register schemas (with kon prefix to avoid conflicts)
+    if (kon.openApi.schemas) {
+      for (const [schemaName, zodSchema] of Object.entries(kon.openApi.schemas)) {
+        const prefixedName = `${konPrefix}_${schemaName}`;
         spec.components!.schemas![prefixedName] = zodToOpenApiSchema(zodSchema, prefixedName);
       }
     }
 
     // Register paths
-    for (const pathDef of grimoire.openApi.paths) {
-      const fullPath = getFullPath(grimoire, pathDef.path);
-      const { method, pathItem } = convertPathToOpenApi(grimoire, pathDef);
+    for (const pathDef of kon.openApi.paths) {
+      const fullPath = getFullPath(kon, pathDef.path);
+      const { method, pathItem } = convertPathToOpenApi(kon, pathDef);
 
       if (!spec.paths![fullPath]) {
         spec.paths![fullPath] = {};
@@ -604,13 +761,13 @@ export async function generateOpenAPISpec(
     }
 
     // Register webhooks
-    if ((grimoire.openApi as any).webhooks) {
+    if ((kon.openApi as any).webhooks) {
       if (!(spec as any).webhooks) {
         (spec as any).webhooks = {};
       }
 
-      for (const [webhookName, webhookDef] of Object.entries((grimoire.openApi as any).webhooks)) {
-        const prefixedName = `${grimoirePrefix}_${webhookName}`;
+      for (const [webhookName, webhookDef] of Object.entries((kon.openApi as any).webhooks)) {
+        const prefixedName = `${konPrefix}_${webhookName}`;
         (spec as any).webhooks[prefixedName] = {
           post: {
             summary: (webhookDef as any).post.summary,
@@ -635,18 +792,19 @@ export async function generateOpenAPISpec(
 }
 
 /**
- * Generate OpenAPI spec for a single grimoire
+ * Generate OpenAPI spec for a single kon
  */
-export async function generateGrimoireSpec(
-  grimoire: GrimoireDefinition
-): Promise<OpenAPIObject | null> {
-  if (!grimoire.openApi) {
+export async function generateKonSpec(kon: KonDefinition): Promise<OpenAPIObject | null> {
+  // Antes devolvía `null` para todo kon sin declaración manual, que eran todos.
+  const tieneRutas = rutasDeKons().some((r) => r.konId === kon.id);
+  if (!kon.openApi && !tieneRutas) {
     return null;
   }
 
-  return generateOpenAPISpec([grimoire], {
-    title: `${grimoire.name} API`,
-    description: grimoire.description || `${grimoire.name} endpoints`,
+  return generateOpenAPISpec([kon], {
+    includeKons: [kon.id],
+    title: `${kon.name} API`,
+    description: kon.description || `${kon.name} endpoints`,
   });
 }
 
@@ -654,30 +812,30 @@ export async function generateGrimoireSpec(
  * Get operation ID for a specific endpoint
  */
 export function getOperationId(
-  grimoire: GrimoireDefinition,
+  kon: KonDefinition,
   method: string,
   path: string
 ): string | undefined {
-  if (!grimoire.openApi) return undefined;
+  if (!kon.openApi) return undefined;
 
-  const pathDef = grimoire.openApi.paths.find(
+  const pathDef = kon.openApi.paths.find(
     (p) => p.method === method.toLowerCase() && p.path === path
   );
 
   if (!pathDef) return undefined;
 
-  const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
+  const konPrefix = kon.id.replace(/^kon-/, "");
   return (
     pathDef.operationId ||
-    `${grimoirePrefix}_${method.toLowerCase()}_${path.replace(/[^a-zA-Z0-9]/g, "_")}`
+    `${konPrefix}_${method.toLowerCase()}_${path.replace(/[^a-zA-Z0-9]/g, "_")}`
   );
 }
 
 /**
- * List all available operations across grimoires
+ * List all available operations across kons
  */
-export function listOperations(grimoires: GrimoireDefinition[]): Array<{
-  grimoireId: string;
+export function listOperations(kons: KonDefinition[]): Array<{
+  konId: string;
   operationId: string;
   method: string;
   path: string;
@@ -685,7 +843,7 @@ export function listOperations(grimoires: GrimoireDefinition[]): Array<{
   tags: string[];
 }> {
   const operations: Array<{
-    grimoireId: string;
+    konId: string;
     operationId: string;
     method: string;
     path: string;
@@ -693,21 +851,21 @@ export function listOperations(grimoires: GrimoireDefinition[]): Array<{
     tags: string[];
   }> = [];
 
-  for (const grimoire of grimoires) {
-    if (!grimoire.openApi) continue;
+  for (const kon of kons) {
+    if (!kon.openApi) continue;
 
-    const grimoirePrefix = grimoire.id.replace(/^grimoire-/, "");
+    const konPrefix = kon.id.replace(/^kon-/, "");
 
-    for (const path of grimoire.openApi.paths) {
+    for (const path of kon.openApi.paths) {
       operations.push({
-        grimoireId: grimoire.id,
+        konId: kon.id,
         operationId:
           path.operationId ||
-          `${grimoirePrefix}_${path.method}_${path.path.replace(/[^a-zA-Z0-9]/g, "_")}`,
+          `${konPrefix}_${path.method}_${path.path.replace(/[^a-zA-Z0-9]/g, "_")}`,
         method: path.method.toUpperCase(),
-        path: getFullPath(grimoire, path.path),
+        path: getFullPath(kon, path.path),
         summary: path.summary,
-        tags: path.tags || [grimoire.name],
+        tags: path.tags || [kon.name],
       });
     }
   }
@@ -754,7 +912,7 @@ function datasetFieldTypeToJsonSchema(
 
 export default {
   generateOpenAPISpec,
-  generateGrimoireSpec,
+  generateKonSpec,
   getOperationId,
   listOperations,
 };

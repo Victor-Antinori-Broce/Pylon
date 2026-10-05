@@ -5,7 +5,7 @@
  *
  * Provides AI agents with powerful tools for:
  * - Intelligent querying with natural language
- * - Grimoire code generation
+ * - Kon code generation
  * - Schema introspection
  * - Batch operations
  * - Error analysis
@@ -18,14 +18,14 @@ import { z } from "zod";
 import type { McpServerDependencies } from "./index";
 
 export function registerEnhancedTools(server: McpServer, deps: McpServerDependencies) {
-  const { db, schema, queue: _queue, grimoireRegistry: _grimoireRegistry } = deps;
+  const { db, schema, queue: _queue, konRegistry: _konRegistry } = deps;
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // INTELLIGENT QUERY TOOL
   // ═══════════════════════════════════════════════════════════════════════════════
 
   server.registerTool(
-    "gremius_intelligent_query",
+    "kitsuden_intelligent_query",
     {
       title: "Query with Natural Language",
       description: `Execute intelligent queries using natural language.
@@ -67,23 +67,28 @@ The AI analyzes the dataset schema and builds appropriate filters automatically.
         // In production, this would use an LLM or sophisticated NLP
         const parsedQuery = parseNaturalLanguageQuery(query, datasetInfo.schema);
 
-        // Build and execute query
+        // Todas las condiciones se juntan ANTES de construir la consulta.
+        //
+        // Antes esto llamaba a `.where()` dos veces: primero con el dataset y
+        // luego, si había filtros, con ellos. En Drizzle la segunda llamada
+        // REEMPLAZA la primera, no la combina — así que en cuanto había un
+        // filtro se perdía el `dataSetId` y la búsqueda devolvía entradas de
+        // TODOS los datasets.
+        //
+        // TypeScript lo impedía: por eso `.where()` desaparece del tipo una vez
+        // usado. Estaba silenciado con un `@ts-ignore` sin explicación.
+        const condiciones = [eq(schema.dataEntries.dataSetId, datasetInfo.id)];
+
+        for (const f of parsedQuery.filters) {
+          // Simplificado: una implementación real construiría el SQL con más
+          // cuidado que interpolar el operador.
+          condiciones.push(sql`data->>'${sql.raw(f.field)}' ${sql.raw(f.operator)} ${f.value}`);
+        }
+
         let dbQuery = db
           .select()
           .from(schema.dataEntries)
-          .where(eq(schema.dataEntries.dataSetId, datasetInfo.id));
-
-        // Apply filters from parsed query
-        if (parsedQuery.filters.length > 0) {
-          // Build where conditions
-          const conditions = parsedQuery.filters.map((f) => {
-            // This is simplified - real implementation would use proper SQL building
-            return sql`data->>'${sql.raw(f.field)}' ${sql.raw(f.operator)} ${f.value}`;
-          });
-
-          // @ts-ignore
-          dbQuery = dbQuery.where(and(...conditions));
-        }
+          .where(and(...condiciones));
 
         // Apply sorting
         if (parsedQuery.sort) {
@@ -124,16 +129,16 @@ The AI analyzes the dataset schema and builds appropriate filters automatically.
   );
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // GRIMOIRE GENERATOR TOOL
+  // KON GENERATOR TOOL
   // ═══════════════════════════════════════════════════════════════════════════════
 
   server.registerTool(
-    "gremius_generate_grimoire",
+    "kitsuden_generate_kon",
     {
-      title: "Generate Grimoire Boilerplate",
-      description: `Generate a complete grimoire template based on requirements.
+      title: "Generate Kon Boilerplate",
+      description: `Generate a complete kon template based on requirements.
 
-This tool creates production-ready grimoire code including:
+This tool creates production-ready kon code including:
 - TypeScript types and Zod schemas
 - CRUD API endpoints
 - Database migrations
@@ -141,12 +146,12 @@ This tool creates production-ready grimoire code including:
 - OpenAPI documentation
 
 Example use cases:
-- "Create an inventory management grimoire with products, categories, and stock tracking"
+- "Create an inventory management kon with products, categories, and stock tracking"
 - "Generate a booking system for conference rooms with time slots"
-- "Build a CRM grimoire with contacts, companies, and deals"`,
+- "Build a CRM kon with contacts, companies, and deals"`,
       inputSchema: z.object({
-        name: z.string().describe("Grimoire name (kebab-case, e.g., 'inventory-management')"),
-        description: z.string().describe("What this grimoire does"),
+        name: z.string().describe("Kon name (kebab-case, e.g., 'inventory-management')"),
+        description: z.string().describe("What this kon does"),
         features: z
           .array(
             z.enum([
@@ -162,46 +167,43 @@ Example use cases:
           )
           .describe("Features to include"),
         dataModel: z.string().describe("Description of entities and relationships"),
-        targetLocation: z
-          .string()
-          .optional()
-          .describe("Where to save (default: packages/grimoires/)"),
+        targetLocation: z.string().optional().describe("Where to save (default: packages/kons/)"),
       }),
       outputSchema: z.any(),
     },
     async ({ name, description, features, dataModel, targetLocation }) => {
       try {
-        const grimoireCode = generateGrimoireTemplate({
+        const konCode = generateKonTemplate({
           name,
           description,
           features,
           dataModel,
         });
 
-        const outputPath = targetLocation || `packages/grimoires/grimoire-${name}`;
+        const outputPath = targetLocation || `packages/kons/kon-${name}`;
 
         return {
           content: [
             {
               type: "text",
-              text: `✅ Generated grimoire "${name}"
+              text: `✅ Generated kon "${name}"
 
 📁 Save to: ${outputPath}/
 
 📋 Files to create:
-${grimoireCode.files.map((f) => `  - ${f.path}`).join("\n")}
+${konCode.files.map((f) => `  - ${f.path}`).join("\n")}
 
 🚀 Installation:
   1. Create directory: mkdir -p ${outputPath}
   2. Save files
-  3. Install: gremius plugin install ${name}
+  3. Install: kitsuden plugin install ${name}
 
 📖 Main index.ts:
 \`\`\`typescript
-${grimoireCode.mainFile}
+${konCode.mainFile}
 \`\`\`
 
-For complete code, use the CLI: gremius generate-grimoire --name ${name} --output ${outputPath}`,
+For complete code, use the CLI: kitsuden generate-kon --name ${name} --output ${outputPath}`,
             },
           ],
         };
@@ -219,7 +221,7 @@ For complete code, use the CLI: gremius generate-grimoire --name ${name} --outpu
   // ═══════════════════════════════════════════════════════════════════════════════
 
   server.registerTool(
-    "gremius_introspect_schema",
+    "kitsuden_introspect_schema",
     {
       title: "Introspect Dataset Schema",
       description:
@@ -299,7 +301,7 @@ For complete code, use the CLI: gremius generate-grimoire --name ${name} --outpu
   // ═══════════════════════════════════════════════════════════════════════════════
 
   server.registerTool(
-    "gremius_batch_operations",
+    "kitsuden_batch_operations",
     {
       title: "Execute Batch Operations",
       description: `Execute multiple CRUD operations in a single transaction.
@@ -389,20 +391,20 @@ All operations are executed atomically - if one fails, all are rolled back.`,
   // ═══════════════════════════════════════════════════════════════════════════════
 
   server.registerTool(
-    "gremius_validate_code",
+    "kitsuden_validate_code",
     {
-      title: "Validate Grimoire Code",
+      title: "Validate Kon Code",
       description:
-        "Validate TypeScript code for a grimoire before deployment. Checks types, schema validity, and best practices.",
+        "Validate TypeScript code for a kon before deployment. Checks types, schema validity, and best practices.",
       inputSchema: z.object({
         code: z.string().describe("TypeScript code to validate"),
-        grimoireName: z.string().optional().describe("Grimoire name for context"),
+        konName: z.string().optional().describe("Kon name for context"),
         checkTypeSafety: z.boolean().optional().default(true),
         checkSecurity: z.boolean().optional().default(true),
       }),
       outputSchema: z.any(),
     },
-    async ({ code, grimoireName, checkTypeSafety: _checkTypeSafety, checkSecurity }) => {
+    async ({ code, konName, checkTypeSafety: _checkTypeSafety, checkSecurity }) => {
       try {
         const issues: Array<{ type: string; message: string; line?: number }> = [];
         const suggestions: string[] = [];
@@ -421,8 +423,8 @@ All operations are executed atomically - if one fails, all are rolled back.`,
         }
 
         // Schema validation check
-        if (!code.includes("defineGrimoire")) {
-          issues.push({ type: "error", message: "Must use defineGrimoire() to export grimoire" });
+        if (!code.includes("defineKon")) {
+          issues.push({ type: "error", message: "Must use defineKon() to export kon" });
         }
 
         // OpenAPI check
@@ -437,7 +439,7 @@ All operations are executed atomically - if one fails, all are rolled back.`,
               text: JSON.stringify(
                 {
                   valid: issues.filter((i) => i.type === "error").length === 0,
-                  grimoireName,
+                  konName,
                   issues,
                   suggestions,
                   summary:
@@ -494,7 +496,7 @@ All operations are executed atomically - if one fails, all are rolled back.`,
     return { filters, sort };
   }
 
-  function generateGrimoireTemplate(config: {
+  function generateKonTemplate(config: {
     name: string;
     description: string;
     features: string[];
@@ -505,7 +507,7 @@ All operations are executed atomically - if one fails, all are rolled back.`,
       .replace(/^[a-z]/, (l) => l.toUpperCase());
 
     const mainFile = `import { Hono } from "hono";
-import { defineGrimoire } from "@gremius/shared";
+import { defineKon } from "@kitsuden/shared";
 import { z } from "zod";
 
 // Schema definition
@@ -516,8 +518,8 @@ const ${pascalName}Schema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-${config.name}",
+export const kon = defineKon({
+  id: "kon-${config.name}",
   name: "${pascalName}",
   version: "1.0.0",
   description: "${config.description}",
@@ -557,12 +559,12 @@ export const grimoire = defineGrimoire({
         { path: "index.ts", content: mainFile },
         { path: "schema.ts", content: "// Database schema" },
         {
-          path: "grimoire.json",
-          content: JSON.stringify({ id: `grimoire-${config.name}` }, null, 2),
+          path: "kon.json",
+          content: JSON.stringify({ id: `kon-${config.name}` }, null, 2),
         },
         {
           path: "package.json",
-          content: JSON.stringify({ name: `@gremius/grimoire-${config.name}` }, null, 2),
+          content: JSON.stringify({ name: `@kitsuden/kon-${config.name}` }, null, 2),
         },
       ],
       mainFile,

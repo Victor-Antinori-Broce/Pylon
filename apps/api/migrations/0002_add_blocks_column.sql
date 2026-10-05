@@ -1,6 +1,6 @@
--- GremiusCMS Migration: Add blocks column to games and blog_posts
+-- Kitsuden Migration: Add blocks column to games and blog_posts
 -- Implements the "Lego" Page Builder architecture
--- Run against gremius_db PostgreSQL instance
+-- Run against kitsuden_db PostgreSQL instance
 
 -- Add blocks JSONB column to blog_posts
 ALTER TABLE blog_posts

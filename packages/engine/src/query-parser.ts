@@ -55,7 +55,7 @@ export interface QueryOptions<_T = any> {
   /** Tabla principal */
   table: PgTable;
   /** Filtros where */
-  where?: Record<string, any>;
+  where?: Record<string, unknown>;
   /** Expandir relaciones */
   expand?: string[];
   /** Campos a seleccionar (default: todos los permitidos) */
@@ -261,7 +261,7 @@ function isFieldAllowed(field: string): boolean {
  * { status: "active", id: { $gt: 100 } }
  * → and(eq(table.status, "active"), gt(table.id, 100))
  */
-function parseWhereClause(table: PgTable, where: Record<string, any>): SQL | undefined {
+function parseWhereClause(table: PgTable, where: Record<string, unknown>): SQL | undefined {
   const conditions: SQL[] = [];
 
   for (const [key, value] of Object.entries(where)) {

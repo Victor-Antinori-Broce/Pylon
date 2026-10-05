@@ -6,8 +6,8 @@ Estado: COMPLETADO
 
 OBJETIVO
 --------
-Transformar el schema monolítico de GremiusCMS en un core 100% dominio-
-agnóstico, extrayendo las tablas gaming/blog/streamer a sus grimoires
+Transformar el schema monolítico de Kitsuden en un core 100% dominio-
+agnóstico, extrayendo las tablas gaming/blog/streamer a sus kons
 correspondientes sin romper la compatibilidad con el CMS de gaming.
 
 ARCHIVOS CREADOS
@@ -16,7 +16,7 @@ ARCHIVOS CREADOS
    - Schema base con SOLO tablas de infraestructura:
      • Auth (authUsers, authSessions, authAccounts, authVerifications)
      • API Keys, Media, Data Sets, Data Entries, Site Settings
-     • Formulas, Modules, Installed Grimoires
+     • Formulas, Modules, Installed Kons
      • Actions, Action Executions
      • Agent System (identities, apiKeys, memory, auditLogs, traces, steps, feedback)
      • Data Sources
@@ -29,7 +29,7 @@ ARCHIVOS MODIFICADOS
 --------------------
 2. apps/api/src/db/schema.ts
    - Convertido en "Backward Compatibility Layer".
-   - Re-exporta schema-core + tablas gaming desde grimoires vía imports
+   - Re-exporta schema-core + tablas gaming desde kons vía imports
      nombrados (evita conflictos de enums duplicados).
    - Legacy imports como `import { games } from "../db/schema"` siguen
      funcionando durante la transición.
@@ -37,30 +37,30 @@ ARCHIVOS MODIFICADOS
 3. apps/api/src/lib/schema-merger.ts
    - Base de schema cambiada de `../db/schema` a `../db/schema-core`.
    - El runtime ahora construye el schema mergeado a partir del core
-     genérico + grimoires activos.
+     genérico + kons activos.
 
 4. apps/api/src/db/schema-all.ts
    - Revertido a exportar `./schema` (compat layer) para mantener
      compatibilidad con drizzle-kit push/migrate.
    - drizzle-kit sigue viendo todas las tablas (core + gaming).
 
-5. apps/api/gremius.config.ts
-   - Agregados grimoires gaming a BASE_FEATURE_GRIMOIRES:
-     • grimoire-games (enabled: true)
-     • grimoire-streamers (enabled: true)
-     • grimoire-esports (enabled: true)
+5. apps/api/kitsuden.config.ts
+   - Agregados kons gaming a BASE_FEATURE_KONS:
+     • kon-games (enabled: true)
+     • kon-streamers (enabled: true)
+     • kon-esports (enabled: true)
    - Esto asegura que staticConfig los incluya y el schema-merger
      los cargue correctamente en runtime.
 
 6. apps/api/src/routes/collections.ts
    - Imports de dominio gaming movidos de `../db/schema` a
-     `../../../../packages/grimoires/grimoire-games/games.schema`.
+     `../../../../packages/kons/kon-games/games.schema`.
    - Import core `media` permanece en `../db/schema`.
 
 7. apps/api/src/routes/blog.ts
-   - Imports de dominio movidos a sus grimoires respectivos:
-     • blogPosts, blogPostsToTags, blogPostsToGames → grimoire-blog
-     • tags, games → grimoire-games
+   - Imports de dominio movidos a sus kons respectivos:
+     • blogPosts, blogPostsToTags, blogPostsToGames → kon-blog
+     • tags, games → kon-games
    - Imports core `authUsers`, `media` permanecen en `../db/schema`.
 
 8. apps/api/src/routes/datasets.ts
@@ -84,46 +84,46 @@ VERIFICACIÓN
 • Errores pre-existentes en agents-v1.ts, openapi-aggregator.ts y
   docs-dynamic.ts NO fueron introducidos por esta fase.
 • El CMS de gaming sigue funcionando mediante dogfooding:
-  schema.ts (compat) re-exporta las tablas de los grimoires.
+  schema.ts (compat) re-exporta las tablas de los kons.
 
 NOTAS TÉCNICAS
 --------------
 - La eliminación de la columna `gameId` de `data_sets` requiere una
   migración de base de datos cuando se decida aplicar el schema real.
   Por ahora, drizzle-kit sigue viendo la columna vía schema.ts compat.
-- Los enums `contentStatusEnum` existen tanto en core como en grimoire-games.
-  El schema-merger sobrescribe el del core con el del grimoire (misma
+- Los enums `contentStatusEnum` existen tanto en core como en kon-games.
+  El schema-merger sobrescribe el del core con el del kon (misma
   definición), sin generar conflictos en runtime.
 
 ═══════════════════════════════════════════════════════════════════
-FASE 2: RUNTIME EXTENSIBLE — Grimoires desde NPM
+FASE 2: RUNTIME EXTENSIBLE — Kons desde NPM
 Fecha: 2026-04-19
 Estado: COMPLETADO
 ═══════════════════════════════════════════════════════════════════
 
 OBJETIVO
 --------
-Permitir que Gremius se extienda sin modificar el monorepo:
-instalar grimoires desde npm, resolver dependencias automáticamente,
+Permitir que Kitsuden se extienda sin modificar el monorepo:
+instalar kons desde npm, resolver dependencias automáticamente,
 y registrarlos en la base de datos.
 
 ARCHIVOS CREADOS
 ----------------
 1. packages/cli/src/commands/install.ts
-   - Comando `gremius install <grimoire>` implementado:
+   - Comando `kitsuden install <kon>` implementado:
      • Detecta package manager (pnpm/npm/yarn)
      • Ejecuta instalación del paquete
-     • Lee grimoire.json / package.json con campo gremius
-     • Instala dependencias de grimoires recursivamente
+     • Lee kon.json / package.json con campo kitsuden
+     • Instala dependencias de kons recursivamente
      • Ejecuta migraciones SQL desde <pkg>/migrations/
-     • Registra en tabla installed_grimoires de PostgreSQL
+     • Registra en tabla installed_kons de PostgreSQL
      • Muestra instrucciones de reinicio
 
-2. packages/cli/templates/grimoire-npm-package/
-   - Template estándar de paquete npm para grimoires:
-     • package.json (con campo gremius.type = "grimoire")
-     • grimoire.json (manifest completo)
-     • index.ts (entry point + GrimoireDefinition)
+2. packages/cli/templates/kon-npm-package/
+   - Template estándar de paquete npm para kons:
+     • package.json (con campo kitsuden.type = "kon")
+     • kon.json (manifest completo)
+     • index.ts (entry point + KonDefinition)
      • schema.ts (Drizzle ORM schema)
      • routes.ts (Hono router factory)
      • migrations/0000_initial.sql (DDL idempotente)
@@ -132,23 +132,23 @@ ARCHIVOS CREADOS
 ARCHIVOS MODIFICADOS
 --------------------
 3. apps/api/src/lib/module-loader.ts
-   - Agregada función sortGrimoiresByDependencies():
-     • Ordenamiento topológico de grimoires por dependencies.grimoires
+   - Agregada función sortKonsByDependencies():
+     • Ordenamiento topológico de kons por dependencies.kons
      • Detecta ciclos y lanza error descriptivo
-   - Loop de carga ahora usa sortedGrimoires en lugar de resolvedGrimoires
-   - Grimoires con dependencias se cargan DESPUÉS de sus dependencias
+   - Loop de carga ahora usa sortedKons en lugar de resolvedKons
+   - Kons con dependencias se cargan DESPUÉS de sus dependencias
 
 4. apps/api/src/lib/schema-merger.ts
    - Agregada búsqueda de schemas en node_modules:
-     • @gremius/grimoire-xxx
-     • grimoire-xxx (community)
-     • Scoped packages (@scope/grimoire-xxx)
-   - Schema-merger ahora puede cargar tablas de grimoires instalados
-     vía npm, no solo desde packages/grimoires/ local.
+     • @kitsuden/kon-xxx
+     • kon-xxx (community)
+     • Scoped packages (@scope/kon-xxx)
+   - Schema-merger ahora puede cargar tablas de kons instalados
+     vía npm, no solo desde packages/kons/ local.
 
 5. packages/cli/src/index.ts
    - Registrado nuevo comando:
-     gremius install <grimoire> [--dev]
+     kitsuden install <kon> [--dev]
 
 VERIFICACIÓN
 ------------
@@ -165,14 +165,14 @@ Fase 5: Multi-Tenancy (opcional)
 NOTAS TÉCNICAS
 --------------
 - El comando install requiere DATABASE_URL para registrar en
-  installed_grimoires. Si no está disponible, instala el paquete pero
+  installed_kons. Si no está disponible, instala el paquete pero
   omite el registro en DB.
 - Las migraciones se ejecutan vía postgres.js en orden alfabético.
   Se recomienda usar IF NOT EXISTS para idempotencia.
 - El schema-merger carga schemas .ts directamente desde node_modules.
-  En producción bundleado, los grimoires deben compilar su schema a .js
+  En producción bundleado, los kons deben compilar su schema a .js
   o usar el fallback de migraciones SQL.
-- El orden topológico en module-loader usa el campo dependencies.grimoires
+- El orden topológico en module-loader usa el campo dependencies.kons
   del manifest. También soporta el formato legacy dependencies: string[].
 
 ═══════════════════════════════════════════════════════════════════
@@ -184,8 +184,8 @@ Estado: COMPLETADO
 
 OBJETIVO
 --------
-Transformar el schema monolítico de GremiusCMS en un core 100% dominio-
-agnóstico, extrayendo las tablas gaming/blog/streamer a sus grimoires
+Transformar el schema monolítico de Kitsuden en un core 100% dominio-
+agnóstico, extrayendo las tablas gaming/blog/streamer a sus kons
 correspondientes sin romper la compatibilidad con el CMS de gaming.
 
 ARCHIVOS CREADOS
@@ -194,7 +194,7 @@ ARCHIVOS CREADOS
    - Schema base con SOLO tablas de infraestructura:
      • Auth (authUsers, authSessions, authAccounts, authVerifications)
      • API Keys, Media, Data Sets, Data Entries, Site Settings
-     • Formulas, Modules, Installed Grimoires
+     • Formulas, Modules, Installed Kons
      • Actions, Action Executions
      • Agent System (identities, apiKeys, memory, auditLogs, traces, steps, feedback)
      • Data Sources
@@ -207,7 +207,7 @@ ARCHIVOS MODIFICADOS
 --------------------
 2. apps/api/src/db/schema.ts
    - Convertido en "Backward Compatibility Layer".
-   - Re-exporta schema-core + tablas gaming desde grimoires vía imports
+   - Re-exporta schema-core + tablas gaming desde kons vía imports
      nombrados (evita conflictos de enums duplicados).
    - Legacy imports como `import { games } from "../db/schema"` siguen
      funcionando durante la transición.
@@ -215,30 +215,30 @@ ARCHIVOS MODIFICADOS
 3. apps/api/src/lib/schema-merger.ts
    - Base de schema cambiada de `../db/schema` a `../db/schema-core`.
    - El runtime ahora construye el schema mergeado a partir del core
-     genérico + grimoires activos.
+     genérico + kons activos.
 
 4. apps/api/src/db/schema-all.ts
    - Revertido a exportar `./schema` (compat layer) para mantener
      compatibilidad con drizzle-kit push/migrate.
    - drizzle-kit sigue viendo todas las tablas (core + gaming).
 
-5. apps/api/gremius.config.ts
-   - Agregados grimoires gaming a BASE_FEATURE_GRIMOIRES:
-     • grimoire-games (enabled: true)
-     • grimoire-streamers (enabled: true)
-     • grimoire-esports (enabled: true)
+5. apps/api/kitsuden.config.ts
+   - Agregados kons gaming a BASE_FEATURE_KONS:
+     • kon-games (enabled: true)
+     • kon-streamers (enabled: true)
+     • kon-esports (enabled: true)
    - Esto asegura que staticConfig los incluya y el schema-merger
      los cargue correctamente en runtime.
 
 6. apps/api/src/routes/collections.ts
    - Imports de dominio gaming movidos de `../db/schema` a
-     `../../../../packages/grimoires/grimoire-games/games.schema`.
+     `../../../../packages/kons/kon-games/games.schema`.
    - Import core `media` permanece en `../db/schema`.
 
 7. apps/api/src/routes/blog.ts
-   - Imports de dominio movidos a sus grimoires respectivos:
-     • blogPosts, blogPostsToTags, blogPostsToGames → grimoire-blog
-     • tags, games → grimoire-games
+   - Imports de dominio movidos a sus kons respectivos:
+     • blogPosts, blogPostsToTags, blogPostsToGames → kon-blog
+     • tags, games → kon-games
    - Imports core `authUsers`, `media` permanecen en `../db/schema`.
 
 8. apps/api/src/routes/datasets.ts
@@ -262,46 +262,46 @@ VERIFICACIÓN
 • Errores pre-existentes en agents-v1.ts, openapi-aggregator.ts y
   docs-dynamic.ts NO fueron introducidos por esta fase.
 • El CMS de gaming sigue funcionando mediante dogfooding:
-  schema.ts (compat) re-exporta las tablas de los grimoires.
+  schema.ts (compat) re-exporta las tablas de los kons.
 
 NOTAS TÉCNICAS
 --------------
 - La eliminación de la columna `gameId` de `data_sets` requiere una
   migración de base de datos cuando se decida aplicar el schema real.
   Por ahora, drizzle-kit sigue viendo la columna vía schema.ts compat.
-- Los enums `contentStatusEnum` existen tanto en core como en grimoire-games.
-  El schema-merger sobrescribe el del core con el del grimoire (misma
+- Los enums `contentStatusEnum` existen tanto en core como en kon-games.
+  El schema-merger sobrescribe el del core con el del kon (misma
   definición), sin generar conflictos en runtime.
 
 ═══════════════════════════════════════════════════════════════════
-FASE 2: RUNTIME EXTENSIBLE — Grimoires desde NPM
+FASE 2: RUNTIME EXTENSIBLE — Kons desde NPM
 Fecha: 2026-04-19
 Estado: COMPLETADO
 ═══════════════════════════════════════════════════════════════════
 
 OBJETIVO
 --------
-Permitir que Gremius se extienda sin modificar el monorepo:
-instalar grimoires desde npm, resolver dependencias automáticamente,
+Permitir que Kitsuden se extienda sin modificar el monorepo:
+instalar kons desde npm, resolver dependencias automáticamente,
 y registrarlos en la base de datos.
 
 ARCHIVOS CREADOS
 ----------------
 1. packages/cli/src/commands/install.ts
-   - Comando `gremius install <grimoire>` implementado:
+   - Comando `kitsuden install <kon>` implementado:
      • Detecta package manager (pnpm/npm/yarn)
      • Ejecuta instalación del paquete
-     • Lee grimoire.json / package.json con campo gremius
-     • Instala dependencias de grimoires recursivamente
+     • Lee kon.json / package.json con campo kitsuden
+     • Instala dependencias de kons recursivamente
      • Ejecuta migraciones SQL desde <pkg>/migrations/
-     • Registra en tabla installed_grimoires de PostgreSQL
+     • Registra en tabla installed_kons de PostgreSQL
      • Muestra instrucciones de reinicio
 
-2. packages/cli/templates/grimoire-npm-package/
-   - Template estándar de paquete npm para grimoires:
-     • package.json (con campo gremius.type = "grimoire")
-     • grimoire.json (manifest completo)
-     • index.ts (entry point + GrimoireDefinition)
+2. packages/cli/templates/kon-npm-package/
+   - Template estándar de paquete npm para kons:
+     • package.json (con campo kitsuden.type = "kon")
+     • kon.json (manifest completo)
+     • index.ts (entry point + KonDefinition)
      • schema.ts (Drizzle ORM schema)
      • routes.ts (Hono router factory)
      • migrations/0000_initial.sql (DDL idempotente)
@@ -310,23 +310,23 @@ ARCHIVOS CREADOS
 ARCHIVOS MODIFICADOS
 --------------------
 3. apps/api/src/lib/module-loader.ts
-   - Agregada función sortGrimoiresByDependencies():
-     • Ordenamiento topológico de grimoires por dependencies.grimoires
+   - Agregada función sortKonsByDependencies():
+     • Ordenamiento topológico de kons por dependencies.kons
      • Detecta ciclos y lanza error descriptivo
-   - Loop de carga ahora usa sortedGrimoires en lugar de resolvedGrimoires
-   - Grimoires con dependencias se cargan DESPUÉS de sus dependencias
+   - Loop de carga ahora usa sortedKons en lugar de resolvedKons
+   - Kons con dependencias se cargan DESPUÉS de sus dependencias
 
 4. apps/api/src/lib/schema-merger.ts
    - Agregada búsqueda de schemas en node_modules:
-     • @gremius/grimoire-xxx
-     • grimoire-xxx (community)
-     • Scoped packages (@scope/grimoire-xxx)
-   - Schema-merger ahora puede cargar tablas de grimoires instalados
-     vía npm, no solo desde packages/grimoires/ local.
+     • @kitsuden/kon-xxx
+     • kon-xxx (community)
+     • Scoped packages (@scope/kon-xxx)
+   - Schema-merger ahora puede cargar tablas de kons instalados
+     vía npm, no solo desde packages/kons/ local.
 
 5. packages/cli/src/index.ts
    - Registrado nuevo comando:
-     gremius install <grimoire> [--dev]
+     kitsuden install <kon> [--dev]
 
 VERIFICACIÓN
 ------------
@@ -342,7 +342,7 @@ Estado: COMPLETADO
 
 OBJETIVO
 --------
-Cualquier dataset o grimoire expone REST + GraphQL automáticamente,
+Cualquier dataset o kon expone REST + GraphQL automáticamente,
 con OpenAPI spec dinámica y SDK auto-generado para el frontend.
 
 ARCHIVOS CREADOS
@@ -350,7 +350,7 @@ ARCHIVOS CREADOS
 1. apps/api/src/routes/items.ts
    - Router unificado `/api/items/{collection}` que funciona para:
      • Datasets (JSONB en data_entries)
-     • Tablas nativas de grimoires (PostgreSQL)
+     • Tablas nativas de kons (PostgreSQL)
    - Endpoints estándar REST:
      GET    /api/items/:collection         → listar con filtros
      GET    /api/items/:collection/:id     → obtener uno
@@ -362,10 +362,10 @@ ARCHIVOS CREADOS
    - Broadcast de mutaciones vía realtime
 
 2. packages/cli/src/commands/generate-sdk.ts
-   - Comando `gremius generate-sdk`:
+   - Comando `kitsuden generate-sdk`:
      • Consume `/api/docs/openapi.json` en runtime
      • Genera hooks React/TypeScript listos para usar
-     • Hook genérico `useGremiusItems(collection)` con CRUD completo
+     • Hook genérico `useVekItems(collection)` con CRUD completo
      • Hooks específicos por operación desde la spec
 
 ARCHIVOS MODIFICADOS
@@ -383,7 +383,7 @@ ARCHIVOS MODIFICADOS
      • /items/{collection} (GET, POST)
      • /items/{collection}/{id} (GET, PATCH, DELETE)
    - Tag "Unified Items" documentado en OpenAPI
-   - La spec ahora incluye tanto grimoires como endpoints unificados
+   - La spec ahora incluye tanto kons como endpoints unificados
 
 6. apps/api/src/routes/graphql.ts
    - Agregado campo dinámico `items(collection, id, page, limit, where)`
@@ -396,7 +396,7 @@ ARCHIVOS MODIFICADOS
 
 7. packages/cli/src/index.ts
    - Registrado nuevo comando:
-     gremius generate-sdk [--lang typescript] [--output dir] [--base-url url]
+     kitsuden generate-sdk [--lang typescript] [--output dir] [--base-url url]
 
 VERIFICACIÓN
 ------------
@@ -426,9 +426,9 @@ Estado: COMPLETADO
 
 OBJETIVO
 --------
-Convertir grimoires en templates que un vibecoder pueda activar sin saber
-qué es un "grimoire". Cada template = un Realm preconfigurado con datasets,
-grimoires y seed data.
+Convertir kons en templates que un vibecoder pueda activar sin saber
+qué es un "kon". Cada template = un Grimoire preconfigurado con datasets,
+kons y seed data.
 
 ARCHIVOS CREADOS
 ----------------
@@ -472,7 +472,7 @@ NOTAS TÉCNICAS
 - Los seed.sql usan INSERT con UUIDs fijos + ON CONFLICT DO NOTHING para
   ser idempotentes si el contenedor se reinicia.
 - El schema de data_sets usa formato interno: {fieldName, fieldType, required,
-  options, defaultValue}. Se mapearon los tipos del realm.json al interno.
+  options, defaultValue}. Se mapearon los tipos del grimoire.json al interno.
 - La imagen pgvector/pgvector:pg16 soporta /docker-entrypoint-initdb.d/
   nativamente para scripts .sql.
 
@@ -519,14 +519,14 @@ ARCHIVOS MODIFICADOS
      • tags                  → solo si existe mergedSchema.tags
      • platforms             → solo si existe mergedSchema.platforms
      • streamers             → solo si existe mergedSchema.streamers
-   - Si Gremius corre sin grimoires gaming, el schema GraphQL es 100% genérico.
+   - Si Kitsuden corre sin kons gaming, el schema GraphQL es 100% genérico.
 
 VERIFICACIÓN
 ------------
 • items.ts compila sin errores nuevos.
 • graphql.ts compila sin errores nuevos.
 • Handlers de items.ts usan transacción RLS (c.get("tx")) en lugar de db raw.
-• GraphQL schema se adapta dinámicamente a los grimoires activos.
+• GraphQL schema se adapta dinámicamente a los kons activos.
 
 NOTAS TÉCNICAS
 --------------
@@ -574,9 +574,9 @@ ARCHIVOS CREADOS
 
 4. packages/cli/src/index.ts
    - Registrados comandos:
-     gremius auth add <provider> --client-id <id> --client-secret <secret>
-     gremius auth list
-     gremius auth remove <provider>
+     kitsuden auth add <provider> --client-id <id> --client-secret <secret>
+     kitsuden auth list
+     kitsuden auth remove <provider>
 
 VERIFICACIÓN
 ------------
@@ -593,29 +593,29 @@ Estado: COMPLETADO
 OBJETIVO
 --------
 Eliminar rutas estáticas de dominio del sidebar y unificar TODO bajo la ruta
-dinámica /g/[grimoireId] que renderiza vistas genéricas desde grimoire.json.
+dinámica /g/[konId] que renderiza vistas genéricas desde kon.json.
 
 ARCHIVO MODIFICADO
 ------------------
 1. packages/admin/src/lib/components/layout/SidebarLayout.svelte
-   - Todos los nav items de grimoires ahora apuntan a /g/{moduleKey}:
-     • DataSets        → /g/grimoire-datasets
-     • Media Library   → /g/grimoire-media
-     • Page Builder    → /g/grimoire-blocks
-     • Blog Posts      → /g/grimoire-blog
-     • Data Visualizer → /g/grimoire-data-visualizer
-     • Academy         → /g/grimoire-academy-lms
-     • Documents       → /g/grimoire-dms
-     • Booking         → /g/grimoire-booking
-     • Directory       → /g/grimoire-directory
-     • Gremius CRM     → /g/grimoire-crm
-     • Contabilidad    → /g/grimoire-conta
-     • Games           → /g/grimoire-games
-     • Streamers       → /g/grimoire-streamers
-     • Esports         → /g/grimoire-esports (nuevo)
+   - Todos los nav items de kons ahora apuntan a /g/{moduleKey}:
+     • DataSets        → /g/kon-datasets
+     • Media Library   → /g/kon-media
+     • Page Builder    → /g/kon-blocks
+     • Blog Posts      → /g/kon-blog
+     • Data Visualizer → /g/kon-data-visualizer
+     • Academy         → /g/kon-academy-lms
+     • Documents       → /g/kon-dms
+     • Booking         → /g/kon-booking
+     • Directory       → /g/kon-directory
+     • Kitsuden CRM     → /g/kon-crm
+     • Contabilidad    → /g/kon-conta
+     • Games           → /g/kon-games
+     • Streamers       → /g/kon-streamers
+     • Esports         → /g/kon-esports (nuevo)
    - Eliminados del sidebar los nav items de tablas individuales:
-     • platforms, tags, collections (ya están en /g/grimoire-games)
-     • teams, players, matches, tournaments (ya están en /g/grimoire-esports)
+     • platforms, tags, collections (ya están en /g/kon-games)
+     • teams, players, matches, tournaments (ya están en /g/kon-esports)
    - Los filesystem modules ya usaban /g/{m.key} (sin cambios).
    - Las rutas estáticas legacy (/games, /blog, /crm, etc.) siguen existiendo
      como archivos para no romper bookmarks, pero ya no se exponen en nav.
@@ -623,25 +623,25 @@ ARCHIVO MODIFICADO
 ESTADO PREVIO YA EXISTENTE
 --------------------------
 • packages/admin/src/routes/g/[id]/+page.svelte — ruta dinámica (ya existía)
-• packages/admin/src/lib/components/admin/GrimoirePage.svelte — renderizado híbrido
-• packages/admin/src/lib/grimoire-loader.ts — auto-detección de vistas
-• packages/admin/src/lib/grimoire-views.ts — registry de overrides
+• packages/admin/src/lib/components/admin/KonPage.svelte — renderizado híbrido
+• packages/admin/src/lib/kon-loader.ts — auto-detección de vistas
+• packages/admin/src/lib/kon-views.ts — registry de overrides
 
 VERIFICACIÓN
 ------------
 • SidebarLayout.svelte compila sin errores nuevos.
-• La ruta /g/[id] ya usaba GrimoirePage con renderizado desde registry.
+• La ruta /g/[id] ya usaba KonPage con renderizado desde registry.
 • No se rompe compatibilidad: las rutas legacy siguen accesibles directamente.
 
 NOTAS TÉCNICAS
 --------------
-- GrimoirePage.svelte soporta dos modos:
-  1. LEGACY: carga vista custom monolítica desde GRIMOIRE_VIEW_REGISTRY
+- KonPage.svelte soporta dos modos:
+  1. LEGACY: carga vista custom monolítica desde KON_VIEW_REGISTRY
   2. HYBRID: renderiza tabs con DataExplorer (grid/kanban/calendar) +
-     vistas custom type="custom" declaradas en grimoire.json
-- El grimoire-loader.ts hace auto-detección de vistas por convención:
-  /src/views/{grimoire}/{PascalCase}View.svelte
-- Si un grimoire no tiene vista custom, usa DataExplorer con config
+     vistas custom type="custom" declaradas en kon.json
+- El kon-loader.ts hace auto-detección de vistas por convención:
+  /src/views/{kon}/{PascalCase}View.svelte
+- Si un kon no tiene vista custom, usa DataExplorer con config
   auto-generada desde /api/admin/registry.
 
 PRÓXIMAS FASES

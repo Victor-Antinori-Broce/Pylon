@@ -32,7 +32,7 @@ export async function mcpCommand(options: McpOptions) {
       spinner.text = "Starting MCP container...";
 
       try {
-        execSync("docker compose up -d gremius_mcp", {
+        execSync("docker compose up -d kitsuden_mcp", {
           cwd: projectRoot,
           stdio: "ignore",
         });
@@ -49,12 +49,12 @@ export async function mcpCommand(options: McpOptions) {
     spinner.text = "Starting standalone MCP Server...";
 
     const envVars: string[] = [
-      `-e GREMIUS_API_URL=${options.apiUrl || "http://host.docker.internal:3000"}`,
+      `-e KITSUDEN_API_URL=${options.apiUrl || "http://host.docker.internal:3000"}`,
       `-e PORT=${PORT}`,
     ];
 
     if (options.token) {
-      envVars.push(`-e GREMIUS_API_TOKEN=${options.token}`);
+      envVars.push(`-e KITSUDEN_API_TOKEN=${options.token}`);
     }
 
     const dockerArgs = [
@@ -62,23 +62,23 @@ export async function mcpCommand(options: McpOptions) {
       "--rm",
       "-d",
       "--name",
-      "gremius-mcp-standalone",
+      "kitsuden-mcp-standalone",
       "-p",
       `${PORT}:3002`,
       ...envVars,
-      "gremius/mcp:latest",
+      "kitsuden/mcp:latest",
     ];
 
     execSync(`docker ${dockerArgs.join(" ")}`, { stdio: "ignore" });
 
     spinner.succeed(chalk.green("✅ MCP Server started (standalone)"));
     printConnectionInfo(PORT, API_URL);
-    console.log(chalk.gray("\nStop with: docker stop gremius-mcp-standalone\n"));
+    console.log(chalk.gray("\nStop with: docker stop kitsuden-mcp-standalone\n"));
   } catch (error) {
     spinner.fail(chalk.red("Failed to start MCP Server"));
     console.log(chalk.yellow("\n💡 Try running directly with Docker:"));
     console.log(
-      chalk.white(`docker run -p ${PORT}:3002 -e GREMIUS_API_URL=${API_URL} gremius/mcp:latest`)
+      chalk.white(`docker run -p ${PORT}:3002 -e KITSUDEN_API_URL=${API_URL} kitsuden/mcp:latest`)
     );
     console.error(error);
     process.exit(1);
@@ -87,7 +87,7 @@ export async function mcpCommand(options: McpOptions) {
 
 function printConnectionInfo(port: string, _apiUrl: string) {
   console.log(chalk.cyan("\n═══════════════════════════════════════════"));
-  console.log(chalk.green.bold("  🧙 Gremius MCP Server"));
+  console.log(chalk.green.bold("  🧙 Kitsuden MCP Server"));
   console.log(chalk.cyan("═══════════════════════════════════════════"));
   console.log("");
   console.log(chalk.white("  SSE:        ") + chalk.blue.underline(`http://localhost:${port}/sse`));
@@ -101,9 +101,9 @@ function printConnectionInfo(port: string, _apiUrl: string) {
   console.log(chalk.dim("  11 tools • 5 resources • TOON-enabled"));
   console.log("");
   console.log(chalk.cyan("  Quick IDE Setup:"));
-  console.log(chalk.white("    gremius mcp --ide cursor"));
-  console.log(chalk.white("    gremius mcp --ide claude"));
-  console.log(chalk.white("    gremius mcp --ide vscode"));
+  console.log(chalk.white("    kitsuden mcp --ide cursor"));
+  console.log(chalk.white("    kitsuden mcp --ide claude"));
+  console.log(chalk.white("    kitsuden mcp --ide vscode"));
   console.log("");
 }
 
@@ -114,7 +114,7 @@ function generateIdeConfig(ide: string, port: string, apiUrl: string, token?: st
     case "cursor": {
       const config = {
         mcpServers: {
-          gremius: {
+          kitsuden: {
             url: sseUrl,
           },
         },
@@ -154,12 +154,12 @@ function generateIdeConfig(ide: string, port: string, apiUrl: string, token?: st
     case "claude": {
       const config = {
         mcpServers: {
-          gremius: {
+          kitsuden: {
             command: "npx",
-            args: ["-y", "@gremius/mcp-server"],
+            args: ["-y", "@kitsuden/mcp-server"],
             env: {
-              GREMIUS_API_URL: apiUrl,
-              ...(token ? { GREMIUS_API_TOKEN: token } : {}),
+              KITSUDEN_API_URL: apiUrl,
+              ...(token ? { KITSUDEN_API_TOKEN: token } : {}),
             },
           },
         },
@@ -177,7 +177,7 @@ function generateIdeConfig(ide: string, port: string, apiUrl: string, token?: st
     case "vscode": {
       const config = {
         "mcp.servers": {
-          gremius: {
+          kitsuden: {
             url: sseUrl,
           },
         },
@@ -192,7 +192,7 @@ function generateIdeConfig(ide: string, port: string, apiUrl: string, token?: st
     case "windsurf": {
       const config = {
         mcpServers: {
-          gremius: {
+          kitsuden: {
             serverUrl: sseUrl,
           },
         },

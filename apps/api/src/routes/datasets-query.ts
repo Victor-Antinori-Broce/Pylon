@@ -6,7 +6,7 @@
  * Expone los motores core (QueryTranslator, BatchProcessor, Auto-Join) vía REST.
  *
  * Endpoints:
- * - POST /:id/query    → Ejecuta consultas Gremius QL con expansión de relaciones
+ * - POST /:id/query    → Ejecuta consultas Kitsuden QL con expansión de relaciones
  * - POST /batch        → Ejecuta operaciones batch transaccionales (ACID)
  *
  * Features:
@@ -16,19 +16,20 @@
  * - Seguridad: Reutiliza middleware de auth existente
  */
 
+import { zValidator } from "@hono/zod-validator";
 import {
-  parseGremiusQuery,
-  GremiusQLError,
+  parseKitsudenQuery,
+  KitsudenQLError,
   getAvailableRelations,
-  validateGremiusQuery,
+  validateKitsudenQuery,
   debugQuery,
   BatchProcessor,
   BatchProcessorError,
-} from "@gremius/engine";
-import { zValidator } from "@hono/zod-validator";
+} from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { Hono } from "hono";
+import type { Context } from "hono";
 import { z } from "zod";
 
 import { db, mergedSchema } from "../db";
@@ -39,10 +40,10 @@ import type { AppVariables } from "../types/hono";
 
 // Importar motores core del engine
 
-export const datasetsQueryRoutes = new Hono<{ Variables: AppVariables }>();
+// datasetsQueryRoutes se define al FINAL del archivo como expresión encadenada (Hono RPC).
 
 // Aplicar autenticación a todas las rutas
-datasetsQueryRoutes.use("/*", requireAuth);
+// requireAuth vive en la cadena del final del archivo.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS ZOD PARA VALIDACIÓN
@@ -121,16 +122,26 @@ const BatchRequestSchema = z
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getTableByName(name: string): PgTable | undefined {
-  // Buscar en mergedSchema (core + grimoires activos)
-  const table = (mergedSchema as Record<string, any>)[name];
-  if (table && typeof table === "object" && table[Symbol.for("drizzle:Name")]) {
+  // Buscar en mergedSchema (core + kons activos)
+  const table = (mergedSchema as Record<string, unknown>)[name];
+  // La marca interna de drizzle es un Symbol: indexar `unknown` con él no
+  // compila, así que se declara la forma mínima que se está comprobando.
+  if (
+    table &&
+    typeof table === "object" &&
+    (table as Record<symbol, unknown>)[Symbol.for("drizzle:Name")]
+  ) {
     return table as PgTable;
   }
   // Fallback: buscar case-insensitive
   for (const key of Object.keys(mergedSchema)) {
     if (key.toLowerCase() === name.toLowerCase()) {
-      const t = (mergedSchema as Record<string, any>)[key];
-      if (t && typeof t === "object" && t[Symbol.for("drizzle:Name")]) {
+      const t = (mergedSchema as Record<string, unknown>)[key];
+      if (
+        t &&
+        typeof t === "object" &&
+        (t as Record<symbol, unknown>)[Symbol.for("drizzle:Name")]
+      ) {
         return t as PgTable;
       }
     }
@@ -139,11 +150,11 @@ function getTableByName(name: string): PgTable | undefined {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// POST /:id/query - Ejecutar consulta Gremius QL
+// POST /:id/query - Ejecutar consulta Kitsuden QL
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Ejecuta una consulta Gremius QL sobre un dataset.
+ * Ejecuta una consulta Kitsuden QL sobre un dataset.
  *
  * @example Request:
  * POST /api/datasets/characters/query
@@ -167,9 +178,9 @@ function getTableByName(name: string): PgTable | undefined {
  *   }
  * }
  */
-datasetsQueryRoutes.post("/:id/query", zValidator("json", DatasetQuerySchema), async (c) => {
+export async function queryDatasetHandler(c: Context) {
   const datasetId = c.req.param("id");
-  const body = c.req.valid("json");
+  const body = await c.req.json();
 
   try {
     // 1. Verificar que el dataset existe
@@ -185,8 +196,8 @@ datasetsQueryRoutes.post("/:id/query", zValidator("json", DatasetQuerySchema), a
       return c.json({ error: "Forbidden: No read access to this dataset" }, 403);
     }
 
-    // 3. Ejecutar query usando el motor Gremius QL
-    const result = await parseGremiusQuery(dataEntries, {
+    // 3. Ejecutar query usando el motor Kitsuden QL
+    const result = await parseKitsudenQuery(dataEntries, {
       ...body,
       where: {
         ...body.where,
@@ -199,7 +210,7 @@ datasetsQueryRoutes.post("/:id/query", zValidator("json", DatasetQuerySchema), a
     console.error("[QueryEngine] Error:", error);
 
     // Manejar errores semánticos del traductor
-    if (error instanceof GremiusQLError) {
+    if (error instanceof KitsudenQLError) {
       return c.json(
         {
           error: error.message,
@@ -219,7 +230,9 @@ datasetsQueryRoutes.post("/:id/query", zValidator("json", DatasetQuerySchema), a
       500
     );
   }
-});
+}
+
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POST /query/:tableName - Query directo sobre tabla (admin only)
@@ -229,9 +242,9 @@ datasetsQueryRoutes.post("/:id/query", zValidator("json", DatasetQuerySchema), a
  * Query directo sobre cualquier tabla del esquema (solo administradores).
  * Útil para queries administrativas o cross-dataset.
  */
-datasetsQueryRoutes.post("/query/:tableName", zValidator("json", DatasetQuerySchema), async (c) => {
+export async function queryTableHandler(c: Context) {
   const tableName = c.req.param("tableName");
-  const body = c.req.valid("json");
+  const body = await c.req.json();
   const user = c.get("user");
 
   // Solo admins pueden hacer queries directas
@@ -251,12 +264,12 @@ datasetsQueryRoutes.post("/query/:tableName", zValidator("json", DatasetQuerySch
   }
 
   try {
-    const result = await parseGremiusQuery(table, body as any);
+    const result = await parseKitsudenQuery(table, body as any);
     return c.json(result, 200);
   } catch (error) {
     console.error("[QueryEngine] Error:", error);
 
-    if (error instanceof GremiusQLError) {
+    if (error instanceof KitsudenQLError) {
       return c.json(
         {
           error: error.message,
@@ -275,7 +288,9 @@ datasetsQueryRoutes.post("/query/:tableName", zValidator("json", DatasetQuerySch
       500
     );
   }
-});
+}
+
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET /:id/relations - Listar relaciones disponibles
@@ -285,7 +300,7 @@ datasetsQueryRoutes.post("/query/:tableName", zValidator("json", DatasetQuerySch
  * Lista las relaciones disponibles para expansión en un dataset.
  * Útil para que los clientes sepan qué pueden expandir.
  */
-datasetsQueryRoutes.get("/:id/relations", async (c) => {
+export async function listRelationsHandler(c: Context) {
   const datasetId = c.req.param("id");
 
   // Las relaciones disponibles para dataEntries están definidas en el translator
@@ -299,7 +314,9 @@ datasetsQueryRoutes.get("/:id/relations", async (c) => {
     },
     200
   );
-});
+}
+
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POST /batch - Ejecutar operaciones batch transaccionales
@@ -344,8 +361,8 @@ datasetsQueryRoutes.get("/:id/relations", async (c) => {
  *   "results": [...]
  * }
  */
-datasetsQueryRoutes.post("/batch", zValidator("json", BatchRequestSchema), async (c) => {
-  const body = c.req.valid("json");
+export async function batchOperationsHandler(c: Context) {
+  const body = await c.req.json();
 
   try {
     // 1. Validar permisos para cada operación
@@ -378,12 +395,12 @@ datasetsQueryRoutes.post("/batch", zValidator("json", BatchRequestSchema), async
     // Para tablas nativas, el auth + RLS ya provee seguridad
     // (el middleware requireAuth se aplicó arriba)
     if (nativeTables.size > 0) {
-      // Opcional: verificar permisos granulares por grimoire aquí
+      // Opcional: verificar permisos granulares por kon aquí
       // Por ahora, confiamos en RLS a nivel de base de datos
     }
 
     // 2. Transformar operaciones al formato del BatchProcessor
-    const batchOps = body.operations.map((op) => {
+    const batchOps = body.operations.map((op: any) => {
       const table = getTableByName(op.table);
       if (!table) {
         throw new Error(`Table "${op.table}" not found`);
@@ -437,40 +454,40 @@ datasetsQueryRoutes.post("/batch", zValidator("json", BatchRequestSchema), async
       500
     );
   }
-});
+}
+
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // POST /validate-query - Validar query sin ejecutarla
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Valida una consulta Gremius QL sin ejecutarla.
+ * Valida una consulta Kitsuden QL sin ejecutarla.
  * Útil para debugging y validación en el frontend.
  */
-datasetsQueryRoutes.post(
-  "/validate-query/:tableName",
-  zValidator("json", DatasetQuerySchema),
-  async (c) => {
-    const tableName = c.req.param("tableName");
-    const body = c.req.valid("json");
+export async function validateQueryHandler(c: Context) {
+  const tableName = c.req.param("tableName");
+  const body = await c.req.json();
 
-    const table = getTableByName(tableName);
-    if (!table) {
-      return c.json(
-        {
-          valid: false,
-          errors: [`Table "${tableName}" not found`],
-          availableTables: Object.keys(mergedSchema as Record<string, unknown>),
-        },
-        400
-      );
-    }
-
-    const validation = validateGremiusQuery(table, body as any);
-
-    return c.json(validation, validation.valid ? 200 : 400);
+  const table = getTableByName(tableName);
+  if (!table) {
+    return c.json(
+      {
+        valid: false,
+        errors: [`Table "${tableName}" not found`],
+        availableTables: Object.keys(mergedSchema as Record<string, unknown>),
+      },
+      400
+    );
   }
-);
+
+  const validation = validateKitsudenQuery(table, body as any);
+
+  return c.json(validation, validation.valid ? 200 : 400);
+}
+
+// (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DEBUG: GET /query-debug/:tableName - Ver SQL generado (sin ejecutar)
@@ -480,38 +497,53 @@ datasetsQueryRoutes.post(
  * Debug: Muestra el SQL que se generaría para una query (sin ejecutar).
  * Solo disponible en modo desarrollo.
  */
-datasetsQueryRoutes.post(
-  "/query-debug/:tableName",
-  zValidator("json", DatasetQuerySchema),
-  async (c) => {
-    const tableName = c.req.param("tableName");
-    const body = c.req.valid("json");
-    const user = c.get("user");
+export async function debugQueryHandler(c: Context) {
+  const tableName = c.req.param("tableName");
+  const body = await c.req.json();
+  const user = c.get("user");
 
-    // Solo admins en desarrollo
-    if (process.env.NODE_ENV === "production") {
-      return c.json({ error: "Debug endpoint not available in production" }, 403);
-    }
-
-    if (user?.role !== "admin") {
-      return c.json({ error: "Admin access required" }, 403);
-    }
-
-    const table = getTableByName(tableName);
-    if (!table) {
-      return c.json({ error: `Table "${tableName}" not found` }, 400);
-    }
-
-    const debug = debugQuery(table, body as any);
-
-    return c.json(
-      {
-        table: tableName,
-        query: body,
-        generatedSql: debug.sql,
-        params: debug.params,
-      },
-      200
-    );
+  // Solo admins en desarrollo
+  if (process.env.NODE_ENV === "production") {
+    return c.json({ error: "Debug endpoint not available in production" }, 403);
   }
-);
+
+  if (user?.role !== "admin") {
+    return c.json({ error: "Admin access required" }, 403);
+  }
+
+  const table = getTableByName(tableName);
+  if (!table) {
+    return c.json({ error: `Table "${tableName}" not found` }, 400);
+  }
+
+  const debug = debugQuery(table, body as any);
+
+  return c.json(
+    {
+      table: tableName,
+      query: body,
+      generatedSql: debug.sql,
+      params: debug.params,
+    },
+    200
+  );
+}
+
+// (registrado en la cadena final)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTER (chained — Hono RPC, arquitectura KITSUDEN §7)
+// Mismo orden de registro que la versión statement-style.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const datasetsQueryRoutes = new Hono<{ Variables: AppVariables }>()
+  .use("/*", requireAuth)
+  .post("/:id/query", zValidator("json", DatasetQuerySchema), queryDatasetHandler)
+  .post("/query/:tableName", zValidator("json", DatasetQuerySchema), queryTableHandler)
+  .get("/:id/relations", listRelationsHandler)
+  .post("/batch", zValidator("json", BatchRequestSchema), batchOperationsHandler)
+  .post("/validate-query/:tableName", zValidator("json", DatasetQuerySchema), validateQueryHandler)
+  .post("/query-debug/:tableName", zValidator("json", DatasetQuerySchema), debugQueryHandler);
+
+/** Tipo acumulado del router — consumido por src/rpc.ts */
+export type DatasetsQueryRoutesType = typeof datasetsQueryRoutes;

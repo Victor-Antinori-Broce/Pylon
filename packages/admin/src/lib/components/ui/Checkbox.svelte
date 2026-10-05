@@ -6,5 +6,5 @@
 <input
   type="checkbox"
   bind:checked
-  class="w-4 h-4 rounded border border-gremius-border bg-gremius-bg text-gremius-cyan focus:ring-gremius-cyan {className}"
+  class="w-4 h-4 rounded border border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent focus:ring-kitsuden-accent {className}"
 />

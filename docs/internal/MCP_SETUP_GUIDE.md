@@ -1,4 +1,4 @@
-# Guía de Configuración MCP - Gremius
+# Guía de Configuración MCP - Kitsuden
 
 > **Fecha:** 2026-03-19  
 > **Versión:** 1.0.0  
@@ -8,13 +8,13 @@
 
 ## 📋 Resumen
 
-Esta guía configura la conexión entre **Claude Desktop** y **Gremius CMS** mediante el protocolo MCP (Model Context Protocol) con autenticación Zero-Trust.
+Esta guía configura la conexión entre **Claude Desktop** y **Kitsuden CMS** mediante el protocolo MCP (Model Context Protocol) con autenticación Zero-Trust.
 
 ---
 
 ## 🔧 Prerrequisitos
 
-1. ✅ **Gremius API corriendo:** `cd apps/api && bun run dev`
+1. ✅ **Kitsuden API corriendo:** `cd apps/api && bun run dev`
 2. ✅ **PostgreSQL activo:** `docker compose up -d db`
 3. ✅ **Token MCP generado:** Ver `progress.txt`
 
@@ -32,7 +32,7 @@ bun run seed:mcp
 Esto generará:
 
 - Un agente "DevBot" en la base de datos
-- Un token con formato `grm_agent_...`
+- Un token con formato `kitsuden_agent_...`
 - Configuración para Claude Desktop
 
 **Ver el token en:** `progress.txt`
@@ -50,12 +50,12 @@ Esto generará:
 ```json
 {
   "mcpServers": {
-    "gremius": {
+    "kitsuden": {
       "command": "bun",
       "args": ["run", "apps/api/src/mcp-server.ts"],
       "cwd": "C:\\Users\\vantinori\\Documents\\github\\cms",
       "env": {
-        "GREMUS_MCP_TOKEN": "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g",
+        "GREMUS_MCP_TOKEN": "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g",
         "GREMUS_API_URL": "http://localhost:3001",
         "NODE_ENV": "development"
       }
@@ -72,7 +72,7 @@ Esto generará:
 
 1. **Cierra** completamente Claude Desktop
 2. **Vuelve a abrirlo**
-3. Espera a que cargue el servidor MCP (aparecerá "gremius" en la lista de servidores)
+3. Espera a que cargue el servidor MCP (aparecerá "kitsuden" en la lista de servidores)
 
 ---
 
@@ -89,15 +89,15 @@ Lista las herramientas que tienes disponibles
 **Respuesta esperada:**
 
 ```
-Tengo disponibles las siguientes herramientas de Gremius:
+Tengo disponibles las siguientes herramientas de Kitsuden:
 
-1. **gremius_list_datasets** - Lista todos los datasets
-2. **gremius_search_entries** - Busca en datasets
-3. **gremius_create_entry** - Crea entradas
-4. **gremius_read_entry** - Lee entradas
-5. **gremius_update_entry** - Actualiza entradas
-6. **gremius_get_dataset_schema** - Obtiene esquema
-7. **gremius_health_check** - Verifica conexión
+1. **kitsuden_list_datasets** - Lista todos los datasets
+2. **kitsuden_search_entries** - Busca en datasets
+3. **kitsuden_create_entry** - Crea entradas
+4. **kitsuden_read_entry** - Lee entradas
+5. **kitsuden_update_entry** - Actualiza entradas
+6. **kitsuden_get_dataset_schema** - Obtiene esquema
+7. **kitsuden_health_check** - Verifica conexión
 ```
 
 ---
@@ -107,16 +107,16 @@ Tengo disponibles las siguientes herramientas de Gremius:
 Escribe:
 
 ```
-Verifica el estado de la conexión con Gremius
+Verifica el estado de la conexión con Kitsuden
 ```
 
 **Respuesta esperada:**
 
 ```
-✅ Gremius API está saludable!
+✅ Kitsuden API está saludable!
 
 Estado: ok
-Servicio: gremius-api
+Servicio: kitsuden-api
 Versión: 0.8.0-beta
 
 Checks:
@@ -133,7 +133,7 @@ Checks:
 Escribe:
 
 ```
-Muestra los datasets disponibles en Gremius
+Muestra los datasets disponibles en Kitsuden
 ```
 
 **Respuesta esperada:**
@@ -157,10 +157,10 @@ Muestra los datasets disponibles en Gremius
 ### ¿Cómo funciona?
 
 ```
-Claude Desktop → Token grm_agent_xxx → Middleware → Validación → Acceso
+Claude Desktop → Token kitsuden_agent_xxx → Middleware → Validación → Acceso
 ```
 
-1. **Formato del token:** `grm_agent_{tipo}_{hash}`
+1. **Formato del token:** `kitsuden_agent_{tipo}_{hash}`
 2. **Verificación:** Hash SHA-256 en base de datos
 3. **Scopes:** Verificación de permisos por herramienta
 4. **Rate limiting:** 120 req/min por agente
@@ -182,15 +182,15 @@ Esto significa que el agente puede:
 
 ## 🛠️ Herramientas MCP Disponibles
 
-| Herramienta                  | Descripción              | Scopes Requeridos |
-| ---------------------------- | ------------------------ | ----------------- |
-| `gremius_list_datasets`      | Lista todos los datasets | `read:issues`     |
-| `gremius_search_entries`     | Busca en datasets        | `read:issues`     |
-| `gremius_create_entry`       | Crea nueva entrada       | `write:intake`    |
-| `gremius_read_entry`         | Lee entrada específica   | `read:issues`     |
-| `gremius_update_entry`       | Actualiza entrada        | `write:intake`    |
-| `gremius_get_dataset_schema` | Obtiene esquema          | `read:issues`     |
-| `gremius_health_check`       | Verifica conexión        | -                 |
+| Herramienta                   | Descripción              | Scopes Requeridos |
+| ----------------------------- | ------------------------ | ----------------- |
+| `kitsuden_list_datasets`      | Lista todos los datasets | `read:issues`     |
+| `kitsuden_search_entries`     | Busca en datasets        | `read:issues`     |
+| `kitsuden_create_entry`       | Crea nueva entrada       | `write:intake`    |
+| `kitsuden_read_entry`         | Lee entrada específica   | `read:issues`     |
+| `kitsuden_update_entry`       | Actualiza entrada        | `write:intake`    |
+| `kitsuden_get_dataset_schema` | Obtiene esquema          | `read:issues`     |
+| `kitsuden_health_check`       | Verifica conexión        | -                 |
 
 ---
 
@@ -224,12 +224,12 @@ bun run apps/api/scripts/seed-mcp-test.ts
 docker compose up -d db
 
 # Ejecutar script SQL de registro
-psql -d gremius_dev -f - << EOF
+psql -d kitsuden_dev -f - << EOF
 INSERT INTO agent_identities (id, name, type, scopes, is_active)
 VALUES ('agent_test', 'DevBot', 'claude-desktop', '["read:issues", "write:intake"]', true);
 
 INSERT INTO agent_api_keys (agent_id, key_hash, key_prefix)
-VALUES ('agent_test', 'hash_aqui', 'grm_agent_****');
+VALUES ('agent_test', 'hash_aqui', 'kitsuden_agent_****');
 EOF
 ```
 
@@ -251,7 +251,7 @@ WHERE name = 'DevBot';
 
 **Verificar:**
 
-1. Gremius API corriendo:
+1. Kitsuden API corriendo:
    ```bash
    cd apps/api && bun run dev
    ```
@@ -268,7 +268,7 @@ WHERE name = 'DevBot';
 
 En Claude Desktop → Developer → MCP Logs
 
-### Logs de auditoría en Gremius
+### Logs de auditoría en Kitsuden
 
 ```sql
 -- Ver últimas acciones del agente
@@ -286,7 +286,7 @@ LIMIT 10;
 sequenceDiagram
     participant CD as Claude Desktop
     participant MCP as MCP Server
-    participant API as Gremius API
+    participant API as Kitsuden API
     participant DB as PostgreSQL
 
     CD->>MCP: Inicia con GREMUS_MCP_TOKEN
@@ -321,7 +321,7 @@ sequenceDiagram
 
 - [ ] Token generado en `progress.txt`
 - [ ] PostgreSQL corriendo
-- [ ] Gremius API corriendo (`bun run dev`)
+- [ ] Kitsuden API corriendo (`bun run dev`)
 - [ ] Configuración en `claude_desktop_config.json`
 - [ ] Claude Desktop reiniciado
 - [ ] Test "Lista herramientas" funciona
@@ -341,4 +341,4 @@ Si encuentras problemas:
 
 ---
 
-**¡Listo!** Claude Desktop ahora está conectado a Gremius con seguridad Zero-Trust.
+**¡Listo!** Claude Desktop ahora está conectado a Kitsuden con seguridad Zero-Trust.

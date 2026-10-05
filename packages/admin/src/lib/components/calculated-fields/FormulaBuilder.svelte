@@ -211,18 +211,18 @@
 
 <div class="space-y-4">
   <!-- Builder Visual -->
-  <div class="bg-gremius-surface/50 border border-gremius-border rounded-xl p-4">
-    <label class="text-sm font-medium text-gremius-text mb-3 block flex items-center gap-2">
-      <Calculator class="w-4 h-4 text-gremius-cyan" />
+  <div class="bg-kitsuden-surface/50 border border-kitsuden-border rounded-xl p-4">
+    <label class="text-sm font-medium text-kitsuden-text mb-3 block flex items-center gap-2">
+      <Calculator class="w-4 h-4 text-kitsuden-accent" />
       Formula Builder
     </label>
 
     <!-- Tokens -->
     <div
-      class="min-h-[80px] bg-gremius-bg border border-gremius-border rounded-lg p-3 flex flex-wrap gap-2 items-center"
+      class="min-h-[80px] bg-kitsuden-bg border border-kitsuden-border rounded-lg p-3 flex flex-wrap gap-2 items-center"
     >
       {#if formulaTokens.length === 0}
-        <span class="text-gremius-subtle text-sm italic"
+        <span class="text-kitsuden-subtle text-sm italic"
           >Click buttons below to build your formula...</span
         >
       {:else}
@@ -239,7 +239,7 @@
               </span>
             {:else if token.type === "operator"}
               <span
-                class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gremius-surface text-gremius-text font-bold text-lg"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-kitsuden-surface text-kitsuden-text font-bold text-lg"
               >
                 {FORMULA_OPERATORS.find((o) => o.id === token.value)?.label || token.value}
               </span>
@@ -252,14 +252,14 @@
               </span>
             {:else}
               <span
-                class="inline-flex items-center px-3 py-1.5 rounded-lg bg-gremius-surface text-gremius-text text-sm"
+                class="inline-flex items-center px-3 py-1.5 rounded-lg bg-kitsuden-surface text-kitsuden-text text-sm"
               >
                 {token.value}
               </span>
             {/if}
 
             <button
-              class="ml-1 p-1 rounded hover:bg-gremius-pink/20 text-gremius-subtle hover:text-gremius-pink opacity-0 group-hover:opacity-100 transition-opacity"
+              class="ml-1 p-1 rounded hover:bg-kitsuden-accent-2/20 text-kitsuden-subtle hover:text-kitsuden-accent-2 opacity-0 group-hover:opacity-100 transition-opacity"
               onclick={() => removeToken(index)}
             >
               <Trash2 class="w-3.5 h-3.5" />
@@ -271,7 +271,7 @@
 
     <!-- Error -->
     {#if error}
-      <div class="mt-2 flex items-center gap-2 text-gremius-pink text-sm">
+      <div class="mt-2 flex items-center gap-2 text-kitsuden-accent-2 text-sm">
         <AlertCircle class="w-4 h-4" />
         {error}
       </div>
@@ -280,11 +280,11 @@
     <!-- Preview -->
     {#if previewValue !== null && !error}
       <div class="mt-3 flex items-center gap-2 text-sm">
-        <span class="text-gremius-subtle">Preview:</span>
-        <span class="font-mono text-gremius-cyan bg-gremius-cyan/10 px-2 py-0.5 rounded">
+        <span class="text-kitsuden-subtle">Preview:</span>
+        <span class="font-mono text-kitsuden-accent bg-kitsuden-accent/10 px-2 py-0.5 rounded">
           {previewValue}
         </span>
-        <Check class="w-4 h-4 text-gremius-green" />
+        <Check class="w-4 h-4 text-kitsuden-green" />
       </div>
     {/if}
   </div>
@@ -292,9 +292,9 @@
   <!-- Toolbox -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <!-- Fields -->
-    <div class="bg-gremius-card border border-gremius-border rounded-xl p-3">
+    <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl p-3">
       <button
-        class="w-full flex items-center justify-between text-sm font-medium text-gremius-text mb-2 hover:text-gremius-cyan"
+        class="w-full flex items-center justify-between text-sm font-medium text-kitsuden-text mb-2 hover:text-kitsuden-accent"
         onclick={() => (showFieldMenu = !showFieldMenu)}
       >
         <span class="flex items-center gap-2">
@@ -308,15 +308,15 @@
         <div class="space-y-1 mt-2 max-h-40 overflow-y-auto">
           {#each availableFields as field}
             <button
-              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-gremius-surface transition-colors text-left"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-kitsuden-surface transition-colors text-left"
               onclick={() => addToken("field", field.name)}
             >
               <svelte:component
                 this={getFieldIcon(field.type)}
-                class="w-3.5 h-3.5 text-gremius-subtle"
+                class="w-3.5 h-3.5 text-kitsuden-subtle"
               />
-              <span class="text-gremius-text">{field.label}</span>
-              <span class="text-gremius-subtle text-xs ml-auto">{field.type}</span>
+              <span class="text-kitsuden-text">{field.label}</span>
+              <span class="text-kitsuden-subtle text-xs ml-auto">{field.type}</span>
             </button>
           {/each}
         </div>
@@ -324,15 +324,15 @@
     </div>
 
     <!-- Operators -->
-    <div class="bg-gremius-card border border-gremius-border rounded-xl p-3">
-      <h4 class="text-sm font-medium text-gremius-text mb-3 flex items-center gap-2">
+    <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl p-3">
+      <h4 class="text-sm font-medium text-kitsuden-text mb-3 flex items-center gap-2">
         <Calculator class="w-4 h-4" />
         Operators
       </h4>
       <div class="grid grid-cols-4 gap-1">
         {#each FORMULA_OPERATORS.slice(0, 8) as op}
           <button
-            class="p-2 rounded-lg bg-gremius-surface hover:bg-gremius-cyan/20 text-gremius-text hover:text-gremius-cyan font-bold transition-colors"
+            class="p-2 rounded-lg bg-kitsuden-surface hover:bg-kitsuden-accent/20 text-kitsuden-text hover:text-kitsuden-accent font-bold transition-colors"
             onclick={() => addToken("operator", op.id)}
             title={op.description}
           >
@@ -343,9 +343,9 @@
     </div>
 
     <!-- Functions -->
-    <div class="bg-gremius-card border border-gremius-border rounded-xl p-3">
+    <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl p-3">
       <button
-        class="w-full flex items-center justify-between text-sm font-medium text-gremius-text mb-2 hover:text-gremius-cyan"
+        class="w-full flex items-center justify-between text-sm font-medium text-kitsuden-text mb-2 hover:text-kitsuden-accent"
         onclick={() => (showFunctionMenu = !showFunctionMenu)}
       >
         <span class="flex items-center gap-2">
@@ -359,12 +359,12 @@
         <div class="space-y-1 mt-2 max-h-40 overflow-y-auto">
           {#each FORMULA_FUNCTIONS.slice(0, 8) as fn}
             <button
-              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-gremius-surface transition-colors text-left"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-kitsuden-surface transition-colors text-left"
               onclick={() => addToken("function", fn.id)}
               title={fn.description}
             >
-              <span class="font-mono text-gremius-cyan">{fn.id}()</span>
-              <span class="text-gremius-subtle text-xs ml-auto">{fn.description}</span>
+              <span class="font-mono text-kitsuden-accent">{fn.id}()</span>
+              <span class="text-kitsuden-subtle text-xs ml-auto">{fn.description}</span>
             </button>
           {/each}
         </div>
@@ -374,10 +374,11 @@
 
   <!-- Expression Raw (editable) -->
   <div class="space-y-2">
-    <label class="text-sm text-gremius-subtle">Raw Expression</label>
+    <label for="expression" class="text-sm text-kitsuden-subtle">Raw Expression</label>
     <textarea
+      id="expression"
       bind:value={expression}
-      class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm font-mono text-gremius-text focus:outline-none focus:border-gremius-cyan"
+      class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm font-mono text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
       rows="2"
       oninput={(e) => {
         expression = e.currentTarget.value;
@@ -386,10 +387,10 @@
         validateExpression();
         calculatePreview();
       }}
-    />
-    <p class="text-xs text-gremius-subtle">
+    ></textarea>
+    <p class="text-xs text-kitsuden-subtle">
       Use {"{fieldName}"} to reference fields. Example:
-      <code class="text-gremius-cyan">{"{price} * {quantity}"}</code>
+      <code class="text-kitsuden-accent">{"{price} * {quantity}"}</code>
     </p>
   </div>
 </div>

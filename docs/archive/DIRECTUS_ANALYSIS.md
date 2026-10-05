@@ -1,12 +1,12 @@
-# Análisis Comparativo: Gremius vs Directus
+# Análisis Comparativo: Kitsuden vs Directus
 
 ## 📋 Resumen Ejecutivo
 
-| Aspecto            | Directus                  | Gremius (v0.8.0-beta)             |
+| Aspecto            | Directus                  | Kitsuden (v0.8.0-beta)            |
 | ------------------ | ------------------------- | --------------------------------- |
 | **Madurez**        | v10.x, años en producción | v0.8.0-beta, en desarrollo activo |
 | **Estabilidad**    | Probado en enterprise     | Beta, APIs pueden cambiar         |
-| **Arquitectura**   | Monolítico extensible     | Modular (Grimoires)               |
+| **Arquitectura**   | Monolítico extensible     | Modular (Kons)                    |
 | **Stack Backend**  | Node.js + Express + Knex  | Bun + Hono + Drizzle              |
 | **Stack Frontend** | Vue 3 + Vite              | SvelteKit + Vite                  |
 | **Performance**    | Rápido, optimizado        | Muy rápido (Bun)                  |
@@ -41,11 +41,11 @@
 - Migrations automáticas desde UI
 - Extensiones con APIs propietarias
 
-### Gremius - Modular por Diseño (Grimoires)
+### Kitsuden - Modular por Diseño (Kons)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    Gremius (Core Mínimo)                     │
+│                    Kitsuden (Core Mínimo)                     │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
 │  │   Config    │ │ DB Adapter  │ │    Query Engine Base    │ │
 │  │   Base      │ │  (Drizzle)  │ │      (Extensible)       │ │
@@ -58,7 +58,7 @@
           │              │              │              │
           ▼              ▼              ▼              ▼
    ┌──────────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
-   │grimoire-auth │ │grimoire- │ │grimoire- │ │ grimoire-    │
+   │kon-auth │ │kon- │ │kon- │ │ kon-    │
    │              │ │content   │ │assets    │ │ search       │
    │• JWT/OAuth   │ │          │ │          │ │              │
    │• Roles       │ │• Revision│ │• Uploads │ │• Full-text   │
@@ -70,7 +70,7 @@
 **Características:**
 
 - Instala solo lo que necesitas
-- Cada grimoire puede escalar independientemente
+- Cada kon puede escalar independientemente
 - Stack moderno (Bun, Hono, Drizzle)
 - Código abierto, ownership total
 
@@ -80,21 +80,21 @@
 
 ### 1. Stack Tecnológico
 
-| Componente     | Directus      | Gremius    | Ventaja                 |
-| -------------- | ------------- | ---------- | ----------------------- |
-| **Runtime**    | Node.js       | Bun        | Gremius (más rápido)    |
-| **Framework**  | Express       | Hono       | Gremius (más ligero)    |
-| **ORM**        | Knex + custom | Drizzle    | Gremius (type-safe)     |
-| **Frontend**   | Vue 3         | Svelte 5   | Subjetivo               |
-| **Build tool** | Vite          | Vite       | Empate                  |
-| **Lenguaje**   | JavaScript/TS | TypeScript | Gremius (tipado nativo) |
+| Componente     | Directus      | Kitsuden   | Ventaja                  |
+| -------------- | ------------- | ---------- | ------------------------ |
+| **Runtime**    | Node.js       | Bun        | Kitsuden (más rápido)    |
+| **Framework**  | Express       | Hono       | Kitsuden (más ligero)    |
+| **ORM**        | Knex + custom | Drizzle    | Kitsuden (type-safe)     |
+| **Frontend**   | Vue 3         | Svelte 5   | Subjetivo                |
+| **Build tool** | Vite          | Vite       | Empate                   |
+| **Lenguaje**   | JavaScript/TS | TypeScript | Kitsuden (tipado nativo) |
 
 ### 2. Performance (Benchmarks Aproximados)
 
 ```
 Requests/segundo (producción, aproximado):
 ┌──────────────────────────────┬───────────────┬───────────────┐
-│ Operación                    │ Directus      │ Gremius       │
+│ Operación                    │ Directus      │ Kitsuden       │
 ├──────────────────────────────┼───────────────┼───────────────┤
 │ GET simple                   │ ~8,000        │ ~25,000       │
 │ POST complejo                │ ~3,000        │ ~8,000        │
@@ -103,13 +103,13 @@ Requests/segundo (producción, aproximado):
 │ File upload (1MB)            │ ~500          │ ~800          │
 └──────────────────────────────┴───────────────┴───────────────┘
 
-* Nota: Gremius usa Bun, Directus usa Node.js optimizado
+* Nota: Kitsuden usa Bun, Directus usa Node.js optimizado
 * En producción real, la diferencia puede ser menor debido a I/O
 ```
 
 ### 3. Base de Datos
 
-| Feature                    | Directus        | Gremius               |
+| Feature                    | Directus        | Kitsuden              |
 | -------------------------- | --------------- | --------------------- |
 | **PostgreSQL**             | ✅ Full support | ✅ Nativo             |
 | **MySQL**                  | ✅ Full support | ⚠️ Requiere adaptador |
@@ -121,9 +121,9 @@ Requests/segundo (producción, aproximado):
 
 ### 4. Sistema de Contenido
 
-| Feature                        | Directus            | Gremius                       |
+| Feature                        | Directus            | Kitsuden                      |
 | ------------------------------ | ------------------- | ----------------------------- |
-| **Colecciones dinámicas**      | ✅ UI sin código    | ✅ Código (grimoires)         |
+| **Colecciones dinámicas**      | ✅ UI sin código    | ✅ Código (kons)              |
 | **Campos calculados**          | 🟡 Extensión        | ✅ Nativo (calculated-fields) |
 | **Relaciones**                 | ✅ Visual drag-drop | ✅ Programático               |
 | **Relaciones bidireccionales** | ✅ Automático       | ⚠️ Manual                     |
@@ -159,7 +159,7 @@ GET /items/posts
 ```
 
 ```javascript
-// Gremius - Query básico actual
+// Kitsuden - Query básico actual
 GET /api/datasets/posts/entries
   ?filter[status]=published
   &sort=-date
@@ -174,7 +174,7 @@ GET /api/datasets/posts/entries
 
 ### 6. Asset Management
 
-| Feature                                | Directus                             | Gremius                    |
+| Feature                                | Directus                             | Kitsuden                   |
 | -------------------------------------- | ------------------------------------ | -------------------------- |
 | **Upload múltiple**                    | ✅ Nativo                            | ✅ Nativo (Multer)         |
 | **Transformaciones on-the-fly**        | ✅ /assets/:id?width=800&format=webp | ❌ No implementado         |
@@ -207,7 +207,7 @@ GET /api/datasets/posts/entries
 ```
 
 ```typescript
-// Gremius - RBAC básico (actual)
+// Kitsuden - RBAC básico (actual)
 {
   "role": "editor",
   "resource": "posts",
@@ -222,7 +222,7 @@ GET /api/datasets/posts/entries
 
 ### 8. Real-time / WebSockets
 
-| Feature                | Directus        | Gremius                |
+| Feature                | Directus        | Kitsuden               |
 | ---------------------- | --------------- | ---------------------- |
 | **WebSocket nativo**   | ✅ wss://       | ❌ No implementado     |
 | **Server-Sent Events** | ✅ Nativo       | ❌ No implementado     |
@@ -249,7 +249,7 @@ ws.send(
 
 ### 9. Caché y Performance
 
-| Feature                | Directus                  | Gremius            |
+| Feature                | Directus                  | Kitsuden           |
 | ---------------------- | ------------------------- | ------------------ |
 | **Query cache**        | ✅ Redis, Memory, APCu    | ❌ No implementado |
 | **Response cache**     | ✅ HTTP Cache Headers     | ❌ No implementado |
@@ -259,7 +259,7 @@ ws.send(
 
 ### 10. Import/Export
 
-| Feature               | Directus           | Gremius            |
+| Feature               | Directus           | Kitsuden           |
 | --------------------- | ------------------ | ------------------ |
 | **CSV Import**        | ✅ UI + API        | ❌ No implementado |
 | **JSON Import**       | ✅ UI + API        | ❌ No implementado |
@@ -270,13 +270,13 @@ ws.send(
 
 ---
 
-## ❌ Gaps Técnicos de Gremius
+## ❌ Gaps Técnicos de Kitsuden
 
 ### Críticos (Bloqueantes para CMS/Blog serio)
 
 #### 1. Database Agnostic
 
-**Problema:** Gremius solo soporta PostgreSQL nativamente.
+**Problema:** Kitsuden solo soporta PostgreSQL nativamente.
 
 **Impacto:**
 
@@ -312,10 +312,10 @@ interface DatabaseAdapter {
 - No se puede hacer A/B testing de contenido
 - Compliance (GDPR, HIPAA) difícil sin historial
 
-**Solución propuesta:** Extensión de `grimoire-content`
+**Solución propuesta:** Extensión de `kon-content`
 
 ```typescript
-// packages/grimoires/grimoire-content/src/revisions/
+// packages/kons/kon-content/src/revisions/
 // Tablas automáticas:
 // - content_revisions
 // - content_versions
@@ -337,10 +337,10 @@ GET / api / content / posts / 123 / revisions / 5 / restore;
 - No WebP/AVIF para mejor compresión
 - SEO afectado por LCP (Largest Contentful Paint)
 
-**Solución propuesta:** Nuevo `grimoire-assets`
+**Solución propuesta:** Nuevo `kon-assets`
 
 ```typescript
-// packages/grimoires/grimoire-assets/
+// packages/kons/kon-assets/
 // Features:
 // - Transformaciones on-the-fly (Sharp)
 // - Presets configurables
@@ -360,19 +360,19 @@ GET /api/assets/:id/preset/thumbnail
 
 - Búsquedas lentas en tablas grandes
 - No typo-tolerance
-- No facets/filters de búsqueda
+- No kons/filters de búsqueda
 - Sin autocomplete
 
-**Solución propuesta:** Nuevo `grimoire-search`
+**Solución propuesta:** Nuevo `kon-search`
 
 ```typescript
-// packages/grimoires/grimoire-search/
+// packages/kons/kon-search/
 // Providers: pgvector, Meilisearch, Algolia, Typesense
 
 // API:
 GET /api/search?q=query+con+typos&collection=posts
   &filters[category]=tech
-  &facets[author][]
+  &kons[author][]
   &sort=_relevance
 ```
 
@@ -401,7 +401,7 @@ GET /api/datasets/posts/aggregate
 
 #### 6. Real-time / WebSockets
 
-**Solución:** Nuevo `grimoire-realtime`
+**Solución:** Nuevo `kon-realtime`
 
 ```typescript
 // WebSocket o SSE para actualizaciones en vivo
@@ -410,7 +410,7 @@ GET /api/datasets/posts/aggregate
 
 #### 7. Field-Level Permissions
 
-**Solución:** Extensión de `grimoire-auth`
+**Solución:** Extensión de `kon-auth`
 
 ```typescript
 {
@@ -426,7 +426,7 @@ GET /api/datasets/posts/aggregate
 
 #### 8. Import/Export Nativo
 
-**Solución:** Extensión de `grimoire-content`
+**Solución:** Extensión de `kon-content`
 
 ```typescript
 POST /api/content/import/csv
@@ -440,21 +440,21 @@ GET /api/content/export/posts?format=xlsx
 
 #### 9. GraphQL API
 
-**Solución:** Nuevo `grimoire-graphql` o extensión
+**Solución:** Nuevo `kon-graphql` o extensión
 
 #### 10. Scheduled Tasks / Cron
 
-**Solución:** Nuevo `grimoire-scheduler`
+**Solución:** Nuevo `kon-scheduler`
 
 ---
 
-## ✅ Fortalezas de Gremius vs Directus
+## ✅ Fortalezas de Kitsuden vs Directus
 
 ### 1. Stack Moderno
 
 ```
 Directus: Node.js (1995 tech) + Express (2009)
-Gremius:  Bun (2023) + Hono (2022) + Drizzle (2022)
+Kitsuden:  Bun (2023) + Hono (2022) + Drizzle (2022)
 
 Ventajas:
 - Bun es 3x más rápido que Node en I/O
@@ -470,15 +470,15 @@ Directus: Todo o nada
 - Quieres solo auth? Instalas todo Directus
 - Actualización de una parte? Testing completo
 
-Gremius: Solo lo necesitas
-- API-only? No instalas grimoire-assets
-- Sin CMS? No instalas grimoire-content
-- Cada grimoire se actualiza independientemente
+Kitsuden: Solo lo necesitas
+- API-only? No instalas kon-assets
+- Sin CMS? No instalas kon-content
+- Cada kon se actualiza independientemente
 ```
 
 ### 3. Developer Experience (para developers)
 
-| Aspecto         | Directus          | Gremius            |
+| Aspecto         | Directus          | Kitsuden           |
 | --------------- | ----------------- | ------------------ |
 | Customizar core | Difícil (fork)    | Fácil (tu código)  |
 | Debugging       | Stack propietario | Standard TS/Bun    |
@@ -489,8 +489,8 @@ Gremius: Solo lo necesitas
 ### 4. Calculated Fields Nativos
 
 ```typescript
-// Gremius: Nativo y potente
-// packages/grimoires/grimoire-content/calculated-fields
+// Kitsuden: Nativo y potente
+// packages/kons/kon-content/calculated-fields
 
 {
   "name": "totalPrice",
@@ -501,17 +501,17 @@ Gremius: Solo lo necesitas
 }
 ```
 
-### 5. Sistema de Grimoires (Plugins Evolucionados)
+### 5. Sistema de Kons (Plugins Evolucionados)
 
 ```typescript
-// Auto-detección de grimoires
-// packages/grimoires/*/grimoire.json
+// Auto-detección de kons
+// packages/kons/*/kon.json
 
 {
-  "name": "grimoire-ecommerce",
+  "name": "kon-ecommerce",
   "version": "1.0.0",
   "autoActivate": true,
-  "dependencies": ["grimoire-content", "grimoire-auth"],
+  "dependencies": ["kon-content", "kon-auth"],
   "config": {
     "tables": ["products", "orders", "inventory"],
     "relations": ["products.categories"]
@@ -536,7 +536,7 @@ Gremius: Solo lo necesitas
 - [x] Quieres real-time sin implementar
 - [x] Buscas search avanzado sin infraestructura extra
 
-### Elige Gremius si:
+### Elige Kitsuden si:
 
 - [x] Quieres stack moderno (Bun, edge-ready)
 - [x] Necesitas modularidad extrema
@@ -551,7 +551,7 @@ Gremius: Solo lo necesitas
 
 ---
 
-## 🚀 Roadmap Sugerido para Gremius
+## 🚀 Roadmap Sugerido para Kitsuden
 
 ### Fase 1: Core Foundation (Meses 1-2)
 
@@ -562,28 +562,28 @@ Gremius: Solo lo necesitas
 
 ### Fase 2: Content Maturity (Meses 2-3)
 
-- [ ] Sistema de Revisions/Auditoría (grimoire-content)
+- [ ] Sistema de Revisions/Auditoría (kon-content)
 - [ ] Draft/Published workflow nativo
-- [ ] Field-level permissions (grimoire-auth)
+- [ ] Field-level permissions (kon-auth)
 - [ ] Import/Export (CSV, JSON, Excel)
 
 ### Fase 3: Media & Assets (Meses 3-4)
 
-- [ ] Nuevo `grimoire-assets`
+- [ ] Nuevo `kon-assets`
 - [ ] Transformaciones on-the-fly (Sharp)
 - [ ] Focal point y smart crops
 - [ ] CDN integration (S3, R2, GCS)
 
 ### Fase 4: Search & Discovery (Meses 4-5)
 
-- [ ] Nuevo `grimoire-search`
+- [ ] Nuevo `kon-search`
 - [ ] Full-text search (pgvector/Meilisearch)
 - [ ] Faceted search
 - [ ] Autocomplete/suggestions
 
 ### Fase 5: Real-time (Meses 5-6)
 
-- [ ] Nuevo `grimoire-realtime`
+- [ ] Nuevo `kon-realtime`
 - [ ] WebSocket support
 - [ ] Server-Sent Events
 - [ ] Pub/Sub entre instancias
@@ -597,18 +597,18 @@ Gremius: Solo lo necesitas
 
 ---
 
-## 📈 Proyección: ¿Cuándo Gremius alcanza a Directus?
+## 📈 Proyección: ¿Cuándo Kitsuden alcanza a Directus?
 
-| Métrica             | Directus Hoy | Gremius Hoy | Gremius + 12 meses |
-| ------------------- | ------------ | ----------- | ------------------ |
-| **Madurez**         | 95%          | 40%         | 80%                |
-| **Features core**   | 100%         | 60%         | 90%                |
-| **Ecosistema**      | 100%         | 20%         | 50%                |
-| **Documentación**   | 100%         | 30%         | 70%                |
-| **Performance**     | 85%          | 95%         | 95%                |
-| **DX (developers)** | 70%          | 90%         | 90%                |
+| Métrica             | Directus Hoy | Kitsuden Hoy | Kitsuden + 12 meses |
+| ------------------- | ------------ | ------------ | ------------------- |
+| **Madurez**         | 95%          | 40%          | 80%                 |
+| **Features core**   | 100%         | 60%          | 90%                 |
+| **Ecosistema**      | 100%         | 20%          | 50%                 |
+| **Documentación**   | 100%         | 30%          | 70%                 |
+| **Performance**     | 85%          | 95%          | 95%                 |
+| **DX (developers)** | 70%          | 90%          | 90%                 |
 
-**Conclusión:** Gremius necesita ~8-12 meses de desarrollo activo para alcanzar paridad técnica con Directus en features core, pero manteniendo sus ventajas de arquitectura y stack moderno.
+**Conclusión:** Kitsuden necesita ~8-12 meses de desarrollo activo para alcanzar paridad técnica con Directus en features core, pero manteniendo sus ventajas de arquitectura y stack moderno.
 
 ---
 
@@ -620,7 +620,7 @@ Gremius: Solo lo necesitas
 - Feature-complete para CMS/Blog/Enterprise
 - No necesitas desarrollar nada
 
-### Para proyectos específicos mañana: **Gremius tiene potencial**
+### Para proyectos específicos mañana: **Kitsuden tiene potencial**
 
 - Mejor base arquitectónica
 - Stack más moderno y rápido
@@ -632,4 +632,4 @@ Gremius: Solo lo necesitas
 
 _Documento generado el: 2024-04-12_  
 _Versión de análisis: 1.0_  
-_Próxima revisión: v0.9.0-beta de Gremius_
+_Próxima revisión: v0.9.0-beta de Kitsuden_

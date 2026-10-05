@@ -121,11 +121,11 @@ CREATE INDEX IF NOT EXISTS "ae_created_idx" ON "action_executions" ("created_at"
 -- 1. Run the data migration script: 
 --    bun run apps/api/src/db/migrations/migrate-to-actions.ts
 --
--- 2. The old tables (gremius_functions, webhooks) are preserved for safety
+-- 2. The old tables (kitsuden_functions, webhooks) are preserved for safety
 --
 -- 3. New code should use the actions table
 --
 -- 4. After full verification, old tables can be dropped:
---    DROP TABLE gremius_functions CASCADE;
+--    DROP TABLE kitsuden_functions CASCADE;
 --    DROP TABLE function_executions CASCADE;
 --    DROP TABLE webhooks CASCADE;

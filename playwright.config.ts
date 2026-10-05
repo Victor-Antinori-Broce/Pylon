@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * GremiusCMS — Playwright E2E Configuration
+ * Kitsuden — Playwright E2E Configuration
  *
  * Setup:
  *   pnpm add -Dw @playwright/test

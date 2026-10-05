@@ -1,28 +1,28 @@
 /**
- * GremiusCMS — Content Publishing API (Nivel 2: Core)
+ * Kitsuden — Content Publishing API (Nivel 2: Core)
  *
  * Sistema de publicación de contenido abstracto que permite a cualquier
- * grimoire promover datos a un "Content Target" (Blog, Docs, Shop, etc.)
+ * kon promover datos a un "Content Target" (Blog, Docs, Shop, etc.)
  */
 
-import type { GrimoireContext, ContentTarget, ContentTargetInfo } from "@gremius/shared";
+import type { KonContext, ContentTarget, ContentTargetInfo } from "@kitsuden/shared";
 
 /**
  * Registry global de Content Targets.
- * Siempre está disponible en GrimoireContext.contentPublishing.
+ * Siempre está disponible en KonContext.contentPublishing.
  */
 export class ContentPublishingRegistry {
   private targets = new Map<string, ContentTarget>();
-  private ctx: GrimoireContext;
+  private ctx: KonContext;
 
-  constructor(ctx: GrimoireContext) {
+  constructor(ctx: KonContext) {
     this.ctx = ctx;
   }
 
   register(target: ContentTarget): void {
     if (this.targets.has(target.id)) {
       this.ctx.logger.warn(
-        `ContentTarget '${target.id}' is being re-registered by ${target.grimoireId}`
+        `ContentTarget '${target.id}' is being re-registered by ${target.konId}`
       );
     }
     this.targets.set(target.id, target);
@@ -41,7 +41,7 @@ export class ContentPublishingRegistry {
     return Array.from(this.targets.values()).map((target) => ({
       id: target.id,
       name: target.name,
-      grimoireId: target.grimoireId,
+      konId: target.konId,
       capabilities: target.capabilities,
     }));
   }
@@ -74,4 +74,4 @@ export class ContentPublishingRegistry {
 }
 
 // Re-exportar tipos para conveniencia
-export type { ContentTarget, ContentTargetInfo } from "@gremius/shared";
+export type { ContentTarget, ContentTargetInfo } from "@kitsuden/shared";

@@ -14,7 +14,7 @@
 import { z } from "zod";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ESQUEMAS ZOD (copiados de @gremius/shared)
+// ESQUEMAS ZOD (copiados de @kitsuden/shared)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const FieldTypeSchema = z.enum([

@@ -8,7 +8,7 @@ import { loadDatabase, closeDatabase } from "../utils/database.js";
 import { findProjectRoot } from "../utils/project.js";
 
 export async function dumpdataCommand(
-  grimoireName: string | undefined,
+  konName: string | undefined,
   options: { output?: string; indent?: boolean }
 ) {
   console.log(chalk.blue("💾 Dumping data...\n"));
@@ -16,13 +16,13 @@ export async function dumpdataCommand(
   try {
     const { db, client } = await loadDatabase();
     const projectRoot = await findProjectRoot();
-    const grimoiresPath = path.join(projectRoot, "packages", "grimoires");
+    const konsPath = path.join(projectRoot, "packages", "kons");
 
     let tablesToDump: string[] = [];
 
-    if (grimoireName) {
-      // Dump específico de un grimoire
-      const schemaPath = path.join(grimoiresPath, grimoireName, "schema.ts");
+    if (konName) {
+      // Dump específico de un kon
+      const schemaPath = path.join(konsPath, konName, "schema.ts");
       try {
         const content = await fs.readFile(schemaPath, "utf-8");
         const matches = content.match(/pgTable\(['"]([^'"]+)['"]/g);
@@ -30,7 +30,7 @@ export async function dumpdataCommand(
           tablesToDump = matches.map((m) => m.match(/['"]([^'"]+)['"]/)?.[1] || "");
         }
       } catch {
-        console.error(chalk.red(`Grimoire "${grimoireName}" not found`));
+        console.error(chalk.red(`Kon "${konName}" not found`));
         process.exit(1);
       }
     } else {

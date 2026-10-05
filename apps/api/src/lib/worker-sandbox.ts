@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Worker Sandbox
+ * Kitsuden — Worker Sandbox
  *
  * Executes user-provided JS/TS code in an isolated Bun Worker thread.
  * Security boundaries:
@@ -15,6 +15,8 @@
 
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+
+import { messageOf } from "@kitsuden/engine";
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -53,7 +55,15 @@ export interface SandboxResult {
 // Sandbox Executor
 // ═══════════════════════════════════════════════════════════════
 
-const SANDBOX_DIR = join(import.meta.dir, "..", "..", ".sandbox");
+/**
+ * Directorio de trabajo del sandbox.
+ *
+ * NO usa `import.meta.dir` (específico de Bun y `undefined` bajo Node): cuando
+ * Kitsuden se instala como paquete npm el runtime puede correr en Node, y además
+ * la ruta relativa al fuente ya no existe dentro del bundle. Se ancla al cwd
+ * del proyecto, que es lo correcto tanto en el monorepo como instalado.
+ */
+const SANDBOX_DIR = process.env.KITSUDEN_SANDBOX_DIR ?? join(process.cwd(), ".kitsuden", "sandbox");
 
 /**
  * Execute user code inside an isolated Bun Worker.
@@ -155,13 +165,13 @@ export async function executeSandbox(input: SandboxInput): Promise<SandboxResult
           worker.terminate();
         } catch {}
       };
-    } catch (spawnError: any) {
+    } catch (spawnError: unknown) {
       clearTimeout(timer);
       settle({
         success: false,
         result: null,
         logs: "",
-        error: `Failed to spawn worker: ${spawnError.message}`,
+        error: `Failed to spawn worker: ${messageOf(spawnError)}`,
         durationMs: Math.round(performance.now() - startTime),
         memoryUsedBytes: 0,
         exitReason: "killed",
@@ -191,7 +201,7 @@ function buildWrapperScript(
   const safeEnvVars = JSON.stringify(envVars);
 
   return `
-// ═══ GremiusCMS Sandbox Wrapper ═══
+// ═══ Kitsuden Sandbox Wrapper ═══
 // This file is auto-generated and immediately deleted after execution.
 
 const __logs = [];
@@ -230,8 +240,8 @@ const event = ${safePayload};
 const env = ${safeEnvVars};
 const console = __console;
 
-// ─── Gremius SDK (limited API surface for user functions) ───
-const gremius = {
+// ─── Kitsuden SDK (limited API surface for user functions) ───
+const kitsuden = {
   async fetch(url, options) {
     return globalThis.fetch(url, {
       ...options,
@@ -255,7 +265,7 @@ async function __execute() {
   try {
     // User code is wrapped in an async IIFE
     const __userFn = new Function(
-      'event', 'env', 'console', 'gremius', 'fetch',
+      'event', 'env', 'console', 'kitsuden', 'fetch',
       'process', 'require', '__filename', '__dirname', 'Deno',
       \`return (async () => {
         \${${JSON.stringify(userCode)}}
@@ -263,7 +273,7 @@ async function __execute() {
     );
 
     const result = await __userFn(
-      event, env, __console, gremius, gremius.fetch,
+      event, env, __console, kitsuden, kitsuden.fetch,
       undefined, undefined, undefined, undefined, undefined
     );
 

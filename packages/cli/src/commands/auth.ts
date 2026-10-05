@@ -4,11 +4,11 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Usage:
- *   gremius auth add google --client-id xxx --client-secret yyy
- *   gremius auth add github --client-id xxx --client-secret yyy
- *   gremius auth add microsoft --client-id xxx --client-secret yyy --tenant common
- *   gremius auth list
- *   gremius auth remove google
+ *   kitsuden auth add google --client-id xxx --client-secret yyy
+ *   kitsuden auth add github --client-id xxx --client-secret yyy
+ *   kitsuden auth add microsoft --client-id xxx --client-secret yyy --tenant common
+ *   kitsuden auth list
+ *   kitsuden auth remove google
  */
 
 import { execSync } from "child_process";
@@ -71,7 +71,7 @@ export async function addProvider(providerId: string, options: Record<string, st
   const envPath = path.resolve(process.cwd(), ENV_FILE);
   if (!(await fs.pathExists(envPath))) {
     spinner.fail(chalk.red(`No ${ENV_FILE} found in current directory`));
-    console.log(chalk.yellow('Run "gremius init" first or create a .env file'));
+    console.log(chalk.yellow('Run "kitsuden init" first or create a .env file'));
     process.exit(1);
   }
 
@@ -90,7 +90,7 @@ export async function addProvider(providerId: string, options: Record<string, st
       values[field.key] = value;
     } else if (field.required) {
       spinner.fail(chalk.red(`Missing required option: --${optionKey}`));
-      console.log(chalk.yellow(`Usage: gremius auth add ${providerId} --${optionKey} <value>`));
+      console.log(chalk.yellow(`Usage: kitsuden auth add ${providerId} --${optionKey} <value>`));
       process.exit(1);
     }
   }
@@ -164,7 +164,7 @@ export async function listProviders() {
   if (!anyConfigured) {
     console.log(chalk.yellow("  No providers configured yet."));
     console.log(
-      chalk.white("  Run: gremius auth add <provider> --client-id <id> --client-secret <secret>")
+      chalk.white("  Run: kitsuden auth add <provider> --client-id <id> --client-secret <secret>")
     );
   }
 
@@ -227,22 +227,22 @@ async function restartApiIfRunning(): Promise<void> {
   }
 
   try {
-    // Check if gremius_api container is running
+    // Check if kitsuden_api container is running
     const output = execSync('docker compose ps --services --filter "status=running"', {
       cwd: projectRoot,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "ignore"],
     });
 
-    if (!output.includes("gremius_api")) {
+    if (!output.includes("kitsuden_api")) {
       console.log(chalk.yellow("\n🔄 API container not running. Start it with:"));
       console.log(chalk.white("  docker compose up -d"));
       return;
     }
 
     // Restart the API container
-    const restartSpinner = ora("Restarting Gremius API...").start();
-    execSync("docker compose restart gremius_api", {
+    const restartSpinner = ora("Restarting Kitsuden API...").start();
+    execSync("docker compose restart kitsuden_api", {
       cwd: projectRoot,
       stdio: "pipe",
     });
@@ -250,6 +250,6 @@ async function restartApiIfRunning(): Promise<void> {
     console.log(chalk.gray("  Auth changes are now live."));
   } catch {
     console.log(chalk.yellow("\n🔄 Could not auto-restart API. Restart manually:"));
-    console.log(chalk.white("  docker compose restart gremius_api"));
+    console.log(chalk.white("  docker compose restart kitsuden_api"));
   }
 }

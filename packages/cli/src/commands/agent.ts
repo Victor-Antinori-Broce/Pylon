@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Commands for AI agents to:
- * - Generate grimoires from descriptions
+ * - Generate kons from descriptions
  * - Validate code
  * - Debug MCP connection
  * - Initialize project context
@@ -19,10 +19,10 @@ import { execa } from "execa";
 import ora from "ora";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CREATE GRIMOIRE - Generate from description
+// CREATE KON - Generate from description
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function createGrimoire(
+export async function createKon(
   name: string,
   options: {
     description?: string;
@@ -31,14 +31,14 @@ export async function createGrimoire(
     output?: string;
   }
 ) {
-  const spinner = ora(`Generating grimoire "${name}"...`).start();
+  const spinner = ora(`Generating kon "${name}"...`).start();
 
   try {
-    const outputDir = options.output || `packages/grimoires/grimoire-${name}`;
+    const outputDir = options.output || `packages/kons/kon-${name}`;
 
     // Validate name
     if (!/^[a-z][a-z0-9-]*$/.test(name)) {
-      throw new Error("Grimoire name must be kebab-case (e.g., 'inventory-management')");
+      throw new Error("Kon name must be kebab-case (e.g., 'inventory-management')");
     }
 
     // Generate files
@@ -54,8 +54,8 @@ export async function createGrimoire(
         content: generateSchemaFile(pascalName, options.dataModel),
       },
       {
-        path: path.join(outputDir, "grimoire.json"),
-        content: generateGrimoireJson(name, options),
+        path: path.join(outputDir, "kon.json"),
+        content: generateKonJson(name, options),
       },
       {
         path: path.join(outputDir, "package.json"),
@@ -72,7 +72,7 @@ export async function createGrimoire(
       await fs.writeFile(file.path, file.content);
     }
 
-    spinner.succeed(`Grimoire "${name}" generated at ${outputDir}/`);
+    spinner.succeed(`Kon "${name}" generated at ${outputDir}/`);
 
     console.log(chalk.blue("\n📁 Generated files:"));
     files.forEach((f) => console.log(`  - ${path.relative(process.cwd(), f.path)}`));
@@ -80,10 +80,10 @@ export async function createGrimoire(
     console.log(chalk.green("\n🚀 Next steps:"));
     console.log(`  1. cd ${outputDir}`);
     console.log(`  2. Review and customize the generated code`);
-    console.log(`  3. gremius plugin install ${name} --source local`);
-    console.log(`  4. gremius dev`);
+    console.log(`  3. kitsuden plugin install ${name} --source local`);
+    console.log(`  4. kitsuden dev`);
   } catch (error: any) {
-    spinner.fail(`Failed to generate grimoire: ${error.message}`);
+    spinner.fail(`Failed to generate kon: ${error.message}`);
     process.exit(1);
   }
 }
@@ -93,7 +93,7 @@ export async function createGrimoire(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function validateCode(options: {
-  grimoire?: string;
+  kon?: string;
   typecheck?: boolean;
   lint?: boolean;
   security?: boolean;
@@ -128,15 +128,15 @@ export async function validateCode(options: {
     if (options.security) {
       spinner.text = "Running security checks...";
       // Check for common security issues
-      const securityIssues = await runSecurityChecks(options.grimoire);
+      const securityIssues = await runSecurityChecks(options.kon);
       issues.push(...securityIssues);
     }
 
-    // Grimoire-specific validation
-    if (options.grimoire) {
-      spinner.text = `Validating grimoire "${options.grimoire}"...`;
-      const grimoireIssues = await validateGrimoire(options.grimoire);
-      issues.push(...grimoireIssues);
+    // Kon-specific validation
+    if (options.kon) {
+      spinner.text = `Validating kon "${options.kon}"...`;
+      const konIssues = await validateKon(options.kon);
+      issues.push(...konIssues);
     }
 
     spinner.stop();
@@ -189,13 +189,13 @@ export async function debugMcp(options: { token?: string; url?: string }) {
       },
     },
     {
-      name: "Grimoire registry",
+      name: "Kon registry",
       check: async () => {
         try {
           const url = options.url || process.env.GREMUS_API_URL || "http://localhost:3001";
-          const response = await fetch(`${url}/api/docs/grimoires`);
+          const response = await fetch(`${url}/api/docs/kons`);
           const data = (await response.json()) as any;
-          return { ok: response.ok, grimoires: data.total };
+          return { ok: response.ok, kons: data.total };
         } catch (err: any) {
           return { ok: false, error: err.message };
         }
@@ -248,7 +248,7 @@ export async function initAgent(options: { editor?: string; force?: boolean }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function generateSdk(options: {
-  grimoire?: string;
+  kon?: string;
   language: "typescript" | "python" | "go" | "java" | "php";
   output: string;
 }) {
@@ -258,8 +258,8 @@ export async function generateSdk(options: {
     const apiUrl = process.env.GREMUS_API_URL || "http://localhost:3001";
     let specUrl: string;
 
-    if (options.grimoire) {
-      specUrl = `${apiUrl}/api/docs/${options.grimoire}/openapi.json`;
+    if (options.kon) {
+      specUrl = `${apiUrl}/api/docs/${options.kon}/openapi.json`;
     } else {
       specUrl = `${apiUrl}/api/docs/openapi.json`;
     }
@@ -351,13 +351,13 @@ function generateIndexFile(
   const hasWebhooks = options.features?.includes("webhooks");
 
   return `/**
- * @gremius/grimoire-${name}
+ * @kitsuden/kon-${name}
  * 
  * ${options.description || `${pascalName} module`}
  */
 
 import { Hono } from "hono";
-import { defineGrimoire } from "@gremius/shared";
+import { defineKon } from "@kitsuden/shared";
 import { z } from "zod";
 import { ${pascalName}Schema, Create${pascalName}Schema } from "./schema";
 
@@ -365,8 +365,8 @@ import { ${pascalName}Schema, Create${pascalName}Schema } from "./schema";
 export type ${pascalName} = z.infer<typeof ${pascalName}Schema>;
 export type Create${pascalName} = z.infer<typeof Create${pascalName}Schema>;
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-${name}",
+export const kon = defineKon({
+  id: "kon-${name}",
   name: "${pascalName}",
   version: "1.0.0",
   description: "${options.description || `${pascalName} module`}",
@@ -485,7 +485,7 @@ export const grimoire = defineGrimoire({
   
   hooks: {
     onStartup: async (ctx) => {
-      ctx.logger.info("📦 ${pascalName} grimoire initialized");
+      ctx.logger.info("📦 ${pascalName} kon initialized");
       
       // TODO: Verify tables exist
       // const exists = await ctx.db.tableExists("${name}");
@@ -504,7 +504,7 @@ export const grimoire = defineGrimoire({
   }
 });
 
-export default grimoire;
+export default kon;
 `;
 }
 
@@ -552,14 +552,14 @@ export type Update${pascalName} = z.infer<typeof Update${pascalName}Schema>;
 `;
 }
 
-function generateGrimoireJson(name: string, options: { description?: string }): string {
+function generateKonJson(name: string, options: { description?: string }): string {
   return JSON.stringify(
     {
-      id: `grimoire-${name}`,
+      id: `kon-${name}`,
       name: toPascalCase(name),
       description: options.description || `${toPascalCase(name)} module`,
       version: "1.0.0",
-      type: "grimoire",
+      type: "kon",
       icon: "Box",
       tables: [name.toLowerCase()],
       mount: {
@@ -578,35 +578,35 @@ function generateGrimoireJson(name: string, options: { description?: string }): 
 function generatePackageJson(name: string): string {
   return JSON.stringify(
     {
-      name: `@gremius/grimoire-${name}`,
+      name: `@kitsuden/kon-${name}`,
       version: "1.0.0",
-      description: `Gremius grimoire for ${name}`,
+      description: `Kitsuden kon for ${name}`,
       type: "module",
       main: "index.ts",
       types: "index.ts",
-      gremius: {
-        type: "grimoire",
-        id: `grimoire-${name}`,
+      kitsuden: {
+        type: "kon",
+        id: `kon-${name}`,
         minVersion: "0.8.0",
       },
       peerDependencies: {
-        "@gremius/engine": "^0.8.0",
-        "@gremius/shared": "^0.8.0",
+        "@kitsuden/engine": "^0.8.0",
+        "@kitsuden/shared": "^0.8.0",
       },
-      keywords: ["gremius", "grimoire"],
+      keywords: ["kitsuden", "kon"],
     },
     null,
     2
   );
 }
 
-async function runSecurityChecks(_grimoire?: string): Promise<any[]> {
+async function runSecurityChecks(_kon?: string): Promise<any[]> {
   const issues: any[] = [];
   // Implementation...
   return issues;
 }
 
-async function validateGrimoire(_name: string): Promise<any[]> {
+async function validateKon(_name: string): Promise<any[]> {
   const issues: any[] = [];
   // Implementation...
   return issues;
@@ -625,19 +625,19 @@ async function initCursorConfig(force?: boolean) {
     return;
   }
 
-  const content = `# Gremius Project - Cursor Rules
+  const content = `# Kitsuden Project - Cursor Rules
 
 ## Architecture
-- GremiusCMS with modular grimoire system
-- Engine → Core → Grimoires (3-tier architecture)
+- Kitsuden with modular kon system
+- Engine → Core → Kons (3-tier architecture)
 - Bun + Hono + Drizzle + PostgreSQL
 
 ## Code Patterns
 
-### Creating a Grimoire Endpoint
+### Creating a Kon Endpoint
 \`\`\`typescript
-export const grimoire = defineGrimoire({
-  id: "grimoire-myfeature",
+export const kon = defineKon({
+  id: "kon-myfeature",
   createRouter: (ctx) => {
     const router = new Hono();
     
@@ -659,14 +659,14 @@ export const grimoire = defineGrimoire({
 ### API Standards
 - RESTful endpoints
 - Zod validation
-- OpenAPI documentation via grimoire.openApi
+- OpenAPI documentation via kon.openApi
 - Proper HTTP status codes
 
 ## MCP Tools Available
-- gremius_intelligent_query - Natural language queries
-- gremius_generate_grimoire - Generate boilerplate
-- gremius_introspect_schema - Schema inspection
-- gremius_validate_code - Code validation
+- kitsuden_intelligent_query - Natural language queries
+- kitsuden_generate_kon - Generate boilerplate
+- kitsuden_introspect_schema - Schema inspection
+- kitsuden_validate_code - Code validation
 `;
 
   await fs.writeFile(cursorRulesPath, content);
@@ -684,7 +684,7 @@ async function initClaudeConfig(force?: boolean) {
   // Similar content to cursorrules but formatted for Claude
   await fs.writeFile(
     claudeMdPath,
-    "# Gremius Project Context\n\nSee .cursorrules for detailed patterns."
+    "# Kitsuden Project Context\n\nSee .cursorrules for detailed patterns."
   );
   console.log(chalk.green("✅ Created CLAUDE.md"));
 }
@@ -716,7 +716,7 @@ function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
 }
 
 export default {
-  createGrimoire,
+  createKon,
   validateCode,
   debugMcp,
   initAgent,

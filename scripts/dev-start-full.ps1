@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Script de inicio para GremiusCMS en modo DESARROLLO (con healthchecks).
+    Script de inicio para Kitsuden en modo DESARROLLO (con healthchecks).
 
 .DESCRIPTION
     Este script automatiza el proceso de inicio en desarrollo:
@@ -38,7 +38,7 @@ Set-Location $projectRoot
 
 Write-Host @"
 ╔════════════════════════════════════════════════════════════════╗
-║           🚀 GremiusCMS - Modo DESARROLLO (Dev)                ║
+║           🚀 Kitsuden - Modo DESARROLLO (Dev)                ║
 ║                   One-Command Startup v1.0                     ║
 ╚════════════════════════════════════════════════════════════════╝
 "@ -ForegroundColor Cyan
@@ -93,6 +93,20 @@ if (-not (Test-CommandExists "pnpm")) {
 Write-Host "   ✅ Docker detectado"
 Write-Host "   ✅ pnpm detectado"
 
+# 0. FRENO: la pila de PRODUCCION no puede estar en marcha
+# docker-compose.dev.yml usa los MISMOS puertos que la de produccion (5432,
+# 6379, 9000) y apps/api/.env apunta a la base `kitsuden_prod`: con las dos a
+# la vez, el `db:push` de abajo empujaria el esquema de Drizzle contra la base
+# REAL, con el "y" ya contestado. Visto el 2026-09-28.
+$prod = docker ps --format "{{.Names}}" 2>$null | Where-Object { $_ -like "kitsuden_*_prod" }
+if ($prod) {
+    Write-Host "`nLa pila de PRODUCCION esta en marcha ($($prod -join ', '))." -ForegroundColor Red
+    Write-Host "Este script es para desarrollo: comparte puertos y base con ella." -ForegroundColor Red
+    Write-Host "Paralo antes con 'docker compose down' (sin -v) o usa la pila de produccion:" -ForegroundColor Yellow
+    Write-Host "  API :3000, panel :3001; las webs con 'node start-all-webs.mjs' o 'node scripts/start-valhalla.mjs'" -ForegroundColor Yellow
+    exit 1
+}
+
 # 1. INSTALAR DEPENDENCIAS
 if (-not $SkipInstall) {
     Write-Host "`n📦 Instalando dependencias..." -ForegroundColor Yellow
@@ -119,9 +133,9 @@ Write-Host "   ✅ Contenedores iniciados" -ForegroundColor Green
 # 3. ESPERAR A QUE LOS SERVICIOS ESTÉN LISTOS
 Write-Host "`n⏳ Verificando salud de los servicios..." -ForegroundColor Yellow
 
-Wait-ForService -Name "PostgreSQL" -ContainerName "gremius_db" -TimeoutSeconds 60
-Wait-ForService -Name "MinIO" -ContainerName "gremius_minio" -TimeoutSeconds 30
-Wait-ForService -Name "Valkey" -ContainerName "gremius_cache" -TimeoutSeconds 30
+Wait-ForService -Name "PostgreSQL" -ContainerName "kitsuden_db" -TimeoutSeconds 60
+Wait-ForService -Name "MinIO" -ContainerName "kitsuden_minio" -TimeoutSeconds 30
+Wait-ForService -Name "Valkey" -ContainerName "kitsuden_cache" -TimeoutSeconds 30
 
 Write-Host "   ✅ Todos los servicios están saludables" -ForegroundColor Green
 

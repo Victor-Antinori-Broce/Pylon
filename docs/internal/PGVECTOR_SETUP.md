@@ -1,8 +1,8 @@
-# GremiusCMS + pgvector Configuration Guide
+# Kitsuden + pgvector Configuration Guide
 
 ## Overview
 
-GremiusCMS utiliza **pgvector** para funcionalidades de IA (embeddings vectoriales, búsqueda semántica, RAG). Esta guía explica cómo está configurado y qué pasa si conectas a PostgreSQL sin pgvector.
+Kitsuden utiliza **pgvector** para funcionalidades de IA (embeddings vectoriales, búsqueda semántica, RAG). Esta guía explica cómo está configurado y qué pasa si conectas a PostgreSQL sin pgvector.
 
 ---
 
@@ -13,7 +13,7 @@ GremiusCMS utiliza **pgvector** para funcionalidades de IA (embeddings vectorial
 El `docker-compose.yml` usa la imagen oficial de pgvector:
 
 ```yaml
-gremius_db:
+kitsuden_db:
   image: pgvector/pgvector:pg16 # ← PostgreSQL 16 + pgvector pre-instalado
   volumes:
     - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
@@ -27,10 +27,10 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 ### ✅ Sí, en el Código
 
-El grimoire **"ai-memories"** usa el tipo `vector` de Drizzle ORM:
+El kon **"ai-memories"** usa el tipo `vector` de Drizzle ORM:
 
 ```typescript
-// packages/grimoires/ai-memories/schema.ts
+// packages/kons/ai-memories/schema.ts
 import { vector } from "drizzle-orm/pg-core";
 
 export const aiMemories = pgTable("ai_memories", {
@@ -72,14 +72,14 @@ El nuevo script `docker/start-with-check.sh` **detecta esto ANTES** de migrar y 
   pgvector Extension:   ❌ MISSING
 ═══════════════════════════════════════════════════════════════
 
-GremiusCMS requires pgvector for AI features.
+Kitsuden requires pgvector for AI features.
 
 Solutions:
 1️⃣  Use PostgreSQL with pgvector (Recommended):
-    docker run -d --name gremius-db \
-      -e POSTGRES_USER=gremius \
-      -e POSTGRES_PASSWORD=gremiuspassword \
-      -e POSTGRES_DB=gremius_prod \
+    docker run -d --name kitsuden-db \
+      -e POSTGRES_USER=kitsuden \
+      -e POSTGRES_PASSWORD=changeme \\
+      -e POSTGRES_DB=kitsuden_prod \
       -p 5432:5432 \
       pgvector/pgvector:pg16
 
@@ -98,7 +98,7 @@ Solutions:
 
 ### ❌ NO fuerza la instalación automática
 
-GremiusCMS **no puede** instalar pgvector automáticamente porque:
+Kitsuden **no puede** instalar pgvector automáticamente porque:
 
 1. Requiere privilegios de **superusuario** en PostgreSQL
 2. La extensión debe instalarse en el servidor, no desde la app
@@ -114,10 +114,10 @@ GremiusCMS **no puede** instalar pgvector automáticamente porque:
 
 ```bash
 docker run -d \
-  --name gremius-pgvector \
-  -e POSTGRES_USER=gremius \
-  -e POSTGRES_PASSWORD=gremiuspassword \
-  -e POSTGRES_DB=gremius_dev \
+  --name kitsuden-pgvector \
+  -e POSTGRES_USER=kitsuden \
+  -e POSTGRES_PASSWORD=changeme \\
+  -e POSTGRES_DB=kitsuden_dev \
   -p 5432:5432 \
   pgvector/pgvector:pg16
 ```
@@ -133,12 +133,12 @@ docker run -d \
 
 ### Opción 2: Deshabilitar funcionalidades de IA
 
-Si NO puedes instalar pgvector, excluye el grimoire `ai-memories`:
+Si NO puedes instalar pgvector, excluye el kon `ai-memories`:
 
-**1. No incluir en `gremius.config.ts`:**
+**1. No incluir en `kitsuden.config.ts`:**
 
 ```typescript
-// gremius.config.ts
+// kitsuden.config.ts
 export default {
   modules: [
     // ❌ No incluir "ai-memories"
@@ -155,7 +155,7 @@ Modifica `apps/api/src/db/schema-all.ts` para no exportar el schema de ai-memori
 
 ```typescript
 // Comentar o eliminar esta línea:
-// export * from "../../../../packages/grimoires/ai-memories/schema";
+// export * from "../../../../packages/kons/ai-memories/schema";
 ```
 
 **3. Regenerar migraciones:**
@@ -220,15 +220,15 @@ El schema merger dinámico carga `ai-memories` solo si está configurado:
 
 ```typescript
 // apps/api/src/lib/schema-merger.ts
-const allGrimoires = new Set([...modules, ...realmGrimoires]);
-// Si "ai-memories" no está en allGrimoires, sus tablas no se cargan
+const allKons = new Set([...modules, ...grimoireKons]);
+// Si "ai-memories" no está en allKons, sus tablas no se cargan
 ```
 
 PERO las **migraciones** (`drizzle/0000_easy_pandemic.sql`) ya están generadas e incluyen las tablas de AI.
 
 ### Flujo correcto para PostgreSQL sin pgvector:
 
-1. **Antes de migrar:** Excluir `ai-memories` de `gremius.config.ts`
+1. **Antes de migrar:** Excluir `ai-memories` de `kitsuden.config.ts`
 2. **Regenerar migraciones:** `bun run db:generate` (sin tablas de AI)
 3. **Ejecutar migraciones:** `bun run db:migrate`
 
@@ -250,4 +250,4 @@ PERO las **migraciones** (`drizzle/0000_easy_pandemic.sql`) ya están generadas 
 
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [Drizzle ORM pgvector](https://orm.drizzle.team/docs/column-types/pg#vector)
-- [Gremius AI Memories Grimoire](../packages/grimoires/ai-memories/)
+- [Kitsuden AI Memories Kon](../packages/kons/ai-memories/)

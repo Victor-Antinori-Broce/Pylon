@@ -8,23 +8,23 @@ cd packages/testing
 bun add drizzle-orm pg pg-mem
 bun run build
 
-# En tu grimoire
-cd packages/grimoires/grimoire-blog
-bun add -d @gremius/testing
+# En tu kon
+cd packages/kons/kon-blog
+bun add -d @kitsuden/testing
 ```
 
 ## 2. Crear Test (3 minutos)
 
 ```typescript
-// packages/grimoires/grimoire-blog/blog.test.ts
+// packages/kons/kon-blog/blog.test.ts
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "bun:test";
 import { eq } from "drizzle-orm";
-import { createDrizzleSandbox } from "@gremius/testing/sandbox-drizzle";
+import { createDrizzleSandbox } from "@kitsuden/testing/sandbox-drizzle";
 import { postsTable, usersTable } from "./schema";
 
 // Crear sandbox con D Rizzzle REAL
 const sandbox = await createDrizzleSandbox({
-  grimoires: ["grimoire-blog"],
+  kons: ["kon-blog"],
   database: "pg-mem", // PostgreSQL en memoria (rápido)
   schema: { postsTable, usersTable },
   fixtures: {
@@ -36,7 +36,7 @@ beforeAll(() => sandbox.setup());
 afterAll(() => sandbox.teardown());
 afterEach(() => sandbox.reset());
 
-describe("Blog Grimoire", () => {
+describe("Blog Kon", () => {
   describe("POST /api/blog/posts", () => {
     it("creates post via Hono, stores via Drizzle", async () => {
       // 1. Llamar endpoint Hono
@@ -161,7 +161,7 @@ bun test blog.test.ts
 bun test --watch blog.test.ts
 
 # Con PostgreSQL real (más lento pero más realista)
-TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/gremius_test \
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/kitsuden_test \
   bun test blog.test.ts
 ```
 
@@ -275,7 +275,7 @@ export default {
 
 // En test
 const sandbox = await createDrizzleSandbox({
-  grimoires: ["grimoire-blog"],
+  kons: ["kon-blog"],
   schema: { postsTable, usersTable },
   fixtures: {
     users: [...],

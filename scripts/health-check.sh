@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===================================================================
-# GremiusCMS - Health Check Script
+# Kitsuden - Health Check Script
 # ===================================================================
 # Uso:
 #   ./scripts/health-check.sh
@@ -69,7 +69,7 @@ check_all() {
     echo ""
     echo -e "${BOLD}Contenedores:${NC}"
     
-    local containers=("gremius_api_prod" "gremius_db_prod" "gremius_state_prod" "gremius_admin_prod")
+    local containers=("kitsuden_api_prod" "kitsuden_db_prod" "kitsuden_state_prod" "kitsuden_admin_prod")
     for container in "${containers[@]}"; do
         if docker ps --format "{{.Names}}" | grep -q "^${container}$"; then
             local uptime
@@ -87,7 +87,7 @@ check_all() {
         echo -e "${GREEN}${BOLD}✅ Todo está saludable${NC}"
     else
         echo -e "${RED}${BOLD}❌ $failures problema(s) detectado(s)${NC}"
-        echo -e "   Revisa los logs: docker compose logs -f gremius_api"
+        echo -e "   Revisa los logs: docker compose logs -f kitsuden_api"
     fi
     
     return $failures

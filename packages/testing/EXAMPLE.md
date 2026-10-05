@@ -1,14 +1,14 @@
-# Gremius Testing Framework - Usage Examples
+# Kitsuden Testing Framework - Usage Examples
 
 ## Basic Example
 
 ```typescript
-// packages/grimoires/grimoire-blog/blog.test.ts
+// packages/kons/kon-blog/blog.test.ts
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import { createTestSandbox } from "@gremius/testing";
+import { createTestSandbox } from "@kitsuden/testing";
 
 const sandbox = createTestSandbox({
-  grimoires: ["grimoire-datasets", "grimoire-blog"],
+  kons: ["kon-datasets", "kon-blog"],
   fixtures: {
     users: [
       { id: "admin-1", name: "Admin", role: "admin" },
@@ -22,7 +22,7 @@ beforeAll(() => sandbox.setup());
 afterAll(() => sandbox.teardown());
 afterEach(() => sandbox.reset());
 
-describe("grimoire-blog", () => {
+describe("kon-blog", () => {
   describe("POST /api/blog/posts", () => {
     it("creates a post when authenticated", async () => {
       const response = await sandbox.http.asUser("admin-1").post("/api/blog/posts", {
@@ -148,7 +148,7 @@ it("emits events on post lifecycle", async () => {
 
 ```typescript
 // fixtures/blog-rich.ts
-import { defineFixture } from "@gremius/testing";
+import { defineFixture } from "@kitsuden/testing";
 
 export default defineFixture({
   id: "blog-rich",
@@ -171,7 +171,7 @@ export default defineFixture({
 
 // In test
 const sandbox = createTestSandbox({
-  grimoires: ["grimoire-blog"],
+  kons: ["kon-blog"],
   fixtures: "blog-rich",
 });
 
@@ -214,11 +214,11 @@ it("creates audit log on update", async () => {
 });
 ```
 
-## Testing Multiple Grimoires
+## Testing Multiple Kons
 
 ```typescript
 const sandbox = createTestSandbox({
-  grimoires: ["grimoire-datasets", "grimoire-blog", "grimoire-media", "grimoire-comments"],
+  kons: ["kon-datasets", "kon-blog", "kon-media", "kon-comments"],
   fixtures: "full-system",
 });
 

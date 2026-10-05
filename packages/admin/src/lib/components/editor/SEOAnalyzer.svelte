@@ -58,14 +58,18 @@
 
 {#snippet charCounter(count: number, max: number)}
   {@const cls =
-    count === 0 ? "text-gremius-subtle" : count <= max ? "text-gremius-green" : "text-gremius-pink"}
+    count === 0
+      ? "text-kitsuden-subtle"
+      : count <= max
+        ? "text-kitsuden-green"
+        : "text-kitsuden-accent-2"}
   <span class="text-[10px] font-mono {cls}">{count}/{max}</span>
 {/snippet}
 
 <div class="space-y-5">
   <div class="flex items-center gap-2 mb-4">
-    <Gauge class="w-4 h-4 text-gremius-cyan" />
-    <h3 class="text-sm font-semibold uppercase tracking-wider text-gremius-text-dim">
+    <Gauge class="w-4 h-4 text-kitsuden-accent" />
+    <h3 class="text-sm font-semibold uppercase tracking-wider text-kitsuden-text-dim">
       SEO Guardian
     </h3>
     <span
@@ -83,16 +87,16 @@
   <div>
     <label class="label mb-1.5 block">URL Slug</label>
     <div
-      class="flex items-center gap-0 rounded-lg border border-gremius-border overflow-hidden bg-gremius-bg"
+      class="flex items-center gap-0 rounded-lg border border-kitsuden-border overflow-hidden bg-kitsuden-bg"
     >
       <span
-        class="px-3 py-2 text-xs text-gremius-subtle bg-gremius-card border-r border-gremius-border font-mono"
+        class="px-3 py-2 text-xs text-kitsuden-subtle bg-kitsuden-card border-r border-kitsuden-border font-mono"
         >/blog/</span
       >
       <input
         value={data.slug}
         oninput={(e) => onUpdate({ ...data, slug: e.currentTarget.value })}
-        class="flex-1 bg-transparent px-3 py-2 text-sm text-gremius-cyan font-mono outline-none"
+        class="flex-1 bg-transparent px-3 py-2 text-sm text-kitsuden-accent font-mono outline-none"
         placeholder="post-slug"
       />
     </div>
@@ -138,15 +142,15 @@
       ondragleave={() => (dragOver = false)}
       ondrop={onDrop}
       class="border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer {dragOver
-        ? 'border-gremius-cyan bg-gremius-cyan/5'
-        : 'border-gremius-border hover:border-gremius-subtle'}"
+        ? 'border-kitsuden-accent bg-kitsuden-accent/5'
+        : 'border-kitsuden-border hover:border-kitsuden-subtle'}"
       onclick={() => fileInput?.click()}
     >
       {#if data.ogImageUrl}
         <div class="relative">
           <img
             src={data.ogImageUrl}
-            class="w-full rounded-lg border border-gremius-border"
+            class="w-full rounded-lg border border-kitsuden-border"
             alt="OG Image"
           />
           <button
@@ -160,7 +164,7 @@
           </button>
         </div>
       {:else}
-        <div class="flex flex-col items-center gap-2 text-gremius-subtle">
+        <div class="flex flex-col items-center gap-2 text-kitsuden-subtle">
           <ImagePlus class="w-8 h-8" />
           <p class="text-xs">Drop image or click to upload</p>
           <p class="text-[10px]">Recommended: 1200×630px</p>
@@ -198,11 +202,12 @@
     {#each checks as check}
       <div class="flex items-center gap-2 text-xs">
         {#if check.pass}
-          <CheckCircle2 class="w-3.5 h-3.5 text-gremius-green shrink-0" />
+          <CheckCircle2 class="w-3.5 h-3.5 text-kitsuden-green shrink-0" />
         {:else}
-          <XCircle class="w-3.5 h-3.5 text-gremius-pink shrink-0" />
+          <XCircle class="w-3.5 h-3.5 text-kitsuden-accent-2 shrink-0" />
         {/if}
-        <span class={check.pass ? "text-gremius-text-dim" : "text-gremius-pink"}>{check.label}</span
+        <span class={check.pass ? "text-kitsuden-text-dim" : "text-kitsuden-accent-2"}
+          >{check.label}</span
         >
       </div>
     {/each}

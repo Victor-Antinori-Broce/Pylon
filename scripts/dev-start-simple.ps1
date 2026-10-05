@@ -1,7 +1,7 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Script SIMPLE para iniciar GremiusCMS en modo DESARROLLO.
+    Script SIMPLE para iniciar Kitsuden en modo DESARROLLO.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -9,7 +9,21 @@ $RootDir = $PSScriptRoot | Split-Path -Parent
 
 Set-Location $RootDir
 
-Write-Host "`n[DEV] Iniciando GremiusCMS...`n" -ForegroundColor Cyan
+Write-Host "`n[DEV] Iniciando Kitsuden...`n" -ForegroundColor Cyan
+
+# 0. FRENO: la pila de PRODUCCION no puede estar en marcha
+# docker-compose.dev.yml usa los MISMOS puertos que la de produccion (5432,
+# 6379, 9000) y apps/api/.env apunta a la base `kitsuden_prod`: con las dos a
+# la vez, el `db:push` de abajo empujaria el esquema de Drizzle contra la base
+# REAL, con el "y" ya contestado. Visto el 2026-09-28.
+$prod = docker ps --format "{{.Names}}" 2>$null | Where-Object { $_ -like "kitsuden_*_prod" }
+if ($prod) {
+    Write-Host "`nLa pila de PRODUCCION esta en marcha ($($prod -join ', '))." -ForegroundColor Red
+    Write-Host "Este script es para desarrollo: comparte puertos y base con ella." -ForegroundColor Red
+    Write-Host "Paralo antes con 'docker compose down' (sin -v) o usa la pila de produccion:" -ForegroundColor Yellow
+    Write-Host "  API :3000, panel :3001; las webs con 'node start-all-webs.mjs' o 'node scripts/start-valhalla.mjs'" -ForegroundColor Yellow
+    exit 1
+}
 
 # 1. Instalar dependencias
 Write-Host "[1/6] pnpm install..." -ForegroundColor Yellow

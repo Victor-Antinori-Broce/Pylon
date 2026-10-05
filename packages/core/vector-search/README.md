@@ -1,10 +1,10 @@
-# @gremius/vector-search
+# @kitsuden/vector-search
 
-Vector Search Extension for Gremius Datasets — migrated from AI Memories Grimoire.
+Vector Search Extension for Kitsuden Datasets — migrated from AI Memories Kon.
 
 ## Migration Summary
 
-**Before (Grimoire)**: Standalone AI Memories module at `/api/ai-memories`
+**Before (Kon)**: Standalone AI Memories module at `/api/ai-memories`
 
 **After (Core Extension)**: Integrated vector search available on ANY dataset via `/api/datasets/:id/vector-search`
 
@@ -96,7 +96,7 @@ Without OpenAI key, returns zero vectors (for testing/development).
 
 ## Migration from AI Memories
 
-If you were using AI Memories grimoire:
+If you were using AI Memories kon:
 
 1. Data migration: Run SQL to migrate from `ai_memories` table to `vector_index`
 2. Update API calls: Change `/api/ai-memories/search` to `/api/datasets/:id/vector-search`

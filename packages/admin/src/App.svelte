@@ -20,7 +20,7 @@
     // 3. Registrar widgets dinámicos
     // En una app real, esto vendría de la API o de módulos cargados dinámicamente
     componentRegistry.registerWidget({
-      id: "gremio-game-stats",
+      id: "kitsuden-game-stats",
       slot: "dashboard:stats",
       component: GameStatsWidget,
       order: 5,
@@ -29,7 +29,7 @@
     });
 
     componentRegistry.registerWidget({
-      id: "gremio-recent-activity",
+      id: "kitsuden-recent-activity",
       slot: "dashboard:sidebar",
       component: RecentActivityWidget,
       order: 10,
@@ -39,9 +39,6 @@
 
     // 4. Verificar sesión de usuario
     await checkSession();
-
-    console.log("🚀 Gremius Admin initialized");
-    console.log("📦 Registered widgets:", componentRegistry.getSlots());
   });
 </script>
 

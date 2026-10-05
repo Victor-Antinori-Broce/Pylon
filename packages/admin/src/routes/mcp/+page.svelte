@@ -10,5 +10,5 @@
 </script>
 
 <div class="flex items-center justify-center h-64">
-  <div class="animate-pulse text-gremius-subtle">Redirecting to MCP Settings...</div>
+  <div class="animate-pulse text-kitsuden-subtle">Redirecting to MCP Settings...</div>
 </div>

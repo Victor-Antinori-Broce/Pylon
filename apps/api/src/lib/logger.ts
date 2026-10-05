@@ -1,5 +1,5 @@
 /**
- * GremiusCMS - Structured Logging
+ * Kitsuden - Structured Logging
  *
  * Pino-based logger with context support for tracing requests
  * and structured log output for production monitoring.
@@ -11,6 +11,8 @@
 
 import pino from "pino";
 
+import { getTraceLogFields } from "./tracing";
+
 const LOG_LEVEL = process.env.LOG_LEVEL || "info";
 const NODE_ENV = process.env.NODE_ENV || "development";
 const isDev = NODE_ENV === "development";
@@ -18,22 +20,28 @@ const isDev = NODE_ENV === "development";
 // Base logger instance
 // In production: structured JSON (machine-readable for Loki/Grafana)
 // In development: still JSON but with timestamp and readable level
+//
+// Práctica #1 (Structured Logging) + #5 (Log-Trace Correlation): cada log lleva
+// campos estándar (timestamp ISO, level, service_name, message) y, vía el mixin,
+// el trace_id/span_id del request activo (AsyncLocalStorage) SIN pasarlos a mano.
 export const logger = pino({
   level: LOG_LEVEL,
   base: {
-    service: "gremius-api",
-    version: "0.7.0-beta",
+    service_name: "kitsuden-api",
+    service: "kitsuden-api", // compat con logs previos
+    version: "0.9.0-beta",
     env: NODE_ENV,
   },
-  // Human-readable timestamps in dev, ISO in prod
-  timestamp: isDev
-    ? () => `,"time":"${new Date().toLocaleTimeString()}"`
-    : pino.stdTimeFunctions.isoTime,
-  // In dev, use a simpler serializer for readability
+  // ISO 8601 con zona (UTC) tanto en dev como prod para consultas/agregación.
+  timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {
     level(label: string) {
-      return { level: label };
+      return { level: label.toUpperCase() };
     },
+  },
+  // Inyecta trace_id/span_id/requestId del contexto activo en cada línea.
+  mixin() {
+    return getTraceLogFields();
   },
 });
 

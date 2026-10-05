@@ -32,31 +32,31 @@
 
 ### Sidebar (`packages/admin/src/lib/components/layout/SidebarLayout.svelte`)
 
-- ✅ **"Modules" → "Grimoires"** (path: `/grimoires`)
-- ✅ **"Themes" → "Realms"** (path: `/realms`)
+- ✅ **"Modules" → "Kons"** (path: `/kons`)
+- ✅ **"Themes" → "Grimoires"** (path: `/grimoires`)
 
 ### Rutas de SvelteKit
 
-- ✅ **Renombrada carpeta** `routes/modules` → `routes/grimoires`
-- ✅ **Renombrada carpeta** `routes/themes` → `routes/realms`
+- ✅ **Renombrada carpeta** `routes/modules` → `routes/kons`
+- ✅ **Renombrada carpeta** `routes/themes` → `routes/grimoires`
 
 ### Vistas
 
-- ✅ **Renombrado** `views/Modules.svelte` → `views/Grimoires.svelte`
-- ✅ **Renombrada carpeta** `views/themes` → `views/Realms`
-- ✅ **Actualizado título** en Grimoires.svelte: "Modules" → "Grimoires"
+- ✅ **Renombrado** `views/Modules.svelte` → `views/Kons.svelte`
+- ✅ **Renombrada carpeta** `views/themes` → `views/Grimoires`
+- ✅ **Actualizado título** en Kons.svelte: "Modules" → "Kons"
 
 ---
 
-## 3. Nueva Vista de Realms
+## 3. Nueva Vista de Grimoires
 
-### Creado `packages/admin/src/views/Realms/RealmsView.svelte`
+### Creado `packages/admin/src/views/Grimoires/GrimoiresView.svelte`
 
-- ✅ Lista de realms disponibles (realm-default, realm-esports, realm-corporate)
-- ✅ Muestra grimoires incluidos en cada realm
-- ✅ Botón para activar realm
-- ✅ Indicador de realm activo
-- ✅ Soporte para crear custom realm (placeholder)
+- ✅ Lista de grimoires disponibles (grimoire-default, grimoire-esports, grimoire-corporate)
+- ✅ Muestra kons incluidos en cada grimoire
+- ✅ Botón para activar grimoire
+- ✅ Indicador de grimoire activo
+- ✅ Soporte para crear custom grimoire (placeholder)
 
 ---
 
@@ -77,7 +77,7 @@
 
 ### Rutas actualizadas
 
-- ✅ `/themes` ahora es `/realms` (gestión de realms)
+- ✅ `/themes` ahora es `/grimoires` (gestión de grimoires)
 - ✅ El selector de tema visual está en `/settings` → Appearance
 
 ---
@@ -111,41 +111,41 @@
 
 ### Frontend
 
-| Archivo                                                         | Cambios                                     |
-| --------------------------------------------------------------- | ------------------------------------------- |
-| `packages/admin/src/lib/api.ts`                                 | Fix endpoints de /blog-posts a /blog        |
-| `packages/admin/src/lib/components/layout/SidebarLayout.svelte` | Renombrar Modules/Themes a Grimoires/Realms |
-| `packages/admin/src/lib/components/ThemeSelector.svelte`        | **NUEVO** - Selector de tema visual         |
-| `packages/admin/src/views/Grimoires.svelte`                     | Título y descripción actualizados           |
-| `packages/admin/src/views/Realms/RealmsView.svelte`             | **NUEVO** - Vista de gestión de realms      |
-| `packages/admin/src/views/Settings.svelte`                      | +Appearance tab, +ThemeSelector             |
-| `packages/admin/src/views/content/PostsView.svelte`             | Fix llamada API                             |
-| `packages/admin/src/routes/grimoires/+page.svelte`              | Actualizado import                          |
-| `packages/admin/src/routes/realms/+page.svelte`                 | Actualizado import                          |
-| `packages/admin/src/routes/posts/new/+page.svelte`              | **NUEVO** - Crear post                      |
-| `packages/admin/src/routes/posts/[id]/+page.svelte`             | **NUEVO** - Editar post                     |
+| Archivo                                                         | Cambios                                   |
+| --------------------------------------------------------------- | ----------------------------------------- |
+| `packages/admin/src/lib/api.ts`                                 | Fix endpoints de /blog-posts a /blog      |
+| `packages/admin/src/lib/components/layout/SidebarLayout.svelte` | Renombrar Modules/Themes a Kons/Grimoires |
+| `packages/admin/src/lib/components/ThemeSelector.svelte`        | **NUEVO** - Selector de tema visual       |
+| `packages/admin/src/views/Kons.svelte`                          | Título y descripción actualizados         |
+| `packages/admin/src/views/Grimoires/GrimoiresView.svelte`       | **NUEVO** - Vista de gestión de grimoires |
+| `packages/admin/src/views/Settings.svelte`                      | +Appearance tab, +ThemeSelector           |
+| `packages/admin/src/views/content/PostsView.svelte`             | Fix llamada API                           |
+| `packages/admin/src/routes/kons/+page.svelte`                   | Actualizado import                        |
+| `packages/admin/src/routes/grimoires/+page.svelte`              | Actualizado import                        |
+| `packages/admin/src/routes/posts/new/+page.svelte`              | **NUEVO** - Crear post                    |
+| `packages/admin/src/routes/posts/[id]/+page.svelte`             | **NUEVO** - Editar post                   |
 
 ---
 
 ## Estado Final de Rutas del Panel
 
-| Ruta          | Descripción                   |
-| ------------- | ----------------------------- |
-| `/`           | Dashboard                     |
-| `/games`      | Games (realm-esports)         |
-| `/posts`      | Blog Posts                    |
-| `/posts/new`  | Crear post                    |
-| `/posts/[id]` | Editar post                   |
-| `/media`      | Media Library                 |
-| `/datasets`   | Data Sets                     |
-| `/streamers`  | Streamers (realm-esports)     |
-| `/data/games` | Data Explorer                 |
-| `/formulas`   | Fórmulas KPI                  |
-| `/workers`    | Workers                       |
-| `/webhooks`   | Webhooks                      |
-| `/grimoires`  | **Grimoires** (antes Modules) |
-| `/realms`     | **Realms** (antes Themes)     |
-| `/settings`   | Settings (+ Appearance)       |
+| Ruta          | Descripción                  |
+| ------------- | ---------------------------- |
+| `/`           | Dashboard                    |
+| `/games`      | Games (grimoire-esports)     |
+| `/posts`      | Blog Posts                   |
+| `/posts/new`  | Crear post                   |
+| `/posts/[id]` | Editar post                  |
+| `/media`      | Media Library                |
+| `/datasets`   | Data Sets                    |
+| `/streamers`  | Streamers (grimoire-esports) |
+| `/data/games` | Data Explorer                |
+| `/formulas`   | Fórmulas KPI                 |
+| `/workers`    | Workers                      |
+| `/webhooks`   | Webhooks                     |
+| `/kons`       | **Kons** (antes Modules)     |
+| `/grimoires`  | **Grimoires** (antes Themes) |
+| `/settings`   | Settings (+ Appearance)      |
 
 ---
 
@@ -252,17 +252,17 @@ bun drizzle-kit migrate
 bun run apps/api/scripts/apply-rls.ts
 
 # 3. Verificar políticas activas
-psql -d gremius -c "SELECT * FROM pg_policies WHERE tablename = 'data_entries';"
+psql -d kitsuden -c "SELECT * FROM pg_policies WHERE tablename = 'data_entries';"
 ```
 
 ---
 
 ## Próximos Pasos Recomendados
 
-1. **Backend**: Implementar endpoint `/api/system/realms` para listar realms disponibles
-2. **Backend**: Implementar soporte para `activeRealm` en settings
-3. **Frontend**: Completar vista de Grimoires con lista real desde API
-4. **Frontend**: Agregar funcionalidad "Create Custom Realm"
+1. **Backend**: Implementar endpoint `/api/system/grimoires` para listar grimoires disponibles
+2. **Backend**: Implementar soporte para `activeGrimoire` en settings
+3. **Frontend**: Completar vista de Kons con lista real desde API
+4. **Frontend**: Agregar funcionalidad "Create Custom Grimoire"
 5. **Testing**: Verificar que todos los endpoints funcionan correctamente
 6. **RLS**: Ejecutar script `apply-rls.ts` para activar El Muro de Titanio
 7. **AI/MCP**: Preparar servidor MCP para generar queries seguros

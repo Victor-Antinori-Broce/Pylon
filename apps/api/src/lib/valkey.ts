@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Valkey Connection Layer
+ * Kitsuden — Valkey Connection Layer
  *
  * Centralized connection management for Valkey (Redis-compatible fork).
  * Provides:

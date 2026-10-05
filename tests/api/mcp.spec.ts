@@ -1,4 +1,4 @@
-// spec: specs/gremius-full-coverage.md — Section 11: API Endpoints -> MCP
+// spec: specs/kitsuden-full-coverage.md — Section 11: API Endpoints -> MCP
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
@@ -87,7 +87,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.jsonrpc).toBe("2.0");
       expect(data.id).toBe(1);
       expect(data.result.protocolVersion).toBe("2024-11-05");
-      expect(data.result.serverInfo.name).toBe("gremius-mcp-server");
+      expect(data.result.serverInfo.name).toBe("kitsuden-mcp-server");
       // Check capabilities
       expect(data.result.capabilities.resources).toBeDefined();
       expect(data.result.capabilities.tools).toBeDefined();
@@ -138,16 +138,16 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.result.resources.length).toBeGreaterThanOrEqual(2);
 
       const uris = data.result.resources.map((r: any) => r.uri);
-      expect(uris).toContain("gremius://datasets");
-      expect(uris).toContain("gremius://grimoires");
+      expect(uris).toContain("kitsuden://datasets");
+      expect(uris).toContain("kitsuden://kons");
     });
 
-    test("Should read 'gremius://datasets' resource", async ({ request }) => {
+    test("Should read 'kitsuden://datasets' resource", async ({ request }) => {
       const res = await request.post(messageEndpoint, {
         data: {
           jsonrpc: "2.0",
           method: "resources/read",
-          params: { uri: "gremius://datasets" },
+          params: { uri: "kitsuden://datasets" },
           id: 101,
         },
       });
@@ -160,12 +160,12 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(Array.isArray(parsed)).toBe(true);
     });
 
-    test("Should read 'gremius://grimoires' resource", async ({ request }) => {
+    test("Should read 'kitsuden://kons' resource", async ({ request }) => {
       const res = await request.post(messageEndpoint, {
         data: {
           jsonrpc: "2.0",
           method: "resources/read",
-          params: { uri: "gremius://grimoires" },
+          params: { uri: "kitsuden://kons" },
           id: 102,
         },
       });
@@ -178,7 +178,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
         data: {
           jsonrpc: "2.0",
           method: "resources/read",
-          params: { uri: "gremius://unknown/path" },
+          params: { uri: "kitsuden://unknown/path" },
           id: 103,
         },
       });
@@ -200,12 +200,12 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.result.tools).toBeDefined();
 
       const toolNames = data.result.tools.map((t: any) => t.name);
-      expect(toolNames).toContain("gremius_query_dataset");
-      expect(toolNames).toContain("gremius_insert_record");
-      expect(toolNames).toContain("gremius_dispatch_worker");
+      expect(toolNames).toContain("kitsuden_query_dataset");
+      expect(toolNames).toContain("kitsuden_insert_record");
+      expect(toolNames).toContain("kitsuden_dispatch_worker");
 
       // Validar que el schema existe
-      const queryTool = data.result.tools.find((t: any) => t.name === "gremius_query_dataset");
+      const queryTool = data.result.tools.find((t: any) => t.name === "kitsuden_query_dataset");
       expect(queryTool.inputSchema.properties.datasetId).toBeDefined();
     });
 
@@ -223,7 +223,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.error.message).toContain("Unknown tool");
     });
 
-    test("Should return error (-32602) for 'gremius_query_dataset' missing required arguments", async ({
+    test("Should return error (-32602) for 'kitsuden_query_dataset' missing required arguments", async ({
       request,
     }) => {
       const res = await request.post(messageEndpoint, {
@@ -231,7 +231,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_query_dataset",
+            name: "kitsuden_query_dataset",
             arguments: { limit: 10 }, // Missing datasetId
           },
           id: 202,
@@ -242,7 +242,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.error.message).toContain("datasetId");
     });
 
-    test("Should execute 'gremius_insert_record' successfully", async ({ request }) => {
+    test("Should execute 'kitsuden_insert_record' successfully", async ({ request }) => {
       test.skip(!testDatasetId, "No dataset ID is available to run this tool test.");
 
       const res = await request.post(messageEndpoint, {
@@ -250,7 +250,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_insert_record",
+            name: "kitsuden_insert_record",
             arguments: {
               datasetId: testDatasetId,
               title: "MCP E2E Verification Record",
@@ -266,7 +266,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.result.content[0].text).toContain("Successfully created record");
     });
 
-    test("Should execute 'gremius_query_dataset' successfully with limit 5", async ({
+    test("Should execute 'kitsuden_query_dataset' successfully with limit 5", async ({
       request,
     }) => {
       test.skip(!testDatasetId, "No dataset ID is available to run this tool test.");
@@ -276,7 +276,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_query_dataset",
+            name: "kitsuden_query_dataset",
             arguments: {
               datasetId: testDatasetId,
               limit: 5,
@@ -293,7 +293,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(records.length).toBeLessThanOrEqual(5);
     });
 
-    test("Should execute 'gremius_dispatch_worker' successfully on email queue", async ({
+    test("Should execute 'kitsuden_dispatch_worker' successfully on email queue", async ({
       request,
     }) => {
       const res = await request.post(messageEndpoint, {
@@ -301,12 +301,12 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_dispatch_worker",
+            name: "kitsuden_dispatch_worker",
             arguments: {
               queueName: "email",
               jobName: "send-notification",
               payload: {
-                to: "admin@gremius.gg",
+                to: "admin@kitsuden.gg",
                 subject: "MCP Extracted Data",
                 body: "This is a test message from Model Context Protocol.",
               },
@@ -320,7 +320,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       expect(data.result.content[0].text).toContain("Job dispatched"); // El BullMQ debería devolver el Job ID
     });
 
-    test("Should fail gracefully 'gremius_dispatch_worker' with unknown queue", async ({
+    test("Should fail gracefully 'kitsuden_dispatch_worker' with unknown queue", async ({
       request,
     }) => {
       const res = await request.post(messageEndpoint, {
@@ -328,7 +328,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
           jsonrpc: "2.0",
           method: "tools/call",
           params: {
-            name: "gremius_dispatch_worker",
+            name: "kitsuden_dispatch_worker",
             arguments: {
               queueName: "non_existent_queue",
               jobName: "test",

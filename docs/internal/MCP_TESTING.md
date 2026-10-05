@@ -1,4 +1,4 @@
-# MCP Testing Guide - GremiusCMS
+# MCP Testing Guide - Kitsuden
 
 Guía para probar el sistema MCP y Agent Identities.
 
@@ -8,10 +8,10 @@ Guía para probar el sistema MCP y Agent Identities.
 
 ```bash
 # Asegurar que PostgreSQL está corriendo con pgvector
-docker compose -f docker-compose.automatic.yml up -d gremius_db
+docker compose -f docker-compose.automatic.yml up -d kitsuden_db
 
 # Verificar que la DB está saludable
-docker compose -f docker-compose.automatic.yml ps gremius_db
+docker compose -f docker-compose.automatic.yml ps kitsuden_db
 ```
 
 ---
@@ -22,7 +22,7 @@ Asegurar que las tablas de agentes existen:
 
 ```bash
 # Conectar a PostgreSQL
-docker exec -it gremius_db_auto psql -U gremius -d gremius_prod
+docker exec -it kitsuden_db_auto psql -U kitsuden -d kitsuden_prod
 
 # Verificar tablas
 \dt agent_*
@@ -85,7 +85,7 @@ curl -X POST http://localhost:3000/api/admin/agents \
       "scopes": ["mcp:connect", "read:*"],
       "rateLimit": 120
     },
-    "apiKey": "grm_agent_xxxx..."
+    "apiKey": "kitsuden_agent_xxxx..."
   }
 }
 ```
@@ -128,7 +128,7 @@ curl http://localhost:3000/api/admin/agents/{agentId}/stats?days=7 \
 ```bash
 # Esto establece una conexión SSE y recibe el endpoint
 curl -N http://localhost:3000/api/mcp \
-  -H "Authorization: Bearer grm_agent_xxxx..."
+  -H "Authorization: Bearer kitsuden_agent_xxxx..."
 ```
 
 **Evento inicial esperado:**
@@ -203,7 +203,7 @@ Hacer múltiples requests rápidamente:
 ```bash
 for i in {1..65}; do
   curl -s http://localhost:3000/api/mcp \
-    -H "Authorization: Bearer grm_agent_xxxx..." &
+    -H "Authorization: Bearer kitsuden_agent_xxxx..." &
 done
 wait
 ```
@@ -236,7 +236,7 @@ Intentar conectar MCP:
 
 ```bash
 curl -N http://localhost:3000/api/mcp \
-  -H "Authorization: Bearer grm_agent_limited..."
+  -H "Authorization: Bearer kitsuden_agent_limited..."
 ```
 
 **Respuesta esperada:**
@@ -292,7 +292,7 @@ Deberías ver acciones como:
 
 ### Error: "Invalid API key format"
 
-Asegúrate de usar el formato correcto: `grm_agent_xxxxx`
+Asegúrate de usar el formato correcto: `kitsuden_agent_xxxxx`
 
 ### Error: "Rate limit exceeded"
 

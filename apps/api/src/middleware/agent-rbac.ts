@@ -11,18 +11,15 @@
  * - "mcp:connect" - Conexión MCP permitida
  * - "read:*" - Permiso de lectura en todos los recursos
  *
- * @author Gremius Security Team
+ * @author Kitsuden Security Team
  * @version 1.0.0
  */
 
 import type { MiddlewareHandler, Context, Next } from "hono";
 
-// @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
 import { logger } from "@/lib/logger";
 import type { AgentAuthContext } from "@/services/agent-auth";
-// @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
 import { hasScope, hasAllScopes, hasAnyScope } from "@/services/agent-auth";
-// @ts-ignore - Path alias @/ not resolved by tsc, but works at runtime
 
 /**
  * Opciones de configuración para el middleware RBAC
@@ -259,7 +256,6 @@ export function agentAuthWithRBAC(options: AgentAuthWithRBACOptions): Middleware
     const requestId = c.get("requestId") || crypto.randomUUID();
 
     // Importar dinámicamente para evitar dependencias circulares
-    // @ts-ignore - Path alias @/ not resolved by tsc
     const { authenticateAgent } = await import("@/services/agent-auth");
 
     const authHeader = c.req.header("Authorization");

@@ -5,9 +5,9 @@
  * - User registration
  * - User login
  * - Session management
- * - Agent NHI authentication (grm_agent_*)
+ * - Agent NHI authentication (kitsuden_agent_*)
  *
- * Legacy API keys (gremius_sk_*) are deprecated. Tests cover the new
+ * Legacy API keys (kitsuden_sk_*) are deprecated. Tests cover the new
  * Agent NHI system which replaces them.
  */
 
@@ -122,7 +122,7 @@ describe("Auth Module", () => {
       expect(result).toBeDefined();
       expect(result.agent).toBeDefined();
       expect(result.plainApiKey).toBeDefined();
-      expect(result.plainApiKey.startsWith("grm_agent_")).toBe(true);
+      expect(result.plainApiKey.startsWith("kitsuden_agent_")).toBe(true);
       expect(result.agent.name).toBe("Test Machine Agent");
       expect(result.agent.type).toBe("machine");
 
@@ -156,7 +156,7 @@ describe("Auth Module", () => {
     it("should reject unknown API key", async () => {
       if (!dbAvailable) return;
 
-      const fakeKey = "grm_agent_test_" + "a".repeat(32);
+      const fakeKey = "kitsuden_agent_test_" + "a".repeat(32);
       const authResult = await authenticateAgent(fakeKey);
 
       expect(authResult.success).toBe(false);

@@ -1,5 +1,5 @@
 /**
- * GremiusCMS Shared Utilities
+ * Kitsuden Shared Utilities
  */
 
 /**
@@ -108,7 +108,7 @@ export function articleJsonLd(post: {
     url: `${post.siteUrl}/blog/${post.slug}`,
     publisher: {
       "@type": "Organization",
-      name: "GremiusCMS",
+      name: "Kitsuden",
     },
   };
 }

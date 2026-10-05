@@ -2,7 +2,7 @@
 
 ## Visión
 
-Transformar grimoire-crm en un motor de CRM configurable donde:
+Transformar kon-crm en un motor de CRM configurable donde:
 
 - "Deals" pueden ser Casos Legales, Propiedades, Proyectos, Oportunidades...
 - Cada negocio define sus propios pipelines, reglas y formularios
@@ -18,7 +18,7 @@ Transformar grimoire-crm en un motor de CRM configurable donde:
 // crm_entity_configs - Define qué "tipo de cosa" maneja este CRM
 export const crmEntityConfigs = pgTable("crm_entity_configs", {
   id: text("id").primaryKey().$defaultFn(createId),
-  grimoireId: text("grimoire_id").notNull(), // A qué instancia pertenece
+  konId: text("kon_id").notNull(), // A qué instancia pertenece
 
   // Configuración semántica
   entityName: text("entity_name").notNull(), // "case", "matter", "deal", "property"
@@ -197,18 +197,18 @@ export const crmDocuments = pgTable("crm_documents", {
 
 ---
 
-## 5. Formularios de Intake con Gremius Forms
+## 5. Formularios de Intake con Kitsuden Forms
 
 ```typescript
 // crm_intake_forms - Configuración de formularios
 export const crmIntakeForms = pgTable("crm_intake_forms", {
   id: text("id").primaryKey().$defaultFn(createId),
-  grimoireId: text("grimoire_id").notNull(),
+  konId: text("kon_id").notNull(),
 
   name: text("name").notNull(), // "Family Law Intake", "Property Inquiry"
   entityConfigId: text("entity_config_id").notNull(), // Qué tipo de entidad crea
 
-  // Schema del formulario (compatible con Gremius Forms)
+  // Schema del formulario (compatible con Kitsuden Forms)
   formSchema: jsonb("form_schema").notNull(), // Fields, validations, conditional logic
 
   // Configuración
@@ -268,7 +268,7 @@ export const crmIntakeForms = pgTable("crm_intake_forms", {
 }
 ```
 
-**Integración con Gremius Forms:**
+**Integración con Kitsuden Forms:**
 
 - Reutilizar el motor de forms existente
 - Los intake forms pueden vincularse a un Dataset para reporting
@@ -417,7 +417,7 @@ ALTER TABLE crm_pipeline_stages ADD COLUMN onEnterActions jsonb DEFAULT '[]';
 
 -- 3. Default entity config para backwards compatibility
 INSERT INTO crm_entity_configs (
-  id, grimoireId, entityName, singularLabel, pluralLabel
+  id, konId, entityName, singularLabel, pluralLabel
 ) VALUES (
   'default-deal', 'default', 'deal', 'Deal', 'Deals'
 );
@@ -524,16 +524,16 @@ const legalConfig = {
 
 ## Resumen de Esfuerzo
 
-| Feature                | Complejidad | Tiempo Est.          |
-| ---------------------- | ----------- | -------------------- |
-| Entity Configs         | Media       | 3-4 días             |
-| Stage Validations      | Media       | 2-3 días             |
-| Time Tracking          | Baja        | 2 días               |
-| Document Requirements  | Media       | 3 días               |
-| Intake Forms (Gremius) | Baja        | 2 días (reusa Forms) |
-| Calendario             | Media-Alta  | 5-7 días             |
-| Analytics/Reportes     | Media       | 3-4 días             |
-| UI Components          | Alta        | 7-10 días            |
-| **TOTAL**              |             | **3-4 semanas**      |
+| Feature                 | Complejidad | Tiempo Est.          |
+| ----------------------- | ----------- | -------------------- |
+| Entity Configs          | Media       | 3-4 días             |
+| Stage Validations       | Media       | 2-3 días             |
+| Time Tracking           | Baja        | 2 días               |
+| Document Requirements   | Media       | 3 días               |
+| Intake Forms (Kitsuden) | Baja        | 2 días (reusa Forms) |
+| Calendario              | Media-Alta  | 5-7 días             |
+| Analytics/Reportes      | Media       | 3-4 días             |
+| UI Components           | Alta        | 7-10 días            |
+| **TOTAL**               |             | **3-4 semanas**      |
 
 Esta arquitectura convierte el CRM en un **motor de automatización de workflows** configurable, no solo un tracker de deals.

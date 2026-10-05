@@ -4,14 +4,14 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { TestGrimoireContext, Fixture } from "./types.js";
+import type { TestKonContext, Fixture } from "./types.js";
 
 /**
  * Load fixtures into the test context
  */
 export async function loadFixtures(
   fixtures: string | Record<string, any>,
-  context: TestGrimoireContext
+  context: TestKonContext
 ): Promise<Record<string, any>> {
   // If fixtures is an object, use it directly
   if (typeof fixtures !== "string") {

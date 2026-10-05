@@ -1,8 +1,8 @@
-# GremiusCMS - Architecture Improvements
+# Kitsuden - Architecture Improvements
 
 ## Summary of Changes (2026-03-06)
 
-This document details the architectural improvements made to enhance the robustness, observability, and quality of GremiusCMS.
+This document details the architectural improvements made to enhance the robustness, observability, and quality of Kitsuden.
 
 ---
 
@@ -154,7 +154,7 @@ GET /api/health
 ```json
 {
   "status": "ok",
-  "service": "gremius-api",
+  "service": "kitsuden-api",
   "version": "0.7.0-beta",
   "environment": "production",
   "timestamp": "2026-03-06T12:00:00Z",
@@ -258,7 +258,7 @@ GET /api/health/pgvector
 | ------------------ | ----- | ---------------------------------- |
 | `auth.test.ts`     | 12    | Auth flow, sessions, API keys      |
 | `datasets.test.ts` | 15    | CRUD operations, schema validation |
-| `modules.test.ts`  | 26    | Grimoire registry, categories      |
+| `modules.test.ts`  | 26    | Kon registry, categories           |
 | `rls.test.ts`      | 10    | Row-level security, context        |
 
 ### Total: 63 Tests

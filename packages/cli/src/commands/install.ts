@@ -67,27 +67,27 @@ async function getDatabaseUrl(projectRoot: string): Promise<string | null> {
 }
 
 /**
- * Read grimoire.json from installed package
+ * Read kon.json from installed package
  */
-async function readGrimoireManifest(pkgPath: string): Promise<any | null> {
+async function readKonManifest(pkgPath: string): Promise<any | null> {
   try {
-    const grimoireJsonPath = path.join(pkgPath, "grimoire.json");
-    const content = await fs.readFile(grimoireJsonPath, "utf-8");
+    const konJsonPath = path.join(pkgPath, "kon.json");
+    const content = await fs.readFile(konJsonPath, "utf-8");
     return JSON.parse(content);
   } catch {
-    // Fallback: package.json with gremius field
+    // Fallback: package.json with kitsuden field
     try {
       const pkgJsonPath = path.join(pkgPath, "package.json");
       const content = await fs.readFile(pkgJsonPath, "utf-8");
       const pkg = JSON.parse(content);
-      if (pkg.gremius?.type === "grimoire") {
+      if (pkg.kitsuden?.type === "kon") {
         return {
-          id: pkg.gremius.id || pkg.name,
-          name: pkg.gremius.name || pkg.name,
+          id: pkg.kitsuden.id || pkg.name,
+          name: pkg.kitsuden.name || pkg.name,
           version: pkg.version,
           description: pkg.description,
-          dependencies: pkg.gremius.dependencies || { grimoires: [], core: [] },
-          ...pkg.gremius,
+          dependencies: pkg.kitsuden.dependencies || { kons: [], core: [] },
+          ...pkg.kitsuden,
         };
       }
     } catch {
@@ -121,11 +121,11 @@ async function runMigrations(migrationsDir: string, dbUrl: string): Promise<numb
 }
 
 /**
- * Register grimoire in installed_grimoires table
+ * Register kon in installed_kons table
  */
-async function registerGrimoireInDb(
+async function registerKonInDb(
   dbUrl: string,
-  grimoireId: string,
+  konId: string,
   name: string,
   version: string,
   source: string,
@@ -134,10 +134,10 @@ async function registerGrimoireInDb(
   const client = postgres(dbUrl, { max: 1 });
   try {
     await client`
-      INSERT INTO installed_grimoires (
-        grimoire_id, name, version, source, source_url, path, manifest, enabled
+      INSERT INTO installed_kons (
+        kon_id, name, version, source, source_url, path, manifest, enabled
       ) VALUES (
-        ${grimoireId},
+        ${konId},
         ${name},
         ${version},
         'npm',
@@ -146,7 +146,7 @@ async function registerGrimoireInDb(
         ${JSON.stringify(manifest)},
         true
       )
-      ON CONFLICT (grimoire_id) DO UPDATE SET
+      ON CONFLICT (kon_id) DO UPDATE SET
         version = EXCLUDED.version,
         source_url = EXCLUDED.source_url,
         manifest = EXCLUDED.manifest,
@@ -159,15 +159,15 @@ async function registerGrimoireInDb(
 }
 
 /**
- * Update gremius.config.ts to enable the newly installed grimoire.
- * Adds an entry to BASE_FEATURE_GRIMOIRES if not already present.
+ * Update kitsuden.config.ts to enable the newly installed kon.
+ * Adds an entry to BASE_FEATURE_KONS if not already present.
  */
-async function updateGremiusConfig(
+async function updateKitsudenConfig(
   projectRoot: string,
-  grimoireId: string,
-  _grimoireName: string
+  konId: string,
+  _konName: string
 ): Promise<boolean> {
-  const configPath = path.join(projectRoot, "apps", "api", "gremius.config.ts");
+  const configPath = path.join(projectRoot, "apps", "api", "kitsuden.config.ts");
   try {
     await fs.access(configPath);
   } catch {
@@ -179,17 +179,17 @@ async function updateGremiusConfig(
     let content = await fs.readFile(configPath, "utf-8");
 
     // Check if already present
-    if (content.includes(`"${grimoireId}"`) || content.includes(`'${grimoireId}'`)) {
+    if (content.includes(`"${konId}"`) || content.includes(`'${konId}'`)) {
       return false; // Already referenced
     }
 
-    // Find the BASE_FEATURE_GRIMOIRES array and append before the closing ]
-    const arrayRegex = /(const BASE_FEATURE_GRIMOIRES = \[)([\s\S]*?)(\];)/;
+    // Find the BASE_FEATURE_KONS array and append before the closing ]
+    const arrayRegex = /(const BASE_FEATURE_KONS = \[)([\s\S]*?)(\];)/;
     const match = content.match(arrayRegex);
     if (!match) return false;
 
     const indent = "  ";
-    const newEntry = `{ id: "${grimoireId}", enabled: true },`;
+    const newEntry = `{ id: "${konId}", enabled: true },`;
 
     // Insert before the closing ]
     const beforeClose = match[2];
@@ -204,31 +204,28 @@ async function updateGremiusConfig(
 }
 
 /**
- * Install a grimoire from npm and register it.
+ * Install a kon from npm and register it.
  *
  * Flow:
  *   1. Detect project root & package manager
- *   2. npm install <grimoireName>
- *   3. Read grimoire.json / package.json#gremius
- *   4. Recursively install grimoire dependencies (with cycle detection)
+ *   2. npm install <konName>
+ *   3. Read kon.json / package.json#kitsuden
+ *   4. Recursively install kon dependencies (with cycle detection)
  *   5. Run SQL migrations
- *   6. Register in installed_grimoires table
- *   7. Update gremius.config.ts to enable it
+ *   6. Register in installed_kons table
+ *   7. Update kitsuden.config.ts to enable it
  */
-export async function installCommand(
-  grimoireName: string,
-  options: InstallOptions = {}
-): Promise<void> {
+export async function installCommand(konName: string, options: InstallOptions = {}): Promise<void> {
   const installChain = options._installChain || new Set<string>();
 
   // Prevent circular dependencies
-  if (installChain.has(grimoireName)) {
-    console.log(chalk.gray(`  ⏩ ${grimoireName} already in install chain, skipping`));
+  if (installChain.has(konName)) {
+    console.log(chalk.gray(`  ⏩ ${konName} already in install chain, skipping`));
     return;
   }
-  installChain.add(grimoireName);
+  installChain.add(konName);
 
-  console.log(chalk.blue(`🔮 Installing grimoire: ${grimoireName}`));
+  console.log(chalk.blue(`🔮 Installing kon: ${konName}`));
 
   // 1. Validate project
   const spinner = ora("Detecting project...").start();
@@ -240,42 +237,42 @@ export async function installCommand(
   console.log(chalk.gray(`  📦 Package manager: ${pm}`));
 
   // 3. Install package
-  const installSpinner = ora(`Installing ${grimoireName} via ${pm}...`).start();
+  const installSpinner = ora(`Installing ${konName} via ${pm}...`).start();
   try {
     const installArgs =
       pm === "pnpm"
-        ? ["add", grimoireName]
+        ? ["add", konName]
         : pm === "yarn"
-          ? ["add", grimoireName]
+          ? ["add", konName]
           : pm === "bun"
-            ? ["add", grimoireName]
-            : ["install", grimoireName];
+            ? ["add", konName]
+            : ["install", konName];
 
     if (options.dev) installArgs.push("--save-dev");
 
     await execa(pm, installArgs, { cwd: projectRoot, stdio: "pipe" });
-    installSpinner.succeed(`${grimoireName} installed`);
+    installSpinner.succeed(`${konName} installed`);
   } catch (err: any) {
-    installSpinner.fail(`Failed to install ${grimoireName}: ${err.message}`);
+    installSpinner.fail(`Failed to install ${konName}: ${err.message}`);
     process.exit(1);
   }
 
   // 4. Read manifest
-  const pkgPath = resolvePackagePath(projectRoot, grimoireName);
-  const manifest = await readGrimoireManifest(pkgPath);
+  const pkgPath = resolvePackagePath(projectRoot, konName);
+  const manifest = await readKonManifest(pkgPath);
 
   if (!manifest) {
-    console.log(chalk.yellow(`⚠️  No grimoire.json found in ${grimoireName}`));
-    console.log(chalk.gray("   The package was installed but may not be a valid grimoire."));
+    console.log(chalk.yellow(`⚠️  No kon.json found in ${konName}`));
+    console.log(chalk.gray("   The package was installed but may not be a valid kon."));
     return;
   }
 
   console.log(chalk.green(`  ✅ Manifest: ${manifest.id} (${manifest.name})`));
 
-  // 5. Install grimoire dependencies recursively
-  const deps: string[] = manifest.dependencies?.grimoires || [];
+  // 5. Install kon dependencies recursively
+  const deps: string[] = manifest.dependencies?.kons || [];
   if (deps.length > 0) {
-    console.log(chalk.blue(`  📎 Grimoire dependencies: ${deps.join(", ")}`));
+    console.log(chalk.blue(`  📎 Kon dependencies: ${deps.join(", ")}`));
     for (const dep of deps) {
       await installCommand(dep, { ...options, _installChain: installChain });
     }
@@ -306,17 +303,17 @@ export async function installCommand(
   // 7. Register in database
   const dbUrl = await getDatabaseUrl(projectRoot);
   if (dbUrl) {
-    const regSpinner = ora("Registering grimoire...").start();
+    const regSpinner = ora("Registering kon...").start();
     try {
-      await registerGrimoireInDb(
+      await registerKonInDb(
         dbUrl,
-        manifest.id || grimoireName,
-        manifest.name || grimoireName,
+        manifest.id || konName,
+        manifest.name || konName,
         manifest.version || "0.0.0",
-        grimoireName,
+        konName,
         manifest
       );
-      regSpinner.succeed("Registered in installed_grimoires");
+      regSpinner.succeed("Registered in installed_kons");
     } catch (err: any) {
       regSpinner.fail(`Registration failed: ${err.message}`);
     }
@@ -324,22 +321,20 @@ export async function installCommand(
     console.log(chalk.yellow("  ⚠️  DATABASE_URL not found. Skipping DB registration."));
   }
 
-  // 8. Update gremius.config.ts
-  const configSpinner = ora("Updating gremius.config.ts...").start();
-  const configUpdated = await updateGremiusConfig(
+  // 8. Update kitsuden.config.ts
+  const configSpinner = ora("Updating kitsuden.config.ts...").start();
+  const configUpdated = await updateKitsudenConfig(
     projectRoot,
-    manifest.id || grimoireName,
-    manifest.name || grimoireName
+    manifest.id || konName,
+    manifest.name || konName
   );
   if (configUpdated) {
-    configSpinner.succeed("Added to gremius.config.ts (enabled)");
+    configSpinner.succeed("Added to kitsuden.config.ts (enabled)");
   } else {
     configSpinner.info("Skipped config update (already present or not found)");
   }
 
   // 9. Done
-  console.log(
-    chalk.green(`\n🎉 Grimoire ${manifest.name || grimoireName} installed successfully!`)
-  );
-  console.log(chalk.gray(`   Restart your Gremius API to activate: gremius start`));
+  console.log(chalk.green(`\n🎉 Kon ${manifest.name || konName} installed successfully!`));
+  console.log(chalk.gray(`   Restart your Kitsuden API to activate: kitsuden start`));
 }

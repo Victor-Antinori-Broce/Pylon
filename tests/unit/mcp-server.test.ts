@@ -59,7 +59,7 @@ describe("MCP Server Protocol", () => {
   describe("Tool Definition", () => {
     test("should define search_entries tool correctly", () => {
       const tool = {
-        name: "gremius_search_entries",
+        name: "kitsuden_search_entries",
         description: "Search entries in a dataset",
         inputSchema: {
           type: "object",
@@ -73,14 +73,14 @@ describe("MCP Server Protocol", () => {
         },
       };
 
-      expect(tool.name).toBe("gremius_search_entries");
+      expect(tool.name).toBe("kitsuden_search_entries");
       expect(tool.inputSchema.required).toContain("datasetId");
       expect(tool.inputSchema.required).toContain("query");
     });
 
     test("should define create_entry tool correctly", () => {
       const tool = {
-        name: "gremius_create_entry",
+        name: "kitsuden_create_entry",
         description: "Create a new entry in a dataset",
         inputSchema: {
           type: "object",
@@ -92,7 +92,7 @@ describe("MCP Server Protocol", () => {
         },
       };
 
-      expect(tool.name).toBe("gremius_create_entry");
+      expect(tool.name).toBe("kitsuden_create_entry");
       expect(tool.inputSchema.properties).toHaveProperty("datasetId");
       expect(tool.inputSchema.properties).toHaveProperty("data");
     });
@@ -136,16 +136,16 @@ describe("MCP Server Protocol", () => {
   describe("Tool Call Validation", () => {
     test("should validate tool name exists", () => {
       const availableTools = [
-        "gremius_search_entries",
-        "gremius_create_entry",
-        "gremius_read_entry",
-        "gremius_update_entry",
-        "gremius_list_datasets",
-        "gremius_get_dataset_schema",
-        "gremius_health_check",
+        "kitsuden_search_entries",
+        "kitsuden_create_entry",
+        "kitsuden_read_entry",
+        "kitsuden_update_entry",
+        "kitsuden_list_datasets",
+        "kitsuden_get_dataset_schema",
+        "kitsuden_health_check",
       ];
 
-      const requestTool = "gremius_search_entries";
+      const requestTool = "kitsuden_search_entries";
       expect(availableTools).toContain(requestTool);
     });
 

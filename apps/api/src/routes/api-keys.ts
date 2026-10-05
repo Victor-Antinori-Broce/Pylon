@@ -1,12 +1,12 @@
 /**
  * API Keys Routes
  *
- * DEPRECATED LEGACY BEHAVIOR: Previously created machine auth keys with prefix gremius_sk_.
- * NEW BEHAVIOR: Creates Agent NHI (Non-Human Identity) tokens with prefix grm_agent_.
+ * DEPRECATED LEGACY BEHAVIOR: Previously created machine auth keys with prefix kitsuden_sk_.
+ * NEW BEHAVIOR: Creates Agent NHI (Non-Human Identity) tokens with prefix kitsuden_agent_.
  *
  * This route is maintained for backward compatibility at /api/keys.
- * All newly created keys are Agent NHI tokens. Legacy gremius_sk_* keys are still
- * listed (marked deprecated) and can be revoked, but new keys use the grm_agent_* format.
+ * All newly created keys are Agent NHI tokens. Legacy kitsuden_sk_* keys are still
+ * listed (marked deprecated) and can be revoked, but new keys use the kitsuden_agent_* format.
  */
 
 import { zValidator } from "@hono/zod-validator";
@@ -66,15 +66,15 @@ apiKeysRoutes.get("/", async (c) => {
     .orderBy(desc(apiKeys.createdAt));
 
   const combined = [
-    ...modernKeys.map((k) => ({ ...k, deprecated: false, format: "grm_agent" })),
-    ...legacyKeys.map((k) => ({ ...k, deprecated: true, format: "gremius_sk" })),
+    ...modernKeys.map((k) => ({ ...k, deprecated: false, format: "kitsuden_agent" })),
+    ...legacyKeys.map((k) => ({ ...k, deprecated: true, format: "kitsuden_sk" })),
   ].sort((a, b) => {
     const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return dateB - dateA;
   });
 
-  c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+  c.header("Deprecation", "kitsuden_sk_*; kitsuden_agent_*");
   return c.json(combined);
 });
 
@@ -97,16 +97,17 @@ apiKeysRoutes.post("/", zValidator("json", createKeySchema), async (c) => {
     expiresInDays: body.expiresInDays ?? undefined,
   });
 
-  c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+  c.header("Deprecation", "kitsuden_sk_*; kitsuden_agent_*");
   return c.json(
     {
       id: agent.id,
       name: agent.name,
       token: plainApiKey, // ONLY SHOWN ONCE
-      format: "grm_agent",
+      format: "kitsuden_agent",
       expiresAt: agent.createdAt, // agent itself doesn't have expiresAt; key does
       createdAt: agent.createdAt,
-      message: "This is an Agent NHI token (grm_agent_*). Legacy gremius_sk_* keys are deprecated.",
+      message:
+        "This is an Agent NHI token (kitsuden_agent_*). Legacy kitsuden_sk_* keys are deprecated.",
     },
     201
   );
@@ -120,11 +121,11 @@ apiKeysRoutes.delete("/:id", async (c) => {
   const [agent] = await db.delete(agentIdentities).where(eq(agentIdentities.id, id)).returning();
 
   if (agent) {
-    c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+    c.header("Deprecation", "kitsuden_sk_*; kitsuden_agent_*");
     return c.json({
       success: true,
       message: "Agent NHI revoked successfully",
-      format: "grm_agent",
+      format: "kitsuden_agent",
     });
   }
 
@@ -135,10 +136,10 @@ apiKeysRoutes.delete("/:id", async (c) => {
     return c.json({ error: "API Key not found" }, 404);
   }
 
-  c.header("Deprecation", "gremius_sk_*; grm_agent_*");
+  c.header("Deprecation", "kitsuden_sk_*; kitsuden_agent_*");
   return c.json({
     success: true,
     message: "Legacy API Key revoked successfully",
-    format: "gremius_sk",
+    format: "kitsuden_sk",
   });
 });

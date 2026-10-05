@@ -1,17 +1,29 @@
 {
-  "name": "@gremius/engine",
+  "name": "@kitsuden/engine",
   "version": "0.9.0-beta",
   "private": true,
   "type": "module",
-  "description": "GremiusCMS Engine — The Unstoppable Motor (Nivel 1). Auth, DB, Workers, RLS, Cache, Storage, TOON.",
+  "description": "Kitsuden Engine — The Unstoppable Motor (Nivel 1). Auth, DB, Workers, RLS, Cache, Storage, TOON.",
   "main": "index.ts",
   "types": "index.ts",
   "scripts": {
     "build": "echo 'No build step needed'"
   },
   "dependencies": {
-    "@gremius/shared": "workspace:*",
+    "@kitsuden/shared": "workspace:*",
     "bullmq": "^5.0.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": "*",
+    "nodemailer": "*"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "nodemailer": {
+      "optional": true
+    }
   }
 }

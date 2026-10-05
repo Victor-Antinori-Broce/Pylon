@@ -30,6 +30,14 @@
     GitPullRequest,
     Zap,
     CheckCircle,
+    Clock,
+    Paperclip,
+    ListChecks,
+    Pilcrow,
+    Calculator,
+    Rows3,
+    Trash2,
+    Eye,
   } from "lucide-svelte";
   import { slide } from "svelte/transition";
 
@@ -87,18 +95,35 @@
   ];
 
   // ─── Icon map ───────────────────────────────────────
+  /**
+   * Nombre de icono del registro → componente.
+   *
+   * Tiene que cubrir TODOS los iconos que declara el registro compartido: un
+   * nombre sin entrada aquí no falla, cae al icono por defecto, y la paleta
+   * muestra media docena de campos con el mismo dibujo sin que nada avise.
+   * `Image` y `Link` se mapean a los alias de import (`ImageIcon`, `Link2`)
+   * porque `Image` y `Link` colisionan con globales del DOM.
+   */
   const iconMap: Record<string, typeof Type> = {
     Type,
     Hash,
     ToggleLeft,
     Calendar,
+    Clock,
     ImageIcon,
+    Image: ImageIcon,
+    Paperclip,
     Link2,
+    Link: Link2,
     Mail,
     List,
+    ListChecks,
     Braces,
     FileText,
+    Pilcrow,
     GitBranch,
+    Calculator,
+    Rows3,
   };
 
   const iconOptions = [
@@ -279,6 +304,64 @@
     selectedField.options.push({ label: "", value: "" });
   }
 
+  // ─── Repeater ───────────────────────────────────────
+  /**
+   * Tipos permitidos como subcampo. `repeater` NO está: el anidamiento se corta
+   * en un nivel (ver shared/schemas.ts), y ofrecerlo aquí crearía una
+   * definición que el validador aplana en silencio.
+   */
+  const SUBFIELD_TYPES = FIELD_TYPE_OPTIONS.filter((o) => o.type !== "repeater");
+
+  function addSubField() {
+    if (!selectedField) return;
+    if (!selectedField.subFields) selectedField.subFields = [];
+    selectedField.subFields.push({
+      ...createEmptyField("text", selectedField.subFields.length),
+      // `createEmptyField` siembra un repeater con un subcampo; para un
+      // subcampo eso no aplica y se quita para no arrastrar basura.
+      subFields: undefined,
+    } as never);
+  }
+
+  function removeSubField(index: number) {
+    selectedField?.subFields?.splice(index, 1);
+  }
+
+  function moveSubField(index: number, delta: number) {
+    const subs = selectedField?.subFields;
+    if (!subs) return;
+    const destino = index + delta;
+    if (destino < 0 || destino >= subs.length) return;
+    [subs[index], subs[destino]] = [subs[destino], subs[index]];
+    subs.forEach((s, i) => (s.order = i));
+  }
+
+  function autoSubKey(sub: { key: string; label: string }) {
+    if (!sub.key || sub.key === generateFieldKey(sub.label.slice(0, -1))) {
+      sub.key = generateFieldKey(sub.label);
+    }
+  }
+
+  // ─── Lógica condicional ─────────────────────────────
+  /**
+   * Un campo solo puede depender de OTRO campo, nunca de sí mismo: una
+   * condición autorreferente no se puede evaluar (haría falta el valor para
+   * decidir si el valor cuenta) y el desplegable no debe permitir construirla.
+   */
+  function conditionSources(current: FieldDefinition) {
+    return localDef.fields.filter((f) => f.key && f.key !== current.key);
+  }
+
+  function toggleCondition() {
+    if (!selectedField) return;
+    if (selectedField.showIf) {
+      selectedField.showIf = undefined;
+      return;
+    }
+    const primero = conditionSources(selectedField)[0];
+    selectedField.showIf = { field: primero?.key ?? "", operator: "eq", value: "" };
+  }
+
   // ─── Utility ────────────────────────────────────────
   function getFieldColor(type: FieldType): string {
     return FIELD_TYPE_OPTIONS.find((f) => f.type === type)?.color || "#888";
@@ -302,9 +385,9 @@
   <!-- ═══ LEFT: Field Type Palette ═══ -->
   {#if activeTab === "fields"}
     <div class="w-56 shrink-0 card overflow-y-auto">
-      <div class="p-3 border-b border-gremius-border sticky top-0 bg-gremius-card z-10">
+      <div class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
         <p class="label">Field Types</p>
-        <p class="text-[10px] text-gremius-subtle mt-0.5">Drag or click to add</p>
+        <p class="text-[10px] text-kitsuden-subtle mt-0.5">Drag or click to add</p>
       </div>
       <div class="p-2 space-y-1">
         {#each FIELD_TYPE_OPTIONS as ft}
@@ -312,7 +395,7 @@
             onclick={() => addField(ft.type)}
             draggable="true"
             ondragstart={(e) => onDragStartPalette(e, ft.type)}
-            class="flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-gremius-border/30 transition-all cursor-grab active:cursor-grabbing group"
+            class="flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-kitsuden-border/30 transition-all cursor-grab active:cursor-grabbing group"
           >
             <div
               class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
@@ -325,11 +408,11 @@
             </div>
             <div class="min-w-0">
               <p
-                class="font-medium text-gremius-text group-hover:text-gremius-text transition-colors"
+                class="font-medium text-kitsuden-text group-hover:text-kitsuden-text transition-colors"
               >
                 {ft.label}
               </p>
-              <p class="text-[10px] text-gremius-subtle truncate">{ft.description}</p>
+              <p class="text-[10px] text-kitsuden-subtle truncate">{ft.description}</p>
             </div>
           </button>
         {/each}
@@ -343,8 +426,9 @@
     <div class="card p-4 mb-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="label mb-1.5 block">Dataset Name *</label>
+          <label for="name" class="label mb-1.5 block">Dataset Name *</label>
           <input
+            id="name"
             bind:value={localDef.name}
             oninput={autoSlug}
             type="text"
@@ -373,8 +457,9 @@
         </div>
       </div>
       <div class="mt-3">
-        <label class="label mb-1.5 block">Description</label>
+        <label for="description" class="label mb-1.5 block">Description</label>
         <input
+          id="description"
           bind:value={localDef.description}
           type="text"
           placeholder="Optional description for this data set"
@@ -390,16 +475,16 @@
           onclick={() => (activeTab = tab.id)}
           class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all border {activeTab ===
           tab.id
-            ? 'bg-gremius-cyan-10 text-gremius-cyan border-gremius-cyan-20'
-            : 'text-gremius-text-dim hover:text-gremius-text hover:bg-gremius-border/20 border-transparent'}"
+            ? 'bg-kitsuden-accent-10 text-kitsuden-accent border-kitsuden-accent-20'
+            : 'text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-border/20 border-transparent'}"
         >
           <tab.icon class="w-3.5 h-3.5" />
           {tab.label}
           {#if tab.id === "security" && localDef.policyJson}
-            <span class="w-1.5 h-1.5 rounded-full bg-gremius-amber"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-kitsuden-amber"></span>
           {/if}
           {#if tab.id === "workflow" && localDef.workflowJson?.requireApproval}
-            <span class="w-1.5 h-1.5 rounded-full bg-gremius-purple"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-kitsuden-purple"></span>
           {/if}
         </button>
       {/each}
@@ -423,7 +508,7 @@
           }}
         >
           <div
-            class="p-3 border-b border-gremius-border sticky top-0 bg-gremius-card z-10 flex items-center justify-between"
+            class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10 flex items-center justify-between"
           >
             <div class="flex items-center gap-2">
               <p class="label">Schema Fields</p>
@@ -437,13 +522,13 @@
           </div>
 
           {#if localDef.fields.length === 0}
-            <div class="flex flex-col items-center justify-center py-12 text-gremius-subtle">
-              <Layers class="w-10 h-10 mb-3 text-gremius-muted" />
+            <div class="flex flex-col items-center justify-center py-12 text-kitsuden-subtle">
+              <Layers class="w-10 h-10 mb-3 text-kitsuden-muted" />
               <p class="text-sm font-medium">No fields yet</p>
               <p class="text-xs mt-1">Click or drag field types from the left panel</p>
             </div>
           {:else}
-            <div class="divide-y divide-gremius-border/50">
+            <div class="divide-y divide-kitsuden-border/50">
               {#each localDef.fields as field, idx}
                 <div
                   draggable="true"
@@ -458,10 +543,10 @@
                     onDropReorder(idx);
                   }}
                   class="group transition-all {dragOverIndex === idx
-                    ? 'ring-2 ring-gremius-cyan-30 ring-inset'
+                    ? 'ring-2 ring-kitsuden-accent-30 ring-inset'
                     : ''} {selectedFieldId === field.id
-                    ? 'bg-gremius-cyan/[0.04]'
-                    : 'hover:bg-gremius-border/20'}"
+                    ? 'bg-kitsuden-accent/[0.04]'
+                    : 'hover:bg-kitsuden-border/20'}"
                 >
                   <!-- Field row -->
                   <div
@@ -475,7 +560,7 @@
                   >
                     <!-- Drag handle -->
                     <GripVertical
-                      class="w-4 h-4 text-gremius-muted shrink-0 opacity-0 group-hover:opacity-60 cursor-grab transition-opacity"
+                      class="w-4 h-4 text-kitsuden-muted shrink-0 opacity-0 group-hover:opacity-60 cursor-grab transition-opacity"
                     />
 
                     <!-- Type icon -->
@@ -493,11 +578,12 @@
 
                     <!-- Label + Key -->
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gremius-text truncate">
+                      <p class="text-sm font-medium text-kitsuden-text truncate">
                         {field.label || "Untitled Field"}
-                        {#if field.isRequired}<span class="text-gremius-pink ml-1">*</span>{/if}
+                        {#if field.isRequired}<span class="text-kitsuden-accent-2 ml-1">*</span
+                          >{/if}
                       </p>
-                      <p class="text-[10px] font-mono text-gremius-subtle">
+                      <p class="text-[10px] font-mono text-kitsuden-subtle">
                         {field.key || "(no key)"} · {field.type}
                       </p>
                     </div>
@@ -523,7 +609,7 @@
                         e.stopPropagation();
                         removeField(idx);
                       }}
-                      class="btn-icon p-1.5 opacity-0 group-hover:opacity-100 hover:!text-gremius-pink transition-all"
+                      class="btn-icon p-1.5 opacity-0 group-hover:opacity-100 hover:!text-kitsuden-accent-2 transition-all"
                     >
                       <X class="w-3.5 h-3.5" />
                     </button>
@@ -541,23 +627,23 @@
     <!-- ════════════════════════════════════════ -->
     {#if activeTab === "security"}
       <div class="flex-1 card overflow-y-auto">
-        <div class="p-3 border-b border-gremius-border sticky top-0 bg-gremius-card z-10">
+        <div class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
           <div class="flex items-center gap-2">
-            <Shield class="w-4 h-4 text-gremius-amber" />
+            <Shield class="w-4 h-4 text-kitsuden-amber" />
             <p class="label">Access Control</p>
           </div>
-          <p class="text-[10px] text-gremius-subtle mt-0.5">
+          <p class="text-[10px] text-kitsuden-subtle mt-0.5">
             Configure who can read and write. Leave disabled for admin-only access.
           </p>
         </div>
 
         {#if !localDef.policyJson}
-          <div class="flex flex-col items-center justify-center py-8 px-4 text-gremius-subtle">
+          <div class="flex flex-col items-center justify-center py-8 px-4 text-kitsuden-subtle">
             <div class="flex items-start gap-4 w-full max-w-lg">
-              <ShieldOff class="w-10 h-10 text-gremius-muted shrink-0 mt-1" />
+              <ShieldOff class="w-10 h-10 text-kitsuden-muted shrink-0 mt-1" />
               <div class="flex-1">
-                <p class="text-sm font-medium text-gremius-text">Default: Admin Only</p>
-                <p class="text-xs mt-1 text-gremius-subtle">
+                <p class="text-sm font-medium text-kitsuden-text">Default: Admin Only</p>
+                <p class="text-xs mt-1 text-kitsuden-subtle">
                   Only admins can read and write this dataset. Enable custom security to allow
                   public or authenticated access.
                 </p>
@@ -578,12 +664,12 @@
                     onclick={() => (localDef.policyJson!.readAccess = opt.value)}
                     class="card-glow p-3 text-center transition-all {localDef.policyJson!
                       .readAccess === opt.value
-                      ? 'border-gremius-cyan-40 bg-gremius-cyan-5 text-gremius-cyan'
-                      : 'text-gremius-text-dim hover:text-gremius-text'}"
+                      ? 'border-kitsuden-accent-40 bg-kitsuden-accent-5 text-kitsuden-accent'
+                      : 'text-kitsuden-text-dim hover:text-kitsuden-text'}"
                   >
                     <opt.icon class="w-5 h-5 mx-auto mb-1.5" />
                     <p class="text-xs font-semibold">{opt.label}</p>
-                    <p class="text-[9px] text-gremius-subtle mt-0.5">{opt.desc}</p>
+                    <p class="text-[9px] text-kitsuden-subtle mt-0.5">{opt.desc}</p>
                   </button>
                 {/each}
               </div>
@@ -598,26 +684,26 @@
                     onclick={() => (localDef.policyJson!.writeAccess = opt.value)}
                     class="card-glow p-3 text-center transition-all {localDef.policyJson!
                       .writeAccess === opt.value
-                      ? 'border-gremius-pink-40 bg-gremius-pink-5 text-gremius-pink'
-                      : 'text-gremius-text-dim hover:text-gremius-text'}"
+                      ? 'border-kitsuden-accent-2-40 bg-kitsuden-accent-2-5 text-kitsuden-accent-2'
+                      : 'text-kitsuden-text-dim hover:text-kitsuden-text'}"
                   >
                     <opt.icon class="w-5 h-5 mx-auto mb-1.5" />
                     <p class="text-xs font-semibold">{opt.label}</p>
-                    <p class="text-[9px] text-gremius-subtle mt-0.5">{opt.desc}</p>
+                    <p class="text-[9px] text-kitsuden-subtle mt-0.5">{opt.desc}</p>
                   </button>
                 {/each}
               </div>
             </div>
 
             <!-- RLS Toggle -->
-            <div class="pt-4 border-t border-gremius-border">
+            <div class="pt-4 border-t border-kitsuden-border">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-medium text-gremius-text flex items-center gap-2">
-                    <Lock class="w-3.5 h-3.5 text-gremius-amber" />
+                  <p class="text-sm font-medium text-kitsuden-text flex items-center gap-2">
+                    <Lock class="w-3.5 h-3.5 text-kitsuden-amber" />
                     Row-Level Security
                   </p>
-                  <p class="text-[10px] text-gremius-subtle mt-0.5">
+                  <p class="text-[10px] text-kitsuden-subtle mt-0.5">
                     Filter rows based on user context
                   </p>
                 </div>
@@ -625,8 +711,8 @@
                   onclick={() => (localDef.policyJson!.enableRLS = !localDef.policyJson!.enableRLS)}
                   class="relative w-10 h-6 rounded-full transition-colors {localDef.policyJson!
                     .enableRLS
-                    ? 'bg-gremius-amber'
-                    : 'bg-gremius-border'}"
+                    ? 'bg-kitsuden-amber'
+                    : 'bg-kitsuden-border'}"
                 >
                   <span
                     class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform {localDef
@@ -666,7 +752,7 @@
                       />
                       <button
                         onclick={() => localDef.policyJson!.rlsRules!.splice(ri, 1)}
-                        class="btn-icon p-1.5 hover:!text-gremius-pink"
+                        class="btn-icon p-1.5 hover:!text-kitsuden-accent-2"
                       >
                         <X class="w-3.5 h-3.5" />
                       </button>
@@ -680,10 +766,10 @@
             </div>
 
             <!-- Remove policy -->
-            <div class="pt-4 border-t border-gremius-border">
+            <div class="pt-4 border-t border-kitsuden-border">
               <button
                 onclick={() => (localDef.policyJson = null)}
-                class="btn-ghost btn-sm text-gremius-pink hover:bg-gremius-pink/5"
+                class="btn-ghost btn-sm text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/5"
               >
                 <X class="w-3.5 h-3.5" /> Remove Custom Security
               </button>
@@ -698,23 +784,23 @@
     <!-- ════════════════════════════════════════ -->
     {#if activeTab === "workflow"}
       <div class="flex-1 card overflow-y-auto">
-        <div class="p-3 border-b border-gremius-border sticky top-0 bg-gremius-card z-10">
+        <div class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
           <div class="flex items-center gap-2">
-            <GitPullRequest class="w-4 h-4 text-gremius-purple" />
+            <GitPullRequest class="w-4 h-4 text-kitsuden-purple" />
             <p class="label">Workflow & Approvals</p>
           </div>
-          <p class="text-[10px] text-gremius-subtle mt-0.5">
+          <p class="text-[10px] text-kitsuden-subtle mt-0.5">
             Require review before entries go live. Leave disabled for instant publish.
           </p>
         </div>
 
         {#if !localDef.workflowJson || !localDef.workflowJson.requireApproval}
-          <div class="flex flex-col items-center justify-center py-8 px-4 text-gremius-subtle">
+          <div class="flex flex-col items-center justify-center py-8 px-4 text-kitsuden-subtle">
             <div class="flex items-start gap-4 w-full max-w-lg">
-              <Zap class="w-10 h-10 text-gremius-muted shrink-0 mt-1" />
+              <Zap class="w-10 h-10 text-kitsuden-muted shrink-0 mt-1" />
               <div class="flex-1">
-                <p class="text-sm font-medium text-gremius-text">Default: Instant Publish</p>
-                <p class="text-xs mt-1 text-gremius-subtle">
+                <p class="text-sm font-medium text-kitsuden-text">Default: Instant Publish</p>
+                <p class="text-xs mt-1 text-kitsuden-subtle">
                   New entries are published immediately. Enable approval workflow to require review
                   before publishing.
                 </p>
@@ -729,11 +815,11 @@
             <!-- Require Approval Toggle -->
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gremius-text flex items-center gap-2">
-                  <CheckCircle class="w-3.5 h-3.5 text-gremius-purple" />
+                <p class="text-sm font-medium text-kitsuden-text flex items-center gap-2">
+                  <CheckCircle class="w-3.5 h-3.5 text-kitsuden-purple" />
                   Require Approval
                 </p>
-                <p class="text-[10px] text-gremius-subtle mt-0.5">
+                <p class="text-[10px] text-kitsuden-subtle mt-0.5">
                   New entries start as drafts until approved
                 </p>
               </div>
@@ -743,8 +829,8 @@
                     !localDef.workflowJson!.requireApproval)}
                 class="relative w-10 h-6 rounded-full transition-colors {localDef.workflowJson!
                   .requireApproval
-                  ? 'bg-gremius-purple'
-                  : 'bg-gremius-border'}"
+                  ? 'bg-kitsuden-purple'
+                  : 'bg-kitsuden-border'}"
               >
                 <span
                   class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform {localDef
@@ -758,7 +844,7 @@
             <!-- Approver IDs -->
             <div>
               <label class="label mb-2 block">Approver User IDs</label>
-              <p class="text-[10px] text-gremius-subtle mb-3">
+              <p class="text-[10px] text-kitsuden-subtle mb-3">
                 Users who can review and publish draft entries
               </p>
               <div class="space-y-2">
@@ -772,7 +858,7 @@
                     />
                     <button
                       onclick={() => localDef.workflowJson!.approverUserIds!.splice(ai, 1)}
-                      class="btn-icon p-1.5 hover:!text-gremius-pink"
+                      class="btn-icon p-1.5 hover:!text-kitsuden-accent-2"
                     >
                       <X class="w-3.5 h-3.5" />
                     </button>
@@ -785,10 +871,10 @@
             </div>
 
             <!-- Remove workflow -->
-            <div class="pt-4 border-t border-gremius-border">
+            <div class="pt-4 border-t border-kitsuden-border">
               <button
                 onclick={() => (localDef.workflowJson = null)}
-                class="btn-ghost btn-sm text-gremius-pink hover:bg-gremius-pink/5"
+                class="btn-ghost btn-sm text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/5"
               >
                 <X class="w-3.5 h-3.5" /> Remove Workflow
               </button>
@@ -801,7 +887,7 @@
     <!-- Bottom action bar -->
     <div class="mt-4 flex items-center justify-between">
       {#if validationErrors.length > 0}
-        <p class="text-xs text-gremius-pink">{validationErrors[0]}</p>
+        <p class="text-xs text-kitsuden-accent-2">{validationErrors[0]}</p>
       {:else}
         <div></div>
       {/if}
@@ -818,7 +904,7 @@
   <!-- ═══ RIGHT: Field Settings Panel ═══ -->
   {#if selectedField && activeTab === "fields"}
     <div transition:slide={{ duration: 200, axis: "x" }} class="w-80 shrink-0 card overflow-y-auto">
-      <div class="p-4 border-b border-gremius-border sticky top-0 bg-gremius-card z-10">
+      <div class="p-4 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
         <div class="flex items-center justify-between">
           <p class="label">Field Settings</p>
           <button onclick={() => (selectedFieldId = null)} class="btn-icon p-1">
@@ -835,7 +921,7 @@
               <SFI class="w-3 h-3" style="color: {getFieldColor(selectedField.type)}" />
             {/if}
           </div>
-          <span class="text-xs font-medium text-gremius-text"
+          <span class="text-xs font-medium text-kitsuden-text"
             >{getFieldTypeLabel(selectedField.type)}</span
           >
         </div>
@@ -844,8 +930,9 @@
       <div class="p-4 space-y-5">
         <!-- Label -->
         <div>
-          <label class="label mb-1.5 block">Label *</label>
+          <label for="label" class="label mb-1.5 block">Label *</label>
           <input
+            id="label"
             bind:value={selectedField.label}
             oninput={() => autoFieldKey(selectedField)}
             type="text"
@@ -856,8 +943,9 @@
 
         <!-- Key -->
         <div>
-          <label class="label mb-1.5 block">Machine Key</label>
+          <label for="key" class="label mb-1.5 block">Machine Key</label>
           <input
+            id="key"
             bind:value={selectedField.key}
             type="text"
             placeholder="e.g. weapon_name"
@@ -867,8 +955,9 @@
 
         <!-- Help text -->
         <div>
-          <label class="label mb-1.5 block">Help Text</label>
+          <label for="helptext" class="label mb-1.5 block">Help Text</label>
           <input
+            id="helptext"
             bind:value={selectedField.helpText}
             type="text"
             placeholder="Shown below the field"
@@ -877,20 +966,20 @@
         </div>
 
         <!-- ── Validation Rules ── -->
-        <div class="pt-3 border-t border-gremius-border">
+        <div class="pt-3 border-t border-kitsuden-border">
           <p class="label mb-3">Validation Rules</p>
 
           <!-- Required -->
           <div class="flex items-center justify-between py-2">
             <div>
-              <p class="text-sm text-gremius-text">Required</p>
-              <p class="text-[10px] text-gremius-subtle">Must have a value</p>
+              <p class="text-sm text-kitsuden-text">Required</p>
+              <p class="text-[10px] text-kitsuden-subtle">Must have a value</p>
             </div>
             <button
               onclick={() => (selectedField.isRequired = !selectedField.isRequired)}
               class="relative w-10 h-6 rounded-full transition-colors {selectedField.isRequired
-                ? 'bg-gremius-cyan'
-                : 'bg-gremius-border'}"
+                ? 'bg-kitsuden-accent'
+                : 'bg-kitsuden-border'}"
             >
               <span
                 class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform {selectedField.isRequired
@@ -903,14 +992,14 @@
           <!-- Unique -->
           <div class="flex items-center justify-between py-2">
             <div>
-              <p class="text-sm text-gremius-text">Unique</p>
-              <p class="text-[10px] text-gremius-subtle">No duplicate values</p>
+              <p class="text-sm text-kitsuden-text">Unique</p>
+              <p class="text-[10px] text-kitsuden-subtle">No duplicate values</p>
             </div>
             <button
               onclick={() => (selectedField.isUnique = !selectedField.isUnique)}
               class="relative w-10 h-6 rounded-full transition-colors {selectedField.isUnique
-                ? 'bg-gremius-amber'
-                : 'bg-gremius-border'}"
+                ? 'bg-kitsuden-amber'
+                : 'bg-kitsuden-border'}"
             >
               <span
                 class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform {selectedField.isUnique
@@ -922,8 +1011,9 @@
 
           <!-- Default value -->
           <div class="pt-2">
-            <label class="label mb-1.5 block">Default Value</label>
+            <label for="defaultvalue" class="label mb-1.5 block">Default Value</label>
             <input
+              id="defaultvalue"
               bind:value={selectedField.defaultValue}
               type="text"
               placeholder="e.g. Unknown"
@@ -934,8 +1024,9 @@
           <!-- Regex (text, email, url) -->
           {#if ["text", "email", "url"].includes(selectedField.type)}
             <div class="pt-2">
-              <label class="label mb-1.5 block">Validation Regex</label>
+              <label for="validationregex" class="label mb-1.5 block">Validation Regex</label>
               <input
+                id="validationregex"
                 bind:value={selectedField.validationRegex}
                 type="text"
                 placeholder="e.g. ^[A-Za-z0-9]+$"
@@ -948,8 +1039,9 @@
           {#if selectedField.type === "number"}
             <div class="pt-2 grid grid-cols-2 gap-3">
               <div>
-                <label class="label mb-1.5 block">Min</label>
+                <label for="minvalue" class="label mb-1.5 block">Min</label>
                 <input
+                  id="minvalue"
                   bind:value={selectedField.minValue}
                   type="number"
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -957,8 +1049,9 @@
                 />
               </div>
               <div>
-                <label class="label mb-1.5 block">Max</label>
+                <label for="maxvalue" class="label mb-1.5 block">Max</label>
                 <input
+                  id="maxvalue"
                   bind:value={selectedField.maxValue}
                   type="number"
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -972,8 +1065,9 @@
           {#if selectedField.type === "text"}
             <div class="pt-2 grid grid-cols-2 gap-3">
               <div>
-                <label class="label mb-1.5 block">Min Length</label>
+                <label for="minlength" class="label mb-1.5 block">Min Length</label>
                 <input
+                  id="minlength"
                   bind:value={selectedField.minLength}
                   type="number"
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -981,8 +1075,9 @@
                 />
               </div>
               <div>
-                <label class="label mb-1.5 block">Max Length</label>
+                <label for="maxlength" class="label mb-1.5 block">Max Length</label>
                 <input
+                  id="maxlength"
                   bind:value={selectedField.maxLength}
                   type="number"
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -995,7 +1090,7 @@
 
         <!-- ── Select Options ── -->
         {#if selectedField.type === "select"}
-          <div class="pt-3 border-t border-gremius-border">
+          <div class="pt-3 border-t border-kitsuden-border">
             <p class="label mb-3">Options</p>
             <div class="space-y-2">
               {#each selectedField.options || [] as opt, oi}
@@ -1010,7 +1105,7 @@
                   />
                   <button
                     onclick={() => selectedField.options!.splice(oi, 1)}
-                    class="btn-icon p-1.5 hover:!text-gremius-pink"
+                    class="btn-icon p-1.5 hover:!text-kitsuden-accent-2"
                   >
                     <X class="w-3.5 h-3.5" />
                   </button>
@@ -1025,9 +1120,9 @@
 
         <!-- ── Relation Config ── -->
         {#if selectedField.type === "relation"}
-          <div class="pt-3 border-t border-gremius-border">
+          <div class="pt-3 border-t border-kitsuden-border">
             <p class="label mb-3">
-              <GitBranch class="w-3 h-3 inline text-gremius-pink mr-1" />
+              <GitBranch class="w-3 h-3 inline text-kitsuden-accent-2 mr-1" />
               Relationship
             </p>
 
@@ -1063,8 +1158,8 @@
                     onclick={() => setRelationType(rt as RelationType)}
                     class="card-glow p-3 text-center transition-all text-xs font-medium {selectedField
                       .relation?.type === rt
-                      ? 'border-gremius-pink-40 bg-gremius-pink-5 text-gremius-pink'
-                      : 'text-gremius-text-dim hover:text-gremius-text'}"
+                      ? 'border-kitsuden-accent-2-40 bg-kitsuden-accent-2-5 text-kitsuden-accent-2'
+                      : 'text-kitsuden-text-dim hover:text-kitsuden-text'}"
                   >
                     <p class="text-lg mb-1">
                       {rt === "one-to-one" ? "1↔1" : rt === "one-to-many" ? "1→N" : "M↔N"}
@@ -1091,7 +1186,7 @@
                   placeholder="e.g. title, name"
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
-                <p class="text-[10px] text-gremius-subtle mt-1">
+                <p class="text-[10px] text-kitsuden-subtle mt-1">
                   Which field to show in the selector
                 </p>
               {/if}
@@ -1099,19 +1194,207 @@
           </div>
         {/if}
 
+        <!-- ── Repeater: forma de cada fila ── -->
+        {#if selectedField.type === "repeater"}
+          <div class="pt-3 border-t border-kitsuden-border">
+            <p class="label mb-1">
+              <Rows3 class="w-3 h-3 inline text-kitsuden-accent-2 mr-1" />
+              Row fields
+            </p>
+            <p class="text-[10px] text-kitsuden-subtle mb-3">
+              Each entry stores a list of rows with this shape.
+            </p>
+
+            <div class="space-y-2">
+              {#each selectedField.subFields || [] as sub, si (sub.id)}
+                <div class="rounded-lg border border-kitsuden-border p-2.5 bg-slate-900/40">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="text-[10px] text-kitsuden-subtle font-mono w-4">{si + 1}</span>
+                    <input
+                      bind:value={sub.label}
+                      oninput={() => autoSubKey(sub)}
+                      type="text"
+                      placeholder="Label"
+                      class="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <button
+                      onclick={() => moveSubField(si, -1)}
+                      disabled={si === 0}
+                      title="Move up"
+                      class="btn-icon p-1 disabled:opacity-30"
+                    >
+                      <GripVertical class="w-3 h-3" />
+                    </button>
+                    <button
+                      onclick={() => removeSubField(si)}
+                      title="Remove subfield"
+                      class="btn-icon p-1 hover:!text-kitsuden-accent-2"
+                    >
+                      <Trash2 class="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <select
+                      bind:value={sub.type}
+                      class="px-2 py-1.5 bg-slate-800 border border-slate-700 text-gray-100 rounded text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      {#each SUBFIELD_TYPES as t}
+                        <option value={t.type}>{t.label}</option>
+                      {/each}
+                    </select>
+                    <input
+                      bind:value={sub.key}
+                      type="text"
+                      placeholder="key"
+                      class="px-2 py-1.5 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded font-mono text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <label class="flex items-center gap-2 mt-2 text-[11px] text-kitsuden-subtle">
+                    <input type="checkbox" bind:checked={sub.isRequired} class="accent-teal-500" />
+                    Required in every row
+                  </label>
+
+                  {#if sub.type === "select"}
+                    <!-- Un desplegable sin opciones no se puede rellenar; se
+                         avisa aquí en vez de dejar que falle al guardar. -->
+                    <p class="text-[10px] text-kitsuden-subtle mt-1.5">
+                      Options for subfield selects are set via API for now.
+                    </p>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+
+            {#if !selectedField.subFields?.length}
+              <p class="text-[11px] text-kitsuden-subtle italic py-2">
+                No row fields yet — rows would be empty.
+              </p>
+            {/if}
+
+            <button onclick={addSubField} class="btn-ghost btn-sm mt-2 w-full justify-center">
+              <Plus class="w-3.5 h-3.5" /> Add row field
+            </button>
+
+            <!-- minLength/maxLength de un repeater son filas, no caracteres. -->
+            <div class="pt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label for="minrows" class="label mb-1.5 block">Min rows</label>
+                <input
+                  id="minrows"
+                  bind:value={selectedField.minLength}
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label for="maxrows" class="label mb-1.5 block">Max rows</label>
+                <input
+                  id="maxrows"
+                  bind:value={selectedField.maxLength}
+                  type="number"
+                  min="0"
+                  placeholder="∞"
+                  class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- ── Visibilidad condicional ── -->
+        <div class="pt-3 border-t border-kitsuden-border">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="label mb-0.5">
+                <Eye class="w-3 h-3 inline text-kitsuden-accent mr-1" />
+                Conditional
+              </p>
+              <p class="text-[10px] text-kitsuden-subtle">Show only when another field matches</p>
+            </div>
+            <button
+              onclick={toggleCondition}
+              disabled={conditionSources(selectedField).length === 0}
+              class="relative w-10 h-6 rounded-full transition-colors disabled:opacity-30 {selectedField.showIf
+                ? 'bg-kitsuden-accent'
+                : 'bg-kitsuden-border'}"
+            >
+              <span
+                class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform {selectedField.showIf
+                  ? 'translate-x-4.5'
+                  : 'translate-x-0.5'}"
+              ></span>
+            </button>
+          </div>
+
+          {#if conditionSources(selectedField).length === 0}
+            <p class="text-[10px] text-kitsuden-subtle italic mt-2">
+              Needs at least one other field with a key.
+            </p>
+          {/if}
+
+          {#if selectedField.showIf}
+            <div class="mt-3 space-y-2">
+              <select
+                bind:value={selectedField.showIf.field}
+                class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {#each conditionSources(selectedField) as f}
+                  <option value={f.key}>{f.label || f.key}</option>
+                {/each}
+              </select>
+
+              <div class="grid grid-cols-2 gap-2">
+                <select
+                  bind:value={selectedField.showIf.operator}
+                  class="px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="eq">equals</option>
+                  <option value="neq">not equals</option>
+                  <option value="contains">contains</option>
+                  <option value="gt">greater than</option>
+                  <option value="lt">less than</option>
+                </select>
+                <input
+                  bind:value={selectedField.showIf.value}
+                  type="text"
+                  placeholder="value"
+                  class="px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              {#if selectedField.isRequired}
+                <!-- Lo que la gente no espera: un obligatorio condicional solo
+                     se exige cuando se muestra. Decirlo aquí evita el ticket. -->
+                <p class="text-[10px] text-kitsuden-subtle">
+                  Required only while this condition holds.
+                </p>
+              {/if}
+              {#if selectedField.showIf.operator === "gt" || selectedField.showIf.operator === "lt"}
+                <p class="text-[10px] text-kitsuden-subtle">
+                  Compared as numbers; non-numeric values never match.
+                </p>
+              {/if}
+            </div>
+          {/if}
+        </div>
+
         <!-- Grid settings -->
-        <div class="pt-3 border-t border-gremius-border">
+        <div class="pt-3 border-t border-kitsuden-border">
           <p class="label mb-3">Display</p>
           <div class="flex items-center justify-between py-2">
             <div>
-              <p class="text-sm text-gremius-text">Hidden in Grid</p>
-              <p class="text-[10px] text-gremius-subtle">Only visible in form</p>
+              <p class="text-sm text-kitsuden-text">Hidden in Grid</p>
+              <p class="text-[10px] text-kitsuden-subtle">Only visible in form</p>
             </div>
             <button
               onclick={() => (selectedField.hidden = !selectedField.hidden)}
               class="relative w-10 h-6 rounded-full transition-colors {selectedField.hidden
-                ? 'bg-gremius-subtle'
-                : 'bg-gremius-border'}"
+                ? 'bg-kitsuden-subtle'
+                : 'bg-kitsuden-border'}"
             >
               <span
                 class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform {selectedField.hidden
@@ -1121,8 +1404,9 @@
             </button>
           </div>
           <div class="pt-2">
-            <label class="label mb-1.5 block">Column Width (px)</label>
+            <label for="width" class="label mb-1.5 block">Column Width (px)</label>
             <input
+              id="width"
               bind:value={selectedField.width}
               type="number"
               placeholder="Auto"
@@ -1136,22 +1420,22 @@
 </div>
 
 <style>
-  .bg-gremius-cyan-10 {
-    background-color: rgb(0 229 255 / 0.1);
+  .bg-kitsuden-accent-10 {
+    background-color: rgb(168 85 247 / 0.1);
   }
-  .border-gremius-cyan-20 {
-    border-color: rgb(0 229 255 / 0.2);
+  .border-kitsuden-accent-20 {
+    border-color: rgb(168 85 247 / 0.2);
   }
-  .border-gremius-cyan-40 {
-    border-color: rgb(0 229 255 / 0.4);
+  .border-kitsuden-accent-40 {
+    border-color: rgb(168 85 247 / 0.4);
   }
-  .bg-gremius-cyan-5 {
-    background-color: rgb(0 229 255 / 0.05);
+  .bg-kitsuden-accent-5 {
+    background-color: rgb(168 85 247 / 0.05);
   }
-  .bg-gremius-pink-5 {
-    background-color: rgb(255 42 109 / 0.05);
+  .bg-kitsuden-accent-2-5 {
+    background-color: rgb(255 45 111 / 0.05);
   }
-  .border-gremius-pink-40 {
-    border-color: rgb(255 42 109 / 0.4);
+  .border-kitsuden-accent-2-40 {
+    border-color: rgb(255 45 111 / 0.4);
   }
 </style>

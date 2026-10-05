@@ -49,17 +49,17 @@
 
   {#if show}
     <div
-      class="w-1.5 shrink-0 cursor-col-resize bg-gremius-border hover:bg-gremius-cyan/60 active:bg-gremius-cyan transition-colors relative flex items-center justify-center group"
+      class="w-1.5 shrink-0 cursor-col-resize bg-kitsuden-border hover:bg-kitsuden-accent/60 active:bg-kitsuden-accent transition-colors relative flex items-center justify-center group"
       onmousedown={startDrag}
       role="separator"
       aria-label="Resize panels"
     >
       <div
-        class="w-1 h-8 rounded-full bg-gremius-subtle/40 group-hover:bg-gremius-cyan/80 transition-colors"
+        class="w-1 h-8 rounded-full bg-kitsuden-subtle/40 group-hover:bg-kitsuden-accent/80 transition-colors"
       ></div>
     </div>
 
-    <div class="h-full overflow-hidden flex-1 bg-gremius-bg">
+    <div class="h-full overflow-hidden flex-1 bg-kitsuden-bg">
       {@render right?.()}
     </div>
   {/if}

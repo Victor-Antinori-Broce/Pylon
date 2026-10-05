@@ -14,14 +14,14 @@ test.describe("Data Explorer Isolated View Verification", () => {
     if (page.url().includes("/setup")) {
       await page.waitForSelector('input[type="text"]', { timeout: 20000 });
       await page.locator('input[type="text"]').fill("Admin MockTest");
-      await page.locator('input[type="email"]').fill("mock@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("mock@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
       await page.waitForURL(/\/$/, { timeout: 20_000 });
     } else if (page.url().includes("/login")) {
       await page.waitForSelector('input[type="email"]');
-      await page.locator('input[type="email"]').fill("admin@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
 
       // Wait for dashboard or successful login
@@ -31,7 +31,7 @@ test.describe("Data Explorer Isolated View Verification", () => {
     // Wait to make sure we are fully loaded on dashboard
     await page.waitForTimeout(1000);
 
-    // NOW Intercept the registry API to return our mock grimoire with Kanban and Calendar
+    // NOW Intercept the registry API to return our mock kon with Kanban and Calendar
     await page.route("**/api/admin/registry*", async (route) => {
       await route.fulfill({
         status: 200,
@@ -41,9 +41,9 @@ test.describe("Data Explorer Isolated View Verification", () => {
           total: 1,
           withCustomViews: 0,
           generatedAt: new Date().toISOString(),
-          grimoires: [
+          kons: [
             {
-              id: "grimoire-mocktest",
+              id: "kon-mocktest",
               name: "MockTest",
               category: "system",
               hasCustomView: false,
@@ -104,8 +104,8 @@ test.describe("Data Explorer Isolated View Verification", () => {
       }
     });
 
-    // Navigate to our mocked grimoire
-    await page.goto(`${ADMIN}/g/grimoire-mocktest`, { waitUntil: "domcontentloaded" });
+    // Navigate to our mocked kon
+    await page.goto(`${ADMIN}/g/kon-mocktest`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
 
     // 1. GRID TEST

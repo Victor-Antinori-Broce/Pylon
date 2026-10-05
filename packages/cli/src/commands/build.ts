@@ -15,13 +15,13 @@ interface BuildOptions {
 }
 
 export async function buildCommand(options: BuildOptions) {
-  console.log(chalk.blue("\n🔨 Building Gremius for production...\n"));
+  console.log(chalk.blue("\n🔨 Building Kitsuden for production...\n"));
 
   const projectRoot = process.cwd();
 
-  // Check if we're in a Gremius project
+  // Check if we're in a Kitsuden project
   if (!existsSync(join(projectRoot, "apps", "api"))) {
-    console.error(chalk.red("✖ Not in a Gremius project directory"));
+    console.error(chalk.red("✖ Not in a Kitsuden project directory"));
     process.exit(1);
   }
 
@@ -30,7 +30,7 @@ export async function buildCommand(options: BuildOptions) {
   try {
     // Build shared first
     spinner.text = "Building shared packages...";
-    await execa("pnpm", ["--filter", "@gremius/shared", "build"], {
+    await execa("pnpm", ["--filter", "@kitsuden/shared", "build"], {
       cwd: projectRoot,
       stdio: "ignore",
     });
@@ -49,23 +49,11 @@ export async function buildCommand(options: BuildOptions) {
       stdio: "ignore",
     });
 
-    // Build Web (if exists)
-    if (existsSync(join(projectRoot, "apps", "web"))) {
-      spinner.text = "Building Web...";
-      await execa("pnpm", ["--filter", "web", "build"], {
-        cwd: projectRoot,
-        stdio: "ignore",
-      });
-    }
-
     spinner.succeed(chalk.green("Build completed successfully!"));
 
     console.log(chalk.bold("\nOutput:\n"));
-    console.log(chalk.gray("  apps/api/dist    - API server"));
-    console.log(chalk.gray("  apps/admin/dist  - Admin UI"));
-    if (existsSync(join(projectRoot, "apps", "web"))) {
-      console.log(chalk.gray("  apps/web/dist    - Web frontend"));
-    }
+    console.log(chalk.gray("  apps/api/dist       - API server"));
+    console.log(chalk.gray("  packages/admin/build - Admin UI"));
     console.log();
 
     if (options.analyze) {

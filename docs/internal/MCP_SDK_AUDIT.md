@@ -8,7 +8,7 @@ Both the MCP Server and SDK are properly configured and functional. All hardcode
 
 ---
 
-## ✅ MCP Server (@gremius/mcp-server)
+## ✅ MCP Server (@kitsuden/mcp-server)
 
 ### Package Structure
 
@@ -27,9 +27,9 @@ packages/mcp-server/
 
 | Setting   | Default                 | Environment Variable |
 | --------- | ----------------------- | -------------------- |
-| API URL   | `http://localhost:3000` | `GREMIUS_API_URL`    |
+| API URL   | `http://localhost:3000` | `KITSUDEN_API_URL`   |
 | Port      | `3002`                  | `PORT`               |
-| API Token | (none)                  | `GREMIUS_API_TOKEN`  |
+| API Token | (none)                  | `KITSUDEN_API_TOKEN` |
 
 ### Modes of Operation
 
@@ -40,26 +40,26 @@ packages/mcp-server/
 
 2. **Standalone Mode** (`src/standalone.ts`)
    - Runs as separate HTTP service
-   - Connects to Gremius API via HTTP
+   - Connects to Kitsuden API via HTTP
    - SSE endpoint for MCP protocol
    - Docker-ready
 
 ### Available Tools
 
-| Tool                      | Description                    |
-| ------------------------- | ------------------------------ |
-| `gremius_query_dataset`   | Query records from a dataset   |
-| `gremius_insert_record`   | Insert new record into dataset |
-| `gremius_dispatch_worker` | Enqueue background job         |
-| `gremius_encode_toon`     | Encode JSON to TOON format     |
+| Tool                       | Description                    |
+| -------------------------- | ------------------------------ |
+| `kitsuden_query_dataset`   | Query records from a dataset   |
+| `kitsuden_insert_record`   | Insert new record into dataset |
+| `kitsuden_dispatch_worker` | Enqueue background job         |
+| `kitsuden_encode_toon`     | Encode JSON to TOON format     |
 
 ### Available Resources
 
-| Resource  | URI                   | Description           |
-| --------- | --------------------- | --------------------- |
-| Datasets  | `gremius://datasets`  | List all datasets     |
-| Grimoires | `gremius://grimoires` | List active grimoires |
-| Health    | `gremius://health`    | API health status     |
+| Resource | URI                   | Description       |
+| -------- | --------------------- | ----------------- |
+| Datasets | `kitsuden://datasets` | List all datasets |
+| Kons     | `kitsuden://kons`     | List active kons  |
+| Health   | `kitsuden://health`   | API health status |
 
 ### Integration with Main API
 
@@ -72,7 +72,7 @@ This provides built-in MCP support without needing the standalone server.
 
 ---
 
-## ✅ SDK (@gremius/sdk)
+## ✅ SDK (@kitsuden/sdk)
 
 ### Package Structure
 
@@ -88,31 +88,31 @@ packages/sdk/
 
 ### Features
 
-#### GremiusClient (Main SDK)
+#### KitsudenClient (Main SDK)
 
 ```typescript
-import { GremiusClient } from "@gremius/sdk";
+import { KitsudenClient } from "@kitsuden/sdk";
 
-const gremius = new GremiusClient({
+const kitsuden = new KitsudenClient({
   url: "http://localhost:3000",
-  apiKey: "grm_agent_your_token",
+  apiKey: "kitsuden_agent_your_token",
 });
 
 // Explorer API — primary CRUD
-const posts = await gremius.from("posts").list();
-const post = await gremius.from("posts").get("uuid-123");
-const newPost = await gremius.from("posts").create({ title: "Hello" });
-await gremius.from("posts").update(newPost.id, { title: "Updated" });
-await gremius.from("posts").delete(newPost.id);
+const posts = await kitsuden.from("posts").list();
+const post = await kitsuden.from("posts").get("uuid-123");
+const newPost = await kitsuden.from("posts").create({ title: "Hello" });
+await kitsuden.from("posts").update(newPost.id, { title: "Updated" });
+await kitsuden.from("posts").delete(newPost.id);
 
 // Legacy Dataset API (backward compat)
-const legacy = await gremius.collection("posts").get();
+const legacy = await kitsuden.collection("posts").get();
 ```
 
-#### GremiusRealtime (WebSocket)
+#### KitsudenRealtime (WebSocket)
 
 ```typescript
-import { GremiusRealtime, createRealtime } from "@gremius/sdk/realtime";
+import { KitsudenRealtime, createRealtime } from "@kitsuden/sdk/realtime";
 
 const rt = createRealtime("http://localhost:3000");
 await rt.connect();
@@ -133,7 +133,7 @@ rt.onPresence("editor:doc-123", (users) => {
 
 | Setting | Default                            | Environment Variable |
 | ------- | ---------------------------------- | -------------------- |
-| WS URL  | `ws://localhost:3000/api/realtime` | `GREMIUS_WS_URL`     |
+| WS URL  | `ws://localhost:3000/api/realtime` | `KITSUDEN_WS_URL`    |
 
 ---
 
@@ -173,12 +173,12 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "gremius": {
+    "kitsuden": {
       "command": "npx",
-      "args": ["-y", "@gremius/mcp-server"],
+      "args": ["-y", "@kitsuden/mcp-server"],
       "env": {
-        "GREMIUS_API_URL": "http://localhost:3000",
-        "GREMIUS_API_TOKEN": "your-api-key"
+        "KITSUDEN_API_URL": "http://localhost:3000",
+        "KITSUDEN_API_TOKEN": "your-api-key"
       }
     }
   }
@@ -188,21 +188,21 @@ Add to `claude_desktop_config.json`:
 ### Using SDK in Frontend
 
 ```typescript
-import { GremiusClient } from "@gremius/sdk";
+import { KitsudenClient } from "@kitsuden/sdk";
 
-const gremius = new GremiusClient({
+const kitsuden = new KitsudenClient({
   url: import.meta.env.VITE_API_URL || "http://localhost:3000",
 });
 
-const data = await gremius.from("posts").list({ limit: 10 });
+const data = await kitsuden.from("posts").list({ limit: 10 });
 ```
 
 ### Using Realtime
 
 ```typescript
-import { createRealtime } from "@gremius/sdk/realtime";
+import { createRealtime } from "@kitsuden/sdk/realtime";
 
-const rt = createRealtime(process.env.GREMIUS_API_URL || "http://localhost:3000");
+const rt = createRealtime(process.env.KITSUDEN_API_URL || "http://localhost:3000");
 
 rt.onStateChange((state) => {
   console.log("Connection state:", state);
@@ -219,11 +219,11 @@ All hardcoded ports have been updated from 3001 to 3000:
 
 ### SDK
 
-- ✅ `packages/sdk/src/realtime.ts` - Uses `GREMIUS_WS_URL` env var with default `ws://localhost:3000`
+- ✅ `packages/sdk/src/realtime.ts` - Uses `KITSUDEN_WS_URL` env var with default `ws://localhost:3000`
 
 ### MCP Server
 
-- ✅ `packages/mcp-server/src/standalone.ts` - Uses `GREMIUS_API_URL` env var with default `http://localhost:3000`
+- ✅ `packages/mcp-server/src/standalone.ts` - Uses `KITSUDEN_API_URL` env var with default `http://localhost:3000`
 
 ### CLI
 
@@ -231,7 +231,7 @@ All hardcoded ports have been updated from 3001 to 3000:
 - ✅ `packages/cli/src/commands/start.ts` - Default: 3000
 - ✅ `packages/cli/src/commands/mcp.ts` - Default: 3000
 - ✅ `packages/cli/src/commands/init.ts` - Default: 3000
-- ✅ `packages/cli/bin/gremius.js` - Default: 3000
+- ✅ `packages/cli/bin/kitsuden.js` - Default: 3000
 
 ### Starter Template
 
@@ -257,9 +257,9 @@ Run with:
 
 ```bash
 docker run -p 3002:3002 \
-  -e GREMIUS_API_URL=http://localhost:3000 \
-  -e GREMIUS_API_TOKEN=your-token \
-  gremius/mcp:latest
+  -e KITSUDEN_API_URL=http://localhost:3000 \
+  -e KITSUDEN_API_TOKEN=your-token \
+  kitsuden/mcp:latest
 ```
 
 ---
@@ -268,17 +268,17 @@ docker run -p 3002:3002 \
 
 ### MCP Server
 
-| Variable            | Required | Default                 | Description              |
-| ------------------- | -------- | ----------------------- | ------------------------ |
-| `GREMIUS_API_URL`   | No       | `http://localhost:3000` | Gremius API URL          |
-| `GREMIUS_API_TOKEN` | No       | -                       | API authentication token |
-| `PORT`              | No       | `3002`                  | MCP server port          |
+| Variable             | Required | Default                 | Description              |
+| -------------------- | -------- | ----------------------- | ------------------------ |
+| `KITSUDEN_API_URL`   | No       | `http://localhost:3000` | Kitsuden API URL         |
+| `KITSUDEN_API_TOKEN` | No       | -                       | API authentication token |
+| `PORT`               | No       | `3002`                  | MCP server port          |
 
 ### SDK
 
-| Variable         | Required | Default                            | Description   |
-| ---------------- | -------- | ---------------------------------- | ------------- |
-| `GREMIUS_WS_URL` | No       | `ws://localhost:3000/api/realtime` | WebSocket URL |
+| Variable          | Required | Default                            | Description   |
+| ----------------- | -------- | ---------------------------------- | ------------- |
+| `KITSUDEN_WS_URL` | No       | `ws://localhost:3000/api/realtime` | WebSocket URL |
 
 ---
 
@@ -316,5 +316,5 @@ docker run -p 3002:3002 \
 3. **Test SDK:**
    ```bash
    # In a test project
-   npm install @gremius/sdk
+   npm install @kitsuden/sdk
    ```

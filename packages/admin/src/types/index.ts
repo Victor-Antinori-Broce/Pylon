@@ -42,6 +42,27 @@ export interface BlogPost {
   seoOverrides?: SEOData;
   tags?: Tag[];
   relatedGames?: Game[];
+
+  /** ¿Está abierto el hilo? Ausente en posts anteriores a la columna: eso es abierto. */
+  commentsEnabled?: boolean;
+
+  /**
+   * De dónde cuelga el hilo de este artículo, ya resuelto por la API.
+   *
+   * Viaja aquí para que quien pinte el post no componga la cadena por su
+   * cuenta: `post`, `blog_post` y `blogpost` abrirían tres hilos distintos
+   * sobre el mismo artículo sin dar ningún error.
+   */
+  comments?: {
+    subjectType: string;
+    subjectId: string;
+    /** Ruta ya montada del hilo. */
+    endpoint: string;
+    enabled: boolean;
+    /** `null` = kon-comments no está instalado (distinto de «no hay ninguno»). */
+    count: number | null;
+  };
+
   createdAt: string;
   updatedAt: string;
 }

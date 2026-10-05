@@ -1,124 +1,130 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# GremiusCMS — Docker Compose AUTOMÁTICO
+# Kitsuden — Docker Compose AUTOMÁTICO
 #
-# 🚀 USO SIMPLE: docker compose -f docker-compose.automatic.yml up -d
+# 🚀 USO SIMPLE:
+#   1. cp .env.example .env
+#   2. Edita .env y configura POSTGRES_PASSWORD, BETTER_AUTH_SECRET, S3_SECRET_KEY
+#   3. docker compose -f docker-compose.automatic.yml up -d
 #
 # Este archivo hace TODO automáticamente:
 #   ✓ Inicia PostgreSQL, Valkey, MinIO
 #   ✓ Corre migraciones automáticamente
-#   ✓ Instala grimoires desde gremius.config.ts
+#   ✓ Instala kons desde kitsuden.config.ts
 #   ✓ Registra plugins en la base de datos
 #   ✓ Inicia API y Admin
 #
-# No necesitas correr comandos manuales. Solo:
-#   docker compose -f docker-compose.automatic.yml up -d
-#
+# NUNCA subas .env a git.
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
   # ═══════════════════════════════════════════════════════════════════════
   # PostgreSQL 16 + pgvector
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_db:
+  kitsuden_db:
     image: pgvector/pgvector:pg16
-    container_name: gremius_db_auto
+    container_name: kitsuden_db_auto
     restart: unless-stopped
     environment:
-      POSTGRES_USER: gremius
-      POSTGRES_PASSWORD: gremiuspassword
-      POSTGRES_DB: gremius
+      POSTGRES_USER: ${POSTGRES_USER:-kitsuden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kitsuden}
     volumes:
-      - gremius_postgres_auto:/var/lib/postgresql/data
+      - kitsuden_postgres_auto:/var/lib/postgresql/data
       - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gremius -d gremius"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kitsuden} -d ${POSTGRES_DB:-kitsuden}"]
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
-      - gremius_net_auto
+      - kitsuden_net_auto
 
   # ═══════════════════════════════════════════════════════════════════════
   # MinIO (S3-compatible storage)
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_minio:
+  kitsuden_minio:
     image: minio/minio:latest
-    container_name: gremius_minio_auto
+    container_name: kitsuden_minio_auto
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: gremius_minio
-      MINIO_ROOT_PASSWORD: gremius_minio_secret
+      # ⚠️ REQUIRED. Set S3_ACCESS_KEY and S3_SECRET_KEY in .env
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required - set it in .env}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - gremius_minio_auto:/data
+      - kitsuden_minio_auto:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
-      - gremius_net_auto
+      - kitsuden_net_auto
 
   # ═══════════════════════════════════════════════════════════════════════
   # Valkey (Redis-compatible)
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_cache:
+  kitsuden_cache:
     image: valkey/valkey:7-alpine
-    container_name: gremius_cache_auto
+    container_name: kitsuden_cache_auto
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
-      - "6379:6379"
+      - "${VALKEY_PORT:-6379}:6379"
     volumes:
-      - gremius_valkey_auto:/data
+      - kitsuden_valkey_auto:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
     networks:
-      - gremius_net_auto
+      - kitsuden_net_auto
 
   # ═══════════════════════════════════════════════════════════════════════
   # API - Con AUTO-SETUP completo
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_api:
+  kitsuden_api:
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: api
-    container_name: gremius_api_auto
+    container_name: kitsuden_api_auto
     restart: unless-stopped
     depends_on:
-      gremius_db:
+      kitsuden_db:
         condition: service_healthy
-      gremius_minio:
+      kitsuden_minio:
         condition: service_healthy
-      gremius_cache:
+      kitsuden_cache:
         condition: service_healthy
     environment:
       # Server
       - NODE_ENV=production
       - PORT=3000
       # Database
-      - DATABASE_URL=postgresql://gremius:gremiuspassword@gremius_db_auto:5432/gremius
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db_auto:5432/${POSTGRES_DB:-kitsuden}
       # Valkey
-      - REDIS_URL=redis://gremius_cache_auto:6379
-      - VALKEY_URL=redis://gremius_cache_auto:6379
+      - REDIS_URL=redis://kitsuden_cache_auto:6379
+      - VALKEY_URL=redis://kitsuden_cache_auto:6379
       # S3/MinIO
-      - S3_ENDPOINT=http://gremius_minio_auto:9000
-      - S3_PUBLIC_URL=http://localhost:9000
-      - S3_ACCESS_KEY=gremius_minio
-      - S3_SECRET_KEY=gremius_minio_secret
-      - S3_BUCKET=gremius-uploads
-      - S3_REGION=us-east-1
+      - S3_ENDPOINT=http://kitsuden_minio_auto:9000
+      - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:9000}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:?S3_ACCESS_KEY is required - set it in .env}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
+      - S3_BUCKET=${S3_BUCKET:-kitsuden-uploads}
+      - S3_REGION=${S3_REGION:-us-east-1}
       # Auth
-      - BETTER_AUTH_SECRET=your-secret-key-change-in-production
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required - set it in .env (min 32 chars)}
+      # KITSUDEN Secrets Manager (clave maestra AES-256-GCM; fallback a BETTER_AUTH_SECRET)
+      - KITSUDEN_SECRETS_KEY=${KITSUDEN_SECRETS_KEY:-}
+      # KITSUDEN Vault (esquemas dinámicos con DDL real, opt-in)
+      - KITSUDEN_VAULT_ENABLED=${KITSUDEN_VAULT_ENABLED:-false}
       - BETTER_AUTH_URL=http://localhost:3000
       # URLs
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
@@ -126,70 +132,70 @@ services:
       # Features
       - ENABLE_SWAGGER=true
       - ENABLE_MCP=true
-      - GREMIUS_AUTO_SETUP=true
+      - KITSUDEN_AUTO_SETUP=true
       # Logging
-      - LOG_LEVEL=info
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     ports:
       - "3000:3000"
     volumes:
-      # Mount para desarrollo: cambios en grimoires se reflejan sin rebuild
-      - ./packages/grimoires:/app/packages/grimoires:ro
-      - ./apps/api/gremius.config.ts:/app/apps/api/gremius.config.ts:ro
+      # Mount para desarrollo: cambios en kons se reflejan sin rebuild
+      - ./packages/kons:/app/packages/kons:ro
+      - ./apps/api/kitsuden.config.ts:/app/apps/api/kitsuden.config.ts:ro
     networks:
-      - gremius_net_auto
+      - kitsuden_net_auto
     command: ["sh", "/app/docker/start-with-check.sh"]
 
   # ═══════════════════════════════════════════════════════════════════════
   # Admin Panel
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_admin:
+  kitsuden_admin:
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: admin
       args:
         - PUBLIC_API_URL=http://localhost:3000
-    container_name: gremius_admin_auto
+    container_name: kitsuden_admin_auto
     restart: unless-stopped
     depends_on:
-      gremius_api:
+      kitsuden_api:
         condition: service_started
     ports:
       - "3001:80"
     networks:
-      - gremius_net_auto
+      - kitsuden_net_auto
 
   # ═══════════════════════════════════════════════════════════════════════
   # Setup Helper (one-shot container for initial setup tasks)
   # ═══════════════════════════════════════════════════════════════════════
-  gremius_setup:
+  kitsuden_setup:
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: api
-    container_name: gremius_setup_auto
+    container_name: kitsuden_setup_auto
     depends_on:
-      gremius_db:
+      kitsuden_db:
         condition: service_healthy
-      gremius_api:
+      kitsuden_api:
         condition: service_started
     environment:
-      - DATABASE_URL=postgresql://gremius:gremiuspassword@gremius_db_auto:5432/gremius
-      - API_URL=http://gremius_api_auto:3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db_auto:5432/${POSTGRES_DB:-kitsuden}
+      - API_URL=http://kitsuden_api_auto:3000
     networks:
-      - gremius_net_auto
+      - kitsuden_net_auto
     command: >
       sh -c "
         echo '⏳ Waiting for API to be ready...' &&
         sleep 10 &&
         echo '🔍 Checking API health...' &&
-        wget -q --spider http://gremius_api_auto:3000/api/health &&
+        wget -q --spider http://kitsuden_api_auto:3000/api/health &&
         echo '✅ API is ready!' &&
         echo '' &&
-        echo '🎉 GremiusCMS is fully operational!' &&
+        echo '🎉 Kitsuden is fully operational!' &&
         echo '' &&
         echo '═══════════════════════════════════════════════════════════════' &&
-        echo '  🚀 GremiusCMS Started Successfully' &&
+        echo '  🚀 Kitsuden Started Successfully' &&
         echo '═══════════════════════════════════════════════════════════════' &&
         echo '' &&
         echo '  📚 API + Swagger:   http://localhost:3000/api/swagger' &&
@@ -206,14 +212,11 @@ services:
         max_attempts: 3
 
 volumes:
-  gremius_postgres_auto:
-    name: gremius_postgres_auto
-  gremius_minio_auto:
-    name: gremius_minio_auto
-  gremius_valkey_auto:
-    name: gremius_valkey_auto
+  kitsuden_postgres_auto:
+  kitsuden_minio_auto:
+  kitsuden_valkey_auto:
 
 networks:
-  gremius_net_auto:
-    name: gremius_net_auto
+  kitsuden_net_auto:
+    name: kitsuden_net_auto
     driver: bridge

@@ -15,18 +15,23 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-gremius-text">Appearance</h2>
-      <p class="text-sm text-gremius-text-dim mt-0.5">Customize the admin panel colors and theme</p>
+      <h2 class="text-xl font-bold text-kitsuden-text">Appearance</h2>
+      <p class="text-sm text-kitsuden-text-dim mt-0.5">
+        Customize the admin panel colors and theme
+      </p>
     </div>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {#each themes as theme}
-      <div class="card p-4 relative group" class:border-gremius-cyan={$currentTheme === theme.id}>
-        {#if $currentTheme === theme.id}
+      <div
+        class="card p-4 relative group"
+        class:border-kitsuden-accent={currentTheme() === theme.id}
+      >
+        {#if currentTheme() === theme.id}
           <div class="absolute top-2 right-2">
             <span
-              class="px-2 py-1 text-[10px] font-medium bg-gremius-cyan/10 text-gremius-cyan rounded-full"
+              class="px-2 py-1 text-[10px] font-medium bg-kitsuden-accent/10 text-kitsuden-accent rounded-full"
             >
               Active
             </span>
@@ -38,16 +43,16 @@
             class="w-10 h-10 rounded-lg flex items-center justify-center"
             style="background: {theme.preview}"
           >
-            <Coffee class="w-5 h-5 text-gremius-text" />
+            <Coffee class="w-5 h-5 text-kitsuden-text" />
           </div>
           <div>
-            <h3 class="font-semibold text-gremius-text">{theme.name}</h3>
-            <p class="text-xs text-gremius-subtle">{theme.description}</p>
+            <h3 class="font-semibold text-kitsuden-text">{theme.name}</h3>
+            <p class="text-xs text-kitsuden-subtle">{theme.description}</p>
           </div>
         </div>
 
         <div class="flex items-center gap-2 mt-4">
-          {#if $currentTheme === theme.id}
+          {#if currentTheme() === theme.id}
             <button class="btn-secondary flex-1" disabled>
               <Check class="w-4 h-4" /> Active
             </button>
@@ -59,7 +64,7 @@
 
           {#if theme.id !== "default"}
             <button
-              class="p-2 rounded-lg text-gremius-text-dim hover:bg-gremius-pink/10 hover:text-gremius-pink transition-colors"
+              class="p-2 rounded-lg text-kitsuden-text-dim hover:bg-kitsuden-accent-2/10 hover:text-kitsuden-accent-2 transition-colors"
               onclick={() => uninstallTheme(theme.id)}
             >
               <Trash2 class="w-4 h-4" />
@@ -71,14 +76,14 @@
 
     <!-- Install new theme card -->
     <button
-      class="card p-4 border-dashed border-2 border-gremius-border hover:border-gremius-cyan/50 transition-colors flex flex-col items-center justify-center min-h-[160px] gap-3"
+      class="card p-4 border-dashed border-2 border-kitsuden-border hover:border-kitsuden-accent/50 transition-colors flex flex-col items-center justify-center min-h-[160px] gap-3"
     >
-      <div class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center">
-        <Download class="w-5 h-5 text-gremius-cyan" />
+      <div class="w-10 h-10 rounded-lg bg-kitsuden-surface flex items-center justify-center">
+        <Download class="w-5 h-5 text-kitsuden-accent" />
       </div>
       <div class="text-center">
-        <h3 class="font-semibold text-gremius-text">Install Theme</h3>
-        <p class="text-xs text-gremius-subtle mt-0.5">Import from file or URL</p>
+        <h3 class="font-semibold text-kitsuden-text">Install Theme</h3>
+        <p class="text-xs text-kitsuden-subtle mt-0.5">Import from file or URL</p>
       </div>
     </button>
   </div>

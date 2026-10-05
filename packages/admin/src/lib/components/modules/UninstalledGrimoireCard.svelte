@@ -1,17 +1,17 @@
 <script lang="ts">
   import { Archive, Database, Trash2, RotateCcw } from "lucide-svelte";
 
-  import type { UninstalledGrimoire } from "$lib/states/modules.svelte";
+  import type { UninstalledKon } from "$lib/states/modules.svelte";
 
   interface Props {
-    grimoire: UninstalledGrimoire;
+    kon: UninstalledKon;
     onRecover?: () => void;
     onDelete?: () => void;
     recovering?: boolean;
     deleting?: boolean;
   }
 
-  const { grimoire, onRecover, onDelete, recovering = false, deleting = false }: Props = $props();
+  const { kon, onRecover, onDelete, recovering = false, deleting = false }: Props = $props();
 
   function formatNumber(num: number): string {
     if (num >= 1000) return (num / 1000).toFixed(1) + "k";
@@ -20,67 +20,67 @@
 </script>
 
 <div
-  class="card p-5 relative overflow-hidden border-dashed border-gremius-border/50 bg-gremius-surface/30"
+  class="card p-5 relative overflow-hidden border-dashed border-kitsuden-border/50 bg-kitsuden-surface/30"
 >
   <!-- Dashed border indicator for uninstalled state -->
   <div
-    class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gremius-subtle/40 via-gremius-subtle/20 to-transparent"
+    class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-kitsuden-subtle/40 via-kitsuden-subtle/20 to-transparent"
   ></div>
 
   <div class="flex items-start gap-3">
     <div
-      class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-gremius-surface/50 border border-gremius-border/50 grayscale opacity-70"
+      class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-kitsuden-surface/50 border border-kitsuden-border/50 grayscale opacity-70"
     >
       📦
     </div>
 
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 flex-wrap">
-        <p class="font-semibold text-gremius-text text-sm opacity-80">{grimoire.name}</p>
+        <p class="font-semibold text-kitsuden-text text-sm opacity-80">{kon.name}</p>
         <span
-          class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gremius-subtle/20 text-gremius-subtle border border-gremius-border/50 flex items-center gap-1"
+          class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-kitsuden-subtle/20 text-kitsuden-subtle border border-kitsuden-border/50 flex items-center gap-1"
         >
           <Archive class="w-2.5 h-2.5" /> UNINSTALLED
         </span>
       </div>
 
-      {#if grimoire.hasPreservedData}
-        <div class="mt-2 flex items-center gap-1.5 text-xs text-gremius-cyan/80">
+      {#if kon.hasPreservedData}
+        <div class="mt-2 flex items-center gap-1.5 text-xs text-kitsuden-accent/80">
           <Database class="w-3.5 h-3.5" />
-          <span>Data preserved: {formatNumber(grimoire.dataSummary.totalRows)} rows</span>
+          <span>Data preserved: {formatNumber(kon.dataSummary.totalRows)} rows</span>
         </div>
 
-        {#if grimoire.dataSummary.tables.length > 0}
+        {#if kon.dataSummary.tables.length > 0}
           <div class="mt-1.5 flex flex-wrap gap-1">
-            {#each grimoire.dataSummary.tables.slice(0, 3) as table}
+            {#each kon.dataSummary.tables.slice(0, 3) as table}
               <span
-                class="text-[10px] px-1.5 py-0.5 rounded bg-gremius-bg border border-gremius-border/50 text-gremius-subtle font-mono"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-kitsuden-bg border border-kitsuden-border/50 text-kitsuden-subtle font-mono"
               >
                 {table.name}: {formatNumber(table.rows)}
               </span>
             {/each}
-            {#if grimoire.dataSummary.tables.length > 3}
+            {#if kon.dataSummary.tables.length > 3}
               <span
-                class="text-[10px] px-1.5 py-0.5 rounded bg-gremius-bg border border-gremius-border/50 text-gremius-subtle"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-kitsuden-bg border border-kitsuden-border/50 text-kitsuden-subtle"
               >
-                +{grimoire.dataSummary.tables.length - 3} more
+                +{kon.dataSummary.tables.length - 3} more
               </span>
             {/if}
           </div>
         {/if}
       {:else}
-        <p class="text-xs text-gremius-subtle mt-1">No data preserved</p>
+        <p class="text-xs text-kitsuden-subtle mt-1">No data preserved</p>
       {/if}
     </div>
   </div>
 
   <!-- Action Buttons -->
-  <div class="mt-4 pt-3 border-t border-gremius-border/30 flex gap-2">
-    {#if grimoire.canRecover}
+  <div class="mt-4 pt-3 border-t border-kitsuden-border/30 flex gap-2">
+    {#if kon.canRecover}
       <button
         onclick={onRecover}
         disabled={recovering}
-        class="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors bg-gremius-cyan/10 text-gremius-cyan hover:bg-gremius-cyan/20 border border-gremius-cyan/20 disabled:opacity-50"
+        class="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors bg-kitsuden-accent/10 text-kitsuden-accent hover:bg-kitsuden-accent/20 border border-kitsuden-accent/20 disabled:opacity-50"
       >
         {#if recovering}
           <RotateCcw class="w-3.5 h-3.5 animate-spin" />
@@ -92,11 +92,11 @@
       </button>
     {/if}
 
-    {#if grimoire.canDelete}
+    {#if kon.canDelete}
       <button
         onclick={onDelete}
         disabled={deleting}
-        class="flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors bg-gremius-pink/10 text-gremius-pink hover:bg-gremius-pink/20 border border-gremius-pink/20 disabled:opacity-50"
+        class="flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors bg-kitsuden-accent-2/10 text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/20 border border-kitsuden-accent-2/20 disabled:opacity-50"
         title="Permanently delete data"
       >
         {#if deleting}
@@ -111,6 +111,6 @@
 
 <style>
   .card {
-    @apply rounded-xl border border-gremius-border bg-gremius-card;
+    @apply rounded-xl border border-kitsuden-border bg-kitsuden-card;
   }
 </style>

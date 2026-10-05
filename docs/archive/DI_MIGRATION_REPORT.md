@@ -1,13 +1,13 @@
 # 📊 Informe de Migración a Dependency Injection (DI)
 
 **Fecha:** 2026-03-18  
-**Grimoires Migrados:** 7
+**Kons Migrados:** 7
 
 ---
 
-## ✅ GRIMOIRES MIGRADOS A DI COMPLETO
+## ✅ KONS MIGRADOS A DI COMPLETO
 
-### 1. grimoire-games
+### 1. kon-games
 
 - **Archivos modificados:**
   - `games.routes.ts` - Factory function `createGamesRouter(ctx)`
@@ -18,7 +18,7 @@
   - Agregado helper `requireAuth` desde `ctx.auth`
   - Export legacy mantenido para compatibilidad
 
-### 2. grimoire-esports
+### 2. kon-esports
 
 - **Archivos modificados:**
   - `esports.di.ts` - Nuevo archivo wrapper DI
@@ -27,7 +27,7 @@
 - **Nota:** Wrapper DI que inyecta contexto a sub-rutas legacy
 - **Sub-rutas:** players, teams, tournaments, matches
 
-### 3. grimoire-crm
+### 3. kon-crm
 
 - **Archivos modificados:**
   - `crm.routes.ts` - Factory function `createCRMRouter(ctx)`
@@ -37,7 +37,7 @@
   - 519 líneas migradas
   - Reemplazadas referencias de `db.` → `dbInstance.`
 
-### 4. grimoire-booking
+### 4. kon-booking
 
 - **Archivos modificados:**
   - `booking.routes.ts` - Factory function `createBookingRouter(ctx)`
@@ -47,7 +47,7 @@
   - Helpers de cache usando `ctx.cache`
   - Auth usando `ctx.auth`
 
-### 5. grimoire-directory
+### 5. kon-directory
 
 - **Archivos modificados:**
   - `directory.routes.ts` - Factory function `createDirectoryRouter(ctx)`
@@ -57,14 +57,14 @@
   - Cache helpers usando `ctx.cache`
   - Auth usando `ctx.auth`
 
-### 6. grimoire-dms
+### 6. kon-dms
 
 - **Archivos modificados:**
   - `index.ts` - Factory function `createDMSRouter(ctx)`
 - **Estado:** ✅ DI (Placeholder)
 - **Nota:** Era un placeholder, ahora usa DI correctamente
 
-### 7. grimoire-streamers
+### 7. kon-streamers
 
 - **Archivos modificados:**
   - `streamers.routes.ts` - Factory function `createStreamersRouter(ctx)`
@@ -95,22 +95,22 @@
 | Legacy           | 1        |
 | **Total**        | **12**   |
 
-### Grimoires con DI (9)
+### Kons con DI (9)
 
-1. ✅ grimoire-blocks (ya estaba)
-2. ✅ grimoire-blog (ya estaba)
-3. ✅ grimoire-academy-lms (ya estaba)
-4. ✅ **grimoire-games** (migrado)
-5. ✅ **grimoire-esports** (wrapper DI)
-6. ✅ **grimoire-crm** (migrado)
-7. ✅ **grimoire-booking** (migrado)
-8. ✅ **grimoire-directory** (migrado)
-9. ✅ **grimoire-dms** (placeholder DI)
-10. ✅ **grimoire-streamers** (migrado)
+1. ✅ kon-blocks (ya estaba)
+2. ✅ kon-blog (ya estaba)
+3. ✅ kon-academy-lms (ya estaba)
+4. ✅ **kon-games** (migrado)
+5. ✅ **kon-esports** (wrapper DI)
+6. ✅ **kon-crm** (migrado)
+7. ✅ **kon-booking** (migrado)
+8. ✅ **kon-directory** (migrado)
+9. ✅ **kon-dms** (placeholder DI)
+10. ✅ **kon-streamers** (migrado)
 
 ### Pendientes (2)
 
-- ⚠️ grimoire-formulas - Legacy (funciona)
+- ⚠️ kon-formulas - Legacy (funciona)
 - ⚠️ ai-memories - Legacy (funciona)
 
 ---
@@ -120,7 +120,7 @@
 ### 1. Factory Function
 
 ```typescript
-export function createXXXRouter(ctx: GrimoireContext): Hono {
+export function createXXXRouter(ctx: KonContext): Hono {
   const router = new Hono();
   const { db, cache, auth } = ctx;
 
@@ -136,7 +136,7 @@ export function createXXXRouter(ctx: GrimoireContext): Hono {
 ### 2. Index Export
 
 ```typescript
-import type { GrimoireContext } from "@gremius/shared";
+import type { KonContext } from "@kitsuden/shared";
 import { createXXXRouter } from "./xxx.routes";
 
 export { createXXXRouter };
@@ -156,7 +156,7 @@ export { legacyRouter as xxxRoutes };
 
 ## ✅ VALIDACIÓN
 
-Todos los grimoires migrados:
+Todos los kons migrados:
 
 - ✅ Compilan sin errores
 - ✅ Exportan factory function
@@ -168,7 +168,7 @@ Todos los grimoires migrados:
 
 ## 🎯 RESULTADO
 
-**75% de los grimoires ahora usan DI completo**
+**75% de los kons ahora usan DI completo**
 
 El sistema está significativamente más desacoplado y listo para:
 

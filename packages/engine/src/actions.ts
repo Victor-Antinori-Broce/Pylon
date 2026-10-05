@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * Gremius Engine — Actions Layer (Nivel 1: Core Infrastructure)
+ * Kitsuden Engine — Actions Layer (Nivel 1: Core Infrastructure)
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Abstracción unificada para definir acciones que pueden ejecutarse vía:
@@ -17,7 +17,7 @@
  *
  * @example
  * ```typescript
- * import { defineAction } from "@gremius/engine/actions";
+ * import { defineAction } from "@kitsuden/engine/actions";
  *
  * // HTTP Trigger
  * defineAction({
@@ -51,10 +51,11 @@
  * ```
  */
 
-import type { GrimoireContext } from "@gremius/shared";
+import type { KonContext } from "@kitsuden/shared";
 import type { Worker, Job, Queue } from "bullmq";
 import type { Hono, Context as HonoContext } from "hono";
 
+import { messageOf } from "./errors";
 import { validate, ValidationSchema } from "./validator";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -106,8 +107,8 @@ export interface ActionContext<TPayload = unknown> {
   payload: TPayload;
   /** Database instance (Drizzle) */
   db: any;
-  /** Grimoire context (full DI context) */
-  grimoire: GrimoireContext;
+  /** Kon context (full DI context) */
+  kon: KonContext;
   /** Logger instance */
   logger: {
     info: (msg: string, meta?: Record<string, unknown>) => void;
@@ -386,7 +387,7 @@ class HonoAdapter implements ActionAdapter {
 
         ctx = buildActionContext({
           payload,
-          grimoire: c.get("grimoireContext") as GrimoireContext,
+          kon: c.get("konContext") as KonContext,
           http: {
             hono: c,
             headers: c.req.header() as any,
@@ -423,12 +424,12 @@ class HonoAdapter implements ActionAdapter {
           },
           (normalized.statusCode as any) || 200
         );
-      } catch (err: any) {
-        ctx!.logger.error(`Action failed: ${trigger.raw}`, { error: err.message });
+      } catch (err: unknown) {
+        ctx!.logger.error(`Action failed: ${trigger.raw}`, { error: messageOf(err) });
         return c.json(
           {
             success: false,
-            error: err.message,
+            error: messageOf(err),
             meta: { trigger: trigger.raw, duration: Date.now() - startTime },
           },
           500
@@ -457,6 +458,7 @@ class HonoAdapter implements ActionAdapter {
         (this.app as any).on(method.toUpperCase(), path, handler);
     }
 
+    // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
     console.log(`  🔷 [Actions] HTTP ${method.toUpperCase()} ${path} registered`);
   }
 }
@@ -488,7 +490,7 @@ class BullMQAdapter implements ActionAdapter {
       return;
     }
 
-    const queueName = `gremius:actions:${trigger.path}`;
+    const queueName = `kitsuden:actions:${trigger.path}`;
     const concurrency = definition.meta?.concurrency ?? 3;
 
     // Create queue if not exists
@@ -505,7 +507,8 @@ class BullMQAdapter implements ActionAdapter {
       async (job: Job<TPayload>) => {
         const ctx = buildActionContext({
           payload: job.data,
-          grimoire: null as any, // Will be injected by engine
+          // Sin contexto de kon: `ctx.db` fallará diciéndolo si la acción lo usa.
+          kon: null,
           event: {
             job,
             jobId: job.id ?? "unknown",
@@ -520,14 +523,16 @@ class BullMQAdapter implements ActionAdapter {
     );
 
     worker.on("completed", (job: Job) => {
+      // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
       console.log(`  ✅ [Action Worker] ${trigger.path}#${job.id} completed`);
     });
 
     worker.on("failed", (job: Job | undefined, err: Error) => {
-      console.error(`  ❌ [Action Worker] ${trigger.path}#${job?.id} failed: ${err.message}`);
+      console.error(`  ❌ [Action Worker] ${trigger.path}#${job?.id} failed: ${messageOf(err)}`);
     });
 
     this.workers.set(trigger.path, worker);
+    // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
     console.log(
       `  🔷 [Actions] Event worker "${trigger.path}" registered (concurrency: ${concurrency})`
     );
@@ -536,10 +541,12 @@ class BullMQAdapter implements ActionAdapter {
   async shutdown(): Promise<void> {
     for (const [name, worker] of Array.from(this.workers.entries())) {
       await worker.close();
+      // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
       console.log(`  🔌 [Actions] Worker "${name}" closed`);
     }
     for (const [name, queue] of Array.from(this.queues.entries())) {
       await queue.close();
+      // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
       console.log(`  🔌 [Actions] Queue "${name}" closed`);
     }
   }
@@ -602,7 +609,7 @@ class MCPAdapter implements ActionAdapter {
 
         const ctx = buildActionContext({
           payload: args,
-          grimoire: null as any,
+          kon: null,
           agent: {
             agentId: extra?.agentId || "unknown",
             agentName: extra?.agentName || "unknown",
@@ -634,6 +641,7 @@ class MCPAdapter implements ActionAdapter {
       this.server.addTool(toolDef);
     }
 
+    // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
     console.log(`  🔷 [Actions] MCP tool "${toolName}" registered`);
   }
 
@@ -656,7 +664,7 @@ class MCPAdapter implements ActionAdapter {
 
     const ctx = buildActionContext({
       payload: args,
-      grimoire: null as any,
+      kon: null,
       agent: {
         agentId: extra?.agentId || "unknown",
         agentName: extra?.agentName || "unknown",
@@ -762,7 +770,7 @@ function wrapWithValidation<TPayload, TResult>(
     ...definition,
     run: async (ctx: ActionContext<TPayload>): Promise<ActionResult<TResult> | TResult | void> => {
       // Validate payload before execution
-      const validationResult = validate(ctx.payload as Record<string, any>, validationSchema);
+      const validationResult = validate(ctx.payload as Record<string, unknown>, validationSchema);
 
       if (!validationResult.valid) {
         ctx.logger.warn(`Validation failed for action: ${definition.trigger}`, {
@@ -805,7 +813,7 @@ function wrapWithTelemetry<TPayload, TResult>(
     ...definition,
     run: async (ctx: ActionContext<TPayload>): Promise<ActionResult<TResult> | TResult | void> => {
       // Check if we have a traceId in the context (set by agent/trigger)
-      const traceId = (ctx.grimoire as any)?.telemetry?.traceId as string | undefined;
+      const traceId = telemetriaDe(ctx)?.traceId;
 
       // Check if telemetry provider is available
       const provider = globalTelemetryProvider;
@@ -823,8 +831,8 @@ function wrapWithTelemetry<TPayload, TResult>(
       const stepId = generateUUID();
       const startTime = performance.now();
 
-      // Get step order (from grimoire telemetry state or default to 0)
-      const telemetryState = (ctx.grimoire as any)?.telemetry;
+      // Get step order (from kon telemetry state or default to 0)
+      const telemetryState = telemetriaDe(ctx);
       const stepOrder = telemetryState?.stepOrder || 0;
 
       // Increment step order for next step
@@ -874,9 +882,9 @@ function wrapWithTelemetry<TPayload, TResult>(
           });
 
         return result;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const durationMs = Math.round(performance.now() - startTime);
-        const errorMessage = error?.message || String(error);
+        const errorMessage = messageOf(error, String(error));
 
         // Update step with error result (async, don't await)
         provider
@@ -905,42 +913,107 @@ function wrapWithTelemetry<TPayload, TResult>(
 
 interface ContextBuildOptions {
   payload: unknown;
-  grimoire: GrimoireContext;
+  /**
+   * Contenedor de DI del kon. `null` en los caminos de agente, MCP y cola.
+   *
+   * No es un descuido de tipos: es que ahí NO HAY contexto. Esos tres caminos
+   * pasan `null` con un "will be injected by engine" que nunca se implementó,
+   * así que la acción se ejecuta sin base de datos. Antes se escribía
+   * `kon: null as any`, que hacía pasar un nulo por un `KonContext` y dejaba el
+   * hueco invisible; declararlo `| null` lo pone en el tipo, donde se ve.
+   */
+  kon: KonContext | null;
   http?: ActionContext["http"];
   event?: ActionContext["event"];
   agent?: ActionContext["agent"];
   traceId?: string; // Optional traceId for telemetry
 }
 
-function buildActionContext<TPayload>(opts: ContextBuildOptions): ActionContext<TPayload> {
-  const { payload, grimoire, http, event, agent, traceId } = opts;
+/**
+ * Estado de telemetría de UNA ejecución.
+ *
+ * Vive en el contexto de la ejecución, no colgado del `kon`. Antes se hacía
+ * `(kon as any).telemetry = {...}`, o sea que se MUTABA el contenedor de DI —
+ * que es compartido por todas las ejecuciones de ese kon. Hoy no llega a
+ * romperse porque el único camino que fija `traceId` pasa `kon: null` y acaba
+ * mutando un objeto recién creado; pero bastaba con que el camino HTTP
+ * empezara a mandar `traceId` para que dos peticiones concurrentes se pisaran
+ * el trazo y los pasos acabaran atribuidos a la traza equivocada.
+ */
+export interface EstadoTelemetria {
+  traceId: string;
+  stepOrder: number;
+}
 
-  // Inject telemetry state into grimoire context if traceId provided
-  const enhancedGrimoire = grimoire || ({} as GrimoireContext);
-  if (traceId && enhancedGrimoire) {
-    (enhancedGrimoire as any).telemetry = {
-      traceId,
-      stepOrder: 0,
-    };
-  }
+/** Estado de telemetría por ejecución, indexado por el contexto que la lleva. */
+const telemetriaPorContexto = new WeakMap<object, EstadoTelemetria>();
 
+/** Lee el estado de telemetría de una ejecución, si la tiene. */
+export function telemetriaDe(ctx: object): EstadoTelemetria | undefined {
+  return telemetriaPorContexto.get(ctx);
+}
+
+/**
+ * `db` cuando no hay contexto de kon.
+ *
+ * Devolver `undefined` convertía "esta acción se lanzó sin contexto" en
+ * `Cannot read properties of undefined (reading 'select')`, cien líneas más
+ * adentro y sin pista de por qué por HTTP sí funcionaba. Este proxy falla en
+ * la primera propiedad que se toque y dice exactamente qué pasó.
+ */
+/**
+ * Logger de reserva cuando no hay contexto de kon.
+ *
+ * Antes era `|| console` a secas. `console` casi encaja, pero no es el mismo
+ * tipo: se apoyaba en el `any` para colar. Aquí se adapta explícitamente, y
+ * queda escrito que esta salida NO va al logging estructurado del host — el
+ * engine no puede alcanzarlo sin crear un ciclo.
+ */
+function loggerDeConsola(): ActionContext["logger"] {
+  /* eslint-disable no-console -- reserva sin contexto: no hay logger del host al que ir */
   return {
+    info: (msg, meta) => console.info(msg, meta ?? ""),
+    warn: (msg, meta) => console.warn(msg, meta ?? ""),
+    error: (msg, meta) => console.error(msg, meta ?? ""),
+    debug: (msg, meta) => console.debug(msg, meta ?? ""),
+  };
+  /* eslint-enable no-console */
+}
+
+function dbAusente(): unknown {
+  return new Proxy(
+    {},
+    {
+      get(_t, prop) {
+        throw new Error(
+          `ctx.db no está disponible: esta acción se ejecutó SIN contexto de kon ` +
+            `(camino de agente, MCP o cola, que pasan kon=null). Por HTTP sí lo hay. ` +
+            `Propiedad pedida: "${String(prop)}".`
+        );
+      },
+    }
+  );
+}
+
+function buildActionContext<TPayload>(opts: ContextBuildOptions): ActionContext<TPayload> {
+  const { payload, kon, http, event, agent, traceId } = opts;
+
+  const ctx: ActionContext<TPayload> = {
     payload: payload as TPayload,
-    db: (enhancedGrimoire as any)?.db?.instance,
-    grimoire: enhancedGrimoire,
-    logger: (enhancedGrimoire as any)?.logger || console,
+    db: kon?.db?.instance ?? dbAusente(),
+    kon: kon ?? ({} as KonContext),
+    logger: kon?.logger ?? loggerDeConsola(),
     queue: {
       add: async (_queueName, _jobName, _data) => {
-        // Implementation would use BullMQ queue
+        // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
         console.log(`[Queue] Adding job "${_jobName}" to "${_queueName}"`);
         return null;
       },
       get: (_name: string) => {
-        // Return queue instance
         return undefined;
       },
     },
-    cache: (enhancedGrimoire as any)?.cache || {
+    cache: kon?.cache ?? {
       get: async () => null,
       set: async () => {},
       invalidate: async () => {},
@@ -949,6 +1022,11 @@ function buildActionContext<TPayload>(opts: ContextBuildOptions): ActionContext<
     event,
     agent,
   };
+
+  // La telemetría se asocia AL CONTEXTO de esta ejecución, no al kon.
+  if (traceId) telemetriaPorContexto.set(ctx, { traceId, stepOrder: 0 });
+
+  return ctx;
 }
 
 function normalizeResult(result: ActionResult | unknown): ActionResult {
@@ -1129,7 +1207,7 @@ export function getAction(trigger: string): ActionDefinition | undefined {
  * @example
  * ```typescript
  * import { Hono } from "hono";
- * import { initActions } from "@gremius/engine/actions";
+ * import { initActions } from "@kitsuden/engine/actions";
  * import { valkeyConnection } from "./valkey";
  *
  * const app = new Hono();
@@ -1161,6 +1239,7 @@ export function initActions(options: ActionsInitOptions): void {
     globalRegistry.useMCP(options.mcp);
   }
 
+  // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
   console.log("\n⚡ Actions Engine initialized");
 }
 

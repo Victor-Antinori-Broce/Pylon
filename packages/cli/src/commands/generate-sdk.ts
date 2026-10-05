@@ -3,6 +3,8 @@ import path from "path";
 
 import chalk from "chalk";
 import ora from "ora";
+
+import { generarClienteTipado } from "./sdk/cliente-tipado.js";
 // import { findProjectRoot } from '../utils/project.js';
 
 interface SdkOptions {
@@ -16,8 +18,10 @@ interface SdkOptions {
  */
 export async function generateSdkCommand(options: SdkOptions = {}): Promise<void> {
   const lang = options.lang || "typescript";
-  const outputDir = options.output || "./src/lib/gremius-sdk";
-  const baseUrl = options.baseUrl || "http://localhost:3001/api";
+  const outputDir = options.output || "./src/lib/kitsuden-sdk";
+  // 3000 es donde escucha la API (3001 es el panel). Con 3001 el comando pedía
+  // el OpenAPI al panel y fallaba con un error que no hablaba del puerto.
+  const baseUrl = options.baseUrl || "http://localhost:3000/api";
 
   console.log(chalk.blue(`🔮 Generating ${lang} SDK...`));
 
@@ -32,18 +36,18 @@ export async function generateSdkCommand(options: SdkOptions = {}): Promise<void
   } catch (err: any) {
     spinner.fail(`Could not fetch spec: ${err.message}`);
     console.log(chalk.gray(`  Is the API running at ${baseUrl}?`));
-    console.log(chalk.gray(`  Start it with: gremius start`));
+    console.log(chalk.gray(`  Start it with: kitsuden start`));
     process.exit(1);
   }
 
   // Generate code
-  const genSpinner = ora(`Generating ${lang} hooks...`).start();
+  const genSpinner = ora(`Generating ${lang} client...`).start();
   try {
-    const code = generateReactHooks(spec, baseUrl);
+    const code = generarClienteTipado(spec, { baseUrl });
     const outPath = path.resolve(outputDir);
     await fs.mkdir(outPath, { recursive: true });
-    await fs.writeFile(path.join(outPath, "gremius-hooks.ts"), code, "utf-8");
-    genSpinner.succeed(`SDK written to ${outPath}/gremius-hooks.ts`);
+    await fs.writeFile(path.join(outPath, "kitsuden-client.ts"), code, "utf-8");
+    genSpinner.succeed(`SDK written to ${outPath}/kitsuden-client.ts`);
   } catch (err: any) {
     genSpinner.fail(`Generation failed: ${err.message}`);
     process.exit(1);
@@ -51,143 +55,6 @@ export async function generateSdkCommand(options: SdkOptions = {}): Promise<void
 
   console.log(chalk.green("\n🎉 SDK generated!"));
   console.log(
-    chalk.gray(`   Import: import { useGremiusItems } from '${outputDir}/gremius-hooks';`)
+    chalk.gray(`   Uso: import { createKitsudenClient } from '${outputDir}/kitsuden-client';`)
   );
-}
-
-function generateReactHooks(spec: any, baseUrl: string): string {
-  const operations: Array<{ opId: string; method: string; path: string; summary?: string }> = [];
-
-  for (const [apiPath, pathItem] of Object.entries(spec.paths || {})) {
-    for (const method of ["get", "post", "patch", "delete", "put"]) {
-      const op = (pathItem as any)[method];
-      if (op?.operationId) {
-        operations.push({
-          opId: op.operationId,
-          method,
-          path: apiPath,
-          summary: op.summary,
-        });
-      }
-    }
-  }
-
-  const hooks = operations
-    .map((op) => {
-      const hookName = `use${toPascalCase(op.opId)}`;
-      const hasBody = ["post", "patch", "put"].includes(op.method);
-      const isList = op.method === "get" && !op.path.endsWith("}");
-      const pathLiteral = JSON.stringify(op.path);
-
-      if (isList) {
-        return `
-/**
- * ${op.summary || op.opId}
- * ${op.method.toUpperCase()} ${op.path}
- */
-export function ${hookName}(options?: { limit?: number; offset?: number; sort?: string; where?: Record<string, any> }) {
-  const query = new URLSearchParams();
-  if (options?.limit) query.set('limit', String(options.limit));
-  if (options?.offset) query.set('offset', String(options.offset));
-  if (options?.sort) query.set('sort', options.sort);
-  if (options?.where) query.set('where', JSON.stringify(options.where));
-
-  const url = \`${baseUrl}${op.path}?\${query.toString()}\`;
-
-  const fetcher = async () => {
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  };
-
-  return { url, fetcher };
-}`;
-      }
-
-      if (hasBody) {
-        return `
-/**
- * ${op.summary || op.opId}
- * ${op.method.toUpperCase()} ${op.path}
- */
-export function ${hookName}(collection: string) {
-  return async (payload: Record<string, any>, id?: string) => {
-    const url = id
-      ? \`${baseUrl}\` + ${pathLiteral}.replace('{collection}', collection).replace('{id}', id)
-      : \`${baseUrl}\` + ${pathLiteral}.replace('{collection}', collection);
-    const res = await fetch(url, {
-      method: '${op.method.toUpperCase()}',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  };
-}`;
-      }
-
-      return `
-/**
- * ${op.summary || op.opId}
- * ${op.method.toUpperCase()} ${op.path}
- */
-export function ${hookName}(collection: string, id: string) {
-  const url = \`${baseUrl}\` + ${pathLiteral}.replace('{collection}', collection).replace('{id}', id);
-  const fetcher = async () => {
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  };
-  return { url, fetcher };
-}`;
-    })
-    .join("\n");
-
-  return `// Auto-generated by GremiusCMS SDK Generator
-// Date: ${new Date().toISOString()}
-// Base URL: ${baseUrl}
-
-${hooks}
-
-/**
- * Generic hook for any collection
- */
-export function useGremiusItems(collection: string) {
-  return {
-    list: (opts?: { limit?: number; offset?: number; sort?: string; where?: Record<string, any> }) => {
-      const query = new URLSearchParams();
-      if (opts?.limit) query.set('limit', String(opts.limit));
-      if (opts?.offset) query.set('offset', String(opts.offset));
-      if (opts?.sort) query.set('sort', opts.sort);
-      if (opts?.where) query.set('where', JSON.stringify(opts.where));
-      return fetch(\`${baseUrl}/items/\${collection}?\${query}\`, { credentials: 'include' }).then(r => r.json());
-    },
-    get: (id: string) => fetch(\`${baseUrl}/items/\${collection}/\${id}\`, { credentials: 'include' }).then(r => r.json()),
-    create: (payload: Record<string, any>) => fetch(\`${baseUrl}/items/\${collection}\`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    }).then(r => r.json()),
-    update: (id: string, payload: Record<string, any>) => fetch(\`${baseUrl}/items/\${collection}/\${id}\`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    }).then(r => r.json()),
-    remove: (id: string) => fetch(\`${baseUrl}/items/\${collection}/\${id}\`, {
-      method: 'DELETE',
-      credentials: 'include',
-    }).then(r => r.json()),
-  };
-}
-`;
-}
-
-function toPascalCase(str: string): string {
-  return str
-    .split(/[_-]+/)
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
-    .join("");
 }

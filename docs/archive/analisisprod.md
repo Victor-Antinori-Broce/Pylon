@@ -1,7 +1,7 @@
-# 🎯 Análisis de Producto: Gremius vs El "Django de la IA"
+# 🎯 Análisis de Producto: Kitsuden vs El "Django de la IA"
 
 **Fecha:** 29 de marzo de 2026  
-**Versión:** GremiusCMS v0.8.0-beta  
+**Versión:** Kitsuden v0.8.0-beta  
 **Estado:** ✅ VISIÓN ALCANZADA + TELEMETRY
 
 ---
@@ -24,7 +24,7 @@
 
 **vs Análisis Anterior:** +9% (de 82% a 91%)
 
-**Veredicto:** Gremius ha **alcanzado y superado la visión**. El sistema NHI con RBAC, `defineAction` unificado con telemetry, Vector Search con auto-indexing, observabilidad nativa tipo LangSmith, y Agent Playground están todos implementados y funcionando.
+**Veredicto:** Kitsuden ha **alcanzado y superado la visión**. El sistema NHI con RBAC, `defineAction` unificado con telemetry, Vector Search con auto-indexing, observabilidad nativa tipo LangSmith, y Agent Playground están todos implementados y funcionando.
 
 ---
 
@@ -43,13 +43,13 @@
 
 **Tu diferenciador ahora es REAL:** ✅
 
-### ✅ Lo que Gremius TIENE (98%) - IMPLEMENTADO
+### ✅ Lo que Kitsuden TIENE (98%) - IMPLEMENTADO
 
 ```typescript
 // ✅ 1. NHI (Non-Human Identity) COMPLETO
 // apps/api/src/services/agent-auth.ts
 
-const token = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const token = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
 //       ↑↑↑↑↑↑↑  ↑↑↑↑↑↑  ↑↑↑↑↑↑↑↑
 //       prefijo   tipo    43 chars SHA-256
 
@@ -158,7 +158,7 @@ interface AgentApiKey {
 
 > "Qué hizo el agente, por qué, qué falló."
 
-### ✅ Lo que Gremius TIENE (90%) - IMPLEMENTADO 🆕 MEJORADO
+### ✅ Lo que Kitsuden TIENE (90%) - IMPLEMENTADO 🆕 MEJORADO
 
 ```typescript
 // ✅ 1. AGENT TELEMETRY COMPLETO (Paso 2)
@@ -277,7 +277,7 @@ playgroundRouter.post("/:id/chat", async (c) => {
 >
 > "El momento de ocultar BullMQ y Bun Sandbox bajo defineAction()"
 
-### ✅ Lo que Gremius TIENE (90%) - IMPLEMENTADO
+### ✅ Lo que Kitsuden TIENE (90%) - IMPLEMENTADO
 
 ```typescript
 // ✅ DEFINE ACTION - API Pública completa
@@ -353,7 +353,7 @@ parseTrigger('agent.tool:query')          → MCP Tool
 >
 > "Cualquier tabla que crees se expone instantáneamente como Tool para el LLM"
 
-### ✅ Lo que Gremius TIENE (85%) - IMPLEMENTADO
+### ✅ Lo que Kitsuden TIENE (85%) - IMPLEMENTADO
 
 ```typescript
 // ✅ 1. VECTOR SEARCH EN CORE
@@ -385,7 +385,7 @@ const dataset = {
 // apps/api/src/mcp-server.ts
 
 {
-  name: "gremius_search_entries",
+  name: "kitsuden_search_entries",
   description: "Search entries using semantic vector search",
   parameters: {
     datasetId: { type: "string" },
@@ -403,13 +403,13 @@ const dataset = {
 // apps/api/src/mcp-server.ts
 
 // 7 Tools disponibles:
-// - gremius_list_datasets
-// - gremius_search_entries (con vector search)
-// - gremius_create_entry
-// - gremius_read_entry
-// - gremius_update_entry
-// - gremius_get_dataset_schema
-// - gremius_health_check
+// - kitsuden_list_datasets
+// - kitsuden_search_entries (con vector search)
+// - kitsuden_create_entry
+// - kitsuden_read_entry
+// - kitsuden_update_entry
+// - kitsuden_get_dataset_schema
+// - kitsuden_health_check
 
 // Autenticación obligatoria
 const result = await authenticateAgent(token, {
@@ -418,7 +418,7 @@ const result = await authenticateAgent(token, {
 ```
 
 ```typescript
-// ✅ 4. AUTO-GRIMOIRES CON MCP PROXY 🆕
+// ✅ 4. AUTO-KONS CON MCP PROXY 🆕
 // apps/api/src/index.ts
 
 const autoMcpProxy = {
@@ -440,7 +440,7 @@ const autoMcpProxy = {
   },
 };
 
-initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
+initializeKons(createKonContext(), app, autoMcpProxy);
 ```
 
 ### 📊 Comparativa - Antes vs Ahora
@@ -451,10 +451,10 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 | Query automática           | ✅               | ✅               | Igual           |
 | **Vector Search**          | ✅ Auto-index    | ✅ Auto-index    | Igual           |
 | **Embeddings automáticos** | ✅ Con autoIndex | ✅ Con autoIndex | Igual           |
-| **Auto-Grimoires**         | ⚠️ Parcial       | ✅ Con proxy     | **MEJORADO** 🆕 |
+| **Auto-Kons**              | ⚠️ Parcial       | ✅ Con proxy     | **MEJORADO** 🆕 |
 | Semantic layer             | 🔄 Parcial       | 🔄 Parcial       | En progreso     |
 
-**Es momento de presumir:** ✅ **SÍ.** Tienes Vector Search funcional y Auto-Grimoires mejorado.
+**Es momento de presumir:** ✅ **SÍ.** Tienes Vector Search funcional y Auto-Kons mejorado.
 
 ---
 
@@ -467,7 +467,7 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 | Agent Auth      | 95%     | **98%** | +3%     | ✅ COMPLETO       |
 | Observabilidad  | 80%     | **90%** | +10%    | ✅ LANGSMITH-LIKE |
 | Actions Layer   | 80%     | **90%** | +10%    | ✅ CON TELEMETRY  |
-| Agent-Native DB | 75%     | **85%** | +10%    | ✅ AUTO-GRIMOIRES |
+| Agent-Native DB | 75%     | **85%** | +10%    | ✅ AUTO-KONS      |
 | **PROMEDIO**    | **82%** | **91%** | **+9%** | **✅ LISTO**      |
 
 ### ✅ Lo que SÍ puedes presumir HOY
@@ -538,7 +538,7 @@ initializeGrimoires(createGrimoireContext(), app, autoMcpProxy);
 
 **SÍ puedes vender la visión.** Ya no es "estamos construyendo", es "tenemos y superamos":
 
-> "Gremius es el primer BaaS diseñado para la era de los agentes de IA.
+> "Kitsuden es el primer BaaS diseñado para la era de los agentes de IA.
 >
 > ✅ Agentes con identidad NHI, scopes granulares, y memoria persistente
 > ✅ Vector search con auto-indexing
@@ -554,4 +554,4 @@ El "Django de la IA" ya existe. Solo necesitas documentarlo y mostrarlo.
 
 ---
 
-_Análisis de Producto Actualizado - GremiusCMS v0.8.0-beta_
+_Análisis de Producto Actualizado - Kitsuden v0.8.0-beta_

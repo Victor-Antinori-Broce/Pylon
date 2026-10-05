@@ -13,7 +13,7 @@ import {
   tags,
   dataSets,
   dataEntries,
-  gremiusFunctions,
+  kitsudenFunctions,
   functionExecutions,
   gameCollections,
   gameCollectionEntries,
@@ -61,7 +61,7 @@ export const authUsersRelations = relations(authUsers, ({ many }) => ({
   blogPosts: many(blogPosts),
   media: many(media),
   dataEntries: many(dataEntries),
-  gremiusFunctions: many(gremiusFunctions),
+  kitsudenFunctions: many(kitsudenFunctions),
   contentMetadata: many(contentMetadata),
   agentFeedbacks: many(agentFeedback),
 }));
@@ -153,7 +153,7 @@ export const dataSetsRelations = relations(dataSets, ({ one, many }) => ({
     references: [games.id],
   }),
   dataEntries: many(dataEntries),
-  gremiusFunctions: many(gremiusFunctions),
+  kitsudenFunctions: many(kitsudenFunctions),
   webhooksConfigs: many(webhooksConfig),
 }));
 
@@ -173,22 +173,22 @@ export const dataEntriesRelations = relations(dataEntries, ({ one, many }) => ({
   contentMetadata: many(contentMetadata),
 }));
 
-export const gremiusFunctionsRelations = relations(gremiusFunctions, ({ one, many }) => ({
+export const kitsudenFunctionsRelations = relations(kitsudenFunctions, ({ one, many }) => ({
   dataSet: one(dataSets, {
-    fields: [gremiusFunctions.watchDatasetId],
+    fields: [kitsudenFunctions.watchDatasetId],
     references: [dataSets.id],
   }),
   authUser: one(authUsers, {
-    fields: [gremiusFunctions.createdById],
+    fields: [kitsudenFunctions.createdById],
     references: [authUsers.id],
   }),
   functionExecutions: many(functionExecutions),
 }));
 
 export const functionExecutionsRelations = relations(functionExecutions, ({ one }) => ({
-  gremiusFunction: one(gremiusFunctions, {
+  kitsudenFunction: one(kitsudenFunctions, {
     fields: [functionExecutions.functionId],
-    references: [gremiusFunctions.id],
+    references: [kitsudenFunctions.id],
   }),
 }));
 

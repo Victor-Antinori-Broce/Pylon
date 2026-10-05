@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { TestDatabase, TestGrimoireContext } from "./types.js";
+import type { TestDatabase, TestKonContext } from "./types.js";
 
 /**
  * Create database helpers for testing
@@ -13,7 +13,7 @@ import type { TestDatabase, TestGrimoireContext } from "./types.js";
  * In a full implementation, this would provide more sophisticated
  * query building and assertions.
  */
-export function createTestDatabase(context: TestGrimoireContext): TestDatabase {
+export function createTestDatabase(_context: TestKonContext): TestDatabase {
   const memoryStore = new Map<string, any[]>();
 
   return {

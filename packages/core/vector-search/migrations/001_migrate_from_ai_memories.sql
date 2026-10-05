@@ -1,4 +1,4 @@
--- Migration: AI Memories Grimoire → Core Vector Search
+-- Migration: AI Memories Kon → Core Vector Search
 -- Purpose: Migrate data from old ai_memories tables to new vector_index schema
 -- Date: 2026-03-19
 -- Note: Run this after the new vector_index tables have been created

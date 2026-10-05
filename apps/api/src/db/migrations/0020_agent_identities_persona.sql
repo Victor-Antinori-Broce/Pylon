@@ -20,8 +20,17 @@ ALTER TABLE agent_identities
 ADD COLUMN IF NOT EXISTS system_prompt TEXT;
 
 -- Allowed Tools: herramientas permitidas para este agente (JSONB)
-ALTER TABLE agent_identities 
+ALTER TABLE agent_identities
 ADD COLUMN IF NOT EXISTS allowed_tools JSONB DEFAULT '[]';
+
+-- is_active: la creaba una de las migraciones 0003–0019, que NO están en el
+-- repositorio. El índice de más abajo la usa, así que sobre una base creada
+-- desde cero esta migración fallaba con "column is_active does not exist".
+-- Se declara aquí para que el fichero se baste a sí mismo: una migración no
+-- puede depender de otra que no existe. `IF NOT EXISTS` la hace inocua en las
+-- bases donde ya está.
+ALTER TABLE agent_identities
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
 
 -- ============================================================================
 -- INDEXES FOR NEW FIELDS

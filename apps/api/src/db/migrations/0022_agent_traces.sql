@@ -155,7 +155,7 @@ COMMENT ON COLUMN agent_traces.tokens_in IS 'Input tokens (for OpenAI/Claude cos
 COMMENT ON COLUMN agent_traces.estimated_cost IS 'Estimated cost in USD for this execution';
 
 COMMENT ON TABLE agent_trace_steps IS 'Individual steps within a trace - tool calls, LLM calls, etc.';
-COMMENT ON COLUMN agent_trace_steps.tool_name IS 'Name of MCP tool called (e.g., "gremius_search_entries")';
+COMMENT ON COLUMN agent_trace_steps.tool_name IS 'Name of MCP tool called (e.g., "kitsuden_search_entries")';
 COMMENT ON COLUMN agent_trace_steps.tool_input IS 'JSON input to the tool';
 COMMENT ON COLUMN agent_trace_steps.tool_output IS 'JSON output from the tool';
 

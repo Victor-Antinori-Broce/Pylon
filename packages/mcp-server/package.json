@@ -1,39 +1,40 @@
 {
-  "name": "@gremius/mcp-server",
+  "name": "@kitsuden/mcp-server",
   "version": "0.9.0-beta",
-  "description": "Gremius Model Context Protocol (MCP) Server for AI Agents",
+  "description": "Kitsuden Model Context Protocol (MCP) Server for AI Agents",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "gremius-mcp": "./dist/standalone.js"
+    "kitsuden-mcp": "./dist/standalone.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target=bun && bun build ./src/standalone.ts --outdir ./dist --target=bun",
+    "typecheck": "tsc --noEmit",
     "dev": "bun run --watch src/standalone.ts",
     "start": "bun run dist/standalone.js"
   },
   "keywords": [
-    "gremius",
+    "kitsuden",
     "mcp",
     "model-context-protocol",
     "ai",
     "claude",
     "cursor"
   ],
-  "author": "Gremius Team",
+  "author": "Kitsuden Team",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
-    "hono": "^4.7.0",
+    "hono": "^4.12.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.5.0",
-    "@types/node": "^20.12.7"
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0"
   },
   "engines": {
     "node": ">=18.0.0"

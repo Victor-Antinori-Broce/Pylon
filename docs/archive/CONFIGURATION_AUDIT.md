@@ -1,4 +1,4 @@
-# GremiusCMS Configuration Audit
+# Kitsuden Configuration Audit
 
 **Date:** 2026-03-07
 
@@ -40,7 +40,7 @@ All files in `packages/admin/src/` now use `import.meta.env.VITE_API_URL || "htt
 - `views/data/DataExplorer.svelte`
 - `views/DataSetEntries.svelte`
 - `views/Media.svelte`
-- `views/Realms/RealmsView.svelte`
+- `views/Grimoires/GrimoiresView.svelte`
 - `views/Settings.svelte`
 - `views/workers/WorkersView.svelte`
 - `views/webhooks/WebhooksView.svelte`
@@ -53,7 +53,7 @@ All test files now use environment variables with sensible defaults:
 | --------------------------------------- | ------------------------------------------------------ |
 | `tests/seed.spec.ts`                    | Uses `process.env.ADMIN_URL` and `process.env.API_URL` |
 | `tests/api/endpoints.spec.ts`           | Uses `process.env.API_URL`                             |
-| `tests/api/gremio.spec.ts`              | Uses `process.env.API_URL`                             |
+| `tests/api/kitsuden.spec.ts`            | Uses `process.env.API_URL`                             |
 | `tests/api/mcp.spec.ts`                 | Uses `process.env.API_URL`                             |
 | `tests/api/promote.spec.ts`             | Uses `process.env.API_URL`                             |
 | `tests/api/webhooks.spec.ts`            | Uses `process.env.API_URL`                             |
@@ -69,16 +69,16 @@ All test files now use environment variables with sensible defaults:
 | File                               | Change                                  |
 | ---------------------------------- | --------------------------------------- |
 | `apps/api/test-api.ts`             | Uses `process.env.API_URL`              |
-| `apps/api/test-grimoires-api.ts`   | Uses `process.env.API_URL`              |
+| `apps/api/test-kons-api.ts`        | Uses `process.env.API_URL`              |
 | `apps/api/tests.json`              | WebSocket endpoint updated to port 3000 |
 | `apps/api/docs/RLS_SETUP_GUIDE.md` | Documentation updated                   |
 
 ### 5. SDK and Starters (2 files updated)
 
-| File                                                    | Change                            |
-| ------------------------------------------------------- | --------------------------------- |
-| `packages/sdk/src/realtime.ts`                          | Uses `process.env.GREMIUS_WS_URL` |
-| `packages/starters/gremio-blog-template/src/lib/cms.ts` | Uses port 3000 as default         |
+| File                                                      | Change                             |
+| --------------------------------------------------------- | ---------------------------------- |
+| `packages/sdk/src/realtime.ts`                            | Uses `process.env.KITSUDEN_WS_URL` |
+| `packages/starters/kitsuden-blog-template/src/lib/cms.ts` | Uses port 3000 as default          |
 
 ### 6. Cleanup
 

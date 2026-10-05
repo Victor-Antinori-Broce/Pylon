@@ -1,48 +1,48 @@
-# Refactorización Completada: Desacoplamiento de Grimoires
+# Refactorización Completada: Desacoplamiento de Kons
 
 ## Resumen
 
-Se ha completado exitosamente la refactorización para desacoplar los grimoires `blog` y `formulas` de `apps/api/src/`. Ahora ambos grimoires son completamente autocontenidos y utilizan inyección de dependencias.
+Se ha completado exitosamente la refactorización para desacoplar los kons `blog` y `formulas` de `apps/api/src/`. Ahora ambos kons son completamente autocontenidos y utilizan inyección de dependencias.
 
 ---
 
 ## Cambios Realizados
 
-### 1. Nuevas Abstracciones en `@gremius/shared`
+### 1. Nuevas Abstracciones en `@kitsuden/shared`
 
-**Archivo:** `packages/shared/src/grimoire-api.ts` (NUEVO)
+**Archivo:** `packages/shared/src/kon-api.ts` (NUEVO)
 
-Se creó un sistema completo de contratos para grimoires autocontenidos:
+Se creó un sistema completo de contratos para kons autocontenidos:
 
 ```typescript
 // Interfaces de dependencias
--GrimoireDatabase - // Acceso a Drizzle
-  GrimoireCache - // Caché (Redis/Valkey)
-  GrimoireEvents - // Sistema de eventos
-  GrimoireRealtime - // WebSockets
-  GrimoireAuth - // Autenticación
-  GrimoireStorage - // S3/MinIO
-  GrimoireContext - // Contexto completo inyectado
+-KonDatabase - // Acceso a Drizzle
+  KonCache - // Caché (Redis/Valkey)
+  KonEvents - // Sistema de eventos
+  KonRealtime - // WebSockets
+  KonAuth - // Autenticación
+  KonStorage - // S3/MinIO
+  KonContext - // Contexto completo inyectado
   // Helpers
-  defineGrimoire() - // Factory para definir grimoires
-  createGrimoireRouter() - // Factory para crear routers
-  GrimoireError; // Clase de error estandarizada
+  defineKon() - // Factory para definir kons
+  createKonRouter() - // Factory para crear routers
+  KonError; // Clase de error estandarizada
 ```
 
-### 2. Grimoire Blog Migrado
+### 2. Kon Blog Migrado
 
 **Antes:**
 
 ```typescript
-// packages/grimoires/grimoire-blog/index.ts
+// packages/kons/kon-blog/index.ts
 export { blogRoutes } from "../../../apps/api/src/routes/blog";
 ```
 
 **Después:**
 
 ```typescript
-// packages/grimoires/grimoire-blog/src/index.ts
-export const grimoire = defineGrimoire({
+// packages/kons/kon-blog/src/index.ts
+export const kon = defineKon({
   id: "blog",
   name: "Blog Posts",
   version: "1.0.0",
@@ -62,7 +62,7 @@ export const grimoire = defineGrimoire({
   admin: {
     /* ... */
   },
-  dependencies: { grimoires: ["media-library"] },
+  dependencies: { kons: ["media-library"] },
   mountPath: "/api/blog",
 });
 ```
@@ -70,23 +70,23 @@ export const grimoire = defineGrimoire({
 **Estructura:**
 
 ```
-packages/grimoires/grimoire-blog/
+packages/kons/kon-blog/
 ├── index.ts           ← Entry point (re-exports)
-├── grimoire.json      ← Metadata
+├── kon.json      ← Metadata
 ├── src/
-│   ├── index.ts       ← Definición del grimoire
+│   ├── index.ts       ← Definición del kon
 │   ├── routes.ts      ← Router Hono con DI
 │   └── schema.ts      ← Schema de tablas
 ```
 
-### 3. Grimoire Formulas Migrado
+### 3. Kon Formulas Migrado
 
 Misma estructura que blog:
 
 ```
-packages/grimoires/grimoire-formulas/
+packages/kons/kon-formulas/
 ├── index.ts
-├── grimoire.json
+├── kon.json
 └── src/
     ├── index.ts
     ├── routes.ts
@@ -99,16 +99,16 @@ packages/grimoires/grimoire-formulas/
 
 Ahora soporta **tres modos** de carga:
 
-| Modo              | Descripción               | Detectado por                          |
-| ----------------- | ------------------------- | -------------------------------------- |
-| **Modern**        | Inyección de dependencias | Exporta `grimoire: GrimoireDefinition` |
-| **Legacy Router** | Router Hono directo       | Exporta router como valor              |
-| **Legacy Init**   | Solo inicialización       | Exporta función `init*`                |
+| Modo              | Descripción               | Detectado por                |
+| ----------------- | ------------------------- | ---------------------------- |
+| **Modern**        | Inyección de dependencias | Exporta `kon: KonDefinition` |
+| **Legacy Router** | Router Hono directo       | Exporta router como valor    |
+| **Legacy Init**   | Solo inicialización       | Exporta función `init*`      |
 
 **Función de creación de contexto:**
 
 ```typescript
-function createGrimoireContext(): GrimoireContext {
+function createKonContext(): KonContext {
   return {
     db: { instance: db, execute, tableExists },
     cache: { get, set, invalidate },
@@ -125,12 +125,12 @@ function createGrimoireContext(): GrimoireContext {
 **Carga moderna:**
 
 ```typescript
-if (isGrimoireDefinition(grimoireExport)) {
-  const router = grimoire.createRouter(context); // DI aquí
-  app.route(grimoire.mountPath || mountPath, router);
+if (isKonDefinition(konExport)) {
+  const router = kon.createRouter(context); // DI aquí
+  app.route(kon.mountPath || mountPath, router);
 
-  if (grimoire.hooks?.onStartup) {
-    await grimoire.hooks.onStartup(context);
+  if (kon.hooks?.onStartup) {
+    await kon.hooks.onStartup(context);
   }
 }
 ```
@@ -141,15 +141,15 @@ if (isGrimoireDefinition(grimoireExport)) {
 
 ### 1. Desacoplamiento Completo
 
-- ✅ Grimoires NO importan de `apps/api/src/`
-- ✅ Solo dependen de `@gremius/shared` (contratos estables)
+- ✅ Kons NO importan de `apps/api/src/`
+- ✅ Solo dependen de `@kitsuden/shared` (contratos estables)
 - ✅ Rutas relativas frágiles eliminadas (`../../../apps/api/...`)
 
 ### 2. Testabilidad Mejorada
 
 ```typescript
 // Ahora se puede testear así:
-const mockContext: GrimoireContext = {
+const mockContext: KonContext = {
   db: createMockDb(),
   cache: createMockCache(),
   // ...
@@ -161,13 +161,13 @@ const router = createBlogRouter(mockContext);
 
 ### 3. Backward Compatibility
 
-- ✅ Grimoires legacy siguen funcionando sin cambios
+- ✅ Kons legacy siguen funcionando sin cambios
 - ✅ Module loader detecta automáticamente el modo
-- ✅ No se rompieron grimoires existentes
+- ✅ No se rompieron kons existentes
 
 ### 4. Developer Experience
 
-- Type safety completo con `GrimoireContext`
+- Type safety completo con `KonContext`
 - Autocompletado de dependencias
 - Errores en tiempo de compilación si falta algo
 
@@ -177,14 +177,14 @@ const router = createBlogRouter(mockContext);
 
 **Nota importante:** Los schemas de tablas siguen viviendo en `apps/api/src/db/schema.ts` porque Drizzle ORM requiere todas las tablas en un solo lugar para generar migraciones.
 
-Los grimoires re-exportan desde allí:
+Los kons re-exportan desde allí:
 
 ```typescript
-// packages/grimoires/grimoire-blog/src/schema.ts
+// packages/kons/kon-blog/src/schema.ts
 export { blogPosts, blogPostsToTags, blogPostsToGames } from "../../../../apps/api/src/db/schema";
 ```
 
-**Futuro:** Se podría implementar un "schema merger" que combine automáticamente schemas de múltiples grimoires en tiempo de compilación.
+**Futuro:** Se podría implementar un "schema merger" que combine automáticamente schemas de múltiples kons en tiempo de compilación.
 
 ---
 
@@ -207,15 +207,15 @@ cd apps/api && pnpm run build          ✅
 
 ---
 
-## Uso de Nuevos Grimoires
+## Uso de Nuevos Kons
 
-### Ejemplo: Crear un Nuevo Grimoire
+### Ejemplo: Crear un Nuevo Kon
 
 ```typescript
-// packages/grimoires/grimoire-mine/src/index.ts
-import { defineGrimoire, createGrimoireRouter } from "@gremius/shared";
+// packages/kons/kon-mine/src/index.ts
+import { defineKon, createKonRouter } from "@kitsuden/shared";
 
-const createMineRouter = createGrimoireRouter((router, ctx) => {
+const createMineRouter = createKonRouter((router, ctx) => {
   // ctx tiene: db, cache, events, realtime, auth, storage, logger, config
 
   router.get("/", async (c) => {
@@ -231,27 +231,27 @@ const createMineRouter = createGrimoireRouter((router, ctx) => {
   });
 });
 
-export const grimoire = defineGrimoire({
+export const kon = defineKon({
   id: "mine",
-  name: "My Grimoire",
+  name: "My Kon",
   version: "1.0.0",
   createRouter: createMineRouter,
   tables: ["my_table"],
   hooks: {
     onEnable: async (ctx) => {
-      ctx.logger.info("My grimoire enabled!");
+      ctx.logger.info("My kon enabled!");
     },
   },
 });
 ```
 
-### Añadir a gremius.config.ts
+### Añadir a kitsuden.config.ts
 
 ```typescript
-// apps/api/gremius.config.ts
-const GRIMOIRES = [
+// apps/api/kitsuden.config.ts
+const KONS = [
   // ... existentes
-  "mine", // ← Nuevo grimoire
+  "mine", // ← Nuevo kon
 ];
 ```
 
@@ -259,7 +259,7 @@ const GRIMOIRES = [
 
 El module loader automáticamente:
 
-1. Detecta que es un grimoire moderno (tiene `grimoire` export)
+1. Detecta que es un kon moderno (tiene `kon` export)
 2. Crea el contexto con todas las dependencias
 3. Llama a `createRouter(context)`
 4. Monta el router en `/api/mine`
@@ -271,31 +271,31 @@ El module loader automáticamente:
 
 ### Nuevos
 
-- `packages/shared/src/grimoire-api.ts`
-- `packages/grimoires/grimoire-blog/src/routes.ts`
-- `packages/grimoires/grimoire-blog/src/index.ts`
-- `packages/grimoires/grimoire-formulas/src/routes.ts`
-- `packages/grimoires/grimoire-formulas/src/index.ts`
+- `packages/shared/src/kon-api.ts`
+- `packages/kons/kon-blog/src/routes.ts`
+- `packages/kons/kon-blog/src/index.ts`
+- `packages/kons/kon-formulas/src/routes.ts`
+- `packages/kons/kon-formulas/src/index.ts`
 - `docs/REFACTOR_EXAMPLES.md`
 - `docs/PROPOSED_ARCHITECTURE_IMPROVEMENTS.md`
 
 ### Modificados
 
-- `packages/shared/src/index.ts` ← Exports de grimoire-api
+- `packages/shared/src/index.ts` ← Exports de kon-api
 - `packages/shared/src/utils.ts` ← PaginatedResponse
 - `packages/shared/src/types.ts` ← Sin duplicados
-- `packages/grimoires/grimoire-blog/index.ts` ← Re-export
-- `packages/grimoires/grimoire-formulas/index.ts` ← Re-export
+- `packages/kons/kon-blog/index.ts` ← Re-export
+- `packages/kons/kon-formulas/index.ts` ← Re-export
 - `apps/api/src/lib/module-loader.ts` ← Soporte DI
 
 ---
 
 ## Próximos Pasos (Opcionales)
 
-1. **Migrar más grimoires**: Los grimoires restantes pueden migrarse al nuevo patrón gradualmente
+1. **Migrar más kons**: Los kons restantes pueden migrarse al nuevo patrón gradualmente
 2. **Schema Merger**: Implementar un sistema para combinar schemas automáticamente
-3. **Testing**: Crear utilidades de testing para grimoires (mock context)
-4. **Documentación**: Documentar la API de grimoires para desarrolladores externos
+3. **Testing**: Crear utilidades de testing para kons (mock context)
+4. **Documentación**: Documentar la API de kons para desarrolladores externos
 
 ---
 
@@ -303,7 +303,7 @@ El module loader automáticamente:
 
 ✅ **El punto 1 ha sido exitosamente mejorado.**
 
-Los grimoires `blog` y `formulas` ahora son:
+Los kons `blog` y `formulas` ahora son:
 
 - Autocontenidos
 - Testeables aisladamente
@@ -311,4 +311,4 @@ Los grimoires `blog` y `formulas` ahora son:
 - Usan inyección de dependencias moderna
 - Totalmente retrocompatibles
 
-El sistema permite que futuros grimoires se desarrollen siguiendo el mismo patrón, facilitando la contribución de la comunidad y la distribución de grimoires como paquetes npm independientes.
+El sistema permite que futuros kons se desarrollen siguiendo el mismo patrón, facilitando la contribución de la comunidad y la distribución de kons como paquetes npm independientes.

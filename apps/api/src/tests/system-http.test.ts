@@ -1,10 +1,11 @@
 /**
  * System Routes HTTP Tests
  *
- * Tests health checks, init-check, setup, realms, themes.
+ * Tests health checks, init-check, setup, grimoires, themes.
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
+
 import { isDatabaseAvailable, generateTestId } from "./setup";
 
 let dbAvailable = false;
@@ -40,8 +41,7 @@ describe("System HTTP", () => {
       expect(res.status).toBe(200);
 
       const body = (await res.json()) as any;
-      // Endpoint may return different shapes depending on setup state
-      expect(typeof body === "object" && body !== null).toBe(true);
+      expect(typeof body.initialized).toBe("boolean");
     });
 
     it("GET /api/system/themes → lists themes", async () => {
@@ -49,46 +49,90 @@ describe("System HTTP", () => {
       expect(res.status).toBe(200);
 
       const body = (await res.json()) as any;
-      // Endpoint may return { themes: [...] } or [...] depending on version
-      const themes = Array.isArray(body) ? body : body.themes;
-      expect(Array.isArray(themes ?? [])).toBe(true);
+      expect(Array.isArray(body.docs)).toBe(true);
     });
 
-    it("GET /api/system/realms → lists realms", async () => {
-      const res = await appInstance!.request(req("/api/system/realms"));
+    it("GET /api/system/grimoires → lists grimoires", async () => {
+      const res = await appInstance!.request(req("/api/system/grimoires"));
       expect(res.status).toBe(200);
 
       const body = (await res.json()) as any;
       expect(Array.isArray(body)).toBe(true);
     });
 
-    it("GET /api/system/realms/:id → returns realm detail or 404", async () => {
-      const res = await appInstance!.request(req("/api/system/realms/realm-default"));
-      expect([200, 404]).toContain(res.status);
+    it("GET /api/system/grimoires/:id → returns grimoire detail", async () => {
+      const listRes = await appInstance!.request(req("/api/system/grimoires"));
+      expect(listRes.status).toBe(200);
+      const grimoires = (await listRes.json()) as any[];
+      const grimoireId = grimoires[0]?.id ?? "grimoire-default";
+
+      const res = await appInstance!.request(req(`/api/system/grimoires/${grimoireId}`));
+      expect(res.status).toBe(200);
+
+      const body = (await res.json()) as any;
+      expect(body.id).toBe(grimoireId);
     });
 
     it("GET /api/system/active-theme-config → returns theme config", async () => {
       const res = await appInstance!.request(req("/api/system/active-theme-config"));
-      expect([200, 404]).toContain(res.status);
+      expect(res.status).toBe(200);
+
+      const body = (await res.json()) as any;
+      expect(body).toHaveProperty("theme");
+      expect(body).toHaveProperty("branding");
     });
   });
 
   describe("Setup", () => {
-    it("POST /api/system/setup → creates first admin", async () => {
+    it("POST /api/system/setup → creates first admin or rejects when initialized", async () => {
+      // Dar de alta el primer admin pasa por Better-Auth: varias tablas, hash
+      // argon2 y una transacción. pg-mem no lo sostiene (la propia suite aplica
+      // las migraciones con 63 sentencias que fallan), así que sin PostgreSQL
+      // real esto no prueba el alta, prueba pg-mem.
+      if (!dbAvailable) return;
+
+      const initRes = await appInstance!.request(req("/api/system/init-check"));
+      expect(initRes.status).toBe(200);
+      const { initialized } = (await initRes.json()) as any;
+
+      const setupEmail = `setup-${generateTestId()}@example.com`;
       const res = await appInstance!.request(
         req("/api/system/setup", {
           method: "POST",
           body: JSON.stringify({
-            siteName: "Test Setup",
-            adminEmail: `setup-${generateTestId()}@example.com`,
-            adminPassword: password,
-            adminName: "Setup Admin",
+            name: "Setup Admin",
+            email: setupEmail,
+            password,
           }),
         })
       );
 
-      // May return 200 (success) or 400 (already initialized)
-      expect([200, 400]).toContain(res.status);
+      if (initialized) {
+        expect(res.status).toBe(403);
+      } else {
+        expect([200, 201]).toContain(res.status);
+      }
+    });
+
+    it("POST /api/system/setup → un fallo NO devuelve el SQL al cliente", async () => {
+      // Esta ruta es pública y previa a la autenticación. Devolvía `e.message`,
+      // que en un error de Drizzle es la consulta entera con sus parámetros:
+      // el esquema y el email recién enviado, para cualquiera que llame.
+      const res = await appInstance!.request(
+        req("/api/system/setup", {
+          method: "POST",
+          body: JSON.stringify({
+            name: "Leak Probe",
+            email: `leak-${generateTestId()}@example.com`,
+            password,
+          }),
+        })
+      );
+
+      const body = await res.text();
+      expect(body).not.toContain("select ");
+      expect(body).not.toContain("auth_users");
+      expect(body).not.toContain("params:");
     });
   });
 
@@ -111,11 +155,23 @@ describe("System HTTP", () => {
       cookie = extractCookie(res.headers);
     });
 
-    it("GET /api/system/realm-state → returns realm state (auth required)", async () => {
+    it("POST /api/system/grimoire-state → deactivates grimoire when authenticated", async () => {
       if (!dbAvailable) return;
 
-      const res = await appInstance!.request(req("/api/system/realm-state", {}, cookie));
-      expect([200, 404]).toContain(res.status);
+      const res = await appInstance!.request(
+        req(
+          "/api/system/grimoire-state",
+          {
+            method: "POST",
+            body: JSON.stringify({ action: "deactivate" }),
+          },
+          cookie
+        )
+      );
+      expect(res.status).toBe(200);
+
+      const body = (await res.json()) as any;
+      expect(body.success).toBe(true);
     });
   });
 });

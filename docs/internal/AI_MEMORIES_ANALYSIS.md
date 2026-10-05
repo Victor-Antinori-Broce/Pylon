@@ -1,14 +1,14 @@
-# Análisis del Grimoire AI Memories
+# Análisis del Kon AI Memories
 
 **Fecha de análisis:** 2026-03-19  
-**Ubicación:** `packages/grimoires/ai-memories/`  
+**Ubicación:** `packages/kons/ai-memories/`  
 **Estado:** ✅ COMPLETO Y FUNCIONAL
 
 ---
 
 ## ¿Qué es AI Memories?
 
-**AI Memories** es el "cerebro de IA" de Gremius. Es un sistema de almacenamiento semántico con embeddings vectoriales que permite:
+**AI Memories** es el "cerebro de IA" de Kitsuden. Es un sistema de almacenamiento semántico con embeddings vectoriales que permite:
 
 1. **Búsqueda semántica**: Encontrar contenido por significado, no solo palabras clave
 2. **Memoria conversacional**: Almacenar historial de chat con contexto
@@ -38,17 +38,17 @@
 
 ---
 
-## Estructura del Grimoire
+## Estructura del Kon
 
 ### Archivos
 
 ```
-packages/grimoires/ai-memories/
+packages/kons/ai-memories/
 ├── schema.ts           # Tablas: ai_memories, ai_memory_chunks
 ├── memories.routes.ts  # API REST completa (631 líneas)
 ├── index.ts            # Exportaciones y health check
-├── gremius.json        # Configuración del grimoire
-├── grimoire.json       # Metadata
+├── kitsuden.json        # Configuración del kon
+├── kon.json       # Metadata
 └── README.md           # Documentación completa
 ```
 
@@ -109,7 +109,7 @@ packages/grimoires/ai-memories/
 **Fecha:** 2026-03-07  
 **Estado:** ✅ COMPLETE
 
-> "The ai-memories grimoire has been fully implemented with comprehensive API routes..."
+> "The ai-memories kon has been fully implemented with comprehensive API routes..."
 
 **Tareas completadas según este doc:**
 
@@ -122,7 +122,7 @@ packages/grimoires/ai-memories/
 - ✅ Integración con pgvector
 - ✅ Integración con OpenAI
 
-### 2. GRIMOIRES_ANALYSIS_COMPLETE.md
+### 2. KONS_ANALYSIS_COMPLETE.md
 
 **Fecha:** 2026-03-15
 
@@ -137,7 +137,7 @@ packages/grimoires/ai-memories/
 - ✅ Ya fue migrado según este documento
 - Ubicación destino: `packages/core/vector-search/`
 
-### 3. GRIMOIRE_CORE_MIGRATION_PLAN.md
+### 3. KON_CORE_MIGRATION_PLAN.md
 
 **Recomendación:**
 
@@ -146,7 +146,7 @@ packages/grimoires/ai-memories/
 **Cambio propuesto en API:**
 
 ```typescript
-// Antes (grimoire separado)
+// Antes (kon separado)
 POST /api/ai-memories/search
 
 // Después (extensión de dataset)
@@ -169,17 +169,17 @@ POST /api/datasets/:id/search/vector
 
 ### ✅ Sí, hay recomendaciones documentadas:
 
-| Documento                           | Sugerencia                             | Prioridad |
-| ----------------------------------- | -------------------------------------- | --------- |
-| **GRIMOIRES_ANALYSIS_COMPLETE.md**  | Mover a `packages/core/vector-search/` | Alta      |
-| **GRIMOIRE_CORE_MIGRATION_PLAN.md** | Convertir en extensión de dataset      | Alta      |
-| **AI_MEMORIES_COMPLETION.md**       | Mantener como está (ya está completo)  | N/A       |
+| Documento                      | Sugerencia                             | Prioridad |
+| ------------------------------ | -------------------------------------- | --------- |
+| **KONS_ANALYSIS_COMPLETE.md**  | Mover a `packages/core/vector-search/` | Alta      |
+| **KON_CORE_MIGRATION_PLAN.md** | Convertir en extensión de dataset      | Alta      |
+| **AI_MEMORIES_COMPLETION.md**  | Mantener como está (ya está completo)  | N/A       |
 
 ### 🔍 Cambios Sugeridos Detallados
 
 #### 1. Migración al Core (packages/core/vector-search/)
 
-**Razón:** El vector search es una capability transversal que debería estar disponible en cualquier dataset, no solo como grimoire separado.
+**Razón:** El vector search es una capability transversal que debería estar disponible en cualquier dataset, no solo como kon separado.
 
 **Propuesta de arquitectura:**
 
@@ -283,4 +283,4 @@ Según TOON_PGVECTOR_AUDIT.md:
 
 ### Acción Recomendada
 
-**Por ahora: NO realizar cambios.** El sistema funciona bien como grimoire. La migración al core puede planificarse para una fase futura de refactorización mayor.
+**Por ahora: NO realizar cambios.** El sistema funciona bien como kon. La migración al core puede planificarse para una fase futura de refactorización mayor.

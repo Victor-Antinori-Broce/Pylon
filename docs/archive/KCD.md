@@ -29,13 +29,13 @@ Se diseñó e implementó desde cero una **arquitectura híbrida de seguridad a 
 
 ### Resumen del Aporte
 
-Implementación completa de un servidor backend que cumple estrictamente con el **Model Context Protocol (MCP)**, abriendo los datos de los Datasets de Gremius y la orquestación distribuida (Valkey) al ecosistema de IAs (como Claude, Cursor y otras NHI).
+Implementación completa de un servidor backend que cumple estrictamente con el **Model Context Protocol (MCP)**, abriendo los datos de los Datasets de Kitsuden y la orquestación distribuida (Valkey) al ecosistema de IAs (como Claude, Cursor y otras NHI).
 
 ### Archivos Clave y Código Generado
 
-- `packages/mcp-server/src/index.ts` (298 líneas): Creación del kernel del servidor MCP para Gremius utilizando `@modelcontextprotocol/sdk`.
-  - **Recursos (Resources):** Registro de endpoints estandarizados (`gremius://datasets`, `gremius://grimoires`) para lectura directa del esquema de los datasets en el CMS.
-  - **Herramientas (Tools):** Definición estandarizada con `inputSchema` de herramientas como `gremius_query_dataset`, `gremius_insert_record`, y `gremius_dispatch_worker`.
+- `packages/mcp-server/src/index.ts` (298 líneas): Creación del kernel del servidor MCP para Kitsuden utilizando `@modelcontextprotocol/sdk`.
+  - **Recursos (Resources):** Registro de endpoints estandarizados (`kitsuden://datasets`, `kitsuden://kons`) para lectura directa del esquema de los datasets en el CMS.
+  - **Herramientas (Tools):** Definición estandarizada con `inputSchema` de herramientas como `kitsuden_query_dataset`, `kitsuden_insert_record`, y `kitsuden_dispatch_worker`.
 - Integración perfecta conectando las dependencias nativas del sistema, como Drizzle (`db`, `schema`) y BullMQ/Valkey (`queue`), hacia la capa stdio de transporte del MCP, habilitando el acceso asincrónico directo para los modelos.
 
 ---

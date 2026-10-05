@@ -32,13 +32,13 @@
   function statusColor(status: string): string {
     switch (status) {
       case "published":
-        return "bg-gremius-green/10 text-gremius-green border-gremius-green/20";
+        return "bg-kitsuden-green/10 text-kitsuden-green border-kitsuden-green/20";
       case "draft":
-        return "bg-gremius-yellow/10 text-gremius-yellow border-gremius-yellow/20";
+        return "bg-kitsuden-yellow/10 text-kitsuden-yellow border-kitsuden-yellow/20";
       case "archived":
-        return "bg-gremius-subtle/10 text-gremius-subtle border-gremius-subtle/20";
+        return "bg-kitsuden-subtle/10 text-kitsuden-subtle border-kitsuden-subtle/20";
       default:
-        return "bg-gremius-surface text-gremius-text-dim";
+        return "bg-kitsuden-surface text-kitsuden-text-dim";
     }
   }
 
@@ -90,8 +90,8 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-gremius-text">Pages</h2>
-      <p class="text-sm text-gremius-text-dim mt-0.5">Manage your landing pages and content</p>
+      <h2 class="text-xl font-bold text-kitsuden-text">Pages</h2>
+      <p class="text-sm text-kitsuden-text-dim mt-0.5">Manage your landing pages and content</p>
     </div>
     <div class="flex items-center gap-2">
       <button
@@ -110,35 +110,35 @@
   {#if loading}
     <div class="flex justify-center py-20">
       <div
-        class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-6 h-6 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
     </div>
   {:else if pages.length === 0}
     <div class="card p-16 text-center">
       <div class="text-4xl mb-3">🎯</div>
-      <p class="text-gremius-text-dim">No pages yet.</p>
-      <p class="text-xs text-gremius-subtle mt-1">Create your first landing page.</p>
+      <p class="text-kitsuden-text-dim">No pages yet.</p>
+      <p class="text-xs text-kitsuden-subtle mt-1">Create your first landing page.</p>
     </div>
   {:else}
     <div class="space-y-3">
       {#each pages as page}
         <a
           href="/builder"
-          class="card p-4 flex items-center justify-between group hover:border-gremius-cyan/30 transition-colors"
+          class="card p-4 flex items-center justify-between group hover:border-kitsuden-accent/30 transition-colors"
         >
           <div class="flex items-center gap-4">
             <div
-              class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center text-xl"
+              class="w-10 h-10 rounded-lg bg-kitsuden-surface flex items-center justify-center text-xl"
             >
               {layoutIcon(page.layout)}
             </div>
             <div>
               <h3
-                class="font-semibold text-gremius-text group-hover:text-gremius-cyan transition-colors"
+                class="font-semibold text-kitsuden-text group-hover:text-kitsuden-accent transition-colors"
               >
                 {page.title}
               </h3>
-              <p class="text-xs text-gremius-subtle mt-0.5">
+              <p class="text-xs text-kitsuden-subtle mt-0.5">
                 /{page.slug} · {page.layout}
               </p>
             </div>

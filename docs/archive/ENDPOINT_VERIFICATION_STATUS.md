@@ -25,7 +25,7 @@ All frontend files now correctly use port `3001`:
 packages/admin/src/lib/api.ts:3
 packages/admin/src/lib/auth.svelte.ts:8
 packages/admin/src/lib/auth-client.ts:3
-packages/admin/src/lib/grimoire-loader.ts:17
+packages/admin/src/lib/kon-loader.ts:17
 packages/admin/src/lib/theme.svelte.ts:8
 packages/admin/src/lib/states/modules.svelte.ts:9
 packages/admin/src/lib/states/datasets.svelte.ts:21
@@ -42,7 +42,7 @@ packages/admin/src/views/Media.svelte:5
 packages/admin/src/views/Settings.svelte:6
 packages/admin/src/views/data/DataExplorer.svelte:20
 packages/admin/src/views/webhooks/WebhooksView.svelte:18
-packages/admin/src/views/Realms/RealmsView.svelte:5
+packages/admin/src/views/Grimoires/GrimoiresView.svelte:5
 packages/admin/src/routes/mcp/+page.svelte:5
 ```
 
@@ -52,7 +52,7 @@ packages/admin/src/routes/mcp/+page.svelte:5
 
 ### 2. Platforms, Tags, Streamers Routes ✅ VERIFIED
 
-The routes are now properly structured as **Grimoire Modules**:
+The routes are now properly structured as **Kon Modules**:
 
 #### File Structure:
 
@@ -74,7 +74,7 @@ apps/api/src/modules/
 
 #### How They Get Mounted:
 
-1. **Listed in gremius.config.ts** (lines 77-80):
+1. **Listed in kitsuden.config.ts** (lines 77-80):
 
    ```typescript
    ("games", "streamers", "platforms", "tags", "collections");
@@ -90,16 +90,16 @@ apps/api/src/modules/
 3. **Mount Path** (line 390 in module-loader.ts):
 
    ```typescript
-   let mountPath = isRealmGrimoire ? `/api/${cleanName}` : `/api/custom/${name}`;
+   let mountPath = isGrimoireKon ? `/api/${cleanName}` : `/api/custom/${name}`;
    // Results in: /api/platforms, /api/tags, /api/streamers
    ```
 
-4. **Registered as Realm Grimoires** (in GRIMOIRE_REGISTRY):
-   - `category: "realm"`
-   - `realmId: "realm-esports"`
+4. **Registered as Grimoire Kons** (in KON_REGISTRY):
+   - `category: "grimoire"`
+   - `grimoireId: "grimoire-esports"`
    - Mounted at `/api/{name}` when active
 
-**Status:** ✅ Routes will be mounted correctly when the grimoires load
+**Status:** ✅ Routes will be mounted correctly when the kons load
 
 ---
 
@@ -135,15 +135,15 @@ const ENDPOINT_MAP: Record<string, string> = {
 
 ---
 
-### 5. Grimoire Page Routing ✅ VERIFIED
+### 5. Kon Page Routing ✅ VERIFIED
 
-Frontend routes use `GrimoirePage` component which loads dynamically:
+Frontend routes use `KonPage` component which loads dynamically:
 
 ```
 packages/admin/src/routes/
-├── platforms/+page.svelte  → <GrimoirePage grimoireId="platforms" />
-├── tags/+page.svelte       → <GrimoirePage grimoireId="tags" />
-├── streamers/+page.svelte  → <GrimoirePage grimoireId="streamers" /> (assumed)
+├── platforms/+page.svelte  → <KonPage konId="platforms" />
+├── tags/+page.svelte       → <KonPage konId="tags" />
+├── streamers/+page.svelte  → <KonPage konId="streamers" /> (assumed)
 ```
 
 **Status:** ✅ Pages will render through DataExplorer or custom views
@@ -164,10 +164,10 @@ The methods in `api.ts` call `/platforms`, `/tags`, `/streamers` directly, but t
 
 ### ⚠️ Issue 2: No Custom Views for Platforms/Tags/Streamers
 
-These grimoires don't have custom Svelte views registered in `GRIMOIRE_VIEW_REGISTRY`:
+These kons don't have custom Svelte views registered in `KON_VIEW_REGISTRY`:
 
 ```typescript
-// packages/admin/src/lib/grimoire-loader.ts (lines 20-36)
+// packages/admin/src/lib/kon-loader.ts (lines 20-36)
 // Only these have custom views:
 (webhooks, workers, formulas, games, media, academy, blog, streamers);
 ```
@@ -190,11 +190,11 @@ To verify everything works, test these scenarios:
 - [ ] Login (`/api/auth/sign-in/email`)
 - [ ] Session check (`/api/auth/get-session`)
 
-### Grimoire Loading
+### Kon Loading
 
-- [ ] Check console logs for: `✅ platforms [realm, legacy] → /api/platforms`
-- [ ] Check console logs for: `✅ tags [realm, legacy] → /api/tags`
-- [ ] Check console logs for: `✅ streamers [realm, legacy] → /api/streamers`
+- [ ] Check console logs for: `✅ platforms [grimoire, legacy] → /api/platforms`
+- [ ] Check console logs for: `✅ tags [grimoire, legacy] → /api/tags`
+- [ ] Check console logs for: `✅ streamers [grimoire, legacy] → /api/streamers`
 
 ### API Endpoints
 
@@ -207,7 +207,7 @@ To verify everything works, test these scenarios:
 
 ### Frontend Navigation
 
-- [ ] Sidebar shows Platforms, Tags, Streamers (when realm active)
+- [ ] Sidebar shows Platforms, Tags, Streamers (when grimoire active)
 - [ ] Clicking Platforms loads `/platforms`
 - [ ] Clicking Tags loads `/tags`
 - [ ] Clicking Streamers loads `/streamers`
@@ -232,7 +232,7 @@ To verify everything works, test these scenarios:
 | Category             | Verdict                                |
 | -------------------- | -------------------------------------- |
 | API Port Fix         | ✅ Correctly applied (3001 everywhere) |
-| Routes Mounted       | ✅ Will be mounted via Grimoire Loader |
+| Routes Mounted       | ✅ Will be mounted via Kon Loader      |
 | Frontend Integration | ✅ Full integration verified           |
 | Overall Health       | ✅ HEALTHY                             |
 
@@ -242,7 +242,7 @@ The architecture is sound:
 
 1. Backend routes exist in `routes/crud.ts`
 2. Modules export them from `modules/{name}/`
-3. Grimoire Loader mounts them at `/api/{name}`
+3. Kon Loader mounts them at `/api/{name}`
 4. Frontend uses them via `api.ts` or DataExplorer
 
 ---

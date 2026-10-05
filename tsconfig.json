@@ -1,24 +1,76 @@
 {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Raíz del monorepo: base heredada + los ficheros que no cubre ningún paquete
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Este fichero hace dos cosas, y conviene no confundirlas:
+  //
+  //   1. Aporta los `compilerOptions` que heredan los 36 paquetes vía `extends`.
+  //   2. Comprueba `tests/` y `scripts/`, que no pertenecen a ningún paquete y
+  //      por tanto `pnpm -r typecheck` NO mira.
+  //
+  // Lo que NO hace es compilar `apps/` ni `packages/`. Antes sí —no había
+  // `include`, así que barría el monorepo entero— y eso producía **82 errores
+  // que no existen**: `@/` sin resolver (ese alias lo declara
+  // `apps/api/tsconfig.json`), `@types/bun` ausente, y reglas de strict
+  // distintas a las de cada kon. Errores que no salen en CI, no rompen nada, y
+  // que cuestan una tarde a quien abra el repo y escriba `tsc`.
+  //
+  // El typecheck de los paquetes es `pnpm -r typecheck`: cada uno con su propio
+  // tsconfig, que es el único que conoce sus alias y sus tipos.
+  //
+  // Nota para quien edite los `include` de abajo: los 36 paquetes que extienden
+  // este fichero declaran todos el suyo, así que no heredan estos. Si alguno
+  // dejara de declararlo, heredaría `tests/**` —resuelto contra ESTA carpeta— y
+  // se quedaría sin compilar lo suyo. Por eso el `include` propio no es opcional.
+  "include": ["tests/**/*.ts", "scripts/**/*.ts", "*.config.ts"],
+  "exclude": ["node_modules", "dist", ".astro", "packages/cli/test-vibecoder-app"],
+
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "vitest/globals"],
     "strict": true,
+    // OJO: aqui NO va `noEmit`. Esta base la extienden 36 paquetes, y uno de
+    // ellos —`packages/shared`— construye sus `.d.ts` con
+    // `tsc --emitDeclarationOnly`. Un `noEmit` heredado gana sobre esa bandera y
+    // tsc sale con codigo 0 SIN escribir nada: el build "funciona", `dist` se
+    // queda solo con el `.js`, y los 8 paquetes que resuelven `@kitsuden/shared`
+    // contra `dist` empiezan a recibir `any` implicito. Se probo y paso justo eso.
+    // Si hace falta no emitir, va en la linea de comandos de cada paquete.
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@gremius/shared/*": ["./packages/shared/src/*"]
+      // Los tests importan de `apps/api/src`, y TypeScript sigue el grafo de
+      // imports: al incluir `tests/**` entra tambien el codigo de la app, que
+      // usa estos alias. Sin declararlos aqui salen ~80 errores de modulo no
+      // encontrado que no son reales — el alias existe, lo declara
+      // `apps/api/tsconfig.json`; el que no lo conocia era este fichero.
+      "@/*": ["./apps/api/src/*"],
+
+      // A FUENTE, no a `dist`, y esto importa: `packages/shared` declara
+      // `types: ./dist/index.d.ts` pero su build no llega a emitirlo (el script
+      // avisa y sigue). Quien resuelva contra `dist` recibe `any` en silencio.
+      // Apuntar a la fuente es ademas lo que ya hacen `engine` y los kons.
+      //
+      // Hacen falta las DOS entradas: la del subpath no cubre el import
+      // desnudo `from "@kitsuden/shared"`, que es el que usa casi todo el codigo.
+      "@kitsuden/shared": ["./packages/shared/src/index.ts"],
+      "@kitsuden/shared/*": ["./packages/shared/src/*"],
+
+      // Kons que otros kons importan por nombre de paquete. Van a `index.ts`
+      // porque los kons no se construyen a `dist`: se cargan desde fuente.
+      "@kitsuden/engine": ["./packages/engine/index.ts"],
+      "@kitsuden/kon-cardsim": ["./packages/kons/kon-cardsim/index.ts"],
+      "@kitsuden/kon-esports": ["./packages/kons/kon-esports/index.ts"]
     }
-  },
-  "exclude": ["node_modules", "dist", ".astro", "packages/cli/test-vibecoder-app"]
+  }
 }

@@ -64,23 +64,23 @@ POST /api/relations/:tableName/inlines/:parentId  ← Guardar inlines
 
 ---
 
-### 3. Migración de Grimoires ⏳
+### 3. Migración de Kons ⏳
 
-**Grimoires migrados a `grimoire.json`:**
+**Kons migrados a `kon.json`:**
 
-| Grimoire             | Estado | Tablas                           |
-| -------------------- | ------ | -------------------------------- |
-| grimoire-academy-lms | ✅     | courses, lessons, enrollments    |
-| grimoire-booking     | ✅     | bookings, services, availability |
-| grimoire-directory   | ✅     | listings, categories, reviews    |
-| grimoire-dms         | ✅     | documents, folders, tags         |
-| grimoire-games       | ✅     | games, collections               |
-| grimoire-blog        | ✅     | posts                            |
+| Kon             | Estado | Tablas                           |
+| --------------- | ------ | -------------------------------- |
+| kon-academy-lms | ✅     | courses, lessons, enrollments    |
+| kon-booking     | ✅     | bookings, services, availability |
+| kon-directory   | ✅     | listings, categories, reviews    |
+| kon-dms         | ✅     | documents, folders, tags         |
+| kon-games       | ✅     | games, collections               |
+| kon-blog        | ✅     | posts                            |
 
 **Pendientes de migración:**
 
 - [ ] webhooks → `packages/core/webhooks/`
-- [ ] workers → Nuevo grimoire
+- [ ] workers → Nuevo kon
 - [ ] media → `packages/core/media-library/`
 
 ---
@@ -92,8 +92,8 @@ POST /api/relations/:tableName/inlines/:parentId  ← Guardar inlines
 **`apps/api/src/routes/data-explorer.ts`:**
 
 ```typescript
-// ELIMINAR: grimoireTables hardcodeado (líneas 47-60)
-const grimoireTables: Record<string, string[]> = {
+// ELIMINAR: konTables hardcodeado (líneas 47-60)
+const konTables: Record<string, string[]> = {
   academy: ["courses", "lessons", "enrollments"],
   // ... etc
 };
@@ -107,7 +107,7 @@ const tableRegistry: Record<string, TableMeta> = {
 
 **Reemplazar por:**
 
-- `getGrimoireAdminConfig()` del admin-registry
+- `getKonAdminConfig()` del admin-registry
 - `introspectTable()` del schema-introspector
 
 ---
@@ -121,7 +121,7 @@ Antes (Manual):
 Después (Zero Config):
   Admin → DataExplorer → /api/admin/registry/:id → Schema Introspection
                                               ↓
-                                       grimoire.json (opcional)
+                                       kon.json (opcional)
                                               ↓
                                        DB Introspection (fallback)
 ```
@@ -130,12 +130,12 @@ Después (Zero Config):
 
 ## 📊 Comparación: Antes vs Después
 
-### Antes - Agregar un grimoire
+### Antes - Agregar un kon
 
 ```typescript
-// 1. Agregar a grimoireTables en data-explorer.ts
-const grimoireTables = {
-  mygrimoire: ["table1", "table2"],
+// 1. Agregar a konTables en data-explorer.ts
+const konTables = {
+  mykon: ["table1", "table2"],
 };
 
 // 2. Agregar tables a tableRegistry
@@ -151,12 +151,12 @@ const tableRegistry = {
 
 **~30 líneas de código, 4 archivos modificados**
 
-### Después - Agregar un grimoire
+### Después - Agregar un kon
 
 ```json
 {
-  "id": "grimoire-mygrimoire",
-  "name": "My Grimoire",
+  "id": "kon-mykon",
+  "name": "My Kon",
   "tables": ["table1", "table2"],
   "icon": "Icon"
 }
@@ -178,10 +178,10 @@ const tableRegistry = {
 ### Opción 2: Personalizar config
 
 ```json
-// packages/grimoires/grimoire-migrimoire/grimoire.json
+// packages/kons/kon-mikon/kon.json
 {
-  "id": "grimoire-migrimoire",
-  "name": "Mi Grimoire",
+  "id": "kon-mikon",
+  "name": "Mi Kon",
   "tables": [
     {
       "name": "products",
@@ -197,7 +197,7 @@ const tableRegistry = {
 
 ```bash
 # Crear archivo por convención:
-packages/admin/src/views/migrimoire/MigrimoireView.svelte
+packages/admin/src/views/mikon/MikonView.svelte
 ```
 
 ---
@@ -227,7 +227,7 @@ POST / api / schema / refresh;
 ### Fallbacks
 
 ```
-1. ¿Existe grimoire.json con tables?
+1. ¿Existe kon.json con tables?
    ↓ SÍ: Usar config definida
    ↓ NO: ¿Existe tabla en DB?
         ↓ SÍ: Introspección automática
@@ -242,15 +242,15 @@ POST / api / schema / refresh;
 - [x] Schema Introspection API Endpoints
 - [x] Inline Relations Service
 - [x] Inline Relations API Endpoints
-- [x] Migrar grimoire-academy-lms
-- [x] Migrar grimoire-booking
-- [x] Migrar grimoire-directory
-- [x] Migrar grimoire-dms
+- [x] Migrar kon-academy-lms
+- [x] Migrar kon-booking
+- [x] Migrar kon-directory
+- [x] Migrar kon-dms
 - [ ] Migrar webhooks (core)
 - [ ] Migrar workers (nuevo)
 - [ ] Migrar media (core)
 - [ ] Eliminar tableRegistry hardcodeado
-- [ ] Eliminar grimoireTables hardcodeado
+- [ ] Eliminar konTables hardcodeado
 - [ ] Actualizar documentación
 - [ ] Tests E2E de flujo completo
 
@@ -258,7 +258,7 @@ POST / api / schema / refresh;
 
 ## 🎯 Próximos Pasos
 
-1. **Completar migración de grimoires restantes**
+1. **Completar migración de kons restantes**
 2. **Tests de integración** para schema introspection
 3. **Frontend: Componente InlineRelations** para UI
 4. **Documentación de usuario** actualizada

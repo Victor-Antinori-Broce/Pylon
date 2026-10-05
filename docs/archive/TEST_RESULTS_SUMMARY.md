@@ -149,7 +149,7 @@ Los siguientes warnings existen en el codebase pero no afectan funcionalidad:
 ### Type Warnings
 
 - Errores de tipos en `agents-v1.ts` y `data-sources.ts` (pre-existentes)
-- Errores en `grimoire-agents` (pre-existentes)
+- Errores en `kon-agents` (pre-existentes)
 
 ---
 

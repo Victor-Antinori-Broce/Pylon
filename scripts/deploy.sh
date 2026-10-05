@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===================================================================
-# GremiusCMS - Production Deploy Script
+# Kitsuden - Production Deploy Script
 # ===================================================================
 # Uso:
 #   chmod +x scripts/deploy.sh
@@ -108,7 +108,7 @@ if [ ${#BETTER_AUTH_SECRET} -lt 32 ]; then
 fi
 
 # Verificar que no esté usando el secret de desarrollo
-if [ "$BETTER_AUTH_SECRET" = "dev-better-auth-secret-gremiuscms-change-in-production-32" ]; then
+if [ "$BETTER_AUTH_SECRET" = "change-me-to-a-random-string-at-least-32-chars" ]; then
     log_error "BETTER_AUTH_SECRET sigue siendo el valor de desarrollo. Genera uno nuevo con:"
     log_error "  openssl rand -base64 32"
     exit 1
@@ -141,7 +141,7 @@ log_step "6/8 Esperando base de datos"
 MAX_RETRIES=30
 RETRY_COUNT=0
 
-while ! $DOCKER_COMPOSE exec -T gremius_db pg_isready -U "${POSTGRES_USER:-gremius}" -d "${POSTGRES_DB:-gremius_prod}" &> /dev/null; do
+while ! $DOCKER_COMPOSE exec -T kitsuden_db pg_isready -U "${POSTGRES_USER:-kitsuden}" -d "${POSTGRES_DB:-kitsuden_prod}" &> /dev/null; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
         log_error "PostgreSQL no respondió después de ${MAX_RETRIES} intentos"
@@ -159,7 +159,7 @@ log_ok "PostgreSQL listo"
 # ═══════════════════════════════════════════════════════════════════
 log_step "7/8 Ejecutando migraciones"
 
-$DOCKER_COMPOSE exec -T gremius_api sh -c "cd /app/apps/api && bunx drizzle-kit migrate" || {
+$DOCKER_COMPOSE exec -T kitsuden_api sh -c "cd /app/apps/api && bunx drizzle-kit migrate" || {
     log_warn "Algunas migraciones pueden haber fallado o ya estaban aplicadas"
 }
 
@@ -170,7 +170,7 @@ log_ok "Migraciones completadas"
 # ═══════════════════════════════════════════════════════════════════
 log_step "8/8 Ejecutando seed"
 
-SEED_OUTPUT=$($DOCKER_COMPOSE exec -T gremius_api sh -c "cd /app/apps/api && bun run src/db/seed.ts" 2>&1) || true
+SEED_OUTPUT=$($DOCKER_COMPOSE exec -T kitsuden_api sh -c "cd /app/apps/api && bun run src/db/seed.ts" 2>&1) || true
 
 if echo "$SEED_OUTPUT" | grep -q "Created admin"; then
     echo "$SEED_OUTPUT" | grep -A 3 "Created admin" | while read line; do
@@ -195,7 +195,7 @@ ADMIN_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/ 2>/
 if [ "$API_HEALTH" = "200" ]; then
     log_ok "API responde correctamente (HTTP 200)"
 else
-    log_warn "API no respondió 200 (HTTP $API_HEALTH) — revisa los logs con: docker compose logs gremius_api"
+    log_warn "API no respondió 200 (HTTP $API_HEALTH) — revisa los logs con: docker compose logs kitsuden_api"
 fi
 
 if [ "$ADMIN_HEALTH" = "200" ] || [ "$ADMIN_HEALTH" = "301" ] || [ "$ADMIN_HEALTH" = "302" ]; then
@@ -205,20 +205,52 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════════
+# Lo que solo se ve en el sitio publicado
+# ═══════════════════════════════════════════════════════════════════
+#
+# Las pruebas de cumplimiento y de SEO guardan el MECANISMO y todas pasan.
+# Lo que no pueden ver es la configuración: un sitio se puede publicar
+# anunciándose en `localhost` y con el aviso legal sin titular, y ninguna
+# prueba se entera. Esto mira el HTML que sale de verdad por la puerta.
+#
+# Es un fallo DURO a propósito. Un despliegue que se anuncia en localhost no
+# lo indexa nadie, y uno sin titular incumple: mejor que el despliegue pare y
+# se vea, que no que quede publicado y en silencio.
+log_step "Comprobando el sitio publicado"
+
+if [ -z "${SITE_URL:-}" ]; then
+    log_warn "SITE_URL no está definida: no se comprueba el sitio publicado."
+    log_warn "Defínela (y ponla también en el panel) para que esto deje de ser un punto ciego."
+elif echo "${SITE_URL}" | grep -qiE '^https?://(localhost|127\.0\.0\.1|\[::1\])(:|/|$)'; then
+    log_error "SITE_URL vale «${SITE_URL}»: eso es localhost."
+    log_error "Canónicas, hreflang, og:url y el mapa del sitio saldrían así, y Google no puede indexarlos."
+    exit 1
+else
+    # `set -e` haría salir por el código 1 del comprobador antes de imprimir nada
+    if node "$(dirname "$0")/comprobar-publicacion.mjs" "${SITE_URL}"; then
+        log_ok "El sitio publicado pasa las comprobaciones"
+    else
+        log_error "El sitio publicado tiene fallos GRAVES (arriba, en detalle)."
+        log_error "Los servicios están levantados, pero NO deberías anunciarlo así."
+        exit 1
+    fi
+fi
+
+# ═══════════════════════════════════════════════════════════════════
 # Resumen
 # ═══════════════════════════════════════════════════════════════════
 echo ""
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}${BOLD}  🎉 Deploy de GremiusCMS completado${NC}"
+echo -e "${GREEN}${BOLD}  🎉 Deploy de Kitsuden completado${NC}"
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════════${NC}"
 echo ""
 echo -e "  ${CYAN}API:${NC}       http://localhost:3000"
 echo -e "  ${CYAN}Swagger:${NC}   http://localhost:3000/api/swagger"
 echo -e "  ${CYAN}Admin:${NC}     http://localhost:3001"
 echo ""
-echo -e "  ${CYAN}Logs API:${NC}   docker compose logs -f gremius_api"
-echo -e "  ${CYAN}Logs DB:${NC}    docker compose logs -f gremius_db"
-echo -e "  ${CYAN}Shell API:${NC}  docker compose exec gremius_api sh"
+echo -e "  ${CYAN}Logs API:${NC}   docker compose logs -f kitsuden_api"
+echo -e "  ${CYAN}Logs DB:${NC}    docker compose logs -f kitsuden_db"
+echo -e "  ${CYAN}Shell API:${NC}  docker compose exec kitsuden_api sh"
 echo ""
 echo -e "${YELLOW}Próximos pasos:${NC}"
 echo -e "  1. Accede al Admin en http://localhost:3001"

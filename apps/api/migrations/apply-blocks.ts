@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * GremiusCMS — Apply "Lego" blocks migration
+ * Kitsuden — Apply "Lego" blocks migration
  *
  * Run with: bun run apps/api/migrations/apply-blocks.ts
  *
@@ -12,12 +12,12 @@
 import postgres from "postgres";
 
 const connectionString =
-  process.env.DATABASE_URL || "postgres://gremius:gremius_dev_2025@localhost:5432/gremiuscms";
+  process.env.DATABASE_URL || "postgres://kitsuden:kitsuden_dev_2025@localhost:5432/kitsuden";
 
 const sql = postgres(connectionString);
 
 async function migrate() {
-  console.log("🧱 GremiusCMS — Applying blocks migration...\n");
+  console.log("🧱 Kitsuden — Applying blocks migration...\n");
 
   try {
     // Add blocks column to blog_posts

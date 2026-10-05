@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════
-# GremiusCMS — Apply Fixes Script
+# Kitsuden — Apply Fixes Script
 #
 # Run AFTER stopping pnpm dev (Ctrl+C):
 #   powershell -ExecutionPolicy Bypass -File scripts/apply-fixes.ps1
@@ -12,7 +12,7 @@
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
-Write-Host "`n🔧 GremiusCMS — Applying fixes...`n" -ForegroundColor Cyan
+Write-Host "`n🔧 Kitsuden — Applying fixes...`n" -ForegroundColor Cyan
 
 # 1. Fix queue.ts
 $queueSrc = Join-Path $root "apps\api\src\lib\queue.fixed.ts"

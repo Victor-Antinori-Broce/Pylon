@@ -8,7 +8,7 @@
 </script>
 
 {#if mode === "view" || mode === "inline"}
-  <span class="text-gremius-text truncate" title={String(displayValue)}>
+  <span class="text-kitsuden-text truncate" title={String(displayValue)}>
     {displayValue}
   </span>
 {:else}
@@ -17,7 +17,7 @@
     value={value ?? ""}
     placeholder={config.options?.placeholder}
     maxlength={config.options?.maxLength}
-    class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan"
+    class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
     oninput={(e) => onChange?.(e.currentTarget.value)}
   />
 {/if}

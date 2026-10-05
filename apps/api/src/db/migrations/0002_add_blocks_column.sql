@@ -1,7 +1,7 @@
 -- Migration: Add blocks JSONB column to blog_posts and games
 -- Purpose: Page Builder "Lego" architecture — stores ordered array of PageBlock objects
 -- Structure: [{ id, type, data, order }]
--- Run: psql -d gremius -f 0002_add_blocks_column.sql
+-- Run: psql -d kitsuden -f 0002_add_blocks_column.sql
 
 -- ═══ Blog Posts ═══
 ALTER TABLE blog_posts

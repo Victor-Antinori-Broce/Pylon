@@ -7,7 +7,7 @@
  * - Accesos denegados
  * - Actividad sospechosa
  *
- * Configuración via gremius.config.ts:
+ * Configuración via kitsuden.config.ts:
  *   agentWebhooks: {
  *     url: "https://hooks.slack.com/...",
  *     events: ["auth_failure", "rate_limited"],
@@ -86,7 +86,7 @@ export async function sendAgentWebhook(event: AgentWebhookEvent): Promise<void> 
   // Construir payload
   const payload = {
     ...event,
-    gremius: {
+    kitsuden: {
       version: "0.7.0-beta",
       source: "agent-webhook",
     },
@@ -97,8 +97,8 @@ export async function sendAgentWebhook(event: AgentWebhookEvent): Promise<void> 
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        "X-Gremius-Event": event.type,
-        "X-Gremius-Timestamp": event.timestamp,
+        "X-Kitsuden-Event": event.type,
+        "X-Kitsuden-Timestamp": event.timestamp,
         ...config.headers,
       };
 
@@ -108,7 +108,7 @@ export async function sendAgentWebhook(event: AgentWebhookEvent): Promise<void> 
         const signature = createHmac("sha256", config.secret)
           .update(JSON.stringify(payload))
           .digest("hex");
-        headers["X-Gremius-Signature"] = `sha256=${signature}`;
+        headers["X-Kitsuden-Signature"] = `sha256=${signature}`;
       }
 
       const response = await fetch(config.url, {

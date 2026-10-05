@@ -3,7 +3,7 @@ import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 // Tabla para trackear migraciones
 export const migrationsTable = pgTable("_migrations", {
   id: serial("id").primaryKey(),
-  grimoire: text("grimoire").notNull(),
+  kon: text("kon").notNull(),
   name: text("name").notNull(),
   appliedAt: timestamp("applied_at").defaultNow().notNull(),
   checksum: text("checksum").notNull(),

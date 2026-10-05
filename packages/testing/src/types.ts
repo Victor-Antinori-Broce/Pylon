@@ -1,16 +1,16 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * TESTING FRAMEWORK TYPES - Minimalist Grimoire Testing
+ * TESTING FRAMEWORK TYPES - Minimalist Kon Testing
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { GrimoireContext, GrimoireDefinition } from "@gremius/shared";
+import type { KonContext, KonDefinition } from "@kitsuden/shared";
 import type { Hono } from "hono";
 
 /** Configuration for test sandbox */
 export interface SandboxConfig {
-  /** Grimoires to load */
-  grimoires: string[];
+  /** Kons to load */
+  kons: string[];
 
   /** Fixtures to load before tests */
   fixtures?: string | Record<string, any>;
@@ -27,11 +27,11 @@ export interface TestSandbox {
   /** Unique sandbox ID */
   id: string;
 
-  /** Full GrimoireContext like in production */
-  context: TestGrimoireContext;
+  /** Full KonContext like in production */
+  context: TestKonContext;
 
-  /** Loaded grimoires with their routers */
-  grimoires: Record<string, TestGrimoire>;
+  /** Loaded kons with their routers */
+  kons: Record<string, TestKon>;
 
   /** Fixture data */
   fixtures: Record<string, any>;
@@ -54,18 +54,18 @@ export interface TestSandbox {
   reset: () => Promise<void>;
 }
 
-/** Simplified GrimoireContext for testing */
-export interface TestGrimoireContext extends GrimoireContext {
+/** Simplified KonContext for testing */
+export interface TestKonContext extends KonContext {
   /** Sandbox-specific metadata */
   sandboxId: string;
 }
 
-/** Loaded grimoire in test environment */
-export interface TestGrimoire {
-  definition: GrimoireDefinition;
+/** Loaded kon in test environment */
+export interface TestKon {
+  definition: KonDefinition;
   router: Hono;
 
-  /** Direct access to grimoire's internal functions */
+  /** Direct access to kon's internal functions */
   invoke: <T>(method: string, ...args: any[]) => Promise<T>;
 }
 
@@ -171,6 +171,6 @@ export interface TestAssertions {
 export interface Fixture {
   id: string;
   dependencies?: string[];
-  setup: (ctx: TestGrimoireContext) => Promise<Record<string, any>>;
-  teardown?: (ctx: TestGrimoireContext, data: Record<string, any>) => Promise<void>;
+  setup: (ctx: TestKonContext) => Promise<Record<string, any>>;
+  teardown?: (ctx: TestKonContext, data: Record<string, any>) => Promise<void>;
 }

@@ -169,7 +169,7 @@ test.describe("Blog Editor - SEO Features", () => {
 
     // Check counter shows red
     const counter = page.locator("text=/61\\/60/");
-    await expect(counter).toHaveClass(/text-gremius-pink/);
+    await expect(counter).toHaveClass(/text-kitsuden-pink/);
 
     // Try to enter meta description over 160 chars
     const longDesc = "b".repeat(161);
@@ -177,7 +177,7 @@ test.describe("Blog Editor - SEO Features", () => {
 
     // Check counter shows red
     const descCounter = page.locator("text=/161\\/160/");
-    await expect(descCounter).toHaveClass(/text-gremius-pink/);
+    await expect(descCounter).toHaveClass(/text-kitsuden-pink/);
   });
 
   test("should update SEO score in real-time", async ({ page }) => {

@@ -12,11 +12,14 @@ import { checkRateLimit } from "../lib/rate-limiter";
 import { isValkeyAvailable } from "../lib/valkey";
 import type { AppVariables } from "../types/hono";
 
+import { isDatabaseAvailable } from "./setup";
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let valkeyAvailable = false;
+let dbAvailable = false;
 const app = new Hono<{ Variables: AppVariables }>();
 
 beforeAll(async () => {
@@ -25,6 +28,7 @@ beforeAll(async () => {
     isValkeyAvailable(),
     new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000)),
   ]);
+  dbAvailable = await isDatabaseAvailable();
   // Register features
   registerCriticalFeatures(app);
   // Mock auth endpoint for rate-limit testing
@@ -88,14 +92,29 @@ describe("🔒 Rate Limiting", () => {
 
   it("should return 429 on rate limited endpoint", async () => {
     if (!valkeyAvailable) return;
-    const res = await app.request("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "test@test.com", password: "test" }),
-    });
 
-    // Primera request debería pasar (o fallar por auth, no por rate limit)
-    expect([200, 401, 429]).toContain(res.status);
+    // Use a unique IP so previous test runs do not pollute the rate-limit window.
+    const testIp = `192.168.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+    let blocked = false;
+
+    // The /api/auth/login route is configured for 5 requests per 5-minute window.
+    for (let i = 0; i < 7; i++) {
+      const res = await app.request("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-forwarded-for": testIp,
+        },
+        body: JSON.stringify({ email: "test@test.com", password: "test" }),
+      });
+
+      if (res.status === 429) {
+        blocked = true;
+        break;
+      }
+    }
+
+    expect(blocked).toBe(true);
   });
 });
 
@@ -104,15 +123,14 @@ describe("🔒 Rate Limiting", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("🔍 Search Engine", () => {
-  it("should have search endpoints", async () => {
-    const res = await requestWithTimeout(app, "/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: "test", type: "fulltext" }),
-    });
+  it("should return empty suggestions when no matches exist", async () => {
+    const res = await requestWithTimeout(app, "/api/search/suggestions?q=testxyz");
 
-    // Puede fallar si no hay datos, pero el endpoint debe existir
-    expect([200, 400, 500]).toContain(res.status);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { suggestions: any[] };
+    expect(body).toHaveProperty("suggestions");
+    expect(Array.isArray(body.suggestions)).toBe(true);
+    expect(body.suggestions.length).toBe(0);
   });
 
   it("should validate search query length", async () => {
@@ -127,12 +145,11 @@ describe("🔍 Search Engine", () => {
     expect(body.error).toContain("at least 2 characters");
   });
 
-  it("should provide autocomplete suggestions", async () => {
+  it("should provide autocomplete suggestions for valid queries", async () => {
     const res = await requestWithTimeout(app, "/api/search/suggestions?q=test");
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { suggestions: any[] };
-    expect(body).toHaveProperty("suggestions");
     expect(Array.isArray(body.suggestions)).toBe(true);
   });
 });
@@ -145,35 +162,35 @@ describe("📊 Observability", () => {
   it("should return health status", async () => {
     const res = await requestWithTimeout(app, "/health");
 
-    // 200 = healthy, 404 = route not mounted in test app, 500 = pg-mem query error
-    expect([200, 404, 500]).toContain(res.status);
-    if (res.status === 200) {
-      const body = (await res.json()) as any;
-      expect(body).toHaveProperty("status");
-    }
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as any;
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("checks");
+    expect(body).toHaveProperty("latency");
+    expect(body).toHaveProperty("timestamp");
   });
 
-  it("should return system stats", async () => {
-    // Necesita auth, debería fallar con 401; puede dar 500 en app de test sin infraestructura completa
+  it("should require auth for admin stats", async () => {
     const res = await requestWithTimeout(app, "/admin/stats");
-    expect([200, 401, 404, 500]).toContain(res.status);
+    expect(res.status).toBe(401);
   });
 
-  it("should return homepage with stats", async () => {
+  it("should return homepage with status", async () => {
     const res = await requestWithTimeout(app, "/");
 
-    expect([200, 404]).toContain(res.status);
-    if (res.status === 200) {
-      const body = (await res.json()) as any;
-      expect(body).toHaveProperty("message");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as any;
+    expect(body.message).toBe("Kitsuden API");
+    expect(body).toHaveProperty("status");
+    expect(["healthy", "degraded"]).toContain(body.status);
+    if (body.status === "healthy") {
+      expect(body).toHaveProperty("stats");
     }
   });
 
-  it("should track real-time connections", async () => {
+  it("should require auth for realtime stats", async () => {
     const res = await requestWithTimeout(app, "/admin/realtime");
-
-    // Necesita auth; puede dar 500 en app de test sin infraestructura completa
-    expect([200, 401, 404, 500]).toContain(res.status);
+    expect(res.status).toBe(401);
   });
 });
 

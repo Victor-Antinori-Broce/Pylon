@@ -4,8 +4,8 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Provides endpoints for:
- * - /api/docs/openapi.json - Full OpenAPI spec from all grimoires
- * - /api/docs/:grimoire/openapi.json - Spec for specific grimoire
+ * - /api/docs/openapi.json - Full OpenAPI spec from all kons
+ * - /api/docs/:kon/openapi.json - Spec for specific kon
  * - /api/docs/ - Swagger UI
  * - /api/docs/modern - Scalar UI
  * - /api/docs/operations - List all available operations
@@ -16,12 +16,8 @@ import { swaggerUI } from "@hono/swagger-ui";
 import { Hono } from "hono";
 
 import { logger } from "../lib/logger";
-import { getLoadedGrimoires } from "../lib/module-loader";
-import {
-  generateOpenAPISpec,
-  generateGrimoireSpec,
-  listOperations,
-} from "../lib/openapi-aggregator";
+import { getLoadedKons } from "../lib/module-loader";
+import { generateOpenAPISpec, generateKonSpec, listOperations } from "../lib/openapi-aggregator";
 import type { AppVariables } from "../types/hono";
 
 export const dynamicDocsRouter = new Hono<{ Variables: AppVariables }>();
@@ -34,7 +30,7 @@ const scalarHtml = `
 <!DOCTYPE html>
 <html>
   <head>
-    <title>GremiusCMS API Reference</title>
+    <title>Kitsuden API Reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -60,13 +56,13 @@ const scalarHtml = `
 /**
  * GET /api/docs/openapi.json
  *
- * Returns the complete OpenAPI specification from all active grimoires.
- * This spec is auto-generated from grimoire definitions.
+ * Returns the complete OpenAPI specification from all active kons.
+ * This spec is auto-generated from kon definitions.
  */
 dynamicDocsRouter.get("/openapi.json", async (c) => {
   try {
-    const grimoires = await getLoadedGrimoires();
-    const spec = await generateOpenAPISpec(grimoires, {
+    const kons = await getLoadedKons();
+    const spec = await generateOpenAPISpec(kons, {
       servers: [
         {
           url: `${new URL(c.req.url).origin}/api`,
@@ -93,35 +89,33 @@ dynamicDocsRouter.get("/openapi.json", async (c) => {
 });
 
 /**
- * GET /api/docs/:grimoire/openapi.json
+ * GET /api/docs/:kon/openapi.json
  *
- * Returns OpenAPI specification for a specific grimoire.
+ * Returns OpenAPI specification for a specific kon.
  */
-dynamicDocsRouter.get("/:grimoire/openapi.json", async (c) => {
+dynamicDocsRouter.get("/:kon/openapi.json", async (c) => {
   try {
-    const grimoireId = c.req.param("grimoire");
-    const grimoires = await getLoadedGrimoires();
-    const grimoire = grimoires.find(
-      (g) => g.id === grimoireId || g.id === `grimoire-${grimoireId}`
-    );
+    const konId = c.req.param("kon");
+    const kons = await getLoadedKons();
+    const kon = kons.find((g) => g.id === konId || g.id === `kon-${konId}`);
 
-    if (!grimoire) {
+    if (!kon) {
       return c.json(
         {
-          error: "Grimoire not found",
-          available: grimoires.map((g) => ({ id: g.id, name: g.name })),
+          error: "Kon not found",
+          available: kons.map((g) => ({ id: g.id, name: g.name })),
         },
         404
       );
     }
 
-    const spec = await generateGrimoireSpec(grimoire);
+    const spec = await generateKonSpec(kon);
 
     if (!spec) {
       return c.json(
         {
-          error: "Grimoire does not expose OpenAPI spec",
-          grimoire: grimoire.name,
+          error: "Kon does not expose OpenAPI spec",
+          kon: kon.name,
         },
         404
       );
@@ -137,10 +131,10 @@ dynamicDocsRouter.get("/:grimoire/openapi.json", async (c) => {
 
     return c.json(spec);
   } catch (error) {
-    logger.error({ error }, "Failed to generate grimoire spec");
+    logger.error({ error }, "Failed to generate kon spec");
     return c.json(
       {
-        error: "Failed to generate grimoire spec",
+        error: "Failed to generate kon spec",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       500
@@ -151,22 +145,20 @@ dynamicDocsRouter.get("/:grimoire/openapi.json", async (c) => {
 /**
  * GET /api/docs/operations
  *
- * List all available operations across all grimoires.
+ * List all available operations across all kons.
  * Useful for code generation and discovery.
  */
 dynamicDocsRouter.get("/operations", async (c) => {
   try {
-    const grimoires = await getLoadedGrimoires();
-    const operations = listOperations(grimoires);
+    const kons = await getLoadedKons();
+    const operations = listOperations(kons);
 
     const query = c.req.query();
     let filtered = operations;
 
-    // Filter by grimoire
-    if (query.grimoire) {
-      filtered = filtered.filter(
-        (op) => op.grimoireId === query.grimoire || op.grimoireId === `grimoire-${query.grimoire}`
-      );
+    // Filter by kon
+    if (query.kon) {
+      filtered = filtered.filter((op) => op.konId === query.kon || op.konId === `kon-${query.kon}`);
     }
 
     // Filter by tag
@@ -218,7 +210,7 @@ dynamicDocsRouter.get(
   "/",
   swaggerUI({
     url: "/api/docs/openapi.json",
-    title: "GremiusCMS API Documentation",
+    title: "Kitsuden API Documentation",
   })
 );
 
@@ -232,15 +224,15 @@ dynamicDocsRouter.get("/modern", (c) => {
 });
 
 /**
- * GET /api/docs/grimoires
+ * GET /api/docs/kons
  *
- * List all grimoires with their OpenAPI status.
+ * List all kons with their OpenAPI status.
  */
-dynamicDocsRouter.get("/grimoires", async (c) => {
+dynamicDocsRouter.get("/kons", async (c) => {
   try {
-    const grimoires = await getLoadedGrimoires();
+    const kons = await getLoadedKons();
 
-    const grimoireList = grimoires.map((g) => ({
+    const konList = kons.map((g) => ({
       id: g.id,
       name: g.name,
       version: g.version,
@@ -249,19 +241,19 @@ dynamicDocsRouter.get("/grimoires", async (c) => {
       endpointCount: g.openApi?.paths.length || 0,
       schemaCount: Object.keys(g.openApi?.schemas || {}).length,
       tags: g.openApi?.tags?.map((t) => t.name) || [g.name],
-      docsUrl: `/api/docs/${g.id.replace(/^grimoire-/, "")}/openapi.json`,
+      docsUrl: `/api/docs/${g.id.replace(/^kon-/, "")}/openapi.json`,
     }));
 
     return c.json({
-      total: grimoires.length,
-      withOpenApi: grimoires.filter((g) => !!g.openApi).length,
-      grimoires: grimoireList,
+      total: kons.length,
+      withOpenApi: kons.filter((g) => !!g.openApi).length,
+      kons: konList,
     });
   } catch (error) {
-    logger.error({ error }, "Failed to list grimoires");
+    logger.error({ error }, "Failed to list kons");
     return c.json(
       {
-        error: "Failed to list grimoires",
+        error: "Failed to list kons",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       500
@@ -281,32 +273,32 @@ dynamicDocsRouter.get("/sdk", async (c) => {
     sdks: [
       {
         name: "TypeScript/JavaScript",
-        package: "@gremius/sdk",
-        install: "npm install @gremius/sdk",
+        package: "@kitsuden/sdk",
+        install: "npm install @kitsuden/sdk",
         generator: "openapi-generator-cli -g typescript-fetch",
         downloadUrl: `${baseUrl}/api/docs/sdk/typescript.zip`,
       },
       {
         name: "Python",
-        package: "gremius",
-        install: "pip install gremius",
+        package: "kitsuden",
+        install: "pip install kitsuden",
         generator: "openapi-generator-cli -g python",
         downloadUrl: `${baseUrl}/api/docs/sdk/python.zip`,
       },
       {
         name: "Go",
-        package: "github.com/gremius/go-sdk",
-        install: "go get github.com/gremius/go-sdk",
+        package: "github.com/kitsuden/go-sdk",
+        install: "go get github.com/kitsuden/go-sdk",
         generator: "openapi-generator-cli -g go",
         downloadUrl: `${baseUrl}/api/docs/sdk/go.zip`,
       },
     ],
-    generateCommand: "gremius generate-sdk --lang <language> --output ./sdk",
+    generateCommand: "kitsuden generate-sdk --lang <language> --output ./sdk",
     openapiUrl: `${baseUrl}/api/docs/openapi.json`,
     codegen: {
       description: "Generate strongly-typed frontend code per collection",
       endpoint: `${baseUrl}/api/generate-code`,
-      package: "@gremius/codegen",
+      package: "@kitsuden/codegen",
       frameworks: ["react", "vue", "svelte"],
       types: ["hook", "component", "form", "types", "all"],
       examples: {
@@ -325,13 +317,13 @@ dynamicDocsRouter.get("/sdk", async (c) => {
  */
 dynamicDocsRouter.get("/postman.json", async (c) => {
   try {
-    const grimoires = await getLoadedGrimoires();
-    const operations = listOperations(grimoires);
+    const kons = await getLoadedKons();
+    const operations = listOperations(kons);
 
     const collection = {
       info: {
-        name: "GremiusCMS API",
-        description: "Auto-generated Postman collection from grimoires",
+        name: "Kitsuden API",
+        description: "Auto-generated Postman collection from kons",
         schema: "https://schema.getpostman.com/json/collection/v2.1.0/",
         version: "0.8.0-beta",
       },

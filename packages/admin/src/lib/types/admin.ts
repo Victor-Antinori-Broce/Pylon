@@ -22,6 +22,17 @@ export interface AdminConfig {
   /** Main views for this grimoire */
   views: AdminView[];
 
+  /**
+   * Id de la vista que se abre por defecto.
+   *
+   * Lo declaran los manifiestos (`admin.defaultView` en `kon.json`) y lo
+   * devuelve `/api/admin/registry` desde siempre; faltaba solo en este tipo, y
+   * por eso el panel no podía usarlo sin que TypeScript protestara. El
+   * resultado práctico era que un kon abría su primera pestaña en vez de la que
+   * declaraba.
+   */
+  defaultView?: string;
+
   /** Custom form configurations */
   forms?: Record<string, FormConfig>;
 

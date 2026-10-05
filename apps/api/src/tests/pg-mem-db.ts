@@ -10,7 +10,8 @@
  */
 
 import { readFileSync, readdirSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 import { drizzle } from "drizzle-orm/node-postgres";
 import { newDb, DataType } from "pg-mem";
@@ -166,12 +167,18 @@ export async function initPgMemDb() {
     implementation: () => crypto.randomUUID(),
   });
 
+  // `import.meta.dir` es de Bun y vale `undefined` bajo Node: este helper lo
+  // cargan TAMBIÉN los tests de vitest, y allí reventaba con
+  // "path argument must be of type string". `fileURLToPath(import.meta.url)`
+  // funciona en los dos runtimes.
+  const here = dirname(fileURLToPath(import.meta.url));
+
   // Load Drizzle-generated migrations
-  const drizzleDir = join(import.meta.dir, "../../drizzle");
+  const drizzleDir = join(here, "../../drizzle");
   const r1 = runMigrations(pgMem, drizzleDir);
 
   // Load manual migrations
-  const manualDir = join(import.meta.dir, "../db/migrations");
+  const manualDir = join(here, "../db/migrations");
   const r2 = runMigrations(pgMem, manualDir);
 
   const total = r1.ok + r2.ok + r1.fail + r2.fail;

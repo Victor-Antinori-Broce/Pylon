@@ -1,14 +1,14 @@
-# Análisis: Gremius vs Django - Framework Modular
+# Análisis: Kitsuden vs Django - Framework Modular
 
 ## 📋 Resumen Ejecutivo
 
-Django es el estándar de oro para frameworks modulares "batteries included". Gremius comparte la visión modular pero está en etapas tempranas. Este análisis identifica qué le falta a Gremius para ser un framework modular tan potente como Django.
+Django es el estándar de oro para frameworks modulares "batteries included". Kitsuden comparte la visión modular pero está en etapas tempranas. Este análisis identifica qué le falta a Kitsuden para ser un framework modular tan potente como Django.
 
-| Aspecto                 | Django                             | Gremius (v0.8.0-beta)        |
+| Aspecto                 | Django                             | Kitsuden (v0.8.0-beta)       |
 | ----------------------- | ---------------------------------- | ---------------------------- |
 | **Lenguaje**            | Python 3.8+                        | TypeScript/Bun               |
 | **Madurez**             | 18+ años, ultra-estable            | Beta, en desarrollo          |
-| **Arquitectura**        | Apps + Middleware + ORM            | Grimoires (similar a apps)   |
+| **Arquitectura**        | Apps + Middleware + ORM            | Kons (similar a apps)        |
 | **Admin auto-generado** | ✅ El mejor del mercado            | 🔄 En desarrollo             |
 | **ORM**                 | Django ORM (muy maduro)            | Drizzle (moderno, type-safe) |
 | **CLI**                 | manage.py (extremadamente potente) | Comandos básicos bun run     |
@@ -54,30 +54,30 @@ myproject/
 - Dependencies entre apps declarativas
 - Comunicación vía signals/events
 
-### Gremius: Grimoires
+### Kitsuden: Kons
 
 ```typescript
-// Gremius project structure
-gremius/
+// Kitsuden project structure
+kitsuden/
 ├── apps/
 │   ├── api/               # Backend Hono
 │   └── admin/             # Frontend SvelteKit
 ├── packages/
 │   ├── core/              # Core mínimo
-│   └── grimoires/         # Módulos
-│       ├── grimoire-auth/
-│       ├── grimoire-content/
-│       ├── grimoire-games/
-│       └── grimoire-esports/
-├── gremius.config.ts      # Configuración
+│   └── kons/         # Módulos
+│       ├── kon-auth/
+│       ├── kon-content/
+│       ├── kon-games/
+│       └── kon-esports/
+├── kitsuden.config.ts      # Configuración
 └── package.json
 ```
 
 **Características actuales:**
 
-- Grimoires auto-detectados via `grimoire.json`
-- Cada grimoire tiene schema, hooks, config
-- Dependencies entre grimoires
+- Kons auto-detectados via `kon.json`
+- Cada kon tiene schema, hooks, config
+- Dependencies entre kons
 - Activación automática o manual
 
 ---
@@ -111,7 +111,7 @@ python manage.py send_newsletter            # Custom command
 python manage.py cleanup_old_sessions       # Custom command
 ```
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```bash
 # CLI actual muy limitado
@@ -124,48 +124,48 @@ bun run migrate               # Corre migrations (básico)
 # - Shell interactivo
 # - Testing runner integrado
 # - Backup/restore de datos
-# - Generador de grimoires
+# - Generador de kons
 # - Comandos custom
 ```
 
-**Solución propuesta:** Crear `gremius-cli`
+**Solución propuesta:** Crear `kitsuden-cli`
 
 ```typescript
 // packages/cli/
 // Comandos esenciales:
 
-// gremius migrate
+// kitsuden migrate
 // - Genera migrations automáticamente (diff schema)
 // - Aplica migrations con rollback support
 // - Muestra estado de migrations
 
-// gremius shell
+// kitsuden shell
 // - REPL interactivo con acceso a DB y servicios
 // - Autocomplete de modelos
 // - Hot reload de cambios
 
-// gremius grimoire:create <nombre>
-// - Genera estructura de grimoire
+// kitsuden kon:create <nombre>
+// - Genera estructura de kon
 // - Crea schema.ts, hooks.ts, config.ts
 // - Setup de tests
 
-// gremius test
-// - Corre tests de todos los grimoires
+// kitsuden test
+// - Corre tests de todos los kons
 // - Coverage report
 // - Test DB automática
 
-// gremius backup
+// kitsuden backup
 // - Exporta datos a JSON/CSV
 // - Backup de uploads
 
-// gremius inspect
+// kitsuden inspect
 // - Muestra rutas registradas
-// - Muestra grimoires activos
+// - Muestra kons activos
 // - Muestra middleware chain
 
 // Comandos custom:
-// packages/grimoires/newsletter/cli/send.ts
-// gremius run newsletter:send
+// packages/kons/newsletter/cli/send.ts
+// kitsuden run newsletter:send
 ```
 
 ---
@@ -210,7 +210,7 @@ class PostAdmin(admin.ModelAdmin):
 - ✅ Dashboard customizable
 - ✅ Exportar a CSV/Excel nativo
 
-#### Gremius Admin (Actual)
+#### Kitsuden Admin (Actual)
 
 ```svelte
 <!-- packages/admin/src/routes/datasets/[slug]/+page.svelte -->
@@ -223,7 +223,7 @@ class PostAdmin(admin.ModelAdmin):
 **Solución propuesta:**
 
 ```typescript
-// packages/grimoires/grimoire-content/src/admin/config.ts
+// packages/kons/kon-content/src/admin/config.ts
 // Configuración de admin por dataset (similar a Django admin)
 
 export const postAdminConfig = {
@@ -249,7 +249,7 @@ export const postAdminConfig = {
 };
 
 // Auto-generación en admin panel:
-// - Lee config del grimoire
+// - Lee config del kon
 // - Genera componentes Svelte dinámicamente
 // - Soporte de inlines, relaciones, filtros
 ```
@@ -302,13 +302,13 @@ def send_confirmation(sender, order, user, **kwargs):
 - Handlers con prioridad
 - Desconexión de signals para testing
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```typescript
 // packages/core/src/events/
 // Actual: EventBus simple
 
-// hooks.ts en grimoire
+// hooks.ts en kon
 export const hooks = {
   beforeCreate: async (data) => {
     /* ... */
@@ -342,9 +342,9 @@ export const signals = {
   userLoggedOut: new Signal<(user: User, request: Request) => void>(),
 };
 
-// Uso en grimoire
-// packages/grimoires/grimoire-content/src/signals.ts
-import { signals } from "@gremius/core";
+// Uso en kon
+// packages/kons/kon-content/src/signals.ts
+import { signals } from "@kitsuden/core";
 
 signals.postSave.connect("posts", async (post, created) => {
   if (created && post.status === "published") {
@@ -426,7 +426,7 @@ class RequestTimingMiddleware:
 4. `process_response` - Después de vista
 5. `process_exception` - Si hay excepción
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```typescript
 // apps/api/src/index.ts
@@ -455,7 +455,7 @@ interface Middleware {
   processException?(request: Request, error: Error): Promise<Response | void>;
 }
 
-// Configuración en gremius.config.ts
+// Configuración en kitsuden.config.ts
 export default {
   middleware: [
     { name: "security", priority: 100 },
@@ -467,8 +467,8 @@ export default {
   ],
 };
 
-// Grimoires pueden registrar middleware
-// packages/grimoires/grimoire-auth/src/middleware.ts
+// Kons pueden registrar middleware
+// packages/kons/kon-auth/src/middleware.ts
 export const authMiddleware: Middleware = {
   async processRequest(request) {
     const token = request.headers.get("authorization");
@@ -548,7 +548,7 @@ Post.objects.all()    # Todos
 - `Subquery` y `Exists`
 - Transactions automáticas
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```typescript
 // Drizzle es moderno pero más básico
@@ -705,7 +705,7 @@ class PostFixtureTest(TestCase):
 - Assertions específicos (assertTemplateUsed, assertQuerysetEqual)
 - Coverage integrado
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```bash
 # Solo Vitest básico
@@ -725,9 +725,9 @@ bun test
 // packages/testing/
 // Framework de testing integrado
 
-import { GremiusTestCase, TestClient } from '@gremius/testing';
+import { KitsudenTestCase, TestClient } from '@kitsuden/testing';
 
-class PostModelTest extends GremiusTestCase {
+class PostModelTest extends KitsudenTestCase {
   async setUp() {
     await super.setUp();
     this.post = await Post.objects.create({
@@ -749,7 +749,7 @@ class PostModelTest extends GremiusTestCase {
   }
 }
 
-class PostAPITest extends GremiusTestCase {
+class PostAPITest extends KitsudenTestCase {
   async setUp() {
     await super.setUp();
     this.client = new TestClient();
@@ -841,7 +841,7 @@ def post_create(request):
 - CSRF protection integrada
 - File upload handling
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```typescript
 // Validaciones con Zod (bueno pero manual)
@@ -890,7 +890,7 @@ class Form<T> {
 }
 
 // Auto-generado desde schema
-// packages/grimoires/grimoire-content/src/forms.ts
+// packages/kons/kon-content/src/forms.ts
 export const PostForm = createFormFromSchema(posts, {
   fields: ["title", "content", "categoryId", "tagIds"],
   widgets: {
@@ -985,10 +985,10 @@ DATABASES['default']['NAME'] = 'myapp_local'
 - django-environ para variables
 - Local/production/test separados
 
-#### Gremius (Actual)
+#### Kitsuden (Actual)
 
 ```typescript
-// gremius.config.ts
+// kitsuden.config.ts
 // Básico, falta herencia de environments
 
 export default {
@@ -996,7 +996,7 @@ export default {
     host: process.env.DB_HOST,
     // ...
   },
-  grimoires: ["grimoire-auth", "grimoire-content"],
+  kons: ["kon-auth", "kon-content"],
 };
 ```
 
@@ -1005,7 +1005,7 @@ export default {
 ```typescript
 // Configuración tipo Django
 
-// gremius/config/
+// kitsuden/config/
 // ├── base.ts           # Configuración base
 // ├── local.ts          # Desarrollo
 // ├── production.ts     # Producción
@@ -1019,14 +1019,14 @@ export const baseConfig = {
     port: env.int("DB_PORT", 5432),
   },
 
-  grimoires: {
+  kons: {
     autoDiscover: true,
-    manual: ["grimoire-custom"],
+    manual: ["kon-custom"],
   },
 
   middleware: ["security", "cors", "auth", "logging"],
 
-  installedGrimoires: ["grimoire-auth", "grimoire-content", "grimoire-admin"],
+  installedKons: ["kon-auth", "kon-content", "kon-admin"],
 };
 
 // production.ts
@@ -1063,7 +1063,7 @@ export default {
 
 ## 📊 Comparativa de Features de Modularidad
 
-| Feature                    | Django                | Gremius          | Prioridad |
+| Feature                    | Django                | Kitsuden         | Prioridad |
 | -------------------------- | --------------------- | ---------------- | --------- |
 | **CLI potente**            | ✅ manage.py completo | ⚠️ Básico        | 🔴 Alta   |
 | **Admin auto-generado**    | ✅ El mejor           | 🔄 En desarrollo | 🔴 Alta   |
@@ -1082,12 +1082,12 @@ export default {
 
 ### Fase 1: CLI y Tooling (2-3 meses)
 
-- [ ] `gremius-cli` con comandos esenciales
-- [ ] Generador de migrations automático (`gremius makemigrations`)
-- [ ] Shell interactivo (`gremius shell`)
-- [ ] Generador de grimoires (`gremius grimoire:create`)
+- [ ] `kitsuden-cli` con comandos esenciales
+- [ ] Generador de migrations automático (`kitsuden makemigrations`)
+- [ ] Shell interactivo (`kitsuden shell`)
+- [ ] Generador de kons (`kitsuden kon:create`)
 - [ ] Comandos custom
-- [ ] Inspector de rutas y grimoires
+- [ ] Inspector de rutas y kons
 
 ### Fase 2: Admin Auto-generado (2-3 meses)
 
@@ -1136,21 +1136,21 @@ export default {
 - **Admin:** El mejor auto-generado
 - **Documentación:** Extensa y traducida
 
-### Gremius puede superar en:
+### Kitsuden puede superar en:
 
 - **Stack moderno:** Bun > Node > Python en I/O
 - **Type safety:** End-to-end TypeScript
-- **Arquitectura:** Grimoires más flexibles que apps Django
+- **Arquitectura:** Kons más flexibles que apps Django
 - **Performance:** Mejor cold start y throughput
 
-**Para ser un framework modular "Django-nivel", Gremius necesita principalmente:**
+**Para ser un framework modular "Django-nivel", Kitsuden necesita principalmente:**
 
 1. CLI potente (manage.py equivalente)
 2. Admin auto-generado avanzado
 3. Testing framework integrado
 4. Sistema de signals robusto
 
-**Diferencia clave:** Django es "batteries included" listo para usar. Gremius es "batteries sold separately" pero con mejor arquitectura base.
+**Diferencia clave:** Django es "batteries included" listo para usar. Kitsuden es "batteries sold separately" pero con mejor arquitectura base.
 
 ---
 

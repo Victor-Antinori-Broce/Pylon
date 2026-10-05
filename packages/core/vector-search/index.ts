@@ -1,10 +1,10 @@
 /**
- * @gremius/core/vector-search — Vector Search Extension for Datasets
+ * @kitsuden/core/vector-search — Vector Search Extension for Datasets
  *
- * MIGRADO desde: packages/grimoires/ai-memories
+ * MIGRADO desde: packages/kons/ai-memories
  * Fecha: 2026-03-19
  *
- * Transforms AI Memories from standalone Grimoire into a Dataset Extension.
+ * Transforms AI Memories from standalone Kon into a Dataset Extension.
  * Any dataset can enable vector search on specific fields.
  *
  * Usage:

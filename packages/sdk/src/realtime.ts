@@ -1,10 +1,10 @@
 /**
- * @gremius/sdk — Real-time Module
+ * @kitsuden/sdk — Real-time Module
  *
  * Provides WebSocket connection management and Live Query subscriptions.
  *
  * Usage:
- *   import { GremiusRealtime, createRealtime } from '@gremius/sdk/realtime';
+ *   import { KitsudenRealtime, createRealtime } from '@kitsuden/sdk/realtime';
  *
  *   const rt = createRealtime('http://localhost:3000');
  *   await rt.connect();
@@ -62,7 +62,7 @@ interface InternalMessage {
   timestamp?: number;
 }
 
-export class GremiusRealtime {
+export class KitsudenRealtime {
   private url: string;
   private ws: WebSocket | null = null;
   private state: ConnectionState = "disconnected";
@@ -146,7 +146,7 @@ export class GremiusRealtime {
         };
 
         this.ws.onerror = (_error: Event) => {
-          console.error("[GremiusRealtime] WebSocket error");
+          console.error("[KitsudenRealtime] WebSocket error");
           if (this.state === "connecting") {
             reject(new Error("Failed to connect"));
           }
@@ -375,7 +375,7 @@ export class GremiusRealtime {
         break;
 
       case "error":
-        console.warn("[GremiusRealtime] Server error:", msg.message);
+        console.warn("[KitsudenRealtime] Server error:", msg.message);
         break;
     }
   }
@@ -395,7 +395,7 @@ export class GremiusRealtime {
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       this.setState("disconnected");
-      console.error("[GremiusRealtime] Max reconnection attempts reached");
+      console.error("[KitsudenRealtime] Max reconnection attempts reached");
       return;
     }
 
@@ -404,7 +404,9 @@ export class GremiusRealtime {
 
     const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
 
-    console.log(`[GremiusRealtime] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    console.log(
+      `[KitsudenRealtime] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`
+    );
 
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch(() => {
@@ -432,16 +434,16 @@ export class GremiusRealtime {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Create a GremiusRealtime instance with sensible defaults.
+ * Create a KitsudenRealtime instance with sensible defaults.
  *
- * @param baseUrl Base URL of the Gremius API (e.g., "http://localhost:3000")
+ * @param baseUrl Base URL of the Kitsuden API (e.g., "http://localhost:3000")
  */
-export function createRealtime(baseUrl: string): GremiusRealtime {
+export function createRealtime(baseUrl: string): KitsudenRealtime {
   const wsUrl =
     baseUrl
       .replace(/^http:/, "ws:")
       .replace(/^https:/, "wss:")
       .replace(/\/$/, "") + "/api/realtime";
 
-  return new GremiusRealtime(wsUrl);
+  return new KitsudenRealtime(wsUrl);
 }

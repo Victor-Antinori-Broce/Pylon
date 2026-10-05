@@ -49,12 +49,16 @@
 </script>
 
 {#if !block}
-  <div class="p-4 bg-gremius-pink/10 border border-gremius-pink/20 rounded-lg text-gremius-pink">
+  <div
+    class="p-4 bg-kitsuden-accent-2/10 border border-kitsuden-accent-2/20 rounded-lg text-kitsuden-accent-2"
+  >
     <p class="text-sm font-medium">Block type "{type}" not found</p>
     <p class="text-xs mt-1">Make sure the module is registered and enabled.</p>
   </div>
 {:else if !BlockComponent}
-  <div class="p-4 bg-gremius-amber/10 border border-gremius-amber/20 rounded-lg text-gremius-amber">
+  <div
+    class="p-4 bg-kitsuden-amber/10 border border-kitsuden-amber/20 rounded-lg text-kitsuden-amber"
+  >
     <p class="text-sm">Component not available for mode: {mode}</p>
   </div>
 {:else}

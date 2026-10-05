@@ -13,6 +13,8 @@
 import { eq } from "drizzle-orm";
 import type { Context } from "hono";
 
+import { esUuid } from "@kitsuden/engine";
+
 import { db } from "../db";
 import { dataSets } from "../db/schema";
 import {
@@ -43,6 +45,12 @@ interface WorkflowJson {
  * FASE DE RESCATE: Ahora delega a rls-builder para consistencia.
  */
 export async function checkDatasetReadAccess(c: Context, datasetId: string): Promise<boolean> {
+  // Un id que no es UUID no puede corresponder a ningun dataset, y entregarselo
+  // a Postgres provoca `invalid input syntax for type uuid` — un 500 donde
+  // corresponde denegar. Denegar es ademas la respuesta segura: ante un id que
+  // no se puede resolver, no hay permiso que conceder.
+  if (!esUuid(datasetId)) return false;
+
   const user = c.get("user") as RLSUser | undefined;
 
   const [dataset] = await db
@@ -66,6 +74,12 @@ export async function checkDatasetReadAccess(c: Context, datasetId: string): Pro
  * FASE DE RESCATE: Ahora delega a rls-builder para consistencia.
  */
 export async function checkDatasetWriteAccess(c: Context, datasetId: string): Promise<boolean> {
+  // Un id que no es UUID no puede corresponder a ningun dataset, y entregarselo
+  // a Postgres provoca `invalid input syntax for type uuid` — un 500 donde
+  // corresponde denegar. Denegar es ademas la respuesta segura: ante un id que
+  // no se puede resolver, no hay permiso que conceder.
+  if (!esUuid(datasetId)) return false;
+
   const user = c.get("user") as RLSUser | undefined;
 
   const [dataset] = await db

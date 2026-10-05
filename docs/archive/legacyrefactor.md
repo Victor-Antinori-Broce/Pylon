@@ -1,4 +1,4 @@
-# Refactorización de Código Legacy - Gremius BaaS/CMS
+# Refactorización de Código Legacy - Kitsuden BaaS/CMS
 
 > **Documento generado:** 2026-03-19  
 > **Estado:** En progreso - Requiere atención prioritaria  
@@ -13,7 +13,7 @@ Este documento cataloga todos los errores de código legacy que utilizan esquema
 ### Categorías Principales de Deuda Técnica
 
 1. **Unificación de Actions/Functions** - Esquema `functions` migrado a `actions`
-2. **Migración de Data Explorer** - Cambios en GremiusManifest y datasets
+2. **Migración de Data Explorer** - Cambios en KitsudenManifest y datasets
 3. **Sistema MCP Legacy** - Cambios en interfaces de herramientas
 4. **Módulos Desactivados** - Booking, Directory, DMS comentados pero con referencias
 5. **Tests Obsoletos** - Tests que usan esquemas antiguos
@@ -64,26 +64,26 @@ interface ActionDefinition {
 
 ---
 
-### 2. Data Explorer - GremiusManifest (apps/api/src/routes/data-explorer.ts)
+### 2. Data Explorer - KitsudenManifest (apps/api/src/routes/data-explorer.ts)
 
 **Archivo:** `apps/api/src/routes/data-explorer.ts`
 
-| Error                                                        | Descripción                                | Solución Propuesta                                            |
-| ------------------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------- |
-| `Property 'tables' does not exist on type 'GremiusManifest'` | El manifest cambió de estructura           | Actualizar a nueva estructura `datasets` en lugar de `tables` |
-| `Property 'relations' does not exist`                        | Las relaciones ahora se definen diferente  | Usar nuevo sistema de relaciones en manifest                  |
-| `Property 'indexes' does not exist`                          | Los índices migraron a metadatos separados | Acceder vía `manifest.metadata?.indexes`                      |
+| Error                                                         | Descripción                                | Solución Propuesta                                            |
+| ------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------- |
+| `Property 'tables' does not exist on type 'KitsudenManifest'` | El manifest cambió de estructura           | Actualizar a nueva estructura `datasets` en lugar de `tables` |
+| `Property 'relations' does not exist`                         | Las relaciones ahora se definen diferente  | Usar nuevo sistema de relaciones en manifest                  |
+| `Property 'indexes' does not exist`                           | Los índices migraron a metadatos separados | Acceder vía `manifest.metadata?.indexes`                      |
 
 **Código problemático:**
 
 ```typescript
 // ANTES (Legacy)
-const manifest = await getManifest(grimoireId);
+const manifest = await getManifest(konId);
 const tables = manifest.tables; // ❌ Ya no existe
 const relations = manifest.relations; // ❌ Ya no existe
 
 // DESPUÉS (Actual)
-const manifest = await getManifest(grimoireId);
+const manifest = await getManifest(konId);
 const datasets = manifest.datasets || []; // ✅ Nuevo campo
 const tables = manifest.metadata?.tablesSnapshot; // ✅ Si se necesita snapshot
 ```
@@ -155,7 +155,7 @@ interface MCPToolDefinition {
 **Solución:**
 
 - Opción A: Eliminar completamente si no se usará
-- Opción B: Migrar a arquitectura de Grimoire standalone
+- Opción B: Migrar a arquitectura de Kon standalone
 
 #### 5.2 Directory (Directorio de Negocios)
 
@@ -170,7 +170,7 @@ interface MCPToolDefinition {
 
 - Comentado en: `apps/api/src/db/schema-all.ts`
 
-#### 5.4 Media Library (ahora es Grimoire separado)
+#### 5.4 Media Library (ahora es Kon separado)
 
 **Código afectado:**
 
@@ -182,7 +182,7 @@ interface MCPToolDefinition {
 // import { dataSetsRoutes } from './routes/data-sets';
 ```
 
-**Solución:** Estos ahora son Grimoires independientes que deben registrarse vía sistema de plugins, no rutas directas.
+**Solución:** Estos ahora son Kons independientes que deben registrarse vía sistema de plugins, no rutas directas.
 
 ---
 
@@ -217,11 +217,11 @@ interface MCPToolDefinition {
 
 **Múltiples archivos afectados**
 
-| Patrón                                          | Ubicaciones                             | Solución                                               |
-| ----------------------------------------------- | --------------------------------------- | ------------------------------------------------------ |
-| `Parameter 't' implicitly has an 'any' type`    | `content-publishing.ts`, `grimoires.ts` | Agregar tipado explícito `t: any` o mejor `t: Context` |
-| `Parameter 'c' implicitly has an 'any' type`    | Varios handlers de Hono                 | Agregar `c: Context<AppBindings>`                      |
-| `Parameter 'data' implicitly has an 'any' type` | Callbacks y handlers                    | Definir interfaces apropiadas                          |
+| Patrón                                          | Ubicaciones                        | Solución                                               |
+| ----------------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
+| `Parameter 't' implicitly has an 'any' type`    | `content-publishing.ts`, `kons.ts` | Agregar tipado explícito `t: any` o mejor `t: Context` |
+| `Parameter 'c' implicitly has an 'any' type`    | Varios handlers de Hono            | Agregar `c: Context<AppBindings>`                      |
+| `Parameter 'data' implicitly has an 'any' type` | Callbacks y handlers               | Definir interfaces apropiadas                          |
 
 **Ejemplo de corrección:**
 
@@ -233,7 +233,7 @@ app.post("/route", async (c) => {
 
 // DESPUÉS
 app.post("/route", async (c: Context<AppBindings>) => {
-  const t: GrimoireContext = c.get("grimoireContext"); // ✅ tipado
+  const t: KonContext = c.get("konContext"); // ✅ tipado
 });
 ```
 
@@ -291,7 +291,7 @@ app.post("/route", async (c: Context<AppBindings>) => {
 ### Fase 4: Limpieza de Módulos (Opcional)
 
 1. Decidir destino de Booking/Directory/DMS
-2. Migrar a Grimoires independientes o eliminar
+2. Migrar a Kons independientes o eliminar
 3. Actualizar documentación
 
 ---
@@ -311,7 +311,7 @@ app.post("/route", async (c: Context<AppBindings>) => {
 
 ## 🔗 Referencias Relacionadas
 
-- [GRIMOIRE_CORE_MIGRATION_PLAN.md](./GRIMOIRE_CORE_MIGRATION_PLAN.md)
+- [KON_CORE_MIGRATION_PLAN.md](./KON_CORE_MIGRATION_PLAN.md)
 - [AGENTS.md](./AGENTS.md) - Arquitectura de Agentes
 - [DEUDA_TECNICA.md](./DEUDA_TECNICA.md) - Deuda técnica general
 - [MCP_SDK_AUDIT.md](./MCP_SDK_AUDIT.md) - Auditoría MCP

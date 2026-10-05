@@ -26,9 +26,9 @@
 </script>
 
 <div>
-  <div class="flex items-center justify-between mb-2 pb-2 border-b border-gremius-border">
-    <h3 class="text-sm font-semibold text-gremius-text flex items-center gap-2">
-      <History class="w-4 h-4 text-gremius-cyan" />
+  <div class="flex items-center justify-between mb-2 pb-2 border-b border-kitsuden-border">
+    <h3 class="text-sm font-semibold text-kitsuden-text flex items-center gap-2">
+      <History class="w-4 h-4 text-kitsuden-accent" />
       Version History
     </h3>
     {#if autosaveStore.versions.length > 0}
@@ -43,23 +43,23 @@
   </div>
 
   {#if autosaveStore.versions.length === 0}
-    <p class="text-sm text-gremius-text-dim text-center py-4">No autosaved versions yet.</p>
+    <p class="text-sm text-kitsuden-text-dim text-center py-4">No autosaved versions yet.</p>
   {:else}
     <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
       {#each autosaveStore.versions as version, i}
         <div
-          class="flex items-center justify-between gap-2 p-2 rounded-lg bg-gremius-bg border border-gremius-border hover:border-gremius-cyan/30 transition-colors"
+          class="flex items-center justify-between gap-2 p-2 rounded-lg bg-kitsuden-bg border border-kitsuden-border hover:border-kitsuden-accent/30 transition-colors"
         >
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-medium text-gremius-text">
+            <p class="text-xs font-medium text-kitsuden-text">
               Version {autosaveStore.versions.length - i}
             </p>
-            <p class="text-[10px] text-gremius-text-dim truncate">
+            <p class="text-[10px] text-kitsuden-text-dim truncate">
               {formatTime(version.timestamp)}
             </p>
           </div>
           <button
-            class="px-2 py-1 text-xs font-medium rounded-md bg-gremius-cyan/10 text-gremius-cyan hover:bg-gremius-cyan/20 transition-colors flex items-center gap-1 shrink-0"
+            class="px-2 py-1 text-xs font-medium rounded-md bg-kitsuden-accent/10 text-kitsuden-accent hover:bg-kitsuden-accent/20 transition-colors flex items-center gap-1 shrink-0"
             onclick={() => handleRestore(i)}
           >
             <RotateCcw class="w-3 h-3" />

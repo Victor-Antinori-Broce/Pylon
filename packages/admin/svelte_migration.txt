@@ -1,4 +1,4 @@
-# Gremius Admin - Svelte 5 Migration Plan
+# Kitsuden Admin - Svelte 5 Migration Plan
 # Created: 2026-02-25
 # Updated: 2026-02-25
 # Status: PHASE 3 COMPLETE ✅
@@ -283,9 +283,9 @@ Apps externas pueden extender el CMS registrando widgets:
 
 ```typescript
 // En una app externa
-declare const gremius: typeof import('./lib/registry').componentRegistry;
+declare const kitsuden: typeof import('./lib/registry').componentRegistry;
 
-gremius.registerWidget({
+kitsuden.registerWidget({
   id: "mi-extension-widget",
   slot: "dashboard:stats",
   component: MiWidget,

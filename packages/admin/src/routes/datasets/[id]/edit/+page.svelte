@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { DatasetDefinition } from "@gremius/shared";
+  import type { DatasetDefinition } from "@kitsuden/shared";
   import { ArrowLeft, Loader2, AlertCircle } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -83,13 +83,13 @@
   <!-- Header -->
   <div class="flex items-center gap-4">
     <button
-      class="btn-icon p-2 hover:bg-gremius-surface rounded-lg transition-colors text-gremius-subtle"
+      class="btn-icon p-2 hover:bg-kitsuden-surface rounded-lg transition-colors text-kitsuden-subtle"
       onclick={goBack}
     >
       <ArrowLeft class="w-5 h-5" />
     </button>
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text">
+      <h1 class="text-2xl font-bold text-kitsuden-text">
         {#if loading}
           Loading...
         {:else if dataset}
@@ -98,7 +98,7 @@
           Edit Dataset
         {/if}
       </h1>
-      <p class="text-sm text-gremius-text-dim mt-1">
+      <p class="text-sm text-kitsuden-text-dim mt-1">
         Modify the schema, fields, and configuration of your dataset.
       </p>
     </div>
@@ -117,17 +117,17 @@
   <!-- Loading State -->
   {#if loading}
     <div class="card p-12 text-center">
-      <Loader2 class="w-8 h-8 text-gremius-cyan animate-spin mx-auto mb-4" />
-      <p class="text-gremius-subtle">Loading dataset...</p>
+      <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mx-auto mb-4" />
+      <p class="text-kitsuden-subtle">Loading dataset...</p>
     </div>
   {:else if !dataset}
     <div class="card p-12 text-center">
       <div class="text-4xl mb-3">😕</div>
-      <p class="text-gremius-text-dim">Dataset not found</p>
+      <p class="text-kitsuden-text-dim">Dataset not found</p>
       <button onclick={goBack} class="btn-primary mt-4"> Back to Datasets </button>
     </div>
   {:else}
-    <div class="card p-6 border-gremius-cyan/20">
+    <div class="card p-6 border-kitsuden-accent/20">
       <SchemaBuilder
         definition={dataset}
         {allDatasets}
@@ -140,8 +140,8 @@
 
 <style>
   .btn-primary {
-    @apply px-4 py-2 bg-gremius-cyan text-black rounded-lg font-medium 
-           hover:bg-gremius-cyan-hover transition-colors;
+    @apply px-4 py-2 bg-kitsuden-accent text-black rounded-lg font-medium 
+           hover:bg-kitsuden-accent-hover transition-colors;
   }
 
   .btn-icon {
@@ -149,6 +149,6 @@
   }
 
   .card {
-    @apply bg-gremius-card border border-gremius-border rounded-xl;
+    @apply bg-kitsuden-card border border-kitsuden-border rounded-xl;
   }
 </style>

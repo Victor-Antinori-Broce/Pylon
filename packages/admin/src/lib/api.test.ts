@@ -19,7 +19,7 @@ describe("ApiClient", () => {
     it("should store token in localStorage", () => {
       const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
       api.setToken("test-token");
-      expect(setItemSpy).toHaveBeenCalledWith("gremius_token", "test-token");
+      expect(setItemSpy).toHaveBeenCalledWith("kitsuden_token", "test-token");
     });
 
     it("should clear token", () => {
@@ -154,6 +154,23 @@ describe("ApiClient", () => {
           body: expect.any(FormData),
         })
       );
+
+      /**
+       * ── Y AHORA SE MIRA QUE LLEVA DENTRO ────────────────────────────────
+       *
+       * `expect.any(FormData)` pasa con CUALQUIER contenido. El cliente mandaba
+       * el fichero en un campo `file` y el endpoint lee `files`, asi que toda
+       * subida respondia 400 «No files provided» — con esta prueba en verde.
+       *
+       * El nombre del campo es el contrato. Comprobar que se envio «un
+       * formulario» es comprobar que se hizo la llamada, no que se hizo bien.
+       */
+      const enviado = (global.fetch as unknown as { mock: { calls: unknown[][] } }).mock
+        .calls[0][1] as {
+        body: FormData;
+      };
+      expect(enviado.body.getAll("files")).toHaveLength(1);
+      expect(enviado.body.get("files")).toBe(file);
     });
   });
 });

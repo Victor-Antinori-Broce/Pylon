@@ -19,8 +19,8 @@
 
 **agent-auth.test.ts** (9 tests):
 
-- ✅ Token NHI format validation (`grm_agent_*`)
-- ✅ Legacy API key rejection (`gremius_sk_*`)
+- ✅ Token NHI format validation (`kitsuden_agent_*`)
+- ✅ Legacy API key rejection (`kitsuden_sk_*`)
 - ✅ Single scope validation
 - ✅ AND logic for multiple scopes
 - ✅ OR logic for multiple scopes
@@ -56,7 +56,7 @@
 | `academy.integration.spec.ts`       | 22    | Playwright | Academy LMS - Cursos, módulos, temas, quizzes |
 | `connectors.spec.ts`                | 2     | Playwright | Data Connectors CRUD                          |
 | `endpoints.spec.ts`                 | 12    | Playwright | Health check, games, modules, blog, settings  |
-| `gremio.spec.ts`                    | 4     | Playwright | Core API - Players, teams, tournaments        |
+| `kitsuden.spec.ts`                  | 4     | Playwright | Core API - Players, teams, tournaments        |
 | `mcp-zerotrust.integration.spec.ts` | 8     | Playwright | MCP + Zero-Trust auth flow                    |
 | `mcp.spec.ts`                       | 20    | Playwright | MCP Server - JSON-RPC, tools, resources       |
 | `vector-search.integration.spec.ts` | 12    | Playwright | Vector search, indexing, semantic search      |
@@ -125,15 +125,15 @@
 | Agent action registers MCP tool            | Tools MCP              | 🔄 Pendiente                     |
 | Trigger parser extracts components         | Parsing de triggers    | 🔄 Pendiente                     |
 
-### 5. Grimoire Layer (Auto-API & MCP) - 🟡 Definidos
+### 5. Kon Layer (Auto-API & MCP) - 🟡 Definidos
 
 | Test                                  | Descripción                    | Estado               |
 | ------------------------------------- | ------------------------------ | -------------------- |
-| defineGrimoire extracts table name    | Extracción de nombre de tabla  | 🔄 Pendiente         |
+| defineKon extracts table name         | Extracción de nombre de tabla  | 🔄 Pendiente         |
 | Auto-API generates 5 CRUD routes      | Generación automática de rutas | 🔄 Pendiente         |
 | Auto-MCP generates read/create tools  | Generación de tools MCP        | 🔄 Pendiente         |
 | MCP tool schema inferred from Drizzle | Inferencia de schema           | 🔄 Pendiente         |
-| InferGrimoireSelect type helper       | Helper de tipos                | ✅ Tipos verificados |
+| InferKonSelect type helper            | Helper de tipos                | ✅ Tipos verificados |
 
 ---
 
@@ -217,7 +217,7 @@ tests/
 │   ├── academy.integration.spec.ts 🔄
 │   ├── connectors.spec.ts 🔄
 │   ├── endpoints.spec.ts 🔄
-│   ├── gremio.spec.ts 🔄
+│   ├── kitsuden.spec.ts 🔄
 │   ├── mcp-zerotrust.integration.spec.ts 🔄
 │   ├── mcp.spec.ts 🔄
 │   ├── vector-search.integration.spec.ts 🔄

@@ -1,4 +1,4 @@
-# GremiusCMS - Code Quality Standards
+# Kitsuden - Code Quality Standards
 
 ## 🎯 Quality Gates
 

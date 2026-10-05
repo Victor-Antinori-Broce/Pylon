@@ -72,8 +72,8 @@ export interface AdminConfig {
 }
 
 /** Query row from database execution */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface QueryRow extends Record<string, any> {}
+
+interface QueryRow extends Record<string, unknown> {}
 
 // Cache for introspection results
 interface CacheEntry {
@@ -514,7 +514,7 @@ function humanizeColumnName(name: string): string {
 function humanizeTableName(name: string): string {
   return name
     .replace(/_/g, " ")
-    .replace(/^grimoire[-_]/, "")
+    .replace(/^kon[-_]/, "")
     .replace(/^./, (s) => s.toUpperCase())
     .trim();
 }

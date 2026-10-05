@@ -3,20 +3,20 @@ import { createInterface } from "readline";
 import chalk from "chalk";
 
 import { loadDatabase, closeDatabase } from "../utils/database.js";
-import { loadGrimoires } from "../utils/grimoires.js";
+import { loadKons } from "../utils/kons.js";
 
 export async function shellCommand(_options: { typescript?: boolean }) {
-  console.log(chalk.blue("🐚 Gremius Interactive Shell\n"));
+  console.log(chalk.blue("🐚 Kitsuden Interactive Shell\n"));
   console.log(chalk.gray("Type .help for commands, .exit to quit\n"));
 
   try {
     const { db, client } = await loadDatabase();
-    const grimoires = await loadGrimoires();
+    const kons = await loadKons();
 
     // Contexto disponible en el shell
     const context = {
       db,
-      ...grimoires.models,
+      ...kons.models,
       sql: (strings: TemplateStringsArray, ...values: any[]) => {
         return db.execute(sql(strings, ...values));
       },
@@ -24,7 +24,7 @@ export async function shellCommand(_options: { typescript?: boolean }) {
 
     console.log(chalk.green("Available:"));
     console.log(chalk.gray("  db          - Database connection"));
-    Object.keys(grimoires.models).forEach((model) => {
+    Object.keys(kons.models).forEach((model) => {
       console.log(chalk.gray(`  ${model.padEnd(12)} - Model`));
     });
     console.log();
@@ -32,7 +32,7 @@ export async function shellCommand(_options: { typescript?: boolean }) {
     const rl = createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: chalk.cyan("gremius> "),
+      prompt: chalk.cyan("kitsuden> "),
     });
 
     rl.prompt();
@@ -55,7 +55,7 @@ export async function shellCommand(_options: { typescript?: boolean }) {
 
       if (input === ".models") {
         console.log(chalk.yellow("Available models:"));
-        Object.keys(grimoires.models).forEach((model) => {
+        Object.keys(kons.models).forEach((model) => {
           console.log(chalk.gray(`  - ${model}`));
         });
         rl.prompt();

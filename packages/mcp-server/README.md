@@ -1,28 +1,28 @@
-# @gremius/mcp-server
+# @kitsuden/mcp-server
 
-Enterprise-grade [Model Context Protocol](https://modelcontextprotocol.io) server for Gremius CMS. Connects AI agents (Claude, Cursor, Windsurf, VS Code Copilot) to your Gremius backend.
+Enterprise-grade [Model Context Protocol](https://modelcontextprotocol.io) server for Kitsuden CMS. Connects AI agents (Claude, Cursor, Windsurf, VS Code Copilot) to your Kitsuden backend.
 
 ## 🚀 Quick Start
 
 ```bash
 # Via CLI (auto-starts Docker container)
-gremius mcp
+kitsuden mcp
 
 # Via Docker
-docker run -p 3002:3002 -e GREMIUS_API_URL=http://localhost:3001 gremius/mcp:latest
+docker run -p 3002:3002 -e KITSUDEN_API_URL=http://localhost:3001 kitsuden/mcp:latest
 
 # Via npx
-npx @gremius/mcp-server
+npx @kitsuden/mcp-server
 ```
 
 ## 🔧 IDE Setup
 
 ```bash
 # Auto-generate config for your IDE
-gremius mcp --ide cursor    # Creates .cursor/mcp.json
-gremius mcp --ide claude    # Prints Claude Desktop config
-gremius mcp --ide vscode    # Prints VS Code config
-gremius mcp --ide windsurf  # Prints Windsurf config
+kitsuden mcp --ide cursor    # Creates .cursor/mcp.json
+kitsuden mcp --ide claude    # Prints Claude Desktop config
+kitsuden mcp --ide vscode    # Prints VS Code config
+kitsuden mcp --ide windsurf  # Prints Windsurf config
 ```
 
 Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
@@ -33,7 +33,7 @@ Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
 // .cursor/mcp.json
 {
   "mcpServers": {
-    "gremius": {
+    "kitsuden": {
       "url": "http://localhost:3002/sse"
     }
   }
@@ -46,12 +46,12 @@ Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
 // claude_desktop_config.json
 {
   "mcpServers": {
-    "gremius": {
+    "kitsuden": {
       "command": "npx",
-      "args": ["-y", "@gremius/mcp-server"],
+      "args": ["-y", "@kitsuden/mcp-server"],
       "env": {
-        "GREMIUS_API_URL": "http://localhost:3001",
-        "GREMIUS_API_TOKEN": "<your-api-key>"
+        "KITSUDEN_API_URL": "http://localhost:3001",
+        "KITSUDEN_API_TOKEN": "<your-api-key>"
       }
     }
   }
@@ -60,40 +60,40 @@ Or visit `http://localhost:3002/ide-config/:ide` while the server is running.
 
 ## 🛠️ Tools (11)
 
-| Tool                    | Description                                                       |
-| ----------------------- | ----------------------------------------------------------------- |
-| `gremius_list_tables`   | Discover all data tables with row counts                          |
-| `gremius_query_table`   | Query records with pagination, sort, filter. Supports TOON format |
-| `gremius_create_record` | Create a new record in any table                                  |
-| `gremius_update_record` | Update a record by ID                                             |
-| `gremius_delete_record` | Delete a record by ID                                             |
-| `gremius_get_schema`    | Get JSON Schema for a table (fields, types, relations)            |
-| `gremius_list_modules`  | List all grimoire modules + status                                |
-| `gremius_toggle_module` | Enable/disable a module                                           |
-| `gremius_encode_toon`   | Encode JSON → TOON (60% fewer tokens)                             |
-| `gremius_list_datasets` | List dynamic datasets                                             |
-| `gremius_api_request`   | Raw API request (escape hatch)                                    |
+| Tool                     | Description                                                       |
+| ------------------------ | ----------------------------------------------------------------- |
+| `kitsuden_list_tables`   | Discover all data tables with row counts                          |
+| `kitsuden_query_table`   | Query records with pagination, sort, filter. Supports TOON format |
+| `kitsuden_create_record` | Create a new record in any table                                  |
+| `kitsuden_update_record` | Update a record by ID                                             |
+| `kitsuden_delete_record` | Delete a record by ID                                             |
+| `kitsuden_get_schema`    | Get JSON Schema for a table (fields, types, relations)            |
+| `kitsuden_list_modules`  | List all kon modules + status                                     |
+| `kitsuden_toggle_module` | Enable/disable a module                                           |
+| `kitsuden_encode_toon`   | Encode JSON → TOON (60% fewer tokens)                             |
+| `kitsuden_list_datasets` | List dynamic datasets                                             |
+| `kitsuden_api_request`   | Raw API request (escape hatch)                                    |
 
 ## 📚 Resources (5)
 
-| Resource | URI                                   |
-| -------- | ------------------------------------- |
-| Tables   | `gremius://tables`                    |
-| Modules  | `gremius://modules`                   |
-| Health   | `gremius://health`                    |
-| Datasets | `gremius://datasets`                  |
-| Schema   | `gremius://schema/{table}` (template) |
+| Resource | URI                                    |
+| -------- | -------------------------------------- |
+| Tables   | `kitsuden://tables`                    |
+| Modules  | `kitsuden://modules`                   |
+| Health   | `kitsuden://health`                    |
+| Datasets | `kitsuden://datasets`                  |
+| Schema   | `kitsuden://schema/{table}` (template) |
 
 ## 🔐 Authentication
 
-Set `GREMIUS_API_TOKEN` to a valid Agent NHI token (`grm_agent_*`) or legacy API key (`gremius_sk_*` — deprecated, sunset 2026-08-01):
+Set `KITSUDEN_API_TOKEN` to a valid Agent NHI token (`kitsuden_agent_*`) or legacy API key (`kitsuden_sk_*` — deprecated, sunset 2026-08-01):
 
 ```bash
 # Recommended: Agent NHI token
-GREMIUS_API_TOKEN=grm_agent_xxx gremius mcp
+KITSUDEN_API_TOKEN=kitsuden_agent_xxx kitsuden mcp
 
 # Deprecated: Legacy API key (will be removed)
-GREMIUS_API_TOKEN=gremius_sk_xxx gremius mcp
+KITSUDEN_API_TOKEN=kitsuden_sk_xxx kitsuden mcp
 ```
 
 ## 📡 Endpoints
@@ -108,8 +108,8 @@ GREMIUS_API_TOKEN=gremius_sk_xxx gremius mcp
 
 ## ⚙️ Environment Variables
 
-| Variable            | Default                 | Description            |
-| ------------------- | ----------------------- | ---------------------- |
-| `GREMIUS_API_URL`   | `http://localhost:3001` | Gremius API base URL   |
-| `GREMIUS_API_TOKEN` | (empty)                 | API authentication key |
-| `PORT`              | `3002`                  | MCP server port        |
+| Variable             | Default                 | Description            |
+| -------------------- | ----------------------- | ---------------------- |
+| `KITSUDEN_API_URL`   | `http://localhost:3001` | Kitsuden API base URL  |
+| `KITSUDEN_API_TOKEN` | (empty)                 | API authentication key |
+| `PORT`               | `3002`                  | MCP server port        |

@@ -105,6 +105,31 @@ export async function getStreamStatus(
   return result;
 }
 
+/**
+ * Estado en vivo por LOGIN de canal (lo que pone en la URL de Twitch), que
+ * es lo que se guarda en el panel. Mismo resultado que por id: el login es
+ * lo único que conoce de memoria quien configura el enlace.
+ */
+export async function getStreamStatusByLogin(
+  logins: string[]
+): Promise<Map<string, TwitchStreamData>> {
+  const result = new Map<string, TwitchStreamData>();
+  const limpios = logins.map((l) => l.trim().toLowerCase()).filter(Boolean);
+  if (!limpios.length) return result;
+  const params = limpios.map((l) => `user_login=${encodeURIComponent(l)}`).join("&");
+  const data = await twitchFetch<TwitchStreamsResponse>(`/streams?${params}`);
+  for (const s of data.data) {
+    result.set(s.user_id, {
+      isLive: true,
+      title: s.title,
+      viewerCount: s.viewer_count,
+      thumbnailUrl: s.thumbnail_url.replace("{width}", "440").replace("{height}", "248"),
+      gameName: s.game_name,
+    });
+  }
+  return result;
+}
+
 export async function getUserInfo(channelIds: string[]): Promise<Map<string, TwitchUserData>> {
   const result = new Map<string, TwitchUserData>();
   if (!channelIds.length) return result;

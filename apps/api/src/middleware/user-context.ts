@@ -6,10 +6,10 @@
  *
  * Sources:
  *   - userRoleIds:    Derived from `user.role` (Better Auth enum → array)
- *   - userDepartmentId: Looked up from directory_employees table (if grimoire-directory installed)
+ *   - userDepartmentId: Looked up from directory_employees table (if kon-directory installed)
  *
  * Graceful degradation:
- *   - If grimoire-directory is not installed → userDepartmentId = null
+ *   - If kon-directory is not installed → userDepartmentId = null
  *   - If user has no role → userRoleIds = []
  */
 
@@ -42,7 +42,7 @@ export const enrichUserContext = createMiddleware(async (c, next) => {
     const rows = result.rows as Array<{ department_id: string | null }>;
     userDepartmentId = rows[0]?.department_id ?? null;
   } catch {
-    // grimoire-directory not installed or table missing → leave as null
+    // kon-directory not installed or table missing → leave as null
   }
 
   c.set("userDepartmentId", userDepartmentId);

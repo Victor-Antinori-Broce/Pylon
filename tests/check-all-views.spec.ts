@@ -15,8 +15,8 @@ const routesToTest = [
   "/dms",
   "/editor",
   "/games",
-  "/gremius-crm",
-  "/grimoires",
+  "/kitsuden-crm",
+  "/kons",
   "/matches",
   "/mcp",
   "/media",
@@ -24,7 +24,7 @@ const routesToTest = [
   "/players",
   "/posts",
   "/blog",
-  "/realms",
+  "/grimoires",
   "/settings",
   "/streamers",
   "/tags",
@@ -32,7 +32,7 @@ const routesToTest = [
   "/tournaments",
   "/webhooks",
   "/workers",
-  // Test some specific grimoire views (auto-detected)
+  // Test some specific kon views (auto-detected)
   "/g/tags",
   "/g/games",
   "/g/blog",
@@ -51,22 +51,22 @@ test.describe("Test all views for 404/500", () => {
     if (page.url().includes("/setup")) {
       await page.waitForSelector('input[type="text"]', { timeout: 20000 });
       await page.locator('input[type="text"]').fill("Admin ViewTester");
-      await page.locator('input[type="email"]').fill("tester@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("tester@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
       await page.waitForURL(/\/$/, { timeout: 20_000 });
     } else if (page.url().includes("/login")) {
       // Try default admin credentials
       await page.waitForSelector('input[type="email"]');
-      await page.locator('input[type="email"]').fill("admin@gremius.gg");
-      await page.locator('input[type="password"]').fill("gremius123");
+      await page.locator('input[type="email"]').fill("admin@kitsuden.gg");
+      await page.locator('input[type="password"]').fill("kitsuden123");
       await page.locator('button[type="submit"]').click();
 
       try {
         await page.waitForURL(/\/$/, { timeout: 15_000 });
       } catch (e) {
         // Try testing admin if default fails
-        await page.locator('input[type="email"]').fill("tester@gremius.gg");
+        await page.locator('input[type="email"]').fill("tester@kitsuden.gg");
         await page.locator('button[type="submit"]').click();
         await page.waitForURL(/\/$/, { timeout: 15_000 });
       }

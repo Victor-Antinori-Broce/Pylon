@@ -40,7 +40,9 @@ async function benchmark() {
 
   // Mock del contador de queries
   const originalQuery = db.query;
-  // @ts-ignore
+  // @ts-ignore -- se sustituye `db.query` por un Proxy para contar consultas.
+  // Es instrumentación de un benchmark: el tipo de drizzle no contempla que
+  // alguien reemplace esa propiedad, y con razón.
   db.query = new Proxy(originalQuery, {
     get(target, prop) {
       queryCount1++;

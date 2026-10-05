@@ -1,10 +1,10 @@
-# Gremius DX & OpenAPI Implementation Progress
+# Kitsuden DX & OpenAPI Implementation Progress
 # Started: 2026-04-08
 # Status: ✅✅✅ FULLY COMPLETED
 
-## Phase 1: Shared Types (GrimoireDefinition + OpenAPI)
-[✅ DONE] Updated packages/shared/src/grimoire-api.ts
-[✅ DONE] Added GrimoireOpenApiSpec, GrimoireOpenApiPath, GrimoireOpenApiTag types
+## Phase 1: Shared Types (KonDefinition + OpenAPI)
+[✅ DONE] Updated packages/shared/src/kon-api.ts
+[✅ DONE] Added KonOpenApiSpec, KonOpenApiPath, KonOpenApiTag types
 [✅ DONE] Updated packages/shared/src/index.ts exports
 
 ## Phase 2: OpenAPI Aggregator
@@ -52,18 +52,18 @@
 [✅ DONE] Created packages/testing/QUICKSTART.md
 
 ## Phase 9: Test Execution & Fixes
-[✅ DONE] Created packages/grimoires/grimoire-blog/blog.simple.test.ts
-[✅ DONE] Created packages/grimoires/grimoire-blog/blog.sandbox.test.ts
-[✅ DONE] Fixed grimoire tests to pass correctly
+[✅ DONE] Created packages/kons/kon-blog/blog.simple.test.ts
+[✅ DONE] Created packages/kons/kon-blog/blog.sandbox.test.ts
+[✅ DONE] Fixed kon tests to pass correctly
 [✅ DONE] ALL TESTS PASSING: 38 pass, 0 fail
 
 ## ===========================================
-## FINAL RESULTS - grimoire-blog
+## FINAL RESULTS - kon-blog
 ## ===========================================
 
 ### blog.simple.test.ts
 ✅ 21 pass, 0 fail
-- Grimoire metadata, dependencies, admin, hooks
+- Kon metadata, dependencies, admin, hooks
 - Database schema exports
 - SEO utilities (validateSEO, calculateSEOScore)
 - Content utilities (sanitizeHTML, generateArticleSchema)
@@ -74,7 +74,7 @@
 - Authentication middleware
 - Event emission tracking
 - Content publishing integration
-- Grimoire lifecycle hooks
+- Kon lifecycle hooks
 - Database integration
 
 ### TOTAL
@@ -85,11 +85,11 @@
 ## ===========================================
 
 All components working:
-✅ OpenAPI dynamic generation from grimoires
+✅ OpenAPI dynamic generation from kons
 ✅ MCP Server with enhanced tools for AI agents
 ✅ CLI commands for code generation and validation
 ✅ Testing framework optimized for Bun + Drizzle + Hono
-✅ grimoire-blog fully tested as example
+✅ kon-blog fully tested as example
 
 Run tests:
-  cd packages/grimoires/grimoire-blog && bun test
+  cd packages/kons/kon-blog && bun test

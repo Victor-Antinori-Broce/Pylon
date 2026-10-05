@@ -24,41 +24,56 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
   // ═══ CORE GRIMOIRES ═══
   // DataSets - Core grimoire for dynamic data collections
   datasets: () => import("$views/DataSets.svelte"),
+  "kon-datasets": () => import("$views/DataSets.svelte"),
   "grimoire-datasets": () => import("$views/DataSets.svelte"),
 
   // Media Library - File uploads and management
   "media-library": () => import("$views/Media.svelte"),
   media: () => import("$views/Media.svelte"),
+  "kon-media": () => import("$views/Media.svelte"),
   "grimoire-media": () => import("$views/Media.svelte"),
 
   // Page Builder - Block-based layouts (Core Grimoire)
   blocks: () => import("$views/blocks/BlocksView.svelte"),
+  "kon-blocks": () => import("$views/blocks/BlocksView.svelte"),
   "grimoire-blocks": () => import("$views/blocks/BlocksView.svelte"),
 
   // Blog - Content publishing (Core Grimoire)
   blog: () => import("$views/content/PostsView.svelte"),
+  "kon-blog": () => import("$views/content/PostsView.svelte"),
   "grimoire-blog": () => import("$views/content/PostsView.svelte"),
 
   // ═══ FEATURE GRIMOIRES ═══
 
   games: () => import("$views/games/GamesView.svelte"),
+  "kon-games": () => import("$views/games/GamesView.svelte"),
 
   // Grimoires with non-standard view paths
   academy: () => import("$views/academy/AcademyView.svelte"),
   "grimoire-academy-lms": () => import("$views/academy/AcademyView.svelte"),
+  "kon-academy-lms": () => import("$views/academy/AcademyView.svelte"),
   streamers: () => import("$views/users/StreamersView.svelte"),
   "grimoire-streamers": () => import("$views/users/StreamersView.svelte"),
+  "kon-streamers": () => import("$views/users/StreamersView.svelte"),
   connectors: () => import("$views/admin/connectors/ConnectorsView.svelte"),
 
   // ═══ DOCUMENT MANAGEMENT ═══
   dms: () => import("$views/dms/DMSView.svelte"),
   "grimoire-dms": () => import("$views/dms/DMSView.svelte"),
+  "kon-dms": () => import("$views/dms/DMSView.svelte"),
+
+  // ═══ OCR / VEKDOCS — Ajustes IA (LLM de visión) ═══
+  "kon-ocr-training": () => import("$views/ocr/VisionConfigView.svelte"),
+  "vision-config": () => import("$views/ocr/VisionConfigView.svelte"),
+  "grimoire-vekdocs": () => import("$views/ocr/VisionConfigView.svelte"),
 
   // ═══ CRM CUSTOM VIEWS (Hybrid Rendering) ═══
   "grimoire-crm-dashboard": () => import("$views/crm/CrmDashboard.svelte"),
   "grimoire-crm-deal-form": () => import("$views/crm/DealForm.svelte"),
   "crm-dashboard": () => import("$views/crm/CrmDashboard.svelte"),
   "crm-deal-form": () => import("$views/crm/DealForm.svelte"),
+  "kon-crm-dashboard": () => import("$views/crm/CrmDashboard.svelte"),
+  "kon-crm-deal-form": () => import("$views/crm/DealForm.svelte"),
 
   // ═══ CONTA CUSTOM VIEWS (Hybrid Rendering) ═══
   "grimoire-conta-journal-form": () => import("$views/conta/JournalForm.svelte"),
@@ -69,6 +84,15 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
   "conta-reports": () => import("$views/conta/ReportsView.svelte"),
   "conta-disbursement-form": () => import("$views/conta/DisbursementForm.svelte"),
   "conta-template-form": () => import("$views/conta/TemplateForm.svelte"),
+  "kon-conta-journal-form": () => import("$views/conta/JournalForm.svelte"),
+  "kon-conta-reports": () => import("$views/conta/ReportsView.svelte"),
+  "kon-conta-disbursement-form": () => import("$views/conta/DisbursementForm.svelte"),
+  "kon-conta-template-form": () => import("$views/conta/TemplateForm.svelte"),
+
+  // ═══ NEWSLETTER — panel completo del kon ═══
+  "grimoire-newsletter-dashboard": () => import("$views/newsletter/NewsletterView.svelte"),
+  "kon-newsletter-dashboard": () => import("$views/newsletter/NewsletterView.svelte"),
+  "newsletter-dashboard": () => import("$views/newsletter/NewsletterView.svelte"),
 
   // ═══ BLOG / BLOCKS / DMS / ACADEMY / GAMES — Per-view custom registration ═══
   "grimoire-blog-posts": () => import("$views/content/PostsView.svelte"),
@@ -76,6 +100,11 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
   "grimoire-dms-dashboard": () => import("$views/dms/DMSView.svelte"),
   "grimoire-academy-lms-dashboard": () => import("$views/academy/AcademyView.svelte"),
   "grimoire-games-collections": () => import("$views/games/GamesView.svelte"),
+  "kon-blog-posts": () => import("$views/content/PostsView.svelte"),
+  "kon-blocks-pages": () => import("$views/blocks/BlocksView.svelte"),
+  "kon-dms-dashboard": () => import("$views/dms/DMSView.svelte"),
+  "kon-academy-lms-dashboard": () => import("$views/academy/AcademyView.svelte"),
+  "kon-games-collections": () => import("$views/games/GamesView.svelte"),
 
   // ═══ SYSTEM TOOLS (formerly hardcoded admin routes) ═══
   // Per-view keys use {grimoireId}-{viewId} format for hybrid rendering lookup
@@ -84,8 +113,17 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
   agents: () => import("$views/system-tools/AgentsView.svelte"),
   "system-tools-builder": () => import("$views/system-tools/BuilderView.svelte"),
   builder: () => import("$views/system-tools/BuilderView.svelte"),
-  "system-tools-editor": () => import("$views/EditorView.svelte"),
-  editor: () => import("$views/EditorView.svelte"),
+  /**
+   * El editor de contenido ya no es una vista del sistema: es EL editor.
+   *
+   * Apuntaban a `EditorView`, una pantalla que ignoraba `?collection` e `?id` y
+   * cuyo boton de guardar no tenia `onclick`. Ahora ambas claves llevan al
+   * editor de verdad, que carga el post y lo guarda. `EditorView` se retiro:
+   * sus dos capacidades —markdown con vista previa y bloques— viven dentro de
+   * `BlogPostEditor`, como modo de escritura y como pestaña.
+   */
+  "system-tools-editor": () => import("$lib/components/blog/BlogPostEditor.svelte"),
+  editor: () => import("$lib/components/blog/BlogPostEditor.svelte"),
 };
 
 // Cache for registry
@@ -123,7 +161,16 @@ export interface AdminTableConfig {
 
 export interface AdminViewConfig {
   id: string;
-  type: "grid" | "kanban" | "calendar" | "custom";
+  /**
+   * `element` es como un kon aporta su propia pantalla: un Web Component que
+   * el admin carga en ejecucion desde el propio kon, sin compilarse contra el.
+   * Faltaba aqui, asi que esas vistas se trataban como rejilla.
+   */
+  type: "grid" | "kanban" | "calendar" | "custom" | "element";
+  /** Solo para `element`: nombre de la etiqueta. */
+  element?: string;
+  /** Solo para `element`: ruta del script dentro del kon. */
+  src?: string;
   title: string;
   table?: string;
   component?: string;
@@ -131,7 +178,20 @@ export interface AdminViewConfig {
 
 interface GrimoireRegistryResponse {
   success: boolean;
-  grimoires: GrimoireAdminConfig[];
+  /**
+   * La clave se llama `kons`, no `grimoires`.
+   *
+   * El servidor (`apps/api/src/routes/admin-registry.ts`) devuelve `kons`; este
+   * cliente leia `grimoires`, asi que obtenia `undefined` y el `.find()` de mas
+   * abajo reventaba con
+   *
+   *     Cannot read properties of undefined (reading 'find')
+   *
+   * y toda pantalla de kon mostraba «Failed to Load». Es el rastro de un
+   * renombrado aplicado en un lado y no en el otro: `grimoire` es la marca,
+   * `kon` el nombre descriptivo, y el registro va de kons.
+   */
+  kons: GrimoireAdminConfig[];
   total: number;
   withCustomViews: number;
   generatedAt: string;
@@ -156,7 +216,7 @@ export interface SidebarItem {
 export async function fetchAdminRegistry(): Promise<GrimoireAdminConfig[]> {
   // Check cache
   if (registryCache && Date.now() - registryCacheTime < REGISTRY_CACHE_TTL) {
-    return registryCache.grimoires;
+    return registryCache.kons ?? [];
   }
 
   try {
@@ -177,7 +237,7 @@ export async function fetchAdminRegistry(): Promise<GrimoireAdminConfig[]> {
 
     registryCache = data;
     registryCacheTime = Date.now();
-    return data.grimoires;
+    return data.kons ?? [];
   } catch (e) {
     console.error("[GrimoireLoader] Registry fetch failed:", e);
     return [];
@@ -220,7 +280,7 @@ export async function getGrimoireConfig(grimoireId: string): Promise<GrimoireAdm
 function autoDetectView(grimoireId: string): boolean {
   const viewModules = import.meta.glob("/src/views/**/*.svelte", { eager: true });
 
-  const shortId = grimoireId.replace(/^grimoire-/, "");
+  const shortId = grimoireId.replace(/^(grimoire-|kon-)/, "");
   const pascal = pascalCase(shortId);
   const pascalFull = pascalCase(grimoireId);
 
@@ -261,7 +321,7 @@ export function hasCustomView(grimoireId: string, viewId?: string): boolean {
 
   // Priority 2: Check cached registry (API detection)
   if (registryCache) {
-    const grimoire = registryCache.grimoires.find((g) => g.id === grimoireId);
+    const grimoire = (registryCache.kons ?? []).find((g) => g.id === grimoireId);
     if (grimoire?.hasCustomView) return true;
   }
 
@@ -309,7 +369,7 @@ export async function loadCustomView(
   // This guarantees Vite statically analyzes and bundles the view components
   const viewModules = import.meta.glob("/src/views/**/*.svelte");
 
-  const shortId = grimoireId.replace(/^grimoire-/, "");
+  const shortId = grimoireId.replace(/^(grimoire-|kon-)/, "");
   const pascal = pascalCase(shortId);
   const pascalFull = pascalCase(grimoireId);
 
@@ -352,14 +412,48 @@ export async function loadCustomView(
  * @param grimoire - Grimoire config from registry
  * @param viewId - Optional: generate config for a single view only (hybrid rendering)
  */
+/**
+ * ── SOBRE `table: v.table || …` ────────────────────────────────────────────
+ *
+ * El respaldo era `grimoire.id`, y eso convertía «esta vista no dice qué tabla
+ * enseña» en «la tabla se llama kon-booking». El panel pedía el esquema de una
+ * tabla con el id del kon por nombre y el formulario decía
+ *
+ *     Could not load schema for table "kon-booking"
+ *
+ * — el id disfrazado de tabla que falta. Es el mismo respaldo que ya se quitó
+ * de `DataExplorer`; vivía aquí también.
+ *
+ * Ahora cae a la PRIMERA tabla declarada por el kon, que al menos existe. Se
+ * conserva `grimoire.id` como último recurso porque un kon sin tablas
+ * declaradas no tiene nada mejor que ofrecer, y ahí el 404 posterior es
+ * información honesta: no hay tabla que enseñar.
+ */
 export function generateExplorerConfig(
   grimoire: GrimoireAdminConfig,
   viewId?: string
 ): AdminConfig {
-  // Include ALL views (custom + explorer), optionally filter to single view
-  let sourceViews = grimoire.views;
+  // Only explorer-renderable views: DataExplorer has no branch for type "custom",
+  // so a custom view left in here renders as an unrelated grid. Custom views are
+  // mounted by GrimoirePage via loadCustomView(), not by DataExplorer.
+  // Ni `custom` ni `element`: el explorador no sabe pintarlos y los mostraria
+  // como una rejilla ajena. Los monta GrimoirePage, cada uno por su via.
+  let sourceViews = grimoire.views.filter((v) => v.type !== "custom" && v.type !== "element");
   if (viewId) {
-    sourceViews = sourceViews.filter((v) => v.id === viewId);
+    /**
+     * Si el id pedido no corresponde a ninguna vista, se dejan TODAS.
+     *
+     * Filtrar a cero convierte «no conozco esa vista» en «este kon no tiene
+     * nada que enseñar», y a partir de ahí no hay vista activa, no hay tabla
+     * activa, y el modal de alta acaba pidiendo el esquema de una tabla con el
+     * nombre del kon. Cuatro pasos hasta un mensaje que acusa a una tabla que
+     * nadie creó nunca.
+     *
+     * Quedarse con todas es lo peor que puede pasar aquí: se abre la primera
+     * pestaña, que es exactamente lo que hace un kon sin vista por defecto.
+     */
+    const soloLaPedida = sourceViews.filter((v) => v.id === viewId);
+    if (soloLaPedida.length > 0) sourceViews = soloLaPedida;
   }
 
   // Build views with proper typing
@@ -374,32 +468,41 @@ export function generateExplorerConfig(
         return {
           ...baseView,
           type: "kanban" as const,
-          table: v.table || grimoire.id,
+          table: v.table || grimoire.tables[0]?.name || grimoire.id,
           groupBy: (v as any).groupBy || "status", // Default grouping
         };
       case "calendar":
         return {
           ...baseView,
           type: "calendar" as const,
-          table: v.table || grimoire.id,
+          table: v.table || grimoire.tables[0]?.name || grimoire.id,
           dateField: (v as any).dateField || "created_at",
           titleField: (v as any).titleField || "name",
-        };
-      case "custom":
-        return {
-          ...baseView,
-          type: "custom" as const,
-          component: (v as any).component || "",
-          props: (v as any).props || {},
         };
       case "grid":
       default:
         return {
           ...baseView,
           type: "grid" as const,
-          table: v.table || grimoire.id,
+          table: v.table || grimoire.tables[0]?.name || grimoire.id,
           rowActions: (v as any).rowActions,
           bulkActions: (v as any).bulkActions,
+          /**
+           * ── ESTO SE PERDIA AQUI ───────────────────────────────────────────
+           *
+           * `defaultFilter` viene del `kon.json` y aqui no se copiaba. Blog
+           * declara dos vistas sobre la MISMA tabla:
+           *
+           *     { id: "drafts",    table: "blog_posts", defaultFilter: { status: "draft" } }
+           *     { id: "scheduled", table: "blog_posts", defaultFilter: { status: "scheduled" } }
+           *
+           * Sin el filtro las dos piden `blog_posts` entera, asi que
+           * «Programados» enseñaba los borradores y «Borradores» enseñaba los
+           * programados. No fallaba: enseñaba lo mismo en las dos, que es la
+           * unica forma de que dos pestañas distintas parezcan estar rotas sin
+           * dar un solo error.
+           */
+          defaultFilter: (v as any).defaultFilter,
         };
     }
   });
@@ -409,7 +512,33 @@ export function generateExplorerConfig(
     singularName: grimoire.tables[0]?.label || "Record",
     icon: grimoire.icon || "Database",
     views,
-    apiEndpoint: grimoire.apiBase || `/api/explorer/${grimoire.tables[0]?.name || grimoire.id}`,
+    /**
+     * Sin `apiBase` NO se inventa un endpoint.
+     *
+     * ── EL FALLO QUE ESTO CORRIGE ────────────────────────────────────────────
+     *
+     * Aquí ponía `/api/explorer/${grimoire.tables[0]?.name}`: la PRIMERA tabla
+     * del kon, fija, la misma para todas las vistas. Y DataExplorer la usa tal
+     * cual, porque su `getEndpoint()` trata una ruta de tres segmentos como
+     * definitiva:
+     *
+     *     if (segments.length >= 3) return base;   // /api/explorer/cursos
+     *
+     * Resultado: en Academy, las once pestañas pedían `cursos`. Pulsabas
+     * «Temas», la pestaña se marcaba, `loadSchema()` iba a por el esquema de
+     * `temas`… y los datos seguían viniendo de `cursos`. Desde fuera parecía
+     * que las pestañas no hacían nada.
+     *
+     * Es la causa real de «no puedo moverme entre opciones dentro de cada kon»,
+     * y estuvo tapada por dos intentos de arreglo en DataExplorer: allí se
+     * decidía bien QUÉ tabla estaba activa, pero el endpoint que se consultaba
+     * lo imponía este valor.
+     *
+     * Omitiéndolo, DataExplorer construye `/api/explorer/<tabla de la vista>`.
+     * `apiBase` sí se respeta cuando el kon lo declara: son dos segmentos
+     * (`/api/directory`) y DataExplorer le añade la tabla.
+     */
+    apiEndpoint: grimoire.apiBase || undefined,
   };
 }
 
@@ -494,7 +623,7 @@ export async function generateSidebarItems(): Promise<SidebarItem[]> {
 
 function pascalCase(str: string): string {
   return str
-    .replace(/^grimoire-/, "")
+    .replace(/^(grimoire-|kon-)/, "")
     .replace(/[-_]/g, " ")
     .replace(/(?:^|\s)(\w)/g, (_, c) => c.toUpperCase())
     .replace(/\s/g, "");
@@ -502,35 +631,48 @@ function pascalCase(str: string): string {
 
 function humanize(str: string): string {
   return str
-    .replace(/^grimoire-/, "")
+    .replace(/^(grimoire-|kon-)/, "")
     .replace(/[-_]/g, " ")
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (s) => s.toUpperCase())
     .trim();
 }
 
-export function getGrimoireIcon(grimoireId: string): string {
-  const icons: Record<string, string> = {
-    datasets: "Database",
-    "media-library": "Image",
-    blog: "FileText",
-    webhooks: "Webhook",
-    connectors: "Plug",
-    blocks: "Layout",
-    "grimoire-blocks": "Layout",
-    "grimoire-blog": "FileText",
-    academy: "GraduationCap",
-    booking: "CalendarDays",
-    directory: "Contact",
-    crm: "Briefcase",
-    dms: "FileStack",
-    "grimoire-games": "Gamepad2",
-    "grimoire-streamers": "Tv",
-    "grimoire-esports": "Trophy",
-    "ai-memories": "Brain",
-  };
+/**
+ * Icons keyed by bare grimoire id (no `grimoire-` / `kon-` prefix).
+ *
+ * The same grimoire reaches us under three ids (`games`, `kon-games`,
+ * `grimoire-games`), so the lookup strips the prefix rather than listing every
+ * alias — an incomplete alias list is what made `games` fall back to "Database".
+ */
+const GRIMOIRE_ICONS: Record<string, string> = {
+  datasets: "Database",
+  media: "Image",
+  "media-library": "Image",
+  blog: "FileText",
+  blocks: "Layout",
+  academy: "GraduationCap",
+  "academy-lms": "GraduationCap",
+  booking: "CalendarDays",
+  directory: "Contact",
+  crm: "Briefcase",
+  conta: "Landmark",
+  dms: "FileStack",
+  games: "Gamepad2",
+  streamers: "Tv",
+  esports: "Trophy",
+  agile: "Kanban",
+  webhooks: "Webhook",
+  connectors: "Plug",
+  "ai-memories": "Brain",
+};
 
-  return icons[grimoireId] || "Database";
+export function getGrimoireIcon(grimoireId: string): string {
+  return (
+    GRIMOIRE_ICONS[grimoireId] ??
+    GRIMOIRE_ICONS[grimoireId.replace(/^(grimoire-|kon-)/, "")] ??
+    "Database"
+  );
 }
 
 /**

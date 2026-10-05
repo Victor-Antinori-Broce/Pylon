@@ -2,14 +2,14 @@
 # DEPRECATED - Use docker/Dockerfile.prod instead
 #
 # This was an experimental approach to reduce image size by copying
-# only dist/ bundles. However, Bun runs .ts natively and grimoires
+# only dist/ bundles. However, Bun runs .ts natively and kons
 # use dynamic imports that require the full workspace source tree.
 # The API CMD `bun run dist/index.js` will fail at runtime because
-# dynamic imports from packages/grimoires/ won't resolve.
+# dynamic imports from packages/kons/ won't resolve.
 #
 # Use: docker build -f docker/Dockerfile.prod --target api .
 # ===================================================================
-# GremiusCMS - Dockerfile OPTIMIZADO (Reduced Size) [DEPRECATED]
+# Kitsuden - Dockerfile OPTIMIZADO (Reduced Size) [DEPRECATED]
 
 FROM oven/bun:1-alpine AS base
 RUN apk add --no-cache nodejs npm
@@ -28,9 +28,9 @@ COPY packages/mcp-server/package.json ./packages/mcp-server/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/engine/package.json ./packages/engine/
 COPY packages/core/package.json ./packages/core/
+COPY packages/kons/package.json ./packages/kons/
 COPY packages/grimoires/package.json ./packages/grimoires/
-COPY packages/realms/package.json ./packages/realms/
-COPY packages/starters/gremio-blog-template/package.json ./packages/starters/gremio-blog-template/
+COPY packages/starters/kitsuden-blog-template/package.json ./packages/starters/kitsuden-blog-template/
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
@@ -47,9 +47,9 @@ ENV VITE_API_URL=${PUBLIC_API_URL}
 
 COPY . .
 
-RUN pnpm --filter @gremius/shared build
-RUN pnpm --filter @gremius/api build
-RUN pnpm --filter @gremius/admin build
+RUN pnpm --filter @kitsuden/shared build
+RUN pnpm --filter @kitsuden/api build
+RUN pnpm --filter @kitsuden/admin build
 RUN SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm rebuild sharp
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -71,9 +71,9 @@ COPY --from=builder /app/docker/start-with-check.sh /app/docker/start-with-check
 COPY --from=builder /app/packages/shared/dist /app/packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json /app/packages/shared/package.json
 
-# Copy grimoires (they're dynamically imported)
+# Copy kons (they're dynamically imported)
+COPY --from=builder /app/packages/kons /app/packages/kons
 COPY --from=builder /app/packages/grimoires /app/packages/grimoires
-COPY --from=builder /app/packages/realms /app/packages/realms
 COPY --from=builder /app/packages/core /app/packages/core
 COPY --from=builder /app/packages/engine /app/packages/engine
 

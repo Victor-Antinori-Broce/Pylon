@@ -1,7 +1,7 @@
 {
-  "name": "@gremius/testing",
+  "name": "@kitsuden/testing",
   "version": "0.9.0-beta",
-  "description": "Gremius Testing Framework - Minimalist grimoire testing",
+  "description": "Kitsuden Testing Framework - Minimalist kon testing",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -33,18 +33,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gremius/shared": "workspace:*",
-    "hono": "^4.7.0",
-    "postgres": "^3.4.0"
+    "@kitsuden/shared": "workspace:*",
+    "hono": "^4.12.3",
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/pg": "^8.10.0",
-    "typescript": "^5.7.0",
-    "vitest": "^2.0.0"
+    "@types/node": "^22.19.0",
+    "@types/pg": "^8.16.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "vitest": "^2.0.0",
+    "vitest": "^4.0.0",
     "drizzle-orm": "^0.45.0",
     "pg": "^8.20.0"
   },
@@ -60,9 +60,9 @@
     "pg-mem": "^3.0.14"
   },
   "keywords": [
-    "gremius",
+    "kitsuden",
     "testing",
-    "grimoires"
+    "kons"
   ],
   "license": "MIT"
 }

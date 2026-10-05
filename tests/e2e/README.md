@@ -23,7 +23,7 @@ cd apps/api && bun install
 # 3. Environment variables
 export DATABASE_URL="postgresql://..."
 export API_URL="http://localhost:3001"
-export TEST_MCP_TOKEN="grm_agent_..."  # From seed script
+export TEST_MCP_TOKEN="kitsuden_agent_..."  # From seed script
 ```
 
 ## ▶️ Running Tests
@@ -41,7 +41,7 @@ cd tests/e2e
 npx playwright test --config=playwright.e2e.config.ts
 
 # Or with environment
-TEST_MCP_TOKEN=grm_agent_xxx npx playwright test
+TEST_MCP_TOKEN=kitsuden_agent_xxx npx playwright test
 ```
 
 ## 📋 Test Scenarios
@@ -49,7 +49,7 @@ TEST_MCP_TOKEN=grm_agent_xxx npx playwright test
 ### Scenario 1: Semantic FAQ Search
 
 - Claude asks natural language questions
-- MCP routes to `gremius_search_entries`
+- MCP routes to `kitsuden_search_entries`
 - Vector search finds semantically similar entries
 - Results returned to Claude
 

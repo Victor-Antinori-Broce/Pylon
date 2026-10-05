@@ -1,6 +1,7 @@
 # ── Dependencies ──
 node_modules/
 .pnpm-store/
+bun.lock
 
 # ── Build outputs ──
 dist/
@@ -29,16 +30,18 @@ Thumbs.db
 # ── Payload CMS ──
 apps/cms/media/
 
-# ── Grimoires/Modules build artifacts ──
+# ── Kons/Modules build artifacts ──
+packages/kons/*/dist/
+packages/kons/*/node_modules/
 packages/grimoires/*/dist/
 packages/grimoires/*/node_modules/
-packages/realms/*/dist/
-packages/realms/*/node_modules/
 
 # ── Logs ──
 *.log
 npm-debug.log*
 pnpm-debug.log*
+api.err
+api.log
 
 # ── Coverage ──
 coverage/
@@ -122,15 +125,15 @@ packages/cli/test-vibecoder-app/
 !packages/cli/templates/**/*.js
 !packages/cli/templates/**/*.d.ts
 
-# Grimoires compiled artifacts (in grimoire root dirs)
-packages/grimoires/*/*.js
-packages/grimoires/*/*.d.ts
-packages/grimoires/*/src/**/*.js
-packages/grimoires/*/src/**/*.d.ts
-packages/grimoires/*/tests/*.js
-packages/grimoires/*/tests/*.d.ts
-packages/grimoires/*/services/*.js
-packages/grimoires/*/services/*.d.ts
+# Kons compiled artifacts (in kon root dirs)
+packages/kons/*/*.js
+packages/kons/*/*.d.ts
+packages/kons/*/src/**/*.js
+packages/kons/*/src/**/*.d.ts
+packages/kons/*/tests/*.js
+packages/kons/*/tests/*.d.ts
+packages/kons/*/services/*.js
+packages/kons/*/services/*.d.ts
 
 # Starters compiled artifacts
 packages/starters/*/*.js
@@ -163,3 +166,77 @@ secrets/
 *.pid
 *.seed
 *.pid.lock
+
+# ── Python virtual environments ──
+.venv*
+packages/admin/.venv-admin/
+
+# ── Salida de scaffolding del CLI (generada, nunca se commitea) ──
+packages/cli/test-*-app*/
+
+# ── Junk / diagnostic files ──
+# `tmp/` no estaba ignorado y acumulaba 3 MB de builds sueltos que salían como
+# ruido en cada `git status`.
+tmp/
+tmp_*.log
+tmp_*.py
+tserrors-*.txt
+build-diag*.txt
+kitsuden_progress.txt
+progress.txt
+tmp_labels.txt
+tmp_dep_analysis.json
+null
+*.test-results.*
+
+# ── Python (SDK) ──
+__pycache__/
+*.pyc
+.pytest_cache/
+dist-py/
+
+# ── Local PGlite / Postgres data dir ──
+.kitsuden/
+
+# ── Salidas temporales de bun build (scratch, regenerables) ──
+apps/api/tmp_build_*/
+
+# ── Datos de juego de terceros (NO deben entrar en el repo) ──
+# Volcados y catalogos extraidos de fuentes externas: la mayoria sin licencia
+# permisiva. Son regenerables con gamedata/_scripts/*.mjs.
+# Ver gamedata/docs/DATA-POLICY.md
+#
+# Los DATOS se quedan fuera; los SCRIPTS y la documentacion NO. Antes estaba
+# todo ignorado con `gamedata/`, y eso contradecia la frase de arriba: los
+# datos eran «regenerables con los scripts», pero los scripts no estaban en
+# ningun sitio mas que en un disco. Se ignora el CONTENIDO (`gamedata/*`) y
+# no la carpeta, porque git no puede volver a incluir nada dentro de una
+# carpeta ignorada entera.
+gamedata/*
+!gamedata/_scripts/
+!gamedata/docs/
+
+# ── Volcados de cartas de TCG (143 MB) ──
+# Misma clase que gamedata/ y por los mismos dos motivos, que ya estan escritos
+# en gamedata/docs/DATA-POLICY.md: son datos de terceros con licencia por
+# verificar, y son regenerables — aqui con scripts/scrape-tcg/*.mjs, uno por
+# juego. Se versiona la receta, no el resultado.
+#
+# El tamano lo confirma: ficheros sueltos de hasta 20 MB que se descargarian en
+# cada clon para siempre. kon-cardsim los lee de disco en tiempo de ejecucion,
+# no los importa, asi que ignorarlos no rompe nada.
+/data/
+
+# Cache con rutas absolutas de la maquina que la genero (3,6 MB).
+.cl.json
+
+# Scripts y volcados sueltos de la raíz (2026-09-30): muchos llevan la cadena de
+# conexión de la base de producción en claro y copias de contenido ajeno.
+# Nunca deben subirse; lo que valga, que viva en apps/api/scripts o gamedata/_scripts.
+/scratch-*
+/scratch_*
+/scrape_*
+/scraped_aniimo_data/
+/check-db*.mjs
+/test-hono-route.mjs
+/test-kon-mount.mjs

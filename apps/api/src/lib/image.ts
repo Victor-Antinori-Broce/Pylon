@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Image Optimization Pipeline
+ * Kitsuden — Image Optimization Pipeline
  *
  * Converts uploaded images (JPEG, PNG, GIF, TIFF) to WebP for optimal
  * delivery. Extracts dimensions. Non-image files pass through unchanged.

@@ -405,8 +405,8 @@
   }
   function alertColor(tipo: string) {
     return tipo === "warning"
-      ? "text-gremius-amber bg-gremius-amber/10"
-      : "text-gremius-green bg-gremius-green/10";
+      ? "text-kitsuden-amber bg-kitsuden-amber/10"
+      : "text-kitsuden-green bg-kitsuden-green/10";
   }
 </script>
 
@@ -416,15 +416,15 @@
 <div class="space-y-6 animate-fade-in">
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-gremius-text flex items-center gap-2">
-        <GraduationCap class="w-6 h-6 text-gremius-cyan" />
+      <h2 class="text-xl font-bold text-kitsuden-text flex items-center gap-2">
+        <GraduationCap class="w-6 h-6 text-kitsuden-accent" />
         Academy LMS
       </h2>
-      <p class="text-sm text-gremius-subtle mt-0.5">
+      <p class="text-sm text-kitsuden-subtle mt-0.5">
         Course management, assignments &amp; analytics
       </p>
     </div>
-    <a href="/academy/courses/new" class="btn-primary inline-flex items-center gap-2">
+    <a href="/g/kon-academy-lms/grid-courses" class="btn-primary inline-flex items-center gap-2">
       <Plus class="w-4 h-4" /> New Course
     </a>
   </div>
@@ -444,12 +444,12 @@
   <!-- Stats Row -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="card p-4 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-lg bg-gremius-cyan/15 flex items-center justify-center">
-        <BookOpen class="w-5 h-5 text-gremius-cyan" />
+      <div class="w-10 h-10 rounded-lg bg-kitsuden-accent/15 flex items-center justify-center">
+        <BookOpen class="w-5 h-5 text-kitsuden-accent" />
       </div>
       <div>
-        <p class="text-xs text-gremius-subtle uppercase tracking-wider">Total Courses</p>
-        <p class="text-2xl font-bold text-gremius-text">{metricas?.totalCursos ?? 0}</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total Courses</p>
+        <p class="text-2xl font-bold text-kitsuden-text">{metricas?.totalCursos ?? 0}</p>
       </div>
     </div>
     <div class="card p-4 flex items-center gap-3">
@@ -457,21 +457,21 @@
         <Users class="w-5 h-5 text-purple-400" />
       </div>
       <div>
-        <p class="text-xs text-gremius-subtle uppercase tracking-wider">Total Assignments</p>
-        <p class="text-2xl font-bold text-gremius-text">{metricas?.totalAsignaciones ?? 0}</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total Assignments</p>
+        <p class="text-2xl font-bold text-kitsuden-text">{metricas?.totalAsignaciones ?? 0}</p>
       </div>
     </div>
     <div class="card p-4 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-lg bg-gremius-green/15 flex items-center justify-center">
-        <TrendingUp class="w-5 h-5 text-gremius-green" />
+      <div class="w-10 h-10 rounded-lg bg-kitsuden-green/15 flex items-center justify-center">
+        <TrendingUp class="w-5 h-5 text-kitsuden-green" />
       </div>
       <div class="flex-1">
-        <p class="text-xs text-gremius-subtle uppercase tracking-wider">Completion Rate</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Completion Rate</p>
         <div class="flex items-center gap-2 mt-1">
-          <p class="text-2xl font-bold text-gremius-text">{fmtPct(metricas?.tasaCompletado)}</p>
-          <div class="flex-1 h-1.5 bg-gremius-bg rounded-full overflow-hidden">
+          <p class="text-2xl font-bold text-kitsuden-text">{fmtPct(metricas?.tasaCompletado)}</p>
+          <div class="flex-1 h-1.5 bg-kitsuden-bg rounded-full overflow-hidden">
             <div
-              class="h-full bg-gremius-green rounded-full"
+              class="h-full bg-kitsuden-green rounded-full"
               style="width: {metricas?.tasaCompletado ?? 0}%"
             ></div>
           </div>
@@ -479,29 +479,29 @@
       </div>
     </div>
     <div class="card p-4 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-lg bg-gremius-amber/15 flex items-center justify-center">
-        <Star class="w-5 h-5 text-gremius-amber" />
+      <div class="w-10 h-10 rounded-lg bg-kitsuden-amber/15 flex items-center justify-center">
+        <Star class="w-5 h-5 text-kitsuden-amber" />
       </div>
       <div>
-        <p class="text-xs text-gremius-subtle uppercase tracking-wider">Avg Satisfaction</p>
-        <p class="text-2xl font-bold text-gremius-text">
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Avg Satisfaction</p>
+        <p class="text-2xl font-bold text-kitsuden-text">
           {metricas?.totalEncuestas
             ? ((metricas.totalFeedbacks ?? 0) / (metricas.totalEncuestas || 1)).toFixed(1)
-            : "—"}<span class="text-sm text-gremius-subtle font-normal"> /5</span>
+            : "—"}<span class="text-sm text-kitsuden-subtle font-normal"> /5</span>
         </p>
       </div>
     </div>
   </div>
 
   <!-- Tabs -->
-  <div class="border-b border-gremius-border">
+  <div class="border-b border-kitsuden-border">
     <div class="flex items-center gap-1">
       {#each tabs as t}
         <button
           class="px-4 py-2 text-sm font-medium flex items-center gap-1.5 transition-colors border-b-2 {activeTab ===
           t.key
-            ? 'text-gremius-cyan border-gremius-cyan'
-            : 'text-gremius-subtle border-transparent hover:text-gremius-text hover:border-gremius-border'}"
+            ? 'text-kitsuden-accent border-kitsuden-accent'
+            : 'text-kitsuden-subtle border-transparent hover:text-kitsuden-text hover:border-kitsuden-border'}"
           onclick={() => {
             activeTab = t.key;
             selectedIds = new Set();
@@ -518,7 +518,7 @@
   {#if loading}
     <div class="flex justify-center py-20">
       <div
-        class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+        class="w-6 h-6 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
     </div>
   {:else}
@@ -531,19 +531,19 @@
         <div class="flex items-center gap-3 flex-wrap">
           <div class="relative flex-1 min-w-[200px] max-w-sm">
             <Search
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-text-dim"
             />
             <input
               type="text"
               placeholder="Search courses..."
-              class="w-full pl-10 pr-4 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-text-dim focus:outline-none focus:border-gremius-cyan/50"
+              class="w-full pl-10 pr-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-text-dim focus:outline-none focus:border-kitsuden-accent/50"
               bind:value={searchQuery}
               oninput={() => (currentPage = 1)}
             />
           </div>
           {#if selectedIds.size > 0}
             <div class="flex items-center gap-2 ml-auto">
-              <span class="text-xs text-gremius-subtle">{selectedIds.size} selected</span>
+              <span class="text-xs text-kitsuden-subtle">{selectedIds.size} selected</span>
               <button
                 class="btn-secondary text-xs inline-flex items-center gap-1"
                 onclick={() => openAssignModal()}
@@ -563,92 +563,92 @@
         <!-- Table -->
         {#if filteredCourses.length === 0}
           <div class="card p-16 text-center">
-            <BookOpen class="w-10 h-10 text-gremius-text-dim mx-auto mb-3" />
-            <p class="text-gremius-text-dim">No courses found.</p>
+            <BookOpen class="w-10 h-10 text-kitsuden-text-dim mx-auto mb-3" />
+            <p class="text-kitsuden-text-dim">No courses found.</p>
           </div>
         {:else}
           <div class="card overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
-                <thead class="bg-gremius-bg sticky top-0 z-10">
-                  <tr class="border-b border-gremius-border">
+                <thead class="bg-kitsuden-bg sticky top-0 z-10">
+                  <tr class="border-b border-kitsuden-border">
                     <th class="px-4 py-3 w-10">
                       <input
                         type="checkbox"
-                        class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+                        class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent"
                         checked={allSelected}
                         indeterminate={someSelected}
                         onchange={toggleSelectAll}
                       />
                     </th>
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("titulo")}
-                      >Title {#if sortKey === "titulo"}<span class="text-gremius-cyan"
+                      >Title {#if sortKey === "titulo"}<span class="text-kitsuden-accent"
                           >{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("asignaciones")}
-                      >Assignments {#if sortKey === "asignaciones"}<span class="text-gremius-cyan"
-                          >{sortDir === "asc" ? "▲" : "▼"}</span
+                      >Assignments {#if sortKey === "asignaciones"}<span
+                          class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("completados")}
-                      >Completed {#if sortKey === "completados"}<span class="text-gremius-cyan"
+                      >Completed {#if sortKey === "completados"}<span class="text-kitsuden-accent"
                           >{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("progresoPromedio")}
                       >Avg Progress {#if sortKey === "progresoPromedio"}<span
-                          class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span
+                          class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("tasaFinalizacion")}
                       >Completion {#if sortKey === "tasaFinalizacion"}<span
-                          class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span
+                          class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("totalEncuestas")}
-                      >Surveys {#if sortKey === "totalEncuestas"}<span class="text-gremius-cyan"
+                      >Surveys {#if sortKey === "totalEncuestas"}<span class="text-kitsuden-accent"
                           >{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
-                      class="px-4 py-3 font-medium text-gremius-subtle cursor-pointer select-none"
+                      class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("satisfaccionPromedio")}
                       >Satisfaction {#if sortKey === "satisfaccionPromedio"}<span
-                          class="text-gremius-cyan">{sortDir === "asc" ? "▲" : "▼"}</span
+                          class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
-                    <th class="px-4 py-3 font-medium text-gremius-subtle">Actions</th>
+                    <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each pagedCourses as r}
                     <tr
-                      class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors group"
+                      class="border-b border-kitsuden-border hover:bg-kitsuden-bg/50 transition-colors group"
                     >
                       <td class="px-4 py-3">
                         <input
                           type="checkbox"
-                          class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+                          class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent"
                           checked={selectedIds.has(r.curso.id)}
                           onchange={() => toggleSelect(r.curso.id)}
                         />
                       </td>
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-2">
-                          <span class="font-medium text-gremius-text">{r.curso.titulo}</span>
+                          <span class="font-medium text-kitsuden-text">{r.curso.titulo}</span>
                           <span
                             class="px-1.5 py-0.5 rounded text-[10px] font-medium {tipoCursoColors[
                               r.curso.tipo
@@ -657,26 +657,26 @@
                           >
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-gremius-text">{r.metricas.asignaciones}</td>
-                      <td class="px-4 py-3 text-gremius-text">{r.metricas.completados}</td>
+                      <td class="px-4 py-3 text-kitsuden-text">{r.metricas.asignaciones}</td>
+                      <td class="px-4 py-3 text-kitsuden-text">{r.metricas.completados}</td>
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-2">
-                          <div class="w-16 h-1.5 bg-gremius-bg rounded-full overflow-hidden">
+                          <div class="w-16 h-1.5 bg-kitsuden-bg rounded-full overflow-hidden">
                             <div
-                              class="h-full bg-gremius-cyan rounded-full"
+                              class="h-full bg-kitsuden-accent rounded-full"
                               style="width: {r.metricas.progresoPromedio}%"
                             ></div>
                           </div>
-                          <span class="text-xs text-gremius-subtle"
+                          <span class="text-xs text-kitsuden-subtle"
                             >{fmtPct(r.metricas.progresoPromedio)}</span
                           >
                         </div>
                       </td>
-                      <td class="px-4 py-3 text-gremius-text"
+                      <td class="px-4 py-3 text-kitsuden-text"
                         >{fmtPct(r.metricas.tasaFinalizacion)}</td
                       >
-                      <td class="px-4 py-3 text-gremius-text">{r.metricas.totalEncuestas}</td>
-                      <td class="px-4 py-3 text-gremius-amber text-xs"
+                      <td class="px-4 py-3 text-kitsuden-text">{r.metricas.totalEncuestas}</td>
+                      <td class="px-4 py-3 text-kitsuden-amber text-xs"
                         >{fmtStar(r.metricas.satisfaccionPromedio)}</td
                       >
                       <td class="px-4 py-3">
@@ -684,17 +684,17 @@
                           class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <button
-                            class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-cyan"
+                            class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent"
                             title="View stats"
                             onclick={() => openDrawer(r)}><Eye class="w-3.5 h-3.5" /></button
                           >
                           <a
                             href="/academy/courses/{r.curso.id}/edit"
-                            class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                            class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
                             title="Edit"><Edit2 class="w-3.5 h-3.5" /></a
                           >
                           <button
-                            class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                            class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
                             title="Delete"
                             onclick={() => promptDelete([r.curso.id])}
                             ><Trash2 class="w-3.5 h-3.5" /></button
@@ -710,30 +710,31 @@
             <!-- Pagination -->
             {#if totalPages > 1}
               <div
-                class="p-3 border-t border-gremius-border bg-gremius-card flex items-center justify-between"
+                class="p-3 border-t border-kitsuden-border bg-kitsuden-card flex items-center justify-between"
               >
-                <span class="text-xs text-gremius-subtle"
+                <span class="text-xs text-kitsuden-subtle"
                   >{filteredCourses.length} total · Page {currentPage} of {totalPages}</span
                 >
                 <div class="flex items-center gap-2">
                   <button
-                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                     disabled={currentPage === 1}
                     onclick={() => (currentPage = 1)}><ChevronFirst class="w-3.5 h-3.5" /></button
                   >
                   <button
-                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                     disabled={currentPage === 1}
                     onclick={() => currentPage--}><ChevronLeft class="w-3.5 h-3.5" /></button
                   >
-                  <span class="text-xs text-gremius-subtle px-2">{currentPage} / {totalPages}</span>
+                  <span class="text-xs text-kitsuden-subtle px-2">{currentPage} / {totalPages}</span
+                  >
                   <button
-                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                     disabled={currentPage === totalPages}
                     onclick={() => currentPage++}><ChevronRight class="w-3.5 h-3.5" /></button
                   >
                   <button
-                    class="px-2.5 py-1.5 rounded-lg bg-gremius-bg border border-gremius-border text-gremius-text text-xs hover:border-gremius-cyan/50 disabled:opacity-40"
+                    class="px-2.5 py-1.5 rounded-lg bg-kitsuden-bg border border-kitsuden-border text-kitsuden-text text-xs hover:border-kitsuden-accent/50 disabled:opacity-40"
                     disabled={currentPage === totalPages}
                     onclick={() => (currentPage = totalPages)}
                     ><ChevronLast class="w-3.5 h-3.5" /></button
@@ -752,31 +753,33 @@
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-gremius-bg">
-              <tr class="border-b border-gremius-border">
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Name</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Category</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Courses</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Sequential Approval</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Actions</th>
+            <thead class="bg-kitsuden-bg">
+              <tr class="border-b border-kitsuden-border">
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Name</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Category</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Courses</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Sequential Approval</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
               </tr>
             </thead>
             <tbody>
               {#each learningPaths as lp}
-                <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors">
+                <tr
+                  class="border-b border-kitsuden-border hover:bg-kitsuden-bg/50 transition-colors"
+                >
                   <td class="px-4 py-3">
-                    <div class="font-medium text-gremius-text">{lp.nombre}</div>
-                    {#if lp.descripcion}<div class="text-xs text-gremius-subtle">
+                    <div class="font-medium text-kitsuden-text">{lp.nombre}</div>
+                    {#if lp.descripcion}<div class="text-xs text-kitsuden-subtle">
                         {lp.descripcion}
                       </div>{/if}
                   </td>
-                  <td class="px-4 py-3 text-gremius-subtle">{lp.categoria || "—"}</td>
-                  <td class="px-4 py-3 text-gremius-text">{lp.totalCursos}</td>
+                  <td class="px-4 py-3 text-kitsuden-subtle">{lp.categoria || "—"}</td>
+                  <td class="px-4 py-3 text-kitsuden-text">{lp.totalCursos}</td>
                   <td class="px-4 py-3">
                     <span
                       class="px-2 py-0.5 rounded text-xs font-medium {lp.secuencial
-                        ? 'bg-gremius-green/15 text-gremius-green'
-                        : 'bg-gremius-text-dim/15 text-gremius-subtle'}"
+                        ? 'bg-kitsuden-green/15 text-kitsuden-green'
+                        : 'bg-kitsuden-text-dim/15 text-kitsuden-subtle'}"
                       >{lp.secuencial ? "Yes" : "No"}</span
                     >
                   </td>
@@ -784,11 +787,11 @@
                     <div class="flex items-center gap-1">
                       <a
                         href="/academy/learning-paths/{lp.id}/edit"
-                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                        class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
                         ><Edit2 class="w-3.5 h-3.5" /></a
                       >
                       <button
-                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                        class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
                         onclick={() => deletePath(lp.id)}><Trash2 class="w-3.5 h-3.5" /></button
                       >
                     </div>
@@ -796,7 +799,7 @@
                 </tr>
               {:else}
                 <tr
-                  ><td colspan="5" class="px-4 py-12 text-center text-gremius-text-dim"
+                  ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-text-dim"
                     ><Route class="w-8 h-8 mx-auto mb-2" />No learning paths found.</td
                   ></tr
                 >
@@ -813,34 +816,36 @@
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-gremius-bg">
-              <tr class="border-b border-gremius-border">
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Name</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Members</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Supervisor</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Actions</th>
+            <thead class="bg-kitsuden-bg">
+              <tr class="border-b border-kitsuden-border">
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Name</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Members</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Supervisor</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
               </tr>
             </thead>
             <tbody>
               {#each grupos as g}
-                <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors">
+                <tr
+                  class="border-b border-kitsuden-border hover:bg-kitsuden-bg/50 transition-colors"
+                >
                   <td class="px-4 py-3">
-                    <div class="font-medium text-gremius-text">{g.nombre}</div>
-                    {#if g.descripcion}<div class="text-xs text-gremius-subtle">
+                    <div class="font-medium text-kitsuden-text">{g.nombre}</div>
+                    {#if g.descripcion}<div class="text-xs text-kitsuden-subtle">
                         {g.descripcion}
                       </div>{/if}
                   </td>
-                  <td class="px-4 py-3 text-gremius-text">{g.miembros}</td>
-                  <td class="px-4 py-3 text-gremius-subtle">{g.supervisorPrincipal || "—"}</td>
+                  <td class="px-4 py-3 text-kitsuden-text">{g.miembros}</td>
+                  <td class="px-4 py-3 text-kitsuden-subtle">{g.supervisorPrincipal || "—"}</td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-1">
                       <a
                         href="/academy/groups/{g.id}/edit"
-                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+                        class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
                         ><Edit2 class="w-3.5 h-3.5" /></a
                       >
                       <button
-                        class="p-1.5 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-pink"
+                        class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
                         onclick={() => deleteGroup(g.id)}><Trash2 class="w-3.5 h-3.5" /></button
                       >
                     </div>
@@ -848,7 +853,7 @@
                 </tr>
               {:else}
                 <tr
-                  ><td colspan="4" class="px-4 py-12 text-center text-gremius-text-dim"
+                  ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-text-dim"
                     ><Users class="w-8 h-8 mx-auto mb-2" />No groups found.</td
                   ></tr
                 >
@@ -865,30 +870,34 @@
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-gremius-bg">
-              <tr class="border-b border-gremius-border">
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Course ID</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">User ID</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Group ID</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Method</th>
-                <th class="px-4 py-3 font-medium text-gremius-subtle">Date</th>
+            <thead class="bg-kitsuden-bg">
+              <tr class="border-b border-kitsuden-border">
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Course ID</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">User ID</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Group ID</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Method</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Date</th>
               </tr>
             </thead>
             <tbody>
               {#each asignaciones as a}
-                <tr class="border-b border-gremius-border hover:bg-gremius-bg/50 transition-colors">
-                  <td class="px-4 py-3 font-mono text-xs text-gremius-text">{a.cursoId}</td>
-                  <td class="px-4 py-3 font-mono text-xs text-gremius-subtle">{a.userId || "—"}</td>
-                  <td class="px-4 py-3 font-mono text-xs text-gremius-subtle">{a.grupoId || "—"}</td
+                <tr
+                  class="border-b border-kitsuden-border hover:bg-kitsuden-bg/50 transition-colors"
+                >
+                  <td class="px-4 py-3 font-mono text-xs text-kitsuden-text">{a.cursoId}</td>
+                  <td class="px-4 py-3 font-mono text-xs text-kitsuden-subtle">{a.userId || "—"}</td
                   >
-                  <td class="px-4 py-3 text-gremius-text">{a.metodo || "—"}</td>
-                  <td class="px-4 py-3 text-gremius-subtle"
+                  <td class="px-4 py-3 font-mono text-xs text-kitsuden-subtle"
+                    >{a.grupoId || "—"}</td
+                  >
+                  <td class="px-4 py-3 text-kitsuden-text">{a.metodo || "—"}</td>
+                  <td class="px-4 py-3 text-kitsuden-subtle"
                     >{a.fecha ? new Date(a.fecha).toLocaleDateString("es-ES") : "—"}</td
                   >
                 </tr>
               {:else}
                 <tr
-                  ><td colspan="5" class="px-4 py-12 text-center text-gremius-text-dim"
+                  ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-text-dim"
                     ><Layers class="w-8 h-8 mx-auto mb-2" />No assignments found.</td
                   ></tr
                 >
@@ -908,11 +917,11 @@
   <div class="fixed inset-0 z-40 flex justify-end">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick={closeDrawer}></div>
     <div
-      class="relative w-full max-w-xl bg-gremius-card border-l border-gremius-border h-full flex flex-col shadow-2xl"
+      class="relative w-full max-w-xl bg-kitsuden-card border-l border-kitsuden-border h-full flex flex-col shadow-2xl"
     >
       <!-- Header -->
       <div
-        class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0"
+        class="flex items-center justify-between px-6 py-4 border-b border-kitsuden-border shrink-0"
       >
         <div class="min-w-0">
           <div class="flex items-center gap-2">
@@ -924,7 +933,7 @@
               >
             {/if}
           </div>
-          <h2 class="text-lg font-bold text-gremius-text truncate">
+          <h2 class="text-lg font-bold text-kitsuden-text truncate">
             {drawerCurso?.curso.titulo || "Course"}
           </h2>
         </div>
@@ -936,7 +945,7 @@
             <Users class="w-3.5 h-3.5" /> Assign
           </button>
           <button
-            class="p-2 hover:bg-gremius-bg rounded-lg text-gremius-text-dim hover:text-gremius-text"
+            class="p-2 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
             onclick={closeDrawer}><X class="w-5 h-5" /></button
           >
         </div>
@@ -947,47 +956,47 @@
         {#if drawerLoading}
           <div class="flex items-center justify-center h-40">
             <div
-              class="w-8 h-8 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+              class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
             ></div>
           </div>
         {:else if !drawerStats}
-          <div class="text-center text-gremius-subtle py-12">No stats available.</div>
+          <div class="text-center text-kitsuden-subtle py-12">No stats available.</div>
         {:else}
           {@const s = drawerStats}
           <!-- Stats Grid -->
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {#each [{ label: "Assigned", value: s.totalAsignados, icon: Users, color: "text-gremius-cyan" }, { label: "Completed", value: s.completados, icon: CheckCircle, color: "text-gremius-green" }, { label: "In Progress", value: s.enProgreso, icon: TrendingUp, color: "text-gremius-amber" }, { label: "Not Started", value: s.noIniciados, icon: AlertCircle, color: "text-gremius-pink" }, { label: "Completion Rate", value: fmtPct(s.tasaFinalizacion), icon: BarChart3, color: "text-gremius-green" }, { label: "Avg Progress", value: fmtPct(s.progresoPromedio), icon: TrendingUp, color: "text-gremius-cyan" }, { label: "Quiz Passers", value: s.aprobadosQuiz, icon: CheckCircle, color: "text-gremius-green" }, { label: "Avg Quiz Score", value: s.puntajePromedioQuiz?.toFixed(1) ?? "—", icon: Star, color: "text-gremius-amber" }, { label: "Surveys", value: s.totalEncuestas, icon: Layers, color: "text-gremius-cyan" }, { label: "Satisfaction", value: fmtStar(s.satisfaccionPromedio), icon: Star, color: "text-gremius-amber" }, { label: "Instructor Rating", value: s.expositorPromedio?.toFixed(1) ?? "—", icon: UserCircle, color: "text-purple-400" }] as stat}
+            {#each [{ label: "Assigned", value: s.totalAsignados, icon: Users, color: "text-kitsuden-accent" }, { label: "Completed", value: s.completados, icon: CheckCircle, color: "text-kitsuden-green" }, { label: "In Progress", value: s.enProgreso, icon: TrendingUp, color: "text-kitsuden-amber" }, { label: "Not Started", value: s.noIniciados, icon: AlertCircle, color: "text-kitsuden-accent-2" }, { label: "Completion Rate", value: fmtPct(s.tasaFinalizacion), icon: BarChart3, color: "text-kitsuden-green" }, { label: "Avg Progress", value: fmtPct(s.progresoPromedio), icon: TrendingUp, color: "text-kitsuden-accent" }, { label: "Quiz Passers", value: s.aprobadosQuiz, icon: CheckCircle, color: "text-kitsuden-green" }, { label: "Avg Quiz Score", value: s.puntajePromedioQuiz?.toFixed(1) ?? "—", icon: Star, color: "text-kitsuden-amber" }, { label: "Surveys", value: s.totalEncuestas, icon: Layers, color: "text-kitsuden-accent" }, { label: "Satisfaction", value: fmtStar(s.satisfaccionPromedio), icon: Star, color: "text-kitsuden-amber" }, { label: "Instructor Rating", value: s.expositorPromedio?.toFixed(1) ?? "—", icon: UserCircle, color: "text-purple-400" }] as stat}
               <div
-                class="bg-gremius-bg border border-gremius-border rounded-lg p-3 flex items-center gap-3"
+                class="bg-kitsuden-bg border border-kitsuden-border rounded-lg p-3 flex items-center gap-3"
               >
                 <div
-                  class="w-8 h-8 rounded-lg bg-gremius-card flex items-center justify-center shrink-0"
+                  class="w-8 h-8 rounded-lg bg-kitsuden-card flex items-center justify-center shrink-0"
                 >
                   <stat.icon class="w-4 h-4 {stat.color}" />
                 </div>
                 <div>
-                  <p class="text-xs text-gremius-subtle">{stat.label}</p>
-                  <p class="text-sm font-semibold text-gremius-text">{stat.value}</p>
+                  <p class="text-xs text-kitsuden-subtle">{stat.label}</p>
+                  <p class="text-sm font-semibold text-kitsuden-text">{stat.value}</p>
                 </div>
               </div>
             {/each}
           </div>
 
           <!-- Mini Bar Chart -->
-          <div class="bg-gremius-bg border border-gremius-border rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-gremius-text mb-3">Student Distribution</h3>
+          <div class="bg-kitsuden-bg border border-kitsuden-border rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-kitsuden-text mb-3">Student Distribution</h3>
             <div class="space-y-2">
-              {#each [{ label: "Completed", value: s.completados, color: "bg-gremius-green" }, { label: "In Progress", value: s.enProgreso, color: "bg-gremius-amber" }, { label: "Not Started", value: s.noIniciados, color: "bg-gremius-pink" }] as bar}
+              {#each [{ label: "Completed", value: s.completados, color: "bg-kitsuden-green" }, { label: "In Progress", value: s.enProgreso, color: "bg-kitsuden-amber" }, { label: "Not Started", value: s.noIniciados, color: "bg-kitsuden-accent-2" }] as bar}
                 {@const max = Math.max(s.totalAsignados || 1, 1)}
                 <div class="flex items-center gap-3">
-                  <span class="w-20 text-xs text-gremius-subtle text-right">{bar.label}</span>
-                  <div class="flex-1 h-3 bg-gremius-card rounded-full overflow-hidden">
+                  <span class="w-20 text-xs text-kitsuden-subtle text-right">{bar.label}</span>
+                  <div class="flex-1 h-3 bg-kitsuden-card rounded-full overflow-hidden">
                     <div
                       class="h-full {bar.color} rounded-full"
                       style="width: {Math.min(100, ((bar.value || 0) / max) * 100)}%"
                     ></div>
                   </div>
-                  <span class="w-8 text-xs text-gremius-text text-right">{bar.value}</span>
+                  <span class="w-8 text-xs text-kitsuden-text text-right">{bar.value}</span>
                 </div>
               {/each}
             </div>
@@ -1008,10 +1017,10 @@
       onclick={() => (showDeleteModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-xl p-6 w-full max-w-sm shadow-2xl"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-xl p-6 w-full max-w-sm shadow-2xl"
     >
-      <h3 class="text-lg font-bold text-gremius-text mb-2">Delete Course(s)?</h3>
-      <p class="text-sm text-gremius-subtle mb-4">
+      <h3 class="text-lg font-bold text-kitsuden-text mb-2">Delete Course(s)?</h3>
+      <p class="text-sm text-kitsuden-subtle mb-4">
         This will permanently delete {deleteTargetIds.length} course(s). This action cannot be undone.
       </p>
       <div class="flex items-center justify-end gap-2">
@@ -1033,25 +1042,30 @@
       onclick={() => (showAssignModal = false)}
     ></div>
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-xl p-6 w-full max-w-md shadow-2xl"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-xl p-6 w-full max-w-md shadow-2xl"
     >
-      <h3 class="text-lg font-bold text-gremius-text mb-1">
+      <h3 class="text-lg font-bold text-kitsuden-text mb-1">
         Assign {assignCursoIds.length} Course(s)
       </h3>
-      <p class="text-xs text-gremius-subtle mb-4">Enter comma-separated IDs</p>
+      <p class="text-xs text-kitsuden-subtle mb-4">Enter comma-separated IDs</p>
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">User IDs</label>
+          <label for="assignuserids" class="block text-xs text-kitsuden-subtle mb-1">User IDs</label
+          >
           <input
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50"
+            id="assignuserids"
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent/50"
             placeholder="user1, user2..."
             bind:value={assignUserIds}
           />
         </div>
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Group IDs</label>
+          <label for="assigngroupids" class="block text-xs text-kitsuden-subtle mb-1"
+            >Group IDs</label
+          >
           <input
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan/50"
+            id="assigngroupids"
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent/50"
             placeholder="group1, group2..."
             bind:value={assignGroupIds}
           />
@@ -1074,15 +1088,15 @@
 
 <style>
   .card {
-    @apply bg-gremius-card border border-gremius-border rounded-xl;
+    @apply bg-kitsuden-card border border-kitsuden-border rounded-xl;
   }
   .btn-primary {
-    @apply px-4 py-2 bg-gremius-cyan text-black rounded-lg font-medium hover:bg-gremius-cyan-hover transition-colors disabled:opacity-50;
+    @apply px-4 py-2 bg-kitsuden-accent text-black rounded-lg font-medium hover:bg-kitsuden-accent-hover transition-colors disabled:opacity-50;
   }
   .btn-secondary {
-    @apply px-3 py-1.5 bg-gremius-surface border border-gremius-border rounded-lg text-gremius-text hover:border-gremius-cyan/50 transition-colors;
+    @apply px-3 py-1.5 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-kitsuden-text hover:border-kitsuden-accent/50 transition-colors;
   }
   .btn-danger {
-    @apply px-3 py-1.5 bg-gremius-pink/15 text-gremius-pink border border-gremius-pink/30 rounded-lg font-medium hover:bg-gremius-pink/25 transition-colors;
+    @apply px-3 py-1.5 bg-kitsuden-accent-2/15 text-kitsuden-accent-2 border border-kitsuden-accent-2/30 rounded-lg font-medium hover:bg-kitsuden-accent-2/25 transition-colors;
   }
 </style>

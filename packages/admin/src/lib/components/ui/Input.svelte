@@ -8,6 +8,6 @@
 
 <input
   bind:value
-  class="w-full bg-gremius-bg text-gremius-text placeholder-gremius-text-dim border border-gremius-border rounded-lg px-3 py-2 text-sm focus:border-gremius-cyan/50 focus:outline-none {className}"
+  class="w-full bg-kitsuden-bg text-kitsuden-text placeholder-kitsuden-text-dim border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none {className}"
   {...rest}
 />

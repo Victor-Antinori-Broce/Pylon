@@ -1,7 +1,7 @@
-# Gremius CMS - Comprehensive Endpoint Audit Report
+# Kitsuden CMS - Comprehensive Endpoint Audit Report
 
 **Generated:** 2026-03-15  
-**Scope:** Full-stack analysis of API endpoints, views, authentication, grimoires, and sidebar functionality
+**Scope:** Full-stack analysis of API endpoints, views, authentication, kons, and sidebar functionality
 
 ---
 
@@ -12,7 +12,7 @@
 | Authentication     | ✅ HEALTHY       | 1 Minor      | Low        |
 | API Routes         | ⚠️ REVIEW NEEDED | 4 Warnings   | Medium     |
 | Frontend Routes    | ✅ HEALTHY       | 0 Issues     | None       |
-| Grimoire System    | ⚠️ REVIEW NEEDED | 3 Warnings   | Medium     |
+| Kon System         | ⚠️ REVIEW NEEDED | 3 Warnings   | Medium     |
 | Sidebar/Navigation | ✅ HEALTHY       | 0 Issues     | None       |
 | Data Explorer      | ✅ HEALTHY       | 0 Issues     | None       |
 
@@ -84,12 +84,12 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 ### Admin Registry Routes ✅
 
-| Endpoint                                        | Status | Purpose                       |
-| ----------------------------------------------- | ------ | ----------------------------- |
-| `/api/admin/registry`                           | ✅ OK  | List all grimoires            |
-| `/api/admin/registry/:grimoireId`               | ✅ OK  | Get specific grimoire         |
-| `/api/admin/registry/refresh`                   | ✅ OK  | Clear cache & rebuild         |
-| `/api/admin/registry/:grimoireId/schema/:table` | ⚠️     | Returns redirect message only |
+| Endpoint                                   | Status | Purpose                       |
+| ------------------------------------------ | ------ | ----------------------------- |
+| `/api/admin/registry`                      | ✅ OK  | List all kons                 |
+| `/api/admin/registry/:konId`               | ✅ OK  | Get specific kon              |
+| `/api/admin/registry/refresh`              | ✅ OK  | Clear cache & rebuild         |
+| `/api/admin/registry/:konId/schema/:table` | ⚠️     | Returns redirect message only |
 
 ### Module Management Routes ✅
 
@@ -136,43 +136,43 @@ app.route("/api/streamers", streamersRoutes);
 
 ### SvelteKit Routes (All Present and Valid)
 
-| Route                   | Component              | Status | Notes                   |
-| ----------------------- | ---------------------- | ------ | ----------------------- |
-| `/`                     | `+page.svelte`         | ✅ OK  | Dashboard redirect      |
-| `/dashboard`            | `Dashboard.svelte`     | ✅ OK  | Main dashboard          |
-| `/g/:id`                | `GrimoirePage.svelte`  | ✅ OK  | Dynamic grimoire loader |
-| `/datasets`             | `DataSets.svelte`      | ✅ OK  | Dataset management      |
-| `/datasets/new`         | `+page.svelte`         | ✅ OK  | Create dataset          |
-| `/datasets/:id/entries` | `+page.svelte`         | ✅ OK  | View entries            |
-| `/posts`                | `PostsView.svelte`     | ✅ OK  | Blog posts              |
-| `/posts/new`            | `+page.svelte`         | ✅ OK  | New post                |
-| `/posts/:id`            | `+page.svelte`         | ✅ OK  | Edit post               |
-| `/media`                | `Media.svelte`         | ✅ OK  | Media library           |
-| `/settings`             | `Settings.svelte`      | ✅ OK  | Site settings           |
-| `/grimoires`            | `Grimoires.svelte`     | ✅ OK  | Module toggle UI        |
-| `/realms`               | `RealmsView.svelte`    | ✅ OK  | Realm management        |
-| `/webhooks`             | `WebhooksView.svelte`  | ✅ OK  | Webhook management      |
-| `/workers`              | `WorkersView.svelte`   | ✅ OK  | Workers view            |
-| `/mcp`                  | `+page.svelte`         | ✅ OK  | MCP capabilities        |
-| `/builder`              | `+page.svelte`         | ✅ OK  | Page builder            |
-| `/formulas`             | `FormulasView.svelte`  | ✅ OK  | KPIs/Formulas           |
-| `/games`                | `GamesView.svelte`     | ✅ OK  | Games management        |
-| `/streamers`            | `StreamersView.svelte` | ✅ OK  | Streamers view          |
-| `/platforms`            | `+page.svelte`         | ✅ OK  | Platforms view          |
-| `/tags`                 | `+page.svelte`         | ✅ OK  | Tags view               |
-| `/teams`                | `+page.svelte`         | ✅ OK  | Teams view              |
-| `/players`              | `+page.svelte`         | ✅ OK  | Players view            |
-| `/matches`              | `+page.svelte`         | ✅ OK  | Matches view            |
-| `/tournaments`          | `+page.svelte`         | ✅ OK  | Tournaments view        |
-| `/academy`              | `AcademyView.svelte`   | ✅ OK  | Academy LMS             |
-| `/booking`              | `+page.svelte`         | ✅ OK  | Booking system          |
-| `/directory`            | `+page.svelte`         | ✅ OK  | Directory               |
-| `/dms`                  | `+page.svelte`         | ✅ OK  | Documents               |
-| `/gremius-crm`          | `+page.svelte`         | ✅ OK  | CRM                     |
-| `/promote`              | `+page.svelte`         | ✅ OK  | Promote                 |
-| `/collections`          | `+page.svelte`         | ✅ OK  | Collections             |
-| `/data/games`           | `+page.svelte`         | ✅ OK  | Data explorer           |
-| `/editor`               | `EditorView.svelte`    | ✅ OK  | Content editor          |
+| Route                   | Component              | Status | Notes               |
+| ----------------------- | ---------------------- | ------ | ------------------- |
+| `/`                     | `+page.svelte`         | ✅ OK  | Dashboard redirect  |
+| `/dashboard`            | `Dashboard.svelte`     | ✅ OK  | Main dashboard      |
+| `/g/:id`                | `KonPage.svelte`       | ✅ OK  | Dynamic kon loader  |
+| `/datasets`             | `DataSets.svelte`      | ✅ OK  | Dataset management  |
+| `/datasets/new`         | `+page.svelte`         | ✅ OK  | Create dataset      |
+| `/datasets/:id/entries` | `+page.svelte`         | ✅ OK  | View entries        |
+| `/posts`                | `PostsView.svelte`     | ✅ OK  | Blog posts          |
+| `/posts/new`            | `+page.svelte`         | ✅ OK  | New post            |
+| `/posts/:id`            | `+page.svelte`         | ✅ OK  | Edit post           |
+| `/media`                | `Media.svelte`         | ✅ OK  | Media library       |
+| `/settings`             | `Settings.svelte`      | ✅ OK  | Site settings       |
+| `/kons`                 | `Kons.svelte`          | ✅ OK  | Module toggle UI    |
+| `/grimoires`            | `GrimoiresView.svelte` | ✅ OK  | Grimoire management |
+| `/webhooks`             | `WebhooksView.svelte`  | ✅ OK  | Webhook management  |
+| `/workers`              | `WorkersView.svelte`   | ✅ OK  | Workers view        |
+| `/mcp`                  | `+page.svelte`         | ✅ OK  | MCP capabilities    |
+| `/builder`              | `+page.svelte`         | ✅ OK  | Page builder        |
+| `/formulas`             | `FormulasView.svelte`  | ✅ OK  | KPIs/Formulas       |
+| `/games`                | `GamesView.svelte`     | ✅ OK  | Games management    |
+| `/streamers`            | `StreamersView.svelte` | ✅ OK  | Streamers view      |
+| `/platforms`            | `+page.svelte`         | ✅ OK  | Platforms view      |
+| `/tags`                 | `+page.svelte`         | ✅ OK  | Tags view           |
+| `/teams`                | `+page.svelte`         | ✅ OK  | Teams view          |
+| `/players`              | `+page.svelte`         | ✅ OK  | Players view        |
+| `/matches`              | `+page.svelte`         | ✅ OK  | Matches view        |
+| `/tournaments`          | `+page.svelte`         | ✅ OK  | Tournaments view    |
+| `/academy`              | `AcademyView.svelte`   | ✅ OK  | Academy LMS         |
+| `/booking`              | `+page.svelte`         | ✅ OK  | Booking system      |
+| `/directory`            | `+page.svelte`         | ✅ OK  | Directory           |
+| `/dms`                  | `+page.svelte`         | ✅ OK  | Documents           |
+| `/kitsuden-crm`         | `+page.svelte`         | ✅ OK  | CRM                 |
+| `/promote`              | `+page.svelte`         | ✅ OK  | Promote             |
+| `/collections`          | `+page.svelte`         | ✅ OK  | Collections         |
+| `/data/games`           | `+page.svelte`         | ✅ OK  | Data explorer       |
+| `/editor`               | `EditorView.svelte`    | ✅ OK  | Content editor      |
 
 ### ⚠️ Issue #3: Missing Data Set Entry Routes (MEDIUM RISK)
 
@@ -184,9 +184,9 @@ The entries routes use `withTransactionalRLS()` middleware but the CRUD operatio
 
 ---
 
-## 4. Grimoire System Analysis
+## 4. Kon System Analysis
 
-### Grimoire Loading (Modern + Legacy Support) ✅
+### Kon Loading (Modern + Legacy Support) ✅
 
 **Location:** `apps/api/src/lib/module-loader.ts`
 
@@ -199,15 +199,15 @@ The entries routes use `withTransactionalRLS()` middleware but the CRUD operatio
 ### Resolution Strategy (6 Strategies) ✅
 
 1. Core modules (`packages/core/{name}/`)
-2. Mapped directory (`packages/grimoires/{dir}/`)
-3. `grimoire-` prefix (`packages/grimoires/grimoire-{name}/`)
-4. Exact name (`packages/grimoires/{name}/`)
+2. Mapped directory (`packages/kons/{dir}/`)
+3. `kon-` prefix (`packages/kons/kon-{name}/`)
+4. Exact name (`packages/kons/{name}/`)
 5. Legacy modules (`src/modules/{name}/`)
-6. Legacy realm (`packages/realms/{realm}/grimoires/{name}/`)
+6. Legacy grimoire (`packages/grimoires/{grimoire}/kons/{name}/`)
 
-### Grimoire View Registry ✅
+### Kon View Registry ✅
 
-**Location:** `packages/admin/src/lib/grimoire-loader.ts` (lines 20-36)
+**Location:** `packages/admin/src/lib/kon-loader.ts` (lines 20-36)
 
 Custom views properly mapped:
 
@@ -220,15 +220,15 @@ Custom views properly mapped:
 - `blog` → `PostsView.svelte`
 - `streamers` → `StreamersView.svelte`
 
-### ⚠️ Issue #4: Grimoire Auto-Detection May Fail (LOW RISK)
+### ⚠️ Issue #4: Kon Auto-Detection May Fail (LOW RISK)
 
-**Location:** `packages/admin/src/lib/grimoire-loader.ts` (lines 165-184)
+**Location:** `packages/admin/src/lib/kon-loader.ts` (lines 165-184)
 
 The `autoDetectView()` function uses `import.meta.glob` with eager loading that may not catch all view variations.
 
 **Potential Problem:** Views following non-standard naming conventions won't be auto-detected.
 
-**Fix:** Ensure all custom views are registered in `GRIMOIRE_VIEW_REGISTRY`.
+**Fix:** Ensure all custom views are registered in `KON_VIEW_REGISTRY`.
 
 ---
 
@@ -238,13 +238,13 @@ The `autoDetectView()` function uses `import.meta.glob` with eager loading that 
 
 **Location:** `packages/admin/src/lib/components/layout/SidebarLayout.svelte`
 
-| Section        | Items                                               | Status                      |
-| -------------- | --------------------------------------------------- | --------------------------- |
-| Core           | Dashboard, Data Sets, Media Library                 | ✅ OK                       |
-| Core Grimoires | Page Builder, KPIs                                  | ✅ Conditional on moduleKey |
-| Optional       | Academy, Documents, Booking, etc.                   | ✅ Conditional on moduleKey |
-| Realm Esports  | Games, Streamers, Platforms, etc.                   | ✅ Conditional on moduleKey |
-| System         | Grimoires, Realms, Webhooks, Workers, MCP, Settings | ✅ OK                       |
+| Section          | Items                                             | Status                      |
+| ---------------- | ------------------------------------------------- | --------------------------- |
+| Core             | Dashboard, Data Sets, Media Library               | ✅ OK                       |
+| Core Kons        | Page Builder, KPIs                                | ✅ Conditional on moduleKey |
+| Optional         | Academy, Documents, Booking, etc.                 | ✅ Conditional on moduleKey |
+| Grimoire Esports | Games, Streamers, Platforms, etc.                 | ✅ Conditional on moduleKey |
+| System           | Kons, Grimoires, Webhooks, Workers, MCP, Settings | ✅ OK                       |
 
 ### Dynamic Filesystem Nav Items ✅
 
@@ -254,7 +254,7 @@ $derived(
   moduleStore.modules
     .filter((m) => m.source === "filesystem" && moduleStore.enabledKeys.has(m.key))
     .map((m) => ({
-      path: `/g/${m.key}`, // Routes to dynamic grimoire loader
+      path: `/g/${m.key}`, // Routes to dynamic kon loader
       label: m.name || m.key,
       icon: PackageOpen,
       moduleKey: m.key,
@@ -273,14 +273,14 @@ $derived(
 
 ---
 
-## 6. Data Explorer & Grimoire Page Analysis ✅
+## 6. Data Explorer & Kon Page Analysis ✅
 
-### GrimoirePage Component Flow
+### KonPage Component Flow
 
-**Location:** `packages/admin/src/lib/components/admin/GrimoirePage.svelte`
+**Location:** `packages/admin/src/lib/components/admin/KonPage.svelte`
 
 1. Check for custom view (`hasCustomView()`)
-2. Fetch config from `/api/admin/registry/:grimoireId`
+2. Fetch config from `/api/admin/registry/:konId`
 3. Load custom view if available (`loadCustomView()`)
 4. Generate DataExplorer config from registry
 5. Fallback to default config
@@ -360,10 +360,10 @@ Check `packages/core/data-sets/index.ts` to ensure full CRUD for dataset entries
 Before deploying, verify:
 
 - [ ] `VITE_API_URL` environment variable is set correctly
-- [ ] All grimoires have corresponding API routes
+- [ ] All kons have corresponding API routes
 - [ ] Platform/Tag/Streamer routes are mounted
 - [ ] Dataset entries endpoints work (POST, PATCH, DELETE)
-- [ ] Custom views are registered in `GRIMOIRE_VIEW_REGISTRY`
+- [ ] Custom views are registered in `KON_VIEW_REGISTRY`
 - [ ] OAuth providers are configured (if needed)
 - [ ] Database migrations are run
 
@@ -386,7 +386,7 @@ GET  /api/auth/* (Better-Auth handles its own)
 ```
 # Admin Registry
 GET  /api/admin/registry
-GET  /api/admin/registry/:grimoireId
+GET  /api/admin/registry/:konId
 POST /api/admin/registry/refresh
 
 # Modules
@@ -458,13 +458,13 @@ GET  /api/doc
 GET  /api/swagger
 ```
 
-### Dynamic Grimoire Endpoints (Loaded at Runtime)
+### Dynamic Kon Endpoints (Loaded at Runtime)
 
 ```
 /api/webhooks/*
 /api/connectors/*
-/api/custom/:grimoireName/*
-/api/:realmGrimoireName/*
+/api/custom/:konName/*
+/api/:grimoireKonName/*
 ```
 
 ---
@@ -473,10 +473,10 @@ GET  /api/swagger
 
 **Overall System Health: GOOD**
 
-The Gremius CMS has a well-architected endpoint structure with:
+The Kitsuden CMS has a well-architected endpoint structure with:
 
 - ✅ Comprehensive authentication via Better-Auth
-- ✅ Flexible grimoire loading (modern + legacy)
+- ✅ Flexible kon loading (modern + legacy)
 - ✅ Dynamic module management
 - ✅ Proper error handling and fallbacks
 - ✅ Good separation of concerns

@@ -1,13 +1,13 @@
-# @gremius/shared
+# @kitsuden/shared
 
-Shared types, schemas, and utilities for GremiusCMS.
+Shared types, schemas, and utilities for Kitsuden.
 
 ## Installation
 
 ```bash
-npm install @gremius/shared
+npm install @kitsuden/shared
 # or
-bun add @gremius/shared
+bun add @kitsuden/shared
 ```
 
 ## Usage
@@ -15,13 +15,13 @@ bun add @gremius/shared
 ### Types
 
 ```typescript
-import type { DataSet, DataEntry, Game, BlogPost, SiteSettings } from "@gremius/shared/types";
+import type { DataSet, DataEntry, Game, BlogPost, SiteSettings } from "@kitsuden/shared/types";
 ```
 
 ### Schemas (Zod)
 
 ```typescript
-import { DatasetDefinitionSchema, validateDatasetDefinition } from "@gremius/shared/schemas";
+import { DatasetDefinitionSchema, validateDatasetDefinition } from "@kitsuden/shared/schemas";
 
 // Validate data
 const result = validateDatasetDefinition(data);
@@ -35,7 +35,7 @@ if (result.success) {
 ### Utilities
 
 ```typescript
-import { formatDate, truncate, buildCmsUrl, gameJsonLd } from "@gremius/shared/utils";
+import { formatDate, truncate, buildCmsUrl, gameJsonLd } from "@kitsuden/shared/utils";
 
 const formatted = formatDate(new Date());
 const excerpt = truncate(longText, 100);
@@ -45,19 +45,19 @@ const structuredData = gameJsonLd(game);
 ### Constants
 
 ```typescript
-import { SITE_CONFIG, BREAKPOINTS, NEON_COLORS } from "@gremius/shared/constants";
+import { SITE_CONFIG, BREAKPOINTS, NEON_COLORS } from "@kitsuden/shared/constants";
 ```
 
 ## Exports
 
-| Export Path                 | Description          |
-| --------------------------- | -------------------- |
-| `@gremius/shared`           | All exports combined |
-| `@gremius/shared/types`     | TypeScript types     |
-| `@gremius/shared/schemas`   | Zod schemas          |
-| `@gremius/shared/utils`     | Utility functions    |
-| `@gremius/shared/constants` | Constants            |
+| Export Path                  | Description          |
+| ---------------------------- | -------------------- |
+| `@kitsuden/shared`           | All exports combined |
+| `@kitsuden/shared/types`     | TypeScript types     |
+| `@kitsuden/shared/schemas`   | Zod schemas          |
+| `@kitsuden/shared/utils`     | Utility functions    |
+| `@kitsuden/shared/constants` | Constants            |
 
 ## License
 
-MIT © GremiusCMS Contributors
+MIT © Kitsuden Contributors

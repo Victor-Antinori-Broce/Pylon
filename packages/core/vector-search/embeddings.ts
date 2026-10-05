@@ -1,7 +1,7 @@
 /**
  * Embedding Service — OpenAI integration for vector generation
  *
- * Extracted from AI Memories grimoire
+ * Extracted from AI Memories kon
  */
 
 // @ts-ignore - openai may not be installed

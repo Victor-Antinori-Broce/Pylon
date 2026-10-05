@@ -26,13 +26,13 @@ describe("Admin Registry HTTP API", () => {
 
         const data = (await res.json()) as {
           success: boolean;
-          grimoires: any[];
+          kons: any[];
           total: number;
           withCustomViews: number;
           generatedAt: string;
         };
         expect(data.success).toBe(true);
-        expect(Array.isArray(data.grimoires)).toBe(true);
+        expect(Array.isArray(data.kons)).toBe(true);
         expect(typeof data.total).toBe("number");
         expect(typeof data.withCustomViews).toBe("number");
         expect(data.generatedAt).toBeDefined();
@@ -42,10 +42,10 @@ describe("Admin Registry HTTP API", () => {
     });
   });
 
-  describe("GET /api/admin/registry/:grimoireId", () => {
-    it("should return specific grimoire config", async () => {
+  describe("GET /api/admin/registry/:konId", () => {
+    it("should return specific kon config", async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/registry/grimoire-games`, {
+        const res = await fetch(`${API_URL}/api/admin/registry/kon-games`, {
           headers: { "Content-Type": "application/json" },
         });
 
@@ -54,19 +54,19 @@ describe("Admin Registry HTTP API", () => {
           return;
         }
 
-        // If grimoire exists
+        // If kon exists
         if (res.status === 200) {
-          const data = (await res.json()) as { success: boolean; grimoire: { id: string } };
+          const data = (await res.json()) as { success: boolean; kon: { id: string } };
           expect(data.success).toBe(true);
-          expect(data.grimoire).toBeDefined();
-          expect(data.grimoire.id).toBe("grimoire-games");
+          expect(data.kon).toBeDefined();
+          expect(data.kon.id).toBe("kon-games");
         }
       } catch (e) {
         console.log("⚠️  Server not running, skipping HTTP test");
       }
     });
 
-    it("should return 404 for non-existent grimoire", async () => {
+    it("should return 404 for non-existent kon", async () => {
       try {
         const res = await fetch(`${API_URL}/api/admin/registry/non-existent`, {
           headers: { "Content-Type": "application/json" },
@@ -103,10 +103,10 @@ describe("Admin Registry HTTP API", () => {
 
         expect(res.status).toBe(200);
 
-        const data = (await res.json()) as { success: boolean; message: string; grimoires: any[] };
+        const data = (await res.json()) as { success: boolean; message: string; kons: any[] };
         expect(data.success).toBe(true);
         expect(data.message).toContain("refreshed");
-        expect(Array.isArray(data.grimoires)).toBe(true);
+        expect(Array.isArray(data.kons)).toBe(true);
       } catch (e) {
         console.log("⚠️  Server not running, skipping HTTP test");
       }

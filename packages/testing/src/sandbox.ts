@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import type { GrimoireDefinition } from "@gremius/shared";
+import type { KonDefinition } from "@kitsuden/shared";
 
 import { createTestAssertions } from "./assertions.js";
 import { createTestContext } from "./context.js";
@@ -12,17 +12,17 @@ import { createTestDatabase } from "./database.js";
 import { createTestEvents } from "./events.js";
 import { loadFixtures } from "./fixtures.js";
 import { createTestHttpClient } from "./http.js";
-import type { SandboxConfig, TestSandbox, TestGrimoire, TestGrimoireContext } from "./types.js";
+import type { SandboxConfig, TestSandbox, TestKon, TestKonContext } from "./types.js";
 
 let sandboxCounter = 0;
 
 /**
- * Create a test sandbox for grimoire testing
+ * Create a test sandbox for kon testing
  *
  * Usage:
  * ```typescript
  * const sandbox = createTestSandbox({
- *   grimoires: ["grimoire-blog"],
+ *   kons: ["kon-blog"],
  *   fixtures: "blog-seed"
  * });
  *
@@ -43,18 +43,18 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
   // Database helpers
   const db = createTestDatabase(context);
 
-  // Load grimoires
-  const grimoires: Record<string, TestGrimoire> = {};
+  // Load kons
+  const kons: Record<string, TestKon> = {};
 
-  for (const grimoireId of config.grimoires) {
-    const grimoire = await loadGrimoire(grimoireId, context, events);
-    if (grimoire) {
-      grimoires[grimoireId] = grimoire;
+  for (const konId of config.kons) {
+    const kon = await loadKon(konId, context, events);
+    if (kon) {
+      kons[konId] = kon;
     }
   }
 
   // HTTP client
-  const http = createTestHttpClient(grimoires, context);
+  const http = createTestHttpClient(kons, context);
 
   // Assertions
   const assert = createTestAssertions(db, events);
@@ -63,7 +63,7 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
   const sandbox: TestSandbox = {
     id: sandboxId,
     context,
-    grimoires,
+    kons,
     fixtures: {},
     http,
     db,
@@ -76,19 +76,19 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
         sandbox.fixtures = await loadFixtures(config.fixtures, context);
       }
 
-      // Call grimoire onStartup hooks
-      for (const grimoire of Object.values(grimoires)) {
-        if (grimoire.definition.hooks?.onStartup) {
-          await grimoire.definition.hooks.onStartup(context);
+      // Call kon onStartup hooks
+      for (const kon of Object.values(kons)) {
+        if (kon.definition.hooks?.onStartup) {
+          await kon.definition.hooks.onStartup(context);
         }
       }
     },
 
     teardown: async () => {
-      // Call grimoire onDisable hooks
-      for (const grimoire of Object.values(grimoires)) {
-        if (grimoire.definition.hooks?.onDisable) {
-          await grimoire.definition.hooks.onDisable(context);
+      // Call kon onDisable hooks
+      for (const kon of Object.values(kons)) {
+        if (kon.definition.hooks?.onDisable) {
+          await kon.definition.hooks.onDisable(context);
         }
       }
 
@@ -101,7 +101,7 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
       events.clear();
 
       // Truncate data but keep schema
-      const tables = Object.values(grimoires).flatMap((g) => g.definition.tables || []);
+      const tables = Object.values(kons).flatMap((g) => g.definition.tables || []);
 
       if (tables.length > 0) {
         await db.truncate(...tables);
@@ -118,21 +118,21 @@ export async function createTestSandbox(config: SandboxConfig): Promise<TestSand
 }
 
 /**
- * Load a grimoire for testing
+ * Load a kon for testing
  */
-async function loadGrimoire(
-  grimoireId: string,
-  context: TestGrimoireContext,
+async function loadKon(
+  konId: string,
+  context: TestKonContext,
   events: ReturnType<typeof createTestEvents>
-): Promise<TestGrimoire | null> {
+): Promise<TestKon | null> {
   try {
-    // Try to load from packages/grimoires/
-    const path = `../../../packages/grimoires/${grimoireId}/index.ts`;
+    // Try to load from packages/kons/
+    const path = `../../../packages/kons/${konId}/index.ts`;
     const module = await import(path);
-    const definition: GrimoireDefinition = module.grimoire || module.default;
+    const definition: KonDefinition = module.kon || module.default;
 
     if (!definition) {
-      console.warn(`Grimoire ${grimoireId} not found or missing export`);
+      console.warn(`Kon ${konId} not found or missing export`);
       return null;
     }
 
@@ -146,7 +146,7 @@ async function loadGrimoire(
           return (context as any).events.emit(name, data);
         },
       },
-    } as TestGrimoireContext;
+    } as TestKonContext;
 
     // Create router
     const router = definition.createRouter(contextWithEventTracking);
@@ -154,7 +154,7 @@ async function loadGrimoire(
     // Invoke helper for direct function access
     const invoke = async <T>(method: string, ..._args: any[]): Promise<T> => {
       // This is a placeholder - in a real implementation,
-      // you'd expose internal grimoire functions
+      // you'd expose internal kon functions
       throw new Error(`Direct method invocation not implemented for ${method}`);
     };
 
@@ -164,7 +164,7 @@ async function loadGrimoire(
       invoke,
     };
   } catch (error) {
-    console.warn(`Failed to load grimoire ${grimoireId}:`, error);
+    console.warn(`Failed to load kon ${konId}:`, error);
     return null;
   }
 }

@@ -14,7 +14,7 @@ const db = {
 };
 
 function resetDB() {
-  db.modules = [{ key: "grimoire-games", name: "Games Catalog", enabled: true, realmId: null }];
+  db.modules = [{ key: "kon-games", name: "Games Catalog", enabled: true, grimoireId: null }];
   db.tables = {
     games: [
       { id: 1, title: "Zelda" },
@@ -36,14 +36,14 @@ function printState(label: string) {
 // Test 1: Uninstall
 test1_uninstall();
 function test1_uninstall() {
-  console.log("\n📋 TEST 1: Uninstall Grimoire");
+  console.log("\n📋 TEST 1: Uninstall Kon");
   console.log("─".repeat(80));
 
   resetDB();
   printState("Initial state");
 
-  // Simular POST /api/modules/grimoire-games/uninstall
-  const key = "grimoire-games";
+  // Simular POST /api/modules/kon-games/uninstall
+  const key = "kon-games";
   const existing = db.modules.find((m) => m.key === key);
 
   if (existing) {
@@ -67,9 +67,9 @@ function test2_listUninstalled() {
 
   // Estado actual: desinstalado pero con datos
   const installedKeys = new Set(db.modules.map((m) => m.key));
-  const availableGrimoires = [{ id: "grimoire-games", name: "Games Catalog" }];
+  const availableKons = [{ id: "kon-games", name: "Games Catalog" }];
 
-  const uninstalled = availableGrimoires.filter((g) => !installedKeys.has(g.id));
+  const uninstalled = availableKons.filter((g) => !installedKeys.has(g.id));
 
   // Verificar cuáles tienen datos
   const withData = uninstalled.map((g) => {
@@ -83,7 +83,7 @@ function test2_listUninstalled() {
     };
   });
 
-  console.log("Uninstalled grimoires with preserved data:");
+  console.log("Uninstalled kons with preserved data:");
   withData.forEach((g) => {
     console.log(`  - ${g.name}: ${g.data.totalRows} rows in ${g.data.tables.length} tables`);
     g.data.tables.forEach((t) => console.log(`      • ${t.name}: ${t.rowCount} rows`));
@@ -95,13 +95,13 @@ function test2_listUninstalled() {
 // Test 3: Recover
 test3_recover();
 function test3_recover() {
-  console.log("\n\n📋 TEST 3: Recover Grimoire");
+  console.log("\n\n📋 TEST 3: Recover Kon");
   console.log("─".repeat(80));
 
   printState("Before recover");
 
-  // Simular POST /api/modules/grimoire-games/recover
-  const key = "grimoire-games";
+  // Simular POST /api/modules/kon-games/recover
+  const key = "kon-games";
   const existing = db.modules.find((m) => m.key === key);
 
   if (!existing) {
@@ -109,7 +109,7 @@ function test3_recover() {
       key,
       name: "Games Catalog",
       enabled: true,
-      realmId: null,
+      grimoireId: null,
     });
 
     console.log(`\n✅ Recovered: ${key}`);
@@ -128,12 +128,12 @@ function test4_deletePermanent() {
   console.log("─".repeat(80));
 
   // Primero desinstalar de nuevo
-  const key = "grimoire-games";
+  const key = "kon-games";
   db.modules = db.modules.filter((m) => m.key !== key);
 
   printState("Uninstalled state (before purge)");
 
-  // Simular DELETE /api/modules/grimoire-games?purge=true&force=true
+  // Simular DELETE /api/modules/kon-games?purge=true&force=true
   const tablesDropped: string[] = [];
 
   for (const tableName of Object.keys(db.tables)) {
@@ -159,12 +159,12 @@ function test5_errorDirectDelete() {
   resetDB();
   printState("Initial (installed)");
 
-  const key = "grimoire-games";
+  const key = "kon-games";
   const existing = db.modules.find((m) => m.key === key);
 
   if (existing) {
-    console.log(`\n❌ Error 409: Cannot delete installed grimoire`);
-    console.log(`  Message: Grimoire ${key} is still installed.`);
+    console.log(`\n❌ Error 409: Cannot delete installed kon`);
+    console.log(`  Message: Kon ${key} is still installed.`);
     console.log(`  Action: Use POST /api/modules/${key}/uninstall first`);
   }
 

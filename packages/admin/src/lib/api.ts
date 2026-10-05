@@ -64,7 +64,34 @@ interface BlogPost {
     robotsIndex?: boolean;
     robotsFollow?: boolean;
     structuredData?: any;
+    /** Grupos que anuncia esta entrada; null = el de la web */
+    facebookGroupUrl?: string | null;
+    whatsappGroupUrl?: string | null;
   };
+
+  /** ¿Está abierto el hilo? Ausente en posts anteriores a la columna: eso es abierto. */
+  commentsEnabled?: boolean;
+
+  /** Plantilla con la que se pinta. Ausente en posts anteriores: eso es `article`. */
+  layout?: "article" | "tips";
+
+  /**
+   * De dónde cuelga el hilo, ya resuelto por la API.
+   *
+   * Viaja aquí para que quien pinte el post no componga la cadena por su
+   * cuenta: `post`, `blog_post` y `blogpost` abrirían tres hilos distintos
+   * sobre el mismo artículo sin dar ningún error.
+   */
+  comments?: {
+    subjectType: string;
+    subjectId: string;
+    /** Ruta ya montada del hilo. */
+    endpoint: string;
+    enabled: boolean;
+    /** `null` = kon-comments no está instalado (distinto de «no hay ninguno»). */
+    count: number | null;
+  };
+
   createdAt: string;
   updatedAt: string;
 }
@@ -137,22 +164,44 @@ interface AuthResponse {
 // In development: VITE_API_URL is "http://localhost:3001" (set in packages/admin/.env)
 const API = import.meta.env.VITE_API_URL ?? "";
 
+/**
+ * Error de la API con el codigo HTTP y el cuerpo intactos.
+ *
+ * `message` sigue siendo la cadena de siempre; `status` y `cuerpo` son lo que
+ * permite reaccionar distinto a un 409 que a un 500.
+ */
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  parentId?: string | null;
+  displayOrder: number;
+  /** Cuantos posts cuelgan de ella. Lo calcula la API para no hacer N consultas. */
+  postCount?: number;
+}
+
+export interface ApiError extends Error {
+  status?: number;
+  cuerpo?: Record<string, unknown>;
+}
+
 class ApiClient {
   private token: string | null = null;
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem("gremius_token", token);
+    localStorage.setItem("kitsuden_token", token);
   }
 
   getToken(): string | null {
-    if (!this.token) this.token = localStorage.getItem("gremius_token");
+    if (!this.token) this.token = localStorage.getItem("kitsuden_token");
     return this.token;
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem("gremius_token");
+    localStorage.removeItem("kitsuden_token");
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -167,11 +216,40 @@ class ApiClient {
     const token = this.getToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${API}/api${path}`, { ...options, headers, credentials: "include" });
+    // El prefijo `/api` lo pone este cliente, pero MEDIA parte del admin pasa
+    // rutas que ya lo llevan: el explorador construye `/api/blog`,
+    // `/api/explorer/games`... y la configuracion de cada kon tambien lo
+    // incluye. El resultado era `/api/api/blog`, un 404 que en la interfaz se
+    // veia como «Failed to Load» sin mas pista.
+    //
+    // Se normaliza aqui, en el unico punto por el que pasan todas las
+    // peticiones, en vez de repasar cada llamante: son decenas, unos con
+    // prefijo y otros sin el, y varios leen la ruta de datos —los manifiestos
+    // de los kons— donde un typecheck no llega.
+    const ruta = path.startsWith("/api/") || path === "/api" ? path : `/api${path}`;
+
+    const res = await fetch(`${API}${ruta}`, { ...options, headers, credentials: "include" });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || err.detail || `HTTP ${res.status}`);
+
+      /**
+       * El codigo y el cuerpo viajan con el error.
+       *
+       * Antes solo sobrevivia `err.error`, asi que quien llamaba no podia
+       * distinguir un 404 de un 409 ni leer el `message` explicativo que la API
+       * si envia. Y hay respuestas donde esa diferencia es TODO el contenido:
+       * un 409 de edicion simultanea trae la marca de la version actual y una
+       * explicacion de que no se ha escrito nada — reducirlo a una cadena
+       * convierte «otra persona guardo antes que tu» en «error».
+       *
+       * `message` se deja intacto para no romper a los decenas de llamantes que
+       * hacen `err.message`.
+       */
+      const fallo = new Error(err.error || err.detail || `HTTP ${res.status}`) as ApiError;
+      fallo.status = res.status;
+      fallo.cuerpo = err;
+      throw fallo;
     }
 
     return res.json();
@@ -287,6 +365,31 @@ class ApiClient {
   }
   deletePost(id: string) {
     return this.request<{ deleted: boolean }>(`/blog/${id}`, { method: "DELETE" });
+  }
+
+  // ── Categorias del blog ──
+  //
+  // La taxonomia jerarquica del blog. Las ETIQUETAS son otra cosa y viven en
+  // `/tags`, que es de kon-games: planas y de vocabulario abierto.
+  getBlogCategories() {
+    return this.request<{ docs: BlogCategory[]; total: number }>("/blog/categories");
+  }
+  createBlogCategory(data: Partial<BlogCategory>) {
+    return this.request<BlogCategory>("/blog/categories", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+  updateBlogCategory(id: string, data: Partial<BlogCategory>) {
+    return this.request<BlogCategory>(`/blog/categories/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+  deleteBlogCategory(id: string) {
+    return this.request<{ success: boolean; id: string }>(`/blog/categories/${id}`, {
+      method: "DELETE",
+    });
   }
 
   // ── Academy LMS ──
@@ -568,17 +671,24 @@ class ApiClient {
   }
 
   // ── Platforms / Tags ──
+  // Son de kon-games y cuelgan de `/api/games/…`. Estaban en `/api/platforms` y
+  // `/api/tags`, que no existen: el editor de entradas pedía las etiquetas, se
+  // llevaba un 404 que solo salía en la consola, y crear una fallaba igual.
+  // Resultado: ninguna entrada del blog tenía etiquetas.
   getPlatforms() {
-    return this.request<PaginatedResponse<Platform>>("/platforms");
+    return this.request<PaginatedResponse<Platform>>("/games/platforms");
   }
   createPlatform(data: Partial<Platform>) {
-    return this.request<Platform>("/platforms", { method: "POST", body: JSON.stringify(data) });
+    return this.request<Platform>("/games/platforms", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
   getTags() {
-    return this.request<PaginatedResponse<Tag>>("/tags");
+    return this.request<PaginatedResponse<Tag>>("/games/tags");
   }
   createTag(data: Partial<Tag>) {
-    return this.request<Tag>("/tags", { method: "POST", body: JSON.stringify(data) });
+    return this.request<Tag>("/games/tags", { method: "POST", body: JSON.stringify(data) });
   }
 
   // ── Streamers ──
@@ -614,18 +724,75 @@ class ApiClient {
   }
 
   // ── Media ──
-  getMedia(params?: { limit?: number; page?: number }) {
+  /**
+   * ── DOS COSAS QUE ESTABAN ROTAS EN SILENCIO ──────────────────────────────
+   *
+   * 1. Se mandaba `page`. El endpoint lee `offset` y nada más
+   *    (`Number(c.req.query("offset")) || 0`), así que TODA petición devolvía
+   *    la primera página. No fallaba: devolvía 200 con los mismos resultados
+   *    una y otra vez, que es la forma más difícil de darse cuenta.
+   *
+   * 2. `search` y `type` existen en el endpoint desde siempre —filtra por
+   *    nombre de fichero y por imagen/vídeo/documento— y este cliente no los
+   *    mandaba nunca. La biblioteca completa sin forma de filtrarla.
+   *
+   * `page` se sigue aceptando y se traduce, para no romper a quien lo use.
+   */
+  getMedia(params?: {
+    limit?: number;
+    page?: number;
+    offset?: number;
+    search?: string;
+    type?: "image" | "video" | "document";
+  }) {
     const q = new URLSearchParams();
-    if (params?.limit) q.set("limit", String(params.limit));
-    if (params?.page) q.set("page", String(params.page));
+    const limit = params?.limit ?? 50;
+    q.set("limit", String(limit));
+
+    const offset = params?.offset ?? (params?.page ? (params.page - 1) * limit : 0);
+    if (offset > 0) q.set("offset", String(offset));
+
+    if (params?.search) q.set("search", params.search);
+    if (params?.type) q.set("type", params.type);
+
     return this.request<PaginatedResponse<Media>>(`/media?${q}`);
   }
 
-  uploadMedia(file: File, alt?: string) {
+  /**
+   * ── ESTA FUNCION NUNCA HA SUBIDO NADA ────────────────────────────────────
+   *
+   * Mandaba el fichero en un campo llamado `file`. El endpoint lee
+   * `body.files` —en plural— y con otro nombre no encuentra nada:
+   *
+   *     if (!files) return c.json({ error: "No files provided" }, 400);
+   *
+   * Es decir: 400 en TODA subida, desde siempre. La prueba que la cubria
+   * mockeaba `fetch` y solo comprobaba que se enviaba «un FormData», sin mirar
+   * que llevaba dentro — pasaba en verde sobre una funcion que no funcionaba.
+   *
+   * La respuesta es `{ success, files: [...] }` y NO trae la URL publica, asi
+   * que quien suba tiene que recargar la lista para usarla.
+   */
+  uploadMedia(file: File | File[], alt?: string) {
     const form = new FormData();
-    form.append("file", file);
+    for (const f of Array.isArray(file) ? file : [file]) form.append("files", f);
     if (alt) form.append("alt", alt);
-    return this.request<Media>("/media/upload", { method: "POST", body: form });
+
+    return this.request<{
+      success: boolean;
+      files: Array<{
+        id?: string;
+        filename: string;
+        mimeType?: string;
+        size?: number;
+        /** URL publica de lo recien subido. Evita releer la biblioteca. */
+        url?: string;
+        width?: number;
+        height?: number;
+        success: boolean;
+        error?: string;
+      }>;
+    }>("/media/upload", { method: "POST", body: form });
   }
 
   deleteMedia(id: string) {

@@ -15,6 +15,9 @@ export type AppVariables = {
   user: typeof auth.$Infer.Session.user | null;
   session: typeof auth.$Infer.Session.session | null;
   requestId: string;
+  /** W3C trace context — populated by requestContextMiddleware */
+  traceId?: string;
+  spanId?: string;
   agent?: AgentAuthContext;
   /** Enriched ACL context — populated by enrichUserContext middleware */
   userRoleIds?: string[];

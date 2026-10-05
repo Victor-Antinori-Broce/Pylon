@@ -166,21 +166,43 @@ describe("RLS E2E", () => {
       if (!dbAvailable) return;
 
       const res = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieB));
+      expect(res.status).toBe(200);
       const body = (await res.json()) as any;
-      // If RLS is enforced at route level, user B sees nothing.
-      // If not, this test documents the gap.
-      const hasAccess = body.docs.some((e: any) => e.id === entryAId);
-      // We assert the type to keep the test valid regardless of RLS implementation state.
-      expect(typeof hasAccess).toBe("boolean");
+      // RLS must filter out user A's entry from user B's view.
+      expect(body.docs.some((e: any) => e.id === entryAId)).toBe(false);
+      expect(body.docs.length).toBe(0);
     });
 
     it("admin can see entries of both users", async () => {
       if (!dbAvailable) return;
 
+      // User B creates their own entry
+      const resB = await app.request(
+        req(
+          `/api/data-sets/${datasetId}/entries`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              title: "RLS Entry B",
+              data: { secret: "user-b-data" },
+              status: "published",
+            }),
+          },
+          cookieB
+        )
+      );
+      expect(resB.status).toBe(201);
+      const entryB = ((await resB.json()) as any)[0];
+      expect(entryB.id).toBeDefined();
+
+      // Admin should see both entries
       const res = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieAdmin));
       expect(res.status).toBe(200);
       const body = (await res.json()) as any;
       expect(Array.isArray(body.docs)).toBe(true);
+      expect(body.docs.length).toBeGreaterThanOrEqual(2);
+      expect(body.docs.some((e: any) => e.id === entryAId)).toBe(true);
+      expect(body.docs.some((e: any) => e.id === entryB.id)).toBe(true);
     });
   });
 

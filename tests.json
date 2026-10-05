@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "project": "GremiusCMS — BaaS/CMS Hybrid Core",
+    "project": "Kitsuden — BaaS/CMS Hybrid Core",
     "version": "0.5.0",
     "lastUpdated": "2026-03-19",
     "description": "Registro de pruebas para los endpoints de las 4 épicas"
@@ -14,11 +14,11 @@
         "framework": "vitest/jest",
         "description": "Fase 2: Utilidad de generación de IDs tipificados",
         "cases": [
-          "generateAgentId creates ID with format grm_agent_{tipo}_{hash}",
+          "generateAgentId creates ID with format kitsuden_agent_{tipo}_{hash}",
           "generateAgentId normalizes type names (spaces to dashes)",
           "generateAgentId throws error for empty type",
           "generateAgentId throws error for type > 50 chars",
-          "generateAgentApiKey creates key with format grm_agent_{tipo}_{random}",
+          "generateAgentApiKey creates key with format kitsuden_agent_{tipo}_{random}",
           "generateAgentApiKey produces unique hashes for same type",
           "generateAgentApiKey generates valid SHA-256 hash",
           "parseAgentId correctly extracts components from valid ID",
@@ -167,7 +167,7 @@
     },
     "blog_content": {
       "status": "migrado",
-      "note": "Funcionalidad 'Promote to Content' migrada a grimoire-blog v2.0.0",
+      "note": "Funcionalidad 'Promote to Content' migrada a kon-blog v2.0.0",
       "tests": [
         {
           "file": "tests/api/blog.spec.ts",
@@ -182,11 +182,11 @@
         }
       ],
       "endpoints": [
-        "GET    /api/grimoires/blog/posts",
-        "GET    /api/grimoires/blog/posts/:id",
-        "POST   /api/grimoires/blog/posts",
-        "PATCH  /api/grimoires/blog/posts/:id",
-        "DELETE /api/grimoires/blog/posts/:id"
+        "GET    /api/kons/blog/posts",
+        "GET    /api/kons/blog/posts/:id",
+        "POST   /api/kons/blog/posts",
+        "PATCH  /api/kons/blog/posts/:id",
+        "DELETE /api/kons/blog/posts/:id"
       ]
     },
     "data_connectors": {
@@ -394,7 +394,7 @@
             "name": "HTTP action receives correct context shape",
             "given": "Una acción HTTP registrada",
             "when": "Se recibe una petición POST",
-            "then": "El contexto incluye: payload, db, grimoire, logger, queue, cache, http",
+            "then": "El contexto incluye: payload, db, kon, logger, queue, cache, http",
             "validation": "ctx.http existe, ctx.event es undefined, ctx.agent es undefined"
           },
           {
@@ -415,7 +415,7 @@
             "name": "Event action creates BullMQ worker",
             "given": "Una acción con trigger 'event:process_video'",
             "when": "Se invoca defineAction",
-            "then": "Se crea un Worker en BullMQ para la cola 'gremius:actions:process_video'",
+            "then": "Se crea un Worker en BullMQ para la cola 'kitsuden:actions:process_video'",
             "validation": "workers.has('process_video') === true"
           },
           {
@@ -448,7 +448,7 @@
             "name": "Unified context has all base properties regardless of trigger",
             "given": "Tres acciones: HTTP, Event, Agent",
             "when": "Se ejecutan las acciones",
-            "then": "Todas reciben: payload, db, grimoire, logger, queue, cache",
+            "then": "Todas reciben: payload, db, kon, logger, queue, cache",
             "validation": "ctx tiene todas las propiedades base definidas"
           }
         ]
@@ -475,34 +475,34 @@
       }
     ]
   },
-  "grimoire_layer": {
+  "kon_layer": {
     "description": "Tests para Auto-API & MCP Generator (Paso 2)",
     "status": "teorico_definido",
     "file": "tests.json",
     "tests": [
       {
-        "file": "tests/engine/grimoire.spec.ts",
+        "file": "tests/engine/kon.spec.ts",
         "framework": "vitest",
-        "description": "Valida que defineGrimoire extrae el nombre de tabla y genera rutas/tools automáticamente",
+        "description": "Valida que defineKon extrae el nombre de tabla y genera rutas/tools automáticamente",
         "cases": [
           {
-            "name": "defineGrimoire extracts table name from Drizzle model",
-            "given": "Un modelo Drizzle 'agile_issues' pasado a defineGrimoire",
-            "when": "Se invoca defineGrimoire({ id: 'agile', models: [agile_issues] })",
+            "name": "defineKon extracts table name from Drizzle model",
+            "given": "Un modelo Drizzle 'agile_issues' pasado a defineKon",
+            "when": "Se invoca defineKon({ id: 'agile', models: [agile_issues] })",
             "then": "El framework extrae 'agile_issues' usando getTableName(model)",
-            "validation": "grimoire.routes incluye paths con 'agile_issues'"
+            "validation": "kon.routes incluye paths con 'agile_issues'"
           },
           {
             "name": "Auto-API generates 5 CRUD routes per model",
-            "given": "Un grimoire con 2 modelos: [agile_issues, agile_projects]",
-            "when": "Se inicializa el grimoire",
+            "given": "Un kon con 2 modelos: [agile_issues, agile_projects]",
+            "when": "Se inicializa el kon",
             "then": "Se generan 10 rutas (5 por modelo): GET /api/agile/agile_issues, POST /api/agile/agile_issues, etc.",
-            "validation": "grimoire.routes.length === 10 && routes[0].path === '/api/agile/agile_issues'"
+            "validation": "kon.routes.length === 10 && routes[0].path === '/api/agile/agile_issues'"
           },
           {
             "name": "Auto-MCP generates read and create tools per model",
-            "given": "Un grimoire 'agile' con modelo 'agile_issues'",
-            "when": "Se inicializa el grimoire con MCP server",
+            "given": "Un kon 'agile' con modelo 'agile_issues'",
+            "when": "Se inicializa el kon con MCP server",
             "then": "Se registran tools 'agile_read_agile_issues' y 'agile_create_agile_issues'",
             "validation": "mcpServer.tools.has('agile_read_agile_issues') === true"
           },
@@ -515,28 +515,28 @@
           },
           {
             "name": "Custom actions are registered alongside auto-generated",
-            "given": "Un grimoire con models y actions personalizadas",
-            "when": "Se define el grimoire",
+            "given": "Un kon con models y actions personalizadas",
+            "when": "Se define el kon",
             "then": "Las acciones personalizadas se registran vía defineAction",
             "validation": "actions.forEach(action => defineAction(action)) es llamado"
           },
           {
-            "name": "Grimoire initialization registers routes in Hono",
-            "given": "Un grimoire definido con models",
-            "when": "Se llama grimoire.initialize(ctx, hono, mcpServer)",
+            "name": "Kon initialization registers routes in Hono",
+            "given": "Un kon definido con models",
+            "when": "Se llama kon.initialize(ctx, hono, mcpServer)",
             "then": "Las rutas auto-generadas se registran en la app Hono",
-            "validation": "hono.routes incluye las rutas del grimoire"
+            "validation": "hono.routes incluye las rutas del kon"
           },
           {
-            "name": "Grimoire ID validation rejects invalid characters",
-            "given": "Un ID de grimoire con caracteres inválidos 'My Grimoire!!!'",
-            "when": "Se invoca defineGrimoire({ id: 'My Grimoire!!!' })",
+            "name": "Kon ID validation rejects invalid characters",
+            "given": "Un ID de kon con caracteres inválidos 'My Kon!!!'",
+            "when": "Se invoca defineKon({ id: 'My Kon!!!' })",
             "then": "Se lanza error con mensaje descriptivo",
-            "validation": "throw new Error('Invalid grimoire ID...')"
+            "validation": "throw new Error('Invalid kon ID...')"
           },
           {
-            "name": "InferGrimoireSelect type helper extracts select type",
-            "given": "type Issues = InferGrimoireSelect<typeof agileIssues>",
+            "name": "InferKonSelect type helper extracts select type",
+            "given": "type Issues = InferKonSelect<typeof agileIssues>",
             "when": "Se usa el tipo en código",
             "then": "Issues tiene las propiedades de la tabla agile_issues",
             "validation": "Issues.id es string, Issues.title es string, etc."
@@ -560,7 +560,7 @@
     ],
     "conventions": {
       "routes": {
-        "basePath": "/api/{grimoireId}",
+        "basePath": "/api/{konId}",
         "patterns": [
           "GET    {basePath}/{table}",
           "POST   {basePath}/{table}",
@@ -570,7 +570,7 @@
         ]
       },
       "mcp_tools": {
-        "prefix": "{grimoireId}",
+        "prefix": "{konId}",
         "patterns": ["{prefix}_read_{table}", "{prefix}_create_{table}"]
       }
     },
@@ -579,15 +579,15 @@
       "file": "packages/engine/src/type-check.ts",
       "cases": [
         {
-          "name": "InferGrimoireSelect extrae tipos row de Drizzle",
-          "given": "type Task = InferGrimoireSelect<typeof tasksTable>",
+          "name": "InferKonSelect extrae tipos row de Drizzle",
+          "given": "type Task = InferKonSelect<typeof tasksTable>",
           "when": "tasksTable tiene columnas: id (uuid), title (varchar), status (varchar)",
           "then": "Task tiene propiedades tipadas: id: string, title: string, status: string",
           "validation": "const task: Task = { id: 'uuid', title: 'Test', status: 'open' } // compila"
         },
         {
-          "name": "InferGrimoireInsert maneja campos opcionales",
-          "given": "type NewTask = InferGrimoireInsert<typeof tasksTable>",
+          "name": "InferKonInsert maneja campos opcionales",
+          "given": "type NewTask = InferKonInsert<typeof tasksTable>",
           "when": "tasksTable tiene defaults en id, createdAt, status",
           "then": "NewTask tiene title: string (required), id?: string (optional)",
           "validation": "const newTask: NewTask = { title: 'New' } // compila sin id"
@@ -595,9 +595,9 @@
         {
           "name": "DrizzleModel acepta PgTable, SQLiteTable, MySqlTable",
           "given": "Array<DrizzleModel> con tablas de diferentes dialectos",
-          "when": "Se pasa a defineGrimoire({ models: [...] })",
+          "when": "Se pasa a defineKon({ models: [...] })",
           "then": "TypeScript acepta el array sin errores",
-          "validation": "defineGrimoire({ id: 'test', models: [pgTable(...), sqliteTable(...)] })"
+          "validation": "defineKon({ id: 'test', models: [pgTable(...), sqliteTable(...)] })"
         },
         {
           "name": "getTableName funciona con tipo DrizzleModel",
@@ -662,11 +662,11 @@
           "status": "passed"
         },
         {
-          "name": "Generación de tokens usa prefijo grm_agent_",
+          "name": "Generación de tokens usa prefijo kitsuden_agent_",
           "given": "Usuario hace click en Generate Token",
           "when": "Se crea un nuevo API key",
-          "then": "El token mostrado comienza con 'grm_agent_'",
-          "validation": "token.startsWith('grm_agent_')",
+          "then": "El token mostrado comienza con 'kitsuden_agent_'",
+          "validation": "token.startsWith('kitsuden_agent_')",
           "status": "passed"
         },
         {
@@ -981,7 +981,7 @@
           "given": "apps/api/src/services/agent-telemetry.ts",
           "when": "Importa desde el engine",
           "then": "Usa ruta relativa ../../../../packages/engine",
-          "validation": "Import funciona sin agregar @gremius/engine a package.json",
+          "validation": "Import funciona sin agregar @kitsuden/engine a package.json",
           "status": "passed"
         },
         {
@@ -1057,7 +1057,7 @@
         {
           "name": "Todos los adapters exportan correctamente",
           "given": "packages/engine/index.ts",
-          "when": "Se importan desde @gremius/engine",
+          "when": "Se importan desde @kitsuden/engine",
           "then": "Todas las funciones están disponibles",
           "validation": "defineAction, initActions, parseTrigger, etc. exportados",
           "status": "passed"

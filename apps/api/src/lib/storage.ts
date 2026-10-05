@@ -15,18 +15,64 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-export const s3 = new S3Client({
-  region: process.env.S3_REGION || "us-east-1",
-  endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY || "gremius_minio",
-    secretAccessKey: process.env.S3_SECRET_KEY || "gremius_minio_secret_2025",
+// ── Configuration ────────────────────────────────────────────────
+
+export const REGION = process.env.S3_REGION || "us-east-1";
+export const ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:9000";
+export const BUCKET = process.env.S3_BUCKET || "kitsuden-media";
+export const PUBLIC_URL = process.env.S3_PUBLIC_URL || "http://localhost:9000";
+
+const DEFAULT_STORAGE_PROVIDER = process.env.DEFAULT_STORAGE_PROVIDER || "local";
+const USES_S3_STORAGE = ["s3", "minio"].includes(DEFAULT_STORAGE_PROVIDER);
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable: ${name}. ` +
+        `Set it in your .env file. If you only need local storage, set DEFAULT_STORAGE_PROVIDER=local.`
+    );
+  }
+  return value;
+}
+
+let _s3: S3Client | null = null;
+
+/**
+ * Lazy S3 client. Credentials are only required when storage provider is s3/minio.
+ * No hardcoded secrets.
+ */
+export function getS3Client(): S3Client {
+  if (!_s3) {
+    if (USES_S3_STORAGE) {
+      requireEnv("S3_ACCESS_KEY");
+      requireEnv("S3_SECRET_KEY");
+    }
+
+    _s3 = new S3Client({
+      region: REGION,
+      endpoint: ENDPOINT,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY || "",
+        secretAccessKey: process.env.S3_SECRET_KEY || "",
+      },
+      forcePathStyle: true,
+    });
+  }
+  return _s3;
+}
+
+// Backwards-compatible export for code that imports `s3` directly.
+// ⚠️ This will throw on first access if S3 credentials are missing and storage is s3/minio.
+export const s3 = new Proxy({} as S3Client, {
+  get(_target, prop) {
+    const client = getS3Client();
+    const value = client[prop as keyof S3Client];
+    return typeof value === "function" ? value.bind(client) : value;
   },
-  forcePathStyle: true,
 });
 
-export const BUCKET = process.env.S3_BUCKET || "gremius-media";
-export const PUBLIC_URL = process.env.S3_PUBLIC_URL || "http://localhost:9000";
+// ── Helpers ──────────────────────────────────────────────────────
 
 export function generateS3Key(filename: string, prefix = "public"): string {
   const now = new Date();
@@ -41,16 +87,28 @@ function buildPublicUrl(s3Key: string): string {
   return `${PUBLIC_URL}/${BUCKET}/${s3Key}`;
 }
 
+function assertS3Enabled(operation: string): void {
+  if (!USES_S3_STORAGE) {
+    throw new Error(
+      `${operation} is only available when DEFAULT_STORAGE_PROVIDER is 's3' or 'minio'. Current: '${DEFAULT_STORAGE_PROVIDER}'`
+    );
+  }
+}
+
+// ── Operations ───────────────────────────────────────────────────
+
 export async function uploadFile(
   file: File | Blob,
   filename: string,
   mimeType: string,
   prefix = "public"
 ): Promise<{ s3Key: string; url: string; size: number }> {
+  assertS3Enabled("uploadFile");
   const s3Key = generateS3Key(filename, prefix);
   const buffer = Buffer.from(await file.arrayBuffer());
+  const client = getS3Client();
 
-  await s3.send(
+  await client.send(
     new PutObjectCommand({
       Bucket: BUCKET,
       Key: s3Key,
@@ -75,7 +133,10 @@ export async function uploadBuffer(
   s3Key: string,
   mimeType: string
 ): Promise<{ s3Key: string; url: string; size: number }> {
-  await s3.send(
+  assertS3Enabled("uploadBuffer");
+  const client = getS3Client();
+
+  await client.send(
     new PutObjectCommand({
       Bucket: BUCKET,
       Key: s3Key,
@@ -93,7 +154,9 @@ export async function uploadBuffer(
 }
 
 export async function deleteFile(s3Key: string): Promise<void> {
-  await s3.send(
+  assertS3Enabled("deleteFile");
+  const client = getS3Client();
+  await client.send(
     new DeleteObjectCommand({
       Bucket: BUCKET,
       Key: s3Key,
@@ -102,8 +165,10 @@ export async function deleteFile(s3Key: string): Promise<void> {
 }
 
 export async function fileExists(s3Key: string): Promise<boolean> {
+  assertS3Enabled("fileExists");
+  const client = getS3Client();
   try {
-    await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: s3Key }));
+    await client.send(new HeadObjectCommand({ Bucket: BUCKET, Key: s3Key }));
     return true;
   } catch {
     return false;
@@ -111,8 +176,10 @@ export async function fileExists(s3Key: string): Promise<boolean> {
 }
 
 export async function getFile(s3Key: string): Promise<ReadableStream | null> {
+  assertS3Enabled("getFile");
+  const client = getS3Client();
   try {
-    const response = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: s3Key }));
+    const response = await client.send(new GetObjectCommand({ Bucket: BUCKET, Key: s3Key }));
     return response.Body as unknown as ReadableStream;
   } catch {
     return null;
@@ -127,7 +194,8 @@ export async function getFile(s3Key: string): Promise<ReadableStream | null> {
  * @param expiresIn TTL in seconds (default 3600 = 1 hour, max 86400 = 24h)
  */
 export async function generateSignedDownloadUrl(s3Key: string, expiresIn = 3600): Promise<string> {
+  assertS3Enabled("generateSignedDownloadUrl");
   const clampedExpiry = Math.min(Math.max(expiresIn, 60), 86400);
   const command = new GetObjectCommand({ Bucket: BUCKET, Key: s3Key });
-  return getSignedUrl(s3, command, { expiresIn: clampedExpiry });
+  return getSignedUrl(getS3Client(), command, { expiresIn: clampedExpiry });
 }

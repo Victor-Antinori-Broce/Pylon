@@ -164,17 +164,17 @@
   <!-- Header con acciones -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gremius-cyan/10 flex items-center justify-center">
-          <FileText class="w-5 h-5 text-gremius-cyan" />
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-kitsuden-accent/10 flex items-center justify-center">
+          <FileText class="w-5 h-5 text-kitsuden-accent" />
         </div>
         Blog Posts
       </h1>
-      <p class="text-gremius-subtle mt-1">Manage your content with the DataExplorer</p>
+      <p class="text-kitsuden-subtle mt-1">Manage your content with the DataExplorer</p>
     </div>
     <a
       href="/content/edit?collection=blog-posts"
-      class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+      class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
         ><path

@@ -1,5 +1,5 @@
 /**
- * Gremius Functions (Workers) HTTP Tests
+ * Kitsuden Functions (Workers) HTTP Tests
  *
  * Tests CRUD and execution of cloud functions via HTTP.
  */
@@ -183,7 +183,9 @@ describe("Functions HTTP", () => {
         )
       );
 
-      expect([200, 404, 500]).toContain(res.status);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(typeof body.success).toBe("boolean");
     });
 
     it("should get execution logs", async () => {

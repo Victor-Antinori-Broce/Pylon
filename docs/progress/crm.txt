@@ -46,7 +46,7 @@ Total: ~2000 líneas de código
 PRUEBAS REALIZADAS
 ====================================
 
-✅ TESTS UNITARIOS (grimoire-crm)
+✅ TESTS UNITARIOS (kon-crm)
    - 57/57 tests PASANDO
    - Schema validation: OK
    - Routes: OK
@@ -67,14 +67,14 @@ ARCHIVOS CREADOS/MODIFICADOS FASE 1
 ====================================
 
 Nuevos:
-- packages/grimoires/grimoire-crm/migrations/0001_crm_builder_fase1.sql
+- packages/kons/kon-crm/migrations/0001_crm_builder_fase1.sql
 - packages/admin/src/views/crm/EntityConfigManager.svelte (335 líneas)
 - packages/admin/src/views/crm/PipelineStageBuilder.svelte (366 líneas)
 - packages/admin/src/views/crm/DealTimeline.svelte (164 líneas)
 
 Modificados:
-- packages/grimoires/grimoire-crm/crm.schema.ts (+300 líneas)
-- packages/grimoires/grimoire-crm/crm.routes.ts (+450 líneas)
+- packages/kons/kon-crm/crm.schema.ts (+300 líneas)
+- packages/kons/kon-crm/crm.routes.ts (+450 líneas)
 - packages/admin/src/views/crm/types.ts (+150 líneas)
 - packages/admin/src/views/crm/DealKanban.svelte (+120 líneas)
 - packages/admin/src/views/crm/CRMView.svelte (+ integración settings tab)
@@ -84,7 +84,7 @@ COMO PROBAR MANUALMENTE
 ====================================
 
 1. Aplicar migración:
-   cd packages/grimoires/grimoire-crm
+   cd packages/kons/kon-crm
    pnpm migrate
 
 2. Endpoints a probar:
@@ -93,7 +93,7 @@ COMO PROBAR MANUALMENTE
    GET    /api/crm/entity-configs
    POST   /api/crm/entity-configs
            Body: {
-             "grimoireId": "default",
+             "konId": "default",
              "entityName": "case",
              "singularLabel": "Case",
              "pluralLabel": "Cases",

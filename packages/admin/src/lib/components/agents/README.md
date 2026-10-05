@@ -2,7 +2,7 @@
 
 ## Visión General
 
-Sistema de UI para gestión y monitoreo de agentes AI en GremiusCMS.
+Sistema de UI para gestión y monitoreo de agentes AI en Kitsuden.
 
 ## Componentes
 
@@ -57,7 +57,7 @@ Muestra tokens de forma segura (one-time display).
 <script>
   import { TokenDisplay } from "$lib/components/agents";
 
-  let token = "grm_agent_xxxxxxxxxxxxxxxx";
+  let token = "kitsuden_agent_xxxxxxxxxxxxxxxx";
 </script>
 
 <TokenDisplay {token} />

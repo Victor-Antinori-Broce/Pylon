@@ -1,4 +1,4 @@
-# 🚀 Gremius DX & OpenAPI Implementation Guide
+# 🚀 Kitsuden DX & OpenAPI Implementation Guide
 
 > **Fecha:** 2026-04-08  
 > **Versión:** 2.0.0  
@@ -8,17 +8,17 @@
 
 ## 📋 Resumen
 
-Esta implementación añade capacidades avanzadas de Developer Experience (DX) para programadores y agentes de IA, junto con generación automática de documentación OpenAPI desde los grimoires.
+Esta implementación añade capacidades avanzadas de Developer Experience (DX) para programadores y agentes de IA, junto con generación automática de documentación OpenAPI desde los kons.
 
 ## 🎯 Nuevas Características
 
-### 1. OpenAPI Dinámico desde Grimoires
+### 1. OpenAPI Dinámico desde Kons
 
-Los grimoires ahora pueden definir su propia documentación OpenAPI declarativa:
+Los kons ahora pueden definir su propia documentación OpenAPI declarativa:
 
 ```typescript
-export const grimoire = defineGrimoire({
-  id: "grimoire-blog",
+export const kon = defineKon({
+  id: "kon-blog",
   name: "Blog",
 
   // ✅ OpenAPI Specification
@@ -50,12 +50,12 @@ export const grimoire = defineGrimoire({
 
 **Endpoints generados automáticamente:**
 
-- `GET /api/docs/openapi.json` - Spec completo de todos los grimoires
-- `GET /api/docs/:grimoire/openapi.json` - Spec de un grimoire específico
+- `GET /api/docs/openapi.json` - Spec completo de todos los kons
+- `GET /api/docs/:kon/openapi.json` - Spec de un kon específico
 - `GET /api/docs/` - Swagger UI
 - `GET /api/docs/modern` - Scalar UI (moderno)
 - `GET /api/docs/operations` - Lista todas las operaciones disponibles
-- `GET /api/docs/grimoires` - Lista grimoires con estado OpenAPI
+- `GET /api/docs/kons` - Lista kons con estado OpenAPI
 
 ### 2. MCP Server Mejorado
 
@@ -63,54 +63,54 @@ Nuevas herramientas para agentes de IA:
 
 #### Herramientas
 
-| Tool                        | Descripción                     |
-| --------------------------- | ------------------------------- |
-| `gremius_intelligent_query` | Queries en lenguaje natural     |
-| `gremius_generate_grimoire` | Genera boilerplate de grimoires |
-| `gremius_introspect_schema` | Inspecciona schemas de datasets |
-| `gremius_batch_operations`  | Operaciones CRUD en batch       |
-| `gremius_validate_code`     | Valida código TypeScript        |
+| Tool                         | Descripción                     |
+| ---------------------------- | ------------------------------- |
+| `kitsuden_intelligent_query` | Queries en lenguaje natural     |
+| `kitsuden_generate_kon`      | Genera boilerplate de kons      |
+| `kitsuden_introspect_schema` | Inspecciona schemas de datasets |
+| `kitsuden_batch_operations`  | Operaciones CRUD en batch       |
+| `kitsuden_validate_code`     | Valida código TypeScript        |
 
 #### Resources
 
-| Resource              | URI                                    | Descripción                  |
-| --------------------- | -------------------------------------- | ---------------------------- |
-| Project Context       | `gremius://project-context`            | Estado completo del proyecto |
-| Dataset Schema        | `gremius://dataset/{id}/schema`        | Schema de un dataset         |
-| Grimoire Capabilities | `gremius://grimoire/{id}/capabilities` | Endpoints de un grimoire     |
-| API Operations        | `gremius://api-operations`             | Todas las operaciones        |
-| Development Guide     | `gremius://dev-guide`                  | Guía de desarrollo           |
+| Resource          | URI                                | Descripción                  |
+| ----------------- | ---------------------------------- | ---------------------------- |
+| Project Context   | `kitsuden://project-context`       | Estado completo del proyecto |
+| Dataset Schema    | `kitsuden://dataset/{id}/schema`   | Schema de un dataset         |
+| Kon Capabilities  | `kitsuden://kon/{id}/capabilities` | Endpoints de un kon          |
+| API Operations    | `kitsuden://api-operations`        | Todas las operaciones        |
+| Development Guide | `kitsuden://dev-guide`             | Guía de desarrollo           |
 
 ### 3. CLI para Agentes
 
 Nuevos comandos:
 
 ```bash
-# Generar grimoire desde descripción
-gremius agent create-grimoire inventory \
+# Generar kon desde descripción
+kitsuden agent create-kon inventory \
   --description "Inventory management system" \
   --features crud,relations,webhooks \
   --data-model "Products with categories and stock"
 
 # Validar código
-gremius agent validate \
-  --grimoire inventory \
+kitsuden agent validate \
+  --kon inventory \
   --security \
   --fix
 
 # Debug MCP
-gremius agent debug-mcp \
-  --token grm_agent_xxx \
+kitsuden agent debug-mcp \
+  --token kitsuden_agent_xxx \
   --url http://localhost:3001
 
 # Inicializar config para agentes
-gremius agent init \
+kitsuden agent init \
   --editor cursor \
   --force
 
 # Generar SDK
-gremius generate-sdk \
-  --grimoire inventory \
+kitsuden generate-sdk \
+  --kon inventory \
   --lang typescript \
   --output ./sdk
 ```
@@ -122,7 +122,7 @@ gremius generate-sdk \
 ### Shared Types
 
 ```
-packages/shared/src/grimoire-api.ts       # + OpenAPI types
+packages/shared/src/kon-api.ts       # + OpenAPI types
 packages/shared/src/index.ts              # + Exports
 ```
 
@@ -157,18 +157,18 @@ packages/cli/src/index.ts                 # + Commands
 
 ```bash
 # 1. Inicializar proyecto
-gremius agent init --editor claude
+kitsuden agent init --editor claude
 
 # 2. Ver contexto del proyecto (via MCP)
-# Resource: gremius://project-context
+# Resource: kitsuden://project-context
 
-# 3. Generar un grimoire
-gremius agent create-grimoire events \
+# 3. Generar un kon
+kitsuden agent create-kon events \
   --description "Event management with calendar" \
   --features crud,webhooks
 
 # 4. Validar
-gremius agent validate
+kitsuden agent validate
 
 # 5. Ver OpenAPI
 open http://localhost:3001/api/docs/
@@ -177,9 +177,9 @@ open http://localhost:3001/api/docs/
 ### Para Desarrolladores
 
 ```typescript
-// 1. Definir grimoire con OpenAPI
-export const grimoire = defineGrimoire({
-  id: "grimoire-myfeature",
+// 1. Definir kon con OpenAPI
+export const kon = defineKon({
+  id: "kon-myfeature",
   openApi: {
     tags: [{ name: "MyFeature", description: "..." }],
     schemas: { MySchema },
@@ -195,18 +195,18 @@ export const grimoire = defineGrimoire({
 // http://localhost:3001/api/docs/
 
 // 3. Generar SDK cliente
-gremius generate-sdk --lang typescript --output ./sdk
+kitsuden generate-sdk --lang typescript --output ./sdk
 ```
 
 ---
 
 ## 📊 Especificación OpenAPI
 
-### Ejemplo de Grimoire con OpenAPI
+### Ejemplo de Kon con OpenAPI
 
 ```typescript
 import { Hono } from "hono";
-import { defineGrimoire } from "@gremius/shared";
+import { defineKon } from "@kitsuden/shared";
 import { z } from "zod";
 
 const GameSchema = z
@@ -218,8 +218,8 @@ const GameSchema = z
   })
   .openapi("Game");
 
-export const grimoire = defineGrimoire({
-  id: "grimoire-games",
+export const kon = defineKon({
+  id: "kon-games",
   name: "Games",
   version: "2.0.0",
   description: "Video game catalog with ratings",
@@ -229,7 +229,7 @@ export const grimoire = defineGrimoire({
       {
         name: "Games",
         description: "Video game catalog management",
-        externalDocs: { url: "https://docs.gremius.dev/games" },
+        externalDocs: { url: "https://docs.kitsuden.dev/games" },
       },
     ],
     schemas: {
@@ -326,7 +326,7 @@ curl http://localhost:3001/api/docs/operations | jq
 # Obtener spec completo
 curl http://localhost:3001/api/docs/openapi.json | jq '.paths | keys'
 
-# Spec de un grimoire
+# Spec de un kon
 curl http://localhost:3001/api/docs/games/openapi.json | jq
 ```
 
@@ -334,13 +334,13 @@ curl http://localhost:3001/api/docs/games/openapi.json | jq
 
 ```bash
 # Debug MCP
-gremius agent debug-mcp
+kitsuden agent debug-mcp
 
 # Ver recursos disponibles (desde Claude/Cursor)
 # "List your available resources"
 
 # Usar herramientas
-# "Query games with rating above 8 using gremius_intelligent_query"
+# "Query games with rating above 8 using kitsuden_intelligent_query"
 ```
 
 ---
@@ -350,7 +350,7 @@ gremius agent debug-mcp
 - [ ] Validación automática de specs OpenAPI
 - [ ] Generación de tests desde specs
 - [ ] Playground interactivo para MCP tools
-- [ ] Marketplace de grimoires con verificación
+- [ ] Marketplace de kons con verificación
 - [ ] SDK generados automáticamente en CI/CD
 
 ---
@@ -363,4 +363,4 @@ gremius agent debug-mcp
 
 ---
 
-**¡Listo!** Tu framework Gremius ahora tiene DX de clase mundial para desarrolladores y agentes de IA. 🎉
+**¡Listo!** Tu framework Kitsuden ahora tiene DX de clase mundial para desarrolladores y agentes de IA. 🎉

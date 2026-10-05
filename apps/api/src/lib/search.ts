@@ -12,6 +12,7 @@ import { Hono } from "hono";
 
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
+import { generateEmbedding as generateRealEmbedding } from "../services/embeddings";
 import type { AppVariables } from "../types/hono";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -24,7 +25,7 @@ export interface SearchOptions {
   type?: "fulltext" | "vector" | "hybrid";
   limit?: number;
   offset?: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   sortBy?: "relevance" | "date" | "title";
 }
 
@@ -36,7 +37,7 @@ export interface SearchResult {
   datasetId?: string;
   score: number;
   highlights?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -44,7 +45,7 @@ export interface VectorDocument {
   id: string;
   content: string;
   embedding: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   datasetId?: string;
 }
 
@@ -204,24 +205,11 @@ export async function searchFuzzy(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Genera embedding usando un servicio externo (OpenAI, local, etc.)
- * En producción, esto llamaría a tu servicio de embeddings
+ * Genera embedding usando el provider configurado (OpenAI, Ollama).
+ * Fallback a mock determinista si no hay provider configurado.
  */
-export async function generateEmbedding(_text: string): Promise<number[]> {
-  // TODO: Integrar con servicio real de embeddings (OpenAI, Ollama, etc.)
-  // Por ahora retornamos un mock para desarrollo
-
-  // Ejemplo de integración con OpenAI:
-  // const response = await fetch("https://api.openai.com/v1/embeddings", {
-  //   method: "POST",
-  //   headers: { "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
-  //   body: JSON.stringify({ input: text, model: "text-embedding-3-small" })
-  // });
-  // const data = await response.json();
-  // return data.data[0].embedding;
-
-  // Mock: vector aleatorio de 384 dimensiones (compatible con all-MiniLM)
-  return Array.from({ length: 384 }, () => (Math.random() - 0.5) * 2);
+export async function generateEmbedding(text: string): Promise<number[]> {
+  return generateRealEmbedding(text);
 }
 
 /**
@@ -264,7 +252,7 @@ export async function createVectorTable(): Promise<void> {
  */
 export async function upsertVectorDocument(
   content: string,
-  metadata: Record<string, any> = {},
+  metadata: Record<string, unknown> = {},
   options: {
     id?: string;
     datasetId?: string;
@@ -326,7 +314,7 @@ export async function searchVector(
   const results = await db.execute<{
     id: string;
     content: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     dataset_id: string;
     source_type: string;
     similarity: number;
@@ -352,7 +340,11 @@ export async function searchVector(
     .filter((row) => row.similarity >= threshold)
     .map((row) => ({
       id: row.id,
-      title: row.metadata?.title || row.content.slice(0, 100),
+      // `metadata` viene de jsonb, así que su contenido es libre: el título es
+      // opcional y hay que asumir que puede no ser texto. El recorte del
+      // contenido es el respaldo, no una rareza.
+      title:
+        typeof row.metadata?.title === "string" ? row.metadata.title : row.content.slice(0, 100),
       content: row.content,
       type: row.source_type || "vector_doc",
       datasetId: row.dataset_id,

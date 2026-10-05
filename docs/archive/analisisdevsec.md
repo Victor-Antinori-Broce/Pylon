@@ -1,14 +1,14 @@
 # 🔒 Análisis DevSecOps: Defaults Obligatorios y Backend Guardrails
 
 **Fecha:** 29 de marzo de 2026  
-**Versión analizada:** GremiusCMS v0.8.0-beta  
+**Versión analizada:** Kitsuden v0.8.0-beta  
 **Enfoque:** Developer Experience (DX) y Seguridad por Default
 
 ---
 
 ## 🎯 Resumen Ejecutivo
 
-Gremius tiene **implementación sólida de seguridad** con el sistema NHI (Non-Human Identity), RBAC granular, rate limiting por agente, y structured logging. Los defaults son seguros y ahora incluye telemetría para auditoría completa.
+Kitsuden tiene **implementación sólida de seguridad** con el sistema NHI (Non-Human Identity), RBAC granular, rate limiting por agente, y structured logging. Los defaults son seguros y ahora incluye telemetría para auditoría completa.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -31,7 +31,7 @@ PROMEDIO: 80% - Seguro por default, RBAC implementado, telemetry completo
 
 ## 1️⃣ Defaults Obligatorios: El Análisis
 
-### ✅ Lo que Gremius hace BIEN
+### ✅ Lo que Kitsuden hace BIEN
 
 #### Auth: NHI (Non-Human Identity) IMPLEMENTADO
 
@@ -39,7 +39,7 @@ PROMEDIO: 80% - Seguro por default, RBAC implementado, telemetry completo
 // ✅ TOKEN NHI CON HASH SHA-256
 // apps/api/src/services/agent-auth.ts
 
-const token = "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const token = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
 //       ↑↑↑↑↑↑↑  ↑↑↑↑↑↑  ↑↑↑↑↑↑↑↑
 //       prefijo   tipo    43 chars de entropy
 
@@ -52,8 +52,8 @@ const authResult = await authenticateAgent(token, {
 
 **Implementado:**
 
-- ✅ **NHI Token Format** - `grm_agent_{tipo}_{hash}` con validación SHA-256
-- ✅ **Dual Auth** - Soporta legacy API keys (`gremius_sk_*`) + NHI tokens
+- ✅ **NHI Token Format** - `kitsuden_agent_{tipo}_{hash}` con validación SHA-256
+- ✅ **Dual Auth** - Soporta legacy API keys (`kitsuden_sk_*`) + NHI tokens
 - ✅ **Zero-Trust** - Cada request valida token
 - ✅ **Agent Context** - `identityId`, `name`, `type`, `scopes`, `metadata`
 - ✅ **Audit Logging** - Todas las autenticaciones logueadas en `agent_audit_logs`
@@ -402,7 +402,7 @@ export const drizzleTelemetryProvider = {
 ### El diferenciador implementado
 
 ```typescript
-// Solo Gremius tiene esto HOY:
+// Solo Kitsuden tiene esto HOY:
 
 "✅ Auth universal humano + agente (NHI)
  ✅ RBAC con wildcard scopes (read:*, admin:*)
@@ -427,4 +427,4 @@ export const drizzleTelemetryProvider = {
 
 ---
 
-_Análisis actualizado - GremiusCMS v0.8.0-beta_
+_Análisis actualizado - Kitsuden v0.8.0-beta_

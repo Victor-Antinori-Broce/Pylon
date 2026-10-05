@@ -73,7 +73,7 @@ function validateHmacSignature(request: WebhookInRequest, config: { secret?: str
   const signatureHeader =
     request.headers["x-signature"] ||
     request.headers["x-hub-signature-256"] ||
-    request.headers["x-gremius-signature"];
+    request.headers["x-kitsuden-signature"];
 
   if (!signatureHeader) return false;
 

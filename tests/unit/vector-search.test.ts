@@ -127,6 +127,7 @@ function chunkContent(content: string, chunkSize: number, overlap: number): stri
   while (start < content.length) {
     const end = Math.min(start + chunkSize, content.length);
     chunks.push(content.slice(start, end));
+    if (end === content.length) break;
     start = end - overlap;
     if (start >= end) start = end;
   }

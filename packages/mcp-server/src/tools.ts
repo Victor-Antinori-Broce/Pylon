@@ -8,7 +8,7 @@ export function registerTools(server: McpServer, deps: McpServerDependencies) {
   const { db, schema, queue } = deps;
 
   server.registerTool(
-    "gremius_query_dataset",
+    "kitsuden_query_dataset",
     {
       title: "Query Dataset",
       description: "Select and filter records from a specific dataset",
@@ -43,7 +43,7 @@ export function registerTools(server: McpServer, deps: McpServerDependencies) {
   );
 
   server.registerTool(
-    "gremius_insert_record",
+    "kitsuden_insert_record",
     {
       title: "Insert Dataset Record",
       description: "Insert a new record into a dataset",
@@ -73,14 +73,14 @@ export function registerTools(server: McpServer, deps: McpServerDependencies) {
   );
 
   server.registerTool(
-    "gremius_dispatch_worker",
+    "kitsuden_dispatch_worker",
     {
       title: "Dispatch Worker Task",
       description: "Enqueue an asynchronous task to Valkey via BullMQ",
       inputSchema: z.object({
         queueName: z
           .string()
-          .describe("Name of the queue (e.g., 'gremius-email', 'gremius-webhooks')"),
+          .describe("Name of the queue (e.g., 'kitsuden-email', 'kitsuden-webhooks')"),
         jobName: z.string().describe("Name of the job inside the queue"),
         payload: z.record(z.any()).describe("Payload data to send to the worker"),
       }),

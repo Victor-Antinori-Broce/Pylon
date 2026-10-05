@@ -1,5 +1,5 @@
 // @ts-nocheck
-// spec: specs/gremius-full-coverage.md — Section 11: API Endpoints
+// spec: specs/kitsuden-full-coverage.md — Section 11: API Endpoints
 // seed: tests/seed.spec.ts
 
 import { test, expect } from "@playwright/test";
@@ -13,7 +13,7 @@ test.describe("API Health & Endpoints", () => {
 
     const data = await res.json();
     expect(data.status).toBe("ok");
-    expect(data.service).toBe("gremius-api");
+    expect(data.service).toBe("kitsuden-api");
   });
 
   test("Games endpoint returns seeded data", async ({ request }) => {
@@ -95,7 +95,7 @@ test.describe("API Health & Endpoints", () => {
     const res = await request.get(`${API}/settings`);
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
-    expect(data.siteName).toBe("Gremius CMS");
+    expect(data.siteName).toBe("Kitsuden CMS");
   });
 
   test("Games CRUD lifecycle", async ({ request }) => {

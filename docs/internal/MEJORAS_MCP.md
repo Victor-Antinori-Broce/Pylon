@@ -1,6 +1,6 @@
-# Mejoras del Sistema MCP - GremiusCMS
+# Mejoras del Sistema MCP - Kitsuden
 
-Documentación de las 12 mejoras implementadas para el sistema MCP (Model Context Protocol) en GremiusCMS.
+Documentación de las 12 mejoras implementadas para el sistema MCP (Model Context Protocol) en Kitsuden.
 
 ---
 
@@ -10,7 +10,7 @@ Sistema completo de autenticación para agentes de IA (Claude, Cursor, etc.)
 
 **Características:**
 
-- Keys con formato `grm_agent_xxxxx` (distingibles de humanos `gremius_sk_`)
+- Keys con formato `kitsuden_agent_xxxxx` (distingibles de humanos `kitsuden_sk_`)
 - Autenticación dual en MCP: soporta tanto agentes AI como usuarios humanos
 - Metadata por agente: nombre, descripción, scopes, rate limits
 - Soft delete con cascade en relaciones
@@ -23,7 +23,7 @@ POST /api/admin/agents
 {"name": "Claude Desktop", "scopes": ["mcp:connect", "read:datasets"]}
 
 # Usar en MCP
-Authorization: Bearer grm_agent_abc123...
+Authorization: Bearer kitsuden_agent_abc123...
 ```
 
 ---
@@ -168,7 +168,7 @@ Almacenamiento seguro de credenciales.
 
 - Keys mostradas **solo una vez** en creación
 - SHA-256 hash almacenado en DB
-- Prefix guardado para identificación en UI: `grm_agent_****1234`
+- Prefix guardado para identificación en UI: `kitsuden_agent_****1234`
 - Expiración configurable por key
 
 **Flujo:**
@@ -326,7 +326,7 @@ curl -X POST http://localhost:3001/api/admin/agents \
 ```bash
 # SSE connection
 curl -N http://localhost:3001/api/mcp \
-  -H "Authorization: Bearer grm_agent_xxxxx"
+  -H "Authorization: Bearer kitsuden_agent_xxxxx"
 
 # En otra terminal, enviar mensajes
 curl -X POST "http://localhost:3001/api/mcp?sessionId=xxx" \
@@ -357,4 +357,4 @@ curl http://localhost:3001/api/admin/agents/:id/logs \
 ---
 
 _Documento generado el 2026-03-17_
-_Versión: GremiusCMS v0.7.0-beta_
+_Versión: Kitsuden v0.7.0-beta_

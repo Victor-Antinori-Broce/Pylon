@@ -32,7 +32,7 @@
     Check,
     X,
   } from "lucide-svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   import { api } from "$lib/api";
   import { fieldRegistry, type FieldConfig } from "$lib/data-explorer/fieldRegistry";
@@ -94,6 +94,16 @@
     config?: Partial<TableConfig>;
     data?: any[];
     apiEndpoint?: string;
+    /**
+     * Parámetros fijos que van SIEMPRE en la petición.
+     *
+     * Hacen falta porque los filtros de esta rejilla se envían como
+     * `filter[campo]=valor`, y un endpoint propio de un kon no tiene por qué
+     * entender esa convención: `/api/blog` lee `?status=`, así que sus filtros
+     * viajaban y no los leía nadie — la rejilla se veía filtrada y devolvía lo
+     * mismo de siempre.
+     */
+    queryParams?: Record<string, string>;
     defaultFilter?: Record<string, any>;
     onRowClick?: (row: any) => void;
   }
@@ -103,6 +113,7 @@
     config = {},
     data: initialData,
     apiEndpoint,
+    queryParams,
     defaultFilter = {},
     onRowClick,
   }: Props = $props();
@@ -173,6 +184,12 @@
     try {
       const params = new URLSearchParams();
 
+      // Los fijos van primero: son parte de la definición de la pantalla, no
+      // una elección de quien mira.
+      for (const [clave, valor] of Object.entries(queryParams ?? {})) {
+        params.append(clave, valor);
+      }
+
       // Search
       if (searchQuery) {
         params.append("search", searchQuery);
@@ -199,9 +216,25 @@
       const response: any = await api.get(`${apiEndpoint}?${params}`);
 
       if (response.docs || Array.isArray(response)) {
-        rows = response.docs || response;
-        pagination.total = response.totalDocs || rows.length;
-        pagination.totalPages = Math.ceil(pagination.total / pagination.pageSize);
+        /**
+         * ── SE TRABAJA SOBRE UNA VARIABLE LOCAL, NO SOBRE EL ESTADO ─────────
+         *
+         * Antes esto escribía `rows` y en la línea siguiente LEÍA `rows.length`;
+         * y escribía `pagination.total` para leerlo justo después. Como esta
+         * función se llama desde un `$effect`, todo lo que lee se convierte en
+         * dependencia del efecto — así que el efecto acababa dependiendo de lo
+         * que él mismo provoca. Cada carga pedía otra carga.
+         *
+         * Mientras la lista estuvo vacía no se notaba: se reescribían los
+         * mismos valores. Es el tipo de fallo que espera a que haya datos
+         * reales para aparecer.
+         */
+        const filas: any[] = response.docs || response;
+        const total: number = response.totalDocs ?? filas.length;
+
+        rows = filas;
+        pagination.total = total;
+        pagination.totalPages = Math.ceil(total / pagination.pageSize);
       } else {
         rows = response;
       }
@@ -213,10 +246,33 @@
     }
   }
 
-  // Recargar cuando cambian filtros/búsqueda/ordenamiento
+  /**
+   * Recargar cuando cambian filtros, búsqueda, orden o página.
+   *
+   * ── POR QUE LAS DEPENDENCIAS VAN ESCRITAS A MANO ──────────────────────────
+   *
+   * Llamar a `loadData()` dentro de un `$effect` hace que TODO lo que esa
+   * función lee sea dependencia del efecto — incluido lo que ella misma
+   * escribe. Eso es una realimentación: cargar provoca cargar.
+   *
+   * Enumerarlas aquí y envolver la llamada en `untrack` invierte la relación:
+   * el efecto depende exactamente de lo que debe —lo que el usuario cambia— y
+   * de nada de lo que la carga produce.
+   *
+   * Es el mismo patrón que ya se aplicó en el editor de blog y en el selector
+   * de vistas: en Svelte 5, «reacciona a esto» se escribe, no se deduce.
+   */
   $effect(() => {
+    // Dependencias declaradas. No se pueden quitar «porque no se usan».
+    void searchQuery;
+    void sortField;
+    void sortDirection;
+    void pagination.page;
+    void pagination.pageSize;
+    void JSON.stringify(activeFilters);
+
     if (!initialData && apiEndpoint) {
-      loadData();
+      untrack(() => void loadData());
     }
   });
 
@@ -327,8 +383,8 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-gremius-text">{fullConfig.label}</h2>
-      <p class="text-sm text-gremius-text-dim mt-0.5">
+      <h2 class="text-xl font-bold text-kitsuden-text">{fullConfig.label}</h2>
+      <p class="text-sm text-kitsuden-text-dim mt-0.5">
         {pagination.total} records
         {#if selectedRows.size > 0}
           · {selectedRows.size} selected
@@ -340,7 +396,7 @@
         <div class="flex items-center gap-1 mr-2">
           {#each fullConfig.bulkActions as action}
             <button
-              class="btn-secondary-sm {action.variant === 'danger' ? 'text-gremius-pink' : ''}"
+              class="btn-secondary-sm {action.variant === 'danger' ? 'text-kitsuden-accent-2' : ''}"
               onclick={() => handleBulkAction(action)}
             >
               {#if action.icon}
@@ -359,7 +415,7 @@
       {#if fullConfig.filterableFields?.length}
         <button
           class="btn-secondary-sm {Object.keys(activeFilters).length > 0
-            ? 'bg-gremius-cyan/10 text-gremius-cyan'
+            ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
             : ''}"
           onclick={() => (showFilterPanel = !showFilterPanel)}
         >
@@ -374,12 +430,12 @@
   <div class="flex items-center gap-3">
     {#if fullConfig.searchableFields?.length}
       <div class="relative flex-1 max-w-md">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-subtle" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
         <input
           type="text"
           placeholder="Search..."
           bind:value={searchQuery}
-          class="w-full pl-10 pr-4 py-2 bg-gremius-card border border-gremius-border rounded-lg text-sm text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan"
+          class="w-full pl-10 pr-4 py-2 bg-kitsuden-card border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
         />
       </div>
     {/if}
@@ -387,11 +443,11 @@
 
   <!-- Filter Panel -->
   {#if showFilterPanel && fullConfig.filterableFields?.length}
-    <div class="card p-4 border-gremius-cyan/20">
+    <div class="card p-4 border-kitsuden-accent/20">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-medium text-gremius-text">Filters</h3>
+        <h3 class="font-medium text-kitsuden-text">Filters</h3>
         <button
-          class="text-sm text-gremius-subtle hover:text-gremius-text"
+          class="text-sm text-kitsuden-subtle hover:text-kitsuden-text"
           onclick={() => (activeFilters = {})}
         >
           Clear all
@@ -400,11 +456,11 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         {#each fullConfig.filterableFields as field}
           <div>
-            <label class="text-xs text-gremius-subtle block mb-1 capitalize">{field}</label>
+            <label class="text-xs text-kitsuden-subtle block mb-1 capitalize">{field}</label>
             <input
               type="text"
               value={activeFilters[field] || ""}
-              class="w-full px-3 py-1.5 bg-gremius-bg border border-gremius-border rounded text-sm text-gremius-text focus:outline-none focus:border-gremius-cyan"
+              class="w-full px-3 py-1.5 bg-kitsuden-bg border border-kitsuden-border rounded text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
               oninput={(e) => {
                 activeFilters = {
                   ...activeFilters,
@@ -420,7 +476,9 @@
 
   <!-- Error -->
   {#if error}
-    <div class="p-4 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-gremius-pink">
+    <div
+      class="p-4 rounded-lg bg-kitsuden-accent-2/10 border border-kitsuden-accent-2/20 text-kitsuden-accent-2"
+    >
       {error}
     </div>
   {/if}
@@ -429,25 +487,25 @@
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
-        <thead class="bg-gremius-surface border-b border-gremius-border">
+        <thead class="bg-kitsuden-surface border-b border-kitsuden-border">
           <tr>
             <th class="w-10 px-4 py-3">
               <input
                 type="checkbox"
                 checked={selectedRows.size === rows.length && rows.length > 0}
-                class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+                class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent"
                 onchange={toggleSelectAll}
               />
             </th>
             {#each fullConfig.columns as column}
               {#if !column.hidden}
                 <th
-                  class="text-left px-4 py-3 font-medium text-gremius-text-dim"
+                  class="text-left px-4 py-3 font-medium text-kitsuden-text-dim"
                   style={column.width ? `width: ${column.width}` : ""}
                 >
                   {#if column.sortable !== false && fullConfig.sortable}
                     <button
-                      class="flex items-center gap-1 hover:text-gremius-text"
+                      class="flex items-center gap-1 hover:text-kitsuden-text"
                       onclick={() => handleSort(column.field)}
                     >
                       {column.label}
@@ -476,16 +534,16 @@
           {#if loading}
             <tr>
               <td colspan={fullConfig.columns.length + 2} class="px-4 py-20 text-center">
-                <Loader2 class="w-6 h-6 animate-spin mx-auto text-gremius-cyan" />
+                <Loader2 class="w-6 h-6 animate-spin mx-auto text-kitsuden-accent" />
               </td>
             </tr>
           {:else if rows.length === 0}
             <tr>
               <td colspan={fullConfig.columns.length + 2} class="px-4 py-16 text-center">
-                <p class="text-gremius-text-dim">No records found</p>
+                <p class="text-kitsuden-text-dim">No records found</p>
                 {#if searchQuery || Object.keys(activeFilters).length > 0}
                   <button
-                    class="text-sm text-gremius-cyan hover:underline mt-2"
+                    class="text-sm text-kitsuden-accent hover:underline mt-2"
                     onclick={() => {
                       searchQuery = "";
                       activeFilters = {};
@@ -500,17 +558,17 @@
             {#each rows as row (row.id)}
               {@const isEditing = editingRow === row.id}
               <tr
-                class="border-b border-gremius-border/50 hover:bg-gremius-surface/30 {selectedRows.has(
+                class="border-b border-kitsuden-border/50 hover:bg-kitsuden-surface/30 {selectedRows.has(
                   row.id
                 )
-                  ? 'bg-gremius-cyan/5'
+                  ? 'bg-kitsuden-accent/5'
                   : ''}"
               >
                 <td class="px-4 py-3">
                   <input
                     type="checkbox"
                     checked={selectedRows.has(row.id)}
-                    class="rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+                    class="rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent"
                     onchange={() => toggleSelectRow(row.id)}
                   />
                 </td>
@@ -546,13 +604,13 @@
                     <div class="flex items-center gap-1">
                       {#if isEditing}
                         <button
-                          class="p-1.5 rounded hover:bg-gremius-green/10 text-gremius-green"
+                          class="p-1.5 rounded hover:bg-kitsuden-green/10 text-kitsuden-green"
                           onclick={saveEdit}
                         >
                           <Check class="w-4 h-4" />
                         </button>
                         <button
-                          class="p-1.5 rounded hover:bg-gremius-subtle/10 text-gremius-subtle"
+                          class="p-1.5 rounded hover:bg-kitsuden-subtle/10 text-kitsuden-subtle"
                           onclick={cancelEdit}
                         >
                           <X class="w-4 h-4" />
@@ -560,7 +618,7 @@
                       {:else}
                         {#each fullConfig.rowActions as action}
                           <button
-                            class="p-1.5 rounded hover:bg-gremius-cyan/10 text-gremius-subtle hover:text-gremius-cyan"
+                            class="p-1.5 rounded hover:bg-kitsuden-accent/10 text-kitsuden-subtle hover:text-kitsuden-accent"
                             onclick={() => action.handler(row)}
                             title={action.label}
                           >
@@ -572,7 +630,7 @@
                           </button>
                         {/each}
                         <button
-                          class="p-1.5 rounded hover:bg-gremius-cyan/10 text-gremius-subtle hover:text-gremius-cyan"
+                          class="p-1.5 rounded hover:bg-kitsuden-accent/10 text-kitsuden-subtle hover:text-kitsuden-accent"
                           onclick={() => startEdit(row)}
                           title="Edit"
                         >
@@ -593,7 +651,7 @@
   <!-- Pagination -->
   {#if fullConfig.pagination && pagination.totalPages > 1}
     <div class="flex items-center justify-between">
-      <p class="text-sm text-gremius-subtle">
+      <p class="text-sm text-kitsuden-subtle">
         Showing {(pagination.page - 1) * pagination.pageSize + 1} to
         {Math.min(pagination.page * pagination.pageSize, pagination.total)} of
         {pagination.total} results
@@ -606,7 +664,7 @@
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
-        <span class="text-sm text-gremius-text px-2">
+        <span class="text-sm text-kitsuden-text px-2">
           Page {pagination.page} of {pagination.totalPages}
         </span>
         <button
@@ -623,7 +681,7 @@
 
 <style>
   :global(.btn-secondary-sm) {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-gremius-surface border border-gremius-border rounded-lg 
-           text-sm text-gremius-text hover:border-gremius-cyan/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-kitsuden-surface border border-kitsuden-border rounded-lg 
+           text-sm text-kitsuden-text hover:border-kitsuden-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 </style>

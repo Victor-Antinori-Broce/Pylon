@@ -1,4 +1,4 @@
-# GremiusCMS - Progress Tracker
+# Kitsuden - Progress Tracker
 
 ## v0.5.0 — The Modular Architecture Era (Current)
 
@@ -6,7 +6,7 @@
 
 - **Runtime:** Bun
 - **Backend:** Hono (REST API) + Drizzle ORM + PostgreSQL
-- **Modularity:** Config-driven Auto-Discovery system (`realm.json`) + Realm-bundled grimoires
+- **Modularity:** Config-driven Auto-Discovery system (`grimoire.json`) + Grimoire-bundled kons
 - **Storage:** MinIO (S3-compatible object storage)
 - **Infra:** **Valkey** (DragonflyDB compatible) for Cache, Leaderboards, & BullMQ Queues
 - **Auth:** **Better-Auth** (JWT + Sessions)
@@ -16,35 +16,35 @@
 - **Code Quality:** ESLint + Prettier + Husky + CI/CD
 - **Type Safety:** TypeScript Strict (0 errors)
 
-### The Lore Refactor: Jerarquía Mágica de Gremius (v0.5+)
+### The Lore Refactor: Jerarquía Mágica de Kitsuden (v0.5+)
 
 ```
-GREMIUS ENGINE (always active, not shown as grimoires)
+KITSUDEN ENGINE (always active, not shown as kons)
 ├── Schema Engine (Drizzle + Datasets)
 ├── Auth Manager (Better Auth)
 ├── API Gateway (Hono + middleware)
 ├── Valkey Layer (cache + queues)
 ├── Media Hub (S3/MinIO)
-└── Grimoire Loader (realm-driven)
+└── Kon Loader (grimoire-driven)
 
-CORE GRIMOIRES (toggleable, official Gremius features)
+CORE KONS (toggleable, official Kitsuden features)
 ├── promote      — CMS / Promote to Content
 ├── webhooks     — Event dispatch
 ├── connectors   — Remote APIs/DBs
 ├── blocks       — Page Builder foundation
 └── media        — Media Library
 
-OPTIONAL GRIMOIRES (toggleable, enterprise features)
+OPTIONAL KONS (toggleable, enterprise features)
 ├── academy      — LMS with courses
 ├── dms          — Document Management
 ├── booking      — Room reservations
 ├── directory    — Employee directory
 ├── formulas     — KPI calculations
-├── gremius-crm  — CRM on Data Sets
+├── kitsuden-crm  — CRM on Data Sets
 └── blog         — Blog Posts
 
-REALM GRIMOIRES (bundled with active realm)
-Realm Esports:
+GRIMOIRE KONS (bundled with active grimoire)
+Grimoire Esports:
 ├── games        — Game catalog + IGDB
 ├── streamers    — Twitch/YouTube/Kick
 ├── platforms    — Gaming platforms
@@ -70,28 +70,28 @@ Realm Esports:
 
 ### What's New from v0.4
 
-| Component           | Before (v0.4)               | After (v0.5)                |
-| ------------------- | --------------------------- | --------------------------- |
-| Grimoire System     | Single source (src/modules) | Dual source (core + realm)  |
-| Grimoire Categories | core/optional               | core/optional/realm         |
-| Realm Grimoires     | Manual config               | Auto-loaded from realm.json |
-| Gaming Realm        | gremius-gaming              | Realm Esports               |
-| API /grimoires      | Flat list                   | Categorized with metadata   |
+| Component       | Before (v0.4)               | After (v0.5)                   |
+| --------------- | --------------------------- | ------------------------------ |
+| Kon System      | Single source (src/modules) | Dual source (core + grimoire)  |
+| Kon Categories  | core/optional               | core/optional/grimoire         |
+| Grimoire Kons   | Manual config               | Auto-loaded from grimoire.json |
+| Gaming Grimoire | kitsuden-gaming             | Grimoire Esports               |
+| API /kons       | Flat list                   | Categorized with metadata      |
 
-### Grimoires System ✅
+### Kons System ✅
 
-La Jerarquía Mágica de Gremius organiza funcionalidades en 4 categorías:
+La Jerarquía Mágica de Kitsuden organiza funcionalidades en 4 categorías:
 
-| Category          | Description                                                     | Count |
-| ----------------- | --------------------------------------------------------------- | ----- |
-| **Core**          | Infrastructure switchable (media-library, webhooks, connectors) | 3     |
-| **Grimoire-Core** | Official BaaS superpowers (promote, blocks, formulas)           | 3     |
-| **Optional**      | Enterprise/vertical features (academy, crm, blog, etc.)         | 6     |
-| **Realm**         | Bundled with active realm (games, teams, tournaments, etc.)     | 9     |
+| Category     | Description                                                     | Count |
+| ------------ | --------------------------------------------------------------- | ----- |
+| **Core**     | Infrastructure switchable (media-library, webhooks, connectors) | 3     |
+| **Kon-Core** | Official BaaS superpowers (promote, blocks, formulas)           | 3     |
+| **Optional** | Enterprise/vertical features (academy, crm, blog, etc.)         | 6     |
+| **Grimoire** | Bundled with active grimoire (games, teams, tournaments, etc.)  | 9     |
 
-**Total: 21 grimoires registered, 19 physical implementations**
+**Total: 21 kons registered, 19 physical implementations**
 
-#### Grimoire Registry
+#### Kon Registry
 
 ```
 Core Infrastructure (packages/core/)
@@ -99,12 +99,12 @@ Core Infrastructure (packages/core/)
 ├── webhooks         ✅ Event-driven HTTP callbacks with retry
 └── connectors       ✅ External APIs and DB connectors
 
-Grimoire Core (packages/grimoires/)
+Kon Core (packages/kons/)
 ├── promote          ✅ CMS/Promote to Content
 ├── blocks           ✅ Page Builder (Lego-style blocks)
 └── formulas         ✅ KPI calculations and virtual fields
 
-Optional Grimoires (packages/grimoires/)
+Optional Kons (packages/kons/)
 ├── academy          ✅ LMS with 60+ endpoints - Admin UI placeholder
 ├── ai-memories      ✅ Vector semantic memory - Full CRUD
 ├── booking          ✅ Room reservations - Admin UI placeholder
@@ -115,7 +115,7 @@ Optional Grimoires (packages/grimoires/)
 ├── promote          ✅ Promote to Content - Working in admin
 └── blog             ✅ Blog platform - Working in admin
 
-Realm Esports (packages/grimoires/)
+Grimoire Esports (packages/kons/)
 ├── games            ✅ Game library with IGDB sync + Auth
 ├── streamers        ✅ Twitch/YouTube/Kick tracking + Auth
 ├── platforms        ✅ Gaming platforms catalog + Auth
@@ -129,11 +129,11 @@ Realm Esports (packages/grimoires/)
 
 #### Sidebar Navigation
 
-Todos los grimoires activados aparecen automáticamente en el sidebar:
+Todos los kons activados aparecen automáticamente en el sidebar:
 
 - **Core**: Data Sets, Media Library, Page Builder, Promote to Content, KPIs
-- **Optional**: Academy, Documents, Booking, Directory, Blog Posts, Gremius CRM
-- **Realm Esports**: Games, Streamers, Platforms, Tags, Collections, Teams, Players, Matches, Tournaments
+- **Optional**: Academy, Documents, Booking, Directory, Blog Posts, Kitsuden CRM
+- **Grimoire Esports**: Games, Streamers, Platforms, Tags, Collections, Teams, Players, Matches, Tournaments
 - **System**: Data Explorer, Webhooks
 
 ### API Endpoints (Selection)
@@ -142,17 +142,17 @@ Todos los grimoires activados aparecen automáticamente en el sidebar:
 GET  /api/health
 POST /api/auth/login
 
-# Grimoire Management
+# Kon Management
 GET  /api/modules              — List with categories
 GET  /api/modules/:key/check   — Dependency check
 PATCH /api/modules/:key        — Toggle/configure
 
-# Core Grimoires
+# Core Kons
 GET  /api/custom/webhooks
 POST /api/custom/promote/:datasetId
 GET  /api/custom/connectors
 
-# Realm Grimoires (when Realm Esports active)
+# Grimoire Kons (when Grimoire Esports active)
 GET  /api/games
 GET  /api/streamers
 GET  /api/teams
@@ -169,7 +169,7 @@ GET  /api/... ?format=toon
 
 ### pgvector Configuration ✅
 
-GremiusCMS utiliza **pgvector** para funcionalidades de IA (embeddings, búsqueda semántica).
+Kitsuden utiliza **pgvector** para funcionalidades de IA (embeddings, búsqueda semántica).
 
 | Aspecto                  | Estado                 | Detalle                                                     |
 | ------------------------ | ---------------------- | ----------------------------------------------------------- |
@@ -294,7 +294,7 @@ Test Files: 2 files
 **Note:** Backend tests are integration tests requiring:
 
 - PostgreSQL running on port 5433
-- Database `gremiuscms` with proper credentials
+- Database `kitsuden` with proper credentials
 - Valkey/Redis for caching layer
 
 Run with: `cd apps/api && DATABASE_URL=postgres://... bun test`
@@ -335,7 +335,7 @@ All TypeScript errors resolved (60 → 0):
 
 ### Testing Expansion ✅
 
-- [x] Grimoire registry tests (39 passing)
+- [x] Kon registry tests (39 passing)
 - [x] Auth module tests (10 passing)
 - [x] Datasets module tests (12 passing)
 - [x] RLS middleware tests (10 passing)
@@ -351,12 +351,12 @@ All TypeScript errors resolved (60 → 0):
 - [ ] Production Caddy/Traefik reverse proxy
 - [ ] Rate limiting middleware
 - [ ] Dashboard analytics integration
-- [x] Move gaming module files to grimoires directory (La Jerarquía Mágica refactor)
-- [ ] Complete Realm system documentation
+- [x] Move gaming module files to kons directory (La Jerarquía Mágica refactor)
+- [ ] Complete Grimoire system documentation
 - [ ] Complete remaining admin views (Media, Modules, Settings)
 - [x] Backend integration tests with test database setup
-- [x] Grimoires audit complete — 21 grimoires registered, all with working routes
-- [x] Sidebar navigation fully dynamic based on enabled grimoires
+- [x] Kons audit complete — 21 kons registered, all with working routes
+- [x] Sidebar navigation fully dynamic based on enabled kons
 - [x] pgvector configuration documented and health check endpoint added
 - [x] Startup script with pgvector detection prevents silent failures
 - [ ] Increase test coverage to 60% (current ~15%)

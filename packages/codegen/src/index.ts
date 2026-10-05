@@ -1,7 +1,7 @@
 /**
- * Gremius Codegen — Frontend code generation engine
+ * Kitsuden Codegen — Frontend code generation engine
  *
- * Generates strongly-typed frontend code from any Gremius collection
+ * Generates strongly-typed frontend code from any Kitsuden collection
  * (dataset or native table) without manual boilerplate.
  */
 

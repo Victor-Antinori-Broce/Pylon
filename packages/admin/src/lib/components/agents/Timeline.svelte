@@ -95,7 +95,7 @@
     },
     retrieval: {
       icon: Brain,
-      color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+      color: "text-kitsuden-accent bg-kitsuden-accent/10 border-kitsuden-accent/20",
       label: "Retrieval",
     },
     memory_read: {

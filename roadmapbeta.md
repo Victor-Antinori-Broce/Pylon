@@ -1,4 +1,4 @@
-# GremiusCMS — Beta Roadmap
+# Kitsuden — Beta Roadmap
 
 > **Versión actual:** `v0.9.0-beta`  
 > **Estado:** Estabilización en curso (ver [`STABILIZATION_PLAN.md`](./STABILIZATION_PLAN.md))  
@@ -9,15 +9,15 @@
 
 ## 1. Visión de la Beta
 
-GremiusCMS es un **BaaS/CMS híbrido modular** construido para equipos que necesitan flexibilidad de CMS sin sacrificar el control de un BaaS.
+Kitsuden es un **BaaS/CMS híbrido modular** construido para equipos que necesitan flexibilidad de CMS sin sacrificar el control de un BaaS.
 
-La beta está enfocada en validar la **arquitectura de grimoires** y el **sistema de datos dinámicos** con RLS. No buscamos feature parity con WordPress o Strapi; buscamos que el core sea sólido, predecible y extensible.
+La beta está enfocada en validar la **arquitectura de kons** y el **sistema de datos dinámicos** con RLS. No buscamos feature parity con WordPress o Strapi; buscamos que el core sea sólido, predecible y extensible.
 
 ### ¿Para quién es esta beta?
 
 - Equipos técnicos que quieren hostear su propio CMS/BaaS
 - Developers que necesitan datasets dinámicos con auth y RLS nativo
-- Proyectos de gaming, esports o contenido que pueden aprovechar los grimoires especializados
+- Proyectos de gaming, esports o contenido que pueden aprovechar los kons especializados
 - **NO es para:** usuarios finales no técnicos, blogs personales simples, o quienes buscan " instalar un plugin y listo"
 
 ---
@@ -33,9 +33,9 @@ Estos features tienen tests, pasan TypeScript strict, y están documentados.
 | **Auth & Sessions**          | Better-Auth con cookies, sesiones seguras, sign-up/sign-in          | v0.7.0 |
 | **Row-Level Security (RLS)** | Aislamiento de datos por usuario a nivel de PostgreSQL              | v0.7.0 |
 | **Dataset Engine**           | Crear datasets dinámicos, insertar entries JSONB, query con filtros | v0.7.0 |
-| **Grimoire Loader**          | Carga dinámica de módulos desde `packages/grimoires/`               | v0.8.0 |
+| **Kon Loader**               | Carga dinámica de módulos desde `packages/kons/`                    | v0.8.0 |
 | **MCP Server**               | Protocolo Model Context para agentes de IA (Claude, Cursor)         | v0.8.0 |
-| **Agent System**             | Identidades NHI (`grm_agent_*`), scopes, audit logs                 | v0.8.0 |
+| **Agent System**             | Identidades NHI (`kitsuden_agent_*`), scopes, audit logs            | v0.8.0 |
 | **Queue Engine**             | BullMQ + Valkey para jobs en background                             | v0.7.0 |
 | **Webhook Engine**           | HTTP callbacks con firma HMAC                                       | v0.7.0 |
 | **Docker Deploy**            | `docker compose up` funcional con PostgreSQL + Valkey + MinIO       | v0.7.0 |
@@ -47,9 +47,9 @@ Estos features funcionan pero necesitan más testing real o pulido de UX.
 
 | Feature                    | Descripción                            | Riesgos conocidos                                        |
 | :------------------------- | :------------------------------------- | :------------------------------------------------------- |
-| **Grimoire Games**         | Catálogo de juegos con IGDB sync       | IGDB rate limits; sync async no testeado en carga        |
-| **Grimoire Streamers**     | Integración Twitch/YouTube/Kick        | APIs de terceros cambian sin aviso                       |
-| **Grimoire Blog**          | Posts con scheduling, tags, SEO        | Scheduling no testeado bajo cron real                    |
+| **Kon Games**              | Catálogo de juegos con IGDB sync       | IGDB rate limits; sync async no testeado en carga        |
+| **Kon Streamers**          | Integración Twitch/YouTube/Kick        | APIs de terceros cambian sin aviso                       |
+| **Kon Blog**               | Posts con scheduling, tags, SEO        | Scheduling no testeado bajo cron real                    |
 | **Page Builder (Blocks)**  | Sistema de bloques Astro para frontend | API de blocks en evolución                               |
 | **Media Library**          | Upload a S3/MinIO con transforms       | Faltan tests de transformación de imágenes               |
 | **Real-time (WebSockets)** | Pub/sub via Valkey                     | Escalabilidad horizontal no validada                     |
@@ -61,17 +61,17 @@ Estos features funcionan pero necesitan más testing real o pulido de UX.
 
 No usar en producción. APIs inestables o incompletas.
 
-| Feature                         | Estado                                                    | ETA     |
-| :------------------------------ | :-------------------------------------------------------- | :------ |
-| **Grimoire Academy (LMS)**      | En desarrollo; schema listo, UI pendiente                 | v1.0    |
-| **Grimoire Booking**            | Schema listo, sin rutas HTTP                              | v1.0    |
-| **Grimoire DMS**                | Migración a grimoire no completada                        | v1.0    |
-| **Grimoire CRM**                | En desarrollo activo                                      | v1.0    |
-| **Formula Engine**              | Parser existente, sin UI de admin                         | v0.10.0 |
-| **Vector Search / AI Memories** | Requiere pgvector; schema listo, API mínima               | v0.10.0 |
-| **Multi-tenant Realms**         | Sistema de realms funcional pero sin isolamiento completo | v1.0    |
-| **SDK Oficial**                 | `@gremius/sdk` existe pero sin documentación              | v0.10.0 |
-| **Astro Starter Theme**         | Template existe pero sin actualizarse a grimoires v3      | v0.10.0 |
+| Feature                         | Estado                                                       | ETA     |
+| :------------------------------ | :----------------------------------------------------------- | :------ |
+| **Kon Academy (LMS)**           | En desarrollo; schema listo, UI pendiente                    | v1.0    |
+| **Kon Booking**                 | Schema listo, sin rutas HTTP                                 | v1.0    |
+| **Kon DMS**                     | Migración a kon no completada                                | v1.0    |
+| **Kon CRM**                     | En desarrollo activo                                         | v1.0    |
+| **Formula Engine**              | Parser existente, sin UI de admin                            | v0.10.0 |
+| **Vector Search / AI Memories** | Requiere pgvector; schema listo, API mínima                  | v0.10.0 |
+| **Multi-tenant Grimoires**      | Sistema de grimoires funcional pero sin isolamiento completo | v1.0    |
+| **SDK Oficial**                 | `@kitsuden/sdk` existe pero sin documentación                | v0.10.0 |
+| **Astro Starter Theme**         | Template existe pero sin actualizarse a kons v3              | v0.10.0 |
 
 ---
 
@@ -86,7 +86,7 @@ No usar en producción. APIs inestables o incompletas.
 │  Hono API (Bun)                             │
 │  ├── Auth (Better-Auth)                     │
 │  ├── Datasets & Entries (JSONB + RLS)       │
-│  ├── Grimoires (carga dinámica)             │
+│  ├── Kons (carga dinámica)             │
 │  ├── MCP Server (/api/mcp)                  │
 │  ├── Actions Engine                         │
 │  └── GraphQL                                │
@@ -95,7 +95,7 @@ No usar en producción. APIs inestables o incompletas.
 ┌──────────────▼──────────────────────────────┐
 │  PostgreSQL 16  +  Valkey  +  MinIO         │
 │  ├── Schema core (auth, datasets, settings) │
-│  ├── Tablas de grimoires activos            │
+│  ├── Tablas de kons activos            │
 │  └── RLS policies por tenant                │
 └─────────────────────────────────────────────┘
 ```
@@ -119,20 +119,20 @@ No usar en producción. APIs inestables o incompletas.
 - [ ] Admin Svelte funcional para CRUD core
 - [ ] Repo limpio, Docker build sin warnings
 
-### v0.10.0-beta (Polish & Grimoires)
+### v0.10.0-beta (Polish & Kons)
 
 - [ ] Formula engine funcional
 - [ ] Vector search + AI memories
 - [ ] SDK documentado y publicado
-- [ ] Grimoire Academy beta
-- [ ] Grimoire CRM funcional
+- [ ] Kon Academy beta
+- [ ] Kon CRM funcional
 - [ ] Mejoras de performance en GraphQL (dataloaders)
 - [ ] WebSocket horizontal scaling (Redis adapter)
 
 ### v1.0.0 (Stable)
 
-- [ ] Todos los grimoires core estables
-- [ ] Multi-tenant con isolamiento completo de realms
+- [ ] Todos los kons core estables
+- [ ] Multi-tenant con isolamiento completo de grimoires
 - [ ] Admin UI 100% funcional (todas las vistas)
 - [ ] Backup/restore integrado
 - [ ] Zero-downtime migrations
@@ -141,8 +141,8 @@ No usar en producción. APIs inestables o incompletas.
 
 ### v1.1.0+ (Features)
 
-- [ ] Marketplace de grimoires (instalar desde npm)
-- [ ] Realms visuales con theming completo
+- [ ] Marketplace de kons (instalar desde npm)
+- [ ] Grimoires visuales con theming completo
 - [ ] Mobile app para admin
 - [ ] Integraciones nativas (Stripe, SendGrid, etc.)
 
@@ -215,9 +215,9 @@ No usar en producción. APIs inestables o incompletas.
 
 ```
 
-**Grimoires activos:**
-- grimoire-games: enabled
-- grimoire-blog: enabled
+**Kons activos:**
+- kon-games: enabled
+- kon-blog: enabled
 - ...
 ```
 
@@ -239,9 +239,9 @@ Para evitar `ALTER TABLE` al vuelo cuando un usuario cambia el schema de un data
 
 Performance. Bun maneja WebSockets nativos, tiene un bundler integrado, y es significativamente más rápido en I/O intensivo. El tradeoff es menor ecosistema; por eso usamos Hono (funciona en ambos) y Drizzle (ORM compatible).
 
-### ¿Por qué tres niveles (Engine / Core / Grimoires)?
+### ¿Por qué tres niveles (Engine / Core / Kons)?
 
-Para que puedas desactivar funcionalidad sin tocar código. Si solo necesitas auth + datasets, apagas los grimoires. Si necesitas gaming, activas `grimoire-games`. Si eres una empresa, activas `grimoire-crm` y `grimoire-dms`.
+Para que puedas desactivar funcionalidad sin tocar código. Si solo necesitas auth + datasets, apagas los kons. Si necesitas gaming, activas `kon-games`. Si eres una empresa, activas `kon-crm` y `kon-dms`.
 
 ### ¿Por qué MCP en lugar de una API propia para IA?
 
@@ -257,10 +257,10 @@ A: Solo si eres el developer del proyecto, entiendes la arquitectura, y aceptas 
 **Q: ¿Hay upgrades automáticos entre versiones beta?**  
 A: No. Las migraciones de DB son manuales (`bun run db:migrate`). Entre betas puede haber breaking changes.
 
-**Q: ¿Puedo escribir mi propio grimoire?**  
-A: Sí, pero la API de `defineGrimoire()` todavía puede cambiar en v0.9.0. Espera a la v0.10.0 para grimoires de terceros estables.
+**Q: ¿Puedo escribir mi propio kon?**  
+A: Sí, pero la API de `defineKon()` todavía puede cambiar en v0.9.0. Espera a la v0.10.0 para kons de terceros estables.
 
-**Q: ¿Qué pasa si desactivo un grimoire?**  
+**Q: ¿Qué pasa si desactivo un kon?**  
 A: Sus rutas desaparecen de la API, pero sus tablas en PostgreSQL permanecen. No hay "uninstall limpio" todavía.
 
 **Q: ¿El panel de admin funciona en móvil?**  
@@ -272,7 +272,7 @@ A: No optimizado. Funciona técnicamente, pero la UX es desktop-first.
 
 ### v0.8.0-beta (Anterior)
 
-- Migración de módulos monolíticos a grimoires (Fase 1–2)
+- Migración de módulos monolíticos a kons (Fase 1–2)
 - Actions Engine unificado (reemplaza functions + webhooks separados)
 - Agent System con NHI y scopes
 - MCP Server SSE
@@ -290,4 +290,21 @@ A: No optimizado. Funciona técnicamente, pero la UX es desktop-first.
 ---
 
 _Última actualización: Mayo 2026_  
-_Mantenedor: GremiusCMS Team_
+_Mantenedor: Kitsuden Team_
+
+---
+
+## Anexo (2026-07-13) — Nuevos engines BaaS disponibles en la beta
+
+Implementados según `kitsuden.md` (ver registro de cambios allí). Clasificación para la Feature Matrix:
+
+**🟡 Beta — Funcional, pendiente de integración con DB real:**
+
+- **Toon Protocol** — serialización con preservación de tipos (`Accept: application/vnd.kitsuden.toon+json` / `?format=toonp`). Cubierto por 16 unit tests. Cliente en `@kitsuden/sdk/toon-protocol`.
+- **Engine Graphify** — APIs relacionales automáticas en `/api/graph` (N:1, 1:N, N:M) bajo RLS transaccional. Cliente en `kitsuden.graph.*` del SDK.
+- **Secrets Manager (Prefect-style)** — `/api/admin/secrets`, AES-256-GCM + hot injection en `process.env`. Requiere `KITSUDEN_SECRETS_KEY` en producción.
+- **Hono RPC** — `AppType` exportado desde el API + `@kitsuden/sdk/rpc` (`createRpcClient`). Autocompletado profundo por endpoint requiere migrar routers a chained syntax (post-beta).
+
+**🔴 Alpha — Detrás de feature flag:**
+
+- **KITSUDEN Vault** (`KITSUDEN_VAULT_ENABLED=true`) — esquemas dinámicos con `CREATE/ALTER TABLE` reales + RLS automático, prefijo `vault_`. Coexiste con JSONB (ADR-001). No exponer a beta testers hasta correr la suite de integración con PostgreSQL.

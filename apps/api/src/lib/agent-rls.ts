@@ -1,7 +1,7 @@
 /**
  * Agent RLS (Row Level Security) Policies
  *
- * Extiende el sistema de RLS de Gremius para soportar agentes NHI
+ * Extiende el sistema de RLS de Kitsuden para soportar agentes NHI
  *
  * Estas políticas permiten que los agentes de IA accedan a datos
  * con restricciones basadas en sus scopes, similar a los usuarios humanos.
@@ -157,10 +157,16 @@ export class AgentRLSError extends Error {
  * Estas políticas usan el current_setting de PostgreSQL para pasar el agent_id
  */
 export const AGENT_RLS_SQL = {
-  // Habilitar RLS en tablas
+  // Habilitar RLS en tablas.
+  //
+  // FORCE no es opcional: sin él, PostgreSQL EXIME al dueño de la tabla de
+  // todas las políticas — y la app se conecta justo como el dueño (el rol que
+  // corrió las migraciones). ENABLE a secas producía políticas decorativas:
+  // existían, pero el único rol que las atravesaba las ignoraba.
   enableRLS: (table: string) =>
     sql.raw(`
     ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE ${table} FORCE ROW LEVEL SECURITY;
   `),
 
   // Política para agentes (lectura)

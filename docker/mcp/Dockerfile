@@ -1,6 +1,6 @@
 # ===================================================================
-# GremiusCMS MCP Server Docker Image (Standalone)
-# Build: docker build -f docker/mcp/Dockerfile -t gremius/mcp .
+# Kitsuden MCP Server Docker Image (Standalone)
+# Build: docker build -f docker/mcp/Dockerfile -t kitsuden/mcp .
 # ===================================================================
 
 FROM oven/bun:1-alpine AS base
@@ -25,7 +25,7 @@ COPY packages/shared ./packages/shared
 COPY packages/sdk ./packages/sdk
 
 # Build shared first, then MCP server
-RUN pnpm --filter @gremius/shared build
+RUN pnpm --filter @kitsuden/shared build
 WORKDIR /app/packages/mcp-server
 RUN bun run build
 
@@ -42,7 +42,7 @@ COPY --from=base /app/packages/mcp-server/package.json ./
 
 ENV NODE_ENV=production
 ENV PORT=3002
-ENV GREMIUS_API_URL=http://localhost:3000
+ENV KITSUDEN_API_URL=http://localhost:3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3002/health || exit 1

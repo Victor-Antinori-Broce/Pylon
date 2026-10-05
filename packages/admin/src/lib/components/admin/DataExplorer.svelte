@@ -24,7 +24,7 @@
     Columns3,
     Copy,
   } from "lucide-svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   import type {
     AdminConfig,
@@ -33,6 +33,12 @@
     CalendarView as CalendarViewType,
     RowAction,
   } from "$lib/types/admin";
+
+  import { toast } from "svelte-sonner";
+
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
 
   import AutoFormModal from "./AutoFormModal.svelte";
   import CalendarView from "./CalendarView.svelte";
@@ -88,16 +94,107 @@
   // FK options for filter dropdowns
   let filterRelationOptions = $state<Record<string, { value: string; label: string }[]>>({});
 
-  // Computed
-  const activeView = $derived(
-    config?.views?.find((v) => v.id === viewId) ||
-      config?.views?.[0] ||
-      ({ type: "grid", table: grimoireId, id: "default", title: grimoireId } as any)
+  // Dynamic table discovery for grimoires
+  let discoveredViews = $state<Array<{ id: string; type: "grid"; title: string; table: string }>>(
+    []
   );
 
-  const displayTable = $derived(
-    activeView?.type === "grid" ? (activeView as any).table : grimoireId
-  );
+  // View tabs (when config has multiple views) + discovered views
+  const views = $derived([
+    ...(config?.views || []),
+    ...discoveredViews.filter(
+      (dv) => !(config?.views || []).some((cv: any) => cv.table === dv.table)
+    ),
+  ]);
+
+  /**
+   * La pestaña activa y la tabla que enseña
+   * --------------------------------------------------------------------------
+   *
+   * ── EL FALLO QUE ESTO ARREGLA ────────────────────────────────────────────
+   *
+   * `activeView` se derivaba de la PROP `viewId`, y el clic en una pestaña
+   * escribía en un `activeViewId` local que solo alimentaba el color del botón.
+   * Resultado: la pestaña se marcaba como activa, `loadData()` volvía a pedir
+   * la tabla ANTERIOR, y `loadSchema()` ni se llamaba.
+   *
+   * Se veía como una incoherencia sin causa aparente: la pestaña «Temas»
+   * resaltada, la cabecera del botón diciendo «Agregar Perfil usuario
+   * capacitaciones» y debajo las filas de otra tabla. Tres cosas en pantalla
+   * describiendo tres estados distintos.
+   *
+   * Ahora `activeViewId` es la única fuente: la prop solo lo INICIALIZA, y todo
+   * lo demás se deriva de él.
+   *
+   * ── SIN TABLA NO HAY TABLA ───────────────────────────────────────────────
+   *
+   * `tablaActiva` puede ser `null`, y eso es una respuesta válida: una vista de
+   * tipo `dashboard`, `custom` o `element` no tiene tabla que enseñar.
+   *
+   * Antes caía a `|| grimoireId`, que convertía «esta vista no es una tabla» en
+   * «la tabla se llama kon-booking». El panel pedía el esquema de una tabla con
+   * ese nombre, no existía, y el diagnóstico que enseñaba era
+   *
+   *     Could not load schema for table "kon-booking"
+   *
+   * es decir: el id del kon disfrazado de tabla que falta. Un respaldo que
+   * fabrica un nombre falso cuesta más de depurar que la ausencia del dato.
+   */
+  let activeViewId = $state("");
+
+  const activeView = $derived(views.find((v) => v.id === activeViewId) || views[0]);
+
+  /** Nombre de la tabla de la vista activa, o `null` si la vista no muestra una. */
+  const tablaActiva = $derived<string | null>((activeView as any)?.table ?? null);
+
+  const displayTable = $derived(tablaActiva ?? grimoireId);
+
+  /**
+   * Nombre para el botón «Agregar», o `null` si no hay uno de fiar.
+   *
+   * ── POR QUE YA NO SE SINGULARIZA ─────────────────────────────────────────
+   *
+   * Aquí había una regla que quitaba la `s` o la `es` final del título de la
+   * vista. Con «Cursos» → «Curso» funcionaba, y por eso pasó. Con la primera
+   * vista en inglés produjo esto:
+   *
+   *     "All Games".replace(/e?s$/i, "")  →  "All Gam"
+   *
+   * Y el botón decía **«Agregar All Gam»**. La regla no falla: acierta a veces,
+   * que es peor — nadie la revisa hasta que sale una palabra rota en pantalla.
+   *
+   * La forma correcta en esta arquitectura es la misma que para todo lo demás:
+   * **el kon lo declara**. Si no lo declara, el botón dice «Agregar» a secas,
+   * que no es tan bonito pero nunca es una palabra inventada. El contexto —el
+   * título de la pantalla, justo encima— ya dice de qué.
+   */
+  const etiquetaDeAlta = $derived.by<string | null>(() => {
+    const vista = activeView as { singularName?: string } | undefined;
+    if (vista?.singularName) return vista.singularName;
+
+    /**
+     * ── LA ETIQUETA ES LA DE LA TABLA QUE SE ESTA VIENDO ───────────────────
+     *
+     * `config.singularName` sale de `grimoire.tables[0].label`: la PRIMERA
+     * tabla del kon, fija, la misma para todas las pestañas. En CardSim, que
+     * tiene siete tablas y ninguna vista declarada, eso significaba estar en
+     * «Cartas» y que el botón dijera **«Agregar Juegos»** — porque
+     * `cardsim_games` es la primera de la lista.
+     *
+     * Es la misma familia que el `apiBase` que servía la primera tabla a las
+     * once pestañas de Academy: coger `[0]` y llamarlo «el del kon» acierta
+     * mientras solo hay uno.
+     *
+     * Se busca la etiqueta de `tablaActiva` en las tablas que el kon declara.
+     * Si no está —una vista sin tabla, o una tabla descubierta que el
+     * manifiesto no nombra— se cae a lo de antes y, si tampoco, el botón dice
+     * «Agregar» a secas: nunca una palabra que no toca.
+     */
+    const deLaTabla = allTables?.find((t) => t.name === tablaActiva)?.label;
+    if (deLaTabla) return deLaTabla;
+
+    return config?.singularName || null;
+  });
 
   const columns = $derived<SchemaColumn[]>(schema?.columns || generateColumnsFromData(data));
 
@@ -135,25 +232,69 @@
       .map((c) => c.name)
   );
 
-  // Dynamic table discovery for grimoires
-  let discoveredViews = $state<Array<{ id: string; type: "grid"; title: string; table: string }>>(
-    []
-  );
-
-  // View tabs (when config has multiple views) + discovered views
-  const views = $derived([
-    ...(config?.views || []),
-    ...discoveredViews.filter(
-      (dv) => !(config?.views || []).some((cv: any) => cv.table === dv.table)
-    ),
-  ]);
-  let activeViewId = $state("");
-
   // ── Row Actions ──
   const rowActions = $derived<RowAction[]>((activeView as any)?.rowActions || []);
+
+  /**
+   * Filtro fijo de la vista, declarado en el `kon.json` del kon.
+   *
+   * No es lo mismo que `activeFilters`: este lo pone el manifiesto y define QUE
+   * ES la pestaña —«Borradores» son los que tienen `status: draft`—, mientras
+   * que `activeFilters` es lo que añade quien mira. Por eso se aplica siempre,
+   * incluso cuando la persona ha limpiado sus filtros: sin el, «Borradores»
+   * dejaria de ser «Borradores».
+   */
+  const filtroDeLaVista = $derived<Record<string, unknown>>(
+    (activeView as any)?.defaultFilter ?? {}
+  );
+
+  /**
+   * La prop `viewId` INICIALIZA la pestaña; no la gobierna.
+   *
+   * ── EL BUCLE QUE ESTO EVITA ──────────────────────────────────────────────
+   *
+   * La versión anterior de este efecto hacía, sin más:
+   *
+   *     const pedida = viewId || config?.defaultView;
+   *     if (pedida && views.some(...)) activeViewId = pedida;
+   *     else if (!activeViewId && ...) activeViewId = views[0].id;
+   *
+   * y leía `activeViewId` en la segunda rama, así que el efecto era DEPENDIENTE
+   * de `activeViewId`. Al pulsar una pestaña, `switchView` escribía
+   * `activeViewId = otra`, eso volvía a disparar el efecto, `pedida` seguía
+   * siendo la prop original… y lo devolvía a su sitio. La pestaña rebotaba en
+   * el mismo instante en que la pulsabas.
+   *
+   * Es peor que el fallo que vino a corregir: antes las pestañas no hacían nada
+   * porque `activeView` no dependía de `activeViewId`; después no hacían nada
+   * porque el efecto las revertía. Desde fuera se veía idéntico.
+   *
+   * ── LA REGLA ─────────────────────────────────────────────────────────────
+   *
+   * La prop se aplica UNA vez por cada valor nuevo de la prop. Lo que el
+   * usuario haga después manda hasta que la prop vuelva a cambiar — que es lo
+   * que ocurre al navegar desde el menú lateral, y entonces sí debe imponerse.
+   *
+   * `untrack` en la lectura de `activeViewId` es la otra mitad: sin él, el
+   * efecto seguiría reaccionando a sus propias escrituras.
+   */
+  let ultimaPropAplicada = $state<string | undefined>(undefined);
+
   $effect(() => {
-    if (viewId && activeViewId === "") {
-      activeViewId = viewId;
+    const pedida = viewId || config?.defaultView;
+    const disponibles = views;
+
+    if (pedida !== ultimaPropAplicada) {
+      ultimaPropAplicada = pedida;
+      if (pedida && disponibles.some((v) => v.id === pedida)) {
+        activeViewId = pedida;
+        return;
+      }
+    }
+
+    // Primera pintada sin nada elegido: se abre la primera pestaña.
+    if (!untrack(() => activeViewId) && disponibles.length > 0) {
+      activeViewId = disponibles[0]!.id;
     }
   });
 
@@ -174,7 +315,7 @@
    *   /api/crm → 2 segments → base (needs table appended)
    */
   function getEndpoint(tblName?: string): string {
-    const table = tblName || (activeView as any)?.table || grimoireId;
+    const table = tblName ?? tablaActiva ?? grimoireId;
     const base = config?.apiEndpoint;
     if (!base) return `/api/explorer/${table}`;
     // Count path segments after removing leading slash
@@ -244,13 +385,130 @@
   }
 
   onMount(async () => {
-    // If no config with explicit views, discover tables dynamically
+    /**
+     * ── EL DESCUBRIMIENTO ES PARA CUANDO NO HAY MANIFIESTO ──────────────────
+     *
+     * Mira qué tablas tiene el kon EN LA BASE y les inventa un nombre a partir
+     * del nombre de la tabla (`cardsim_games` → «Cardsim games»). Sirve para el
+     * caso de cero configuración: sueltas un directorio con su `kon.json` y
+     * aparece en el panel.
+     *
+     * Pero si el kon YA DECLARA sus tablas, esto sobra y estorba. En CardSim se
+     * veía así: la fila de pestañas de arriba con las etiquetas buenas —Juegos,
+     * Cartas, Mazos…— y JUSTO DEBAJO otra fila con las mismas siete tablas
+     * rebautizadas «Cardsim games», «Cardsim decks»… Dos veces lo mismo, una
+     * con nombres peores.
+     *
+     * La condición anterior era `config.views.length === 0`, y no bastaba:
+     * `onMount` corre en el primer render, cuando el contenedor todavía no ha
+     * resuelto qué vista está activa, así que `config.views` llega vacío y el
+     * descubrimiento se dispara igual.
+     *
+     * `allTables` viene del manifiesto y es estable desde el primer momento.
+     * Si trae algo, el manifiesto manda y no hay nada que descubrir — además,
+     * el explorador solo puede abrir tablas declaradas, así que descubrir otras
+     * no serviría de nada.
+     */
+    const elKonDeclaraSusTablas = (allTables?.length ?? 0) > 0;
+    if (elKonDeclaraSusTablas) return;
+
     if (!config?.views || config.views.length === 0) {
       await discoverGrimoireTables();
     }
-    // Schema-first: try loading schema before data
-    await loadSchema();
-    await loadData();
+  });
+
+  /**
+   * Recarga esquema y datos cada vez que cambia la tabla que se enseña.
+   *
+   * Esto era un `onMount`, y por eso cambiar de pestaña no recargaba nada:
+   * `onMount` corre UNA vez por montaje, y el router de SvelteKit reutiliza el
+   * componente. La pestaña cambiaba, la tabla de abajo no.
+   *
+   * Es el mismo fallo que ya se corrigió en `GrimoirePage` y en
+   * `CustomViewHost`: en Svelte 5, «cuando esto cambie» es `$effect`, no
+   * `onMount`. Aquí se repitió porque se arregló caso por caso en lugar de
+   * buscar el patrón.
+   *
+   * La dependencia es `tablaActiva` y no `activeViewId` a propósito: dos
+   * pestañas pueden apuntar a la MISMA tabla con filtros distintos (Blog tiene
+   * «Borradores» y «Programados», las dos sobre `blog_posts`), y ahí recargar
+   * el esquema no aporta nada.
+   */
+  $effect(() => {
+    const tabla = tablaActiva;
+    if (!tabla) {
+      // Una vista sin tabla —panel, vista propia— no tiene nada que pedir.
+      // Se limpia lo anterior para no enseñar las filas de la pestaña previa
+      // debajo de una vista que no las ha pedido.
+      schema = null;
+      data = [];
+      totalCount = 0;
+      loading = false;
+      return;
+    }
+
+    // Los ajustes de la pestaña anterior no valen para esta tabla: un filtro
+    // sobre una columna que aquí no existe devuelve cero filas sin explicar por
+    // qué, y el orden apuntaría a una columna inexistente.
+    currentPage = 1;
+    sortStack = [];
+    activeFilters = {};
+    hiddenColumns = new Set();
+    schema = null;
+
+    /**
+     * ── POR QUE `untrack` SI AQUI YA HAY UN `await` ─────────────────────────
+     *
+     * Porque el aislamiento no puede depender de un detalle sutil. Svelte 5
+     * deja de rastrear lecturas después del primer `await`, así que esta carga
+     * PROBABLEMENTE no se realimenta hoy. «Probablemente» y «sutil» es
+     * exactamente como sobrevivió el mismo fallo en el otro explorador, donde
+     * la llamada era síncrona y ataba el efecto a lo que la propia carga
+     * escribe: cargar provocaba cargar.
+     *
+     * Decirlo explícitamente no cuesta nada —`untrack` no cambia lo que se
+     * ejecuta, solo de qué se depende— y hace que la garantía se lea en el
+     * código en vez de deducirse del orden de los `await`.
+     */
+    untrack(() => {
+      void (async () => {
+        await loadSchema();
+        await loadData();
+      })();
+    });
+  });
+
+  /**
+   * Cambiar de PESTAÑA recarga los datos, aunque la tabla sea la misma.
+   *
+   * El efecto de arriba depende de `tablaActiva`, y su propio comentario ya
+   * decía que dos pestañas pueden compartir tabla con filtros distintos —
+   * «Borradores» y «Programados» de Blog, las dos sobre `blog_posts`—. Pero
+   * entonces `tablaActiva` no cambia, el efecto no se dispara y la rejilla se
+   * queda con las filas de la pestaña anterior. Con el filtro ya en su sitio,
+   * eso significaría enseñar los borradores bajo el título «Programados».
+   *
+   * Se salta la primera pasada: el efecto de la tabla ya carga al abrir, y sin
+   * esto se harían dos peticiones idénticas nada más entrar.
+   */
+  let vistaYaCargada = $state<string | null>(null);
+
+  $effect(() => {
+    const vista = activeViewId;
+    if (!vista || !untrack(() => tablaActiva)) return;
+
+    if (vistaYaCargada === null) {
+      vistaYaCargada = vista;
+      return;
+    }
+    if (vistaYaCargada === vista) return;
+
+    vistaYaCargada = vista;
+    untrack(() => {
+      currentPage = 1;
+      activeFilters = {};
+      void loadData();
+    });
   });
 
   async function discoverGrimoireTables() {
@@ -264,7 +522,12 @@
           discoveredViews = result.tables.map((t: any) => ({
             id: `grid-${t.name}`,
             type: "grid" as const,
-            title: t.name.replace(/_/g, " ").replace(/^\w/, (c: string) => c.toUpperCase()),
+            // Si el manifiesto le puso nombre, ese. Humanizar el nombre de la
+            // tabla es el ÚLTIMO recurso, no el primero: «Cardsim games» es
+            // peor que «Juegos» en todos los idiomas.
+            title:
+              allTables?.find((d) => d.name === t.name)?.label ??
+              t.name.replace(/_/g, " ").replace(/^\w/, (c: string) => c.toUpperCase()),
             table: t.name,
           }));
           // If no config, build one from discovered tables
@@ -297,7 +560,8 @@
 
   // ── Schema-first loading ──
   async function loadSchema() {
-    const tableName = (activeView as any)?.table || grimoireId;
+    const tableName = tablaActiva;
+    if (!tableName) return;
 
     // If using custom apiEndpoint (like /api/directory), skip schema introspection
     // and generate columns from data instead
@@ -322,13 +586,13 @@
               name,
               type: inferTypeFromJsonSchema(prop),
               nullable: !jsonSchema.required?.includes(name),
-              isPrimary: name === jsonSchema["x-gremius"]?.primaryKey,
+              isPrimary: name === jsonSchema["x-kitsuden"]?.primaryKey,
             })
           );
           schema = {
             name: tableName,
             columns: cols,
-            primaryKey: jsonSchema["x-gremius"]?.primaryKey || "id",
+            primaryKey: jsonSchema["x-kitsuden"]?.primaryKey || "id",
           };
           return;
         }
@@ -434,7 +698,27 @@
         }
       });
 
-      const tableName = (activeView as any)?.table || grimoireId;
+      /**
+       * El filtro de la vista va DESPUES, y con `equals`.
+       *
+       * Después porque define qué es la pestaña y no puede quedar pisado por lo
+       * que haya elegido quien mira; la API solo admite un filtro por petición
+       * (`filter_field` es una clave única en la URL), así que el orden ES la
+       * precedencia.
+       *
+       * `equals` y no `contains` porque un `contains` sobre estados haría que
+       * «draft» encajara con cualquier estado que lo contenga. Hoy ninguno lo
+       * hace; mañana un `draft_review` rompería «Borradores» sin tocar nada.
+       */
+      Object.entries(filtroDeLaVista).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        params.set("filter_field", key);
+        params.set("filter_op", "equals");
+        params.set("filter_value", String(value));
+      });
+
+      const tableName = tablaActiva;
+      if (!tableName) return;
       const endpoint = getEndpoint(tableName);
 
       const res = await fetch(`${API_URL}${endpoint}?${params}`, {
@@ -443,8 +727,12 @@
 
       if (res.ok) {
         const result = await res.json();
-        data = result.data || result.docs || result;
-        totalCount = result.pagination?.total || result.totalDocs || result.total || data.length;
+        // Sobre una variable local: leer `data` justo después de asignarlo
+        // vuelve a atar la función a su propia salida en cuanto alguien la
+        // llame desde un efecto. Ver la nota de arriba.
+        const filas = result.data || result.docs || result;
+        data = filas;
+        totalCount = result.pagination?.total || result.totalDocs || result.total || filas.length;
 
         // If we didn't get schema from the schema endpoint, infer from data
         if (!schema && result.columns && result.columns.length > 0) {
@@ -596,12 +884,12 @@
       case "primary":
         return (
           base +
-          "bg-gremius-cyan/5 border-gremius-cyan/20 text-gremius-cyan hover:bg-gremius-cyan/10 hover:border-gremius-cyan/30"
+          "bg-kitsuden-accent/5 border-kitsuden-accent/20 text-kitsuden-accent hover:bg-kitsuden-accent/10 hover:border-kitsuden-accent/30"
         );
       default:
         return (
           base +
-          "bg-gremius-surface border-gremius-border text-gremius-text hover:bg-gremius-cyan/5 hover:border-gremius-cyan/20 hover:text-gremius-cyan"
+          "bg-kitsuden-surface border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/5 hover:border-kitsuden-accent/20 hover:text-kitsuden-accent"
         );
     }
   }
@@ -694,7 +982,19 @@
   }
 
   function handleExportCsv() {
-    if (data.length === 0) return;
+    /**
+     * Sin filas no hay nada que exportar — pero hay que DECIRLO.
+     *
+     * Antes era un `return` a secas: se pulsaba «Exportar», no pasaba
+     * absolutamente nada, no salía ningún mensaje y no se descargaba ningún
+     * fichero. Desde fuera es indistinguible de un botón roto, y es justo el
+     * caso más frecuente en una instalación nueva, donde las tablas están
+     * vacías.
+     */
+    if (data.length === 0) {
+      toast.info("No hay nada que exportar: esta vista no tiene filas.");
+      return;
+    }
     const headers = Object.keys(data[0]);
     const csvRows = [
       headers.join(","),
@@ -718,7 +1018,53 @@
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * `?crear=1` abre el formulario de alta nada más entrar.
+   *
+   * Hace falta porque desde otras pantallas se enlaza «crear un X», y sin esto
+   * lo único que se puede hacer es llevar a la lista y esperar que la persona
+   * vuelva a pulsar. El botón «New Game» de la vista de juegos hacía
+   * exactamente eso: navegaba a esta pantalla y ahí se quedaba, de modo que
+   * parecía que no hacía nada.
+   *
+   * Se limpia el parámetro de la URL después: si no, recargar o volver atrás
+   * reabriría el formulario una y otra vez.
+   */
+  let altaPorUrlHecha = $state(false);
+
+  $effect(() => {
+    if (altaPorUrlHecha) return;
+    if (!browser) return;
+    if ($page.url.searchParams.get("crear") !== "1") return;
+    if (!tablaActiva) return;
+
+    altaPorUrlHecha = true;
+    untrack(() => {
+      void openCreateModal();
+      const limpia = new URL($page.url);
+      limpia.searchParams.delete("crear");
+      void goto(`${limpia.pathname}${limpia.search}`, { replaceState: true, noScroll: true });
+    });
+  });
+
   async function openCreateModal() {
+    /**
+     * Sin tabla no se abre el formulario.
+     *
+     * El respaldo `?? grimoireId` se quitó de `tablaActiva` hace tiempo por
+     * fabricar nombres falsos, y seguía vivo justo aquí, en el sitio donde más
+     * duele: el modal pedía el esquema de una tabla llamada como el kon y
+     * enseñaba «Could not load schema for table "kon-character-builder"» — el id del kon
+     * disfrazado de tabla que falta.
+     *
+     * Decirlo es más útil que inventarlo: si la vista activa no tiene tabla,
+     * no hay nada que dar de alta desde aquí.
+     */
+    if (!tablaActiva) {
+      toast.error("Esta vista no tiene una tabla asociada, así que no hay nada que crear.");
+      return;
+    }
+
     // Ensure schema is loaded before opening modal
     if (!schema || columns.length === 0) {
       await loadSchema();
@@ -900,11 +1246,29 @@
     }
   }
 
+  /**
+   * Cambia de pestaña.
+   *
+   * No recarga nada por su cuenta: escribe el estado y el `$effect` de arriba
+   * se encarga. Antes llamaba a `loadData()` directamente —y a `loadSchema()`
+   * nunca—, así que la carga y la pestaña podían acabar describiendo tablas
+   * distintas.
+   *
+   * También actualiza la URL, porque `/g/[id]/[viewId]` existe como ruta: sin
+   * esto, recargar la página devolvía a la primera pestaña y no se podía
+   * enlazar una vista concreta.
+   */
   function switchView(vId: string) {
+    if (vId === activeViewId) return;
     activeViewId = vId;
-    const v = config?.views?.find((v) => v.id === vId);
-    if (v && v.type === "grid") {
-      loadData();
+
+    if (typeof window !== "undefined") {
+      const destino = `/g/${grimoireId}/${vId}`;
+      if (window.location.pathname !== destino) {
+        // `replaceState` y no `goto`: navegar remontaría el componente y
+        // perdería el estado que acabamos de fijar.
+        window.history.replaceState(window.history.state, "", destino);
+      }
     }
   }
 
@@ -932,17 +1296,17 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-semibold text-gremius-text">
+        <h1 class="text-xl font-semibold text-kitsuden-text">
           {config?.name || activeView?.title || grimoireId}
         </h1>
-        <p class="text-sm text-gremius-text-dim">
+        <p class="text-sm text-kitsuden-text-dim">
           {totalCount.toLocaleString()} records
         </p>
       </div>
 
       <div class="flex items-center gap-2">
         <button
-          class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-cyan/5 hover:border-gremius-cyan/20 hover:text-gremius-cyan transition-all duration-200"
+          class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/5 hover:border-kitsuden-accent/20 hover:text-kitsuden-accent transition-all duration-200"
           onclick={() => loadData()}
           title="Actualizar"
         >
@@ -951,7 +1315,7 @@
         </button>
 
         <button
-          class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-emerald-500/5 hover:border-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
+          class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-emerald-500/5 hover:border-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
           onclick={handleExportCsv}
           title="Exportar como CSV"
         >
@@ -960,11 +1324,11 @@
         </button>
 
         <button
-          class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+          class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
           onclick={openCreateModal}
         >
           <Plus class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          <span>Agregar {config?.singularName || "Registro"}</span>
+          <span>Agregar{etiquetaDeAlta ? ` ${etiquetaDeAlta}` : ""}</span>
         </button>
       </div>
     </div>
@@ -972,14 +1336,13 @@
     <!-- View Tabs (when multiple views exist) -->
     {#if views.length > 1}
       <div
-        class="flex items-center gap-1 p-1 bg-gremius-bg border border-gremius-border rounded-lg w-fit"
+        class="flex items-center gap-1 p-1 bg-kitsuden-bg border border-kitsuden-border rounded-lg w-fit"
       >
         {#each views as v}
           <button
-            class="px-3 py-1.5 text-sm rounded-md transition-colors {(activeViewId ||
-              views[0]?.id) === v.id
-              ? 'bg-gremius-card text-gremius-text shadow-sm'
-              : 'text-gremius-text-dim hover:text-gremius-text'}"
+            class="px-3 py-1.5 text-sm rounded-md transition-colors {activeView?.id === v.id
+              ? 'bg-kitsuden-card text-kitsuden-text shadow-sm'
+              : 'text-kitsuden-text-dim hover:text-kitsuden-text'}"
             onclick={() => switchView(v.id)}
           >
             {v.title}
@@ -990,10 +1353,10 @@
 
     <!-- Toolbar -->
     <div
-      class="flex items-center gap-3 p-3 bg-gremius-card border border-gremius-border rounded-lg"
+      class="flex items-center gap-3 p-3 bg-kitsuden-card border border-kitsuden-border rounded-lg"
     >
       <div class="relative flex-1 max-w-md">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gremius-text-dim" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-text-dim" />
         <input
           type="text"
           placeholder="Buscar en todos los campos..."
@@ -1004,8 +1367,8 @@
       </div>
 
       <button
-        class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-cyan/5 hover:border-gremius-cyan/20 transition-all duration-200 {showFilters
-          ? 'bg-gremius-cyan/10 text-gremius-cyan border-gremius-cyan/30'
+        class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/5 hover:border-kitsuden-accent/20 transition-all duration-200 {showFilters
+          ? 'bg-kitsuden-accent/10 text-kitsuden-accent border-kitsuden-accent/30'
           : ''}"
         onclick={() => (showFilters = !showFilters)}
       >
@@ -1013,7 +1376,7 @@
         <span class="hidden sm:inline">Filtros</span>
         {#if activeFilterCount > 0}
           <span
-            class="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-gremius-cyan text-white"
+            class="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-kitsuden-accent text-white"
           >
             {activeFilterCount}
           </span>
@@ -1023,8 +1386,8 @@
       <!-- Column Visibility Toggle -->
       <div class="relative">
         <button
-          class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-cyan/5 hover:border-gremius-cyan/20 transition-all duration-200 {showColumnMenu
-            ? 'bg-gremius-cyan/10 text-gremius-cyan border-gremius-cyan/30'
+          class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/5 hover:border-kitsuden-accent/20 transition-all duration-200 {showColumnMenu
+            ? 'bg-kitsuden-accent/10 text-kitsuden-accent border-kitsuden-accent/30'
             : ''}"
           onclick={() => (showColumnMenu = !showColumnMenu)}
           title="Mostrar/ocultar columnas"
@@ -1045,30 +1408,30 @@
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div class="fixed inset-0 z-40" onclick={() => (showColumnMenu = false)}></div>
           <div
-            class="absolute right-0 top-full mt-1 z-50 w-56 bg-gremius-card border border-gremius-border rounded-lg shadow-xl p-2 max-h-80 overflow-y-auto"
+            class="absolute right-0 top-full mt-1 z-50 w-56 bg-kitsuden-card border border-kitsuden-border rounded-lg shadow-xl p-2 max-h-80 overflow-y-auto"
           >
             <div class="flex items-center justify-between px-2 py-1 mb-1">
-              <p class="text-xs font-semibold text-gremius-subtle uppercase tracking-wider">
+              <p class="text-xs font-semibold text-kitsuden-subtle uppercase tracking-wider">
                 Columns
               </p>
               {#if hiddenColumns.size > 0}
                 <button
-                  class="text-[10px] text-gremius-cyan hover:underline"
+                  class="text-[10px] text-kitsuden-accent hover:underline"
                   onclick={showAllColumns}>Show all</button
                 >
               {/if}
             </div>
             {#each columns as col}
               <label
-                class="flex items-center gap-2 px-2 py-1.5 hover:bg-gremius-bg rounded cursor-pointer"
+                class="flex items-center gap-2 px-2 py-1.5 hover:bg-kitsuden-bg rounded cursor-pointer"
               >
                 <input
                   type="checkbox"
                   checked={!hiddenColumns.has(col.name)}
                   onchange={() => toggleColumnVisibility(col.name)}
-                  class="w-3.5 h-3.5 rounded border-gremius-border accent-gremius-cyan"
+                  class="w-3.5 h-3.5 rounded border-kitsuden-border accent-kitsuden-accent"
                 />
-                <span class="text-sm text-gremius-text-dim truncate">
+                <span class="text-sm text-kitsuden-text-dim truncate">
                   {col.name
                     .replace(/([A-Z])/g, " $1")
                     .replace(/_/g, " ")
@@ -1083,11 +1446,11 @@
 
       <!-- Sort indicator -->
       {#if sortStack.length > 0}
-        <div class="flex items-center gap-1 text-xs text-gremius-subtle">
+        <div class="flex items-center gap-1 text-xs text-kitsuden-subtle">
           <ArrowUpDown class="w-3.5 h-3.5" />
           {sortStack.length} sort{sortStack.length > 1 ? "s" : ""}
           <button
-            class="text-gremius-cyan hover:underline ml-1"
+            class="text-kitsuden-accent hover:underline ml-1"
             onclick={() => {
               sortStack = [];
               loadData();
@@ -1099,11 +1462,11 @@
 
     <!-- Filter Sidebar -->
     {#if showFilters}
-      <div class="p-4 bg-gremius-card border border-gremius-border rounded-lg space-y-3">
+      <div class="p-4 bg-kitsuden-card border border-kitsuden-border rounded-lg space-y-3">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-gremius-text">Filters</h3>
+          <h3 class="text-sm font-semibold text-kitsuden-text">Filters</h3>
           {#if activeFilterCount > 0}
-            <button class="text-xs text-gremius-cyan hover:underline" onclick={clearAllFilters}>
+            <button class="text-xs text-kitsuden-accent hover:underline" onclick={clearAllFilters}>
               Clear all ({activeFilterCount})
             </button>
           {/if}
@@ -1115,7 +1478,7 @@
             <div>
               <label
                 for="filter-{col.name}"
-                class="block text-xs font-medium text-gremius-text-dim mb-1"
+                class="block text-xs font-medium text-kitsuden-text-dim mb-1"
               >
                 {col.name
                   .replace(/_id$/, "")
@@ -1194,17 +1557,17 @@
     <!-- Bulk Actions Bar -->
     {#if selectedRows.size > 0}
       <div
-        class="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 p-3 bg-gremius-card border border-gremius-border rounded-lg shadow-lg shadow-black/10"
+        class="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 p-3 bg-kitsuden-card border border-kitsuden-border rounded-lg shadow-lg shadow-black/10"
       >
         <div class="flex items-center gap-3">
           <span
-            class="px-2.5 py-1 text-sm font-medium rounded-full bg-gremius-cyan/10 text-gremius-cyan border border-gremius-cyan/20"
+            class="px-2.5 py-1 text-sm font-medium rounded-full bg-kitsuden-accent/10 text-kitsuden-accent border border-kitsuden-accent/20"
           >
             {selectedRows.size} selected
           </span>
           {#if selectedRows.size < data.length}
             <button
-              class="text-xs text-gremius-text-dim hover:text-gremius-cyan transition-colors"
+              class="text-xs text-kitsuden-text-dim hover:text-kitsuden-accent transition-colors"
               onclick={() => {
                 selectedRows = new Set(data.map((row) => row.id));
               }}
@@ -1213,7 +1576,7 @@
             </button>
           {:else}
             <button
-              class="text-xs text-gremius-text-dim hover:text-gremius-cyan transition-colors"
+              class="text-xs text-kitsuden-text-dim hover:text-kitsuden-accent transition-colors"
               onclick={deselectAll}
             >
               Deselect all
@@ -1224,7 +1587,7 @@
         <div class="flex items-center gap-2">
           {#if hasStatusField()}
             <button
-              class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400 transition-all duration-200 disabled:opacity-50"
+              class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400 transition-all duration-200 disabled:opacity-50"
               onclick={handleBulkPublish}
               disabled={bulkActionLoading}
               title="Publish selected"
@@ -1233,7 +1596,7 @@
               Publish
             </button>
             <button
-              class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-400 transition-all duration-200 disabled:opacity-50"
+              class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-400 transition-all duration-200 disabled:opacity-50"
               onclick={handleBulkUnpublish}
               disabled={bulkActionLoading}
               title="Unpublish selected"
@@ -1244,7 +1607,7 @@
           {/if}
 
           <button
-            class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-cyan/10 hover:border-gremius-cyan/30 hover:text-gremius-cyan transition-all duration-200 disabled:opacity-50"
+            class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/10 hover:border-kitsuden-accent/30 hover:text-kitsuden-accent transition-all duration-200 disabled:opacity-50"
             onclick={handleBulkDuplicate}
             disabled={bulkActionLoading}
             title="Duplicate selected"
@@ -1253,7 +1616,7 @@
             Duplicate
           </button>
 
-          <div class="w-px h-6 bg-gremius-border mx-1"></div>
+          <div class="w-px h-6 bg-kitsuden-border mx-1"></div>
 
           <button
             class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border border-red-500/20 hover:from-red-500/20 hover:to-red-600/20 hover:border-red-500/30 transition-all duration-200 disabled:opacity-50"
@@ -1269,18 +1632,18 @@
     {/if}
 
     <!-- Data Table -->
-    <div class="border border-gremius-border rounded-lg overflow-hidden bg-gremius-card">
+    <div class="border border-kitsuden-border rounded-lg overflow-hidden bg-kitsuden-card">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-gremius-border bg-gremius-bg">
+            <tr class="border-b border-kitsuden-border bg-kitsuden-bg">
               <th class="w-10 p-3">
                 <input
                   type="checkbox"
                   checked={data.length > 0 && selectedRows.size === data.length}
                   indeterminate={selectedRows.size > 0 && selectedRows.size < data.length}
                   onchange={toggleAllSelection}
-                  class="w-4 h-4 rounded border-gremius-border accent-gremius-cyan"
+                  class="w-4 h-4 rounded border-kitsuden-border accent-kitsuden-accent"
                 />
               </th>
               {#each displayColumns as column}
@@ -1289,8 +1652,8 @@
                 <th class="p-3 text-left">
                   <button
                     class="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors {dir
-                      ? 'text-gremius-cyan'
-                      : 'text-gremius-subtle hover:text-gremius-cyan'}"
+                      ? 'text-kitsuden-accent'
+                      : 'text-kitsuden-subtle hover:text-kitsuden-accent'}"
                     onclick={(e) => handleSortClick(column.name, e)}
                     title="Clic para ordenar, Shift+clic para ordenar múltiple"
                   >
@@ -1316,7 +1679,7 @@
                     {/if}
                     {#if sortStack.length > 1 && idx >= 0}
                       <span
-                        class="text-[9px] font-bold bg-gremius-cyan/20 text-gremius-cyan rounded-full w-4 h-4 flex items-center justify-center"
+                        class="text-[9px] font-bold bg-kitsuden-accent/20 text-kitsuden-accent rounded-full w-4 h-4 flex items-center justify-center"
                         >{idx + 1}</span
                       >
                     {/if}
@@ -1324,7 +1687,7 @@
                 </th>
               {/each}
               <th
-                class="p-3 text-right text-xs font-semibold uppercase tracking-wider text-gremius-subtle"
+                class="p-3 text-right text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
                 >Acciones</th
               >
             </tr>
@@ -1332,10 +1695,10 @@
           <tbody>
             {#if loading}
               {#each Array(5) as _, i}
-                <tr class="border-b border-gremius-border">
+                <tr class="border-b border-kitsuden-border">
                   {#each Array(Math.min(displayColumns.length + 2, 10)) as __}
                     <td class="p-3">
-                      <div class="h-4 bg-gremius-border/30 rounded animate-pulse"></div>
+                      <div class="h-4 bg-kitsuden-border/30 rounded animate-pulse"></div>
                     </td>
                   {/each}
                 </tr>
@@ -1345,14 +1708,14 @@
                 <td colspan="100" class="p-12 text-center">
                   <div class="flex flex-col items-center gap-3">
                     <div
-                      class="w-12 h-12 rounded-full bg-gremius-border/20 flex items-center justify-center"
+                      class="w-12 h-12 rounded-full bg-kitsuden-border/20 flex items-center justify-center"
                     >
-                      <FileJson class="w-6 h-6 text-gremius-subtle" />
+                      <FileJson class="w-6 h-6 text-kitsuden-subtle" />
                     </div>
-                    <p class="text-gremius-text-dim">No se encontraron registros</p>
+                    <p class="text-kitsuden-text-dim">No se encontraron registros</p>
                     {#if searchQuery || activeFilterCount > 0}
                       <button
-                        class="text-xs px-3 py-1.5 rounded-lg bg-gremius-cyan/10 text-gremius-cyan hover:bg-gremius-cyan/20 transition-colors"
+                        class="text-xs px-3 py-1.5 rounded-lg bg-kitsuden-accent/10 text-kitsuden-accent hover:bg-kitsuden-accent/20 transition-colors"
                         onclick={() => {
                           searchQuery = "";
                           clearAllFilters();
@@ -1367,14 +1730,14 @@
             {:else}
               {#each data as row}
                 <tr
-                  class="border-b border-gremius-border hover:bg-gremius-cyan/[0.03] transition-colors"
+                  class="border-b border-kitsuden-border hover:bg-kitsuden-accent/[0.03] transition-colors"
                 >
                   <td class="p-3">
                     <input
                       type="checkbox"
                       checked={selectedRows.has(row.id)}
                       onchange={() => toggleRowSelection(row.id)}
-                      class="w-4 h-4 rounded border-gremius-border accent-gremius-cyan"
+                      class="w-4 h-4 rounded border-kitsuden-border accent-kitsuden-accent"
                     />
                   </td>
                   {#each displayColumns as column}
@@ -1396,13 +1759,13 @@
                             <X class="w-3 h-3" /> No
                           </span>
                         {:else}
-                          <span class="text-gremius-subtle">-</span>
+                          <span class="text-kitsuden-subtle">-</span>
                         {/if}
 
                         <!-- DATE: formatted -->
                       {:else if colType === "date"}
                         <span
-                          class="text-gremius-text-dim text-xs"
+                          class="text-kitsuden-text-dim text-xs"
                           title={value ? String(value) : ""}
                         >
                           {formatDateTime(value)}
@@ -1411,7 +1774,7 @@
                         <!-- RELATION: FK badge -->
                       {:else if colType === "relation" || isRelationColumn(column.name)}
                         <span
-                          class="inline-flex items-center px-2 py-0.5 rounded-md bg-gremius-surface text-xs font-medium text-gremius-text-dim"
+                          class="inline-flex items-center px-2 py-0.5 rounded-md bg-kitsuden-surface text-xs font-medium text-kitsuden-text-dim"
                           title={String(value || "")}
                         >
                           {resolveFkDisplay(column.name, value)}
@@ -1424,7 +1787,7 @@
                             href={value}
                             target="_blank"
                             rel="noopener"
-                            class="inline-flex items-center gap-1 text-gremius-cyan hover:underline text-xs truncate max-w-[200px]"
+                            class="inline-flex items-center gap-1 text-kitsuden-accent hover:underline text-xs truncate max-w-[200px]"
                             onclick={(e) => e.stopPropagation()}
                           >
                             <ExternalLink class="w-3 h-3 shrink-0" />
@@ -1433,7 +1796,7 @@
                               .slice(0, 30)}
                           </a>
                         {:else}
-                          <span class="text-gremius-subtle">-</span>
+                          <span class="text-kitsuden-subtle">-</span>
                         {/if}
 
                         <!-- EMAIL: clickable mailto -->
@@ -1441,14 +1804,14 @@
                         {#if value}
                           <a
                             href="mailto:{value}"
-                            class="inline-flex items-center gap-1 text-gremius-cyan hover:underline text-xs"
+                            class="inline-flex items-center gap-1 text-kitsuden-accent hover:underline text-xs"
                             onclick={(e) => e.stopPropagation()}
                           >
                             <Mail class="w-3 h-3 shrink-0" />
                             {value}
                           </a>
                         {:else}
-                          <span class="text-gremius-subtle">-</span>
+                          <span class="text-kitsuden-subtle">-</span>
                         {/if}
 
                         <!-- COLOR: swatch + hex -->
@@ -1456,18 +1819,18 @@
                         {#if value}
                           <div class="flex items-center gap-2">
                             <div
-                              class="w-5 h-5 rounded border border-gremius-border shrink-0"
+                              class="w-5 h-5 rounded border border-kitsuden-border shrink-0"
                               style="background-color: {value}"
                             ></div>
-                            <span class="text-xs text-gremius-text-dim font-mono">{value}</span>
+                            <span class="text-xs text-kitsuden-text-dim font-mono">{value}</span>
                           </div>
                         {:else}
-                          <span class="text-gremius-subtle">-</span>
+                          <span class="text-kitsuden-subtle">-</span>
                         {/if}
 
                         <!-- ID: truncated mono -->
                       {:else if colType === "id"}
-                        <span class="text-xs text-gremius-subtle font-mono" title={value}>
+                        <span class="text-xs text-kitsuden-subtle font-mono" title={value}>
                           {value ? String(value).slice(0, 8) + "…" : "-"}
                         </span>
 
@@ -1477,11 +1840,11 @@
                           <img
                             src={value}
                             alt=""
-                            class="w-10 h-10 object-cover rounded border border-gremius-border"
+                            class="w-10 h-10 object-cover rounded border border-kitsuden-border"
                           />
                         {:else}
                           <div
-                            class="w-10 h-10 bg-gremius-border/30 rounded flex items-center justify-center text-xs text-gremius-text-dim"
+                            class="w-10 h-10 bg-kitsuden-border/30 rounded flex items-center justify-center text-xs text-kitsuden-text-dim"
                           >
                             N/A
                           </div>
@@ -1491,7 +1854,7 @@
                       {:else if colType === "json"}
                         {#if value !== null && value !== undefined}
                           <span
-                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-gremius-surface text-gremius-subtle"
+                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-kitsuden-surface text-kitsuden-subtle"
                             title={JSON.stringify(value, null, 2)}
                           >
                             <FileJson class="w-3 h-3" />
@@ -1500,12 +1863,12 @@
                               : `{${Object.keys(value).length}}`}
                           </span>
                         {:else}
-                          <span class="text-gremius-subtle">-</span>
+                          <span class="text-kitsuden-subtle">-</span>
                         {/if}
 
                         <!-- NUMBER: formatted -->
                       {:else if colType === "number"}
-                        <span class="text-gremius-text tabular-nums">
+                        <span class="text-kitsuden-text tabular-nums">
                           {value !== null && value !== undefined
                             ? Number(value).toLocaleString()
                             : "-"}
@@ -1513,7 +1876,7 @@
 
                         <!-- DEFAULT TEXT -->
                       {:else}
-                        <span class="text-gremius-text truncate max-w-[250px] block">
+                        <span class="text-kitsuden-text truncate max-w-[250px] block">
                           {formatValue(value)}
                         </span>
                       {/if}
@@ -1535,7 +1898,7 @@
                         {/if}
                       {/each}
                       <button
-                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-cyan/10 hover:border-gremius-cyan/30 hover:text-gremius-cyan transition-all duration-200"
+                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/10 hover:border-kitsuden-accent/30 hover:text-kitsuden-accent transition-all duration-200"
                         title="Editar"
                         onclick={() => openEditModal(row)}
                       >
@@ -1543,7 +1906,7 @@
                         <span class="text-xs font-medium">Editar</span>
                       </button>
                       <button
-                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-200"
+                        class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-200"
                         title="Eliminar"
                         onclick={() => confirmDelete(row)}
                       >
@@ -1560,8 +1923,8 @@
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between p-3 border-t border-gremius-border">
-        <div class="text-sm text-gremius-text-dim">
+      <div class="flex items-center justify-between p-3 border-t border-kitsuden-border">
+        <div class="text-sm text-kitsuden-text-dim">
           {#if totalCount > 0}
             Showing {(currentPage - 1) * pageSize + 1} to {Math.min(
               currentPage * pageSize,
@@ -1574,7 +1937,7 @@
 
         <div class="flex items-center gap-2">
           <select
-            class="px-3 py-2 text-sm rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text focus:outline-none focus:ring-2 focus:ring-gremius-cyan/50 focus:border-gremius-cyan/50 transition-all duration-200 hover:border-gremius-cyan/30 cursor-pointer"
+            class="px-3 py-2 text-sm rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text focus:outline-none focus:ring-2 focus:ring-kitsuden-accent/50 focus:border-kitsuden-accent/50 transition-all duration-200 hover:border-kitsuden-accent/30 cursor-pointer"
             bind:value={pageSize}
             onchange={() => {
               currentPage = 1;
@@ -1588,10 +1951,10 @@
           </select>
 
           <div
-            class="flex items-center gap-1 bg-gremius-surface border border-gremius-border rounded-xl p-1"
+            class="flex items-center gap-1 bg-kitsuden-surface border border-kitsuden-border rounded-xl p-1"
           >
             <button
-              class="group p-2 rounded-lg text-gremius-text-dim hover:bg-gremius-cyan/10 hover:text-gremius-cyan disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
+              class="group p-2 rounded-lg text-kitsuden-text-dim hover:bg-kitsuden-accent/10 hover:text-kitsuden-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
               disabled={currentPage === 1}
               onclick={() => {
                 currentPage = 1;
@@ -1602,7 +1965,7 @@
               <ChevronsLeft class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             </button>
             <button
-              class="group p-2 rounded-lg text-gremius-text-dim hover:bg-gremius-cyan/10 hover:text-gremius-cyan disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
+              class="group p-2 rounded-lg text-kitsuden-text-dim hover:bg-kitsuden-accent/10 hover:text-kitsuden-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
               disabled={currentPage === 1}
               onclick={() => {
                 currentPage--;
@@ -1614,13 +1977,13 @@
             </button>
 
             <span
-              class="px-4 py-1 text-sm font-semibold text-gremius-text tabular-nums bg-gremius-bg rounded-lg border border-gremius-border min-w-[80px] text-center"
+              class="px-4 py-1 text-sm font-semibold text-kitsuden-text tabular-nums bg-kitsuden-bg rounded-lg border border-kitsuden-border min-w-[80px] text-center"
             >
               {currentPage} / {totalPages || 1}
             </span>
 
             <button
-              class="group p-2 rounded-lg text-gremius-text-dim hover:bg-gremius-cyan/10 hover:text-gremius-cyan disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
+              class="group p-2 rounded-lg text-kitsuden-text-dim hover:bg-kitsuden-accent/10 hover:text-kitsuden-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
               disabled={currentPage >= totalPages}
               onclick={() => {
                 currentPage++;
@@ -1631,7 +1994,7 @@
               <ChevronRight class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
             <button
-              class="group p-2 rounded-lg text-gremius-text-dim hover:bg-gremius-cyan/10 hover:text-gremius-cyan disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
+              class="group p-2 rounded-lg text-kitsuden-text-dim hover:bg-kitsuden-accent/10 hover:text-kitsuden-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all duration-200"
               disabled={currentPage >= totalPages}
               onclick={() => {
                 currentPage = totalPages;
@@ -1649,9 +2012,14 @@
 {/if}
 
 <!-- Auto-Form Modal -->
-{#if showFormModal}
+<!--
+  Sin tabla no se pinta el formulario. Es la otra mitad del guardia de
+  `openCreateModal`: la condición de render y la de apertura tienen que decir
+  lo mismo, o el tipo miente en una de las dos.
+-->
+{#if showFormModal && tablaActiva}
   <AutoFormModal
-    tableName={(activeView as any)?.table || grimoireId}
+    tableName={tablaActiva}
     {columns}
     editData={editRecord}
     apiEndpoint={apiBaseEndpoint}
@@ -1676,7 +2044,7 @@
     }}
   >
     <div
-      class="bg-gremius-card border border-gremius-border rounded-xl shadow-2xl p-6 max-w-sm w-full"
+      class="bg-kitsuden-card border border-kitsuden-border rounded-xl shadow-2xl p-6 max-w-sm w-full"
       onclick={(e) => e.stopPropagation()}
     >
       <div class="flex items-center gap-3 mb-4">
@@ -1684,13 +2052,13 @@
           <Trash2 class="w-6 h-6 text-red-400" />
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-gremius-text">¿Eliminar registro?</h3>
-          <p class="text-sm text-gremius-text-dim">Esta acción no se puede deshacer.</p>
+          <h3 class="text-lg font-semibold text-kitsuden-text">¿Eliminar registro?</h3>
+          <p class="text-sm text-kitsuden-text-dim">Esta acción no se puede deshacer.</p>
         </div>
       </div>
       <div class="flex items-center justify-end gap-3">
         <button
-          class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-bg transition-all duration-200"
+          class="px-5 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-bg transition-all duration-200"
           onclick={() => {
             showDeleteConfirm = false;
             deleteTarget = null;
@@ -1722,7 +2090,7 @@
     }}
   >
     <div
-      class="bg-gremius-card border border-gremius-border rounded-xl shadow-2xl p-6 max-w-sm w-full"
+      class="bg-kitsuden-card border border-kitsuden-border rounded-xl shadow-2xl p-6 max-w-sm w-full"
       onclick={(e) => e.stopPropagation()}
     >
       <div class="flex items-center gap-3 mb-4">
@@ -1730,15 +2098,15 @@
           <Trash2 class="w-6 h-6 text-red-400" />
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-gremius-text">
+          <h3 class="text-lg font-semibold text-kitsuden-text">
             Delete {selectedRows.size} records?
           </h3>
-          <p class="text-sm text-gremius-text-dim">This action cannot be undone.</p>
+          <p class="text-sm text-kitsuden-text-dim">This action cannot be undone.</p>
         </div>
       </div>
       <div class="flex items-center justify-end gap-3">
         <button
-          class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-bg transition-all duration-200"
+          class="px-5 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-bg transition-all duration-200"
           onclick={() => {
             showBulkDeleteConfirm = false;
           }}

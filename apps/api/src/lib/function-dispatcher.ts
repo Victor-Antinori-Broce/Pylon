@@ -1,5 +1,5 @@
 /**
- * GremiusCMS — Function Dispatcher (Legacy Wrapper)
+ * Kitsuden — Function Dispatcher (Legacy Wrapper)
  *
  * ⚠️ DEPRECATED: This module is kept for backward compatibility.
  * New code should use the ActionEngine directly from `./actions`.
@@ -12,7 +12,7 @@
 
 // import { eq } from "drizzle-orm"; // Not used in legacy wrapper
 import { db } from "../db";
-import { gremiusFunctions } from "../db/schema";
+import { kitsudenFunctions } from "../db/schema";
 
 import { dispatchEvent, executeActionById } from "./actions";
 import { events } from "./events";
@@ -38,7 +38,7 @@ const EVENT_MAP: Record<string, string> = {
  * @deprecated Use executeActionById from `./actions` instead
  */
 export async function executeFunction(
-  fn: typeof gremiusFunctions.$inferSelect,
+  fn: typeof kitsudenFunctions.$inferSelect,
   triggerEvent: string,
   payload: Record<string, unknown>
 ): Promise<SandboxResult> {

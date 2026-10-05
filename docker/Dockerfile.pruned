@@ -2,12 +2,12 @@
 # DEPRECATED - Use docker/Dockerfile.prod instead
 #
 # Same issue as Dockerfile.optimized: the API CMD `bun run dist/index.js`
-# will fail because Bun needs .ts sources for grimoire dynamic imports.
+# will fail because Bun needs .ts sources for kon dynamic imports.
 # The pnpm --prod install also strips drizzle-kit needed for migrations.
 #
 # Use: docker build -f docker/Dockerfile.prod --target api .
 # ===================================================================
-# GremiusCMS - Dockerfile with Dependency Pruning [DEPRECATED]
+# Kitsuden - Dockerfile with Dependency Pruning [DEPRECATED]
 
 FROM oven/bun:1-alpine AS base
 RUN apk add --no-cache nodejs npm
@@ -26,8 +26,8 @@ COPY packages/mcp-server/package.json ./packages/mcp-server/
 COPY packages/sdk/package.json ./packages/sdk/
 COPY packages/engine/package.json ./packages/engine/
 COPY packages/core/package.json ./packages/core/
+COPY packages/kons/package.json ./packages/kons/
 COPY packages/grimoires/package.json ./packages/grimoires/
-COPY packages/realms/package.json ./packages/realms/
 RUN pnpm install --no-frozen-lockfile
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -39,9 +39,9 @@ ARG PUBLIC_API_URL=http://localhost:3000
 ENV PUBLIC_API_URL=${PUBLIC_API_URL}
 ENV VITE_API_URL=${PUBLIC_API_URL}
 COPY . .
-RUN pnpm --filter @gremius/shared build
-RUN pnpm --filter @gremius/api build
-RUN pnpm --filter @gremius/admin build
+RUN pnpm --filter @kitsuden/shared build
+RUN pnpm --filter @kitsuden/api build
+RUN pnpm --filter @kitsuden/admin build
 RUN SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm rebuild sharp
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -62,8 +62,8 @@ COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
 
 # Copy source packages for dynamic imports
+COPY --from=builder /app/packages/kons ./packages/kons
 COPY --from=builder /app/packages/grimoires ./packages/grimoires
-COPY --from=builder /app/packages/realms ./packages/realms
 COPY --from=builder /app/packages/core ./packages/core
 COPY --from=builder /app/packages/engine ./packages/engine
 

@@ -1,8 +1,8 @@
-# GRIMOIRE AGILE - Sistema de Gestión de Proyectos para Gremius
+# KON AGILE - Sistema de Gestión de Proyectos para Kitsuden
 
 ## Visión General
 
-**Grimoire Agile** es un sistema profesional de gestión de proyectos estilo Plane/Linear/Jira, diseñado específicamente para la arquitectura Gremius BaaS/CMS. Proporciona gestión ágil completa con separación clara entre **Tiempo** (Cycles/Sprints) y **Alcance** (Modules/Epics).
+**Kon Agile** es un sistema profesional de gestión de proyectos estilo Plane/Linear/Jira, diseñado específicamente para la arquitectura Kitsuden BaaS/CMS. Proporciona gestión ágil completa con separación clara entre **Tiempo** (Cycles/Sprints) y **Alcance** (Modules/Epics).
 
 ---
 
@@ -12,15 +12,15 @@
 2. **Estados como Entidades**: Cada proyecto define sus propios estados personalizados
 3. **Inbox para IA**: Bandeja de entrada para triage antes de afectar el backlog
 4. **Estimaciones Flexibles**: Sistema configurable (Fibonacci, Tallas, Lineal)
-5. **Zero Config**: Usa el sistema `grimoire.json` de Gremius
+5. **Zero Config**: Usa el sistema `kon.json` de Kitsuden
 
 ---
 
-## 📁 Estructura del Grimoire
+## 📁 Estructura del Kon
 
 ```
-packages/grimoires/grimoire-agile/
-├── grimoire.json              # Manifiesto del módulo
+packages/kons/kon-agile/
+├── kon.json              # Manifiesto del módulo
 ├── index.ts                   # Punto de entrada
 ├── schema.ts                  # Esquema Drizzle completo
 ├── routes.ts                  # Rutas API Hono
@@ -762,15 +762,15 @@ POST   /api/agile/search                   # Búsqueda avanzada tipo JQL
 
 ---
 
-## 📋 Manifiesto (grimoire.json)
+## 📋 Manifiesto (kon.json)
 
 ```json
 {
-  "id": "grimoire-agile",
+  "id": "kon-agile",
   "name": "Agile Project Management",
   "description": "Sistema profesional de gestión ágil con Cycles (tiempo), Modules (alcance), States personalizables e Intake para triage de IA",
   "version": "1.0.0",
-  "type": "grimoire",
+  "type": "kon",
   "icon": "Kanban",
   "tables": [
     {
@@ -931,7 +931,7 @@ agile_list_modules; // Listar módulos/épicas
 | **Inbox para IA**          | Tabla agile_intakes con flujo de triage               |
 | **Estimaciones Flexibles** | Tabla agile_estimates con tipos configurables         |
 | **Keys Únicas**            | PROJ-123 auto-generado con counter                    |
-| **Zero Config**            | grimoire.json con tables y admin.views                |
+| **Zero Config**            | kon.json con tables y admin.views                     |
 | **MCP Ready**              | Tools definidos para agentes                          |
 
 ---
@@ -940,10 +940,10 @@ agile_list_modules; // Listar módulos/épicas
 
 ```bash
 # 1. Crear directorio
-mkdir packages/grimoires/grimoire-agile
+mkdir packages/kons/kon-agile
 
 # 2. Copiar archivos del plan
-# - grimoire.json
+# - kon.json
 # - schema.ts
 # - routes.ts
 # - index.ts
@@ -962,11 +962,11 @@ pnpm start
 
 ## 💡 Diferencias Clave vs Jira Tradicional
 
-| Aspecto                | Jira Tradicional     | Grimoire Agile                                |
+| Aspecto                | Jira Tradicional     | Kon Agile                                     |
 | ---------------------- | -------------------- | --------------------------------------------- |
 | **Épicas vs Sprints**  | Épicas como campo    | Modules (alcance) y Cycles (tiempo) separados |
 | **Estados**            | Workflow global      | Cada proyecto define sus propios estados      |
 | **Bandeja de entrada** | No tiene             | Intakes para triage antes de backlog          |
 | **Estimaciones**       | Story points fijo    | Fibonacci, Tallas, Lineal, Días configurables |
 | **Keys**               | PROJ-123 configurado | Auto-generado con contador                    |
-| **Arquitectura**       | Monolito             | Modular Gremius con RLS + JSONB               |
+| **Arquitectura**       | Monolito             | Modular Kitsuden con RLS + JSONB              |

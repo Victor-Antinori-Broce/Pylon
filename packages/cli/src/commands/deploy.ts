@@ -24,12 +24,12 @@ export interface DeployOptions {
 export async function deployCommand(options: DeployOptions) {
   const projectRoot = process.cwd();
 
-  // Check if we're in a Gremius project
+  // Check if we're in a Kitsuden project
   if (
     !existsSync(join(projectRoot, "apps", "api")) &&
-    !existsSync(join(projectRoot, "gremius.config.ts"))
+    !existsSync(join(projectRoot, "kitsuden.config.ts"))
   ) {
-    console.error(chalk.red("✖ Not in a Gremius project directory"));
+    console.error(chalk.red("✖ Not in a Kitsuden project directory"));
     process.exit(1);
   }
 
@@ -49,8 +49,8 @@ export async function deployCommand(options: DeployOptions) {
     return;
   }
 
-  // Fallback: original placeholder deploy to "Gremius Cloud"
-  await deployToGremiusCloud(projectRoot, options);
+  // Fallback: original placeholder deploy to "Kitsuden Cloud"
+  await deployToKitsudenCloud(projectRoot, options);
 }
 
 function detectProvider(projectRoot: string, options: DeployOptions): string {
@@ -70,18 +70,18 @@ function detectProvider(projectRoot: string, options: DeployOptions): string {
   // Default to railway for vibecoders if no explicit provider set
   // but only if railway cli seems to be in use
   // Otherwise keep the original placeholder as fallback
-  return options.provider || "gremius";
+  return options.provider || "kitsuden";
 }
 
-async function deployToGremiusCloud(projectRoot: string, options: DeployOptions) {
-  console.log(chalk.blue("\n🚀 Deploying to Gremius Cloud...\n"));
+async function deployToKitsudenCloud(projectRoot: string, options: DeployOptions) {
+  console.log(chalk.blue("\n🚀 Deploying to Kitsuden Cloud...\n"));
 
   // Check for auth token
-  const token = process.env.GREMIUS_TOKEN || (await getStoredToken());
+  const token = process.env.KITSUDEN_TOKEN || (await getStoredToken());
 
   if (!token) {
     console.error(chalk.red("✖ Not authenticated"));
-    console.log(chalk.gray("Run 'gremius login' to authenticate"));
+    console.log(chalk.gray("Run 'kitsuden login' to authenticate"));
     process.exit(1);
   }
 
@@ -100,14 +100,10 @@ async function deployToGremiusCloud(projectRoot: string, options: DeployOptions)
     const timestamp = Date.now();
     const tarball = `deploy-${timestamp}.tar.gz`;
 
-    await execa(
-      "tar",
-      ["-czf", tarball, "apps/api/dist", "packages/admin/build", "apps/web/dist"],
-      {
-        cwd: projectRoot,
-        stdio: "ignore",
-      }
-    );
+    await execa("tar", ["-czf", tarball, "apps/api/dist", "packages/admin/build"], {
+      cwd: projectRoot,
+      stdio: "ignore",
+    });
 
     spinner.text = "Uploading to cloud...";
 
@@ -118,8 +114,8 @@ async function deployToGremiusCloud(projectRoot: string, options: DeployOptions)
     spinner.succeed(chalk.green("Deployed successfully!"));
 
     const deploymentUrl = options.prod
-      ? "https://your-project.gremius.io"
-      : `https://preview-${timestamp}.gremius.io`;
+      ? "https://your-project.kitsuden.io"
+      : `https://preview-${timestamp}.kitsuden.io`;
 
     console.log(chalk.bold("\nDeployment URL:\n"));
     console.log(chalk.cyan(`  ${deploymentUrl}\n`));
@@ -149,7 +145,7 @@ async function deployToGremiusCloud(projectRoot: string, options: DeployOptions)
 async function getStoredToken(): Promise<string | null> {
   try {
     const { homedir } = await import("node:os");
-    const configPath = join(homedir(), ".gremius", "config.json");
+    const configPath = join(homedir(), ".kitsuden", "config.json");
 
     if (!existsSync(configPath)) {
       return null;

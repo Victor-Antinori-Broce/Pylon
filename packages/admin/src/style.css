@@ -6,38 +6,53 @@
 
 @layer base {
   /* ── Theme Engine CSS Variables (overridden at runtime by useThemeEngine) ── */
+  /**
+   * Paleta: violeta (acento) y carmesí (acento secundario).
+   *
+   * Los tokens se llaman `accent` y no por su tono a propósito. Antes eran
+   * `cyan` y `pink`, y cuando el acento pasó a violeta el nombre quedó
+   * describiendo un color que ya no existía: cualquiera que leyera
+   * `text-kitsuden-cyan` esperaba cian y se encontraba morado.
+   *
+   * Un nombre por su papel —acento, acento secundario— sobrevive al siguiente
+   * rediseño; uno por su tono caduca en cuanto alguien cambia el tono.
+   *
+   * Tailwind los resuelve en tiempo de ejecución
+   * (`rgb(var(--kitsuden-accent) / <alpha-value>)`), así que cambiar el VALOR
+   * de aquí repinta el admin entero sin tocar una sola clase.
+   */
   :root {
-    --gremius-color-primary: #00e5ff;
-    --gremius-color-secondary: #ff2a6d;
-    --gremius-bg: 9 9 11;
-    --gremius-card: 24 24 27;
-    --gremius-surface: 30 30 46;
-    --gremius-border: 39 39 42;
-    --gremius-muted: 63 63 70;
-    --gremius-subtle: 82 82 91;
-    --gremius-text: 250 250 250;
-    --gremius-text-dim: 161 161 170;
-    --gremius-cyan: 0 229 255;
-    --gremius-cyan-dim: 0 184 212;
-    --gremius-cyan-hover: 102 241 255;
-    --gremius-pink: 255 42 109;
-    --gremius-pink-dim: 233 30 99;
-    --gremius-green: 0 230 118;
-    --gremius-amber: 255 171 0;
-    --gremius-yellow: 255 214 0;
-    --gremius-purple: 179 136 255;
-    --gremius-danger: 255 42 109;
-    --gremius-font-sans: "Inter", system-ui, sans-serif;
-    --gremius-font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --kitsuden-color-primary: #a855f7;
+    --kitsuden-color-secondary: #ff2d6f;
+    --kitsuden-bg: 9 9 11;
+    --kitsuden-card: 24 24 27;
+    --kitsuden-surface: 30 30 46;
+    --kitsuden-border: 39 39 42;
+    --kitsuden-muted: 63 63 70;
+    --kitsuden-subtle: 82 82 91;
+    --kitsuden-text: 250 250 250;
+    --kitsuden-text-dim: 161 161 170;
+    --kitsuden-accent: 168 85 247;
+    --kitsuden-accent-dim: 126 58 194;
+    --kitsuden-accent-hover: 192 132 252;
+    --kitsuden-accent-2: 255 45 111;
+    --kitsuden-accent-2-dim: 214 31 90;
+    --kitsuden-green: 0 230 118;
+    --kitsuden-amber: 255 171 0;
+    --kitsuden-yellow: 255 214 0;
+    --kitsuden-purple: 179 136 255;
+    --kitsuden-danger: 255 45 111;
+    --kitsuden-font-sans: "Inter", system-ui, sans-serif;
+    --kitsuden-font-mono: "JetBrains Mono", "Fira Code", monospace;
   }
 
   * {
-    @apply border-gremius-border;
+    @apply border-kitsuden-border;
   }
 
   body {
-    @apply bg-gremius-bg text-gremius-text antialiased;
-    font-family: var(--gremius-font-sans);
+    @apply bg-kitsuden-bg text-kitsuden-text antialiased;
+    font-family: var(--kitsuden-font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
@@ -54,11 +69,11 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gremius-subtle;
+    @apply bg-kitsuden-subtle;
   }
 
   ::selection {
-    @apply bg-gremius-cyan/20 text-gremius-cyan;
+    @apply bg-kitsuden-accent/20 text-kitsuden-accent;
   }
 }
 

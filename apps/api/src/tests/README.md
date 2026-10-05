@@ -1,10 +1,10 @@
-# GremiusCMS API Tests
+# Kitsuden API Tests
 
 ## Test Suites
 
-### 1. Grimoire Registry Tests (`modules.test.ts`)
+### 1. Kon Registry Tests (`modules.test.ts`)
 
-Tests for the grimoire registry system.
+Tests for the kon registry system.
 
 - ✅ Registry structure validation
 - ✅ Category classification
@@ -83,15 +83,15 @@ Tests that require database need:
 ```bash
 # Start PostgreSQL with Docker
 docker run -d \
-  --name gremius-test-db \
-  -e POSTGRES_USER=gremius \
-  -e POSTGRES_PASSWORD=gremiuspassword \
-  -e POSTGRES_DB=gremius_test \
+  --name kitsuden-test-db \
+  -e POSTGRES_USER=kitsuden \
+  -e POSTGRES_PASSWORD=changeme \\
+  -e POSTGRES_DB=kitsuden_test \
   -p 5433:5432 \
   pgvector/pgvector:pg16
 
 # Set environment
-export DATABASE_URL="postgres://gremius:gremiuspassword@localhost:5433/gremius_test"
+export DATABASE_URL="postgres://kitsuden:changeme@localhost:5433/kitsuden_test"
 
 # Run migrations
 bun run db:migrate
@@ -104,34 +104,49 @@ bun test
 
 ```env
 # .env.test
-DATABASE_URL=postgres://gremius:gremiuspassword@localhost:5433/gremius_test
+DATABASE_URL=postgres://kitsuden:changeme@localhost:5433/kitsuden_test
 REDIS_URL=redis://localhost:6380
 NODE_ENV=test
-JWT_SECRET=test-secret
+BETTER_AUTH_SECRET=change-me-to-a-random-string-at-least-32-chars
 ```
 
 ## Test Coverage
 
-| Module            | Tests  | Coverage | DB Required |
-| ----------------- | ------ | -------- | ----------- |
-| Grimoire Registry | 26     | ✅ 100%  | No          |
-| Auth              | 12     | ⚠️ Ready | Yes         |
-| Datasets          | 15     | ⚠️ Ready | Yes         |
-| RLS               | 10     | ⚠️ Ready | Yes         |
-| **Total**         | **63** | **~25%** | Partial     |
+| Module       | Tests  | Coverage | DB Required |
+| ------------ | ------ | -------- | ----------- |
+| Kon Registry | 26     | ✅ 100%  | No          |
+| Auth         | 12     | ⚠️ Ready | Yes         |
+| Datasets     | 15     | ⚠️ Ready | Yes         |
+| RLS          | 10     | ⚠️ Ready | Yes         |
+| **Total**    | **63** | **~25%** | Partial     |
+
+## Recent Additions
+
+A focused test pass added coverage for core files that previously had 0% or very low line coverage:
+
+- `src/tests-unit/logger.test.ts` — logger helpers (`createRequestLogger`, `createPerformanceLogger`, `logQuery`, `logSecurity`)
+- `src/tests-unit/storage.test.ts` — S3/MinIO operations with mocked AWS SDK
+- `src/tests-unit/config.test.ts` — config exports, feature flags, rate-limit and CORS configs
+- `src/tests-unit/transactional-rls.test.ts` — RLS context utilities and middleware helpers
+- `src/tests-unit/module-loader-unit.test.ts` — `createKonContext`, kon type guards, dependency sort
+- `src/tests-unit/crud-routes.test.ts` — inline `dataSetsRoutes` handlers (GET/POST datasets and entries)
+- `src/tests-unit/system-routes.test.ts` — inline `systemRoutes` handlers (theme activation, grimoire-state, grimoire deletion)
+- `src/tests/system-routes-http.test.ts` — integration smoke tests for authenticated system routes (skips when DB unavailable)
+
+These tests follow the existing `describe`/`it`/`expect` Bun style and reuse the mock patterns from the rest of the suite.
 
 ## Future Test Additions
 
 ### Priority 1
 
-- [ ] Middleware tests (auth-guard, transactional-rls)
-- [ ] API endpoint integration tests
-- [ ] Cache layer tests
+- [x] Middleware tests (auth-guard, transactional-rls)
+- [x] API endpoint integration tests
+- [x] Cache layer tests
 - [ ] Queue/Worker tests
 
 ### Priority 2
 
-- [ ] Grimoire loader tests
+- [ ] Kon loader tests
 - [ ] MCP server tests
 - [ ] Real-time/WebSocket tests
 - [ ] File upload tests

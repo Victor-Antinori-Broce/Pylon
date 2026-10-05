@@ -7,7 +7,7 @@
  * con sintaxis correcta para agentTraceSteps.
  */
 
-import { setTelemetryProvider, type TelemetryStepData } from "@gremius/engine"; // Ruta relativa al workspace
+import { setTelemetryProvider, type TelemetryStepData } from "@kitsuden/engine"; // Ruta relativa al workspace
 import { eq } from "drizzle-orm";
 
 import { db } from "../db";

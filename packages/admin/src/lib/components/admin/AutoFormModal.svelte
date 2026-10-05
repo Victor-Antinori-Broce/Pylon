@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveFieldType } from "@kitsuden/shared";
   import { X, Loader2, Save } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -6,6 +7,7 @@
   import type { SchemaColumn } from "$lib/types/admin";
 
   import AutoSaveIndicator from "./AutoSaveIndicator.svelte";
+  import EtiquetasDelJuego from "./EtiquetasDelJuego.svelte";
   import InlineRelationPanel from "./InlineRelationPanel.svelte";
 
   interface Props {
@@ -44,6 +46,14 @@
   let error = $state<string | null>(null);
   const relationOptions = $state<Record<string, { value: string; label: string }[]>>({});
   let loadingRelations = $state(false);
+
+  /**
+   * Un juego de kon-games lleva además etiquetas y plataformas (tablas puente
+   * que este formulario genérico no ve): las elige `EtiquetasDelJuego` y se
+   * guardan en cuanto el juego tiene id.
+   */
+  const esJuego = $derived(tableName === "games");
+  let selectorDelJuego = $state<EtiquetasDelJuego | null>(null);
 
   // Autosave key for this form
   const autosaveKey = $derived(`${tableName}_${editData?.id || "new"}`);
@@ -127,16 +137,32 @@
     return plural;
   }
 
+  /**
+   * Tipo canónico del registro → tipo de `input` HTML.
+   *
+   * Esta mitad sí es de la UI y se queda aquí. La otra mitad —reconocer que
+   * `integer`, `float` y `numeric` son lo mismo— la hace `resolveFieldType`
+   * contra el registro compartido, así que un alias nuevo allí se entiende
+   * aquí sin tocar este fichero. Era la cuarta lista de tipos del repo.
+   */
+  const INPUT_BY_FIELD_TYPE: Record<string, string> = {
+    boolean: "checkbox",
+    number: "number",
+    kpi: "number",
+    date: "date",
+    datetime: "datetime-local",
+    json: "json",
+    email: "email",
+    url: "url",
+    textarea: "textarea",
+    richtext: "textarea",
+  };
+
   function inferInputType(col: SchemaColumn): string {
     if (isRelationColumn(col)) return "relation";
-    const t = col.type?.toLowerCase() || "text";
-    if (t === "boolean") return "checkbox";
-    if (t === "number" || t === "integer" || t === "float" || t === "numeric") return "number";
-    if (t === "date") return "date";
-    if (t === "datetime" || t === "timestamp") return "datetime-local";
-    if (t === "json" || t === "jsonb") return "json";
-    if (t === "email") return "email";
-    if (t === "url") return "url";
+    const canonico = resolveFieldType(col.type?.toLowerCase() || "text");
+    const mapeado = INPUT_BY_FIELD_TYPE[canonico];
+    if (mapeado) return mapeado;
     if (
       col.name.includes("description") ||
       col.name.includes("content") ||
@@ -262,6 +288,17 @@
       });
 
       if (res.ok) {
+        if (esJuego && selectorDelJuego) {
+          const guardado = isEdit ? editData : await res.json().catch(() => null);
+          const id = guardado?.id ?? editData?.id;
+          const fallo = id ? await selectorDelJuego.guardar(String(id)) : null;
+          if (fallo) {
+            // El juego sí se guardó: se avisa y el formulario se queda abierto para reintentar
+            error = `Juego guardado, pero ${fallo.charAt(0).toLowerCase()}${fallo.slice(1)}`;
+            onsave?.();
+            return;
+          }
+        }
         autosaveStore.clearCurrentAutosave();
         onsave?.();
         onclose?.();
@@ -290,18 +327,18 @@
   }}
 >
   <div
-    class="bg-gremius-card border border-gremius-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+    class="bg-kitsuden-card border border-kitsuden-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
     onclick={(e) => e.stopPropagation()}
   >
     <!-- Header -->
     <div
-      class="flex items-center justify-between px-6 py-4 border-b border-gremius-border shrink-0"
+      class="flex items-center justify-between px-6 py-4 border-b border-kitsuden-border shrink-0"
     >
       <div>
-        <h2 class="text-lg font-semibold text-gremius-text">
+        <h2 class="text-lg font-semibold text-kitsuden-text">
           {isEdit ? "Edit" : "Create"} Record
         </h2>
-        <p class="text-xs text-gremius-subtle mt-0.5">{tableName}</p>
+        <p class="text-xs text-kitsuden-subtle mt-0.5">{tableName}</p>
       </div>
       <div class="flex items-center gap-3">
         <AutoSaveIndicator />
@@ -310,7 +347,7 @@
             autosaveStore.stopAutosave();
             onclose?.();
           }}
-          class="p-2 rounded-lg hover:bg-gremius-border/30 text-gremius-text-dim hover:text-gremius-text transition-colors"
+          class="p-2 rounded-lg hover:bg-kitsuden-border/30 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
         >
           <X class="w-5 h-5" />
         </button>
@@ -321,7 +358,7 @@
     <div class="flex-1 overflow-y-auto px-6 py-5">
       {#if error}
         <div
-          class="mb-4 p-3 rounded-lg bg-gremius-pink/10 border border-gremius-pink/20 text-sm text-gremius-pink"
+          class="mb-4 p-3 rounded-lg bg-kitsuden-accent-2/10 border border-kitsuden-accent-2/20 text-sm text-kitsuden-accent-2"
         >
           {error}
         </div>
@@ -331,15 +368,15 @@
         {#if editableColumns.length === 0}
           <div class="p-8 text-center">
             <div
-              class="w-12 h-12 rounded-full bg-gremius-cyan/10 flex items-center justify-center mx-auto mb-3"
+              class="w-12 h-12 rounded-full bg-kitsuden-accent/10 flex items-center justify-center mx-auto mb-3"
             >
               <span class="text-2xl">⚠️</span>
             </div>
-            <h3 class="text-gremius-text font-medium mb-1">No fields available</h3>
-            <p class="text-sm text-gremius-subtle">
+            <h3 class="text-kitsuden-text font-medium mb-1">No fields available</h3>
+            <p class="text-sm text-kitsuden-subtle">
               Could not load schema for table "{tableName}".
             </p>
-            <p class="text-xs text-gremius-subtle mt-2">
+            <p class="text-xs text-kitsuden-subtle mt-2">
               Total columns received: {columns.length}<br />
               Editable columns: {editableColumns.length}
             </p>
@@ -348,10 +385,10 @@
         {#each editableColumns as col}
           {@const inputType = inferInputType(col)}
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-1.5">
+            <label class="block text-sm font-medium text-kitsuden-text mb-1.5">
               {formatLabel(col.name)}
               {#if !col.nullable}
-                <span class="text-gremius-pink ml-0.5">*</span>
+                <span class="text-kitsuden-accent-2 ml-0.5">*</span>
               {/if}
             </label>
 
@@ -365,7 +402,7 @@
                   {/each}
                 {/if}
               </select>
-              <p class="text-[10px] text-gremius-subtle mt-1">
+              <p class="text-[10px] text-kitsuden-subtle mt-1">
                 Related to: {getRelatedTable(col.name) || "unknown"}
               </p>
             {:else if inputType === "checkbox"}
@@ -373,9 +410,9 @@
                 <input
                   type="checkbox"
                   bind:checked={formData[col.name]}
-                  class="w-4 h-4 rounded border-gremius-border accent-gremius-cyan"
+                  class="w-4 h-4 rounded border-kitsuden-border accent-kitsuden-accent"
                 />
-                <span class="text-sm text-gremius-text-dim">Enabled</span>
+                <span class="text-sm text-kitsuden-text-dim">Enabled</span>
               </label>
             {:else if inputType === "textarea"}
               <textarea
@@ -412,6 +449,10 @@
         {/each}
       </div>
 
+      {#if esJuego}
+        <EtiquetasDelJuego bind:this={selectorDelJuego} juegoId={editData?.id ?? null} />
+      {/if}
+
       <!-- Inline Relations (edit mode only) -->
       {#if isEdit && editData?.id}
         <InlineRelationPanel {grimoireId} parentTable={tableName} parentId={editData.id} />
@@ -420,7 +461,7 @@
 
     <!-- Footer -->
     <div
-      class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gremius-border shrink-0"
+      class="flex items-center justify-end gap-3 px-6 py-4 border-t border-kitsuden-border shrink-0"
     >
       <button class="btn-secondary-sm" onclick={() => onclose?.()} disabled={saving}>
         Cancel

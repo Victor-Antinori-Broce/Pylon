@@ -70,23 +70,15 @@ export async function checkSession() {
   loading = true;
   error = null;
   try {
-    console.log(`[auth] checkSession → GET ${API_URL}/api/auth/get-session`);
     const res = await fetch(`${API_URL}/api/auth/get-session`, {
       credentials: "include",
     });
-    console.log(`[auth] checkSession response: ${res.status} ${res.statusText}`);
     if (!res.ok) {
       console.warn(`[auth] checkSession failed with status ${res.status}, clearing user`);
       user = null;
       return;
     }
     const data = await res.json();
-    console.log(
-      `[auth] checkSession data:`,
-      JSON.stringify(
-        data?.user ? { id: data.user.id, role: data.user.role, name: data.user.name } : null
-      )
-    );
     user = data?.user || null;
   } catch (err) {
     console.error(`[auth] checkSession error:`, err);
@@ -94,9 +86,6 @@ export async function checkSession() {
   } finally {
     loading = false;
     checked = true;
-    console.log(
-      `[auth] checkSession done → user=${user?.name || "null"}, role=${user?.role || "null"}, loggedIn=${!!user}`
-    );
   }
 }
 
@@ -116,7 +105,17 @@ export async function signIn(email: string, password: string) {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.message || body.error || "Invalid credentials");
+      /**
+       * Se conserva el `code` además del texto. Con la verificación de email
+       * obligatoria, «contraseña incorrecta» y «tienes que confirmar tu email»
+       * piden cosas distintas —la segunda, un botón para reenviar el enlace—
+       * y sin el código solo quedaba comparar el mensaje en inglés.
+       */
+      const fallo = new Error(body.message || body.error || "Invalid credentials") as Error & {
+        code?: string;
+      };
+      fallo.code = body.code;
+      throw fallo;
     }
 
     const data = await res.json();
@@ -132,6 +131,119 @@ export async function signIn(email: string, password: string) {
     throw err;
   } finally {
     loading = false;
+  }
+}
+
+/**
+ * Pide el correo para restablecer la contraseña.
+ *
+ * `redirectTo` es la raíz del panel: sin sesión, el panel pinta el login en
+ * cualquier ruta, y es el propio login quien reconoce el `?token=` con el que
+ * better-auth vuelve. Una ruta `/reset-password` aparte quedaría tapada.
+ *
+ * No se distingue «no existe esa cuenta» de «enviado»: decirlo permitiría
+ * averiguar qué emails están registrados probando direcciones.
+ */
+export async function requestPasswordReset(email: string) {
+  const res = await fetch(`${API_URL}/api/auth/request-password-reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, redirectTo: `${window.location.origin}/` }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || "No se pudo solicitar el restablecimiento");
+  }
+}
+
+/** Fija la contraseña nueva con el token del enlace. */
+export async function resetPassword(token: string, newPassword: string) {
+  const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token, newPassword }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || "No se pudo cambiar la contraseña");
+  }
+}
+
+/** Reenvía el enlace de verificación a quien no pudo entrar por no tenerlo. */
+export async function resendVerification(email: string) {
+  const res = await fetch(`${API_URL}/api/auth/send-verification-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, callbackURL: `${window.location.origin}/` }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || "No se pudo reenviar el correo");
+  }
+}
+
+export interface SocialProvider {
+  id: string;
+  label: string;
+}
+
+let socialProviders = $state<SocialProvider[]>([]);
+export function getSocialProviders() {
+  return socialProviders;
+}
+
+/**
+ * Pregunta al servidor QUÉ proveedores OAuth están configurados.
+ *
+ * Se pregunta en vez de tener la lista escrita en el cliente porque un botón
+ * de un proveedor sin credenciales no falla al pulsarlo: falla DESPUÉS del
+ * redirect, en una página de Discord o Google que ya no es nuestra, con un
+ * error que no explica nada.
+ */
+export async function loadSocialProviders() {
+  try {
+    const res = await fetch(`${API_URL}/api/system/auth-providers`);
+    if (!res.ok) return;
+    const data = await res.json();
+    socialProviders = Array.isArray(data?.social) ? data.social : [];
+  } catch {
+    socialProviders = [];
+  }
+}
+
+/**
+ * Entrar con un proveedor social.
+ *
+ * No devuelve nada: `sign-in/social` responde con la URL de autorización y el
+ * navegador se va del sitio. Al volver, el callback deja la cookie de sesión y
+ * el arranque normal (`checkSession`) decide si esa cuenta puede entrar aquí.
+ */
+export async function signInWithProvider(providerId: string, callbackURL = "/") {
+  loading = true;
+  error = null;
+  try {
+    const res = await fetch(`${API_URL}/api/auth/sign-in/social`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ provider: providerId, callbackURL }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.url) {
+      throw new Error(
+        data?.message || data?.error || `No se pudo iniciar sesión con ${providerId}`
+      );
+    }
+
+    window.location.href = data.url;
+  } catch (err: any) {
+    error = err.message;
+    loading = false;
+    throw err;
   }
 }
 

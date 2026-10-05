@@ -182,27 +182,30 @@
 </script>
 
 <div
-  class="w-full max-w-2xl bg-gremius-card border border-gremius-border rounded-xl overflow-hidden"
+  class="w-full max-w-2xl bg-kitsuden-card border border-kitsuden-border rounded-xl overflow-hidden"
 >
   <!-- Header -->
   <div
-    class="flex items-center justify-between px-6 py-4 border-b border-gremius-border bg-gremius-surface/50"
+    class="flex items-center justify-between px-6 py-4 border-b border-kitsuden-border bg-kitsuden-surface/50"
   >
     <div>
-      <h2 class="text-lg font-bold text-gremius-text flex items-center gap-2">
-        <Calculator class="w-5 h-5 text-gremius-cyan" />
+      <h2 class="text-lg font-bold text-kitsuden-text flex items-center gap-2">
+        <Calculator class="w-5 h-5 text-kitsuden-accent" />
         {value?.id ? "Edit" : "Create"} Calculated Field
       </h2>
-      <p class="text-sm text-gremius-subtle">Step {step} of 3</p>
+      <p class="text-sm text-kitsuden-subtle">Step {step} of 3</p>
     </div>
-    <button class="p-2 rounded-lg hover:bg-gremius-surface text-gremius-subtle" onclick={onCancel}>
+    <button
+      class="p-2 rounded-lg hover:bg-kitsuden-surface text-kitsuden-subtle"
+      onclick={onCancel}
+    >
       <X class="w-5 h-5" />
     </button>
   </div>
 
   <!-- Progress -->
-  <div class="flex h-1 bg-gremius-border">
-    <div class="h-full bg-gremius-cyan transition-all" style="width: {(step / 3) * 100}%"></div>
+  <div class="flex h-1 bg-kitsuden-border">
+    <div class="h-full bg-kitsuden-accent transition-all" style="width: {(step / 3) * 100}%"></div>
   </div>
 
   <!-- Content -->
@@ -211,65 +214,67 @@
       <!-- Step 1: Basic Info -->
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-2">
-            Field Label <span class="text-gremius-pink">*</span>
+          <label for="label" class="block text-sm font-medium text-kitsuden-text mb-2">
+            Field Label <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
+            id="label"
             type="text"
             bind:value={field.label}
             placeholder="e.g., Total Revenue"
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan"
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
           />
           {#if errors.label}
-            <p class="mt-1 text-sm text-gremius-pink">{errors.label}</p>
+            <p class="mt-1 text-sm text-kitsuden-accent-2">{errors.label}</p>
           {/if}
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-2">
-            Field Name <span class="text-gremius-pink">*</span>
+          <label for="name" class="block text-sm font-medium text-kitsuden-text mb-2">
+            Field Name <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
+            id="name"
             type="text"
             bind:value={field.name}
             placeholder="e.g., total_revenue"
-            class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text placeholder:text-gremius-subtle focus:outline-none focus:border-gremius-cyan font-mono"
+            class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent font-mono"
           />
-          <p class="mt-1 text-xs text-gremius-subtle">
+          <p class="mt-1 text-xs text-kitsuden-subtle">
             Used in API and formulas. Auto-generated from label.
           </p>
           {#if errors.name}
-            <p class="mt-1 text-sm text-gremius-pink">{errors.name}</p>
+            <p class="mt-1 text-sm text-kitsuden-accent-2">{errors.name}</p>
           {/if}
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-3">
-            Calculation Type <span class="text-gremius-pink">*</span>
+          <label class="block text-sm font-medium text-kitsuden-text mb-3">
+            Calculation Type <span class="text-kitsuden-accent-2">*</span>
           </label>
           <div class="grid grid-cols-2 gap-3">
             {#each fieldTypes as type}
               <button
                 class="flex items-start gap-3 p-3 rounded-lg border text-left transition-all {field.type ===
                 type.id
-                  ? 'border-gremius-cyan bg-gremius-cyan/10'
-                  : 'border-gremius-border hover:border-gremius-cyan/50'}"
+                  ? 'border-kitsuden-accent bg-kitsuden-accent/10'
+                  : 'border-kitsuden-border hover:border-kitsuden-accent/50'}"
                 onclick={() => (field.type = type.id)}
               >
                 <div
-                  class="w-10 h-10 rounded-lg bg-gremius-surface flex items-center justify-center shrink-0"
+                  class="w-10 h-10 rounded-lg bg-kitsuden-surface flex items-center justify-center shrink-0"
                 >
-                  <svelte:component this={type.icon} class="w-5 h-5 text-gremius-cyan" />
+                  <svelte:component this={type.icon} class="w-5 h-5 text-kitsuden-accent" />
                 </div>
                 <div>
-                  <p class="font-medium text-gremius-text">{type.label}</p>
-                  <p class="text-xs text-gremius-subtle">{type.description}</p>
+                  <p class="font-medium text-kitsuden-text">{type.label}</p>
+                  <p class="text-xs text-kitsuden-subtle">{type.description}</p>
                 </div>
               </button>
             {/each}
           </div>
           {#if errors.type}
-            <p class="mt-2 text-sm text-gremius-pink">{errors.type}</p>
+            <p class="mt-2 text-sm text-kitsuden-accent-2">{errors.type}</p>
           {/if}
         </div>
 
@@ -277,11 +282,11 @@
           <input
             type="checkbox"
             bind:checked={field.isKpi}
-            class="w-5 h-5 rounded border-gremius-border bg-gremius-bg text-gremius-cyan"
+            class="w-5 h-5 rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent"
           />
           <div>
-            <p class="font-medium text-gremius-text">Mark as KPI</p>
-            <p class="text-xs text-gremius-subtle">Show in dashboards and enable targets</p>
+            <p class="font-medium text-kitsuden-text">Mark as KPI</p>
+            <p class="text-xs text-kitsuden-subtle">Show in dashboards and enable targets</p>
           </div>
         </label>
       </div>
@@ -290,23 +295,26 @@
       <div class="space-y-6">
         {#if field.type === "formula"}
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-3"> Formula </label>
+            <label class="block text-sm font-medium text-kitsuden-text mb-3"> Formula </label>
             <FormulaBuilder
               {availableFields}
               value={field.config?.expression}
               onChange={(expr) => (field.config = { ...field.config, expression: expr })}
             />
             {#if errors.expression}
-              <p class="mt-2 text-sm text-gremius-pink">{errors.expression}</p>
+              <p class="mt-2 text-sm text-kitsuden-accent-2">{errors.expression}</p>
             {/if}
           </div>
         {:else if field.type === "count" || field.type === "sum" || field.type === "average"}
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gremius-text mb-2"> Source Table </label>
+              <label for="sourcetable" class="block text-sm font-medium text-kitsuden-text mb-2">
+                Source Table
+              </label>
               <select
+                id="sourcetable"
                 bind:value={field.config.sourceTable}
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text focus:outline-none focus:border-gremius-cyan"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
               >
                 <option value="">Select table...</option>
                 {#each availableTables as table}
@@ -314,18 +322,19 @@
                 {/each}
               </select>
               {#if errors.sourceTable}
-                <p class="mt-1 text-sm text-gremius-pink">{errors.sourceTable}</p>
+                <p class="mt-1 text-sm text-kitsuden-accent-2">{errors.sourceTable}</p>
               {/if}
             </div>
 
             {#if field.type !== "count"}
               <div>
-                <label class="block text-sm font-medium text-gremius-text mb-2">
+                <label for="sourcefield" class="block text-sm font-medium text-kitsuden-text mb-2">
                   Field to {field.type}
                 </label>
                 <select
+                  id="sourcefield"
                   bind:value={field.config.sourceField}
-                  class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text focus:outline-none focus:border-gremius-cyan"
+                  class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
                 >
                   <option value="">Select field...</option>
                   {#each availableFields.filter((f) => f.type === "number") as field}
@@ -333,14 +342,14 @@
                   {/each}
                 </select>
                 {#if errors.sourceField}
-                  <p class="mt-1 text-sm text-gremius-pink">{errors.sourceField}</p>
+                  <p class="mt-1 text-sm text-kitsuden-accent-2">{errors.sourceField}</p>
                 {/if}
               </div>
             {/if}
           </div>
         {:else if field.type === "concat"}
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-2">
+            <label class="block text-sm font-medium text-kitsuden-text mb-2">
               Fields to Concatenate
             </label>
             <div class="space-y-2">
@@ -353,7 +362,7 @@
                       fields[index] = e.currentTarget.value;
                       field.config = { ...field.config, fields };
                     }}
-                    class="flex-1 px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                    class="flex-1 px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                   >
                     <option value="">Select field...</option>
                     {#each availableFields.filter((f) => f.type === "text") as f}
@@ -361,7 +370,7 @@
                     {/each}
                   </select>
                   <button
-                    class="p-2 rounded-lg hover:bg-gremius-pink/20 text-gremius-subtle hover:text-gremius-pink"
+                    class="p-2 rounded-lg hover:bg-kitsuden-accent-2/20 text-kitsuden-subtle hover:text-kitsuden-accent-2"
                     onclick={() => {
                       const fields = (field.config?.fields || []).filter(
                         (_f: any, i: number) => i !== index
@@ -374,7 +383,7 @@
                 </div>
               {/each}
               <button
-                class="flex items-center gap-2 px-3 py-2 text-sm text-gremius-cyan hover:bg-gremius-cyan/10 rounded-lg transition-colors"
+                class="flex items-center gap-2 px-3 py-2 text-sm text-kitsuden-accent hover:bg-kitsuden-accent/10 rounded-lg transition-colors"
                 onclick={() => {
                   field.config = {
                     ...field.config,
@@ -387,24 +396,28 @@
             </div>
 
             <div class="mt-4">
-              <label class="block text-sm font-medium text-gremius-text mb-2"> Separator </label>
+              <label for="separator" class="block text-sm font-medium text-kitsuden-text mb-2">
+                Separator
+              </label>
               <input
+                id="separator"
                 type="text"
                 bind:value={field.config.separator}
                 placeholder="e.g., ' - ' or ' '"
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
             </div>
           </div>
         {:else if field.type === "date_diff"}
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gremius-text mb-2">
+              <label for="startfield" class="block text-sm font-medium text-kitsuden-text mb-2">
                 Start Date Field
               </label>
               <select
+                id="startfield"
                 bind:value={field.config.startField}
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               >
                 <option value="">Select field...</option>
                 {#each availableFields.filter((f) => f.type === "date") as f}
@@ -414,12 +427,13 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gremius-text mb-2">
+              <label for="endfield" class="block text-sm font-medium text-kitsuden-text mb-2">
                 End Date Field
               </label>
               <select
+                id="endfield"
                 bind:value={field.config.endField}
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               >
                 <option value="">Now (current time)</option>
                 {#each availableFields.filter((f) => f.type === "date") as f}
@@ -429,10 +443,13 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gremius-text mb-2"> Output Unit </label>
+              <label for="unit" class="block text-sm font-medium text-kitsuden-text mb-2">
+                Output Unit
+              </label>
               <select
+                id="unit"
                 bind:value={field.config.unit}
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               >
                 <option value="days">Days</option>
                 <option value="hours">Hours</option>
@@ -443,19 +460,19 @@
           </div>
         {:else if field.type === "conditional"}
           <div class="space-y-4">
-            <p class="text-sm text-gremius-subtle">IF condition THEN value ELSE value</p>
+            <p class="text-sm text-kitsuden-subtle">IF condition THEN value ELSE value</p>
 
             <div
-              class="p-4 rounded-lg bg-gremius-surface/50 border border-gremius-border space-y-4"
+              class="p-4 rounded-lg bg-kitsuden-surface/50 border border-kitsuden-border space-y-4"
             >
-              <div class="flex items-center gap-2 text-gremius-cyan font-medium">
+              <div class="flex items-center gap-2 text-kitsuden-accent font-medium">
                 <span>IF</span>
               </div>
 
               <div class="grid grid-cols-3 gap-2">
                 <select
                   bind:value={field.config.condition.field}
-                  class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                  class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                 >
                   <option value="">Select field...</option>
                   {#each availableFields as f}
@@ -465,7 +482,7 @@
 
                 <select
                   bind:value={field.config.condition.operator}
-                  class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                  class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                 >
                   <option value="eq">equals</option>
                   <option value="neq">not equals</option>
@@ -482,12 +499,12 @@
                     type="text"
                     bind:value={field.config.condition.value}
                     placeholder="Value"
-                    class="px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                    class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                   />
                 {/if}
               </div>
 
-              <div class="flex items-center gap-2 text-gremius-green font-medium">
+              <div class="flex items-center gap-2 text-kitsuden-green font-medium">
                 <span>THEN</span>
               </div>
 
@@ -495,10 +512,10 @@
                 type="text"
                 bind:value={field.config.trueValue}
                 placeholder="Value if true"
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
 
-              <div class="flex items-center gap-2 text-gremius-pink font-medium">
+              <div class="flex items-center gap-2 text-kitsuden-accent-2 font-medium">
                 <span>ELSE</span>
               </div>
 
@@ -506,7 +523,7 @@
                 type="text"
                 bind:value={field.config.falseValue}
                 placeholder="Value if false"
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
             </div>
           </div>
@@ -516,14 +533,14 @@
       <!-- Step 3: Format & KPI Settings -->
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium text-gremius-text mb-3"> Output Format </label>
+          <label class="block text-sm font-medium text-kitsuden-text mb-3"> Output Format </label>
           <div class="grid grid-cols-3 gap-2">
             {#each formatTypes as fmt}
               <button
                 class="p-3 rounded-lg border text-sm font-medium transition-all {field.format
                   ?.type === fmt.id
-                  ? 'border-gremius-cyan bg-gremius-cyan/10 text-gremius-cyan'
-                  : 'border-gremius-border text-gremius-text hover:border-gremius-cyan/50'}"
+                  ? 'border-kitsuden-accent bg-kitsuden-accent/10 text-kitsuden-accent'
+                  : 'border-kitsuden-border text-kitsuden-text hover:border-kitsuden-accent/50'}"
                 onclick={() => (field.format = { ...field.format, type: fmt.id as any })}
               >
                 {fmt.label}
@@ -534,10 +551,13 @@
 
         {#if field.format?.type === "currency"}
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-2"> Currency </label>
+            <label for="currency" class="block text-sm font-medium text-kitsuden-text mb-2">
+              Currency
+            </label>
             <select
+              id="currency"
               bind:value={field.format.currency}
-              class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+              class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
             >
               <option value="USD">USD ($)</option>
               <option value="EUR">EUR (€)</option>
@@ -549,69 +569,85 @@
 
         {#if field.format?.type === "number" || field.format?.type === "currency" || field.format?.type === "percentage"}
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-2"> Decimal Places </label>
+            <label for="decimals" class="block text-sm font-medium text-kitsuden-text mb-2">
+              Decimal Places
+            </label>
             <input
+              id="decimals"
               type="number"
               bind:value={field.format.decimals}
               min="0"
               max="10"
-              class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+              class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
             />
           </div>
         {/if}
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-2"> Prefix </label>
+            <label for="prefix" class="block text-sm font-medium text-kitsuden-text mb-2">
+              Prefix
+            </label>
             <input
+              id="prefix"
               type="text"
               bind:value={field.format.prefix}
               placeholder="e.g., $"
-              class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+              class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gremius-text mb-2"> Suffix </label>
+            <label for="suffix" class="block text-sm font-medium text-kitsuden-text mb-2">
+              Suffix
+            </label>
             <input
+              id="suffix"
               type="text"
               bind:value={field.format.suffix}
               placeholder="e.g., %"
-              class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+              class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
             />
           </div>
         </div>
 
         {#if field.isKpi}
-          <div class="p-4 rounded-lg bg-gremius-surface/50 border border-gremius-border space-y-4">
-            <h4 class="font-medium text-gremius-text flex items-center gap-2">
-              <Target class="w-4 h-4 text-gremius-cyan" />
+          <div
+            class="p-4 rounded-lg bg-kitsuden-surface/50 border border-kitsuden-border space-y-4"
+          >
+            <h4 class="font-medium text-kitsuden-text flex items-center gap-2">
+              <Target class="w-4 h-4 text-kitsuden-accent" />
               KPI Targets
             </h4>
 
             <div>
-              <label class="block text-sm font-medium text-gremius-text mb-2"> Target Value </label>
+              <label for="target" class="block text-sm font-medium text-kitsuden-text mb-2">
+                Target Value
+              </label>
               <input
+                id="target"
                 type="number"
                 bind:value={field.target}
                 placeholder="e.g., 1000"
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
             </div>
 
             <div>
               <label
-                class="block text-sm font-medium text-gremius-text mb-2 flex items-center gap-2"
+                for="warningthreshold"
+                class="block text-sm font-medium text-kitsuden-text mb-2 flex items-center gap-2"
               >
                 <AlertTriangle class="w-4 h-4 text-amber-400" />
                 Warning Threshold
               </label>
               <input
+                id="warningthreshold"
                 type="number"
                 bind:value={field.warningThreshold}
                 placeholder="e.g., 500"
-                class="w-full px-3 py-2 bg-gremius-bg border border-gremius-border rounded-lg text-gremius-text"
+                class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
-              <p class="mt-1 text-xs text-gremius-subtle">
+              <p class="mt-1 text-xs text-kitsuden-subtle">
                 Value at which to show warning indicator
               </p>
             </div>
@@ -619,24 +655,24 @@
         {/if}
 
         <!-- Summary -->
-        <div class="p-4 rounded-lg bg-gremius-cyan/5 border border-gremius-cyan/20">
-          <h4 class="font-medium text-gremius-text mb-2">Summary</h4>
+        <div class="p-4 rounded-lg bg-kitsuden-accent/5 border border-kitsuden-accent/20">
+          <h4 class="font-medium text-kitsuden-text mb-2">Summary</h4>
           <div class="space-y-1 text-sm">
-            <p class="text-gremius-subtle">
-              <span class="text-gremius-text">Name:</span>
+            <p class="text-kitsuden-subtle">
+              <span class="text-kitsuden-text">Name:</span>
               {field.name}
             </p>
-            <p class="text-gremius-subtle">
-              <span class="text-gremius-text">Type:</span>
+            <p class="text-kitsuden-subtle">
+              <span class="text-kitsuden-text">Type:</span>
               {field.type}
             </p>
-            <p class="text-gremius-subtle">
-              <span class="text-gremius-text">Format:</span>
+            <p class="text-kitsuden-subtle">
+              <span class="text-kitsuden-text">Format:</span>
               {field.format?.type}
             </p>
             {#if field.dependsOn?.length}
-              <p class="text-gremius-subtle">
-                <span class="text-gremius-text">Depends on:</span>
+              <p class="text-kitsuden-subtle">
+                <span class="text-kitsuden-text">Depends on:</span>
                 {field.dependsOn.join(", ")}
               </p>
             {/if}
@@ -647,9 +683,9 @@
   </div>
 
   <!-- Footer -->
-  <div class="flex items-center justify-between pt-6 border-t border-gremius-border">
+  <div class="flex items-center justify-between pt-6 border-t border-kitsuden-border">
     <button
-      class="px-4 py-2 text-gremius-subtle hover:text-gremius-text transition-colors"
+      class="px-4 py-2 text-kitsuden-subtle hover:text-kitsuden-text transition-colors"
       onclick={onCancel}
     >
       Cancel
@@ -677,9 +713,9 @@
 
 <style>
   .btn-primary {
-    @apply bg-gremius-cyan text-black font-medium rounded-lg hover:brightness-110 transition-all;
+    @apply bg-kitsuden-accent text-black font-medium rounded-lg hover:brightness-110 transition-all;
   }
   .btn-secondary {
-    @apply bg-gremius-surface border border-gremius-border text-gremius-text rounded-lg hover:border-gremius-cyan/50 transition-all;
+    @apply bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text rounded-lg hover:border-kitsuden-accent/50 transition-all;
   }
 </style>

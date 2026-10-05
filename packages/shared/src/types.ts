@@ -1,5 +1,5 @@
 /**
- * GremiusCMS Shared Types
+ * Kitsuden Shared Types
  * These types mirror the Drizzle schema for frontend use
  */
 
@@ -88,6 +88,14 @@ export interface BlogPost {
   excerpt?: string;
   status: "draft" | "published" | "scheduled";
   publishedAt?: string;
+  /**
+   * Cuándo cambió el contenido por última vez.
+   *
+   * La API ya lo mandaba —la ruta por slug devuelve la fila entera— y aquí no
+   * estaba declarado, así que nadie lo usaba: las guías salían con `Article`
+   * sin `dateModified` aunque se hubieran reescrito enteras ese mismo día.
+   */
+  updatedAt?: string;
   author: {
     id: string;
     displayName: string;
@@ -107,9 +115,9 @@ export interface BlogPost {
 }
 
 /**
- * Define la estructura de una Vertical (App) que se instala sobre el Gremius Core.
+ * Define la estructura de una Vertical (App) que se instala sobre el Kitsuden Core.
  * @example
- * export default defineApp({ id: 'gremio-cms', name: 'Gaming CMS' ... })
+ * export default defineApp({ id: 'kitsuden-cms', name: 'Gaming CMS' ... })
  */
 export interface AppManifest {
   /** El identificador único de la app (slug). Se usará para montar las rutas en /api/apps/:id */

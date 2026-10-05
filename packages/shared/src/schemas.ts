@@ -11,24 +11,18 @@
 
 import { z } from "zod";
 
+import { FIELD_TYPE_NAMES } from "./field-types";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Field Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const FieldTypeSchema = z.enum([
-  "text",
-  "number",
-  "boolean",
-  "date",
-  "image",
-  "url",
-  "email",
-  "select",
-  "json",
-  "richtext",
-  "relation",
-  "kpi",
-]);
+/**
+ * Se deriva del registro en vez de repetir la lista: mantener dos copias es
+ * exactamente cómo `multiselect`, `textarea`, `datetime` y `media` acabaron
+ * validando en el backend sin existir para el usuario.
+ */
+export const FieldTypeSchema = z.enum(FIELD_TYPE_NAMES);
 
 export type FieldType = z.infer<typeof FieldTypeSchema>;
 
@@ -48,7 +42,7 @@ export const RelationTargetSchema = z.enum([
 export type RelationTarget = z.infer<typeof RelationTargetSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Field Definition (El corazón del esquema)
+// Relaciones y opciones
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const RelationConfigSchema = z.object({
@@ -68,17 +62,34 @@ export const SelectOptionSchema = z.object({
 
 export type SelectOption = z.infer<typeof SelectOptionSchema>;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Lógica condicional
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Esquema Zod para la definición de un campo individual.
+ * Muestra un campo solo si otro campo del mismo formulario cumple la condición.
  *
- * CRÍTICO: Este esquema valida que cada campo tenga:
- * - id único
- * - key (nombre máquina)
- * - label (nombre visible)
- * - type (uno de los FieldTypes permitidos)
- * - Validaciones opcionales (required, unique, regex, min/max)
+ * Reusa el vocabulario de operadores de `rlsRules` a propósito: el usuario ya
+ * lo conoce de las políticas de acceso, y no merece un segundo dialecto.
+ *
+ * Dentro de un repeater, `field` se resuelve contra la MISMA fila, no contra
+ * el formulario padre. Es lo que espera quien lo configura, y evita que una
+ * fila dependa del estado de otra.
  */
-export const FieldDefinitionSchema = z.object({
+export const ShowIfSchema = z.object({
+  field: z.string().min(1, "showIf.field is required"),
+  operator: z.enum(["eq", "neq", "contains", "gt", "lt"]),
+  value: z.string(),
+});
+
+export type ShowIf = z.infer<typeof ShowIfSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Field Definition (El corazón del esquema)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Campos comunes a un campo de primer nivel y a un subcampo de repeater. */
+const FieldBaseShape = {
   // Identificación
   id: z.string().min(1, "Field ID is required"),
   key: z.string().min(1, "Field key is required"),
@@ -108,6 +119,46 @@ export const FieldDefinitionSchema = z.object({
   // Configuración UI
   width: z.number().optional(),
   hidden: z.boolean().default(false),
+
+  /** Visibilidad condicional. `hidden` es fijo; esto depende de otro campo. */
+  showIf: ShowIfSchema.optional(),
+};
+
+/**
+ * Subcampo de un repeater: es un campo completo MENOS `subFields`.
+ *
+ * El anidamiento se corta a UN nivel a propósito, no por descuido. Un repeater
+ * dentro de un repeater multiplica filas por filas: el coste de render y de
+ * validación crece de forma cuadrática, y en la práctica casi todo lo que la
+ * gente resuelve así (FAQs, miembros del equipo, tramos de precio) es plano.
+ * Además, un esquema recursivo sin tope permite construir una definición que
+ * revienta la pila al generar el validador — un límite explícito es también
+ * un límite de seguridad.
+ */
+export const SubFieldDefinitionSchema = z.object(FieldBaseShape);
+
+export type SubFieldDefinition = z.infer<typeof SubFieldDefinitionSchema>;
+
+/**
+ * Esquema Zod para la definición de un campo individual.
+ *
+ * CRÍTICO: Este esquema valida que cada campo tenga:
+ * - id único
+ * - key (nombre máquina)
+ * - label (nombre visible)
+ * - type (uno de los FieldTypes permitidos)
+ * - Validaciones opcionales (required, unique, regex, min/max)
+ */
+export const FieldDefinitionSchema = z.object({
+  ...FieldBaseShape,
+
+  /**
+   * Solo para `type: "repeater"`. Define la forma de cada fila.
+   *
+   * `minLength` / `maxLength` del propio repeater actúan como mínimo y máximo
+   * de FILAS, en vez de inventar dos campos nuevos que signifiquen lo mismo.
+   */
+  subFields: z.array(SubFieldDefinitionSchema).optional(),
 });
 
 export type FieldDefinition = z.infer<typeof FieldDefinitionSchema>;
@@ -282,5 +333,23 @@ export function createEmptyField(type: FieldType, order: number): FieldDefinitio
     isUnique: false,
     order,
     hidden: false,
+    // Un repeater sin subcampos no es editable en el admin ni valida nada útil:
+    // se siembra con una fila de texto para que sirva desde el primer clic.
+    ...(type === "repeater"
+      ? {
+          subFields: [
+            {
+              id: generateFieldId(),
+              key: "",
+              label: "",
+              type: "text" as const,
+              isRequired: false,
+              isUnique: false,
+              order: 0,
+              hidden: false,
+            },
+          ],
+        }
+      : {}),
   };
 }

@@ -1,4 +1,4 @@
-# Gremius Image Size Optimization Plan
+# Kitsuden Image Size Optimization Plan
 
 ## Current State: 1.05 GB API Image
 
@@ -144,7 +144,7 @@ Bun can create single-file executables:
 
 ```bash
 # Build standalone executable
-bun build src/index.ts --compile --outfile gremius-api
+bun build src/index.ts --compile --outfile kitsuden-api
 
 # This bundles everything into one ~50-100 MB file
 # No node_modules needed!
@@ -212,8 +212,8 @@ apps/api/
 
 ```bash
 # Check what's taking space in your image
-docker run --rm -it cms-gremius_api:latest sh -c "du -sh /app/* | sort -h"
+docker run --rm -it cms-kitsuden_api:latest sh -c "du -sh /app/* | sort -h"
 
 # Check node_modules size
-docker run --rm -it cms-gremius_api:latest sh -c "du -sh /app/node_modules/* | sort -h | tail -20"
+docker run --rm -it cms-kitsuden_api:latest sh -c "du -sh /app/node_modules/* | sort -h | tail -20"
 ```

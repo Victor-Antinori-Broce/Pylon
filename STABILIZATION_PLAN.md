@@ -1,4 +1,4 @@
-# Plan de Estabilización — GremiusCMS v0.8.0 → Beta Real
+# Plan de Estabilización — Kitsuden v0.8.0 → Beta Real
 
 > **Estado actual:** Alpha avanzada con refactor arquitectónico masivo en curso.
 > **Meta:** Llegar a una beta estable, testeada y lista para deploys de producción controlados.
@@ -6,9 +6,29 @@
 
 ---
 
+## 🔄 Estado Actual Revisado (2026-06-16)
+
+El proyecto ha avanzado significativamente desde la redacción original de este plan:
+
+- ✅ **TypeScript strict** pasa limpio en API, shared, admin, sdk, mcp-server, cli y orm.
+- ✅ **Builds** funcionan para shared, api (8.33 MB) y admin (adapter-static).
+- ✅ **604 tests pasan** (413 en `apps/api/src/tests/` + 191 en `apps/api/src/tests-unit/`).
+- ✅ **Auth unificado**: Better-Auth + Agents NHI; API keys legacy deprecadas.
+- ✅ **Repo limpio**: `apps/api/src/modules/` eliminado; pocos artefactos compilados trackeados.
+- ⚠️ **Tests críticos usan aserciones débiles** (especialmente RLS) que dan falsa confianza.
+- ⚠️ **Docker/deploy** tiene secrets hardcodeados y problemas de seguridad.
+- ⚠️ **Admin Svelte** builda pero tests fallan y hay links rotos en el dashboard.
+- ⚠️ **Kons** tienen inconsistencias entre schemas locales y migraciones oficiales.
+
+**Estimación actualizada para beta pública:** 2–3 semanas enfocadas en seguridad, calidad de tests, Docker y pulido del admin.
+
+---
+
+---
+
 ## Principios del Plan
 
-1. **No reescribir, estabilizar.** El refactor a grimoires ya está en marcha; hay que terminarlo, no revertirlo.
+1. **No reescribir, estabilizar.** El refactor a kons ya está en marcha; hay que terminarlo, no revertirlo.
 2. **TypeScript como guardián.** Si `tsc --noEmit` no pasa limpio, no hay release.
 3. **Tests antes de features.** Ningún nuevo feature hasta que los flows críticos tengan tests de integración.
 4. **Un sistema de auth.** Tres sistemas conviviendo (cookies + API keys + agents) es una bomba de tiempo.
@@ -49,7 +69,7 @@
 **Problema:** `.js`, `.d.ts`, `.js.map`, `.d.ts.map` están mezclados con `.ts` en:
 
 - `apps/api/src/`, `apps/api/scripts/`, `apps/api/migrations/`
-- `packages/grimoires/*/`
+- `packages/kons/*/`
 - `packages/mcp-server/src/`
 - `packages/sdk/src/`
 - `packages/engine/src/`
@@ -63,8 +83,8 @@ git rm --cached -r apps/api/src/**/*.js apps/api/src/**/*.js.map apps/api/src/**
 git rm --cached -r apps/api/scripts/**/*.js apps/api/scripts/**/*.js.map apps/api/scripts/**/*.d.ts apps/api/scripts/**/*.d.ts.map
 git rm --cached -r apps/api/migrations/**/*.js apps/api/migrations/**/*.js.map apps/api/migrations/**/*.d.ts apps/api/migrations/**/*.d.ts.map
 
-# 2. Grimoires
-for dir in packages/grimoires/*/; do
+# 2. Kons
+for dir in packages/kons/*/; do
   git rm --cached -r "$dir"*.js "$dir"*.js.map "$dir"*.d.ts "$dir"*.d.ts.map 2>/dev/null || true
 done
 
@@ -75,7 +95,7 @@ git rm --cached -r packages/engine/src/**/*.js packages/engine/src/**/*.d.ts pac
 git rm --cached -r packages/starters/**/*.js packages/starters/**/*.d.ts packages/starters/**/*.js.map packages/starters/**/*.d.ts.map
 
 # 4. Limpiar archivos basura de root
-git rm --cached build-diag.txt build-diag2.txt gremius.md gremius_progress.txt null api.err tsc-errors.txt 2>/dev/null || true
+git rm --cached build-diag.txt build-diag2.txt kitsuden.md kitsuden_progress.txt null api.err tsc-errors.txt 2>/dev/null || true
 rm -f build-diag.txt build-diag2.txt null api.err tsc-errors.txt
 
 # 5. Commit
@@ -123,18 +143,18 @@ git commit -m "chore: remove compiled artifacts and junk files from source tree"
 
 **Archivos críticos a limpiar (en orden de prioridad):**
 
-| Prioridad | Archivo                                 | Por qué                     |
-| :-------- | :-------------------------------------- | :-------------------------- |
-| P0        | `apps/api/src/index.ts`                 | Entry point de toda la API  |
-| P0        | `apps/api/src/db/schema-core.ts`        | Schema base de la DB        |
-| P0        | `apps/api/src/db/schema.ts`             | Compat layer                |
-| P0        | `apps/api/src/lib/module-loader.ts`     | Carga dinámica de grimoires |
-| P0        | `apps/api/src/lib/schema-merger.ts`     | Merge de schemas            |
-| P1        | `apps/api/src/routes/crud.ts`           | CRUD base                   |
-| P1        | `apps/api/src/routes/agents.ts`         | Sistema de agentes          |
-| P1        | `apps/api/src/routes/mcp.ts`            | MCP server                  |
-| P2        | Grimoires (`packages/grimoires/*/*.ts`) | Módulos de negocio          |
-| P2        | Admin (`packages/admin/src/**/*.ts`)    | Panel de admin              |
+| Prioridad | Archivo                              | Por qué                    |
+| :-------- | :----------------------------------- | :------------------------- |
+| P0        | `apps/api/src/index.ts`              | Entry point de toda la API |
+| P0        | `apps/api/src/db/schema-core.ts`     | Schema base de la DB       |
+| P0        | `apps/api/src/db/schema.ts`          | Compat layer               |
+| P0        | `apps/api/src/lib/module-loader.ts`  | Carga dinámica de kons     |
+| P0        | `apps/api/src/lib/schema-merger.ts`  | Merge de schemas           |
+| P1        | `apps/api/src/routes/crud.ts`        | CRUD base                  |
+| P1        | `apps/api/src/routes/agents.ts`      | Sistema de agentes         |
+| P1        | `apps/api/src/routes/mcp.ts`         | MCP server                 |
+| P2        | Kons (`packages/kons/*/*.ts`)        | Módulos de negocio         |
+| P2        | Admin (`packages/admin/src/**/*.ts`) | Panel de admin             |
 
 **Estrategia:**
 
@@ -168,19 +188,19 @@ git commit -m "chore: remove compiled artifacts and junk files from source tree"
 
 ---
 
-## Fase 3: Arquitectura Estable — Consolidar Grimoires
+## Fase 3: Arquitectura Estable — Consolidar Kons
 
 **Tiempo estimado:** 4–6 días  
 **Bloqueante para:** Fase 4 (Tests), Fase 5 (Auth)
 
 ### 3.1 Matar el código legacy de módulos monolíticos
 
-**Problema:** `apps/api/src/modules/` aún tiene stubs que apuntan a grimoires (vistos en git status como archivos eliminados pero posiblemente referenciados en código).
+**Problema:** `apps/api/src/modules/` aún tiene stubs que apuntan a kons (vistos en git status como archivos eliminados pero posiblemente referenciados en código).
 
 **Tareas:**
 
 - [ ] Verificar que NADA en el codebase importa desde `apps/api/src/modules/*`
-- [ ] Si algo importa de ahí, redirigir a `packages/grimoires/*`
+- [ ] Si algo importa de ahí, redirigir a `packages/kons/*`
 - [ ] Eliminar el directorio `apps/api/src/modules/` por completo
 - [ ] Eliminar rutas legacy que re-exportan módulos antiguos (`apps/api/src/routes/blog.ts`, `collections.ts`, `games.ts`, `datasets.ts`, `datasets-openapi.ts`, `media.ts`, `upload.ts`, `theme-config.ts`)
 
@@ -191,11 +211,11 @@ git commit -m "chore: remove compiled artifacts and junk files from source tree"
 **Tareas:**
 
 - [ ] Escribir tests unitarios para `module-loader.ts` (sin DB):
-  - Resolución de paths (local, node_modules, realm bundled)
+  - Resolución de paths (local, node_modules, grimoire bundled)
   - Orden de carga por prioridad
   - Manejo de dependencias faltantes
-  - Graceful fallback si un grimoire falla al cargar
-- [ ] Documentar el protocolo de grimoire (qué exporta `index.ts`, qué firma tiene `createRouter`)
+  - Graceful fallback si un kon falla al cargar
+- [ ] Documentar el protocolo de kon (qué exporta `index.ts`, qué firma tiene `createRouter`)
 
 ### 3.3 Consolidar el schema
 
@@ -210,24 +230,24 @@ git commit -m "chore: remove compiled artifacts and junk files from source tree"
 
 - [ ] Definir una fuente única de verdad: **`schema-core.ts` es el schema base**
 - [ ] `schema.ts` debe ser solo `export * from "./schema-core"` (sin tablas de dominio)
-- [ ] Las tablas de dominio (games, streamers, etc.) viven SOLO en sus grimoires
-- [ ] `schema-all.ts` debe importar `schema-core` + schemas de grimoires activos (dinámicamente o via lista estática)
+- [ ] Las tablas de dominio (games, streamers, etc.) viven SOLO en sus kons
+- [ ] `schema-all.ts` debe importar `schema-core` + schemas de kons activos (dinámicamente o via lista estática)
 - [ ] Aplicar la migración que elimina `gameId` de `data_sets` (pendiente desde Fase 1 del progress.txt)
 
-### 3.4 Validar que todos los grimoires activos cargan
+### 3.4 Validar que todos los kons activos cargan
 
 **Script de validación:**
 
 ```bash
 # Este script debería existir y pasar limpio
-bun run apps/api/src/tests/verify-dynamic-realms.ts
+bun run apps/api/src/tests/verify-dynamic-grimoires.ts
 ```
 
 **Tareas:**
 
-- [ ] Verificar que cada grimoire en `gremius.config.ts` con `enabled: true`:
-  - Tiene su `grimoire.json` válido
-  - Exporta `defineGrimoire()` correctamente
+- [ ] Verificar que cada kon en `kitsuden.config.ts` con `enabled: true`:
+  - Tiene su `kon.json` válido
+  - Exporta `defineKon()` correctamente
   - Su `createRouter` no crashea al montarse
   - Sus dependencias están satisfechas
 
@@ -235,7 +255,7 @@ bun run apps/api/src/tests/verify-dynamic-realms.ts
 
 > `apps/api/src/modules/` no existe.  
 > El API arranca sin warnings de "legacy" ni "fallback".  
-> `bun test src/tests/modules.test.ts` pasa y valida que todos los grimoires enabled resuelven.
+> `bun test src/tests/modules.test.ts` pasa y valida que todos los kons enabled resuelven.
 
 ---
 
@@ -287,9 +307,9 @@ bun run apps/api/src/tests/verify-dynamic-realms.ts
 - [ ] Admin puede ver entries de ambos (si aplica)
 - [ ] Verificar que `set_config('app.current_user_id', ...)` se invoca en cada request
 
-### 4.4 Tests de Grimoire HTTP
+### 4.4 Tests de Kon HTTP
 
-**Nuevo archivo:** `apps/api/src/tests/grimoire-games-http.test.ts` (ejemplo)
+**Nuevo archivo:** `apps/api/src/tests/kon-games-http.test.ts` (ejemplo)
 
 **Cobertura:**
 
@@ -306,7 +326,7 @@ bun run apps/api/src/tests/verify-dynamic-realms.ts
 
 - [ ] GET `/api/mcp` → establece conexión SSE
 - [ ] POST `/api/mcp` → responde a `initialize`
-- [ ] Tool `gremius_query_dataset` funciona via JSON-RPC
+- [ ] Tool `kitsuden_query_dataset` funciona via JSON-RPC
 - [ ] Tool respeta RLS (no devuelve datos de otros usuarios)
 
 ### 4.6 Tests de Actions Engine
@@ -322,16 +342,16 @@ bun run apps/api/src/tests/verify-dynamic-realms.ts
 
 ### 4.7 Cobertura mínima objetivo
 
-| Módulo                 | Tests mínimos | Tipo        |
-| :--------------------- | :------------ | :---------- |
-| Auth HTTP              | 15            | Integration |
-| Dataset CRUD           | 15            | Integration |
-| RLS E2E                | 10            | Integration |
-| Grimoires (2 ejemplos) | 12            | Integration |
-| MCP Server             | 8             | Integration |
-| Actions Engine         | 8             | Integration |
-| Module Loader          | 10            | Unit        |
-| **Total objetivo**     | **~78**       | —           |
+| Módulo             | Tests mínimos | Tipo        |
+| :----------------- | :------------ | :---------- |
+| Auth HTTP          | 15            | Integration |
+| Dataset CRUD       | 15            | Integration |
+| RLS E2E            | 10            | Integration |
+| Kons (2 ejemplos)  | 12            | Integration |
+| MCP Server         | 8             | Integration |
+| Actions Engine     | 8             | Integration |
+| Module Loader      | 10            | Unit        |
+| **Total objetivo** | **~78**       | —           |
 
 Sumados a los 71 existentes = **~150 tests** para declarar beta.
 
@@ -347,21 +367,21 @@ Sumados a los 71 existentes = **~150 tests** para declarar beta.
 **Tiempo estimado:** 3–4 días  
 **Bloqueante para:** Fase 7 (Release)
 
-### 5.1 Deprecar API Keys legacy (`Bearer gremius_sk_*`)
+### 5.1 Deprecar API Keys legacy (`Bearer kitsuden_sk_*`)
 
 **Problema:** El sistema tiene tres auth:
 
 1. Better-Auth cookies (humanos)
-2. API Keys legacy (`gremius_sk_`) — DEPRECATED
-3. Agent NHI (`grm_agent_`) — nuevo
+2. API Keys legacy (`kitsuden_sk_`) — DEPRECATED
+3. Agent NHI (`kitsuden_agent_`) — nuevo
 
 **Tareas:**
 
-- [ ] Migrar todas las integraciones que usan `gremius_sk_` a Agents
+- [ ] Migrar todas las integraciones que usan `kitsuden_sk_` a Agents
 - [ ] Agregar un script de migración: `scripts/migrate-api-keys-to-agents.ts`
   - Lee `apiKeys` de la DB
   - Crea un Agent por cada API key
-  - Genera nuevo token `grm_agent_xxx`
+  - Genera nuevo token `kitsuden_agent_xxx`
   - Guarda mapping para notificar al usuario
 - [ ] Cambiar el middleware de API keys para loggear `warn`: `"API Keys are deprecated, migrate to Agents"`
 - [ ] Plan de eliminación: v0.9.0 elimina API keys legacy
@@ -431,11 +451,11 @@ Sumados a los 71 existentes = **~150 tests** para declarar beta.
 - ✅ `apps/admin/src/_legacy_vue_archive/` — eliminado en migración anterior
 - ✅ `Pylon/`, `pylon1/` — directorios vacíos eliminados
 
-**Nota:** `packages/starters/gremio-blog-template/` usa Astro + Vue islands como starter template oficial. Esto NO es legacy — es un producto activo que ofrece Vue como opción de frontend. No eliminar.
+**Nota:** `packages/starters/kitsuden-blog-template/` usa Astro + Vue islands como starter template oficial. Esto NO es legacy — es un producto activo que ofrece Vue como opción de frontend. No eliminar.
 
 **Orphan code pendiente de decisión:**
 
-- ⚠️ `capacitaciones_app/` — App Django LMS de 63 archivos + 29 migraciones. No referenciada en docker-compose ni package.json. Aparece en `module-registry.ts` como tablas relacionadas a `grimoire-academy-lms`. **Requiere confirmación del usuario para eliminar.**
+- ⚠️ `capacitaciones_app/` — App Django LMS de 63 archivos + 29 migraciones. No referenciada en docker-compose ni package.json. Aparece en `module-registry.ts` como tablas relacionadas a `kon-academy-lms`. **Requiere confirmación del usuario para eliminar.**
 
 ### Criterio de salida
 
@@ -489,32 +509,35 @@ Sumados a los 71 existentes = **~150 tests** para declarar beta.
 
 ## Calendario Sugerido (1 desarrollador full-time)
 
-| Semana       | Fases                              | Entregable                                                       |
-| :----------- | :--------------------------------- | :--------------------------------------------------------------- |
-| **Semana 1** | Fase 0 + Fase 1 + Fase 2 (parcial) | Repo limpio, entry point sin `@ts-nocheck`, tsc limpio en core   |
-| **Semana 2** | Fase 2 (resto) + Fase 3            | Toda la API pasa tsc, grimoires consolidados, modules/ eliminado |
-| **Semana 3** | Fase 4 + Fase 5 (parcial)          | >140 tests pasando, auth unificado en progreso                   |
-| **Semana 4** | Fase 5 (resto) + Fase 6 + Fase 7   | Beta release v0.9.0-beta, admin funcional, docs actualizadas     |
+| Semana       | Fases                              | Entregable                                                     |
+| :----------- | :--------------------------------- | :------------------------------------------------------------- |
+| **Semana 1** | Fase 0 + Fase 1 + Fase 2 (parcial) | Repo limpio, entry point sin `@ts-nocheck`, tsc limpio en core |
+| **Semana 2** | Fase 2 (resto) + Fase 3            | Toda la API pasa tsc, kons consolidados, modules/ eliminado    |
+| **Semana 3** | Fase 4 + Fase 5 (parcial)          | >140 tests pasando, auth unificado en progreso                 |
+| **Semana 4** | Fase 5 (resto) + Fase 6 + Fase 7   | Beta release v0.9.0-beta, admin funcional, docs actualizadas   |
 
 ---
 
 ## Métricas de Éxito
 
-| Métrica                       | Actual       | Meta Beta              |
-| :---------------------------- | :----------- | :--------------------- |
-| Archivos `@ts-nocheck` en API | 61           | 0                      |
-| Tests                         | 71           | >140                   |
-| Cobertura de líneas           | ~15%         | >60%                   |
-| Sistemas de auth activos      | 3            | 2 (1 legacy deprecado) |
-| Archivos compilados en src/   | Cientos      | 0                      |
-| Tiempo de `bun test`          | ~350ms       | <2s                    |
-| `docker compose build`        | Con warnings | Limpio                 |
+| Métrica                            | Actual                               | Meta Beta                |
+| :--------------------------------- | :----------------------------------- | :----------------------- |
+| Archivos `@ts-nocheck` en API      | ~13 (scripts/utils)                  | 0 (entry point/core)     |
+| Tests                              | 604                                  | >140 (cantidad superada) |
+| Cobertura de líneas real           | ~15%                                 | >60%                     |
+| Sistemas de auth activos           | 2                                    | 2 (1 legacy deprecado)   |
+| Archivos compilados en src/        | ~18                                  | 0                        |
+| Tiempo de `bun test`               | ~50s                                 | <2s                      |
+| `docker compose build`             | Funcional con problemas de seguridad | Limpio y seguro          |
+| Tests de RLS con aserciones reales | ❌                                   | ✅                       |
+| Docker sin secrets hardcodeados    | ❌                                   | ✅                       |
+| Admin tests pasando                | ❌                                   | ✅                       |
 
 ---
 
 ## Notas Finales
 
-- **No agregues features nuevos durante la estabilización.** Ni un solo grimoire nuevo.
+- **No agregues features nuevos durante la estabilización.** Ni un solo kon nuevo.
 - **Si algo se siente "rápido y sucio", es señal de que va en `ROADMAP.md`, no en el código.**
 - **El objetivo de beta no es que esté perfecto; es que esté predecible.** Un beta tester debe poder deployar, romperlo, y saber por qué se rompió.
 

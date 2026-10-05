@@ -1,5 +1,5 @@
 @echo off
-:: GremiusCMS - Script de inicio para DESARROLLO
+:: Kitsuden - Script de inicio para DESARROLLO
 :: Ejecuta: dev-start.bat
 
 cd /d "%~dp0\.."

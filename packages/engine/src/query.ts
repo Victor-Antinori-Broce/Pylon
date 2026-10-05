@@ -58,7 +58,7 @@ import * as schema from "../../../apps/api/src/db/schema";
 // TIPOS Y CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** Operadores de filtro soportados según GremiusDataset.md */
+/** Operadores de filtro soportados según KitsudenDataset.md */
 export type FilterOperator =
   | "eq" // Igual
   | "neq" // Diferente
@@ -147,7 +147,7 @@ export class QueryTranslatorError extends Error {
       | "MAX_EXPAND_DEPTH_EXCEEDED"
       | "INVALID_WHERE_CLAUSE"
       | "QUERY_EXECUTION_ERROR",
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "QueryTranslatorError";

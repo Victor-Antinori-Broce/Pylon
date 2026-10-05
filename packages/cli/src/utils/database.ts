@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 export async function loadDatabase() {
-  const configPath = path.resolve("gremius.config.ts");
+  const configPath = path.resolve("kitsuden.config.ts");
   let config: any = {};
 
   try {
@@ -17,7 +17,7 @@ export async function loadDatabase() {
   const connectionString =
     config.database?.connectionString ||
     process.env.DATABASE_URL ||
-    "postgres://postgres:postgres@localhost:5432/gremius";
+    "postgres://postgres:postgres@localhost:5432/kitsuden";
 
   const client = postgres(connectionString, { max: 1 });
   const db = drizzle(client);

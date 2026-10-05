@@ -1,4 +1,4 @@
-# 📋 Inventario de Deuda Técnica - GremiusCMS
+# 📋 Inventario de Deuda Técnica - Kitsuden
 
 **Fecha de auditoría:** 2026-04-26  
 **Auditor:** Arquitecto de Sistemas Principal  
@@ -136,12 +136,12 @@ Fase 1 (1 semana): Tests críticos
 
 Fase 2 (2 semanas): Tests de integración
   - Flujo completo: crear dataset → agregar entry → publicar
-  - Grimoires: activar/desactivar
+  - Kons: activar/desactivar
   - MCP: tools y resources
 
 Fase 3 (1 semana): Tests E2E
   - Login → Crear dataset → Agregar entrada
-  - Cambiar realm → Verificar grimoires
+  - Cambiar grimoire → Verificar kons
 ```
 
 **Archivos prioritarios para testing:**
@@ -257,7 +257,7 @@ Fase 3 (1 semana): Tests E2E
 - [ ] Alcanzar 40% cobertura de tests
 - [ ] Implementar scheduling / publicación programada
 - [ ] Implementar analytics dashboard
-- [ ] Mover tipos inline de Settings.svelte a `@gremius/shared`
+- [ ] Mover tipos inline de Settings.svelte a `@kitsuden/shared`
 
 ### Q3 2026
 

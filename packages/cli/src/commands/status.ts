@@ -68,7 +68,7 @@ export async function statusCommand() {
 
     spinner.stop();
 
-    console.log(chalk.cyan("\n📊 Gremius Status\n"));
+    console.log(chalk.cyan("\n📊 Kitsuden Status\n"));
 
     // ── Railway status ──
     if (isRailway) {
@@ -102,16 +102,16 @@ export async function statusCommand() {
 
         if (containers.length === 0) {
           console.log(chalk.yellow("  ⚠️  No local containers running"));
-          console.log(chalk.gray("     Run: gremius start\n"));
+          console.log(chalk.gray("     Run: kitsuden start\n"));
         } else {
           console.log(chalk.green("  🟢 Local Services:\n"));
 
           const services = [
-            { name: "gremius_api", label: "API Server", url: "http://localhost:3000" },
-            { name: "gremius_admin", label: "Admin Panel", url: "http://localhost:3001" },
-            { name: "gremius_mcp", label: "MCP Server", url: "http://localhost:3002" },
-            { name: "gremius_db", label: "Database", url: "localhost:5432" },
-            { name: "gremius_cache", label: "Cache", url: "localhost:6379" },
+            { name: "kitsuden_api", label: "API Server", url: "http://localhost:3000" },
+            { name: "kitsuden_admin", label: "Admin Panel", url: "http://localhost:3001" },
+            { name: "kitsuden_mcp", label: "MCP Server", url: "http://localhost:3002" },
+            { name: "kitsuden_db", label: "Database", url: "localhost:5432" },
+            { name: "kitsuden_cache", label: "Cache", url: "localhost:6379" },
           ];
 
           for (const service of services) {

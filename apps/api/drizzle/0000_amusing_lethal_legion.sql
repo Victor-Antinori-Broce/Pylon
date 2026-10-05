@@ -175,7 +175,7 @@ CREATE TABLE "games_to_tags" (
 	"tag_id" uuid NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "gremius_functions" (
+CREATE TABLE "kitsuden_functions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(200) NOT NULL,
 	"slug" varchar(200) NOT NULL,
@@ -219,7 +219,7 @@ CREATE TABLE "modules" (
 	"icon" varchar(50),
 	"category" varchar(100),
 	"enabled" boolean DEFAULT false NOT NULL,
-	"realm_id" varchar(100),
+	"grimoire_id" varchar(100),
 	"settings" jsonb DEFAULT '{}'::jsonb,
 	"sidebar_path" varchar(200),
 	"sidebar_icon" varchar(50),
@@ -239,7 +239,7 @@ CREATE TABLE "platforms" (
 --> statement-breakpoint
 CREATE TABLE "site_settings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"site_name" varchar(200) DEFAULT 'GremiusCMS' NOT NULL,
+	"site_name" varchar(200) DEFAULT 'Kitsuden' NOT NULL,
 	"site_description" text,
 	"site_url" text DEFAULT 'http://localhost:4321' NOT NULL,
 	"branding" jsonb,
@@ -288,7 +288,7 @@ ALTER TABLE "data_entries" ADD CONSTRAINT "data_entries_data_set_id_data_sets_id
 ALTER TABLE "data_entries" ADD CONSTRAINT "data_entries_owner_id_auth_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."auth_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "data_entries" ADD CONSTRAINT "data_entries_thumbnail_id_media_id_fk" FOREIGN KEY ("thumbnail_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "data_sets" ADD CONSTRAINT "data_sets_game_id_games_id_fk" FOREIGN KEY ("game_id") REFERENCES "public"."games"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "function_executions" ADD CONSTRAINT "function_executions_function_id_gremius_functions_id_fk" FOREIGN KEY ("function_id") REFERENCES "public"."gremius_functions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "function_executions" ADD CONSTRAINT "function_executions_function_id_kitsuden_functions_id_fk" FOREIGN KEY ("function_id") REFERENCES "public"."kitsuden_functions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "game_collection_entries" ADD CONSTRAINT "game_collection_entries_collection_id_game_collections_id_fk" FOREIGN KEY ("collection_id") REFERENCES "public"."game_collections"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "game_collection_entries" ADD CONSTRAINT "game_collection_entries_game_id_games_id_fk" FOREIGN KEY ("game_id") REFERENCES "public"."games"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "games" ADD CONSTRAINT "games_cover_art_id_media_id_fk" FOREIGN KEY ("cover_art_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -298,8 +298,8 @@ ALTER TABLE "games_to_streamers" ADD CONSTRAINT "games_to_streamers_game_id_game
 ALTER TABLE "games_to_streamers" ADD CONSTRAINT "games_to_streamers_streamer_id_streamers_id_fk" FOREIGN KEY ("streamer_id") REFERENCES "public"."streamers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "games_to_tags" ADD CONSTRAINT "games_to_tags_game_id_games_id_fk" FOREIGN KEY ("game_id") REFERENCES "public"."games"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "games_to_tags" ADD CONSTRAINT "games_to_tags_tag_id_tags_id_fk" FOREIGN KEY ("tag_id") REFERENCES "public"."tags"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "gremius_functions" ADD CONSTRAINT "gremius_functions_watch_dataset_id_data_sets_id_fk" FOREIGN KEY ("watch_dataset_id") REFERENCES "public"."data_sets"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "gremius_functions" ADD CONSTRAINT "gremius_functions_created_by_id_auth_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."auth_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "kitsuden_functions" ADD CONSTRAINT "kitsuden_functions_watch_dataset_id_data_sets_id_fk" FOREIGN KEY ("watch_dataset_id") REFERENCES "public"."data_sets"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "kitsuden_functions" ADD CONSTRAINT "kitsuden_functions_created_by_id_auth_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."auth_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "media" ADD CONSTRAINT "media_uploaded_by_id_auth_users_id_fk" FOREIGN KEY ("uploaded_by_id") REFERENCES "public"."auth_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "platforms" ADD CONSTRAINT "platforms_icon_id_media_id_fk" FOREIGN KEY ("icon_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "streamers" ADD CONSTRAINT "streamers_avatar_id_media_id_fk" FOREIGN KEY ("avatar_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -324,10 +324,10 @@ CREATE INDEX "games_release_idx" ON "games" USING btree ("release_date");--> sta
 CREATE UNIQUE INDEX "gp_unique" ON "games_to_platforms" USING btree ("game_id","platform_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "gs_unique" ON "games_to_streamers" USING btree ("game_id","streamer_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "gt_unique" ON "games_to_tags" USING btree ("game_id","tag_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "pf_slug_idx" ON "gremius_functions" USING btree ("slug");--> statement-breakpoint
-CREATE INDEX "pf_trigger_idx" ON "gremius_functions" USING btree ("trigger");--> statement-breakpoint
-CREATE INDEX "pf_status_idx" ON "gremius_functions" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "pf_dataset_idx" ON "gremius_functions" USING btree ("watch_dataset_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "pf_slug_idx" ON "kitsuden_functions" USING btree ("slug");--> statement-breakpoint
+CREATE INDEX "pf_trigger_idx" ON "kitsuden_functions" USING btree ("trigger");--> statement-breakpoint
+CREATE INDEX "pf_status_idx" ON "kitsuden_functions" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "pf_dataset_idx" ON "kitsuden_functions" USING btree ("watch_dataset_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "media_s3key_idx" ON "media" USING btree ("s3_key");--> statement-breakpoint
 CREATE UNIQUE INDEX "platforms_slug_idx" ON "platforms" USING btree ("slug");--> statement-breakpoint
 CREATE UNIQUE INDEX "streamers_slug_idx" ON "streamers" USING btree ("slug");--> statement-breakpoint

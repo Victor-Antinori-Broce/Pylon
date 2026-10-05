@@ -1,7 +1,7 @@
 # 📊 DATASETS VALIDATION REPORT
 
 > **Fecha**: 2026-04-01  
-> **Scope**: grimoire-datasets package  
+> **Scope**: kon-datasets package  
 > **Validación**: 46 tests automatizados
 
 ---
@@ -230,7 +230,7 @@ try {
 ## 📦 Files Structure
 
 ```
-packages/grimoires/grimoire-datasets/
+packages/kons/kon-datasets/
 ├── index.ts                      ✅ Entry point con exports
 ├── datasets.routes.ts            ✅ Router con 26 endpoints
 ├── datasets.schema.ts            ✅ Schema base

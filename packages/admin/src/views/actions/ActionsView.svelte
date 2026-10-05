@@ -391,15 +391,15 @@
   function getTypeColor(type: ActionType): string {
     switch (type) {
       case "code":
-        return "text-gremius-amber bg-gremius-amber/10";
+        return "text-kitsuden-amber bg-kitsuden-amber/10";
       case "webhook_out":
-        return "text-gremius-purple bg-gremius-purple/10";
+        return "text-kitsuden-purple bg-kitsuden-purple/10";
       case "webhook_in":
-        return "text-gremius-cyan bg-gremius-cyan/10";
+        return "text-kitsuden-accent bg-kitsuden-accent/10";
       case "agent":
-        return "text-gremius-pink bg-gremius-pink/10";
+        return "text-kitsuden-accent-2 bg-kitsuden-accent-2/10";
       default:
-        return "text-gremius-subtle bg-gremius-subtle/10";
+        return "text-kitsuden-subtle bg-kitsuden-subtle/10";
     }
   }
 </script>
@@ -408,32 +408,32 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gremius-text flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-br from-gremius-cyan/20 to-gremius-purple/20 border border-gremius-cyan/20 flex items-center justify-center"
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-kitsuden-accent/20 to-kitsuden-purple/20 border border-kitsuden-accent/20 flex items-center justify-center"
         >
-          <Zap class="w-5 h-5 text-gremius-cyan" />
+          <Zap class="w-5 h-5 text-kitsuden-accent" />
         </div>
         Acciones
       </h1>
-      <p class="text-sm text-gremius-subtle mt-1">
+      <p class="text-sm text-kitsuden-subtle mt-1">
         Automatizaciones, webhooks y tareas programadas — todo en un solo lugar.
         {#if !useNewApi}
-          <span class="text-gremius-amber">(Legacy Mode)</span>
+          <span class="text-kitsuden-amber">(Legacy Mode)</span>
         {/if}
       </p>
     </div>
     <div class="flex items-center gap-2">
       <button
         onclick={() => openCreateModal("code")}
-        class="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-amber-500/5 hover:border-amber-500/20 hover:text-amber-400 transition-all duration-200"
+        class="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-amber-500/5 hover:border-amber-500/20 hover:text-amber-400 transition-all duration-200"
       >
         <Code class="w-4 h-4 group-hover:scale-110 transition-transform" />
         Nuevo Worker
       </button>
       <button
         onclick={() => openCreateModal("webhook_out")}
-        class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+        class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
       >
         <Webhook class="w-4 h-4 group-hover:rotate-12 transition-transform" />
         Nuevo Webhook
@@ -445,62 +445,62 @@
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="card p-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-gremius-cyan/10 flex items-center justify-center">
-          <Zap class="w-5 h-5 text-gremius-cyan" />
+        <div class="w-10 h-10 rounded-lg bg-kitsuden-accent/10 flex items-center justify-center">
+          <Zap class="w-5 h-5 text-kitsuden-accent" />
         </div>
         <div>
-          <p class="text-2xl font-bold text-gremius-text">{stats.total}</p>
-          <p class="text-xs text-gremius-subtle uppercase tracking-wider">Total Acciones</p>
+          <p class="text-2xl font-bold text-kitsuden-text">{stats.total}</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total Acciones</p>
         </div>
       </div>
     </div>
     <div class="card p-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-gremius-green/10 flex items-center justify-center">
-          <Activity class="w-5 h-5 text-gremius-green" />
+        <div class="w-10 h-10 rounded-lg bg-kitsuden-green/10 flex items-center justify-center">
+          <Activity class="w-5 h-5 text-kitsuden-green" />
         </div>
         <div>
-          <p class="text-2xl font-bold text-gremius-text">{stats.active}</p>
-          <p class="text-xs text-gremius-subtle uppercase tracking-wider">Activos</p>
+          <p class="text-2xl font-bold text-kitsuden-text">{stats.active}</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Activos</p>
         </div>
       </div>
     </div>
     <div class="card p-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-gremius-amber/10 flex items-center justify-center">
-          <Terminal class="w-5 h-5 text-gremius-amber" />
+        <div class="w-10 h-10 rounded-lg bg-kitsuden-amber/10 flex items-center justify-center">
+          <Terminal class="w-5 h-5 text-kitsuden-amber" />
         </div>
         <div>
-          <p class="text-2xl font-bold text-gremius-text">{stats.code}</p>
-          <p class="text-xs text-gremius-subtle uppercase tracking-wider">Workers</p>
+          <p class="text-2xl font-bold text-kitsuden-text">{stats.code}</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Workers</p>
         </div>
       </div>
     </div>
     <div class="card p-4">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-gremius-purple/10 flex items-center justify-center">
-          <Globe class="w-5 h-5 text-gremius-purple" />
+        <div class="w-10 h-10 rounded-lg bg-kitsuden-purple/10 flex items-center justify-center">
+          <Globe class="w-5 h-5 text-kitsuden-purple" />
         </div>
         <div>
-          <p class="text-2xl font-bold text-gremius-text">{stats.webhooks}</p>
-          <p class="text-xs text-gremius-subtle uppercase tracking-wider">Webhooks</p>
+          <p class="text-2xl font-bold text-kitsuden-text">{stats.webhooks}</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Webhooks</p>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Tabs -->
-  <div class="border-b border-gremius-border">
+  <div class="border-b border-kitsuden-border">
     <div class="flex gap-1">
       {#each [{ id: "all", label: "Todas las Acciones", icon: Zap }, { id: "code", label: "Workers", icon: Terminal }, { id: "webhook_out", label: "Webhooks", icon: Globe }] as tab}
         <button
           onclick={() => (activeTab = tab.id as any)}
           class="group px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 inline-flex items-center gap-2"
-          class:border-gremius-cyan={activeTab === tab.id}
-          class:text-gremius-cyan={activeTab === tab.id}
+          class:border-kitsuden-accent={activeTab === tab.id}
+          class:text-kitsuden-accent={activeTab === tab.id}
           class:border-transparent={activeTab !== tab.id}
-          class:text-gremius-text-dim={activeTab !== tab.id}
-          class:hover:text-gremius-text={activeTab !== tab.id}
+          class:text-kitsuden-text-dim={activeTab !== tab.id}
+          class:hover:text-kitsuden-text={activeTab !== tab.id}
         >
           <tab.icon class="w-4 h-4 group-hover:scale-110 transition-transform" />
           {tab.label}
@@ -514,25 +514,27 @@
     {#if loading}
       <div class="flex justify-center py-20">
         <div
-          class="w-6 h-6 border-2 border-gremius-cyan/30 border-t-gremius-cyan rounded-full animate-spin"
+          class="w-6 h-6 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
         ></div>
       </div>
     {:else if filteredActions.length === 0}
       <div class="p-16 text-center">
-        <Zap class="w-16 h-16 mx-auto text-gremius-cyan/30 mb-4" />
-        <h3 class="text-lg font-medium text-gremius-text mb-2">No actions configured</h3>
-        <p class="text-sm text-gremius-subtle mb-4">Create your first automation to get started.</p>
+        <Zap class="w-16 h-16 mx-auto text-kitsuden-accent/30 mb-4" />
+        <h3 class="text-lg font-medium text-kitsuden-text mb-2">No actions configured</h3>
+        <p class="text-sm text-kitsuden-subtle mb-4">
+          Create your first automation to get started.
+        </p>
         <div class="flex justify-center gap-3">
           <button
             onclick={() => openCreateModal("code")}
-            class="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-amber-500/5 hover:border-amber-500/20 hover:text-amber-400 transition-all duration-200"
+            class="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-amber-500/5 hover:border-amber-500/20 hover:text-amber-400 transition-all duration-200"
           >
             <Code class="w-4 h-4 group-hover:scale-110 transition-transform" />
             Nuevo Worker
           </button>
           <button
             onclick={() => openCreateModal("webhook_out")}
-            class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black rounded-xl font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+            class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
           >
             <Webhook class="w-4 h-4 group-hover:rotate-12 transition-transform" />
             Nuevo Webhook
@@ -541,29 +543,29 @@
       </div>
     {:else}
       <table class="w-full">
-        <thead class="bg-gremius-surface/50 border-b border-gremius-border">
+        <thead class="bg-kitsuden-surface/50 border-b border-kitsuden-border">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gremius-subtle uppercase"
+            <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
               >Tipo</th
             >
-            <th class="px-4 py-3 text-left text-xs font-medium text-gremius-subtle uppercase"
+            <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
               >Nombre</th
             >
-            <th class="px-4 py-3 text-left text-xs font-medium text-gremius-subtle uppercase"
+            <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
               >Trigger</th
             >
-            <th class="px-4 py-3 text-left text-xs font-medium text-gremius-subtle uppercase"
+            <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
               >Estado</th
             >
-            <th class="px-4 py-3 text-right text-xs font-medium text-gremius-subtle uppercase"
+            <th class="px-4 py-3 text-right text-xs font-medium text-kitsuden-subtle uppercase"
               >Acciones</th
             >
           </tr>
         </thead>
-        <tbody class="divide-y divide-gremius-border">
+        <tbody class="divide-y divide-kitsuden-border">
           {#each filteredActions as action}
             {@const Icon = getTypeIcon(action.type)}
-            <tr class="hover:bg-gremius-surface/30 group">
+            <tr class="hover:bg-kitsuden-surface/30 group">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
                   <div
@@ -573,18 +575,18 @@
                   >
                     <Icon class="w-4 h-4" />
                   </div>
-                  <span class="text-sm text-gremius-text capitalize"
+                  <span class="text-sm text-kitsuden-text capitalize"
                     >{action.type.replace("_", " ")}</span
                   >
                 </div>
               </td>
               <td class="px-4 py-3">
-                <div class="font-medium text-gremius-text">{action.name}</div>
+                <div class="font-medium text-kitsuden-text">{action.name}</div>
                 {#if action.description}
-                  <div class="text-xs text-gremius-subtle">{action.description}</div>
+                  <div class="text-xs text-kitsuden-subtle">{action.description}</div>
                 {/if}
                 {#if action.config?.url}
-                  <div class="text-xs text-gremius-subtle font-mono truncate max-w-[200px]">
+                  <div class="text-xs text-kitsuden-subtle font-mono truncate max-w-[200px]">
                     {action.config.url}
                   </div>
                 {/if}
@@ -602,8 +604,8 @@
                 <span
                   class="inline-flex px-2 py-1 text-xs rounded-full border {action.status ===
                   'active'
-                    ? 'border-gremius-green/30 bg-gremius-green/10 text-gremius-green'
-                    : 'border-gremius-subtle/30 bg-gremius-subtle/10 text-gremius-subtle'}"
+                    ? 'border-kitsuden-green/30 bg-kitsuden-green/10 text-kitsuden-green'
+                    : 'border-kitsuden-subtle/30 bg-kitsuden-subtle/10 text-kitsuden-subtle'}"
                 >
                   {action.status === "active" ? "Activo" : "Pausado"}
                 </span>
@@ -614,7 +616,7 @@
                 >
                   {#if action.type === "code"}
                     <button
-                      class="group/btn p-2 rounded-xl text-gremius-text-dim hover:text-gremius-cyan hover:bg-gremius-cyan/10 transition-all duration-200 hover:scale-110"
+                      class="group/btn p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-accent hover:bg-kitsuden-accent/10 transition-all duration-200 hover:scale-110"
                       title="Ejecutar ahora"
                       onclick={() => runAction(action)}
                     >
@@ -656,15 +658,15 @@
     ></div>
 
     <div
-      class="relative bg-gremius-card border border-gremius-border rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
     >
-      <div class="flex items-center justify-between p-6 border-b border-gremius-border">
-        <h3 class="text-lg font-semibold text-gremius-text">
+      <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
+        <h3 class="text-lg font-semibold text-kitsuden-text">
           Nuevo {createType === "code" ? "Worker" : "Webhook"}
         </h3>
         <button
           onclick={() => (showCreateModal = false)}
-          class="group p-2 rounded-xl text-gremius-text-dim hover:text-gremius-text hover:bg-gremius-bg transition-all duration-200 hover:rotate-90"
+          class="group p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-bg transition-all duration-200 hover:rotate-90"
         >
           <X class="w-5 h-5 transition-transform" />
         </button>
@@ -672,34 +674,39 @@
 
       <form onsubmit={saveAction} class="p-6 space-y-4">
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Nombre *</label>
+          <label for="formname" class="block text-xs text-kitsuden-subtle mb-1">Nombre *</label>
           <input
+            id="formname"
             bind:value={formName}
             type="text"
             placeholder={createType === "code"
               ? "ej. Resumen Diario de Emails"
               : "ej. Notificar Slack"}
-            class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm focus:border-gremius-cyan/50 focus:outline-none"
+            class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
             required
           />
         </div>
 
         <div>
-          <label class="block text-xs text-gremius-subtle mb-1">Descripción</label>
+          <label for="formdescription" class="block text-xs text-kitsuden-subtle mb-1"
+            >Descripción</label
+          >
           <input
+            id="formdescription"
             bind:value={formDescription}
             type="text"
             placeholder="¿Qué hace esta acción?"
-            class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm focus:border-gremius-cyan/50 focus:outline-none"
+            class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
           />
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Trigger</label>
+            <label for="formtrigger" class="block text-xs text-kitsuden-subtle mb-1">Trigger</label>
             <select
+              id="formtrigger"
               bind:value={formTrigger}
-              class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm focus:border-gremius-cyan/50 focus:outline-none"
+              class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
             >
               {#if createType === "code"}
                 <option value="cron">Programación Cron</option>
@@ -713,20 +720,26 @@
 
           {#if formTrigger === "cron"}
             <div>
-              <label class="block text-xs text-gremius-subtle mb-1">Expresión Cron</label>
+              <label for="formcronexpression" class="block text-xs text-kitsuden-subtle mb-1"
+                >Expresión Cron</label
+              >
               <input
+                id="formcronexpression"
                 bind:value={formCronExpression}
                 type="text"
                 placeholder="0 * * * *"
-                class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm font-mono focus:border-gremius-cyan/50 focus:outline-none"
+                class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm font-mono focus:border-kitsuden-accent/50 focus:outline-none"
               />
             </div>
           {:else if formTrigger === "event"}
             <div>
-              <label class="block text-xs text-gremius-subtle mb-1">Nombre del Evento</label>
+              <label for="formeventname" class="block text-xs text-kitsuden-subtle mb-1"
+                >Nombre del Evento</label
+              >
               <select
+                id="formeventname"
                 bind:value={formEventName}
-                class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm focus:border-gremius-cyan/50 focus:outline-none"
+                class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
               >
                 <option value="entry.created">Entry Created</option>
                 <option value="entry.updated">Entry Updated</option>
@@ -739,48 +752,55 @@
 
         {#if createType === "code"}
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Código</label>
+            <label for="formcode" class="block text-xs text-kitsuden-subtle mb-1">Código</label>
             <textarea
+              id="formcode"
               bind:value={formCode}
               rows="6"
-              class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm font-mono focus:border-gremius-cyan/50 focus:outline-none"
+              class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm font-mono focus:border-kitsuden-accent/50 focus:outline-none"
             ></textarea>
           </div>
         {:else}
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">URL de Destino *</label>
+            <label for="formurl" class="block text-xs text-kitsuden-subtle mb-1"
+              >URL de Destino *</label
+            >
             <input
+              id="formurl"
               bind:value={formUrl}
               type="url"
               placeholder="https://hooks.slack.com/services/..."
-              class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm focus:border-gremius-cyan/50 focus:outline-none"
+              class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
               required
             />
           </div>
 
           <div>
-            <label class="block text-xs text-gremius-subtle mb-1">Headers (JSON)</label>
+            <label for="formheaders" class="block text-xs text-kitsuden-subtle mb-1"
+              >Headers (JSON)</label
+            >
             <textarea
+              id="formheaders"
               bind:value={formHeaders}
               rows="3"
               placeholder={`{\"Authorization\": \"Bearer token\"}`}
-              class="w-full bg-gremius-bg text-gremius-text border border-gremius-border rounded-lg px-3 py-2 text-sm font-mono focus:border-gremius-cyan/50 focus:outline-none"
+              class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm font-mono focus:border-kitsuden-accent/50 focus:outline-none"
             ></textarea>
           </div>
         {/if}
 
-        <div class="flex justify-end gap-3 pt-4 border-t border-gremius-border">
+        <div class="flex justify-end gap-3 pt-4 border-t border-kitsuden-border">
           <button
             type="button"
             onclick={() => (showCreateModal = false)}
-            class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gremius-surface border border-gremius-border text-gremius-text hover:bg-gremius-bg transition-all duration-200"
+            class="px-5 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-bg transition-all duration-200"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving || !formName || (createType === "webhook_out" && !formUrl)}
-            class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-gremius-cyan to-cyan-400 text-black shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100"
+            class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100"
           >
             {#if saving}
               <Loader2 class="w-4 h-4 animate-spin" />
