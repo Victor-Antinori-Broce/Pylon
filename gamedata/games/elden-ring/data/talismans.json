@@ -1,0 +1,611 @@
+[
+  {
+    "id": "17f69f4f7a3l0i2soioqe3qysjxaw",
+    "name": "Arrow's Sting Talisman",
+    "image": "/media/talismans/arrows-sting-talisman.png",
+    "description": "A talisman depicting three iron arrows. Carried by soldiers long ago.\n\nRaises attack power of arrows and bolts.",
+    "effect": "Increases the damage of arrows and bolts fired from bows, greatbows, crossbows, and ballistae by 10%."
+  },
+  {
+    "id": "17f69659e33l0i2soj4uhpxf54ncje",
+    "name": "Arsenal Charm",
+    "image": "/media/talismans/arsenal-charm.png",
+    "description": "An iron charm that resembles a mass of weaponry. Boosts maximum equipment load.\n\nThis talisman was derived from an unusual greatsword, once wielded by a hero hungry for vengeance.",
+    "effect": "Increases maximum equip load by 15%."
+  },
+  {
+    "id": "17f69d47ea5l0i2sokp40249x3da4f",
+    "name": "Assassin's Cerulean Dagger",
+    "image": "/media/talismans/assassins-cerulean-dagger.png",
+    "description": "An assassin's dagger, misshapen and stained in cerulean. Critical hits restore FP.\n\nThis charm is modelled after the darkly gleaming blades used in the Night of Black Knives. Those which gave the demigods their first taste of death.",
+    "effect": "Restores 15 FP upon landing a critical hit."
+  },
+  {
+    "id": "17f697e45b3l0i2sol3u2c1y0ja11",
+    "name": "Assassin's Crimson Dagger",
+    "image": "/media/talismans/assassins-crimson-dagger.png",
+    "description": "An assassin's dagger, misshapen and stained in crimson.\n\nCritical hits restore HP.\n\nThis charm is modelled after the darkly gleaming blades used in the Night of Black Knives. Those which gave the demigods their first taste of death.",
+    "effect": "Restores 85 HP + 10% of maximum HP upon performing a critical hit."
+  },
+  {
+    "id": "17f69dfff40l0i2soo71h481xlxzx8i",
+    "name": "Arrow's Reach Talisman",
+    "image": "/media/talismans/arrows-reach-talisman.png",
+    "description": "A talisman depicting three arrows.\nCarried by hunters of beasts.\n\nIncreases the effective range of bows.",
+    "effect": "Increases the effective range and maximum flight distance of arrows, bolts, and greatbow arrows by approximately 65%, mitigating projectile damage fall-off over distance. Also increases the travel distance and effective range of select ranged spells and skills (such as Rock Sling)."
+  },
+  {
+    "id": "17f69c74ab1l0i2sp8u8ehul0cxenh",
+    "name": "Axe Talisman",
+    "image": "/media/talismans/axe-talisman.png",
+    "description": "A talisman depicting an axe and a warrior.\n\nThe Lord who led the Long March bore an axe, and his loyal warriors honored him by wielding axes of their own, making them very effective at dealing decisive blows.\n\nEnhances charge attacks.",
+    "effect": "Increases the damage of charged attacks by 10%."
+  },
+  {
+    "id": "17f697718ffl0i2sp9dowe0oahaam",
+    "name": "Boltdrake Talisman",
+    "image": "/media/talismans/boltdrake-talisman.png",
+    "description": "Talisman depicting a yellow ancient dragon. Boosts lightning damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Increases lightning damage negation by 13% (reduced to 4% in PvP)."
+  },
+  {
+    "id": "17f69811f79l0i2spa5kavq1z95u5i",
+    "name": "Blue Dancer Charm",
+    "image": "/media/talismans/blue-dancer-charm.png",
+    "description": "A cloth doll depicting a dancer garbed in blue. An ancient heirloom of some sort.\n\nRaises attack power with lower equipment load.\n\nThe dancer in blue represents a fairy, who in legend bestowed a flowing sword upon a blind swordsman. Blade in hand, the swordsman sealed away an ancient god \u2014 a god that was Rot itself.",
+    "effect": "Increases physical attack power by up to approximately 15% with lower total equipment load. The bonus scales based on flat equipment load: maximum boost (~15%) applies below 8.0 weight, decreasing to ~13.5% (8.0\u201315.9 weight), ~9% (16.0\u201319.9 weight), and ~3.75% (20.0\u201329.9 weight), providing no benefit at 30.0 weight or above. Affects physical weapon and arrow attacks, but does not affect non-physical damage, sorceries, or incantations."
+  },
+  {
+    "id": "17f69977289l0i2spaggtt1hdtxhk4",
+    "name": "Blessed Dew Talisman",
+    "image": "/media/talismans/blessed-dew-talisman.png",
+    "description": "Talisman depicting a drop of the Erdtree's sap, a blessed boon.\n\nGradually restores HP.\n\nIt was once thought that the blessed sap of the Erdtree would drip from its boughs forever\u2014but that age of plenty swiftly came to a close, and with time, the Erdtree became more an object of faith.",
+    "effect": "Gradually restores 2 HP per second."
+  },
+  {
+    "id": "17f69659808l0i2sphoobyfsfvku2i",
+    "name": "Bull-goat's Talisman",
+    "image": "/media/talismans/bull-goats-talisman.png",
+    "description": "A talisman depicting the horns of a bull-goat. Raises poise.\n\nBull-goats are associated with the stout and mighty Tragoth, said to be unflinching in combat\u2014now a silent comrade to those who fight.",
+    "effect": "Increases poise by 33% (mechanically reduces incoming poise damage by 25%)."
+  },
+  {
+    "id": "17f69ed62a2l0i2sq0x8kqy5oe9mwn",
+    "name": "Cerulean Amber Medallion",
+    "image": "/media/talismans/cerulean-amber-medallion.png",
+    "description": "A medallion with cerulean amber inlaid. Boosts maximum FP.\n\nThe Erdtree's old sap becomes amber, treasured as the most precious of jewels in the age of Godfrey, the first Elden Lord. A primordial life energy resides inside.",
+    "effect": "Increases maximum FP by 7% (+1 variant increases by 9%, +2 variant increases by 11%, +3 variant increases by 12.5%)."
+  },
+  {
+    "id": "17f69e97eaal0i2sq1lvpkd5cfq2q",
+    "name": "Carian Filigreed Crest",
+    "image": "/media/talismans/carian-filigreed-crest.png",
+    "description": "A talisman adorned with the royal crest.\nLowers FP consumed by skills.\n\nAn honor said to have once been awarded to Carian knights who served as direct retainers to the kingdom's princesses. Now there is only one princess: Ranni, daughter of Rennala.",
+    "effect": "Reduces the FP cost of weapon skills and Ashes of War by 25%. Does not affect sorceries or incantations."
+  },
+  {
+    "id": "17f69dc1892l0i2sq1oh9i2x6tlarj",
+    "name": "Cerulean Seed Talisman",
+    "image": "/media/talismans/cerulean-seed-talisman.png",
+    "description": "A cerulean-colored talisman patterned after an Erdtree seed. Boosts FP restoration from the Flask of Cerulean Tears.\n\nThe Erdtree was once perfect and eternal, and thus was it believed that Erdtree seeds could not exist.",
+    "effect": "Increases FP restoration from the Flask of Cerulean Tears by 20%."
+  },
+  {
+    "id": "17f69942443l0i2sq2zl2bttnq08hp",
+    "name": "Clarifying Horn Charm",
+    "image": "/media/talismans/clarifying-horn-charm.png",
+    "description": "An accoutrement worn by the ancestral followers.\nRaises focus.\n(Focus governs resistance to sleep and madness.)\n\nSaid to be a budding horn. The ancestral followers believe that the horns of a long-lived beast continue to bud like antlers, over and over again, until the beast one day becomes an ancestral spirit.",
+    "effect": "Raises focus by 90 (increasing resistance to sleep and madness). The +1 variant raises focus by 140, and the +2 variant raises focus by 230."
+  },
+  {
+    "id": "17f69ba1d62l0i2sq92f4o8t2tlzp7",
+    "name": "Claw Talisman",
+    "image": "/media/talismans/claw-talisman.png",
+    "description": "A talisman depicting a claw and an assassin.\nEnhances jump attacks.\n\nThe assassins of Ravenmount are killers by trade. They assail their victims while dressed as birds of prey.",
+    "effect": "Increases jump attack damage by 15% in PvE and 7.5% in PvP."
+  },
+  {
+    "id": "17f69d61012l0i2sqr9dmioj7dxngi",
+    "name": "Crucible Knot Talisman",
+    "image": "/media/talismans/crucible-knot-talisman.png",
+    "description": "A talisman fashioned from a bony knot that embodies the aspects of various creatures. Said to have grown on the human body long ago.\n\nA vestige of the crucible of primordial life. Born partially of devolution, it was considered a signifier of the divine in ancient times, but is now increasingly disdained as an impurity as civilization has advanced.",
+    "effect": "Reduces damage and impact of headshots taken by completely eliminating bonus headshot damage (~30% damage reduction on headshot multipliers) and negating headshot stagger animations."
+  },
+  {
+    "id": "17f699e5a9dl0i2sqsk8mpabyj9mm4",
+    "name": "Crimson Amber Medallion",
+    "image": "/media/talismans/crimson-amber-medallion.png",
+    "description": "A medallion with crimson amber inlaid. Boosts maximum HP.\n\nThe Erdtree's old sap becomes amber, treasured as the most precious of jewels in the age of Godfrey, the first Elden Lord. A primordial life energy resides inside.",
+    "effect": "Increases maximum HP by 6%."
+  },
+  {
+    "id": "17f6993bc1fl0i2sqt5xscysq45rce",
+    "name": "Crucible Scale Talisman",
+    "image": "/media/talismans/crucible-scale-talisman.png",
+    "description": "A talisman fashioned from a scale that embodies the aspects of various creatures. Said to have grown on the human body long ago.\n\nReduces damage taken from critical hits.\n\nA vestige of the crucible of primordial life. Born partially of devolution, it was considered a signifier of the divine in ancient times, but is now increasingly disdained as an impurity as civilization has advanced.",
+    "effect": "Reduces damage taken from critical hits by 30%."
+  },
+  {
+    "id": "17f69b7aec7l0i2sqw1x7ajlmzguyi",
+    "name": "Crepus's Vial",
+    "image": "/media/talismans/crepuss-vial.png",
+    "description": "Small mysterious bottle with a dark mist sealed within.\n\nEliminates all sound made by the wearer during movement.\n\nA ritual implement used by Roundtable Hold assassins. There was a time when Tarnished who had strayed from guidance feared nothing more than utter silence.",
+    "effect": "Completely eliminates all sound made by the wearer during movement, including walking, sprinting, jumping, and rolling."
+  },
+  {
+    "id": "17f69ed2edfl0i2sqxgpadu0gprbn",
+    "name": "Curved Sword Talisman",
+    "image": "/media/talismans/curved-sword-talisman.png",
+    "description": "A talisman depicting a curved sword and a swordsman.\n\nEnhances guard counters.\n\nIt is said that a blind swordsman was the originator of this technique\u2014the art of allowing one's opponent to strike so as to leave them vulnerable to a well-timed reply.",
+    "effect": "Increases Guard Counter damage by 20%."
+  },
+  {
+    "id": "17f69d584c8l0i2srfem3zhei7qek",
+    "name": "Dragoncrest Shield Talisman",
+    "image": "/media/talismans/dragoncrest-shield-talisman.png",
+    "description": "Wrought iron talisman depicting an ancient dragon.\n\nBoosts physical damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Increases physical damage negation by 10% (reduced to 2% in PvP)."
+  },
+  {
+    "id": "17f6969e375l0i2srh8fpkcyede0z",
+    "name": "Flamedrake Talisman",
+    "image": "/media/talismans/flamedrake-talisman.png",
+    "description": "Talisman depicting a red ancient dragon.\nBoosts fire damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Increases fire damage negation by 13% (reduced to 4% in PvP)."
+  },
+  {
+    "id": "17f697b6373l0i2srhja32ffmg9v7s",
+    "name": "Fire Scorpion Charm",
+    "image": "/media/talismans/fire-scorpion-charm.png",
+    "description": "A talisman carried by assassins who strike unseen.\n\nPatterned on a scorpion freshly shed of its exoskeleton, its claws seizing a heart that burns with fire.\n\nRaises fire attack power, but lowers damage negation.",
+    "effect": "Increases Fire Damage by 12% (reduced to 8% in PvP), but increases Physical Damage taken by 10% (increased to 15% in PvP)."
+  },
+  {
+    "id": "17f69c7f897l0i2srkhjmyvn5rfnva",
+    "name": "Godskin Swaddling Cloth",
+    "image": "/media/talismans/godskin-swaddling-cloth.png",
+    "description": "Sacred cloth of the Godskin Apostles, made from supple skin sewn together.\n\nSuccessive attacks restore HP.\n\nThe Gloam-Eyed Queen cradles newborn apostles swaddled in this cloth. Soon they will grow to become the death of the gods.",
+    "effect": "Restores 3% of maximum HP plus 30 flat HP upon landing successive attacks (requires 3 to 7 consecutive hits depending on weapon type and attack speed)."
+  },
+  {
+    "id": "17f696b2a8el0i2srkijjgnyeo45ic",
+    "name": "Faithful's Canvas Talisman",
+    "image": "/media/talismans/faithfuls-canvas-talisman.png",
+    "description": "A talisman bearing an icon that depicts a group of masked figures.\n\nRaises potency of incantations.\n\nThe figures represent the flock at prayer, their firm belief in the intangible inspiring even the solitary founder of their religion.\n\nWhat is faith if not an affirmation?",
+    "effect": "Increases the damage of incantations by 4%. Stacks multiplicatively with Flock's Canvas Talisman."
+  },
+  {
+    "id": "17f69882e78l0i2ss2r6zb3cbd6h3k",
+    "name": "Great-jar's Arsenal",
+    "image": "/media/talismans/great-jars-arsenal.png",
+    "description": "A charm that resembles a great jar overflowing with weaponry.\n\nVastly boosts maximum equipment load.\n\nThe great jar grants this talisman to their warriors. \"Carry as much as you can \u2014 grow big and strong.\"",
+    "effect": "Vastly raises maximum equip load by 19%."
+  },
+  {
+    "id": "17f69854ae6l0i2ss4quq0gikz8cw",
+    "name": "Haligdrake Talisman",
+    "image": "/media/talismans/haligdrake-talisman.png",
+    "description": "Talisman depicting a golden ancient dragon.\n\nBoosts holy damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Increases Holy damage negation by 13% (reduced to 4% in PvP)."
+  },
+  {
+    "id": "17f69ecd4bdl0i2ss5cnven5hobw5d",
+    "name": "Green Turtle Talisman",
+    "image": "/media/talismans/green-turtle-talisman.png",
+    "description": "A talisman in the shape of a green turtle. Raises stamina recovery speed.\n\nTurtles are known as a nutritious ingredient, symbolic of inexhaustible power. However, those who hold turtles to be wise creatures consider the practice of eating their meat to be barbarous.",
+    "effect": "Increases stamina recovery speed by 8 points per second (approximately +17.7%)."
+  },
+  {
+    "id": "17f696fc245l0i2ss7f2pzn3xdhj6n",
+    "name": "Hammer Talisman",
+    "image": "/media/talismans/hammer-talisman.png",
+    "description": "A talisman depicting a hammer and a knight.\n\nEnhances stamina-reducing attacks against a blocking opponent.\n\nHammers are highly effective against shield-bearing foes, so much so that they are known as 'knight-killers.'",
+    "effect": "Increases stamina damage dealt against blocking opponents by 40%."
+  },
+  {
+    "id": "17f69a7ec34l0i2ss898co9a2xz8uv",
+    "name": "Immunizing Horn Charm",
+    "image": "/media/talismans/immunizing-horn-charm.png",
+    "description": "An accoutrement worn by the ancestral followers. Raises immunity.\n\nSaid to be a budding horn. The ancestral followers believed that the horns of a long-lived beast continue to bud like antlers, over and over again, until the beast one day becomes an ancestral spirit.",
+    "effect": "Raises Immunity by 90, increasing resistance to poison and scarlet rot."
+  },
+  {
+    "id": "17f69cd1ed6l0i2ssohaju8uk3qvro",
+    "name": "Kindred Of Rot's Exultation",
+    "image": "/media/talismans/kindred-of-rots-exultation.png",
+    "description": "A talisman depicting the exultation of pests.\n\nRaises attack power when poisoning or rot occurs in the vicinity.\n\n\"Rot for the scarlet goddess. O scarlet blossoms, flourish in distant lands, and return to us, the unwanted children.\"",
+    "effect": "Raises attack power by 20% for 20 seconds when poison or scarlet rot is inflicted on a nearby entity or the player."
+  },
+  {
+    "id": "17f69e2a905l0i2ssrfz1ym5wgjvc",
+    "name": "Lightning Scorpion Charm",
+    "image": "/media/talismans/lightning-scorpion-charm.png",
+    "description": "A talisman carried by assassins who strike unseen. Patterned on a scorpion freshly shed of its exoskeleton, its claws seizing a heart that sparks with lightning. Raises lightning attack power, but lowers damage negation.",
+    "effect": "Increases lightning damage by 12% (8% in PvP), but increases physical damage taken by 10% (15% in PvP)."
+  },
+  {
+    "id": "17f69ca952al0i2ssu6yw9l5kfw6q",
+    "name": "Longtail Cat Talisman",
+    "image": "/media/talismans/longtail-cat-talisman.png",
+    "description": "A brooch depicting Lacrima, the long-tailed cat.\n\nGrants immunity to fall damage, but does not prevent death from a high fall.\n\nLacrima features in the fables of Raya Lucaria, in which she is described as a faerie cat who was fond of playing in the great bell tower.",
+    "effect": "Completely negates non-lethal fall damage (normally incurred between 16 and 19.9 meters). Does not prevent instant death from lethal falls (20 meters or higher)."
+  },
+  {
+    "id": "17f69bdcd53l0i2ssvjmuvkx73w1bo",
+    "name": "Marika's Scarseal",
+    "image": "/media/talismans/marikas-scarseal.png",
+    "description": "An eye engraved with an Elden Rune. Said to be the seal of Queen Marika.\n\nRaises mind, intelligence, faith, and arcane, but also increases damage taken.\n\nThese seals represent the lifelong duty of those chosen by the gods.",
+    "effect": "Increases Mind, Intelligence, Faith, and Arcane by 3 each, but increases all damage taken by 10%."
+  },
+  {
+    "id": "17f69c66a45l0i2sswom5whqqzshn",
+    "name": "Lord Of Blood's Exultation",
+    "image": "/media/talismans/lord-of-bloods-exultation.png",
+    "description": "A talisman depicting the exultation of the Lord of Blood.\n\nRaises attack power when blood loss occurs in the vicinity.\n\n\"Render up your offerings of blood to your Lord. Drench my consort's chamber. Slake his cocoon's thirst. His awakening shall herald the dawn of our dynasty.\"",
+    "effect": "Increases attack power by 20% for 20 seconds when blood loss occurs in the vicinity."
+  },
+  {
+    "id": "17f69b9af92l0i2st8bt7bg2grdb1h",
+    "name": "Mottled Necklace",
+    "image": "/media/talismans/mottled-necklace.png",
+    "description": "A vividly-colored accoutrement precious to the ancestral followers. Raises immunity, robustness, and focus.\n\nSaid to be a budding horn. The ancestral followers believed that the horns of a long-lived beast continue to bud like antlers, over and over again, until the beast one day becomes an ancestral spirit.",
+    "effect": "Raises Immunity, Robustness, and Focus by +40, increasing resistance to Poison, Scarlet Rot, Hemorrhage, Frostbite, Sleep, and Madness."
+  },
+  {
+    "id": "17f6980d220l0i2stavhe03m4ms2yf",
+    "name": "Moon Of Nokstella",
+    "image": "/media/talismans/moon-of-nokstella.png",
+    "description": "This legendary talisman is a treasure of Nokstella, the Eternal City.\n\nIncreases memory slots.\n\nThis talisman represents the lost black moon. The moon of Nokstella was the guide of countless stars.",
+    "effect": "Increases memory slots by 2, allowing up to two additional Sorceries or Incantations to be memorized."
+  },
+  {
+    "id": "17f6967fb2dl0i2ste8y2pomb9gcj9",
+    "name": "Old Lord's Talisman",
+    "image": "/media/talismans/old-lords-talisman.png",
+    "description": "A legendary talisman depicting the ancient king whose seat lies at the heart of the storm beyond time.\n\nExtends the duration of sorceries and incantations.\n\nIt is said that the ancient royal city of Farum Azula has been slowly crumbling since time immemorial.",
+    "effect": "Extends the duration of sorceries and incantations by 30%."
+  },
+  {
+    "id": "17f699f5086l0i2stgzl85bqm2vvy",
+    "name": "Pearldrake Talisman",
+    "image": "/media/talismans/pearldrake-talisman.png",
+    "description": "Talisman depicting a pearlescent dragon. Boosts non-physical damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Reduces incoming non-physical damage (Magic, Fire, Lightning, and Holy) by 5% (reduced to 2% in PvP combat)."
+  },
+  {
+    "id": "17f69e4e872l0i2strgtb0bn8sior8",
+    "name": "Primal Glintstone Blade",
+    "image": "/media/talismans/primal-glintstone-blade.png",
+    "description": "An old glintstone blade that has been stained with blood. Reduces FP consumption of sorceries and incantations at the cost of maximum HP.\n\nThe old sorcerers would slice open their hearts with these blades to imbue a primal glintstone with their soul, and thus did they die.",
+    "effect": "Reduces FP consumption of sorceries and incantations by 25%, at the cost of reducing maximum HP by 15%."
+  },
+  {
+    "id": "17f697a330el0i2stvssvzrmkqvrx",
+    "name": "Prince Of Death's Pustule",
+    "image": "/media/talismans/prince-of-deaths-pustule.png",
+    "description": "A fetid pustule taken from facial flesh. Raises vitality.\n(Vitality governs resistance to the effects of Death.)\n\nIt is said that this pustule came from the visage of the Prince of Death, he who used to be called Godwyn. As First Dead of the demigods, it's said he's buried deep under the capital, at the Erdtree's roots.",
+    "effect": "Increases Vitality by +90, raising resistance to Death Blight buildup."
+  },
+  {
+    "id": "17f69db3ddfl0i2stxpa5we7cuil2",
+    "name": "Radagon Icon",
+    "image": "/media/talismans/radagon-icon.png",
+    "description": "A legendary talisman depicting the Elden Lord Radagon.\n\nShortens the casting time of sorceries and incantations.\n\nAs the husband of Rennala of Caria, the red-haired Radagon studied sorcery, and as the husband of Queen Marika, he studied incantations. Thus did the hero aspire to be complete.",
+    "effect": "Shortens the casting time of sorceries and incantations by granting 30 virtual Dexterity towards spell casting speed (which caps at 70 Dexterity)."
+  },
+  {
+    "id": "17f69f6b0d2l0i2su0uxibci7qzsn",
+    "name": "Radagon's Scarseal",
+    "image": "/media/talismans/radagons-scarseal.png",
+    "description": "An eye engraved with an Elden Rune. Said to be the seal of King Consort Radagon.\n\nRaises vigor, endurance, strength, and dexterity, but also increases damage taken.\n\nThese seals represent the lifelong duty of those chosen by the gods.",
+    "effect": "Increases Vigor, Endurance, Strength, and Dexterity by +3 each, but increases damage taken by 10%."
+  },
+  {
+    "id": "17f696a52c1l0i2su2ddt9cbw3bnog",
+    "name": "Radagon's Soreseal",
+    "image": "/media/talismans/radagons-soreseal.png",
+    "description": "This legendary talisman is an eye engraved with an Elden Rune, said to be the seal of King Consort Radagon.\n\nGreatly raises vigor, endurance, strength, dexterity, but also increases damage taken by a similar measure.\n\nSolemn duty weighs upon the one beholden; not unlike a gnawing curse from which there is no deliverance.",
+    "effect": "Increases Vigor, Endurance, Strength, and Dexterity by +5 each, but increases all damage taken by 15%."
+  },
+  {
+    "id": "17f69e49085l0i2sudupmymnf7is0e",
+    "name": "Sacred Scorpion Charm",
+    "image": "/media/talismans/sacred-scorpion-charm.png",
+    "description": "A talisman carried by assassins who strike unseen. Patterned on a scorpion freshly shed of its exoskeleton, its claws seizing a heart with a blessed glow.\n\nRaises holy attack power, but lowers damage negation.",
+    "effect": "Increases Holy damage dealt by 12% (8% in PvP), but increases Physical damage taken by 10% (15% in PvP)."
+  },
+  {
+    "id": "17f6966d3a9l0i2suh41ayrux3telz",
+    "name": "Sacrificial Twig",
+    "image": "/media/talismans/sacrificial-twig.png",
+    "description": "A talisman fashioned from a dried twig, so slender that it might snap at the slightest touch.\n\nPrevents rune loss upon death, but will be lost itself in exchange.\n\nBelieved to be a twig pruned from the Erdtree long, long ago.",
+    "effect": "Prevents the loss of runes upon death, but is consumed and destroyed in the process. If runes have already been dropped from a previous death, dying with this talisman equipped will also prevent those dropped runes from disappearing."
+  },
+  {
+    "id": "17f697d1dacl0i2sui3ut73lui72f",
+    "name": "Shabriri's Woe",
+    "image": "/media/talismans/shabriris-woe.png",
+    "description": "Disturbing likeness of a man whose eyes have been gouged out. The corners of his mouth are upturned in an almost flirtatious manner. Constantly attracts enemies' aggression.\n\nIt is said that the man, named Shabriri, had his eyes gouged out as punishment for the crime of slander, and, with time, the blight of the flame of frenzy came to dwell in the empty sockets.",
+    "effect": "Constantly attracts enemies' aggression, increasing the wearer's threat value and causing enemies and bosses to prioritize attacking them over allies and spirit summons."
+  },
+  {
+    "id": "17f69b80630l0i2sum3q22drl273qe",
+    "name": "Spelldrake Talisman",
+    "image": "/media/talismans/spelldrake-talisman.png",
+    "description": "Talisman depicting a blue ancient dragon.\nBoosts magical damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Increases magic damage negation by 13% (reduced to 4% in PvP)."
+  },
+  {
+    "id": "17f69726e74l0i2sunvmav2rtqj9e",
+    "name": "Stargazer Heirloom",
+    "image": "/media/talismans/stargazer-heirloom.png",
+    "description": "A talisman engraved with the legend of a queen.\n\nRaises intelligence.\n\nThe young astrologer gazed at the night sky as she walked. She had always chased the stars every step of her journey. Then she met the full moon \u2014 and, in time, the astrologer became a queen.",
+    "effect": "Increases Intelligence by 5."
+  },
+  {
+    "id": "17f6964b6cbl0i2suzpeqzc8p0p31a",
+    "name": "Twinblade Talisman",
+    "image": "/media/talismans/twinblade-talisman.png",
+    "description": "A talisman depicting a twinblade and a confessor. Enhances the final hit ending a chain of attacks.\n\nThe twinblade technique is a tradition of the confessors, who closely guard the secret of how they preserve the momentum of their attacks. Thus is the final strike of their onslaught all the more deadly.",
+    "effect": "Increases damage of the final hit ending a chain of normal light attacks (R1/RB) or paired weapon attacks (L1/LB) by 45%. Does not apply to heavy attacks, jumping attacks, skills, or spells."
+  },
+  {
+    "id": "17f69ebbca4l0i2suzy77ydy8c49x",
+    "name": "Taker's Cameo",
+    "image": "/media/talismans/takers-cameo.png",
+    "description": "A talisman engraved with a stern likeness of Praetor Rykard, master of Volcano Manor.\n\nRestores HP upon defeating enemies.\n\nWhen Rykard turned to heresy, taking by force became the rule. The gods themselves were no different, after all.",
+    "effect": "Restores 3% of maximum HP plus 30 flat HP upon defeating an enemy."
+  },
+  {
+    "id": "17f697e6e60l0i2sv6zgblnfuco5k5",
+    "name": "Starscourge Heirloom",
+    "image": "/media/talismans/starscourge-heirloom.png",
+    "description": "A talisman engraved with a scene from a heroic tale. Raises strength.\n\nThe mightiest hero of the demigods confronted the falling stars alone\u2014and thus did he crush them, his conquest sealing the very fate of the stars.",
+    "effect": "Increases Strength by 5."
+  },
+  {
+    "id": "17f697609cfl0i2sv7ve0yxa2u67ps",
+    "name": "Viridian Amber Medallion",
+    "image": "/media/talismans/viridian-amber-medallion.png",
+    "description": "A medallion with viridian amber inlaid. Raises maximum stamina.\n\nThe Erdtree's old sap becomes amber, treasured as the most precious of jewels in the age of Godfrey, the first Elden Lord. A primordial life energy resides inside.",
+    "effect": "Increases maximum stamina by 11% (upgraded versions increase stamina by 13% for +1, 15% for +2, and 17% for +3)."
+  },
+  {
+    "id": "17f69b8ff63l0i2svfsqagao13n1q",
+    "name": "Two Fingers Heirloom",
+    "image": "/media/talismans/two-fingers-heirloom.png",
+    "description": "A talisman engraved with the legend of the Two Fingers. Raises faith.\n\nFingers cannot speak, yet these are eloquent. Persistently they wriggle, spelling out mysteries in the air. Thus did we gain the words. The words of our faith.",
+    "effect": "Increases Faith by 5."
+  },
+  {
+    "id": "17f69a2445bl0i2svl6l9dei5cxhbd",
+    "name": "Winged Sword Insignia",
+    "image": "/media/talismans/winged-sword-insignia.png",
+    "description": "A talisman depicting a raised prosthetic blade. An honor bestowed upon the knights who fought alongside Malenia the Severed.\n\nRaises attack power with successive attacks.\n\nThe wings symbolize Malenia and her undefeated prowess. Though she never knew relief from the accursed rot she was born into, her blade was forever beautiful\u2014and relentless.",
+    "effect": "Raises attack power with successive attacks across three tiers (+3%, +5%, and +10%). Landing consecutive hits accumulates points toward each tier, which decay after approximately 1.5 seconds without attacking. Stacks with Millicent's Prosthesis, but does not stack with Rotten Winged Sword Insignia."
+  },
+  {
+    "id": "17f69f205a0l0i2svmo2djg04dhvj4",
+    "name": "Erdtree's Favor",
+    "image": "/media/talismans/erdtrees-favor.png",
+    "description": "A talisman depicting a special blessing of the Erdtree.\n\nSlightly raises maximum HP, stamina, and equip load.\n\nIt is said that when the Age of the Erdtree began, such blessings were personally bestowed upon their recipients by Queen Marika herself.",
+    "effect": "Raises maximum HP by 3%, stamina by 7%, and equip load by 5%. (Upgraded versions: +1 raises HP by 3.5%, stamina by 8.5%, equip load by 6.5%; +2 raises HP by 4%, stamina by 10%, equip load by 8%.)"
+  },
+  {
+    "id": "17f699b6e58l0i2svqah8qxabssa6s",
+    "name": "Crimson Seed Talisman",
+    "image": "/media/talismans/crimson-seed-talisman.png",
+    "description": "A crimson-colored talisman patterned after an Erdtree seed.\n\nBoosts HP restoration from the Flask of Crimson Tears.\n\nThe Erdtree was once perfect and eternal, and thus was it believed that Erdtree seeds could not exist.",
+    "effect": "Boosts HP restored from the Flask of Crimson Tears by 20%."
+  },
+  {
+    "id": "17f69d7c380l0i2sw0rxwfk68fidwr",
+    "name": "Graven-school Talisman",
+    "image": "/media/talismans/graven-school-talisman.png",
+    "description": "A talisman depicting a school of graven mages, the nightmare of the academy.\n\nRaises potency of sorceries.\n\nThe primeval current is a forbidden tradition of glintstone sorcery. To those who cleave to its teachings, the act of collecting sorcerers to fashion them into the seeds of stars is but another path of scientific inquiry.",
+    "effect": "Increases the damage of all sorceries by 4%. Stacks with the Graven-Mass Talisman."
+  },
+  {
+    "id": "17f69c0c973l0i2sw8w6uvbwqiqfmy",
+    "name": "Godfrey Icon",
+    "image": "/media/talismans/godfrey-icon.png",
+    "description": "A legendary talisman depicting the Elden Lord Godfrey.\n\nRaises charge attack power of sorceries, incantations, and skills.\n\nGodfrey was a ferocious warrior. When he vowed to become a lord, he took the Beast Regent Serosh upon his back to suppress the ceaseless lust for battle that raged within.",
+    "effect": "Increases the attack power of fully charged spells (sorceries and incantations) and weapon skills by 15%. Only applies to abilities that can be charged to full power."
+  },
+  {
+    "id": "17f69858252l0i2swaqtyccdf5kihk",
+    "name": "Lance Talisman",
+    "image": "/media/talismans/lance-talisman.png",
+    "description": "A talisman depicting a lance and a knight.\n\nEnhances attacks while on horseback.\n\nKnights on horseback are deadly foes. They see all below from their lofty position, meeting little meaningful resistance as they charge ahead.",
+    "effect": "Increases physical weapon attack damage by 15% while mounted on horseback."
+  },
+  {
+    "id": "17f69ee87e3l0i2swe4iei5nanxbr",
+    "name": "Graven-mass Talisman",
+    "image": "/media/talismans/graven-mass-talisman.png",
+    "description": "A talisman depicting the first school of graven mages \u2014 a nightmare that would continue to haunt the academy.\n\nGreatly raises potency of sorceries.\n\nThe primeval current is a forbidden tradition of glintstone sorcery. To those who cleave to its teachings, the act of collecting sorcerers to fashion them into the seeds of stars is but another path of scientific inquiry.",
+    "effect": "Increases the damage of sorceries by 8%. Stacks multiplicatively with the Graven-School Talisman (4%) for a combined 12.32% boost."
+  },
+  {
+    "id": "17f6967466bl0i2swi5et1ibv4rc6r",
+    "name": "Ancestral Spirit's Horn",
+    "image": "/media/talismans/ancestral-spirits-horn.png",
+    "description": "Item cut from the horns of the Regal Ancestor Spirit. Restore FP upon defeating enemies.\n\nA number of new growths bud from the antler-like horns of the fallen king, each glowing with light.\n\nThus does new life grow from death, and from death, one obtains power.",
+    "effect": "Restores 3 FP upon defeating enemies."
+  },
+  {
+    "id": "17f69990291l0i2swl19cw8v99d5tk",
+    "name": "Stalwart Horn Charm",
+    "image": "/media/talismans/stalwart-horn-charm.png",
+    "description": "An accoutrement worn by the ancestral followers. Raises robustness.\n\n(Robustness governs resistance to blood loss and frost.)\n\nSaid to be a budding horn. The ancestral followers believe that the horns of a long-lived beast continue to bud like antlers, over and over again, until the beast one day becomes an ancestral spirit.",
+    "effect": "Raises robustness by 90, increasing resistance to hemorrhage and frostbite."
+  },
+  {
+    "id": "17f696b90dbl0i2sws9twxdvi39xzf",
+    "name": "Dragoncrest Greatshield Talisman",
+    "image": "/media/talismans/dragoncrest-greatshield-talisman.png",
+    "description": "Legendary talisman of wrought iron depicting a massive ancient dragon.\n\nEnormously boosts physical damage negation.\n\nThe ancient dragons, who ruled in the prehistoric era before the Erdtree, would protect their lord as a wall of living rock. And so it is that the shape of the dragon has become symbolic of all manner of protections.",
+    "effect": "Reduces physical damage taken by 20% (reduced to 5% in PvP)."
+  },
+  {
+    "id": "17f69c504f2l0i2swunxt9oun5dn9",
+    "name": "Marika's Soreseal",
+    "image": "/media/talismans/marikas-soreseal.png",
+    "description": "This legendary talisman is an eye engraved with an Elden Rune, said to be the seal of Queen Marika.\n\nGreatly raises mind, intelligence, faith, and arcane, but also increases damage taken by a similar measure.\n\nSolemn duty weighs upon the one beholden; not unlike a gnawing curse from which there is no deliverance.",
+    "effect": "Increases Mind, Intelligence, Faith, and Arcane by 5 each, but increases damage taken by 15%."
+  },
+  {
+    "id": "17f69d1b2c0l0i2sx1e2ftbrqshztb",
+    "name": "Gold Scarab",
+    "image": "/media/talismans/gold-scarab.png",
+    "description": "A talisman facsimile of a scarab, the carrier of treasures and precious things.\n\nThis golden scarab increases the amount of runes obtained from defeating enemies.",
+    "effect": "Increases runes obtained from defeated enemies by 20%."
+  },
+  {
+    "id": "17f699ae959l0i2sx3bloupcziqiz",
+    "name": "Ritual Sword Talisman",
+    "image": "/media/talismans/ritual-sword-talisman.png",
+    "description": "A talisman patterned after swords used in ritual combat held to honor the Erdtree.\n\nRaises attack power when HP is at maximum.\n\nThe practice had died out by the age of King Consort Radagon, but remains of the arenas where ritual combat took place can still be found in every land.",
+    "effect": "Raises attack power by 10% when HP is at maximum."
+  },
+  {
+    "id": "17f699e1a3al0i2sxkv62fi32hab4",
+    "name": "Ritual Shield Talisman",
+    "image": "/media/talismans/ritual-shield-talisman.png",
+    "description": "A talisman patterned after shields used in ritual combat held to honor the Erdtree.\n\nRaises defense when HP is at maximum.\n\nThe practice had died out by the age of King Consort Radagon, but remains of the arenas where ritual combat took place can still be found in every land.",
+    "effect": "Reduces all incoming damage by 30% across all damage types (physical and elemental) when HP is at maximum (100%). The full 30% reduction applies in both PvE and PvP."
+  },
+  {
+    "id": "17f69e92d45l0i2sxmogqn2tdfna89",
+    "name": "Perfumer's Talisman",
+    "image": "/media/talismans/perfumers-talisman.png",
+    "description": "A talisman depicting a set of perfume bottles.\n\nRaises potency of arts employing perfume.\n\nThere are gardens known only to the perfumers. Whether hidden on the fringes of the highlands, or obscured by shadows inside caves, the flowers blossom in secret, waiting to impart their scent.",
+    "effect": "Increases the damage of offensive perfume items, Perfumer's Bolts, and Perfume Bottle weapons by 20%. Does not affect non-damaging or buffing perfumes."
+  },
+  {
+    "id": "17f69b3ce89l0i2sxo7j01c9t4v2b",
+    "name": "Blue-feathered Branchsword",
+    "image": "/media/talismans/blue-feathered-branchsword.png",
+    "description": "A talisman adorned with blue feathers, once used in ancient death rituals.\n\nRaises damage negation when HP is low.\n\nThe heart sings when one draws close to death, and thus does one cling tenaciously to life\u2014to render up a death worth offering.",
+    "effect": "Increases all damage negation by 50% when HP drops below 20%."
+  },
+  {
+    "id": "17f69747fbcl0i2sxow29iyn6fm75v",
+    "name": "Magic Scorpion Charm",
+    "image": "/media/talismans/magic-scorpion-charm.png",
+    "description": "A talisman carried by assassins who strike unseen. Patterned on a scorpion freshly shed of its exoskeleton, its claws seizing a heart that shimmers with magic.\n\nRaises magic attack, but lowers damage negation.",
+    "effect": "Increases magic damage by 12% (8% in PvP), but increases physical damage taken by 10% (15% in PvP)."
+  },
+  {
+    "id": "17f69c86334l0i2sy3lip14s6g9qa",
+    "name": "Prince Of Death's Cyst",
+    "image": "/media/talismans/prince-of-deaths-cyst.png",
+    "description": "A fetid, overgrown cyst taken from facial flesh.\n\nGreatly raises vitality.\n(Vitality governs resistance to the effects of Death.)\n\nIt is said that this cyst came from the corrupted visage of one unable to die a true Death. Indeed, it comes from the Prince of Death, scion of the golden bough and First of the Dead among the demigods.",
+    "effect": "Greatly raises vitality by +140, increasing resistance to Death Blight."
+  },
+  {
+    "id": "17f69f4710al0i2sy6gpkd85ki28",
+    "name": "Warrior Jar Shard",
+    "image": "/media/talismans/warrior-jar-shard.png",
+    "description": "Shard of a shattered warrior jar.\nBoosts the attack power of skills.\n\nScraps of stewed flesh cling to the shard, and tatters of ornaments can be seen mingled within the slime. Relics of ancient royal warriors, perhaps.",
+    "effect": "Increases the attack power of skills by 10%."
+  },
+  {
+    "id": "17f698e1ea9l0i2sy8csbpc3y128lo",
+    "name": "Shard Of Alexander",
+    "image": "/media/talismans/shard-of-alexander.png",
+    "description": "Shard of the late Alexander, a shattered warrior jar.\n\nGreatly boosts the attack power of skills.\n\nScraps of stewed flesh cling to the shard, and tatters of ornaments can be seen mingled within the slime. Relics of a red-haired champion, it would seem.",
+    "effect": "Greatly boosts the attack power of skills by 15%."
+  },
+  {
+    "id": "17f69ba2ff0l0i2sye3sdb94vc6u6j",
+    "name": "Greatshield Talisman",
+    "image": "/media/talismans/greatshield-talisman.png",
+    "description": "Talisman depicting a knight holding a greatshield.\nBoosts guarding ability.\n\nThe knights of Leyndell once modelled themselves after the Tree Sentinels. Their purpose is to protect that which deserves protection, and thus the shield always comes before the sword.",
+    "effect": "Reduces stamina damage taken from blocking by 20%."
+  },
+  {
+    "id": "17f69afb835l0i2sykg6ynuw6wl9b",
+    "name": "Millicent's Prosthesis",
+    "image": "/media/talismans/millicents-prosthesis.png",
+    "description": "Part of the golden prosthesis used by Millicent. The hand is locked into a fist that once raised a sword aloft.\n\nBoosts dexterity and raises attack power with successive attacks.\n\nThe despair of sweet betrayal transformed Millicent from a mere bud into a magnificent flower. And one day, she will be reborn - as a beautiful scarlet valkyrie.",
+    "effect": "Increases Dexterity by 5 and raises attack power with successive attacks across three tiers (+4%, +6%, and +11%)."
+  },
+  {
+    "id": "17f69e13918l0i2syr0vvb0gg1l8xg",
+    "name": "Spear Talisman",
+    "image": "/media/talismans/spear-talisman.png",
+    "description": "A talisman depicting a spear and a soldier.\nEnhances the counterattacks that are unique to thrusting weapons.\n\nSpears are standard weapons for soldiers in the Lands Between. They made it possible to respond to a ferocious foe with an equally ferocious counterattack.",
+    "effect": "Enhances counterattacks unique to thrusting attacks by 15%. Counterattacks occur when hitting an enemy with a thrusting weapon or attack while they are in their attack animation."
+  },
+  {
+    "id": "17f6991130cl0i2sywsfxyysl6tz7h",
+    "name": "Dagger Talisman",
+    "image": "/media/talismans/dagger-talisman.png",
+    "description": "A talisman depicting a dagger and a surgeon.\nEnhances critical hits.\n\nThe white-garbed field surgeons come to the aid of friend and foe alike by dealing a final deadly thrust to spare them from the prolonged agony of a mortal wound. A sense of mercy is a catalyst for bloodlust.",
+    "effect": "Increases critical attack damage by 17% (affects backstabs, ripostes, and critical strikes on posture-broken foes)."
+  },
+  {
+    "id": "17f69ad7529l0i2syzo9ji7wrucoq5",
+    "name": "Red-feathered Branchsword",
+    "image": "/media/talismans/red-feathered-branchsword.png",
+    "description": "A talisman adorned with red feathers, once used in ancient death rituals.\n\nRaises attack power when HP is low.\n\nThe heart sings when one draws close to death, and a glorious end awaits those who cling so tenaciously to life.",
+    "effect": "Increases all attack power by 20% when HP drops to 20% or lower."
+  },
+  {
+    "id": "17f69eaed7fl0i2sz3buubfj570rq",
+    "name": "Companion Jar",
+    "image": "/media/talismans/companion-jar.png",
+    "description": "A talisman given by the jars to their friends.\n\nRaises potency of thrown jars.\n\nThough the jars are brought to life by human flesh and blood, they are all rather kindly folk. Perhaps they were made to be better than their innards.",
+    "effect": "Increases the damage of thrown pots (including cracked pots, ritual pots, and hefty pots) by 20%. Does not affect status effect buildup caused by pots."
+  },
+  {
+    "id": "17f6976f6b0l0i2szav175mw9xww9x",
+    "name": "Flock's Canvas Talisman",
+    "image": "/media/talismans/flocks-canvas-talisman.png",
+    "description": "A talisman bearing an icon that depicts a mass of masked figures.\nGreatly raises potency of incantations.\n\nThe figures represent the flock at prayer, their firm belief in the intangible inspiring even the solitary founder of their religion.\nWhat is faith if not an affirmation?",
+    "effect": "Greatly raises the potency of offensive incantations by 8%. Stacks multiplicatively with Faithful's Canvas Talisman for an approximate total increase of 12.32%. Does not increase healing or non-damaging buff effects."
+  },
+  {
+    "id": "17f69c9bfc8l0i2sze3h5gawcr577p",
+    "name": "Concealing Veil",
+    "image": "/media/talismans/concealing-veil.png",
+    "description": "Talisman put together from dark cloth with a lustrous sheen.\n\nCompletely conceals the wearer's presence while crouching at a distance from foes.\n\nPart of one of the concealing veils used by the assassins on the Night of Black Knives.",
+    "effect": "Conceals the wearer while crouching away from foes. In multiplayer (PvP), renders the wearer completely invisible to other players at a distance of approximately 15 meters or further (roughly 5 medium dodge roll distances). In PvE, significantly reduces enemy detection and aggression range while crouching at a distance."
+  },
+  {
+    "id": "17f69cdc905l0i2szmkk79ces1m9ea",
+    "name": "Furled Finger's Trick-mirror",
+    "image": "/media/talismans/furled-fingers-trick-mirror.png",
+    "description": "A small, clouded mirror that reflects a flesh-and-blood figure.\n\nOne of the ritual implements created by the Tarnished to deceive invaders.\n\nMakes the bearer take on the appearance of a Host of Fingers.",
+    "effect": "Causes the wearer to take on the appearance of a Host of Fingers, removing phantom glow and visual effects when summoned as a cooperator or adversary. Also removes the phantom visual effect from the player's Mimic Tear summon."
+  },
+  {
+    "id": "17f69d33e2dl0i2szt872otxd3taua",
+    "name": "Crucible Feather Talisman",
+    "image": "/media/talismans/crucible-feather-talisman.png",
+    "description": "A talisman fashioned from feathers that embody the aspects of various creatures. Said to have grown on the human body long ago.\n\nImproves the effectiveness of dodge rolls, but increases damage taken at all times.\n\nA vestige of the crucible of primordial life. Born partially of devolution, it was considered a signifier of the divine in ancient times, but is now increasingly disdained as an impurity as civilization has advanced.",
+    "effect": "Increases invulnerability frames (i-frames) during dodge rolls and backsteps by approximately 20% to 25% (adding +6 frames at 60 FPS for light and medium rolls), but reduces all damage negation, causing the player to take 30% increased damage from all sources."
+  },
+  {
+    "id": "17f699d64d5l0i2szu3wjjkmeqklc",
+    "name": "Daedicar's Woe",
+    "image": "/media/talismans/daedicars-woe.png",
+    "description": "Disturbing likeness of a woman whose skin was flayed. She smiles with a serene tenderness.\n\nIncreases damage taken.\n\nIt is said that this woman, named Daedicar, indulged in every form of adultery and wicked pleasure imaginable, giving birth to a myriad of grotesque children.",
+    "effect": "Increases all damage taken by 100%."
+  },
+  {
+    "id": "17f69e0bce6l0i2szv2ltfxx820p4e",
+    "name": "Host's Trick-mirror",
+    "image": "/media/talismans/hosts-trick-mirror.png",
+    "description": "A small, clouded mirror that reflects a flesh-and-blood figure.\n\nOne of the ritual implements created by the Tarnished to deceive invaders.\n\nMakes the bearer take on the appearance of a summoned cooperator.",
+    "effect": "Causes the bearer to take on the appearance of a summoned cooperator (Furled Finger), displaying their characteristic golden phantom glow regardless of the wearer's actual multiplayer role. When equipped in single-player mode, it alters the appearance of the summoned Mimic Tear spirit ash, removing its translucent ghostly sheen to make it look identical to the player character."
+  },
+  {
+    "id": "17f696c4991l0i2szwm52zrw4bgso4",
+    "name": "Entwining Umbilical Cord",
+    "image": "/media/talismans/entwining-umbilical-cord.png",
+    "description": "Mysterious circular object that's oddly warped.\n\nChanges the demeanour of the wearer's actions.",
+    "effect": "Changes the demeanour of the wearer's actions. An unobtainable cut-content item that alters movement animations and posture between male and female animation sets, a function rendered obsolete by appearance editing at the Clouded Mirror Stand."
+  }
+]
