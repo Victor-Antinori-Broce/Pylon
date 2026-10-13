@@ -1,0 +1,1582 @@
+[
+  {
+    "id": "17f69323f35l0hykrc6d1g3vajyc0n",
+    "name": "Briars Of Punishment",
+    "image": "/media/sorceries/briars-of-punishment.png",
+    "description": "An aberrant sorcery discovered by exiled criminals. Theirs are the sorceries most reviled by the academy.\n\nWounds the caster with thorns of punishment, sending a trail of bloodthorns running over the ground to impale enemies from below. This sorcery can be cast repeatedly.\n\nThe guilty, their eyes gouged by thorns, lived in eternal darkness. There, they discovered the blood star.",
+    "type": "Sorcery",
+    "cost": 9,
+    "slots": 1,
+    "effects": "Consumes 50 HP and inflicts 25 self-Hemorrhage buildup upon casting to project a trail of bloodthorns along the ground that tracks toward the target and erupts upward to impale enemies from below. The trail adapts to terrain contour, navigating elevation changes and uneven ground. Deals Magic damage and inflicts 72 Hemorrhage (Blood Loss) buildup on hit; blood loss buildup scales with Arcane when cast using a catalyst with Arcane scaling. This sorcery cannot be charged and cannot be cast while mounted, but it can be cast repeatedly in rapid succession. Damage is boosted by the Staff of the Guilty and pieces of Alberich's Set.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 21
+      }
+    ]
+  },
+  {
+    "id": "17f697cbb96l0hykre66weonnfh81y",
+    "name": "Ancient Death Rancor",
+    "image": "/media/sorceries/ancient-death-rancor.png",
+    "description": "Sorcery of the servants of Death.\n\nSummons a horde of vengeful spirits that chase down foes.\nCharging enhances potency.\n\nThey are cinders of the ancient death hex, raked from the fires of ghostflame by Deathbirds.",
+    "type": "Sorcery",
+    "cost": 21,
+    "slots": 1,
+    "effects": "Summons a horde of nine vengeful spirits that aggressively home in on targets, dealing Magic damage. Can be charged to increase the damage and stance damage of each spirit. Causes significant stagger and continuous hitstun. Damage is increased by 10% when cast with the Prince of Death's Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 34
+      },
+      {
+        "name": "Faith",
+        "amount": 24
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f694c4b51l0hykrh5ekspavmcdh",
+    "name": "Briars Of Sin",
+    "image": "/media/sorceries/briars-of-sin.png",
+    "description": "An aberrant sorcery discovered by exiled criminals. Theirs are the sorceries most reviled by the academy.\n\nWounds the caster with thorns of sin, creating a spiral of bloodthorns. This sorcery can be cast repeatedly, up to three times.\n\nThe guilty, their eyes gouged by thorns, lived in eternal darkness. There, they discovered the blood star.",
+    "type": "Sorcery",
+    "cost": 6,
+    "slots": 1,
+    "effects": "Sacrifices 80 HP and inflicts 30 Hemorrhage buildup on the caster to summon a circular whorl of bloodthorns dealing Magic damage and inflicting 95 Hemorrhage buildup to surrounding enemies. This spell cannot be charged, but can be chained up to three consecutive casts (two follow-up recasts). Each successive cast increases damage (200%, 232%, and 233% Sorcery Scaling), area of effect (2.5m, 3.5m, and 4.5m radius), and stance damage (7, 7.5, and 8). Status buildup can scale with Arcane when using an Arcane-scaling catalyst.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 0
+      },
+      {
+        "name": "Faith",
+        "amount": 24
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f697763ffl0hykrjb9eqis858fj9",
+    "name": "Cannon Of Haima",
+    "image": "/media/sorceries/cannon-of-haima.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nLobs an explosive magic projectile that flies in an arc. Charging enhances potency.\n\nDrawn from the conspectus of Haima, the adjudicator of the academy, this sorcery employs might as a means to quell conflict.",
+    "type": "Sorcery",
+    "cost": 38,
+    "slots": 1,
+    "effects": "Lobs an explosive magic projectile in an arcing trajectory that detonates upon impact, dealing Magic damage across a wide area of effect and knocking down human-sized enemies. Can be charged to increase damage and blast radius. Can be cast while mounted on Torrent.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 25
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69548207l0hykrjxtjpw45plt0o",
+    "name": "Ambush Shard",
+    "image": "/media/sorceries/ambush-shard.png",
+    "description": "One of the night sorceries of Sellia, Town of Sorcery.\n\nLaunches a projectile from a distance removed from the caster, so as to strike the enemy from behind. This sorcery can be cast repeatedly.\n\nThe Sellian sorcerers were assassins, and it is said that they often hunted their fellows.",
+    "type": "Sorcery",
+    "cost": 13,
+    "slots": 1,
+    "effects": "Deals magic damage by manifesting a projectile behind the target that strikes forward into their back, bypassing shields and frontal guard. Cannot be charged, but can be cast repeatedly in rapid succession. As a Night Sorcery, enemies do not react or dodge the projectile upon casting. Its effective range is extended by the Arrow's Reach Talisman, though its damage is not boosted by the Staff of Loss.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 23
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69526092l0hykrkfqubdcrri5ri",
+    "name": "Carian Phalanx",
+    "image": "/media/sorceries/carian-phalanx.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nCreates a defensive arch of numerous magic glintblades overhead, which automatically attack nearby foes. This sorcery can be cast while in motion.\n\nAn enhanced version of the glintblade sorcery used by enchanted knights.",
+    "type": "Sorcery",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Forms a defensive arch of nine magical glintblades above the caster that remain in place until a hostile entity enters proximity and line of sight, upon which each blade automatically launches toward the target. Deals pure Magic damage and high stance damage. The sorcery cannot be charged, but it can be cast while moving or while mounted. Overwrites and is overwritten by other phalanx effects. The blades break upon contact with environmental geometry.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 34
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69501669l0hykrly1hkzqhsjkgf",
+    "name": "Adula's Moonblade",
+    "image": "/media/sorceries/adulas-moonblade.png",
+    "description": "Sorcery of Adula, the Glintstone Dragon.\n\nConjures a cold magic greatsword, then delivers a sweeping blow that launches a blade-like projectile of frost. This sorcery can be cast repeatedly.\n\nAdula, a devourer of sorcerers, was bested by Ranni and subsequently swore a knightly oath to her Dark Moon.",
+    "type": "Sorcery",
+    "cost": 22,
+    "slots": 1,
+    "effects": "Conjures a spectral greatsword of cold magic and performs a sweeping horizontal slash, unleashing a piercing blade-like wave of frost forward. Deals pure Magic damage split between the physical blade swipe and the frost wave projectile, both of which can hit simultaneously at point-blank range for maximum damage. Inflicts Frostbite status buildup (120 from the blade and 35 from the wave, for 155 total if both hit). The sorcery cannot be charged, but it can be cast repeatedly in continuous succession (chain-cast). It benefits from bonuses to Carian sword sorceries and cold sorceries.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 32
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f698158cbl0hykro1lrfmqwblslj",
+    "name": "Carian Greatsword",
+    "image": "/media/sorceries/carian-greatsword.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nConjures a magic greatsword and then delivers a sweeping blow.\nThis sorcery can be cast repeatedly.\n\nArmed with this spell, sorcerers gain the strength of knights, their loyalty sworn to the moon.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Conjures a large magic greatsword to execute a wide sweeping slash in front of the caster, dealing pure Magic damage. The spell cannot be charged, but it can be cast repeatedly in succession to chain fluid sweeping slashes. It deals moderate stance damage, can hit multiple targets across a wide horizontal arc including through obstacles, and can be cast while mounted. Its damage is boosted by 15% when wielding the Carian Glintstone Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 24
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f68f67eeal0hyksqja69pmxoh3yh",
+    "name": "Carian Piercer",
+    "image": "/media/sorceries/carian-piercer.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nConjures a magic greatsword to impale foes.\nCharging lengthens the initial step in.\n\nThis sorcery forms a counterpart to Carian Greatsword.\nHighly lethal when used against single foes riding alone.",
+    "type": "Sorcery",
+    "cost": 17,
+    "slots": 1,
+    "effects": "Conjures a magical greatsword and thrusts it forward to impale foes, dealing pure Magic damage. Can be charged to extend the caster's forward lunge distance and increase damage. A fully charged thrust deals heavy stance damage and knocks down human-sized enemies and NPC invaders. Features a lingering hitbox effective for roll-catching, combos seamlessly with other Carian sword sorceries, and can be cast while mounted atop Torrent.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 27
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f691dc847l0hyksqn4eqkjcj7jls",
+    "name": "Carian Retaliation",
+    "image": "/media/sorceries/carian-retaliation.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nSwing your staff to dispel incoming sorceries and incantations, using their power to retaliate with glintblades.\n\nThis was the Carian royal family's secret means to prepare against the disloyalty of the academy. The moon and stars would one day go their separate ways.",
+    "type": "Sorcery",
+    "cost": 8,
+    "slots": 1,
+    "effects": "Swings the catalyst to create a defensive magical barrier that dispels incoming enemy sorceries and incantations. Successfully dispelling an incoming spell manifests three hovering glintblades overhead that automatically fire at nearby targets, dealing Magic damage scaled with the catalyst's Sorcery Scaling. Cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 17
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69526839l0hykt29wlkzjaekmfp",
+    "name": "Carian Slicer",
+    "image": "/media/sorceries/carian-slicer.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nConjures a magic sword and delivers a swift sweeping slash. This sorcery can be used without delay after performing another action.\n\nEven among the Carian sword sorceries, this is a notably effective technique.",
+    "type": "Sorcery",
+    "cost": 4,
+    "slots": 1,
+    "effects": "Deals pure magic damage. Conjures a glintstone blade to perform a rapid horizontal sweeping slash. Cannot be charged. Can be chained repeatedly in rapid succession with low stamina consumption, and can be cast immediately out of actions such as rolling, backstepping, sprinting, jumping, or crouching. Damage scales with the casting staff's Sorcery Scaling, triggers consecutive attack bonuses, and is boosted by 15% when wielding the Carian Glintstone Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 14
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f697a3cebl0hykt5z1wd5xboo99x",
+    "name": "Crystal Barrage",
+    "image": "/media/sorceries/crystal-barrage.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires a volley of glintstone crystal shards. Charging increases potency.\n\nA sorcery of the Crystal Cadre, a group of sorcerers who pursue the wisdom of stone\u2014the secrets locked in the faint cogitation of the Crystalians.",
+    "type": "Sorcery",
+    "cost": 14,
+    "slots": 1,
+    "effects": "Fires a continuous, rapid-fire volley of small glintstone crystal shards dealing Magic damage that scales with the catalyst's Sorcery Scaling. Each shard deals Magic damage equal to approximately 36% of the catalyst's Sorcery Scaling. Holding the cast button charges the spell, extending the barrage to fire up to 17 additional crystal shards for increased overall damage output while consuming additional FP per tick. Can be cast while moving or while mounted on Torrent, though mounted movement speed is reduced during the cast.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 23
+      }
+    ]
+  },
+  {
+    "id": "17f6935c00al0hykt61d5dex7ibki",
+    "name": "Collapsing Stars",
+    "image": "/media/sorceries/collapsing-stars.png",
+    "description": "One of the glintstone sorceries that manipulates gravitational forces.\n\nFires numerous gravitational projectiles. Any foes struck will be pulled toward the caster. Charging enhances potency.\n\nA gravitational technique mastered by the young Radahn. \"I thank you for your tutelage, for now I can challenge the stars.\"",
+    "type": "Sorcery",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Fires a volley of nine gravitational projectiles that deal magic damage and pull struck enemies toward the caster, grounding airborne targets. Can be charged to increase damage.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 36
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69383db4l0hykt8reipbquz8e6t",
+    "name": "Comet Azur",
+    "image": "/media/sorceries/comet-azur.png",
+    "description": "Legendary sorcery devised by Azur, primeval sorcerer.\n\nFires a tremendous comet in a torrent akin to the distant starry expanse, the place said to be the origin of glintstone.\nHold to continue releasing the sorcery's power.\n\nWhen Azur glimpsed into the primeval current, he saw darkness. He was left both bewitched and fearful of the abyss.",
+    "type": "Sorcery",
+    "cost": 40,
+    "slots": 3,
+    "effects": "Fires a tremendous, piercing beam in a straight line that deals continuous Magic damage to all enemies caught within it. Holding down the cast input allows the player to continuously channel the beam, consuming 10 FP per additional tick. The trajectory cannot be redirected once casting begins. Comet Azur is a channeled spell rather than a chargeable one, so it does not benefit from charge damage boosts.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 60
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69246033l0hykt9k2ifr73lab5s",
+    "name": "Crystal Burst",
+    "image": "/media/sorceries/crystal-burst.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires a burst of glintstone crystal shards. This sorcery can be cast repeatedly and while in motion. Charging increases potency.\n\nA sorcery of the Crystal Cadre, a group of sorcerers who pursued the wisdom of stone\u2014the secrets locked in the faint cogitation of the Crystalians.",
+    "type": "Sorcery",
+    "cost": 14,
+    "slots": 1,
+    "effects": "Fires a wide spread of glintstone crystal shards forward that deal Magic damage in a shotgun-like burst. Can be cast while moving. Charging increases the damage and posture impact of each projectile.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 18
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69173b9bl0hyktcuppfyv71lx3",
+    "name": "Comet",
+    "image": "/media/sorceries/comet.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires a great magical comet.\nThis sorcery can be cast repeatedly and while in motion.\nCharging enhances potency.\n\nThe greatest of the Karolos Conspectus's sorceries, that only a very few sorcerers have ever mastered.",
+    "type": "Sorcery",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Fires a large, high-velocity glintstone projectile that inflicts pure Magic damage and pierces through enemies, damaging multiple aligned targets. The sorcery can be cast while in motion and chained repeatedly in rapid succession. It can also be charged to increase damage by approximately 25% along with boosting projectile speed and impact, which benefits from charge-enhancing effects such as the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 52
+      }
+    ]
+  },
+  {
+    "id": "17f68f97095l0hykuc91iv4akp5w4i",
+    "name": "Crystal Torrent",
+    "image": "/media/sorceries/crystal-torrent.png",
+    "description": "Sorcery of the mysterious Crystalians.\n\nCreates a mass of crystal, then fires off shards in rapid succession. Hold to continue firing shards.\n\nThe wrath of the Crystalians encapsulated in sorcery. Each shard is of substantial size, making even a stray blow capable of inflicting a severe wound.",
+    "type": "Sorcery",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Forms a cluster of crystals at the catalyst tip that unleashes a rapid, continuous barrage of large crystal shards forward in a narrow spread. Deals Magic damage. The spell cannot be charged, but holding the cast input channels a continuous torrent that drains additional FP (6 FP per interval) until released or FP is exhausted. The caster remains stationary and cannot re-aim while channeling.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 47
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69346f84l0hykudkkqg6v1lwpk",
+    "name": "Crystal Release",
+    "image": "/media/sorceries/crystal-release.png",
+    "description": "Sorcery of the mysterious Crystalians.\n\nCreates a mass of crystal, then shatters it to scour a wide area with a violent rain of crystal shards.\n\nThis sorcery is used by high-ranking adepts among the Crystalians. Some also call this sorcery \"the Crystal Sun.\"",
+    "type": "Sorcery",
+    "cost": 34,
+    "slots": 1,
+    "effects": "Conjures a crystal mass overhead that shatters into a violent, wide-area rain of crystal shards around the caster, dealing pure Magic damage. The caster gains increased poise and resistance to stagger during the initial hunched startup animation. Projectiles inflict higher damage and stamina damage at close range than at far range. Cannot be charged. Damage is passively boosted by the Crystal Staff and Rotten Crystal Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 41
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69402fafl0hykuks706v0mkdjbd",
+    "name": "Fia's Mist",
+    "image": "/media/sorceries/fias-mist.png",
+    "description": "Sorcery of Fia, the Deathbed Companion.\n\nCreates a deathly mist before the caster, which inflicts Death blight upon those who enter.\nThis sorcery can be cast while in motion. Charging enhances range of the mist.\n\nThis sorcery was developed to oppose the Roundtable Hold, and is effective only against the Tarnished.",
+    "type": "Sorcery",
+    "cost": 25,
+    "slots": 1,
+    "effects": "Casts a lingering cloud of black mist directly in front of the caster that lasts for approximately 6 seconds. The spell deals no direct damage; instead, it rapidly inflicts the Death Blight status effect (accumulating 20 Death Blight per tick at 2.5 ticks per second, for a total of up to 300 buildup over 15 ticks). Death Blight is only effective against Tarnished targets, including player characters and human NPC models, while standard PvE enemies, monsters, and bosses are completely immune. The sorcery can be cast while moving, and charging the spell expands the mist's radius from 2.8 meters to 5 meters. The mist does not harm the caster.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 23
+      },
+      {
+        "name": "Faith",
+        "amount": 18
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f696b6eael0hykuqvnuxlujdx0r9",
+    "name": "Eternal Darkness",
+    "image": "/media/sorceries/eternal-darkness.png",
+    "description": "Forbidden sorcery of Sellia, Town of Sorcery.\n\nCreates a space of darkness that draws in sorceries and incantations. This sorcery can be cast while in motion.\n\nOriginally a lost sorcery of the Eternal City; the despair that brought about its ruin made manifest.",
+    "type": "Sorcery",
+    "cost": 25,
+    "slots": 1,
+    "effects": "Creates a localized dark sphere that draws in and redirects hostile projectile sorceries and incantations, causing them to orbit the void for 10 seconds before dissipating. Deals no direct damage and cannot be charged, but can be cast while in motion. Orbiting projectiles retain their active hitboxes and can still damage the caster or allies upon contact. Ineffective against physical projectiles such as arrows and bolts, non-projectile area-of-effect spells, melee attacks, and certain specialized sorceries.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 35
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f698816aal0hykuwweto12afmr3",
+    "name": "Frozen Armament",
+    "image": "/media/sorceries/frozen-armament.png",
+    "description": "Sorcery said to have been used by the old snow witch.\n\nEnchants armament held in the right hand with frost.\nThis sorcery can be cast while in motion.\n\nThe snowy crone taught the young Ranni to fear the dark moon as she imparted her cold sorcery.",
+    "type": "Sorcery",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Enchants the right-hand melee armament with frost, adding 63 flat Frostbite status buildup to attacks for 60 seconds. Does not deal or add direct Magic damage, and the frost buildup does not scale with Intelligence or Sorcery Scaling. The sorcery cannot be charged, but it can be cast while in motion. It can only be applied to buffable weapons without innate elemental damage or non-buffable affinities, and the effect terminates immediately if the armament is unequipped, sheathed, or if the off-hand staff is two-handed.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 15
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69206fd7l0hykuyci822nhe618p",
+    "name": "Founding Rain Of Stars",
+    "image": "/media/sorceries/founding-rain-of-stars.png",
+    "description": "The eldest primeval sorcery, said to have been discovered by an ancient astrologer. A sorcery of legendary status.\n\nSummons a dark cloud of stars overhead. Shortly after, the cloud will release a violent deluge of star rain. This sorcery can be cast while in motion. Charging increases potency.\n\nThought to be the founding glintstone sorcery. The glimpse of the primeval current that the astrologer saw became real, and the stars' amber rained down on this land.",
+    "type": "Sorcery",
+    "cost": 27,
+    "slots": 2,
+    "effects": "Summons a dark cloud overhead that releases a localized downpour of star rain over an area, dealing continuous Magic damage over time. The spell can be cast while moving. Charging increases damage and extends the duration of the rainfall. Deals negligible poise damage. Only one active star cloud can exist at a time; casting again replaces the existing cloud.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 52
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6989bf92l0hykv0ugfsrr1nuyy6",
+    "name": "Explosive Ghostflame",
+    "image": "/media/sorceries/explosive-ghostflame.png",
+    "description": "Sorcery of the servants of Death.\n\nStrike the ground with the staff, triggering an explosion of ghostflame that burns the surrounding area.\n\nIn the time when there was no Erdtree, death was burned in ghostflame. Deathbirds were the keepers of that fire.",
+    "type": "Sorcery",
+    "cost": 29,
+    "slots": 1,
+    "effects": "Strikes the ground with the staff using both hands, releasing a large area-of-effect explosion of ghostflame that deals magic damage and inflicts heavy Frostbite buildup, while knocking back enemies. Lingering trails of ghostflame spread across the ground, dealing continuous magic damage and additional Frostbite buildup to enemies caught within. This spell cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 42
+      },
+      {
+        "name": "Faith",
+        "amount": 30
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f698eaeabl0hykv0y1tsef3d740n",
+    "name": "Freezing Mist",
+    "image": "/media/sorceries/freezing-mist.png",
+    "description": "Sorcery said to have been used by the old snow witch.\n\nReleases a cold mist before the caster. This sorcery can be cast while in motion. Charging enhances range of the mist.\n\nThe snowy crone taught the young Ranni to fear the dark moon as she imparted her cold sorcery.",
+    "type": "Sorcery",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Releases a lingering cloud of freezing mist directly in front of the caster. Does not deal direct damage, instead inflicting rapid Frostbite status buildup (100 buildup per second for 15 seconds) to enemies caught inside. Can be cast while in motion. Charging increases the forward range and radius of the mist.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 21
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6970b6del0hykw6jbvxlnultl",
+    "name": "Gelmir's Fury",
+    "image": "/media/sorceries/gelmirs-fury.png",
+    "description": "One of the sorceries developed from the magma of Mt. Gelmir.\n\nConjures a surge of magma from the earth, covering the area. Charging extends the surge of magma.\n\nThis sorcery is held to represent the fury of the volcano, but the arrogance of attempting to harness it is solely that of men and serpents.",
+    "type": "Sorcery",
+    "cost": 16,
+    "slots": 1,
+    "effects": "The caster drives the base of their staff into the ground to trigger a violent eruption of magma, scattering projectiles outward across a wide area and leaving short-lived lava pools that inflict damage on contact. Deals Fire damage that scales with Sorcery Scaling. Charging the sorcery extends the eruption duration and magma surge, consuming additional FP per tick while channeled. Because it inflicts Fire damage, it can reset Frostbite buildup on afflicted targets to allow repeated procs.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 28
+      },
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f697a11c6l0hykw8gs7a4bj2bzi",
+    "name": "Gavel Of Haima",
+    "image": "/media/sorceries/gavel-of-haima.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nCreates a magical greathammer and slams it down. Allows one follow-up attack.\n\nDrawn from the scholarly conspectus of Haima, the adjudicator of the academy, this sorcery employs might as a means to quell conflict.",
+    "type": "Sorcery",
+    "cost": 22,
+    "slots": 1,
+    "effects": "Summons a large magical greathammer to slam into the ground, dealing pure Magic damage on direct hit and creating a magical shockwave with a 3-meter radius that deals additional Magic damage. Can be chained once for an immediate follow-up slam. Provides considerable hyper armor during execution, inflicts heavy stance damage, breaks guard easily, and flattens smaller enemies. Cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 25
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6923b831l0hykweqyar0a2aerzn",
+    "name": "Glintstone Arc",
+    "image": "/media/sorceries/glintstone-arc.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires a horizontal arc of magic that spreads outward. This sorcery can be cast repeatedly and while in motion.\n\nGranted to sorcerers who depart from the academy to embark on journeys, in order to fend off large groups of would-be adversaries. Fools often roam in packs.",
+    "type": "Sorcery",
+    "cost": 9,
+    "slots": 1,
+    "effects": "Fires a wide, horizontal crescent arc of magical energy that travels forward and pierces through all enemies caught in its path, widening as it advances. Deals pure Magic damage scaling with the catalyst's Sorcery Scaling. This sorcery cannot be charged, but it features rapid casting animations, can be chained repeatedly, and can be cast while in motion (walking or running). The projectile travels at a fixed horizontal elevation, meaning it may pass over low-profile or crouching enemies and cannot adjust vertically on steep inclines or stairs.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 13
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6933356el0hykwkb5c4f5eue05g",
+    "name": "Glintstone Cometshard",
+    "image": "/media/sorceries/glintstone-cometshard.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires a magical comet with a trailing tail.\n\nThis sorcery can be cast repeatedly and while in motion. Charging enhances potency.\n\nA sorcery of the Karolos Conspectus, the most venerable of the academy.",
+    "type": "Sorcery",
+    "cost": 17,
+    "slots": 1,
+    "effects": "Fires a magical comet projectile with a trailing tail that inflicts magic damage. Can be cast continuously in succession and while moving. Charging increases damage and projectile speed.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 36
+      }
+    ]
+  },
+  {
+    "id": "17f692eb5c4l0hykwkentckpz3y24a",
+    "name": "Glintstone Pebble",
+    "image": "/media/sorceries/glintstone-pebble.png",
+    "description": "The most basic glintstone sorcery of the Academy of Raya Lucaria.\n\nThe glintstone serves as a conduit, launching magical projectiles at foes. This sorcery can be cast repeatedly and while in motion.\n\nThis is a universal first step on the journey to true knowledge of sorcery.",
+    "type": "Sorcery",
+    "cost": 7,
+    "slots": 1,
+    "effects": "Fires a swift magic projectile from the glintstone conduit at foes, dealing Magic damage equal to 152% of Sorcery Scaling. This sorcery cannot be charged, but it has slight homing tracking, costs 20 stamina per cast, and can be cast repeatedly in rapid succession as well as while in motion.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 10
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6944ddfel0hykwkrvbsv9aa4yv",
+    "name": "Glintstone Stars",
+    "image": "/media/sorceries/glintstone-stars.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires three magic shooting stars that pursue the target.\nThis sorcery can be cast while in motion. Charging enhances potency.\n\nA sorcery of the Olivinus Conspectus, which attracts sorcerers from Sellia, Town of Sorcery.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Fires three magic shooting stars that hover briefly before tracking down the target, dealing magic damage. Can be cast while in motion, and can be charged to increase damage. The delayed homing behavior provides superior tracking against evasive enemies and in mounted combat.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 12
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6964e156l0hykwlsm0jw2254jkf",
+    "name": "Glintstone Icecrag",
+    "image": "/media/sorceries/glintstone-icecrag.png",
+    "description": "Sorcery said to have been used by the old snow witch.\n\nThe glintstone serves as a conduit, launching a mass of cold magic. This sorcery can be cast repeatedly and while in motion.\n\nThe snowy crone taught the young Ranni to fear the dark moon as she imparted her cold sorcery.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Fires a slow-moving mass of cold magic that deals Magic damage and inflicts Frostbite buildup (100 Frostbite). Cannot be charged, but can be cast repeatedly in succession and while in motion or mounted. Has slight tracking and receives a 10% damage boost from the Snow Witch Hat.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 15
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f694aa956l0hykwnt8t2s7k2ohg8",
+    "name": "Glintblade Phalanx",
+    "image": "/media/sorceries/glintblade-phalanx.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nCreates a defensive arch of magic glintblades overhead, which automatically attack nearby foes. This sorcery can be cast while in motion.\n\nBestowed upon the enchanted Carian knights, who combined this art with their swordsmanship to maintain pressure upon their foes, striking in waves of steel and sorcery.",
+    "type": "Sorcery",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Summons a defensive arch of 5 magic glintblades overhead that autonomously home in on nearby enemies after a brief delay. Deals pure Magic damage scaling with Sorcery Scaling. Cannot be charged. Can be cast while in motion. Deals 5 stance damage per blade (up to 25 stance damage total if all 5 blades connect). Blades shatter prematurely upon physical contact with walls, ceilings, or terrain.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "id": "17f68fa1c72l0hykxlbrlhvbrbbyqn",
+    "name": "Gravity Well",
+    "image": "/media/sorceries/gravity-well.png",
+    "description": "One of the glintstone sorceries that manipulates gravitational forces.\n\nFires a projectile of condensed gravitational force. Those struck by it will be pulled toward the caster. Charging enhances potency.\n\nA gravitational technique studied by the young Radahn. His master was an Alabaster Lord with skin of stone.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Fires a projectile of condensed gravitational force that travels toward the target, dealing magic damage. Enemies struck by the projectile are pulled toward the caster. The spell can be charged to increase damage and pulling force. As a Gravity sorcery, its damage is boosted by 30% when wielding the Meteorite Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 17
+      }
+    ]
+  },
+  {
+    "id": "17f696ff8b3l0hyky03xbsyxdc6ybe",
+    "name": "Great Glintstone Shard",
+    "image": "/media/sorceries/great-glintstone-shard.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nThe glintstone serves as a conduit, launching large magical projectiles at foes.\nThis sorcery can be cast repeatedly and while in motion.\n\nThose unworthy of the stone crown typically end their brief journey into sorcery here.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Fires a large projectile of glintstone magic at targets, dealing Magic damage. Can be cast repeatedly in rapid succession and while in motion, including on horseback. This sorcery cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 16
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6916d3a1l0hyky82ck5l071k7zt",
+    "name": "Lucidity",
+    "image": "/media/sorceries/lucidity.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nAlleviates buildup of sleep and madness.\nThis sorcery can be cast while in motion.\n\nThe Carian knights never waver.",
+    "type": "Sorcery",
+    "cost": 10,
+    "slots": 1,
+    "effects": "Alleviates the buildup of sleep and madness on the caster. This sorcery can be cast while in motion, including while sprinting or riding a mount. It cannot be charged and deals no damage.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 17
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69580940l0hyky9z5ebz67i2kvd",
+    "name": "Greatblade Phalanx",
+    "image": "/media/sorceries/greatblade-phalanx.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nCreates a defensive arch of larger magic glintblades overhead, which automatically attack nearby foes.\n\nUsed by the enchanted troll knights. They were the comrades of the young Rennala, bound by oath.",
+    "type": "Sorcery",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Conjures a defensive arch of 3 large magic glintblades overhead that hover around the caster and automatically launch at nearby enemies. Deals Magic damage (100% sorcery scaling per blade, 300% total) and significant stance damage (10.175 stance damage per blade, 30.525 total). This sorcery cannot be charged. The blades dissipate upon colliding with solid geometry or when replaced by another active phalanx spell.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 29
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f695ccb66l0hykyaen5y0w0khkll",
+    "name": "Great Oracular Bubble",
+    "image": "/media/sorceries/great-oracular-bubble.png",
+    "description": "Sorcery of the claymen who served as priests in the ancient dynasty.\n\nProduces a gigantic magical bubble that drifts towards foes before it naturally ruptures. Charging increases the delay before the bubble pops.\n\nThe claymen search for lost oracles within their bubbles.",
+    "type": "Sorcery",
+    "cost": 16,
+    "slots": 1,
+    "effects": "Produces a gigantic magical bubble that slowly floats forward toward targets before naturally rupturing to deal magic damage in an area of effect. Charging increases damage and prolongs the delay before the bubble pops. Can be cast while in motion or while mounted.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 25
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 18
+      }
+    ]
+  },
+  {
+    "id": "17f6971b61dl0hykyaiiyblbxaeim",
+    "name": "Oracle Bubble",
+    "image": "/media/sorceries/oracle-bubble.png",
+    "description": "Sorcery of the claymen who served as priests in the ancient dynasty.\n\nProduces several small magical bubbles that drift towards foes before they naturally pop. Charging increases the delay before the bubbles pop.\n\nThe claymen search for lost oracles within their bubbles.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Produces a cluster of small magic bubbles that float slowly forward toward enemies before naturally popping, dealing Magic damage. Charging increases the damage and delays the time before the bubbles burst. Can be cast while in motion or while mounted.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 19
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f6921c90fl0hykycr9xzxlra3r57",
+    "name": "Loretta's Greatbow",
+    "image": "/media/sorceries/lorettas-greatbow.png",
+    "description": "Sorcery used by Royal Knight Loretta.\n\nCreates a magic greatbow and fires a great arrow.\nCharging enhances potency. Hold to keep the great arrow nocked.\n\nIt is said that the bow was Loretta's favored weapon.",
+    "type": "Sorcery",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Conjures a spectral greatbow to fire a great arrow over extreme range, dealing Magic damage. Can be charged to increase damage and projectile velocity, and the cast can be held to keep the arrow nocked before releasing. Receives damage boosts from charging-enhancement effects such as the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 26
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f696d8893l0hykyj6qhbawvh09t",
+    "name": "Loretta's Mastery",
+    "image": "/media/sorceries/lorettas-mastery.png",
+    "description": "Sorcery used by Loretta, Knight of the Haligtree.\n\nCreates a magic greatbow and fires four great arrows simultaneously. Charging enhances potency. Hold to keep the great arrows nocked.\n\nDeveloped by Loretta after her long, bloody journey to seek out a place where the Albinaurics could live in peace.",
+    "type": "Sorcery",
+    "cost": 39,
+    "slots": 1,
+    "effects": "Conjures a magical greatbow to fire four great arrows simultaneously, dealing Magic damage. Can be charged to increase damage output, and the charge can be held indefinitely to delay the shot. Arrows fan outwards before homing in on their target. Can be cast while mounted on Torrent.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 46
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69330670l0hykywaqrpmwdbzpyj",
+    "name": "Magic Downpour",
+    "image": "/media/sorceries/magic-downpour.png",
+    "description": "One of the sorceries of the Carian royal family.\n\nSummons a mass of magic that fires projectiles over a wide area. This sorcery can be cast while in motion. Charging extends duration.\n\nSaid to have been taught by the Crystalians to mark the swearing of the old concord.",
+    "type": "Sorcery",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Summons a floating mass of magic overhead that rains down glintstone projectiles over a wide area, dealing Magic damage. Can be cast while in motion. Charging extends the duration of the rainfall.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f69818087l0hykz26ox2vtdp84yq",
+    "name": "Magic Glintblade",
+    "image": "/media/sorceries/magic-glintblade.png",
+    "description": "An old sorcery of the Carian Royal Family.\n\nCreates a sigil overhead, from which an enemy-seeking glintblade appears after a brief delay. This sorcery can be used while in motion. Charging increases the delay.\n\nSaid to be the prototype of the sword-phalanx sorceries wielded by royal enchanted knights.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Summons a magical sigil overhead that manifests an enemy-tracking glintblade after a brief delay, dealing Magic damage. Can be cast while in motion or mounted on horseback. Charging increases damage and extends the delay before the blade fires, allowing the caster to manipulate projectile timing against enemy dodge behavior. Boosted by the Carian Glintblade Staff and the Godfrey Icon when charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 14
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6985da4cl0hykzwl2ly1lk18kxg",
+    "name": "Magma Shot",
+    "image": "/media/sorceries/magma-shot.png",
+    "description": "One of the sorceries developed from the magma of Mt. Gelmir.\n\nFires a lump of magma that explodes on contact.\nCharging enhances potency.\n\nAfter discovering the ancient hexes of Gelmir, Rykard, son of Queen Rennala, brought them back into practical use as new forms of sorcery.",
+    "type": "Sorcery",
+    "cost": 16,
+    "slots": 1,
+    "effects": "Fires a lump of magma that explodes on impact, dealing Fire damage and leaving behind a temporary pool of magma that continuously damages enemies standing within it. Can be charged to enhance the damage of both the impact explosion and the lingering magma pool. Damage is boosted by the Gelmir Glintstone Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 19
+      },
+      {
+        "name": "Faith",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f6979d7f4l0hyl01q26suhho4xsd",
+    "name": "Meteorite",
+    "image": "/media/sorceries/meteorite.png",
+    "description": "One of the glintstone sorceries that manipulates gravitational forces.\n\nSummons a void that emits a rain of small meteorites. Hold to continue the effect.\n\nThe sorcery originates from the Onyx Lords, who had skin of stone, and were called lords in reverential fear of their destructive power.",
+    "type": "Sorcery",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Summons a gravitational void overhead that rains down a barrage of small meteorites upon a targeted area. Each meteorite deals both Physical and Magic damage upon direct hit as well as through a small area-of-effect impact radius. The spell can be continuously channeled by holding down the cast input, prolonging the meteor shower at an additional cost of 10 FP per interval until stamina or FP is depleted. It cannot be charged for an individual empowered burst. Meteorites fall in random trajectories without homing tracking and deal significant stance damage, capable of breaking stance on large foes and knocking down smaller enemies. Damage is boosted by 30% when wielding the Meteorite Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 30
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69763b5dl0hyl03j39aq843i4li",
+    "name": "Night Comet",
+    "image": "/media/sorceries/night-comet.png",
+    "description": "One of the night sorceries of Sellia, Town of Sorcery.\n\nFires a semi-invisible magic comet.\nThis sorcery can be cast repeatedly and while in motion.\nCharging enhances potency.\n\nThe Sellian sorcerers were assassins, and it is said that they often hunted their fellows.",
+    "type": "Sorcery",
+    "cost": 21,
+    "slots": 1,
+    "effects": "Deals magic damage by firing a semi-invisible piercing comet. As a night sorcery, non-player enemies and NPC invaders cannot detect the projectile, preventing them from dodging. The spell can be cast while moving, chained continuously, and charged to increase damage and poise damage. Damage is boosted by the Staff of Loss.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 38
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f68fe64del0hyl068olsfxrrts7",
+    "name": "Meteorite Of Astel",
+    "image": "/media/sorceries/meteorite-of-astel.png",
+    "description": "One of the glintstone sorceries that manipulates gravitational forces.\n\nSummons a void that emits a hail of meteorites. Hold to continue the effect.\n\nA manifestation of the power with which Astel leveled the Eternal City.",
+    "type": "Sorcery",
+    "cost": 60,
+    "slots": 2,
+    "effects": "Summons a gravitational void overhead that calls down a continuous barrage of small meteorites in front of the caster. Deals a combination of Physical and Magic damage upon impact with small AoE explosions. The spell cannot be charged, but holding down the cast button channels the spell continuously to prolong the meteorite storm at a recurring FP cost. Each meteorite inflicts high poise and stance damage.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 55
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69717eddl0hyl0exs9l0a0sdw6s",
+    "name": "Night Shard",
+    "image": "/media/sorceries/night-shard.png",
+    "description": "One of the night sorceries of Sellia, Town of Sorcery.\n\nSwiftly fires a semi-invisible projectile. This sorcery can be used without delay after performing another action.\n\nThe Sellian sorcerers were assassins, and it is said that they often hunted their fellows.",
+    "type": "Sorcery",
+    "cost": 7,
+    "slots": 1,
+    "effects": "Fires a semi-invisible projectile dealing magic damage. Cannot be charged. As a night sorcery, enemies and NPC invaders cannot detect the projectile upon casting and will not attempt to dodge it. Features rapid casting speed and minimal recovery, allowing it to be cast immediately without delay after other actions such as sprinting, jumping, rolling, or performing other spells and attacks. Damage is boosted by 30% when wielding the Staff of Loss.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 18
+      }
+    ]
+  },
+  {
+    "id": "17f690350b7l0hyl0i9t31pb2ahyzj",
+    "name": "Night Maiden's Mist",
+    "image": "/media/sorceries/night-maidens-mist.png",
+    "description": "One of the night sorceries of Sellia, Town of Sorcery.\n\nReleases a life-sapping silver mist before the caster, dealing damage to all caught within, including the caster. This sorcery can be cast while in motion.\n\nBelow Sellia, the Eternal City of Nokron sleeps. This sorcery originates from the maiden of that place.",
+    "type": "Sorcery",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Releases a cloud of life-sapping silver mist directly in front of the caster that lingers for approximately 17 seconds. Any entity within the cloud takes rapid damage over time, dealing around 1,500 total Standard damage across its duration. The damage is a flat amount that bypasses enemy defense, absorption, and damage negation, and does not scale meaningfully with Intelligence or staff upgrades. The mist damages all entities caught within, including the caster and enemies, but does not affect allied cooperators, spirit ashes, or hunters. The damage cannot be blocked with shields. Charging the spell increases the mist cloud's radius from 2.8 meters to 5 meters without altering its duration or damage rate. It can be cast while moving or jumping.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 14
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69062ddbl0hyl0j0sh5cueid15m",
+    "name": "Rancorcall",
+    "image": "/media/sorceries/rancorcall.png",
+    "description": "Sorcery of the servants of Death.\n\nSummons vengeful spirits that chase down foes.\nCharging enhances potency.\n\nOnce thought lost, this ancient death hex was rediscovered by the necromancer Garris.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Summons a cluster of slow-moving vengeful spirits that track and pursue enemies, dealing magic damage upon impact. Can be charged to increase the damage dealt by the spirits. Projectiles feature persistent homing capabilities over medium-to-long distances, but can overshoot close-range targets. Boosted by the Prince of Death's Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 16
+      },
+      {
+        "name": "Faith",
+        "amount": 14
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f698db556l0hyl0jjihm0vl3xdwh",
+    "name": "Oracle Bubbles",
+    "image": "/media/sorceries/oracle-bubbles.png",
+    "description": "Sorcery of the claymen who served as priests in the ancient dynasty.\n\nProduces several small magical bubbles that drift towards foes before they naturally pop. Charging increases the delay before the bubbles pop.\n\nThe claymen search for lost oracles within their bubbles.",
+    "type": "Sorcery",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Produces a cluster of several small, slow-moving magical bubbles that spread outward and drift towards foes before popping, dealing Magic damage upon contact or detonation. The spell can be charged to increase damage and extend the delay before the bubbles burst. Can be cast while moving or while mounted.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 19
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f696ded8bl0hyl1chm38nbkimwj9",
+    "name": "Rennala's Full Moon",
+    "image": "/media/sorceries/rennalas-full-moon.png",
+    "description": "Sorcery associated with the Carian queen.\n\nUses the caster as a vessel to incarnate a full moon, then sends it floating toward foes. The full moon dispels all sorcery that touches it, and temporarily reduces magic damage negation for those it strikes.\n\nQueen Rennala encountered this enchanting moon when she was young, and later, it would bewitch the academy.",
+    "type": "Sorcery",
+    "cost": 47,
+    "slots": 2,
+    "effects": "The caster floats into the air and assumes a pose, manifesting a giant full moon around themselves before launching it forward. The moon slowly moves forward and accelerates toward targets, dispelling all hostile sorceries in its path. Upon contact, it detonates in an area-of-effect explosion (3-meter radius) dealing heavy Magic damage and temporarily reducing the target's Magic Damage Negation by 10% for 60 seconds. This sorcery cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 70
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6933fcffl0hyl1h3yit07w1s9ta",
+    "name": "Ranni's Dark Moon",
+    "image": "/media/sorceries/rannis-dark-moon.png",
+    "description": "Legendary sorcery associated with the Carian queen.\n\nUses the caster as a vessel to incarnate a cold, dark moon, then sends it floating toward foes. The dark moon dispels all sorcery that touches it, and temporarily reduces magic damage negation for those it strikes.\n\nThis moon was encountered by a young Ranni, led by the hand of her mother, Rennala. What she beheld was cold, dark and veiled in occult mystery.",
+    "type": "Sorcery",
+    "cost": 57,
+    "slots": 2,
+    "effects": "Casting Ranni's Dark Moon causes the caster to float into the air and incarnate a cold, dark moon around themselves before launching it toward enemies. The projectile tracks targets over long distances, gradually accelerating, and explodes in a 3-meter radius upon impact. It deals heavy Magic damage based on Sorcery Scaling and inflicts 270 Frostbite buildup. As it travels, the moon absorbs and dispels any hostile sorceries and magical projectiles in its path. Enemies struck have their Magic Damage Negation reduced by 10% for 60 seconds, which stacks multiplicatively with Frostbite's 20% negation penalty. The spell cannot be charged, but the casting animation lifts the player off the ground, allowing them to dodge low-hitting and ground-based attacks.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 68
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6960508el0hyl1nhkrxurxy1oqd",
+    "name": "Rock Blaster",
+    "image": "/media/sorceries/rock-blaster.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nImbues the ferrule of the caster's staff with magic, then thrusts it into the ground to create a massive magical shockwave.\n\nHold to continue moving without striking the ground, and then push the end of the staff into enemies.\n\nAn enhanced version of the glintstone miners' Stonedigger sorcery.",
+    "type": "Sorcery",
+    "cost": 22,
+    "slots": 1,
+    "effects": "Imbues the tip of the staff with magic and thrusts it into the ground to generate a shockwave dealing Magic damage and stance damage in an area of effect. The cast input can be held to enter a continuous drilling motion while slowly moving forward, dealing sustained multi-hit Magic damage to enemies at the cost of 4 FP per tick. Releasing the input or depleting FP triggers the final shockwave. Damage is boosted by 20% when using the Digger's Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 21
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f695b8eb1l0hyl1wwn8bq4hod2yh",
+    "name": "Roiling Magma",
+    "image": "/media/sorceries/roiling-magma.png",
+    "description": "One of the sorceries developed from the magma of Mt. Gelmir.\n\nAfter discovering the ancient hexes of Gelmir, Rykard, son of Queen Rennala, brought them back into practical use as new forms of sorcery.\n\nFires a lump of condensed magma that explodes a short delay after hitting the target. Charging enhances potency and further delays the explosion.",
+    "type": "Sorcery",
+    "cost": 28,
+    "slots": 1,
+    "effects": "Fires a condensed lump of magma in an arced trajectory that deals Fire damage. If it strikes an environmental surface, the magma adheres to the terrain and acts as a delayed explosive trap, detonating after a brief delay and leaving behind a pool of lava that inflicts continuous Fire damage over time. If the projectile scores a direct hit on an enemy, it explodes on impact, dealing immediate Fire damage without planting a delayed surface trap. The sorcery can be charged to increase direct damage, expand the blast radius of the explosion, and further prolong the detonation delay when planted on terrain.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 21
+      },
+      {
+        "name": "Faith",
+        "amount": 12
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6956b602l0hyl1xzxdrjbidynzq",
+    "name": "Rykard's Rancor",
+    "image": "/media/sorceries/rykards-rancor.png",
+    "description": "The terrible power of Rykard, Lord of Blasphemy.\n\nSummons searing spirits that leave a trail of delayed explosions in their wake.\n\nThese spirits manifest from the rancor of heroes who met a violent end. The lord granted them an audience, whereupon they were welcomed by the maw of the great serpent\u2014and within the serpent's bowels, they became the lord's kin.",
+    "type": "Sorcery",
+    "cost": 23,
+    "slots": 2,
+    "effects": "Summons a searing spirit that moves forward while tracking targets, leaving behind a trail of delayed explosions that detonate sequentially in its wake. Deals pure Fire damage. Cannot be charged. The successive explosions make it especially effective against large enemies caught along the trajectory. As a Magma Sorcery, its damage is boosted by 15% when wielding the Gelmir Glintstone Staff and scales with fire damage enhancements.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 40
+      },
+      {
+        "name": "Faith",
+        "amount": 18
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f697513fdl0hyl1yp7y0bcj3si6i",
+    "name": "Rock Sling",
+    "image": "/media/sorceries/rock-sling.png",
+    "description": "One of the glintstone sorceries that manipulates gravitational forces.\n\nPulls a clump of rocks from the earth and sends them flying. This sorcery can be cast while in motion.\n\nA gravitational technique studied by the young Radahn. His master was an Alabaster Lord with skin of stone.",
+    "type": "Sorcery",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Summons three rocks from the ground and propels them toward the target with moderate homing. Deals pure physical damage distributed across the three projectiles, making it effective against magic-resistant targets. Deals heavy stance and poise damage capable of easily staggering enemies and breaking boss postures. Cannot be charged. Can be cast while in motion or mounted on horseback. The projectiles follow an arced trajectory and may collide with terrain obstacles. Damage is boosted by 30% when cast with or wielding the Meteorite Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 18
+      }
+    ]
+  },
+  {
+    "id": "17f694eec4fl0hyl27r5xh06ckw1so",
+    "name": "Scholar's Armament",
+    "image": "/media/sorceries/scholars-armament.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nEnchants armaments held in the right hand with magic-affinity attacks. This sorcery can be cast while in motion.\n\nTaught to the Knights of the Cuckoo by the academy as payment for their contract.",
+    "type": "Sorcery",
+    "cost": 25,
+    "slots": 1,
+    "effects": "Enchants right-hand armament with magic damage for 90 seconds. Adds magic attack power equal to 0.75x the Intelligence-scaling portion of the casting catalyst's Sorcery Scaling. Cannot be charged. Can be cast while in motion. Only applies to weapons with standard physical affinity paths without innate elemental damage.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f69379d7el0hyl27xfguetq35bni",
+    "name": "Scholar's Shield",
+    "image": "/media/sorceries/scholars-shield.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nEnchants shield held in the left hand with additional damage negation.\n\nThis sorcery can be cast while in motion.\n\nTaught to the Knights of the Cuckoo by the academy as payment for their contract.",
+    "type": "Sorcery",
+    "cost": 25,
+    "slots": 1,
+    "effects": "Enchants a shield held in the left hand, increasing damage negation across all types by approximately 30% and reducing stamina loss when guarding by 35% (0.65x stamina damage multiplier). The effect lasts for 60 seconds. It can be cast while in motion, cannot be charged, and deals no direct damage.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f69233f99l0hyl32ixqa8cf501y",
+    "name": "Shard Spiral",
+    "image": "/media/sorceries/shard-spiral.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires twin projectiles that form a spiral as they travel.\nThis sorcery can be cast repeatedly and while in motion. Charging enhances potency.\n\nA sorcery of the Karolos Conspectus, the most venerable of the academy. This was the product of a failed attempt to create a new comet.",
+    "type": "Sorcery",
+    "cost": 14,
+    "slots": 1,
+    "effects": "Fires twin spiraling glintstone projectiles that deal Magic damage. The projectiles pierce through targets rather than dissipating upon impact, dealing continuous multi-hit damage as they pass through hitboxes. Highly effective against large-sized enemies. Can be cast while in motion and chained repeatedly. Can be charged to enhance damage.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 27
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69240fcdl0hyl38ber0x0u7bv3d",
+    "name": "Shatter Earth",
+    "image": "/media/sorceries/shatter-earth.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nImbues the ferrule of the caster's staff with magic, then thrusts it into the ground to create a magical shockwave.\nAllows one follow-up attack.\n\nA Stonedigger sorcery used by the glintstone miners of the crystal tunnel. At the academy, use of this sorcery was a stigma that marked out failed scholars.",
+    "type": "Sorcery",
+    "cost": 10,
+    "slots": 1,
+    "effects": "Thrusts the magic-imbued ferrule of the staff into the ground to produce an expanding shockwave dealing Magic damage around the caster. Can be followed up with one additional attack input for a second slam. The spell cannot be charged. Provides hyper armor during execution, inflicts significant poise damage and stamina damage against guarding enemies, and is boosted by the Digger's Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 15
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6902b989l0hyl3f6iorcnaeypi",
+    "name": "Starlight",
+    "image": "/media/sorceries/starlight.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nCreates a small, floating star light that illuminates surroundings. This sorcery can be cast while in motion.\n\nGranted to sorcerers who depart from the academy to embark on journeys. Even during the blackest nights, sojourns underground, or imprisonment in gaol, the stars are never far from a sorcerer's side.",
+    "type": "Sorcery",
+    "cost": 9,
+    "slots": 1,
+    "effects": "Creates a small, floating star light above the caster that illuminates dark surroundings for 180 seconds. The brightness is comparable to a raised torch, offering significantly stronger illumination than a standard lantern while keeping both hands completely free. This sorcery can be cast while in motion, deals no damage, and cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 15
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f693402e5l0hyl3gzhtqb01yjf3k",
+    "name": "Star Shower",
+    "image": "/media/sorceries/star-shower.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nFires six magic shooting stars that pursue the target. This sorcery can be cast while in motion. Charging enhances potency.\n\nThe most difficult to master of the Olivinus Conspectus sorceries.",
+    "type": "Sorcery",
+    "cost": 23,
+    "slots": 1,
+    "effects": "Fires six magic shooting stars in rapid succession that home in on the target, dealing Magic damage. Can be cast while in motion and can be charged to enhance damage and stance damage. Features exceptional projectile tracking, making it difficult for evasive targets to avoid.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 24
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6974051al0hyl3kcvhpy2j6smf",
+    "name": "Stars Of Ruin",
+    "image": "/media/sorceries/stars-of-ruin.png",
+    "description": "Legendary sorcery devised by Lusat, primeval sorcerer.\n\nFires twelve dark shooting stars that pursue the target. This sorcery can be cast while in motion. Charging increases potency.\n\nWhen Lusat glimpsed into the primeval current, he beheld the final moments of a great star cluster, and upon seeing it, he too was broken.",
+    "type": "Sorcery",
+    "cost": 32,
+    "slots": 1,
+    "effects": "Fires a volley of twelve dark shooting stars in rapid succession that aggressively track and home in on targets, dealing Magic damage. Can be cast while in motion and chained with successive casts. Charging the sorcery boosts the damage potency of the projectiles.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 43
+      }
+    ]
+  },
+  {
+    "id": "17f696ec037l0hyl3ngvf00twpbcg",
+    "name": "Shattering Crystal",
+    "image": "/media/sorceries/shattering-crystal.png",
+    "description": "Sorcery of the mysterious Crystalians.\n\nCreates a mass of crystal, then shatters it in a forward burst. Charging enhances potency.\n\nThe Crystalians are inorganic beings, yet they live. They cleave close to the ideals of the primeval current, and as such, they are revered guests of the sorcerers.",
+    "type": "Sorcery",
+    "cost": 21,
+    "slots": 1,
+    "effects": "Conjures a crystal cluster in front of the caster that rapidly shatters into a wide cone of piercing crystalline shards, dealing Magic damage. Can be charged to increase damage and range. Most effective at close range where multiple crystal fragments strike the target simultaneously.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 38
+      }
+    ]
+  },
+  {
+    "id": "17f69183747l0hyl3o1tnkgev3q3qs",
+    "name": "Swift Glintstone Shard",
+    "image": "/media/sorceries/swift-glintstone-shard.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nThe glintstone serves as a conduit, launching swift magical projectiles at foes.\n\nThis sorcery can be used without delay after performing another action. Those unworthy of the stone crown typically end their brief journey into sorcery here.",
+    "type": "Sorcery",
+    "cost": 5,
+    "slots": 1,
+    "effects": "Fires swift projectiles dealing magic damage. Can be cast rapidly and chain-cast while moving or immediately after other actions with minimal recovery delay. Cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 12
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f694f65f4l0hyl3qlnj0oepap3pg",
+    "name": "Terra Magicus",
+    "image": "/media/sorceries/terra-magica.png",
+    "description": "One of the glintstone sorceries of the Academy of Raya Lucaria.\n\nDraws an academy sigil upon the ground, raising the magic strength of those within.\n\nOnce, the sigil would be cast from the highest belfry of the academy, covering the entire institution's grounds. This spell allows such vivid experience of spell-casting success, it turns many a fledgling into a true sorcerer in a flash of newfound understanding.",
+    "type": "Sorcery",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Draws an academy sigil on the ground creating a stationary zone with a 4.2-meter radius that lasts for 30 seconds. While standing inside the sigil, all Magic damage dealt by the caster and allies is increased by 22.5% in PvE (15% in PvP). The buff applies to all damage sources that inflict Magic damage, including Sorceries, Incantations, weapon skills, and weapon attacks, provided the caster is standing inside the sigil at the moment the damage connects. Cannot be charged.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 20
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69321284l0hyl4lnndsfcv2un9k",
+    "name": "Unseen Blade",
+    "image": "/media/sorceries/unseen-blade.png",
+    "description": "One of the night sorceries of Sellia, Town of Sorcery.\n\nEnchants armament held in right hand, making it completely invisible. This sorcery can be cast while in motion.\n\nUsed by Sellian assassins to present themselves as unarmed sorcerers.",
+    "type": "Sorcery",
+    "cost": 13,
+    "slots": 1,
+    "effects": "Enchants the right-hand armament, making it completely invisible for 45 seconds (58.5 seconds with the Old Lord's Talisman). Can be cast while in motion. Deals no damage, adds no elemental or status damage, and cannot be charged. Only applies to weapons that can receive armament buffs. In PvP, hides weapon type, range, and attack animations from opponents.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f698ec32bl0hyl4ouriysbeaoqvp",
+    "name": "Unseen Form",
+    "image": "/media/sorceries/unseen-form.png",
+    "description": "One of the night sorceries of Sellia, Town of Sorcery.\n\nMakes the caster semi-invisible. While on horseback, effect extends to cover the mount. This sorcery can be cast while in motion.\n\nThe Sellian assassins considered every option that aided their dirty work.",
+    "type": "Sorcery",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Renders the caster semi-invisible for 30 seconds (extendable to 39 seconds with the Old Lord's Talisman). When mounted on Torrent, the concealment extends to the mount as well. This sorcery can be cast while moving or mounted and cannot be charged. It deals no damage, functioning purely as a stealth utility. Mechanically, it drastically decreases enemy visual detection and aggro range in PvE, allowing the player to bypass foes or initiate stealth attacks, though enemies can still detect the caster if approached too closely, bumped into, or heard through un-silenced movement. Bosses and certain scripted enemies are completely immune to the detection reduction. In PvP, it significantly reduces the maximum distance at which opposing players can lock onto the caster.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 16
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69332a7cl0hyl4q0ahq1rhl510s",
+    "name": "Thops's Barrier",
+    "image": "/media/sorceries/thops-s-barrier.png",
+    "description": "The lifelong pursuit of Thops the Bluntstone.\n\nCreates a magic forcefield that deflects sorceries and incantations.\nHold to continuously create barriers.\n\nFuture generations will learn. They will know the foolishness of the sneering sorcerers who ridiculed this theory, little realizing that it was in fact a discovery worthy of a new conspectus of the academy.",
+    "type": "Sorcery",
+    "cost": 7,
+    "slots": 1,
+    "effects": "Creates a magic forcefield around the caster that deflects incoming hostile sorceries and projectile incantations, causing them to veer off course. Deals no damage and cannot be charged, but holding the cast button continuously casts successive barriers that consume stamina without expending additional FP beyond the initial cast. It does not deflect melee attacks or non-projectile area-of-effect spells.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 18
+      },
+      {
+        "name": "Faith",
+        "amount": 0
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f693b4e3cl0hyl4rjaph3b2vbtk5",
+    "name": "Zamor Ice Storm",
+    "image": "/media/sorceries/zamor-ice-storm.png",
+    "description": "Ice sorcery of the Town of Zamor.\n\nStrike the ground with the staff to create a freezing tornado.\nCharging enhances potency.\n\nCloaked in icy tempests, the knights of Zamor have challenged the Fire Giants since ancient times.",
+    "type": "Sorcery",
+    "cost": 17,
+    "slots": 1,
+    "effects": "Strikes the ground with the staff to create a freezing tornado around the caster that deals continuous magic damage and inflicts rapid frostbite buildup. Can be charged to enhance potency, increasing damage, duration, and area of effect. Deflects incoming projectile attacks while active.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 36
+      }
+    ]
+  },
+  {
+    "id": "17f692e03b8l0hyl4rlgts2b9n06wj",
+    "name": "Tibia's Summons",
+    "image": "/media/sorceries/tibias-summons.png",
+    "description": "Sorcery of the servants of Death.\n\nSummons a group of Those Lost in Death. Three skeletons will appear some distance from the caster and attack foes before disappearing.\n\nThe dead have long been left to wander; what they need is leadership.",
+    "type": "Sorcery",
+    "cost": 17,
+    "slots": 1,
+    "effects": "Summons three skeletons a short distance away from the caster that materialize, execute a downward slash attack against nearby enemies, and vanish. Each skeleton's strike inflicts pure Magic damage equal to 125% of Sorcery Scaling (dealing 375% total damage if all three hit) and inflicts 5 stance damage per hit (15 stance damage total). This sorcery cannot be charged. Damage is boosted by 10% when cast with the Prince of Death's Staff.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 28
+      },
+      {
+        "name": "Faith",
+        "amount": 20
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      }
+    ]
+  }
+]
