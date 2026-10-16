@@ -1,0 +1,1918 @@
+[
+  {
+    "id": "17f696c7ce7l0hynrwmh6d0r0rwk2",
+    "name": "Ancient Dragons' Lightning Strike",
+    "image": "/media/incantations/ancient-dragons-lightning-strike.png",
+    "description": "A secret incantation of the capital's ancient dragon cult.\n\nSummons a red bolt of lightning that scatters and spreads around the surrounding area. Charging enhances the range of the lightning bolt.\n\nSpoken of in legend, red lightning is the weapon wielded by the ancient dragons.",
+    "type": "Incantation",
+    "cost": 36,
+    "slots": 1,
+    "effects": "Deals pure Lightning damage by summoning red lightning strikes around the caster that scatter outward into secondary branching bolts. Enemies with large hitboxes can be hit simultaneously by multiple overlapping strikes, causing extreme burst damage. The incantation can be charged to increase its effective area of effect and bolt travel range. It cannot be channeled or continuously cast. It inflicts no status buildup. It synergizes with the Gravel Stone Seal for a 15% Dragon Cult damage bonus (stacking if dual-wielded), the Godfrey Icon when charged, the Lightning Scorpion Charm, Flock's Canvas Talisman, the Lightning-Shrouding Cracked Tear, and rain or standing water environments which reduce enemy lightning resistance.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 26
+      }
+    ]
+  },
+  {
+    "id": "17f695ad891l0hynrxcposdnx7gy9h",
+    "name": "Aspects Of The Crucible: Horns",
+    "image": "/media/incantations/aspects-of-the-crucible-horns.png",
+    "description": "One of the ancient Erdtree incantations.\n\nCreates a mighty horn on the caster's shoulder to gore foes from a low stance. Charging allows the caster to barrel into foes before delivering the final attack.\n\nThis is a manifestation of the Erdtree's primal vital energies\u2014an aspect of the primordial crucible, where all life was once blended together.",
+    "type": "Incantation",
+    "cost": 18,
+    "slots": 1,
+    "effects": "The caster assumes a low stance and manifests a large horn on their shoulder, rushing forward to gore enemies. Deals Standard physical damage and stance damage. Charging the incantation increases the charge distance by roughly three times, increases damage and stance damage, and launches human-sized foes into the air. It cannot be channeled or continuously cast and inflicts no status buildup. Damage is boosted by 4% for each piece of the Crucible Axe or Crucible Tree armor sets equipped (approximately 17% for the full set), and charged casts are boosted by 15% by the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 27
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f690dc5ael0hynrxf3lq1w3xcjpr",
+    "name": "Agheel's Flame",
+    "image": "/media/incantations/agheels-flame.png",
+    "description": "Superior incantation of Dragon Communion.\n\nChannels the power of the flying dragon Agheel.\n\nTransforms caster into a dragon to spew flaming breath from above.\nCharging extends duration. This incantation can be cast while jumping.\n\nThe dead gazed at the skies over the lakes of Limgrave, praying that the dragons' flames would burn them to ash.",
+    "type": "Incantation",
+    "cost": 36,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon head mid-air to spew a sweeping stream of fire downward, dealing heavy Fire damage. Charging extends the duration to release a second breath, continuously consuming FP and stamina. Can be cast while jumping to gain elevation, but cannot be cast while mounted. Damage scales with Incantation Scaling and is boosted by the Dragon Communion Seal, Roar Medallion, Fire Scorpion Charm, Flame-Shrouding Cracked Tear, Flame, Grant Me Strength, and Rock Heart.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f693bd4f8l0hynrzaixs0xzre1q",
+    "name": "Aspects Of The Crucible: Tail",
+    "image": "/media/incantations/aspects-of-the-crucible-tail.png",
+    "description": "One of the ancient Erdtree incantations.\n\nCreates a supple tail that sweeps through foes before the caster. Charging enhances potency.\n\nThis is a manifestation of the Erdtree's primal vital energies\u2014an aspect of the primordial crucible, where all life was once blended together.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Conjures a large, supple tail that sweeps horizontally across a wide frontal arc, dealing Physical (Standard) damage and knocking down smaller foes. Can be charged to execute a second, larger follow-up sweep with extended range and increased damage. Deals 13 stance damage uncharged, and a total of 52 stance damage when charged (13 on the initial sweep, 39 on the follow-up). Cannot be continuously channeled. Inflicts no status build-up. Damage is boosted by 4% per piece of the Crucible Axe and Crucible Tree armor sets (stacking up to ~17%), and charged damage is boosted by 15% with the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 27
+      }
+    ]
+  },
+  {
+    "id": "17f698483c9l0hyns2v5nt60a29sd",
+    "name": "Barrier Of Gold",
+    "image": "/media/incantations/barrier-of-gold.png",
+    "description": "One of the incantations of Erdtree Worship.\n\nGreatly increases magic damage negation for the caster and nearby allies. Hold to continue praying and delay activation.\n\nThis incantation was used by the champions of the Erdtree in the First and the Second Liurnian Wars, during which the red-haired Radagon joined the heroes' ranks.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Grants a body buff to the caster and allies within a 6-meter radius that increases Magic damage negation by 60% in PvE and 20% in PvP for 70 seconds. Casting can be held to delay activation, but the spell cannot be charged for increased potency. Deals no damage and causes no status build-up. Does not stack with other body buffs, but stacks multiplicatively with aura buffs, shield buffs, and talisman effects. Duration is extended to 91 seconds with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 24
+      }
+    ]
+  },
+  {
+    "id": "17f6911d8c2l0hyns4qd7p9pfucu26",
+    "name": "Ancient Dragons' Lightning Spear",
+    "image": "/media/incantations/ancient-dragons-lightning-spear.png",
+    "description": "A secret incantation of the capital's ancient dragon cult.\n\nCreates a spear of red lightning and stabs it into the ground from above. On impact, the spear will burst into trails of lightning covering the area.\n\nSpoken of in legend, red lightning is the weapon wielded by the ancient dragons.",
+    "type": "Incantation",
+    "cost": 25,
+    "slots": 1,
+    "effects": "Summons a red lightning spear from above while leaping into the air and plunges it into the ground, dealing pure Lightning damage on impact. The direct strike and surrounding shockwave hit targets in close proximity, followed by waves of red lightning traveling across the ground in multiple directions to damage nearby foes. This incantation cannot be charged, channeled, or continuously cast, and it causes no status build-up. The caster gains considerable hyper armor during the casting animation. Its damage scales with Faith (or the catalyst's incantation scaling) and is boosted by the Gravel Stone Seal, the Death Knight Set, the Lightning Scorpion Charm, the Canvas Talismans, and the Lightning-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 32
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f690418f4l0hyns68vsg9zhbc6w",
+    "name": "Beast Claw",
+    "image": "/media/incantations/beast-claw.png",
+    "description": "Incantation taught by Gurranq, the Beast Clergyman.\n\nCreates beast claws that rend the land with shockwaves.\nCharging enhances potency.\n\nThis incantation represents the fury of Gurranq, his bestial nature returned, as much as it does his restless agitation.",
+    "type": "Incantation",
+    "cost": 10,
+    "slots": 1,
+    "effects": "Thrusts the caster's hand into the ground and tears forward, releasing a spreading cone of five vertical shockwaves that rip through the earth and contour over uneven terrain and walls. Deals pure physical slash damage scaling with Incantation Scaling (193% uncharged, 222% fully charged). Charging increases damage, range, spread, and stance damage from 7 to 12.95. Enemies can only be struck once per cast even if multiple shockwaves cross their hitbox. The incantation cannot be continuously cast or channeled, and it inflicts no status build-up. As a Bestial Incantation, its damage is boosted by 10% when wielding the Clawmark Seal (scaling with Strength and Faith, and stacking multiplicatively if dual-wielded) and 10% when holding the Cinquedea. Fully charged casts gain an additional 15% damage bonus from the Godfrey Icon, and damage is further amplified by generic physical attack buffs such as Flame, Grant Me Strength, Golden Vow, and the Blue Dancer Charm.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 8
+      }
+    ]
+  },
+  {
+    "id": "17f693c22edl0hynsdj8fz0ddz4vni",
+    "name": "Aspect Of The Crucible: Breath",
+    "image": "/media/incantations/aspect-of-the-crucible-breath.png",
+    "description": "One of the ancient Erdtree incantations.\n\nCreates a throat pouch on the caster's neck, allowing them to spew fiery breath while walking. Charging increases duration of the breath.\n\nThis is a manifestation of the Erdtree's primal vital energies\u2014an aspect of the primordial crucible, where all life was once blended together.",
+    "type": "Incantation",
+    "cost": 28,
+    "slots": 1,
+    "effects": "Creates a throat pouch on the caster's neck that channels a continuous stream of fire forward while allowing the caster to walk and turn. Deals pure Fire damage scaling with Incantation Scaling (98% per tick) and inflicts 28 stance damage with no status effect build-up. The incantation can be charged to prolong the breath attack, operating as a continuous cast that consumes 40 stamina and drains 4 FP per tick after an initial startup delay. Damage is enhanced by fire-boosting buffs (such as Flame, Grant Me Strength and the Fire-shrouding Cracked Tear), the Roar Medallion (~10-15%), and pieces of the Crucible Axe and Crucible Tree armor sets (3.5% to 4% per piece). It does not benefit from the Godfrey Icon because charging increases the duration rather than the damage.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 27
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69691e79l0hyntbidbq75lrrjb7",
+    "name": "Bestial Constitution",
+    "image": "/media/incantations/bestial-constitution.png",
+    "description": "Incantation taught by Gurranq, the Beast Clergyman.\n\nFills the body with bestial vigor, alleviating buildup of frost and blood loss.\n\nHaving gained intelligence, the beasts must have felt how their wildness slipped away as civilization took hold.",
+    "type": "Incantation",
+    "cost": 10,
+    "slots": 1,
+    "effects": "Alleviates and removes accumulated blood loss (hemorrhage) and frostbite status buildup from the caster, and removes the frostbite status condition if already afflicted. It deals no damage, cannot be charged, and cannot be channeled for continuous casting, though it can be chain cast and allows slow movement while casting. As a Bestial Incantation, it has a minimal stat requirement and low FP consumption, serving as a renewable spell alternative to Stanching Boluses and Thawfrost Boluses.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 9
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f68f98778l0hynteevtb4hr6x90d",
+    "name": "Bestial Sling",
+    "image": "/media/incantations/bestial-sling.png",
+    "description": "Incantation taught by Gurranq, the Beast Clergyman.\n\nSwiftly flings numerous sharp rock shards.\nThis incantation can be cast without delay after performing another action.\n\nIt is said that in the time before the Erdtree, stones were the first weapons of the beasts who had gained intelligence.",
+    "type": "Incantation",
+    "cost": 7,
+    "slots": 1,
+    "effects": "Swiftly flings a spread of sharp rock shards in a frontal cone dealing Standard Physical damage. It cannot be charged, but it can be cast repeatedly in rapid succession and chained fluidly without delay following other actions such as rolling, jumping, sprinting, or attacking. The incantation causes no status build-up. Damage scales with the Incantation Scaling of the equipped Sacred Seal and is boosted by 10% each when wielding the Clawmark Seal or the Cinquedea dagger. Because it deals physical damage, it also synergizes with physical damage-enhancing buffs and equipment.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69160ac9l0hynthagycs7dr7gq7",
+    "name": "Black Blade",
+    "image": "/media/incantations/black-blade.png",
+    "description": "Power gleaned from the remembrance of Maliketh.\n\nCaster creates an illusory black blade, then leaps forward to deliver a spinning slash that emits a wave of light. This can be followed up with one additional attack.\n\nThis blade was once imbued with Destined Death. In addition to dealing damage, it reduces foes' maximum HP and continues to sap their current HP for a very short time.",
+    "type": "Incantation",
+    "cost": 26,
+    "slots": 2,
+    "effects": "Summons an illusory greatsword and leaps forward to deliver a spinning slash that emits a wave of light, dealing Holy damage. Can be followed up with an additional input to execute a second leaping slash and projectile. Both the blade and the projectile deal Holy damage and can hit simultaneously at melee range. The spell cannot be charged or continuously cast. Hits inflict the Destined Death debuff, temporarily reducing the target's maximum HP by 10% for 15 seconds and draining 2% of max HP plus 20 flat damage over 2 seconds. The maximum HP reduction stacks with Black Knife's Blade of Death, but does not stack with Maliketh's Black Blade.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 46
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69860befl0hyntmsoo0kq76fsvd",
+    "name": "Black Flame Ritual",
+    "image": "/media/incantations/black-flame-ritual.png",
+    "description": "Superior black flame incantation of the Godskin Apostles.\n\nSummons a circle of black flame pillars around the caster. Charging increases the size of the circle.\n\nThe Gloam-Eyed Queen led the apostles. It is said that she was an Empyrean chosen by the Fingers.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Summons a ring of rising black flame pillars around the caster that persist for approximately 4 seconds, dealing Fire damage and stance damage on hit. Targets struck suffer the Black Flame debuff, inflicting damage over time equal to 2% of the target's maximum HP plus 20 flat damage over 2 seconds; additional hits refresh this debuff's duration rather than stacking. Can be charged to expand the circle's radius further outwards (leaving a safe pocket directly around the caster), while increasing direct damage and stance damage. Cannot be channeled or chain cast, and leaves the caster stationary during execution. Synergizes with the Godfrey Icon (boosts charged damage by 15%), the Godslayer's Seal (boosts Godslayer incantations by 10%), and standard Fire damage or incantation-enhancing equipment.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 42
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6982c810l0hyntn0pvua05sv3w",
+    "name": "Black Flame",
+    "image": "/media/incantations/black-flame.png",
+    "description": "A black flame incantation of the Godskin Apostles.\n\nThrows a ball of raging black fire.\nCharging enhances potency and causes the fireball to explode.\n\nBlack flame is weighty. After dealing damage it continues to sap foes' HP for a very short time.",
+    "type": "Incantation",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Hurls a ball of black fire that deals direct Fire damage upon impact. Can be charged to increase direct damage, boost poise damage, and create a small explosive area-of-effect radius. Upon striking an enemy, it applies a unique Godslayer burn debuff that saps approximately 2% of the target's maximum HP plus 20 flat damage over 2 seconds. The damage-over-time debuff does not stack with itself, but subsequent hits refresh its duration. Does not support channeling or continuous casting, and cannot be cast while airborne on foot, though it can be cast while mounted on Torrent. Mechanical synergies include a 10% damage bonus when cast using the Godslayer's Seal (which stacks multiplicatively if dual-wielding), a 15% charge damage boost from Godfrey Icon, incantation boosts from Flock's Canvas Talisman and Faithful's Canvas Talisman, and fire damage increases from Flame-Shrouding Cracked Tear, Fire Scorpion Charm, and Flame, Grant Me Strength.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 20
+      }
+    ]
+  },
+  {
+    "id": "17f692ee649l0hyntu1vu7cu8wxah",
+    "name": "Black Flame Blade",
+    "image": "/media/incantations/black-flame-blade.png",
+    "description": "A black flame incantation of the Godskin Apostles.\n\nEngulfs armament held in the right hand with black flame.\nThis incantation can be cast without delay after performing another action.\n\nBlack flame is weighty. After dealing damage it continues to sap foes' HP for a very short time.",
+    "type": "Incantation",
+    "cost": 15,
+    "slots": 1,
+    "effects": "Engulfs the right-hand armament in black flame, adding flat Fire attack power scaling with 0.65x of the Faith portion of the Sacred Seal's Incantation Scaling. Striking enemies applies a lingering Black Flame damage-over-time debuff for 2 seconds that drains 2% of the target's maximum HP plus 20 flat damage; this percentage-based burn cannot be boosted by spell scaling but can be repeatedly refreshed by consecutive hits. Cannot be charged and cannot be channeled or continuously cast. Does not inflict standard status build-up (such as hemorrhage or frostbite). The spell features an exceptionally fast cast time that can be chained seamlessly after rolls, backsteps, jumps, or attack recovery animations. Has a base duration of 7 seconds (extendable to approximately 9.1 seconds with the Old Lord's Talisman). Can only buff weapons that accept external enhancements (standard physical affinity paths) and cannot stack with other weapon-coating spells or greases.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 17
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6955e547l0hyntv29oe95w4kpxj",
+    "name": "Bestial Vitality",
+    "image": "/media/incantations/bestial-vitality.png",
+    "description": "Incantation taught by Gurranq, the Beast Clergyman.\n\nFills the body with bestial vigor, restoring HP over a period of time.\n\nHaving gained intelligence, the beasts must have felt how their wildness slipped away as civilization took hold.",
+    "type": "Incantation",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Grants a health regeneration buff that restores 5 HP per second for 120 seconds, recovering a total of 600 HP. The amount restored is flat and does not scale with Faith or Sacred Seal incantation scaling. The incantation deals no damage, causes no status buildup, cannot be charged, and cannot be channeled or continuously cast, though it can be cast while moving or mounted. Its duration can be extended to 156 seconds (healing 780 HP total) by equipping the Old Lord's Talisman. Classified as a health regeneration body buff, it does not stack with other health regeneration body buffs or tears such as Blessing's Boon, Blessing of the Erdtree, or Crimsonburst Crystal Tear, but it stacks with passive equipment HP regeneration including the Blessed Dew Talisman, Icon Shield, and the Royal Remains set. It does not receive a healing bonus from the Clawmark Seal.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f694f1c32l0hynu33qh2e3un2g1",
+    "name": "Black Flame's Protection",
+    "image": "/media/incantations/black-flames-protection.png",
+    "description": "A black flame incantation of the Godskin Apostles.\n\nSummons black fire within, increasing physical damage negation.\nHowever, sacred flasks and other such forms of HP restoration are impaired.\n\nThe Apostles were all embraced by the Gloam-Eyed Queen, and the black flame was their armor within.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Summons black fire within the caster's body, applying a body buff that increases physical damage negation by 35% in PvE (reduced to 15% in PvP) across all physical damage types (Standard, Slash, Strike, and Pierce) for 70 seconds. As a drawback, all incoming HP recovery\u2014including Flask of Crimson Tears, healing incantations, and passive regeneration\u2014is reduced by 20% while the buff remains active. It cannot be charged or channeled/continuously cast, and it does not inflict damage or status build-up. Classified as a Body Buff, it does not stack with and will overwrite or be overwritten by other body buffs such as Boiled Crab, Flame, Grant Me Strength, or elemental fortification incantations. However, it stacks multiplicatively with aura buffs (such as Golden Vow), shield buffs, and physical defense-boosting talismans like the Dragoncrest Greatshield Talisman. Its duration can be extended to 91 seconds by equipping the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 30
+      }
+    ]
+  },
+  {
+    "id": "17f69801f77l0hynudtg36sba9k5lr",
+    "name": "Blessing's Boon",
+    "image": "/media/incantations/blessings-boon.png",
+    "description": "One of the ancient Erdtree incantations.\n\nGrants a blessing to the caster and nearby allies, gradually restoring HP.\n\nHold to continue praying and delay activation.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Grants a health-regeneration body buff to the caster and nearby allies within an area of effect, gradually restoring 8 HP per second over a 90-second duration for a total of 720 HP. The healing is flat and does not scale with Faith or Sacred Seal Incantation Scaling. It affects friendly summons, co-op allies, NPCs, and Torrent when cast while mounted. Deals no damage of any type and inflicts no status build-up. The incantation cannot be charged to boost healing potency, but holding the casting input channels continuous prayer to delay the spell's activation until released. The duration is extended by 30% to 117 seconds when equipping the Old Lord's Talisman, increasing total HP restored to 936. As a health-regeneration body buff, it overwrites and does not stack with other regenerative body buffs such as Bestial Vitality, Blessing of the Erdtree, or the Crimsonburst Crystal Tear, but stacks with passive equipment HP regeneration (such as the Blessed Dew Talisman, Icon Shield, and Royal Remains armor) and aura buffs such as Golden Vow.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 24
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f690ba6e1l0hynuyuvb7sle1w35",
+    "name": "Blessing Of The Erdtree",
+    "image": "/media/incantations/blessing-of-the-erdtree.png",
+    "description": "One of the ancient Erdtree incantations.\n\nGrants a greater blessing to the caster and nearby allies, gradually restoring a large amount of HP.\nHold to continue praying and delay activation.\n\nThe Erdtree once flourished with abundance\u2014yet it was only for a fleeting moment. Such is the course of all life.",
+    "type": "Incantation",
+    "cost": 60,
+    "slots": 1,
+    "effects": "Gradually restores 12 HP per second to the caster and nearby allies (including cooperators, summoned spirit ashes, and friendly NPCs) for 90 seconds, healing a total of 1,080 HP. The health regeneration is a flat rate and does not scale with Faith or Sacred Seal incantation scaling. The incantation deals no damage and inflicts no status build-up. It cannot be charged to boost healing potency or duration, but holding the cast button allows the caster to stay in a prayer stance to delay activation. It cannot be channeled continuously. Classified as a Health Regeneration buff; it does not stack with other health regeneration spells (overwriting or being overwritten by them), but stacks with passive equipment HP regeneration (such as the Blessed Dew Talisman or Icon Shield), Wondrous Physick tears, Aura buffs (such as Golden Vow), and Body buffs (such as Flame, Grant Me Strength). Equipping the Old Lord's Talisman extends the buff duration by 30% to 117 seconds, increasing total HP restored to 1,404.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 38
+      }
+    ]
+  },
+  {
+    "id": "17f697aaf25l0hynv3bmpsnp4lpnd",
+    "name": "Bloodflame Blade",
+    "image": "/media/incantations/bloodflame-blade.png",
+    "description": "A Blood Oath incantation, granted by the Lord of Blood.\n\nEngulfs armament held in the right hand with bloodflame.\nThis incantation can be cast while in motion.\n\nAfter dealing damage, bloodflame continues to build up onset of blood loss for a very short time.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Enchants the right-hand armament with bloodflame for 60 seconds (extended to 78 seconds with Old Lord's Talisman). The incantation can be cast while moving, but cannot be charged, channeled, or continuously cast. It adds flat Fire damage equal to 0.40x of the casting Sacred Seal's Faith-based Incantation Scaling (scaling contributions from Arcane or Intelligence on hybrid seals are excluded). In addition to Fire damage, each strike applies 40 points of Blood Loss (Hemorrhage) build-up that ticks over a 2-second duration. This Hemorrhage build-up is a static value and does not scale with the Arcane stat or weapon level. The lingering bleed tick temporarily prevents the target's Hemorrhage meter from decaying, creating powerful synergy with rapid multi-hit weapons and armaments with innate Blood Loss. Can only be applied to weapons that allow weapon buffs (Standard, Heavy, Keen, or Quality affinities; cannot be applied to Somber weapons or weapons with elemental/status affinities).",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 12
+      },
+      {
+        "name": "Arcane",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f6973c98fl0hynv5gnjf09yvy8y",
+    "name": "Bloodflame Talons",
+    "image": "/media/incantations/bloodflame-talons.png",
+    "description": "A Blood Oath incantation, granted by the Lord of Blood.\n\nCreates bloodflame lacerations before the caster, which explode in an instant.\n\nThis incantation can be cast repeatedly.\n\nAfter dealing damage, bloodflame continues to build up onset of blood loss for a very short time.",
+    "type": "Incantation",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Lacerates the air in front of the caster, leaving bloodflame claw marks that detonate into an explosion after a brief delay. The initial claw swipe inflicts no damage, but the subsequent detonation deals Fire damage in a small area. The explosion will still trigger even if the caster is staggered after the swipe animation completes. The incantation cannot be charged, but it can be cast repeatedly in rapid succession. Hits apply bloodflame to targets, inflicting immediate Hemorrhage buildup followed by additional blood loss buildup that continues over a brief two-second window. The status buildup scales with Arcane when cast using a seal with Arcane scaling (such as the Dragon Communion Seal). Synergizes with fire-enhancing effects (e.g., Fire Scorpion Charm, Flame-Shrouding Cracked Tear, Flame, Grant Me Strength) and bleed-enhancement gear (e.g., Lord of Blood's Exultation, White Mask), as well as general incantation-boosting talismans.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 13
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f68fd9537l0hynv7q0d210i53bym9",
+    "name": "Bloodboon",
+    "image": "/media/incantations/bloodboon.png",
+    "description": "Sacred incantation of Mohg, Lord of Blood.\n\nThrust arm into the body of the Formless Mother, then scatter the bloodflame to set the area ablaze.\nThis incantation can be cast while in motion.\n\nThe mother of truth craves wounds. When Mohg stood before her, deep underground, his accursed blood erupted with fire, and he was besotted with the defilement that he was born into.",
+    "type": "Incantation",
+    "cost": 13,
+    "slots": 1,
+    "effects": "Thrusts the caster's arm into an unseen rift to draw power from the Formless Mother, scattering bloodflame in a wide arc across the ground. Deals Fire damage on projectile impact and continues to inflict Fire damage via lingering pools of fire. Applies Hemorrhage (Blood Loss) buildup from both the initial burst and the lingering bloodflame patches, which continuously build bleed on enemies standing within them. Overlapping fire patches compound the rate of status buildup. Cannot be charged, but can be cast while in motion and chain-cast repeatedly in rapid succession. Synergizes effectively with Arcane scaling catalysts such as the Dragon Communion Seal to enhance status buildup, fire-boosting effects like Flame, Grant Me Strength and the Fire Scorpion Charm, and bleed-activated effects such as the Lord of Blood's Exultation and the White Mask.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 14
+      },
+      {
+        "name": "Arcane",
+        "amount": 17
+      }
+    ]
+  },
+  {
+    "id": "17f695324del0hynv9a91iu7h3knff",
+    "name": "Borealis's Mist",
+    "image": "/media/incantations/borealiss-mist.png",
+    "description": "Superior incantation of Dragon Communion.\n\nChannels the power of Borealis, the Freezing Fog.\n\nTransforms caster into a dragon to spew icy breath from above.\nCharging extends the duration. This incantation can be cast while jumping.\n\nThe ice dragons were once lords of the mountaintops long ago, until they were defeated by the Fire Giants and chased from the peak.",
+    "type": "Incantation",
+    "cost": 48,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon head to spew a sweeping stream of freezing breath from above over a wide area, dealing Magic damage and causing heavy Frostbite buildup. The incantation can be cast while jumping to avoid ground-level attacks. Holding the cast button channels/charges the incantation to prolong the breath attack for a second burst, consuming additional FP and stamina. Damage is boosted by the Dragon Communion Seal (+15%), the Roar Medallion (+10%), Magic-Shrouding Cracked Tear (+20%), and Canvas Talismans. Frostbite procs deal percentage maximum health damage and reduce target damage negation by 20% for 30 seconds, which can be reset early using fire damage for repeated procs.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f694bc935l0hynvcwx4oahz00k48",
+    "name": "Cure Poison",
+    "image": "/media/incantations/cure-poison.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nAlleviates poison buildup and cures poison.\nThis incantation can be cast while in motion.\n\nThe Two Fingers has high hopes for the Tarnished; that even if they should be wounded, even should they fall, they will continue to fight for their duty.",
+    "type": "Incantation",
+    "cost": 7,
+    "slots": 1,
+    "effects": "Alleviates poison status build-up and cures the poison status ailment for the caster. Deals no damage. Cannot be charged, and cannot be channeled or continuously cast. Inflicts no status build-up. Can be cast while in motion or while mounted. Requires a Sacred Seal to cast, consumes 7 FP and 10 stamina, and occupies 1 memory slot. Casting speed scales with Dexterity and cast speed enhancing effects such as the Radagon Icon. Targets self only and does not cure scarlet rot or affect allies.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f696d3fddl0hynve32uy42tb6pip",
+    "name": "Burn O Flame!",
+    "image": "/media/incantations/burn-o-flame.png",
+    "description": "One of the incantations that draws directly from the power of the Fire Giants.\n\nRaises a series of flame pillars around the caster. Charging further increases the number of flame pillars.\n\nThe Fire Giants borrowed from the power of a fell god, and still they were defeated. Yet their failure released them from their solitary curse: to serve as keepers of the Flame for eternity.",
+    "type": "Incantation",
+    "cost": 26,
+    "slots": 1,
+    "effects": "Channels the flame of the Fire Giants to erupt multiple pillars of fire from the earth in a chaotic circle around the caster, dealing pure Fire damage. The incantation can be charged before release to significantly increase the total count of flame pillars from approximately 7 to 11 and expand their area of distribution. It cannot be channeled or continuously cast, executing as a discrete cast during which the caster crouches, effectively lowering their hurtbox beneath high horizontal attacks. While it does not apply any status buildup directly, its Fire damage immediately resets Frostbite on affected targets. Flame pillars inflict immense stance and poise damage, launching smaller and humanoid enemies upward into a knockdown state while hitting massive targets multiple times across overlapping eruptions. Damage is boosted by 20% when wielding the Giant's Seal (stacking multiplicatively when dual-wielded), gains a 15% increase when charged from the Godfrey Icon, and synergizes with fire-enhancing gear such as the Fire Scorpion Charm, Flame-Shrouding Cracked Tear, and the Flame, Grant Me Strength buff.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 27
+      }
+    ]
+  },
+  {
+    "id": "17f690b63a9l0hynvpzqrouoa3uwo",
+    "name": "Darkness",
+    "image": "/media/incantations/darkness.png",
+    "description": "Incantation of the Two Fingers' servants, who once served as the assassins of the Roundtable Hold.\n\nCreates a veil of darkness that conceals the caster.\nThis incantation can be cast while in motion or crouching.\n\nThe assassins were charged with eliminating Tarnished who had strayed from guidance.",
+    "type": "Incantation",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Creates a localized cloud of dark smoke around the caster that conceals their presence, interrupts enemy line of sight, and blinds standard foes for approximately 7 seconds. Blinding resets enemy aggro to an unaware state, permitting the player to drop out of combat or maneuver behind targets for a backstab or critical strike. Deals no damage, inflicts no status build-up, cannot be charged, and cannot be continuously channeled. Can be cast while in motion or crouching without breaking stealth posture. In player-versus-player combat, it provides a visual smoke screen to obscure movement and actions but does not disable player target lock-on. Synergizes with critical and stealth-oriented equipment such as Assassin's Approach, the Concealing Veil, and the Dagger Talisman. Ineffective against major bosses.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 18
+      }
+    ]
+  },
+  {
+    "id": "17f6907b527l0hynw9qj9bgu0iu0x",
+    "name": "Death Lightning",
+    "image": "/media/incantations/death-lightning.png",
+    "description": "Incantation that channels the power of the ancient dragon Fortissax, now corrupted by Death.\n\nStrikes surroundings with a storm of Death lightning.\nInflicts Death blight upon foes.\nCharging extends duration of the storm.\n\nIt is said that this golden lightning was wielded by Godwyn, who befriended Fortissax.",
+    "type": "Incantation",
+    "cost": 28,
+    "slots": 2,
+    "effects": "Strikes the surrounding area with a storm of Death lightning bolts dealing pure Lightning damage, leaving behind lingering clouds of death mist. Can be charged to extend storm duration, summoning additional strikes over an expanded area with increased stamina cost and poise damage. Cannot be channeled or continuously cast. Inflicts Death Blight status build-up through direct lightning strikes (50 build-up) and continuous ticking build-up within the residual mist clouds (30 build-up every 0.2 seconds for 3 seconds), which affects Tarnished and player-model targets. As a Dragon Cult incantation, its damage is boosted by the Gravel Stone Seal (+15% each, stackable), Godfrey Icon (+15% when charged), Lightning Scorpion Charm, Lightning-Shrouding Cracked Tear, Flock's Canvas Talisman, and Death Knight armor pieces (+2% per piece).",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 47
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69836ab4l0hynwcix7z37ngspv",
+    "name": "Discus Of Light",
+    "image": "/media/incantations/discus-of-light.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\n\nProduces a ring of light and fires it forwards. The ring of light returns to a position close to the caster before disappearing. This incantation can be cast repeatedly.\n\nA gift from the young Miquella to his father, Radagon.",
+    "type": "Incantation",
+    "cost": 3,
+    "slots": 1,
+    "effects": "Produces a ring of light and fires it forward, piercing through enemies along its path. Upon reaching its maximum distance, the ring reverses trajectory and returns toward the caster before vanishing, allowing it to deal damage twice (once on the outbound path and once on the return path). Deals pure Holy damage and scales with Incantation Scaling. Cannot be charged. Can be cast repeatedly in rapid succession, and can be cast while moving or mounted on Torrent. Inflicts no status build-up. Damage is boosted by 10% when cast with the Golden Order Seal and by 10% when wearing the Radiant Gold Mask. Synergizes with the Erdtree Greatshield, as the returning disc can be deflected with the Golden Retaliation skill to trigger the shield's sacred counterattack. Its minimal 3 FP cost permits near-limitless casting and FP-positive loops when combined with FP-restoring items like the Ancestral Spirit's Horn or Sacrificial Axe.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 13
+      },
+      {
+        "name": "Intelligence",
+        "amount": 13
+      }
+    ]
+  },
+  {
+    "id": "17f695c512fl0hynwmn3k7xy8866e",
+    "name": "Divine Fortification",
+    "image": "/media/incantations/divine-fortification.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nIncreases holy damage negation.\nThis incantation can be cast while in motion.\n\nFollow the path that has been set for you, and you will make enemies of all others: the monks, the sorcerers, the ancient dragon knights, and the scions of gold. Heed me\u2014the Lands Between offers no welcome to the Tarnished.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Increases Holy damage negation by +35% in PvE (+10% in PvP) for 90 seconds. Deals no damage and causes no status build-up. Cannot be charged, channeled, or continuously cast, but can be cast while in motion. Categorized as a Body buff, meaning it does not stack with and will overwrite (or be overwritten by) other Body buffs such as Flame, Grant Me Strength, Black Flame's Protection, Boiled Crab, or other elemental Fortifications. Stacks multiplicatively with Aura buffs (such as Golden Vow), shield buffs, Talismans (such as the Haligdrake Talisman), armor, and the Flask of Wondrous Physick. Duration is extended from 90 to 117 seconds when equipping the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69850e86l0hynws5vlzzny9q7y",
+    "name": "Dragonbolt Blessing",
+    "image": "/media/incantations/dragonbolt-blessing.png",
+    "description": "Superior incantation of the capital's ancient dragon cult.\n\nSummons lightning to bolster the caster's body.\nAttacks become easier to deflect and resistance to all ailments is increased. However, lightning damage negation will be reduced.\n\nOnly those loved by dragons can survive the ordeal of cladding their bodies in lightning.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Bolsters the caster's body with lightning for 70 seconds. Grants Tier 2 hardness, causing light physical attacks from enemies (such as one-handed light weapon attacks) to deflect and bounce off, interrupting enemy attack chains and staggering them. Increases all status ailment resistances (Immunity, Robustness, Focus, and Vitality) by +30 points. Reduces lightning damage negation by -35%, making the caster more vulnerable to lightning attacks. Does not deal direct damage and does not imbue weapons with lightning damage. Cannot be charged and cannot be channeled or cast continuously. Inflicts no status build-up on targets. Classified as a Body Buff; it mutually overwrites and does not stack with other body buffs (such as Flame, Grant Me Strength or Black Flame's Protection), but stacks with Aura buffs like Golden Vow. Buff duration can be extended to 91 seconds with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 21
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f695ddd2cl0hynwt4kcvu1t0jpbh",
+    "name": "Dragonice",
+    "image": "/media/incantations/dragonice.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to spew icy breath.\nCharging extends duration.\n\nThose extraordinary individuals who perpetuate Dragon Communion are called the dragon-hearted.",
+    "type": "Incantation",
+    "cost": 36,
+    "slots": 1,
+    "effects": "Channels the power of Dragon Communion to manifest a spectral dragon head that unleashes a wide sweeping cone of freezing breath, dealing continuous Magic damage and rapidly building up Frostbite on targets caught within the mist. Holding down the cast button extends the duration of the breath attack through continuous channeling, consuming additional FP (4 FP per tick) and stamina. While charging extends its duration, it functions mechanically as channeling rather than a chargeable spell, meaning it is not boosted by the Godfrey Icon. The incantation can be cast while stationary on the ground or while mounted on Torrent, but cannot be performed mid-air while jumping. Its damage is boosted by 15% when cast using the Dragon Communion Seal and by 10% when equipped with the Roar Medallion. It also benefits from Magic-boosting buffs such as the Magic-Shrouding Cracked Tear and Magic Scorpion Charm. Once Frostbite is triggered, enemies suffer burst damage and a 20% reduction to all damage negation for 30 seconds, which can subsequently be reset with fire damage to trigger the status again.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f695ee05cl0hynwvuh9iqspb3fmk",
+    "name": "Dragonclaw",
+    "image": "/media/incantations/dragonclaw.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to tear through foes with dragon claws.\nAllows one follow-up attack.\n\nIncantation of those who have hunted dragons and feasted upon their hearts. Theirs is a pure and overwhelming power.",
+    "type": "Incantation",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon that leaps into the air and delivers a powerful downward slam with a colossal spectral dragon claw, inflicting Standard physical damage alongside an area-of-effect shockwave. An additional input allows an immediate single follow-up slam with the alternate claw, knocking down human-sized targets. The mid-air casting animation provides heavy hyper armor, though the incantation cannot be charged or channeled. When dual-wielding Sacred Seals and alternating casts between hands, the recovery animation is bypassed, allowing continuous chain-casting of the initial slam. Its damage is boosted by 15% when cast with the Dragon Communion Seal and benefits from physical damage enhancements, but it is unaffected by the Roar Medallion.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 17
+      },
+      {
+        "name": "Arcane",
+        "amount": 13
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6919abe5l0hynwx7opzx5u5zvs",
+    "name": "Dragonfire",
+    "image": "/media/incantations/dragonfire.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to spew flaming breath.\nCharging extends duration.\n\nIncantation of those who have hunted dragons and feasted upon their hearts. Theirs is a pure and overwhelming power.",
+    "type": "Incantation",
+    "cost": 28,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon to spew a wide cone of fire breath, dealing pure Fire damage over a large area. Holding the cast button extends the duration, unleashing a continuous secondary stream of flame at the cost of additional FP and stamina. The incantation does not cause any status build-up and must be cast while stationary on the ground, as it cannot be used while airborne or mounted. Damage scales with the Incantation Scaling of the equipped Sacred Seal, gaining an innate 15% damage bonus when cast with the Dragon Communion Seal. Fire damage is boosted by the Flame-Shrouding Cracked Tear, Fire Scorpion Charm, and buffs such as Flame, Grant Me Strength and Golden Vow. Additionally, the breath attack is boosted by the Roar Medallion, Faithful's Canvas Talisman, and Flock's Canvas Talisman, while its wind-up can be shortened with Radagon Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f68f9d130l0hynx3f1brjxtzdk9j",
+    "name": "Dragonmaw",
+    "image": "/media/incantations/dragonmaw.png",
+    "description": "Channels dragon to bite foes before caster.\n\nOne of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to bite enemies before them.\n\nIncantations of those who have hunted dragons and feasted upon their hearts. Theirs is a pure and overwhelming power.",
+    "type": "Incantation",
+    "cost": 34,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon to deliver a powerful lunging bite attack in front of them. Deals heavy Physical (Standard) damage and inflicts 45 stance damage, knocking down standard adversaries and dealing 50% additional damage and stance damage if striking a head weak point. Grants significant hyper-armor during the cast animation. The incantation cannot be charged, cannot be chained or channeled into continuous casting, and inflicts no status build-up. Its damage is boosted by 15% when utilizing the Dragon Communion Seal and by 20% with the Rock Heart tool, as well as general incantation and physical attack enhancers like Flock's Canvas Talisman and the Blue Dancer Charm; it is not boosted by the Roar Medallion or Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 24
+      },
+      {
+        "name": "Arcane",
+        "amount": 16
+      }
+    ]
+  },
+  {
+    "id": "17f6909836cl0hynxdbh1rpx4s4xfb",
+    "name": "Ekzyke's Decay",
+    "image": "/media/incantations/ekzykes-decay.png",
+    "description": "Superior incantation of Dragon Communion.\n\nChannels the power of Ekzykes, the Decaying.\n\nTransforms caster into a dragon to spew scarlet rot breath from above.\nCharging extends duration.\n\nEkzykes, Dragon Communion Revenger, did not forget his hatred even as he succumbed to the scarlet rot.",
+    "type": "Incantation",
+    "cost": 48,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon to spew a concentrated cloud of scarlet rot breath from above, dealing standard Physical damage and causing rapid Scarlet Rot buildup (65 per tick). The spell can be cast while jumping or from the ground, causing the caster to hover in mid-air. Charging and holding the cast extends the breath's duration for a follow-up stream. Synergizes with the Dragon Communion Seal for increased incantation scaling, the Roar Medallion for enhanced breath damage, and general physical damage buffs.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f693fa72dl0hynxecsuhc2twylv",
+    "name": "Ekzykes's Decay",
+    "image": "/media/incantations/ekzykess-decay.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to spew scarlet rot breath.\nCharging extends duration.\n\nThose extraordinary individuals who perpetuate Dragon Communion are called the dragon-hearted.",
+    "type": "Incantation",
+    "cost": 36,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon to spew a wide conical cloud of scarlet rot breath, dealing physical damage and rapidly inflicting Scarlet Rot buildup (65 status buildup per tick). Charging the incantation extends the duration and coverage of the breath attack. Channeling and holding down the cast button consumes additional FP to prolong the attack. The spell cannot be cast while jumping or mounted. Damage scales with the Faith and Arcane scaling of the equipped sacred seal, synergizing directly with the Dragon Communion Seal (which grants a 15% damage bonus to Dragon Communion incantations) and the Roar Medallion talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 12
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f694fc4c1l0hynyj2kcaruicejdh",
+    "name": "Fire's Deadly Sin",
+    "image": "/media/incantations/fires-deadly-sin.png",
+    "description": "Incantation originating from a deeply ominous prophecy.\n\nSets both the caster and the surrounding area ablaze with raging flames. The caster's body will remain engulfed in flame for a while, burning them and any who draw near. Charging enhances potency.\n\nThe prophet despaired, looking up at the Erdtree, for soon the kindling would burst into flame, bringing ruin.\n\n\"The burning of the Erdtree is the first cardinal sin. That is not the domain of mere men.\"",
+    "type": "Incantation",
+    "cost": 26,
+    "slots": 1,
+    "effects": "Sets both the caster and the surrounding area ablaze, dealing continuous Fire damage to enemies in close proximity while inflicting flat self-damaging Fire burn over time to the caster for 40 seconds (extended to 52 seconds with the Old Lord's Talisman). The incantation also deals an initial burst of Fire damage upon activation. Charging enhances the damage of both the initial explosion and the subsequent aura ticks, while slightly increasing the self-damage rate (~8 HP/s charged vs ~6 HP/s uncharged). It cannot be channeled or continuously cast; it acts as a Body Buff and does not stack with other body buffs. The aura does not inherently inflict status build-up, but its continuous fire ticks immediately reset Frostbite on affected enemies, enabling rapid reapplication. The aura's ticks also inherit right-hand weapon coatings and weapon buffs such as Bloodflame Blade or Poison Armament, transmitting status build-up to nearby targets. The damage is boosted by the Godfrey Icon when charged, as well as the Fire Scorpion Charm and Flame-Shrouding Cracked Tear, while the self-damage can be mitigated by passive HP regeneration effects.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 19
+      }
+    ]
+  },
+  {
+    "id": "17f698775c6l0hynyj6kv53b13zexj",
+    "name": "Erdtree Heal",
+    "image": "/media/incantations/erdtree-heal.png",
+    "description": "One of the ancient Erdtree incantations.\n\nHeals a vast amount of HP for the caster and nearby allies. Hold to continue praying and delay activation.\n\nThe Erdtree once flourished with abundance\u2014yet it was only for a fleeting moment. Such is the course of all life.",
+    "type": "Incantation",
+    "cost": 65,
+    "slots": 1,
+    "effects": "Restores a substantial amount of HP to the caster and nearby allies within an area of effect. Restores HP equal to 5.9x (590%) of the Faith portion of the Sacred Seal's Incantation Scaling to the caster, and 3.9x (390%) of that scaling to friendly allies and summoned spirits. Healing potency scales exclusively from the Faith component of the seal's Incantation Scaling, ignoring Strength, Intelligence, or Arcane scaling. Cannot be charged to increase potency, but the input can be held to delay activation and time the release. Cannot be continuously channeled or cast repeatedly in a chain. Inflicts no status build-up or curing. When cast against Royal Revenants and Revenant Followers, it deals Holy-type damage equal to 50% of their maximum HP plus 300 flat damage and instantly breaks their stance.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 42
+      }
+    ]
+  },
+  {
+    "id": "17f6908edd1l0hynyjh9vrt6fwxg9g",
+    "name": "Flame, Fall Upon Them",
+    "image": "/media/incantations/flame-fall-upon-them.png",
+    "description": "One of the incantations that draws directly from the power of the Fire Giants.\n\nHurls several balls of fire at once. Charging enhances potency and causes the balls of fire to explode.\n\nThere is no record of this incantation in common prayerbooks. Only a select few prelates know of its existence.",
+    "type": "Incantation",
+    "cost": 16,
+    "slots": 1,
+    "effects": "Hurls a volley of twelve fireballs forward in a wide scattering arc that deal Fire damage. Charging the incantation increases the damage of each fireball and causes them to explode on impact, creating small area-of-effect blast radiuses. It cannot be channeled continuously, but it can be chain-cast and can be cast while mounted. It causes no status effect build-up. The incantation benefits from synergies with the Giant's Seal (20% damage boost), Godfrey Icon (15% boost to charged casts), Fire Scorpion Charm, Flock's Canvas Talisman, Faithful's Canvas Talisman, Flame-Shrouding Cracked Tear, and the Flame, Grant Me Strength buff.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 28
+      }
+    ]
+  },
+  {
+    "id": "17f692cd88cl0hynyo45u48tb1tyn",
+    "name": "Ezykes's Decay",
+    "image": "/media/incantations/ezykess-decay.png",
+    "description": "Superior incantation of Dragon Communion.\n\nChannels the power of Ekzykes, the Decaying.\n\nTransforms caster into a dragon to spew scarlet rot breath from above.\nCharging extends duration. This incantation can be cast while jumping.\n\nEkzykes, Dragon Communion Revenger, did not forget his hatred even as he succumbed to the scarlet rot.",
+    "type": "Incantation",
+    "cost": 48,
+    "slots": 1,
+    "effects": "Transforms the caster into a dragon head to spew a concentrated breath of scarlet rot from mid-air, inflicting physical damage and rapid Scarlet Rot status build-up (65 build-up per tick) across an area of effect. The caster leaps and hovers off the ground during execution, allowing them to evade low ground-level attacks and shockwaves; it can also be cast while jumping. Charging or holding the cast button channels and extends the breath's duration, consuming additional FP and stamina continuously while permitting slight directional aiming. Synergizes with the Dragon Communion Seal for scaling and a passive damage boost, the Roar Medallion talisman for enhanced breath damage, and effects triggered by rot infliction such as Kindred of Rot's Exultation.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f691a5912l0hynyooe4izs5zxh3t",
+    "name": "Electrify Armament",
+    "image": "/media/incantations/electrify-armament.png",
+    "description": "One of the incantations of the capital's ancient dragon cult.\n\nEnchants right-hand armament with lightning-affinity attacks.\n\nLong ago, Godwyn the Golden defeated the ancient dragon Fortissax, and befriended his fallen foe \u2014 an event that gave rise to the ancient dragon cult in the capital.",
+    "type": "Incantation",
+    "cost": 27,
+    "slots": 1,
+    "effects": "Enchants the right-hand weapon with lightning attack power for 90 seconds. The added flat lightning damage scales with 0.75 multiplied by the Faith portion of the Sacred Seal's Incantation Scaling; it does not scale with Strength, Dexterity, Intelligence, or Arcane on hybrid seals. The incantation cannot be charged and cannot be channeled or continuously cast. It inflicts no status build-up. It can only be cast on buffable weapons with standard physical affinities (Standard, Heavy, Keen, or Quality) and does not work on weapons with innate/infused elemental or status affinities, nor most unique weapons. Classified as a Weapon Buff, it does not stack with other weapon buffs, weapon coatings/greases, or weapon skill infusions, but stacks with Body and Aura buffs. Its duration increases to 117 seconds with the Old Lord's Talisman (+30%), and its lightning damage benefits from the Lightning Scorpion Charm, the Lightning-Shrouding Cracked Tear, and water/rain environmental conditions.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f6985c468l0hynypycnlfmwjdzds",
+    "name": "Flame Fortification",
+    "image": "/media/incantations/flame-fortification.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nIncreases fire damage negation.\nThis incantation can be cast while in motion.\n\nFollow the path that has been set for you, and you will make enemies of all others: the monks, the sorcerers, the ancient dragon knights, and the scions of gold. Heed me \u2014 the Lands Between offers no welcome to the Tarnished.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Increases fire damage negation by 35% in PvE and 10% in PvP for 90 seconds. Can be cast while stationary or while moving. The spell cannot be charged and cannot be channeled or continuously cast. It deals no damage and causes no status buildup. Classified as a Body Buff, it mutually overrides and cannot stack with other Body Buffs (such as Flame, Protect Me; Black Flame's Protection; Boiled Crab; Boiled Prawn; or Flame, Grant Me Strength). It stacks multiplicatively with Aura Buffs (such as Golden Vow), defensive talismans (such as the Flamedrake Talisman), and Flask of Wondrous Physick tears. Its duration is extended from 90 seconds to 117 seconds when cast with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f6964ed65l0hynyrzn67dmtv89e",
+    "name": "Flame Of The Fell God",
+    "image": "/media/incantations/flame-of-the-fell-god.png",
+    "description": "This legendary incantation is one of several that draws directly from the power of the Fire Giants.\n\nReleases a ball of raging fire said to be inhabited by a fell god. The fireball floats toward enemies and explodes, setting the area ablaze.\n\nArghanthy, the chief guardian of the Flame, had kept this incantation a well-kept secret until it was stolen by Adan. The fell god still lurks within the Fire Giants.",
+    "type": "Incantation",
+    "cost": 34,
+    "slots": 2,
+    "effects": "Summons a large, slow-moving ball of fire that tracks nearby enemies before violently exploding on contact or after approximately 5 seconds. The blast deals heavy pure Fire damage in a wide area and leaves behind a lingering pool of fire on the ground that inflicts continuous Fire damage to targets standing within it. The incantation cannot be charged and cannot be channeled or continuously cast, though it can be cast while mounted on Torrent. It inflicts no status build-up, but the initial detonation causes massive stance damage that knocks down human-sized foes and deals heavy stamina damage against guarding enemies. Damage scales with the Sacred Seal's Incantation Scaling and receives a 20% boost from the Giant's Seal (stacking multiplicatively when dual-wielded). It is further enhanced by Fire-boosting and incantation-boosting effects such as the Fire Scorpion Charm, Flame-Shrouding Cracked Tear, Flock's Canvas Talisman, Faithful's Canvas Talisman, Flame, Grant Me Strength, and Golden Vow. It does not benefit from the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 41
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69225db6l0hynyujjw6qxgtrbk",
+    "name": "Elden Stars",
+    "image": "/media/incantations/elden-stars.png",
+    "description": "This legendary incantation is the most ancient of those that derive from the Erdtree.\n\nCreates a stream of golden shooting stars that assail the area.\n\nIt is said that long ago, the Greater Will sent a golden star bearing a beast into the Lands Between, which would later become the Elden Ring.",
+    "type": "Incantation",
+    "cost": 41,
+    "slots": 2,
+    "effects": "Summons a large, slow-moving golden star that travels toward enemies, continuously discharging a rapid stream of small shooting star projectiles before detonating in a high-damage Holy explosion upon contact or expiration. Deals pure Holy damage with zero status effect build-up. The incantation cannot be charged, channeled, or continuously cast; it has a single fixed cast animation. Although individual minor stars inflict low per-hit damage, their continuous hits provide unrelenting posture pressure, preventing enemy stance meter recovery and inflicting micro-staggers, resulting in approximately 37 total stance damage. The caster can move, roll, and attack freely once the cast animation finishes while the star remains active. Damage is enhanced by Holy damage boosting effects such as Sacred Scorpion Charm and Holy-Shrouding Cracked Tear, as well as general incantation boosters like Flock's Canvas Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 50
+      }
+    ]
+  },
+  {
+    "id": "17f692f5b38l0hynzsnci8jsfgasx6",
+    "name": "Flame, Protect Me",
+    "image": "/media/incantations/flame-protect-me.png",
+    "description": "The most ancient of the Fire Monks' incantations.\n\nCreates a fire within that greatly increases fire damage negation.\n\nIt is said that this incantation was used during the War against the Giants long ago, during which it protected the champions of the Erdtree.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Creates an inner fire that substantially boosts fire damage negation by +60% in PvE (+20% in PvP) for 70 seconds. Classified as a Body Buff, meaning it will overwrite and cannot stack with other body buffs (such as Flame, Grant Me Strength, Black Flame's Protection, or Boiled Crab), though it stacks multiplicatively with Aura buffs like Golden Vow. It cannot be charged and cannot be continuously channeled. Requires 30 FP and 20 stamina per cast.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 24
+      }
+    ]
+  },
+  {
+    "id": "17f693ad486l0hynztvo8jus81t2uf",
+    "name": "Fortissax's Lightning Spear",
+    "image": "/media/incantations/fortissaxs-lightning-spear.png",
+    "description": "Incantation that channels the power of the ancient dragon Fortissax.\n\nCreates two spears of red lightning and stabs them into the ground from above, one after another. On impact, each spear will burst into trails of lightning covering the area.\n\nDuring the War of the Ancient Dragons, these twin red lightning stakes were the hallmark of the ancient dragon who was once called the mightiest boulderstone.",
+    "type": "Incantation",
+    "cost": 35,
+    "slots": 1,
+    "effects": "The caster leaps into the air and summons two red lightning spears, plunging them consecutively into the ground to deal pure Lightning damage alongside heavy stance damage (split evenly between both spear strikes). Upon impact, each spear generates an electrical shockwave and spreading trails of red lightning that radiate outward across the ground. The caster gains substantial hyper armor during execution, enabling attacks to be traded against most stagger effects. The incantation cannot be charged, cannot be continuous-cast or chained, and inflicts no status build-up. Its damage is augmented by 15% when wielding the Gravel Stone Seal (or approximately 32% if dual-wielded), and further benefits from general Lightning and incantation enhancers such as the Lightning Scorpion Charm, Faithful's and Flock's Canvas Talismans, and the Lightning-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 46
+      }
+    ]
+  },
+  {
+    "id": "17f6939dc0dl0hyo003ig3i03oy5eh",
+    "name": "Frozen Lightning Spear",
+    "image": "/media/incantations/frozen-lightning-spear.png",
+    "description": "Incantation that channels the power of the Dragonkin Soldiers.\n\nCreates a spear of ice lightning and stabs it into the ground from above.\n\nThe Dragonkin were born in the Eternal City, where they knew no true sky, nor true lightning. Instead, ice lightning was their weapon.",
+    "type": "Incantation",
+    "cost": 29,
+    "slots": 1,
+    "effects": "The caster leaps into the air and stabs a spear of ice lightning into the ground from above. The initial strike deals direct damage at the point of impact, followed by two successive waves of frozen lightning that surge forward along the ground. All strikes deal pure Lightning damage and inflict 120 Frostbite build-up per hit. Against large or multi-hitbox enemies, both the spear impact and the trailing waves can connect multiple times for compounded damage and rapid status triggers. The incantation cannot be charged and cannot be channeled or chain-cast. As a Dragon Cult incantation, its damage is boosted by 15% when cast with or while holding the Gravel Stone Seal, and further enhanced by lightning-boosting buffs such as the Lightning Scorpion Charm, Lightning-Shrouding Cracked Tear, and the Death Knight armor set (+2% per piece). Successfully proccing Frostbite deals an immediate burst of percentage-based health damage and reduces the target's damage negation by 20% for 30 seconds. In addition, its lightning damage is amplified against enemies standing in water or during rain.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 34
+      }
+    ]
+  },
+  {
+    "id": "17f695939cbl0hyo0116aw3hbaoca",
+    "name": "Glintstone Breath",
+    "image": "/media/incantations/glintstone-breath.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to spew magic breath.\nCharging extends duration.\n\nThose extraordinary individuals who perpetuate Dragon Communion are called the dragon-hearted.",
+    "type": "Incantation",
+    "cost": 28,
+    "slots": 1,
+    "effects": "Channels a dragon to spew a wide, sweeping torrent of magic breath, dealing continuous Magic damage across multiple hits. Holding the cast button sustains the incantation to unleash a second consecutive sweep of breath at additional FP and stamina cost. Can be cast while jumping or while mounted on Torrent. Does not inflict status effects. Damage is boosted by the Dragon Communion Seal, Roar Medallion, Flock's Canvas Talisman, Magic Scorpion Charm, and Magic-Shrouding Cracked Tear. Mechanically functions as channeled casting rather than a charge attack, so it does not benefit from the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 12
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f68ff32f6l0hyo035frl5ld6347k",
+    "name": "Golden Lightning Fortification",
+    "image": "/media/incantations/golden-lightning-fortification.png",
+    "description": "One of the incantations of the Erdtree Worship.\n\nGreatly increases lightning damage negation for the caster and nearby allies.\nHold to continue praying and delay activation.\n\nThis incantation was used by the knights of the Erdtree during the assault by the great ancient dragon Gransax, and the bitter War of the Ancient Dragons that followed.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Greatly increases lightning damage negation for the caster and nearby allies by 60% in PvE (reduced to 20% in PvP) for 70 seconds. Cannot be charged to increase damage negation potency or duration, though the cast button can be held to prolong the prayer animation and delay activation until released. It does not support continuous channeling, inflicts no damage, and applies no status build-up. Classified as a Body Buff; it does not stack with other Body Buffs (such as Flame, Grant Me Strength, Black Flame's Protection, Boiled Crab, or Protection of the Erdtree) and will overwrite or be overwritten by them. It stacks multiplicatively with Aura Buffs (such as Golden Vow), health regeneration effects, shield fortifications, and defensive talismans such as the Boltdrake Talisman. Duration can be extended from 70 seconds to 91 seconds with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 24
+      }
+    ]
+  },
+  {
+    "id": "17f690e9092l0hyo03nyw25bgiu4hs",
+    "name": "Frenzied Burst",
+    "image": "/media/incantations/frenzied-burst.png",
+    "description": "Incantation originating from the maddening Three Fingers.\n\nReleases concentrated blasts of the yellow flame of frenzy from the caster's eyes.\nCharging enhances potency, enabling the blasts to penetrate the enemy's guard.",
+    "type": "Incantation",
+    "cost": 24,
+    "slots": 1,
+    "effects": "Fires a concentrated, high-velocity beam of the yellow flame of frenzy from the caster's eyes over extreme ranges, dealing Fire damage. Can be charged to increase damage output, enhance projectile speed, pierce through multiple enemies, and penetrate enemy guards and shields. It cannot be channeled or continuously cast, though consecutive casts can be chained. Causes Madness buildup on targets (effective against Tarnished and humanoid enemies) while also inflicting minor Madness buildup on the caster. Damage synergizes with and is boosted by the Frenzied Flame Seal, the Godfrey Icon (when charged), the Fire Scorpion Charm, Faithful's and Flock's Canvas Talismans, and the Flame-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "id": "17f695e7bcdl0hyo059aa6ajju2es",
+    "name": "Giantsflame Take Thee",
+    "image": "/media/incantations/giantsflame-take-thee.png",
+    "description": "One of the incantations that draws directly from the power of the Fire Giants.\n\nHurls a massive ball of raging fire.\nCharging enhances potency and causes the ball of fire to explode.\n\nThere is no record of this incantation in common prayerbooks. Only a select few prelates know of its existence.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 2,
+    "effects": "Hurls a massive fireball in an arcing trajectory that detonates upon impact, dealing heavy pure Fire damage and high stance damage with strong knockback that knocks down or launches medium and humanoid enemies. This incantation can be charged to increase damage by roughly 20%, significantly expand the explosion radius, and increase stance damage. It cannot be channeled or chain-cast into continuous attacks. While it inflicts no status build-up of its own, its Fire damage instantly clears Frostbite from enemies, enabling rapid Frostbite re-application. It mechanically synergizes with the Giant's Seal (+20% damage per seal), Godfrey Icon (+15% damage when fully charged), Fire Scorpion Charm, Flame-Shrouding Cracked Tear, Flame, Grant Me Strength, and Oil Pots (+50% fire damage on next hit).",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 30
+      }
+    ]
+  },
+  {
+    "id": "17f69510ee3l0hyo0f0mccaj31dwhq",
+    "name": "Golden Vow (spell)",
+    "image": "/media/incantations/golden-vow-spell.png",
+    "description": "An incantation of Erdtree Worship.\n\nIncreases attack power and defense for the caster and nearby allies.\n\nThis incantation has been taught to knights of the royal capital for generations, and knights sent on distant expeditions lean on it as a source of courage.",
+    "type": "Incantation",
+    "cost": 47,
+    "slots": 1,
+    "effects": "Grants an aura buff that increases attack power and all damage negation for the caster and nearby allies for 80 seconds. In PvE, it increases all damage dealt by 15% and increases all damage negation by 10%. In PvP, it increases all damage dealt by 7.5% and damage negation by 5%. Cannot be charged or continuously cast. It stacks multiplicatively with body buffs (such as Flame, Grant Me Strength), weapon buffs, and unique buffs, but overwrites and does not stack with other aura buffs (such as Commander's Standard or the Ash of War version of Golden Vow). Duration can be extended to 104 seconds with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 25
+      }
+    ]
+  },
+  {
+    "id": "17f69535c25l0hyo1gmmkqtdazls9",
+    "name": "Gurrang's Beast Claw",
+    "image": "/media/incantations/gurrangs-beast-claw.png",
+    "description": "Superior incantation taught by Gurranq, the Beast Clergyman.\n\nCreates beast claws to rend surroundings with shockwaves.\n\nLong ago, Gurranq was a beast of such terrifying ferocity that his former name meant \"Death of the Demigods.\"",
+    "type": "Incantation",
+    "cost": 21,
+    "slots": 1,
+    "effects": "The caster thrusts their hand into the earth, creating a radial burst of beast claws and stone shockwaves that rip outward in all directions around the caster. Deals pure Physical (Slash) damage and significant poise damage that can stagger or knock back foes. This incantation cannot be charged and cannot be channeled or continuously cast in chain succession. It inflicts no status effect build-up. Its damage is boosted by 10% when cast with the Clawmark Seal and by an additional 10% when wielding the Cinquedea dagger (which stacks multiplicatively). It also benefits from general physical damage buffs such as Flame, Grant Me Strength and Golden Vow, as well as incantation-boosting talismans like the Faithful's Canvas Talisman and Flock's Canvas Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69822dd3l0hyo1hzk48p9uymlan",
+    "name": "Immutable Shield",
+    "image": "/media/incantations/immutable-shield.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\n\nEnchants shield held in the left hand with the light of regression, increasing all forms of non-physical damage negation and ailment resistance.\n\nTwo concepts form the basis for Golden Order fundamentalism. One is the law of regression, to which this incantation relates.",
+    "type": "Incantation",
+    "cost": 15,
+    "slots": 1,
+    "effects": "Enchants the shield held in the left hand with the light of regression for 30 seconds. While active, the shield provides 100% damage negation against all non-physical damage types (Magic, Fire, Lightning, and Holy), completely preventing elemental chip damage when blocking. It also grants total immunity to all status ailment build-ups (Blood Loss, Frostbite, Poison, Scarlet Rot, Sleep, and Madness) while guarding. The spell cannot be charged and cannot be channeled or continuously cast. Its duration can be extended to 39 seconds using the Old Lord's Talisman (+30% duration). It does not increase the shield's physical damage negation or Guard Boost, but it synergizes with the Greatshield Talisman to reduce stamina loss while guarding. It cannot stack with or be applied alongside weapon/shield skills such as Barricade Shield or shield greases, as these overwrite one another. It requires a Sacred Seal in the right hand to cast, deals no direct damage, and its defensive effects are fixed and do not scale with attributes or Incantation Scaling.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 19
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 19
+      }
+    ]
+  },
+  {
+    "id": "17f692dbdc9l0hyo1jah0ket283h6d",
+    "name": "Heal",
+    "image": "/media/incantations/heal.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nHeals HP for the caster and nearby allies.\nHold to continue praying and delay activation.\n\nThe Two Fingers has high hopes for the Tarnished; that even if they should be wounded, even should they fall, they will continue to fight for their duty.",
+    "type": "Incantation",
+    "cost": 32,
+    "slots": 1,
+    "effects": "Restores HP to the caster and nearby allies within an area of effect. Heals the caster for 2.3x Faith-based Incantation Scaling and nearby allies for 1.15x Faith-based Incantation Scaling. Healing power scales strictly with the Faith portion of a Sacred Seal's incantation scaling and does not benefit from Strength, Dexterity, or Intelligence scaling. The spell cannot be charged to increase potency, but the casting button can be held down continuously to maintain the prayer stance and delay healing activation. When cast within range of Royal Revenants and Revenant enemies, it deals massive Holy damage (50% max HP + flat damage) and instantly breaks their stance, opening them up to a critical strike.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f69430705l0hyo1jpd17zxxmmdyl",
+    "name": "Howl Of Shabriri",
+    "image": "/media/incantations/howl-of-shabriri.png",
+    "description": "Incantation originating from the maddening Three Fingers.\n\nReleases a maddening shriek that causes madness buildup in self and those nearby, making enemies more likely to target caster.\n\nThis incantation also boosts the caster's attack power at the expense of lower damage negation.\n\nIt is said that the sickness of the flame of frenzy began with Shabriri, the most reviled man in all history.",
+    "type": "Incantation",
+    "cost": 21,
+    "slots": 1,
+    "effects": "Unleashes a maddening shriek that emits shockwave pulses dealing minor Physical damage and rapid Madness buildup (35 per tick) to nearby targets, while also inflicting slight Madness buildup (approx. 6 per tick) onto the caster. This incantation cannot be charged and cannot be channeled or continuously cast. Upon completion of the cast, it applies a 40-second Body Buff that increases all damage dealt (Physical, Magic, Fire, Lightning, and Holy) by 25%, at the cost of reducing all damage negation by 30% and drastically increasing enemy aggression toward the caster. The duration can be extended to 52 seconds with the Old Lord's Talisman. It conflicts with other Body Buffs (such as Flame, Grant Me Strength) but stacks multiplicatively with Aura Buffs like Golden Vow. It synergizes strongly with items triggered upon madness affliction, such as the Black Dumpling helm and Aged One's Exultation, as well as low-HP hyper-mode setups utilizing the Red-Feathered Branchsword.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 33
+      }
+    ]
+  },
+  {
+    "id": "17f6926bc7dl0hyo1ku9wh0qz4eyh6",
+    "name": "Great Heal",
+    "image": "/media/incantations/great-heal.png",
+    "description": "Superior incantation of the Two Fingers' faithful.\n\nGreatly heals HP for the caster and nearby allies.\nHold to continue praying and delay activation.\n\nThe Two Fingers has high hopes for the Tarnished; that even if they should be wounded, even should they fall, they will continue to fight for their duty.",
+    "type": "Incantation",
+    "cost": 45,
+    "slots": 1,
+    "effects": "Restores HP to the caster and nearby friendly allies within a moderate area of effect. Healing scales exclusively with the Faith-based portion of the casting seal's Incantation Scaling, restoring HP equal to 3.64x Faith Incantation Scaling for the caster and 2.07x Faith Incantation Scaling for allies. The spell cannot be charged to increase potency, but the cast input can be held to delay activation. Inflicts no status buildup. Against Revenants and Royal Revenants, the area of effect deals Holy damage equal to 50% of their maximum HP plus 300 flat damage, while instantly breaking their stance and opening them to a critical strike.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      }
+    ]
+  },
+  {
+    "id": "17f693e76abl0hyo1mzypokk5gvlz",
+    "name": "Greyoll's Roar",
+    "image": "/media/incantations/greyolls-roar.png",
+    "description": "Superior incantation of Dragon Communion.\n\nChannels the power of Greyoll, the Elder Dragon.\nAn incantation of legendary status.\n\nTransforms caster into a dragon to emit a terrible roar, reducing the attack power and defense of nearby enemies.\n\nGreyoll was the mother of all dragons, dwarfing all who stood before her like a looming mountain.",
+    "type": "Incantation",
+    "cost": 50,
+    "slots": 2,
+    "effects": "Transforms the caster's head into a dragon to emit a massive 360-degree shockwave roar, dealing heavy Physical damage, substantial stance damage, and knocking back standard foes. Applies a 60-second debuff to affected enemies that reduces their attack power by 15% and reduces damage negation by 10% (causing them to take 10% more damage), while also revealing invisible targets. The incantation cannot be charged and cannot be channeled or chain cast. It inflicts no status build-up. Roar damage is boosted by the Dragon Communion Seal (+15%), the Roar Medallion (+10%), and the Highland Axe (+7.5%). Casting speed scales with Dexterity.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 28
+      },
+      {
+        "name": "Arcane",
+        "amount": 17
+      }
+    ]
+  },
+  {
+    "id": "17f68fa0c30l0hyo1qasgyir08s9kb",
+    "name": "Inescapable Frenzy",
+    "image": "/media/incantations/inescapable-frenzy.png",
+    "description": "Incantation originating from the maddening Three Fingers.\n\nCauses the yellow flame of frenzy to blaze from the caster's eyes. The caster then latches onto foes, spreading the madness. This incantation also causes buildup of madness in the caster, and is only effective against Tarnished.\n\nTo gaze into one another's eyes is truly the most intimate form of human contact.",
+    "type": "Incantation",
+    "cost": 22,
+    "slots": 1,
+    "effects": "The caster lunges forward to execute a command grab against human-sized Tarnished targets (such as hostile NPCs, invaders, and other players in PvP; it cannot grab or affect non-Tarnished or monstrous foes). Upon latching onto the target, it deals continuous Fire damage and inflicts heavy Madness status build-up over the duration of the grab, which typically procs Madness for additional percentage-based HP damage and FP loss while leaving the victim incapacitated. Casting also causes moderate Madness build-up in the caster. The incantation cannot be charged (and therefore does not benefit from the Godfrey Icon) and cannot be continuously channeled or chain-cast. Its damage scales with Sacred Seal incantation scaling and is boosted by 20% with the Frenzied Flame Seal (which stacks multiplicatively when dual-wielded). It synergizes with fire-enhancing buffs (Flame, Grant Me Strength, Fire Scorpion Charm, Flame-Shrouding Cracked Tear), incantation damage talismans (Flock's Canvas Talisman, Faithful's Canvas Talisman), and madness-triggered effects such as the Aged One's Exultation and Black Dumpling helm.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 21
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6904f3b2l0hyo1u5sqdw9zxr0g",
+    "name": "Honed Bolt",
+    "image": "/media/incantations/honed-bolt.png",
+    "description": "One of the incantations of the capital's ancient dragon cult.\n\nSummons a bolt of lightning to strike foes from above. This incantation can be cast repeatedly.\n\nLong ago, Godwyn the Golden defeated the ancient dragon Fortissax, and befriended his fallen foe\u2014an event that gave rise to the ancient dragon cult in the capital.",
+    "type": "Incantation",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Summons a vertical bolt of lightning that strikes directly down onto the locked-on target from above, bypassing frontal shields and low obstacles if vertical clearance is clear. Deals pure Lightning damage and causes no status build-up. The incantation cannot be charged (and thus does not benefit from the Godfrey Icon), but it can be cast repeatedly in rapid succession; after an initial wind-up, successive chain-casts execute with significantly faster cast and recovery animations. Receives a 15% damage boost from the Gravel Stone Seal (stacking multiplicatively when dual-wielding), and is enhanced by the Lightning Scorpion Charm, Lightning-Shrouding Cracked Tear, Flock's Canvas Talisman, and Faithful's Canvas Talisman. In addition, its damage increases by approximately 10% and produces a localized AoE splash when the target is standing in water or during rain.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 24
+      }
+    ]
+  },
+  {
+    "id": "17f69773db5l0hyo3532itzerrsdj",
+    "name": "Lansseax's Glaive",
+    "image": "/media/incantations/lansseaxs-glaive.png",
+    "description": "Incantation that channels the power of the ancient dragon Lansseax.\n\nCreates a red-lightning glaive and sweeps the area from above. This attack unleashes trails of lightning.\n\nLansseax was the sister of Fortissax. It is said that she took the form of a human to commune with the knights as a priestess of the ancient dragon cult.",
+    "type": "Incantation",
+    "cost": 22,
+    "slots": 1,
+    "effects": "The caster leaps into the air and sweeps a conjured blade of red lightning across the area from above, following up with a spreading forward wave of lightning along the ground. Both the melee glaive strike and the lightning trails inflict pure Lightning damage. The incantation cannot be charged or continuously cast. It inflicts no status build-up. The caster receives hyper armor during the mid-air slash, resisting light staggering attacks. As a Dragon Cult incantation, its damage is boosted by 15% with the Gravel Stone Seal (stacking multiplicatively if dual-wielded) and benefits from lightning-enhancing equipment such as the Lightning Scorpion Charm, Flock's Canvas Talisman, Faithful's Canvas Talisman, the Lightning-Shrouding Cracked Tear, and pieces of the Death Knight set.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 40
+      }
+    ]
+  },
+  {
+    "id": "17f696de88al0hyo39vlr771is6fv",
+    "name": "Lightning Fortification",
+    "image": "/media/incantations/lightning-fortification.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nIncreases lightning damage negation.\nThis incantation can be cast while in motion.\n\nFollow the path that has been set for you, and you will make enemies of all others: the monks, the sorcerers, the ancient dragon knights, and the scions of gold. Heed me\u2014the Lands Between offers no welcome to the Tarnished.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Increases the caster's lightning damage negation by +35% (+10% in PvP) for 90 seconds. It affects only the caster and can be cast while walking, running, or mounted on Torrent. It deals no damage, cannot be charged, cannot be channeled or continuously cast, and inflicts no status build-up. Classified mechanically as a Body Buff, it does not stack with other Body Buffs (such as Flame, Protect Me; Flame, Grant Me Strength; Boiled Crab; or Black Flame's Protection) and will overwrite or be overwritten by them. It stacks multiplicatively with Aura Buffs, weapon buffs, health regen buffs, and defensive talismans (such as the Boltdrake Talisman). Its duration can be extended by 30% (from 90 to 117 seconds) using the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f69602ae3l0hyo3a6ruzolnobp3o",
+    "name": "Lord's Aid",
+    "image": "/media/incantations/lords-aid.png",
+    "description": "Incantation bestowed by the Two Fingers upon the Tarnished deemed worthy of becoming a lord.\n\nAlleviates poison, blood loss, and sleep buildup for self and nearby allies.\nHold to continue praying and delay activation.",
+    "type": "Incantation",
+    "cost": 12,
+    "slots": 1,
+    "effects": "Alleviates accumulated poison, blood loss (hemorrhage), and sleep status buildup for the caster and nearby allies, and completely cures active poison status. Does not deal damage. The spell cannot be charged to increase its potency, but holding the cast button allows the user to remain kneeling in prayer to delay activation indefinitely until released. While kneeling, the caster's lowered profile can evade certain high-reaching attacks. Affects friendly phantoms and summoned spirits in cooperative play.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 12
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6908485dl0hyo3bkdtot70uk3p4",
+    "name": "Lightning Spear",
+    "image": "/media/incantations/lightning-spear.png",
+    "description": "One of the incantations of the capital's ancient dragon cult.\n\nSummons a lightning spear and hurls it before the caster.\nCharging causes a lightning bolt to strike the point of impact.\n\nLong ago, Godwyn the Golden defeated the ancient dragon Fortissax, and befriended his fallen foe \u2014 an event that gave rise to the ancient dragon cult in the capital.",
+    "type": "Incantation",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Hurls a fast-moving spear of red-gold lightning forward, dealing pure Lightning damage. The spell cannot be channeled for continuous casting, but it can be cast while mounted atop Torrent. This incantation can be charged to increase direct damage, boost stance damage, and cause an additional bolt of lightning to strike down at the target upon impact. It inflicts no status build-up. In rainy weather or when hitting targets standing in water, enemies suffer reduced lightning damage negation and the projectile triggers an area-of-effect electrical splash. As an Ancient Dragon Cult incantation, its damage is boosted by 15% when wielding the Gravel Stone Seal (which stacks multiplicatively when dual-wielding). The charged cast synergizes with the Godfrey Icon (15% damage increase), and its damage scales with the Sacred Seal's Incantation Scaling, further boosted by the Lightning Scorpion Charm, Faithful's Canvas Talisman, Flock's Canvas Talisman, and the Lightning-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 17
+      }
+    ]
+  },
+  {
+    "id": "17f6933b1fdl0hyo3bz9d9loqhf9qh",
+    "name": "Law Of Causality",
+    "image": "/media/incantations/law-of-causality.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\nOne of the key fundamentals.\n\nManifests a small ring of causality within that allows the caster to automatically retaliate upon receiving a certain number of blows.\n\nThe fundamentalists describe the Golden Order through the powers of regression and causality. Causality is the pull between meanings; that which links all things in a chain of relation.",
+    "type": "Incantation",
+    "cost": 22,
+    "slots": 1,
+    "effects": "Manifests a small internal ring of causality that buffs the caster for 120 seconds. Upon receiving 5 damaging hits from enemies within a short duration, the ring automatically detonates, unleashing a retaliatory golden explosion that deals 487 flat Holy damage and heavily staggers or knocks back nearby enemies. The retaliatory damage does not scale with attributes or Sacred Seal incantation scaling, but it can be enhanced by holy damage buffs such as the Sacred Scorpion Charm and Holy-Shrouding Cracked Tear, as well as the Golden Order Seal's passive 10% fundamentalist incantation boost. The buff duration can be extended to 156 seconds with the Old Lord's Talisman. The incantation cannot be charged, is not channeled or continuously cast, and inflicts no status build-up. Damage over time, attacks completely mitigated by 100% physical damage reduction shields, and self-inflicted damage do not contribute toward the 5-hit threshold.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 29
+      }
+    ]
+  },
+  {
+    "id": "17f6908f509l0hyo3cd6br7iexs0ys",
+    "name": "Litany Of Proper Death",
+    "image": "/media/incantations/litany-of-proper-death.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\n\nUsed by hunters of Those Who Live in Death.\n\nCreates an image of Order, dealing holy damage to nearby foes.\n\nThis incantation is especially damaging to Those Who Live in Death. Any felled by this incantation cannot be revived.\n\nThe role of the hunters is to stamp out defiled reason \u2014 all for the perfection of the Golden Order.",
+    "type": "Incantation",
+    "cost": 17,
+    "slots": 1,
+    "effects": "The caster crosses their arms and expands them outward into a T-pose, projecting a sweeping wave of sacred light along the ground that inflicts Holy damage to nearby enemies. The incantation cannot be charged, channeled, or continuously cast, and inflicts no status build-up. It deals +900% bonus damage against Those Who Live in Death (such as skeletons, Tibia Mariners, and Death Birds), scaling its damage multiplier to approximately 560% of incantation scaling against undead targets, and permanently kills skeletons to prevent them from reviving. As a Golden Order fundamentalist incantation, its damage is boosted by 10% per equipped Golden Order Seal and synergizes with holy damage buffs such as the Sacred Scorpion Charm and the Holy-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 17
+      },
+      {
+        "name": "Intelligence",
+        "amount": 17
+      }
+    ]
+  },
+  {
+    "id": "17f693addcel0hyo3dh93zpcxbralt",
+    "name": "Law Of Regression",
+    "image": "/media/incantations/law-of-regression.png",
+    "description": "Incantation of the Golden Order fundamentalists.\nOne of the key fundamentals.\n\nHeals all negative statuses, dispels special effects, and reveals mimicry in all its forms.\n\nThe fundamentalists describe the Golden Order through the powers of regression and causality. Regression is the pull of meaning; that all things yearn eternally to converge.",
+    "type": "Incantation",
+    "cost": 55,
+    "slots": 1,
+    "effects": "Casts an expansive golden area-of-effect pulse centered on the caster (approx. 15-meter radius) that dispels all active special effects, spell buffs, body buffs, debuffs, and weapon enchantments from both friendly and hostile targets. Instantly cleanses all status ailments and completely clears build-up meters for Poison, Scarlet Rot, Hemorrhage, Frostbite, Sleep, Madness, and Death Blight. Deals no damage, cannot be charged, and cannot be channeled or continuously cast. Dispels illusory walls, reveals mimics and players disguised by the Mimic Veil, and reveals the secret of Radagon's statue in Leyndell to advance Goldmask and Brother Corhyn's quest. Mechanically pairs with cast speed-boosting gear such as Radagon Icon or high virtual Dexterity to reduce its slow casting animation.",
+    "requires": [
+      {
+        "name": "Intelligence",
+        "amount": 37
+      }
+    ]
+  },
+  {
+    "id": "17f69522233l0hyo3e7aqun8itt9a",
+    "name": "Lightning Strike",
+    "image": "/media/incantations/lightning-strike.png",
+    "description": "One of the incantations of the capital's ancient dragon cult.\n\nSummons a bolt of lightning that scatters and spreads around the surrounding area. This incantation can be cast repeatedly.\n\nLong ago, Godwyn the Golden defeated the ancient dragon Fortissax, and befriended his fallen foe \u2014 an event that gave rise to the ancient dragon cult in the capital.",
+    "type": "Incantation",
+    "cost": 19,
+    "slots": 1,
+    "effects": "Summons a bolt of lightning that strikes the ground and scatters outward in a branching path, dealing pure Lightning damage to enemies within its area. Cannot be charged, but can be cast repeatedly in rapid succession without interruption. Inflicts no status build-up. Its damage is boosted by 15% when wielding the Gravel Stone Seal, and further enhanced by talismans like the Lightning Scorpion Charm and Flock's Canvas Talisman, as well as the Lightning-Shrouding Cracked Tear. Deals bonus damage and gains expanded splash range against enemies standing in water or under rain.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 28
+      }
+    ]
+  },
+  {
+    "id": "17f6988869dl0hyo4qsblr2lchs3q7",
+    "name": "Lord's Divine Fortification",
+    "image": "/media/incantations/lords-divine-fortification.png",
+    "description": "Incantation taught to Gideon the All-Knowing by the Two Fingers.\n\nGreatly increases holy damage negation for the caster and nearby allies.\nHold to continue praying and delay activation.\n\nGideon gained true knowledge after his long exchange with the Two Fingers\u2014discovering all had been broken long ago; that the trembling fingers, bent with age, and the Erdtree itself, were no exception.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Greatly increases Holy damage negation by 60% in PvE and 20% in PvP for both the caster and nearby allies for 70 seconds. Can be cast while in motion, and the casting input can be held to delay activation, though it cannot be charged to increase potency or duration. Deals no damage and causes no status effect build-up. Classified as a Body Buff, meaning it does not stack with other Body Buffs (such as Flame, Grant Me Strength, Black Flame's Protection, Protection of the Erdtree, or Boiled Crab) and will overwrite or be overwritten by them. Stacks multiplicatively with Holy damage negation from armor, shields, talismans (such as the Haligdrake Talisman), and Aura buffs (such as Golden Vow). Duration is extended to 91 seconds when equipped with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 27
+      }
+    ]
+  },
+  {
+    "id": "17f69634f78l0hyo4s4zggpkf72qsp",
+    "name": "Lord's Heal",
+    "image": "/media/incantations/lords-heal.png",
+    "description": "Incantation bestowed by the Two Fingers upon the Tarnished deemed worthy of becoming a lord.\n\nHeals a massive amount of HP for the caster and nearby allies.\n\nHold to continue praying and delay activation.",
+    "type": "Incantation",
+    "cost": 55,
+    "slots": 1,
+    "effects": "Massively restores HP to the caster and nearby allies, including summons and spirit ashes. The caster recovers HP equal to 420% of their catalyst's Faith-based Incantation Scaling, while allies recover 210% of Faith-based Incantation Scaling. Only the Faith portion of a Sacred Seal's scaling contributes to healing potency; non-Faith scaling attributes (Strength, Intelligence, Arcane) on hybrid seals provide no benefit. The incantation cannot be charged to increase potency and cannot be channeled or continuously cast, though holding the cast button delays activation by maintaining the prayer stance. Against Royal Revenants and Revenant Followers, it deals Holy damage equal to 50% of their maximum HP plus 300 flat damage, while completely breaking their stance and leaving them open to a critical hit. It inflicts no status buildup. Synergizes optimally with high Faith scaling catalysts such as the Erdtree Seal, and its cast speed and FP consumption are enhanced by Dexterity, the Radagon Icon, and the Primal Glintstone Blade.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 20
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f68fdec40l0hyo4sbk8kjcr4p6lp",
+    "name": "Order Healing",
+    "image": "/media/incantations/order-healing.png",
+    "description": "One of the incantations of the Golden Order fundamentalists. Used by hunters of Those Who Live in Death.\n\nAlleviates death blight buildup.\n\nThe noble Goldmask lamented what had become of the hunters. How easy it is for learning and learnedness to be reduced to the ravings of fanatics; all the good and the great wanted, in their foolishness, was an absolute evil to contend with. Does such a notion exist in the fundamentals of Order?",
+    "type": "Incantation",
+    "cost": 15,
+    "slots": 1,
+    "effects": "Alleviates and cleanses accumulated Death Blight status buildup on the caster. It does not restore Hit Points (HP) and cannot prevent death once the Death Blight meter is completely filled. The incantation is not chargeable, cannot be channeled or continuously cast, and must be cast from a stationary position on foot, though it can be performed while mounted on horseback. Deals 0 damage, applies no offensive status effects, and affects only the caster without extending to allies.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 11
+      },
+      {
+        "name": "Intelligence",
+        "amount": 11
+      }
+    ]
+  },
+  {
+    "id": "17f6962911el0hyo4s02nf0ie24nvc",
+    "name": "Noble Presence",
+    "image": "/media/incantations/noble-presence.png",
+    "description": "Ancient power of the Godskin Nobles.\n\nThrust out belly with gusto to produce a shockwave that knocks back nearby foes.\n\nCharging enhances potency, knocking enemies into the air.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Thrusts out the caster's abdomen with force to emit a close-range concussive shockwave that repels surrounding enemies and deals pure Fire damage while applying the Black Flame damage-over-time effect, which drains a percentage of the target's maximum HP over several seconds. The incantation can be charged to increase damage and stance damage (from 16.8 to 21.84), expand the shockwave radius, and launch human-sized foes high into the air rather than simply knocking them backward; charging increases the FP consumption from 20 to 36. It cannot be channeled or continuously cast. The spell receives a 20% damage bonus when wearing the Godskin Noble Robe, but notably does not receive the 10% boost from the Godslayer's Seal. It additionally benefits from generic fire-boosting effects such as the Fire Scorpion Charm and Flame-Shrouding Cracked Tear, along with the Godfrey Icon when charged.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 26
+      }
+    ]
+  },
+  {
+    "id": "17f692fa4d2l0hyo4uc4mjru3qoaee",
+    "name": "Order's Blade",
+    "image": "/media/incantations/orders-blade.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\nUsed by hunters of Those Who Live in Death.\n\nEnchants armament held in the right hand with holy-affinity attacks.\nThis incantation is especially damaging to Those Who Live in Death. Any felled by this incantation cannot be revived.\n\nThe role of the hunters is to stamp out defiled reason\u2014all for the perfection of the Golden Order.",
+    "type": "Incantation",
+    "cost": 22,
+    "slots": 1,
+    "effects": "Enchants the armament held in the right hand with Holy damage for 90 seconds. The added Holy Attack Power scales exclusively with 0.75x (75%) of the Faith portion of the Sacred Seal's Incantation Scaling, ignoring any Intelligence, Strength, or Arcane scaling from hybrid seals. Deals +100% bonus damage against Those Who Live in Death and completely prevents undead skeletons from resurrecting when felled. This incantation cannot be charged, cannot be channeled or continuously cast, and cannot be cast while mounted on horseback. It can only be applied to weapons that allow affinity buffs (Standard, Heavy, Keen, or Quality paths, and select innate buffable weapons), and cannot be applied to elemental- or status-infused weapons. The added holy damage benefits from holy damage enhancing effects, such as the Sacred Scorpion Charm and Holy-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 13
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 13
+      }
+    ]
+  },
+  {
+    "id": "17f69295d83l0hyo4wyff4k2r6tkno",
+    "name": "Magic Fortification",
+    "image": "/media/incantations/magic-fortification.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nIncreases magic damage negation.\nThis incantation can be cast while in motion.\n\nFollow the path that has been set for you, and you will make enemies of all others: the monks, the sorcerers, the ancient dragon knights, and the scions of gold. Heed me\u2014the Lands Between offers no welcome to the Tarnished.",
+    "type": "Incantation",
+    "cost": 20,
+    "slots": 1,
+    "effects": "Grants a body buff that increases magic damage negation by 35% (10% in PvP) for 90 seconds. Can be cast while in motion or while mounted on horseback. Does not inflict or build up any status effects. Cannot be charged or continuously channeled. As a body buff, it does not stack with and will overwrite (or be overwritten by) other body buffs such as Flame, Grant Me Strength, Boiled Crab, Barrier of Gold, or other Fortification incantations. It stacks multiplicatively with aura buffs (such as Golden Vow), shield buffs, health regeneration effects, and damage negation talismans like the Spelldrake Talisman. The duration can be extended to 117 seconds with the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f6946750bl0hyo4yckgppsbgjyai",
+    "name": "O, Flame!",
+    "image": "/media/incantations/o-flame.png",
+    "description": "Incantation of the Fire Monks, drawn from the Giants' Flame.\n\nMomentarily sparks a roaring flame from the caster's hand.\nCharging enhances potency.\n\nFire beguiles those who gaze into it. And so the guardians of the flame are also its worshippers.",
+    "type": "Incantation",
+    "cost": 16,
+    "slots": 1,
+    "effects": "Unleashes a roaring burst of fire directly in front of the caster, dealing pure Fire damage across a wide close-range area. The spell can be charged to significantly increase damage output, hit volume, and stance damage. Unlike Catch Flame, it cannot be chain-cast or performed immediately out of jumps or rolls, but deals substantially greater single-hit burst damage. It does not inflict status effects, but can reset the Frostbite status on enemies. The incantation is classified as a Giants' Flame / Fire Monk spell, receiving a 20% damage boost from the Giant's Seal. When charged, it receives a 15% damage bonus from the Godfrey Icon. It also benefits from the Fire Scorpion Charm, Flock's Canvas Talisman, the Flame-Shrouding Cracked Tear, and the body buff Flame, Grant Me Strength.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 16
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6917092dl0hyo511p1ard3b4xwm",
+    "name": "Magma Breath",
+    "image": "/media/incantations/magma-breath.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a wyrm to spew magma breath.\nAllows one follow-up attack.\n\nThose who have performed the Dragon Communion will find their humanity slowly slipping away. Once they fully succumb to their fate, they are left no more than wyrms that crawl the earth.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Transforms the caster into a Magma Wyrm to spew molten lava forward, creating pools of magma on the ground. Deals Fire damage upon direct hit as well as continuous Fire damage to targets standing in the lingering magma. Cannot be charged, but allows for one follow-up attack by pressing the attack button again, consuming additional FP and stamina. Cannot be cast mid-air while jumping, though it can be cast while mounted on Torrent. Does not inflict status effects, but can reset Frostbite with its fire damage. Damage is boosted by the Dragon Communion Seal, Roar Medallion, Fire Scorpion Charm, Faithful's Canvas Talisman, Flock's Canvas Talisman, and Flame-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 14
+      },
+      {
+        "name": "Arcane",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f6971f6b6l0hyo69cly6crooe39",
+    "name": "Pest Threads",
+    "image": "/media/incantations/pest-threads.png",
+    "description": "Incantation of the servants of rot.\n\nSecretes countless sticky threads, launching them forwards.\n\nA technique of the pale pests who crawl through the lands afflicted by scarlet rot; the abandoned children of the goddess.",
+    "type": "Incantation",
+    "cost": 19,
+    "slots": 1,
+    "effects": "Releases two volleys of sticky projectile threads that track the target, dealing pure Physical damage. The threads pierce enemies and can hit repeatedly as they travel through large hitboxes. The spell cannot be charged or channeled, but can be cast repeatedly in succession and while mounted on horseback. Despite being a Servants of Rot incantation, it inflicts no Scarlet Rot or Poison buildup.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 11
+      }
+    ]
+  },
+  {
+    "id": "17f697ae98fl0hyo6a7rwr36m0lrsr",
+    "name": "Protection Of The Erdtree",
+    "image": "/media/incantations/protection-of-the-erdtree.png",
+    "description": "A superior incantation of Erdtree Worship.\n\nIncrease damage negation for all affinities except physical, for both the caster and nearby allies.\nHold to continue praying and delay activation.\n\nIn the beginning, everything was in opposition to the Erdtree. But through countless victories in war, it became the embodiment of Order.",
+    "type": "Incantation",
+    "cost": 30,
+    "slots": 1,
+    "effects": "Casts a defensive aura that grants a Body Buff to the caster and nearby allies, significantly increasing damage negation against all non-physical damage types (Magic, Fire, Lightning, and Holy). In PvE, it provides a 30% reduction to incoming non-physical damage; in PvP combat, this damage negation is reduced to 10%. It provides no damage negation against physical damage (Standard, Slash, Strike, or Pierce). The buff lasts for 70 seconds and does not deal damage or inflict any status build-up. The spell cannot be charged to amplify its potency, but holding the cast button allows the player to delay activation while continuing to pray, granting allies extra time to move within range. It cannot be channeled continuously. As a Body Buff, Protection of the Erdtree does not stack with other Body Buffs (such as Flame, Grant Me Strength, Black Flame's Protection, Boiled Prawn/Crab, or specific fortification incantations like Barrier of Gold or Flame Fortification), overwriting or being overwritten by them. It stacks with Aura Buffs (such as Golden Vow), Health-over-time regeneration incantations, weapon armaments, shield buffs, and defensive talismans. Its effect duration is increased by 30% (to 91 seconds) when equipping the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 35
+      }
+    ]
+  },
+  {
+    "id": "17f6922607fl0hyo6c1nfqul6hljpg",
+    "name": "Poison Armament",
+    "image": "/media/incantations/poison-armament.png",
+    "description": "Incantation of the servants of rot.\n\nEnchants armament held in the right hand with poison.\nThis incantation can be cast while in motion.\n\nThose who dwell within poison know rot all too well. The death that begets life, that comes to all equally. That is to say: it is the cycle of rebirth put into practice.",
+    "type": "Incantation",
+    "cost": 15,
+    "slots": 1,
+    "effects": "Enchants the right-hand armament with poison for 60 seconds (extended to 78 seconds with the Old Lord's Talisman). The incantation does not impart direct physical or elemental damage; instead, it adds a flat 70 poison status buildup per strike. Once triggered, standard poison inflicts damage over 90 seconds (dealing 0.07% max HP + 7 damage per second). The incantation cannot be charged, channeled, or continuously cast, but it can be cast while in motion or while mounted. It can only be applied to buffable right-hand armaments (Standard, Heavy, Keen, or Quality affinities, as well as uninfused weapons that accept armament buffs). Although the 70 buildup does not scale with Sacred Seal incantation scaling or Arcane normally, it uniquely scales with the player's Arcane stat when applied to weapons with innate Arcane scaling that accept buffs (such as the Ripple Blade, Ripple Crescent Halberd, and Varr\u00e9's Bouquet). Successfully poisoning an enemy triggers bonuses from Kindred of Rot's Exultation, the Mushroom Crown, and the Poisoned Hand, and the poison status can be consumed for burst damage using the Poison Moth Flight Ash of War.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 10
+      }
+    ]
+  },
+  {
+    "id": "17f6958b760l0hyo6c41h81a4ao9ihh",
+    "name": "Placidusax's Ruin",
+    "image": "/media/incantations/placidusaxs-ruin.png",
+    "description": "Power gleaned from the remembrance of Dragonlord Placidusax.\n\nTransforms caster into the Dragonlord to spew golden breath from above. This incantation can be cast while jumping.\n\nThese are the dying wails of the Dragonlord who once dwelled eternal beyond time.",
+    "type": "Incantation",
+    "cost": 62,
+    "slots": 3,
+    "effects": "Transforms the caster into the Dragonlord hovering in the air to unleash an initial lightning burst followed by sweeping golden breath beams. The initial blast deals Lightning damage and knocks back nearby targets. The ensuing golden breath deals heavy Fire damage over multiple hits, sweeping across the area and launching enemies upwards on the final hit. The beam can be aimed freely in a 360-degree direction during the animation. The incantation can be initiated while jumping, cannot be charged, and plays as a fixed continuous casting animation lasting approximately 8 seconds. It inflicts high stance damage (up to 70 total) with no status effect build-up. Its breath damage is boosted by the Roar Medallion, but because it belongs to neither the Dragon Communion nor Dragon Cult spell groups, it receives no passive school bonuses from the Dragon Communion Seal or Gravel Stone Seal, nor does it benefit from the Godfrey Icon.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 36
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f695abe1dl0hyo6ddrxsg47tz9j9",
+    "name": "Poison Mist",
+    "image": "/media/incantations/poison-mist.png",
+    "description": "Incantation of the servants of rot.\n\nReleases a poisonous mist before the caster.\nThis incantation can be cast while in motion.\n\nThose who dwell within poison know rot all too well.\nThe death that begets life, that comes to all equally.\nThat is to say: it is the cycle of rebirth put into practice.",
+    "type": "Incantation",
+    "cost": 18,
+    "slots": 1,
+    "effects": "Releases a short-range poisonous mist cloud with a 2.8-meter radius directly in front of the caster that lingers for 16 seconds. Can be cast while in motion. Deals no direct physical or elemental damage upon contact and does not produce noise or hit stagger, allowing the caster to inflict status without alerting unaware targets or breaking stealth. It cannot be charged and cannot be channeled or held for continuous cast. Inflicts 20 Poison status build-up every 0.2 seconds (100 Poison build-up per second) to enemies inside the cloud, totaling up to 1,600 Poison build-up across its full duration. Poison build-up scales with Arcane when cast using a catalyst with Arcane scaling (such as the Dragon Communion Seal), increasing up to 29 build-up per tick (145 per second, or 2,320 total). Synergizes with items that buff attack power upon poison infliction nearby, such as Kindred of Rot's Exultation, the Mushroom Crown, and the Poisoned Hand.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f69215aafl0hyo6fnokhkxl7dq4p",
+    "name": "Radagon's Rings Of Light",
+    "image": "/media/incantations/radagons-rings-of-light.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\n\nA gift of gratitude to the young Miquella from his father, Radagon.\n\nProduces a golden ring of light and fires it across a wide area. Charging enhances range.\n\nAnd yet, the young Miquella abandoned fundamentalism, for it could do nothing to treat Malenia's accursed rot. This was the beginning of unalloyed gold.",
+    "type": "Incantation",
+    "cost": 21,
+    "slots": 1,
+    "effects": "Generates a golden halo of light above the caster that expands outward in a wide 360-degree horizontal ring, dealing Holy damage to all enemies within its perimeter. The incantation deals pure Holy damage equal to 310% of Incantation Scaling when uncharged and 395% of Incantation Scaling when fully charged, alongside 10 stance damage (14 stance damage if charged). Can be charged to increase both damage and the area of effect, but cannot be channeled or chained continuously. It inflicts no status build-up. Targets can only be hit once per cast despite the wide ring structure. Its damage is boosted by 10% when wielding the Golden Order Seal (which stacks when dual-wielding), 10% by wearing the Radiant Gold Mask, and 15% when charged using the Godfrey Icon talisman, and it scales with both Intelligence and Faith.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 31
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 31
+      }
+    ]
+  },
+  {
+    "id": "17f6968b28dl0hyo6loaay43jahfcp",
+    "name": "Rotten Breath",
+    "image": "/media/incantations/rotten-breath.png",
+    "description": "One of the incantations of Dragon Communion.\n\nTransforms caster into a dragon to spew scarlet rot breath.\nCharging extends duration.\n\nThose extraordinary individuals who perpetuate Dragon Communion are called the dragon-hearted.",
+    "type": "Incantation",
+    "cost": 36,
+    "slots": 1,
+    "effects": "Channels the power of Dragon Communion to manifest a draconic head that spews a wide cloud of rotting breath forward, dealing Standard Physical damage (131% Incantation Scaling per hit, up to 3 hits per breath) and inflicting 65 Scarlet Rot buildup per hit (up to 195 buildup per breath). Holding the cast button channels the incantation to unleash a second consecutive breath attack for an additional FP and stamina cost, allowing for a total of up to 6 hits (390 cumulative Scarlet Rot buildup). Once triggered, Scarlet Rot inflicts damage equal to roughly 29.7% of the target's maximum HP plus 1,170 damage over 90 seconds. Unlike advanced named dragon breath spells, Rotten Breath cannot be cast in mid-air while jumping, but it can be cast while mounted on horseback. Its damage is boosted by 15% per Dragon Communion Seal held, 10% by the Roar Medallion, and 20% by the Rock Heart, and because it inflicts pure physical damage, it benefits from the Blue Dancer Charm.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 15
+      },
+      {
+        "name": "Arcane",
+        "amount": 12
+      }
+    ]
+  },
+  {
+    "id": "17f695dd7d9l0hyo6nbzipolrbtuxg",
+    "name": "Rejection",
+    "image": "/media/incantations/rejection.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nProduces a shockwave that knocks back nearby foes.\nCharging increases the size of the shockwave.\n\nHark, Tarnished! If you truly walk in faith, you must be prepared to reject all else.",
+    "type": "Incantation",
+    "cost": 9,
+    "slots": 1,
+    "effects": "Produces a shockwave around the caster that deals 0 direct damage but knocks back nearby foes in the direction the caster faces, dealing 180 stamina damage against guarding enemies in PvE (220 in PvP) and 10 stance damage. Can be charged to expand the shockwave radius from 2 meters to 4 meters, dealing 220 stamina damage against guards in PvE (275 in PvP) and 14 stance damage. The incantation cannot be channeled or continuously cast. It causes no status build-up. It is effective for interrupting enemy attacks, breaking enemy poise or guard, rapidly cracking Crystalian defenses, and knocking targets off ledges for lethal gravity damage. While chargeable, it does not benefit from damage-boosting equipment such as the Godfrey Icon due to its lack of base damage.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 12
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f694d5050l0hyo7rhkcg4j0qaii",
+    "name": "Smarag's Glintstone Breath",
+    "image": "/media/incantations/smarags-glintstone-breath.png",
+    "description": "Superior incantation of Dragon Communion.\n\nChannels the power of Smarag, the Glintstone Dragon.\n\nTransforms caster into a dragon to spew magic breath from above.\nCharging extends duration.\nThis incantation can be cast while jumping.\n\nSmarag was a devourer of sorcerers, and over time, his body became corrupted by their glintstones.",
+    "type": "Incantation",
+    "cost": 36,
+    "slots": 1,
+    "effects": "Transforms the caster into the spectral head of Glintstone Dragon Smarag, hovering in mid-air to spew a sweeping stream of glintstone breath downward, dealing heavy Magic damage. Can be cast while jumping in mid-air, but cannot be cast while mounted. Charging the spell extends the initial breath duration, and continuing to channel or pressing the input again triggers a second breath wave, allowing the player to swivel and adjust aim. The incantation inflicts no status effects. Initial cast costs 36 FP and 60 stamina, with extended casting consuming FP continuously (up to 144 FP total for both full waves, requiring at least 79 FP to initiate the second wave) and an additional 60 stamina for the follow-up breath. Damage scales with Incantation Scaling and is boosted by the Dragon Communion Seal (15% per seal), Roar Medallion (10%), Rock Heart (20%), Magic-Shrouding Cracked Tear, and Terra Magica.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Arcane",
+        "amount": 15
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f69771088l0hyo7tmllgof77289o",
+    "name": "Stone Of Gurranq",
+    "image": "/media/incantations/stone-of-gurranq.png",
+    "description": "Superior incantation taught by Gurranq, the Beast Clergyman.\n\nHurls a boulder before the caster.\nThis incantation can be cast repeatedly.\n\nLong ago, Gurranq was a beast of such terrifying ferocity that his former name meant 'Death of the Demigods.'",
+    "type": "Incantation",
+    "cost": 15,
+    "slots": 1,
+    "effects": "Hurls a massive boulder forward in an arcing trajectory that inflicts physical strike damage and heavy stance/poise damage upon impact, creating a small area-of-effect explosion. The incantation cannot be charged, but it can be cast continuously in rapid succession (chain casting) with reduced recovery animations to repeatedly stagger enemies. It inflicts no status build-up. Damage is boosted by the Clawmark Seal (+10%) and the Cinquedea dagger (+10%), scales with Faith (and Strength when using the Clawmark Seal), and synergizes with physical attack buffs such as Flame, Grant Me Strength, Golden Vow, and the Blue Dancer Charm, as well as general incantation-boosting talismans.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 13
+      }
+    ]
+  },
+  {
+    "id": "17f692aa326l0hyo81f3t0bbkonkwh",
+    "name": "Surge, O Flame!",
+    "image": "/media/incantations/surge-o-flame.png",
+    "description": "Superior incantation of the Fire Monks.\n\nCreates a stream of fire to burn the area before the caster. This incantation can be cast while in motion. Hold to maintain the effect.\n\nThe Giants' Flame is the flame of ruin, capable of burning the Erdtree. And so, following the War against the Giants, its ruinous blaze was sealed, and guardians were appointed to watch over it.",
+    "type": "Incantation",
+    "cost": 1,
+    "slots": 1,
+    "effects": "Emits a continuous sweeping stream of fire directly in front of the caster that deals Fire damage scaling with Incantation Scaling (51% per tick, dealing 1 stance damage). The incantation cannot be charged, but it can be channeled continuously by holding the cast button, draining 1 FP and 2 stamina per tick until reserves are exhausted. The caster can move at walking speed while maintaining the stream. While it causes no status build-up itself, its fire damage immediately resets the Frostbite status on enemies, allowing Frostbite to be reapplied repeatedly. Damage is boosted by the Giant's Seal, Fire Scorpion Charm, Flame-Shrouding Cracked Tear, and the Flame, Grant Me Strength buff. It can also be maintained indefinitely during the Cerulean Hidden Tear's duration.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 9
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f691c3d89l0hyo81xcmf8pooodpu",
+    "name": "Shadow Bait",
+    "image": "/media/incantations/shadow-bait.png",
+    "description": "Incantation of the Two Fingers' servants, who once served as the assassins of the Roundtable Hold.\n\nCreates a pale gold shadow before the caster, luring foes of human build and attracting their aggression. This incantation can be cast while in motion or crouching, and will still affect foes that are already in a combat state.\n\nIt is said that those beguiled by the shadow see within it a hated foe.",
+    "type": "Incantation",
+    "cost": 15,
+    "slots": 1,
+    "effects": "Casts a pale gold shadow projectile forward that creates an illusory effigy upon landing, attracting the aggression of nearby enemies of human build within a 15-meter radius for approximately 3 seconds. Deals no damage of any type, cannot be charged, cannot be channeled or continuously cast, and inflicts no status build-up. It can be cast while in motion or while crouching, and successfully redirects the attention of valid foes even if they are already alerted or engaged in combat. Effective against human-sized and medium humanoid enemies (such as foot soldiers, knights, Albinaurics, Demi-Humans, Miners, and Omens), but has no effect on beasts, large non-humanoid monsters, or bosses. Synergizes with stealth approaches and backstabs, pairing effectively with talismans like the Assassin's Crimson Dagger and Assassin's Cerulean Dagger to restore HP and FP on critical hits.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 13
+      }
+    ]
+  },
+  {
+    "id": "17f692422c4l0hyo84mlas2e4zch5",
+    "name": "Scouring Black Flame",
+    "image": "/media/incantations/scouring-black-flame.png",
+    "description": "A black flame incantation of the Godskin Apostles.\n\nSweeps a wide area before the caster with black flame. Charging enhances range.\n\nThe black flame could once slay gods. But when Maliketh sealed Destined Death, the true power of the black flame was lost.",
+    "type": "Incantation",
+    "cost": 21,
+    "slots": 1,
+    "effects": "Sweeps a wide area in front of the caster with black flame, dealing Fire damage and applying a debuff that burns away 2% of the enemy's maximum HP plus 20 damage over 2 seconds. Can be charged to increase forward range, damage, and stance damage. Deals pure Fire damage that scales with Faith and Incantation Scaling, boosted by Godslayer's Seal and Godfrey Icon when charged.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 28
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6904109al0hyo84mydzpc5usap9",
+    "name": "Scarlet Aeonia",
+    "image": "/media/incantations/scarlet-aeonia.png",
+    "description": "Technique of Malenia, the Goddess of Rot.\n\nCreates a gigantic flower that blooms into an explosion of scarlet rot.\n\nEach time the scarlet flower blooms, Malenia's rot advances. It has bloomed twice already. With the third bloom, she will become a true goddess.",
+    "type": "Incantation",
+    "cost": 48,
+    "slots": 3,
+    "effects": "The caster takes flight enveloped in a scarlet bud before diving to slam down onto the ground, dealing Standard physical damage and knocking down foes in a 4-meter radius. A massive scarlet flower then blooms and explodes, inflicting heavy Standard physical damage, high stance damage, and Scarlet Rot in a 5-meter radius. The blooming petals linger for roughly 4.2 seconds, continuously dealing periodic physical damage and inflicting 150 Scarlet Rot buildup every 0.7 seconds (inflicting the potent tier of Scarlet Rot dealing 0.33% max HP + 13 damage per second for 90 seconds). This spell cannot be charged and cannot be chain-cast or channeled. During mid-air ascent and descent, the caster possesses substantial hyperarmor against stagger. Because it deals physical damage, it is boosted by physical damage buffs such as Flame, Grant Me Strength and the Blue Dancer Charm, as well as incantation boosters like Flock's Canvas Talisman. Triggering rot from this incantation activates damage buffs from Kindred of Rot's Exultation and the Mushroom Crown.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 35
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f6925361el0hyo84va1dajld4erh",
+    "name": "Swarm Of Flies",
+    "image": "/media/incantations/swarm-of-flies.png",
+    "description": "A Blood Oath incantation, shared from the Lord of Blood's power.\n\nReleases a swarm of bloodflies before the caster to assault foes. The vile swarm deals damage and builds up onset of blood loss. This incantation can be cast while in motion.\n\nThe new palace of the Lord of Blood lies in a swamp of festering blood, and these flies are said to spawn from excrement in that land.",
+    "type": "Incantation",
+    "cost": 14,
+    "slots": 1,
+    "effects": "Releases a slow-flying, tracking swarm of bloodflies directly ahead of the caster. Upon hitting an enemy or surface, the swarm explodes for Standard Physical damage equal to 52% of Incantation Scaling and disperses into a stationary cloud that hits up to 5 times. Each cloud hit inflicts Standard Physical damage equal to 15% of Incantation Scaling and builds up Blood Loss through both an instant flat buildup (70 base) and a bloodflame burn effect (80 buildup over 2 seconds at 4 per 0.1s), totaling 150 Blood Loss buildup per hit (up to 750 across all 5 hits). Each hit also inflicts 1 Stance damage (6 total). The spell cannot be charged and cannot be channeled, but it can be cast while walking or crouching and can be chained into consecutive casts. When cast with the Dragon Communion Seal, the flat Blood Loss buildup scales with Arcane (reaching up to 102 flat, or 182 total per hit at 99 Arcane). Blood loss procs caused by the flies trigger attack boosts from Lord of Blood's Exultation and the White Mask, and its physical damage benefits from physical attack buffs such as Flame, Grant Me Strength.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 11
+      },
+      {
+        "name": "Arcane",
+        "amount": 16
+      }
+    ]
+  },
+  {
+    "id": "17f69632226l0hyo91iqbjmg4xbw1",
+    "name": "The Flame Of Frenzy",
+    "image": "/media/incantations/the-flame-of-frenzy.png",
+    "description": "Incantation originating from the maddening Three Fingers.\n\nCauses the yellow flame of frenzy to burst forth from the caster's eyes. Charging increases the range of the burst.\n\nThe flame of frenzy deals damage and causes buildup of madness. This incantation also causes buildup of madness in the caster, and is only effective against Tarnished.",
+    "type": "Incantation",
+    "cost": 16,
+    "slots": 1,
+    "effects": "Emits a wide spread of frenzied flame projectiles from the caster's eyes that deal Fire damage and inflict Madness buildup on targets, while also causing a smaller amount of Madness buildup on the caster. The incantation can be charged to increase damage, projectile spread, range, and Madness buildup, but cannot be channeled continuously. The Madness status effect only afflicts Tarnished foes and other players. Damage scales with the equipped seal's Incantation Scaling and receives specific bonuses from the Frenzied Flame Seal, Godfrey Icon (when charged), Fire Scorpion Charm, and Flame-Shrouding Cracked Tear. Self-inflicted or enemy-inflicted Madness triggers synergies with equipment like the Black Dumpling, Madding Hand, and Aged One's Exultation.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 16
+      }
+    ]
+  },
+  {
+    "id": "17f69603e55l0hyo92oip6kr38j99r",
+    "name": "Theodorix's Magma",
+    "image": "/media/incantations/theodorixs-magma.png",
+    "description": "Superior incantation of Dragon Communion. Channels the power of the great wyrm Theodorix.\n\nTransforms caster into a great wyrm to spew a large volume of magma breath. Allows one follow-up attack.\n\nThe name of the ancient troll warrior Theodorix lives on \u2014 as a hero of the War against the Giants.",
+    "type": "Incantation",
+    "cost": 45,
+    "slots": 1,
+    "effects": "Transforms the caster into a great magma wyrm to spew a massive volume of molten lava in an arc, dealing heavy Fire damage on direct impact and coating the ground in lingering magma pools for approximately 6 seconds. Targets standing within the magma take continuous tick Fire damage and suffer minor stagger. When hitting targets at point-blank range, both the initial projectile and the resulting eruption connect, dealing double damage. Allows for one immediate follow-up attack by inputting the cast command again before recovery; the second cast consumes stamina rather than additional FP, requiring at least 1 point of stamina to execute. The spell cannot be charged and cannot be continuously channeled. It can be cast midair while jumping, but cannot be used while mounted on horseback. The lava's Fire damage instantly clears Frostbite on enemies, enabling rapid cyclical frost reapplication. Damage scales with Faith and Arcane, and is boosted by the Dragon Communion Seal, Roar Medallion, Fire Scorpion Charm, Flame-Shrouding Cracked Tear, and Flame, Grant Me Strength.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 21
+      },
+      {
+        "name": "Arcane",
+        "amount": 14
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f692da48al0hyo9dril53k44haam",
+    "name": "Unendurable Frenzy",
+    "image": "/media/incantations/unendurable-frenzy.png",
+    "description": "Incantation originating from the maddening Three Fingers.\n\nCauses the yellow flame of frenzy to violently burst forth from the caster's eyes. Hold to continue channeling the flame. This incantation can be used while in motion.\n\nIt is the maddening pain and unstoppable tears of those afflicted with the flame of frenzy brought into being.",
+    "type": "Incantation",
+    "cost": 22,
+    "slots": 1,
+    "effects": "Violently channels a continuous, wide spray of the yellow flame of frenzy from the caster's eyes, dealing pure Fire damage and 5 stance damage per projectile. The incantation cannot be charged; instead, holding the input continuously channels the flame barrage at the cost of additional FP (6 per bolt) and stamina, while allowing slow movement. Releasing the input causes the caster to stagger back slightly and discharge a final surrounding burst of flames. Each flame bolt inflicts 40 Madness build-up on targets (affecting players and Tarnished-like humanoid NPCs) while causing 4 Madness build-up on the caster per projectile, which can inflict self-madness with prolonged casting. If cast with the Dragon Communion Seal, the Madness build-up scales with Arcane. The spell's damage is boosted by 20% when using the Frenzied Flame Seal (44% when dual-wielding), and it synergizes with Fire-enhancing buffs (Fire Scorpion Charm, Flame, Grant Me Strength, Flame-Shrouding Cracked Tear) as well as Madness-triggered effects like Aged One's Exultation, the Black Dumpling helm, and Madding Hand. Cerulean Hidden Tear eliminates FP consumption during the channel, though self-inflicted Madness buildup continues.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 31
+      }
+    ]
+  },
+  {
+    "id": "17f6912a13el0hyo9e5e3yb9u659qs",
+    "name": "Triple Rings Of Light",
+    "image": "/media/incantations/triple-rings-of-light.png",
+    "description": "One of the incantations of the Golden Order fundamentalists.\n\nProduces three rings of light and fires them forwards. The rings of light return to a position close to the caster before disappearing. This incantation can be cast repeatedly.\n\nA gift from the young Miquella to his father, Radagon.",
+    "type": "Incantation",
+    "cost": 23,
+    "slots": 1,
+    "effects": "Produces three large rings of golden light that fire forward in a wide horizontal spread, piercing through enemies and dealing Holy damage. Upon reaching their maximum range, the rings pause briefly before returning toward the caster's current position, allowing them to strike enemies multiple times. The incantation cannot be charged or channeled, but can be cast repeatedly in rapid succession. It inflicts no status build-up and does not prevent Those Who Live in Death from reviving. Damage is boosted by 10% when cast with or holding the Golden Order Seal, by 15% with the Dryleaf Seal, by 10% when wearing the Radiant Gold Mask, and by holy damage-enhancing gear and buffs such as the Sacred Scorpion Charm and Holy-Shrouding Cracked Tear.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Intelligence",
+        "amount": 23
+      }
+    ]
+  },
+  {
+    "id": "17f690c2762l0hyo9glzbxuxlwc2dh",
+    "name": "Whirl, O Flame!",
+    "image": "/media/incantations/whirl-o-flame.png",
+    "description": "Superior incantation of the Fire Monks.\n\nCreates a spiraling stream of fire that burns the area before the caster. Charging enhances potency and reach.\n\nFire beguiles those who gaze into it. And so the guardians of the flame are also its worshippers.",
+    "type": "Incantation",
+    "cost": 19,
+    "slots": 1,
+    "effects": "Unleashes a spiraling stream of fire in front of the caster that deals fire damage. The stream pierces through enemies and can hit a single target up to 4 times, damaging multiple foes lined up in its path. Can be charged to increase damage and double its reach. It cannot be channeled continuously and causes no status buildup. Damage is boosted by the Giant's Seal, Godfrey Icon (when charged), Fire Scorpion Charm, Flame-Shrouding Cracked Tear, and Flame, Grant Me Strength.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 13
+      }
+    ]
+  },
+  {
+    "id": "17f694ba1f5l0hyo9j21xk3iv8ws5v",
+    "name": "Vyke's Dragonbolt",
+    "image": "/media/incantations/vykes-dragonbolt.png",
+    "description": "Incantation of Vyke, knight of the Roundtable Hold.\n\nSummons red lightning to bolster both the caster's body and their armament held in the right hand.\n\nEnchants armament with lightning-affinity attacks and increases maximum equipment load. However, lightning damage negation will be reduced.\n\nOf all the knights, Vyke the Dragonspear was the one Lansseax loved the most.",
+    "type": "Incantation",
+    "cost": 35,
+    "slots": 1,
+    "effects": "Summons red lightning to grant both a weapon buff to the right-hand armament and a body buff to the caster, each lasting 70 seconds. Can only be cast if the right-hand armament is eligible for weapon buffs.\n\n- Weapon Buff: Imbues the right-hand weapon with flat Lightning damage equal to 0.75x of the casting Sacred Seal's Faith-based Incantation Scaling. Intelligence- and Arcane-based scaling on hybrid seals do not contribute to the added damage.\n- Body Buff: Increases maximum equipment load by 15% (which can lower equip load burden tiers), but reduces lightning damage negation by 35%.\n\nThis incantation cannot be charged, channeled, or continuously cast, and causes no status build-up. Once cast, the weapon and body buffs function independently: swapping weapons removes the weapon enchantment while leaving the body buff active, and applying another body buff will overwrite the equip load and negation modifier without removing the weapon enchantment. Both buff durations are extended by the Old Lord's Talisman.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 23
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f698ccf55l0hyo9juunjo3lodn1n",
+    "name": "Urgent Heal",
+    "image": "/media/incantations/urgent-heal.png",
+    "description": "Incantation of the Two Fingers' faithful.\n\nHeals a small amount of HP. This incantation can be cast while in motion.\n\nThe Two Fingers has high hopes for the Tarnished; that even if they should be wounded, even should they fall, they will continue to fight for their duty.",
+    "type": "Incantation",
+    "cost": 16,
+    "slots": 1,
+    "effects": "Restores HP to the caster equal to 115% of the Faith-scaling portion of the equipped Sacred Seal's Incantation Scaling upon completing the casting animation. The healing does not scale with the Arcane or Intelligence scaling of hybrid Sacred Seals and affects only the caster, without healing nearby allies or summons. Urgent Heal deals no damage of any type, including Holy damage, and does not harm Revenants or Revenant Followers. The incantation cannot be charged to boost its potency or delay execution, cannot be channeled or continuously cast, and inflicts or cures no status build-up. Uniquely among standard direct healing incantations, it can be cast while walking in motion. It mechanically synergizes with cast-speed boosters such as the Radagon Icon or high Dexterity, and complements gradual health-recovery effects such as Bestial Vitality for efficient, low-FP health maintenance between encounters.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 8
+      },
+      {
+        "name": "Arcane",
+        "amount": 0
+      },
+      {
+        "name": "Intelligence",
+        "amount": 0
+      }
+    ]
+  },
+  {
+    "id": "17f693ca95el0hyo9lhohewhkatfd",
+    "name": "Wrath Of Gold",
+    "image": "/media/incantations/wrath-of-gold.png",
+    "description": "Superior Erdtree Worship incantation.\n\nProduces a golden shockwave that knocks back nearby foes. Charging increases the size of the shockwave.\n\nThis incantation was discovered when the Elden Ring was shattered, and it was feared as a sign of the Erdtree's wrath.",
+    "type": "Incantation",
+    "cost": 40,
+    "slots": 1,
+    "effects": "Releases an expansive golden shockwave dealing Holy damage in an area around the caster that violently knocks back human-sized enemies. Can be charged to increase Holy damage, enlarge the shockwave radius, and deal increased stance damage. It can be cast while mounted on Torrent, benefits from charge-boosting effects such as the Godfrey Icon, and does not cause status build-up or allow continuous channeling.",
+    "requires": [
+      {
+        "name": "Faith",
+        "amount": 32
+      }
+    ]
+  }
+]
