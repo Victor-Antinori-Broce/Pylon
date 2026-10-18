@@ -1,0 +1,1296 @@
+[
+  {
+    "id": "17f6a3ceea8l0i6yrr9i9li6sityc",
+    "name": "Arcane Sphere Of Faces",
+    "image": "/media/creatures/arcane-sphere-of-faces.png",
+    "description": "Masses of graven glintstone faces bound into a grotesque sphere, safeguarding the basement cellar of Witchbane Ruins. Born from primeval sorcery experiments.",
+    "location": "Witchbane Ruins, Liurnia & Caelid",
+    "drops": [
+      "Glintstone Scrap"
+    ]
+  },
+  {
+    "id": "17f6a0bda2cl0i6yrtkvf0vjp9puf",
+    "name": "Giant Bat",
+    "image": "/media/creatures/giant-bat.png",
+    "description": "Nocturnal winged predators nesting near dark cliffs, cave ceilings, and ruins throughout the Lands Between. Often rest during daylight unless disturbed.",
+    "location": "Limgrave, Weeping Peninsula, Liurnia",
+    "drops": [
+      "Golden Rune [1]",
+      "Beast Blood"
+    ]
+  },
+  {
+    "id": "17f6a4a6036l0i6yrvd9spb0xhw8tg",
+    "name": "Lesser Runebear",
+    "image": "/media/creatures/lesser-runebear.png",
+    "description": "Massive, ferociously aggressive bears bearing intricate runic patterns across their chest fur. Scavenge forests and hillsides with tremendous physical power.",
+    "location": "Mistwood, Eastern Limgrave & Weeping Peninsula",
+    "drops": [
+      "Hefty Beast Bone",
+      "Beast Blood"
+    ]
+  },
+  {
+    "id": "17f6a47bf80l0i6ys0d6zu6xbqlwu2",
+    "name": "Abnormal Stone Cluster",
+    "image": "/media/creatures/abnormal-stone-cluster.png",
+    "description": "Bizarre caterpillar-shaped beings formed of spherical moss-covered stones centered around an eerie human-like eye. Found guarding ancient Evergaols.",
+    "location": "Evergaols across Limgrave, Liurnia and Altus Plateau",
+    "drops": [
+      "Ruin Fragment",
+      "Sanctuary Stone"
+    ]
+  },
+  {
+    "id": "17f6a58d8d2l0i6ys2scc9vx91u6pp",
+    "name": "Basilisk",
+    "image": "/media/creatures/basilisk.png",
+    "description": "Repulsive reptiles dwelling in dark caverns and deep subterranean waterways, swollen with large bulbous false eyes. They expel clouds of deadly Death Blight fog.",
+    "location": "Ainsel River, Deeproot Depths, Lake of Rot, Subterranean Shunning-Grounds",
+    "drops": [
+      "Beast Liver",
+      "Eye of Yelough"
+    ]
+  },
+  {
+    "id": "17f6a170239l0i6ysg3xam4t0zopmn",
+    "name": "Bladed Talon Eagle",
+    "image": "/media/creatures/bladed-talon-eagle.png",
+    "description": "Servants of Stormveil Castle fitted with vicious steel talons and explosive barrels, driven by cruel training to divebomb intruders.",
+    "location": "Stormveil Castle",
+    "drops": [
+      "Warhawk's Talon",
+      "Flight Pinion",
+      "Stormhawk Feather"
+    ]
+  },
+  {
+    "id": "17f69f92eebl0i6yshu9cbf402o9dp",
+    "name": "Boar",
+    "image": "/media/creatures/boar.png",
+    "description": "Sturdy wild swine roaming the woodlands and plains of Limgrave and Stormhill. Generally non-hostile unless cornered or attacked.",
+    "location": "Forests of Limgrave and Stormhill",
+    "drops": [
+      "Thin Animal Bones",
+      "Lump of Flesh"
+    ]
+  },
+  {
+    "id": "17f69f7b6e7l0i6ysj8mlloa8u65n9",
+    "name": "Burning Slug",
+    "image": "/media/creatures/burning-slug.png",
+    "description": "Sluggish gastropods radiating intense heat and molten slime, roaming thermal springs and magma-soaked terrain.",
+    "location": "Liurnia of the Lakes, Mt. Gelmir",
+    "drops": [
+      "Smoldering Butterfly"
+    ]
+  },
+  {
+    "id": "17f69ee8f6el0i6ysmpe59c9uqwri4",
+    "name": "Crab",
+    "image": "/media/creatures/crab.png",
+    "description": "Common crustaceans scuttling along the beaches, rivers, and shallow marshes of Limgrave and the Weeping Peninsula.",
+    "location": "Beaches and shallow waters of Limgrave",
+    "drops": [
+      "Crab Eggs",
+      "Strip of White Flesh"
+    ]
+  },
+  {
+    "id": "17f69f11a62l0i6yswxrtoktawxqv",
+    "name": "Construct",
+    "image": "/media/creatures/construct.png",
+    "description": "Enchanted stone constructs animated by primeval magic to excavate tunnels and defend ancient underground chambers.",
+    "location": "Sealed Tunnel, Altus Plateau",
+    "drops": [
+      "Explosive Stone",
+      "Smithing Stone [1]"
+    ]
+  },
+  {
+    "id": "17f69edd929l0i6yt0z56hlzhtjwzu",
+    "name": "Deer",
+    "image": "/media/creatures/deer.png",
+    "description": "Graceful herbivores roaming undisturbed across the open plains and valleys of the Lands Between.",
+    "location": "Plains and forests across Limgrave and Liurnia",
+    "drops": [
+      "Thin Animal Bones",
+      "Sliver of Meat",
+      "Beast Liver"
+    ]
+  },
+  {
+    "id": "17f69dccb97l0i6yt6w0ys92ic7km6p",
+    "name": "Dog",
+    "image": "/media/creatures/dog.png",
+    "description": "Feral canines hunting in packs across ruins and highways, quick to snap and bite with vicious agility.",
+    "location": "Dragon-Burnt Ruins, Limgrave",
+    "drops": [
+      "Thin Animal Bones",
+      "Lump of Flesh"
+    ]
+  },
+  {
+    "id": "17f69eb0a50l0i6yt8vwaeqz4djpgo",
+    "name": "Giant Dragonfly",
+    "image": "/media/creatures/giant-dragonfly.png",
+    "description": "Enormous insects flitting erratically above marshes and lakes, harassing travelers with sharp aerial maneuvers.",
+    "location": "Agheel Lake, Limgrave, Liurnia shallows",
+    "drops": [
+      "Great Dragonfly Head"
+    ]
+  },
+  {
+    "id": "17f69d1f23cl0i6ytdsizgpbatwgb",
+    "name": "Direwolf",
+    "image": "/media/creatures/direwolf.png",
+    "description": "Large predatory wolves prowling the cold courtyards of Caria Manor and wooded ridges of Liurnia.",
+    "location": "Caria Manor, Liurnia of the Lakes",
+    "drops": [
+      "Thin Animal Bones",
+      "Lump of Flesh"
+    ]
+  },
+  {
+    "id": "17f69df2d3cl0i6ytiz05kga4oygzh",
+    "name": "Eagle",
+    "image": "/media/creatures/eagle.png",
+    "description": "Majestic birds of prey roosting high on sea-facing cliffs and rocky outcroppings throughout Limgrave and Stormhill.",
+    "location": "Cliffs of Limgrave and Stormhill",
+    "drops": [
+      "Flight Pinion",
+      "Slumbering Egg"
+    ]
+  },
+  {
+    "id": "17f69d72c7bl0i6ytp7vgblxte06s",
+    "name": "Giant Crab",
+    "image": "/media/creatures/giant-crab.png",
+    "description": "Massive armoured crustaceans inhabiting wetlands and shorelines, swinging heavy pincers and spitting high-pressure torrents of water.",
+    "location": "Agheel Lake, Liurnia of the Lakes, Leyndell Moat",
+    "drops": [
+      "Crab Eggs",
+      "Strip of White Flesh"
+    ]
+  },
+  {
+    "id": "17f6a2f96a7l0i6ytu14rxjb7bw7x9",
+    "name": "Giant Land Octopus",
+    "image": "/media/creatures/giant-land-octopus.png",
+    "description": "Grotesque terrestrial cephalopods armed with multiple flailing tentacles and a hardened beak, feeding on blood along marshy shores.",
+    "location": "Shores and shallow waters of Limgrave and Liurnia",
+    "drops": [
+      "Land Octopus Ovary",
+      "Strip of White Flesh"
+    ]
+  },
+  {
+    "id": "17f69d7f00al0i6ytxittgv1hoa7vg",
+    "name": "Giant Lobster",
+    "image": "/media/creatures/giant-lobster.png",
+    "description": "Enormous freshwater crustaceans that skitter through murky lakebeds, capable of sniping prey from great distances with razor-sharp water jets.",
+    "location": "Liurnia of the Lakes, Subterranean Shunning-Grounds",
+    "drops": [
+      "Strip of White Flesh",
+      "Crab Eggs",
+      "Rimed Crystal Bud"
+    ]
+  },
+  {
+    "id": "17f6a0191adl0i6yu0apvoxijwr9gh",
+    "name": "Giant Poison Flower",
+    "image": "/media/creatures/giant-poison-flower.png",
+    "description": "Colossal sentient blossom rooted in ruins and damp groves, capable of releasing clouds of lethal poison and calling down beams of divine light.",
+    "location": "Post Town Remains, Limgrave, Weeping Peninsula",
+    "drops": [
+      "Poisonbloom",
+      "Miranda's Prayer"
+    ]
+  },
+  {
+    "id": "17f6a48e789l0i6yu31h78fyzf033f",
+    "name": "Giant Rat",
+    "image": "/media/creatures/giant-rat.png",
+    "description": "Vile, disease-carrying rodents nesting in dark tunnels, cellars, and catacombs, attacking in aggressive swarms.",
+    "location": "Cellars and caves across Limgrave, Weeping Peninsula, and Altus Plateau",
+    "drops": [
+      "Rune Arc",
+      "Golden Rune [1]"
+    ]
+  },
+  {
+    "id": "17f6a376603l0i6yuaiwj16jsztf7e",
+    "name": "Guillemot",
+    "image": "/media/creatures/guillemot.png",
+    "description": "Docile seabirds nesting on ocean bluffs and rocky beaches, easily frightened away by passing travelers.",
+    "location": "Beaches and bluffs of Western Limgrave",
+    "drops": [
+      "Flight Pinion",
+      "Four-Toed Fowl Foot"
+    ]
+  },
+  {
+    "id": "17f6a359878l0i6yufgzh9jcns3vb",
+    "name": "Lesser Runebear",
+    "image": "/media/creatures/lesser-runebear.png",
+    "description": "Feral giant bears bearing ancient runic chest markings, roaming forests with immense vitality and vicious charging strikes.",
+    "location": "Forests of Limgrave and Weeping Peninsula",
+    "drops": [
+      "Hefty Beast Bone",
+      "Beast Blood"
+    ]
+  },
+  {
+    "id": "17f6a5acdf4l0i6yuhp3y4ou046hc3",
+    "name": "Lesser Red Wolf Of Radagon",
+    "image": "/media/creatures/lesser-red-wolf-of-radagon.png",
+    "description": "Acrobatic scarlet-furred wolves possessing sorcerous glintblade enchantments, prowling wild grounds and sacred chambers.",
+    "location": "Liurnia of the Lakes, Moonlight Altar, Nokron",
+    "drops": [
+      "Golden Rune [7]"
+    ]
+  },
+  {
+    "id": "17f6a53e49dl0i6yunvzzo7rq8l7cb",
+    "name": "Lesser Spider Hand",
+    "image": "/media/creatures/lesser-spider-hand.png",
+    "description": "Small, severed multi-fingered hands that skitter across the floors and walls of Carian grounds, ambushing unwary travelers.",
+    "location": "Caria Manor, Liurnia of the Lakes",
+    "drops": [
+      "Somber Smithing Stone [1]",
+      "Somber Smithing Stone [2]"
+    ]
+  },
+  {
+    "id": "17f6a3d0ac1l0i6yut1mv1q5riwtbe",
+    "name": "Land Octopus",
+    "image": "/media/creatures/land-octopus.png",
+    "description": "Smaller juvenile land octopuses that cluster in coastal tide pools and lake margins, feeding on detritus.",
+    "location": "Agheel Lake and coastal shallows of Limgrave",
+    "drops": [
+      "Land Octopus Ovary",
+      "Strip of White Flesh"
+    ]
+  },
+  {
+    "id": "17f6a4b452bl0i6yuv2ywajxgixbnd",
+    "name": "Owl",
+    "image": "/media/creatures/owl.png",
+    "description": "Solitary nocturnal birds perched quietly on rocky bluffs and gravestones, observant of wandering travelers.",
+    "location": "Cliffs and ruins of Stormhill and Limgrave",
+    "drops": [
+      "Slumbering Egg",
+      "Flight Pinion"
+    ]
+  },
+  {
+    "id": "17f6a070695l0i6yv1st2tyq59xlk",
+    "name": "Poison Flower",
+    "image": "/media/creatures/poison-flower.png",
+    "description": "Carnivorous blooming plant that spews venomous spores upon any who approach its leafy domain.",
+    "location": "Waypoint Ruins, Limgrave",
+    "drops": [
+      "Poisonbloom"
+    ]
+  },
+  {
+    "id": "17f6a4415dcl0i6yv78pnx35hqq3u8",
+    "name": "Land Squirt",
+    "image": "/media/creatures/land-squirt.png",
+    "description": "Bulbous, tubular organisms growing in clusters in wetlands, releasing poison gas clouds to sicken and dissolve prey.",
+    "location": "Dragon-Burnt Ruins, shores of Limgrave and Liurnia",
+    "drops": [
+      "Poisonbloom"
+    ]
+  },
+  {
+    "id": "17f6a55a3a8l0i6yvd9wioasyfq39c",
+    "name": "Rat",
+    "image": "/media/creatures/rat.png",
+    "description": "Small scurrying rodents infesting abandoned cellars, dungeons, and sewers throughout the Lands Between.",
+    "location": "Limgrave Tunnels, Ailing Village, Tombsward Cave",
+    "drops": [
+      "Rune Arc",
+      "Golden Rune [1]"
+    ]
+  },
+  {
+    "id": "17f6a26dde8l0i6yvhv0sfaca0cp78l",
+    "name": "Rabbitgaroo",
+    "image": "/media/creatures/rabbitgaroo.png",
+    "description": "Gentle, skittish creatures unique to the Lands Between, hopping across grassy hillsides with long hind legs.",
+    "location": "Plains and hillocks of Limgrave and Liurnia",
+    "drops": [
+      "Thin Animal Bones",
+      "Sliver of Meat"
+    ]
+  },
+  {
+    "id": "17f69cf16d9l0i6yvjvc9in38ydv3c",
+    "name": "Rotten Stray",
+    "image": "/media/creatures/rotten-stray.png",
+    "description": "Diseased hounds festering with Scarlet Rot, lunging with feral desperation to spread infection through bite wounds.",
+    "location": "Limgrave Tunnels, Caelid highways",
+    "drops": [
+      "Thin Animal Bones",
+      "Lump of Flesh"
+    ]
+  },
+  {
+    "id": "17f6a05a586l0i6yvqntjzd6hpa4jl",
+    "name": "Sheep",
+    "image": "/media/creatures/sheep.png",
+    "description": "Feral horned sheep grazing peacefully across the hills and pastures of Limgrave, rolling away when threatened.",
+    "location": "Pastures of Limgrave and Stormhill",
+    "drops": [
+      "Thin Animal Bones",
+      "Sliver of Meat",
+      "Beast Liver"
+    ]
+  },
+  {
+    "id": "17f69dc762dl0i6yvxw3r8a3zemfvb",
+    "name": "Skeletal Slime",
+    "image": "/media/creatures/skeletal-slime.png",
+    "description": "Amorphous gelatinous blobs infused with bones and necromantic residue, creeping along damp shallows and catacombs.",
+    "location": "Agheel Lake, coastal shallows of Limgrave",
+    "drops": [
+      "Glass Shard"
+    ]
+  },
+  {
+    "id": "17f6a367a0el0i6yw7fx9h19jrzggp",
+    "name": "Spirit Jellyfish",
+    "image": "/media/creatures/spirit-jellyfish.png",
+    "description": "Floating spectral cnidarians illuminating the night air, gently drifting near graves unless provoked.",
+    "location": "Cemeteries and hillsides of Stormhill and Liurnia",
+    "drops": [
+      "Grave Violet"
+    ]
+  },
+  {
+    "id": "17f6a0bd238l0i6yw9dgiguttijn5",
+    "name": "Teardrop Scarab",
+    "image": "/media/creatures/teardrop-scarab.png",
+    "description": "Mythical scarabs rolling spheres of sacred dew. Striking them replenishes flasks or yields valuable sorceries, incantations, and smithing stones.",
+    "location": "Scattered throughout all regions of the Lands Between",
+    "drops": [
+      "Crimson Tear Flask refill",
+      "Cerulean Tear Flask refill",
+      "Ash of War",
+      "Smithing Stones"
+    ]
+  },
+  {
+    "id": "17f69e78bd0l0i6ywdt9vwdes5tt4b",
+    "name": "Spider Hand",
+    "image": "/media/creatures/spider-hand.png",
+    "description": "Monstrous multi-jointed hands formed from spliced corpses, skittering across walls and burying into ground to crush trespassers.",
+    "location": "Caria Manor, Mountaintops of the Giants",
+    "drops": [
+      "Somber Smithing Stone [2]",
+      "Somber Smithing Stone [7]"
+    ]
+  },
+  {
+    "id": "17f6a23208cl0i6ywofpwtfyw4q8jl",
+    "name": "Wild Mouflon",
+    "image": "/media/creatures/wild-mouflon.png",
+    "description": "Stout, curved-horned wild rams inhabiting rugged highlands, defending their herd by charging forward with blunt force.",
+    "location": "Stormhill and Altus Plateau highlands",
+    "drops": [
+      "Thin Animal Bones",
+      "Sliver of Meat",
+      "Beast Liver"
+    ]
+  },
+  {
+    "id": "17f69f93e2cl0i6ywpl2tdr0v79vp8",
+    "name": "Turtle",
+    "image": "/media/creatures/turtle.png",
+    "description": "Docile shelled reptiles resting near ponds and rivers, revered for meat renowned for boosting stamina recovery.",
+    "location": "Lakes and grassy plains of West Limgrave",
+    "drops": [
+      "Turtle Neck Meat"
+    ]
+  },
+  {
+    "id": "17f6a353752l0i6ywvuiyio67jzpbh",
+    "name": "Wolf",
+    "image": "/media/creatures/wolf.png",
+    "description": "Pack hunters stalking the forests and foothills of Limgrave, howling to coordinate vicious flanking maneuvers.",
+    "location": "Groveside Cave, Mistwood, Stormhill",
+    "drops": [
+      "Thin Animal Bones",
+      "Lump of Flesh"
+    ]
+  },
+  {
+    "id": "17f69fd0dd7l0i6yx1o187uqkxkf08",
+    "name": "Prawn Miner",
+    "image": "/media/creatures/prawn-miner.png",
+    "description": "Insectoid worshippers of the Scarlet Rot wielding barbed pest glaives and firing homing pest thread spikes from afar.",
+    "location": "Sellia Crystal Tunnel, Caelid",
+    "drops": [
+      "Pest's Glaive",
+      "Toxic Mushroom"
+    ]
+  },
+  {
+    "id": "17f69eb5eefl0i6yx32k657x6so7zf",
+    "name": "Farum Azula Dragon",
+    "image": "/media/creatures/farum-azula-dragon.png",
+    "description": "Lesser ancient dragons roosting amid the ruins of Crumbling Farum Azula, wielding red lightning and breath of searing flame.",
+    "location": "Crumbling Farum Azula",
+    "drops": [
+      "Ancient Dragon Smithing Stone"
+    ]
+  },
+  {
+    "id": "17f6a4720aal0i6yxmkks4qfttp3b8",
+    "name": "Bloody Finger Nerijus",
+    "image": "/media/creatures/bloody-finger-nerijus.png",
+    "description": "A savage invader who hunts fellow Tarnished along the murky ravines of Limgrave, wielding the dual-bleed dagger Reduvia.",
+    "location": "Murkwater Ravine, Limgrave",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Reduvia"
+    ]
+  },
+  {
+    "id": "17f69eb7e95l0i6yxnw6glz7q4fubb",
+    "name": "Anastasia, Tarnished-eater",
+    "image": "/media/creatures/anastasia-tarnished-eater.png",
+    "description": "A cannibalistic maiden masquerading as a Finger Maiden who ambushes Tarnished travelers with a heavy Butchering Knife.",
+    "location": "Smoldering Church, Mt. Gelmir, Consecrated Snowfield",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Sacred Scorpion Charm",
+      "Butchering Knife"
+    ]
+  },
+  {
+    "id": "17f6a01ad5cl0i6yxv6sq0qoo7tk0a",
+    "name": "Bloody Finger Okina",
+    "image": "/media/creatures/bloody-finger-okina.png",
+    "description": "A master swordsman hailing from the Land of Reeds who succumbed to the allure of blood, wielding the devastating katana Rivers of Blood.",
+    "location": "Church of Repose, Mountaintops of the Giants",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Rivers of Blood",
+      "Okina Mask"
+    ]
+  },
+  {
+    "id": "17f6a2def99l0i6yxwb7eyuhvu38tg",
+    "name": "Edgar The Revenger",
+    "image": "/media/creatures/edgar-the-revenger.png",
+    "description": "Driven mad with grief after the slaughter of his daughter Irina, Castellan Edgar hunts trespassers as an invader at the Revenger's Shack.",
+    "location": "Revenger's Shack, Liurnia of the Lakes",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Shabriri Grape",
+      "Banished Knight's Halberd (+8)",
+      "Raw Meat Dumpling"
+    ]
+  },
+  {
+    "id": "17f6a10de56l0i6yygvqflqpozsvd",
+    "name": "Inquisitor Ghiza",
+    "image": "/media/creatures/inquisitor-ghiza.png",
+    "description": "A sadistic torturer of Volcano Manor who challenges Tarnished in the manor's upper dining hall with a whirling spiked iron wheel.",
+    "location": "Volcano Manor (Upper Floor)",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Ghiza's Wheel"
+    ]
+  },
+  {
+    "id": "17f69e29ac1l0i6yyt36xomtyw80pr",
+    "name": "Mad Tongue Alberich",
+    "image": "/media/creatures/mad-tongue-alberich.png",
+    "description": "An outcast sorcerer whose phantom lingers in the lower sanctum of Roundtable Hold, casting chilling frostbite and thorn spells.",
+    "location": "Roundtable Hold (Lower Hall)",
+    "drops": [
+      "Taunter's Tongue",
+      "Furlcalling Finger Remedy"
+    ]
+  },
+  {
+    "id": "17f69d42847l0i6yywsyxrvn97q7pa",
+    "name": "Maleigh Marais, Shaded Castle Castellan",
+    "image": "/media/creatures/maleigh-marais-shaded-castle-castellan.png",
+    "description": "The cloaked castellan of the Shaded Castle, devoted to the worship of Malenia, fighting with the scarlet-rot infused Antspur Rapier.",
+    "location": "Fields west of The Shaded Castle, Altus Plateau",
+    "drops": [
+      "Antspur Rapier",
+      "Marais Mask",
+      "Marais Robe"
+    ]
+  },
+  {
+    "id": "17f6a16077el0i6yz89rtvo0b08wet",
+    "name": "Moongrum Carian Knight",
+    "image": "/media/creatures/moongrum-carian-knight.png",
+    "description": "The stalwart Carian Knight standing sentinel before the Grand Library of Raya Lucaria, parrying strikes with effortless grace.",
+    "location": "Raya Lucaria Academy (Grand Library Courtyard)",
+    "drops": [
+      "Carian Knight's Shield"
+    ]
+  },
+  {
+    "id": "17f6a4e77c6l0i6yz8ue9ura86soil",
+    "name": "Preceptor Miriam",
+    "image": "/media/creatures/preceptor-miriam.png",
+    "description": "An elusive sorcerous apparition guarding the balconies of Carian Study Hall, firing magical greatbow arrows and downpours of glintstones.",
+    "location": "Carian Study Hall, Liurnia",
+    "drops": [
+      "Magic Downpour",
+      "Lucidity"
+    ]
+  },
+  {
+    "id": "17f6a320fd9l0i6yzgmo2bwje3vtwa",
+    "name": "Recusant Henricus",
+    "image": "/media/creatures/recusant-henricus.png",
+    "description": "An early Volcano Manor recusant who invades wanderers venturing near the Stormhill colosseum road.",
+    "location": "East of Stormhill Shack, Limgrave",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Hammer Talisman"
+    ]
+  },
+  {
+    "id": "17f6a57a3dfl0i6yzlyirzoe6ek9qe",
+    "name": "Albinauric",
+    "image": "/media/creatures/albinauric.png",
+    "description": "Second-generation artificial humanoids with round, frog-like heads. Despite clumsy waddling, they cartwheel nimbly and strike in frenzied bands.",
+    "location": "Liurnia of the Lakes, Palace Approach Ledge-Road",
+    "drops": [
+      "Albinauric Bloodclot",
+      "Ripple Blade",
+      "Albinauric Mask"
+    ]
+  },
+  {
+    "id": "17f69d8f6ecl0i6yzyadne1wptx69k",
+    "name": "Albinauric Wolfback Archer",
+    "image": "/media/creatures/albinauric-wolfback-archer.png",
+    "description": "First-generation female Albinaurics riding silver direwolves, sniping trespassers with deadly pinpoint accuracy from great distances.",
+    "location": "Consecrated Snowfield, Ordina Liturgical Town",
+    "drops": [
+      "Albinauric Bloodclot",
+      "St. Trina's Arrow",
+      "Blue Silver Mail Armor"
+    ]
+  },
+  {
+    "id": "17f6a42b641l0i6z019225gr50ro3y",
+    "name": "Banished Knight",
+    "image": "/media/creatures/banished-knight.png",
+    "description": "Disgraced heavy knights exiled from their homelands, bound to defend fortifications with whirlwind swordplay and halberd sweeps.",
+    "location": "Stormveil Castle, Cathedral of Dragon Communion, Castle Sol",
+    "drops": [
+      "Banished Knight's Greatsword",
+      "Banished Knight Set",
+      "Banished Knight's Shield",
+      "Banished Knight's Halberd"
+    ]
+  },
+  {
+    "id": "17f6a385eaal0i6z025b3timpwicqi",
+    "name": "Azula Beastman",
+    "image": "/media/creatures/azula-beastman.png",
+    "description": "Ferocious feral beastmen of Farum Azula, wielding primitive stone cleavers and displaying savage acrobatic agility.",
+    "location": "Crumbling Farum Azula, Dragonbarrow Cave",
+    "drops": [
+      "Sanctuary Stone",
+      "Beastman's Cleaver",
+      "Beastman's Curved Sword"
+    ]
+  },
+  {
+    "id": "17f6a26edb1l0i6z0c0l7q5bk6a84s",
+    "name": "Baleful Shadow",
+    "image": "/media/creatures/baleful-shadow.png",
+    "description": "A lethal shadow-assassin taking the form of a crimson-eyed wolf warrior, sent by the Two Fingers to thwart Ranni's rebellion.",
+    "location": "Nokstella, Ainsel River Main",
+    "drops": [
+      "Discarded Palace Key"
+    ]
+  },
+  {
+    "id": "17f69fb509el0i6z0gtmfmrez3jub",
+    "name": "Blackflame Monk",
+    "image": "/media/creatures/blackflame-monk.png",
+    "description": "Apostles of the Godskin who turned from holy flames to wield god-slaying black flames, guarding subterranean vaults.",
+    "location": "Divine Tower of Caelid, Temple of Eiglay",
+    "drops": [
+      "Blackflame Monk Armor",
+      "Monk's Blackflame Blade"
+    ]
+  },
+  {
+    "id": "17f69feb47dl0i6z0k3ravqm7glk",
+    "name": "Perfumer",
+    "image": "/media/creatures/perfumer.png",
+    "description": "Apothecaries of Leyndell who transmuted herbal medicine into devastating weapons of fire and toxic smog during the Shattering.",
+    "location": "Leyndell Royal Capital, Perfumer's Ruins",
+    "drops": [
+      "Perfumer's Robe",
+      "Altus Bloom",
+      "Spark Aromatic"
+    ]
+  },
+  {
+    "id": "17f69f00cfel0i6z0mmodqv7jvdaci",
+    "name": "Black Knight",
+    "image": "/media/creatures/black-knight.png",
+    "description": "Harbingers of death clad in pitch-black armor, patrolling roads and bridges atop shadowy steeds under cover of darkness.",
+    "location": "Bridge near Agheel Lake North, patrolling at night",
+    "drops": [
+      "Ash of War: Repeating Thrust",
+      "Night's Cavalry Set"
+    ]
+  },
+  {
+    "id": "17f69dfb029l0i6z0wqysfsnnae3v",
+    "name": "Godrick Knight",
+    "image": "/media/creatures/godrick-knight.png",
+    "description": "Elite armored commanders in service to Godrick the Grafted, leading footmen and wielding heavy partisan spears or greatswords.",
+    "location": "Gatefront Ruins, Fort Haight, Limgrave",
+    "drops": [
+      "Lordsworn's Greatsword",
+      "Godrick Knight Set",
+      "Knight's Greatshield"
+    ]
+  },
+  {
+    "id": "17f69d1db06l0i6z0z639orzq5og3g",
+    "name": "Castle Guard",
+    "image": "/media/creatures/castle-guard.png",
+    "description": "Condemned penal soldiers clad in red hoods and padded mail, garrisoned to defend Stormveil's parapets and courtyards.",
+    "location": "Stormveil Castle",
+    "drops": [
+      "Exile Set",
+      "Torchpole",
+      "Stormhawk Feather",
+      "Soldier's Crossbow"
+    ]
+  },
+  {
+    "id": "17f6a302bd7l0i6z12o9lq9y1lew9n",
+    "name": "Chanting Winged Dame",
+    "image": "/media/creatures/chanting-winged-dame.png",
+    "description": "Hideous bat-winged hags that sing mournful Latin hymns across misty ravines, suddenly swooping to poison and claw intruders.",
+    "location": "Ruin-Strewn Precipice, Liurnia, Fort Faroth",
+    "drops": [
+      "Golden Rune [5]",
+      "Poisonbloom"
+    ]
+  },
+  {
+    "id": "17f69ef99e6l0i6z16kucxff07ajb",
+    "name": "Clayman",
+    "image": "/media/creatures/clayman.png",
+    "description": "Mute, mud-sculpted priests and denizens of subterranean rivers, armed with stone harpoons and ancient bubble sorceries.",
+    "location": "Siofra River, Ainsel River",
+    "drops": [
+      "Clayman's Harpoon",
+      "Glintstone Scrap"
+    ]
+  },
+  {
+    "id": "17f6a21d89al0i6z17flcn6njlnoa",
+    "name": "Commoner",
+    "image": "/media/creatures/commoner.png",
+    "description": "Gaunt, subservient human laborers who perform menial tasks and guard castle perimeters with knives and torches.",
+    "location": "Stormveil Castle, Leyndell, Volcano Manor",
+    "drops": [
+      "Commoner's Garb",
+      "Commoner's Shoes",
+      "Dagger"
+    ]
+  },
+  {
+    "id": "17f6a47d8c4l0i6z1hixh46ze7d0j",
+    "name": "Demi-human",
+    "image": "/media/creatures/demi-human.png",
+    "description": "Small, aggressive pack humanoids scavenging in coastal caves and forests, led by larger tribal chieftains.",
+    "location": "Caves and forests across Limgrave and Weeping Peninsula",
+    "drops": [
+      "Rainbow Stone",
+      "Rickety Shield",
+      "Falchion",
+      "String",
+      "Glowstone"
+    ]
+  },
+  {
+    "id": "17f6a4a39c2l0i6z1owhunir5sz7ok",
+    "name": "Fire Monk",
+    "image": "/media/creatures/fire-monk.png",
+    "description": "Devout custodians of the Giants' Flame who wield fire-blessed maces and cast flame incantations across the hills of Liurnia.",
+    "location": "Monk encampments in East Liurnia of the Lakes",
+    "drops": [
+      "Fire Monk Hood",
+      "Fire Monk Armor",
+      "Monk's Flamemace",
+      "Smoldering Butterfly",
+      "Fire Blossom"
+    ]
+  },
+  {
+    "id": "17f69cf24d6l0i6z1pyyc80cokt3a",
+    "name": "Sorcerer Miner",
+    "image": "/media/creatures/sorcerer-miner.png",
+    "description": "Enslaved miners infused with glintstone crystallization, using magic-tipped pickaxes to extract ores and strike intruders.",
+    "location": "Altus Tunnel, Raya Lucaria Crystal Tunnel",
+    "drops": [
+      "Digger's Staff",
+      "Smithing Stone [1]"
+    ]
+  },
+  {
+    "id": "17f6a5b8c8al0i6z1sda5f93o89ubg",
+    "name": "Flame Guardian",
+    "image": "/media/creatures/flame-guardian.png",
+    "description": "Mysterious bronze-masked priests stationed at mountain garrisons, channeling flame pillars from ceremonial braziers.",
+    "location": "Guardians' Garrison, Mountaintops of the Giants",
+    "drops": [
+      "Smoldering Butterfly",
+      "Fire Blossom"
+    ]
+  },
+  {
+    "id": "17f69fbc645l0i6z1th5oc8w2y7kqk",
+    "name": "Glintstone Sorcerer",
+    "image": "/media/creatures/glintstone-sorcerer.png",
+    "description": "Scholars of Raya Lucaria wearing stone crowns, casting glintstone pebble volleys from their study halls and courtyards.",
+    "location": "Raya Lucaria Academy",
+    "drops": [
+      "Glintstone Staff",
+      "Raya Lucarian Robe",
+      "Glintstone Scrap"
+    ]
+  },
+  {
+    "id": "17f6a2e238el0i6z20md0879bx2sa",
+    "name": "Gnoll",
+    "image": "/media/creatures/gnoll.png",
+    "description": "Cannibalistic beast warriors roaming the crumbling architecture of Farum Azula, swift and brutal in melee combat.",
+    "location": "Crumbling Farum Azula",
+    "drops": [
+      "Sanctuary Stone",
+      "Beastman's Curved Sword"
+    ]
+  },
+  {
+    "id": "17f6a3a9029l0i6z27h60v22c5sisi",
+    "name": "Godrick Soldier",
+    "image": "/media/creatures/godrick-soldier.png",
+    "description": "Standard foot soldiers bearing Godrick's twin-headed axe crest, patrolling gatefront ruins and roads in disciplined squads.",
+    "location": "Gatefront Ruins, Stormgate, Limgrave",
+    "drops": [
+      "Lordsworn's Straight Sword",
+      "Godrick Soldier Set",
+      "Lordsworn's Crossbow"
+    ]
+  },
+  {
+    "id": "17f69f23c47l0i6z297epd0jcox8d",
+    "name": "Golem",
+    "image": "/media/creatures/golem.png",
+    "description": "Colossal stone sentinels constructed in ancient eras, awakening from centuries of slumber to stomp and fire heavy greatbow ballistas.",
+    "location": "Stormhill, Castle Morne ramparts, Ainsel River Well",
+    "drops": [
+      "Golem's Halberd",
+      "Golem Greatarrow",
+      "Smithing Stone [1]"
+    ]
+  },
+  {
+    "id": "17f69d31a06l0i6z2kyia61ityqps",
+    "name": "Highwayman",
+    "image": "/media/creatures/highwayman.png",
+    "description": "Former soldiers turned cutthroats who ambush travelers in caves and narrow ravines using hidden bells and swift daggers.",
+    "location": "Murkwater Cave, Limgrave",
+    "drops": [
+      "Bolt",
+      "Smoldering Butterfly",
+      "Highwayman Hood"
+    ]
+  },
+  {
+    "id": "17f6a1704cdl0i6z2ohrqnekxuveon",
+    "name": "Great Horned Tragoth",
+    "image": "/media/creatures/great-horned-tragoth.png",
+    "description": "A famed chivalrous knight renowned for aiding countless Tarnished, targeted for assassination by Volcano Manor atop the precipice.",
+    "location": "Ruin-Strewn Precipice (Volcano Manor assassination contract)",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Rune Arc",
+      "Bull-Goat Set"
+    ]
+  },
+  {
+    "id": "17f6a37a5f1l0i6z2ptkcpanfvzxk",
+    "name": "Gold Dragon Cult Knight",
+    "image": "/media/creatures/gold-dragon-cult-knight.png",
+    "description": "Elite golden knight of Leyndell wielding ancient dragon lightning incantations and high-poise sword strikes.",
+    "location": "South of Artist's Shack, Liurnia of the Lakes",
+    "drops": [
+      "Dragon Cult Prayerbook",
+      "Leyndell Knight Set",
+      "Knight's Greatshield"
+    ]
+  },
+  {
+    "id": "17f69d38beel0i6z2uah4n55ouvrrh",
+    "name": "Imp",
+    "image": "/media/creatures/imp.png",
+    "description": "Nimble stone gargoyles lurking in catacombs, clinging to ceilings and ambushing travelers with bleeding hatchets and throwing pots.",
+    "location": "Catacombs throughout Limgrave, Liurnia, and Altus",
+    "drops": [
+      "Forked Hatchet",
+      "Grave Glovewort [1]"
+    ]
+  },
+  {
+    "id": "17f69db3251l0i6z2uxrqc134y3ewp",
+    "name": "Imp Miner",
+    "image": "/media/creatures/imp-miner.png",
+    "description": "Small stone constructs deployed in cliffside mining scaffolds, ambushing workers and intruders with flying flail strikes.",
+    "location": "Ruin-Strewn Precipice",
+    "drops": [
+      "Smithing Stone [1]",
+      "Smithing Stone [2]"
+    ]
+  },
+  {
+    "id": "17f6a0250f0l0i6z33camvyws96s0v",
+    "name": "Invisible Warrior",
+    "image": "/media/creatures/invisible-warrior.png",
+    "description": "Concealed scion of the Black Knives cloaked in invisibility veils, stalking the freezing alleys of the liturgical town to backstab unwary souls.",
+    "location": "Ordina Liturgical Town (Evergaol)",
+    "drops": [
+      "Ghost Glovewort [9]"
+    ]
+  },
+  {
+    "id": "17f6a6452b7l0i6z39vw4cv451i5eh",
+    "name": "Juno Hoslow, Knight Of Blood",
+    "image": "/media/creatures/juno-hoslow-knight-of-blood.png",
+    "description": "The master of House Hoslow who swore to uphold his lineage in blood, refusing Volcano Manor's invitation and defending his snowbound estate.",
+    "location": "Shack of the Lofty, Mountaintops of the Giants",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Rune Arc",
+      "Hoslow's Petal Whip",
+      "Hoslow's Set"
+    ]
+  },
+  {
+    "id": "17f6a54cd85l0i6z3dvc1msyzxgnhb",
+    "name": "Imp",
+    "image": "/media/creatures/imp.png",
+    "description": "Carved stone imps stationed in underground crypts, leaping from darkened perches to inflict rapid blood loss.",
+    "location": "Catacombs throughout the Lands Between",
+    "drops": [
+      "Forked Hatchet",
+      "Grave Glovewort [1]"
+    ]
+  },
+  {
+    "id": "17f6a468558l0i6z3evwocwf8dyje",
+    "name": "Lesser Burial Watchdog",
+    "image": "/media/creatures/lesser-burial-watchdog.png",
+    "description": "Mechanical feline statues animated to guard underground heroes' graves, wielding elemental fire and stone blades with unnatural levitation.",
+    "location": "Giant-Conquering Hero's Grave, Mountaintops of the Giants",
+    "drops": [
+      "Watchdog's Greatsword",
+      "Grave Glovewort [7]"
+    ]
+  },
+  {
+    "id": "17f6a542bd4l0i6z3nv6rhyzwgpy3s",
+    "name": "Knight Of Zamor",
+    "image": "/media/creatures/knight-of-zamor.png",
+    "description": "Ancient, lanky warriors from the legendary war with the Giants, drifting across battlefield snow with frost-wreathed curved blades.",
+    "location": "Zamor Ruins, Mountaintops of the Giants",
+    "drops": [
+      "Zamor Curved Sword",
+      "Zamor Set"
+    ]
+  },
+  {
+    "id": "17f6a590e96l0i6z3ozc8rcbywnwpk",
+    "name": "Lesser Pumpkin Head",
+    "image": "/media/creatures/lesser-pumpkin-head.png",
+    "description": "Burly, feral giants wearing heavy bronze pumpkin helms to dull madness, swinging flails and headbutting ground targets.",
+    "location": "Castle Morne, Raya Lucaria Academy, Limgrave",
+    "drops": [
+      "Pumpkin Helm",
+      "Sanctuary Stone"
+    ]
+  },
+  {
+    "id": "17f6a1094del0i6z3usa6gslbq7dbv",
+    "name": "Lesser Ulcerated Tree Spirit",
+    "image": "/media/creatures/lesser-ulcerated-tree-spirit.png",
+    "description": "Writhing mass of corrupted roots and pustules slumbering deep in castle crypts, violently thrashing and detonating holy bursts.",
+    "location": "Stormveil Castle (Crypt)",
+    "drops": [
+      "Golden Seed"
+    ]
+  },
+  {
+    "id": "17f69d18668l0i6z3zu42cdeukhk8j",
+    "name": "Living Jar",
+    "image": "/media/creatures/living-jar.png",
+    "description": "Sentient earthenware jars filled with flesh and bone, spinning and smashing intruders to protect the peace of jar communities.",
+    "location": "Stormhill, Liurnia, Jarburg, Mt. Gelmir",
+    "drops": [
+      "Living Jar Shard",
+      "Raw Meat Dumpling"
+    ]
+  },
+  {
+    "id": "17f6a056aafl0i6z4af9sblixpdylg",
+    "name": "Lesser Wormface",
+    "image": "/media/creatures/lesser-wormface.png",
+    "description": "Grotesque cloaked wanderers whose visages are obscured by squirming parasitic worms, vomiting streams of death-inducing blight.",
+    "location": "Minor Erdtree in Altus Plateau, Crumbling Farum Azula",
+    "drops": [
+      "Gold-Tinged Excrement"
+    ]
+  },
+  {
+    "id": "17f6a418567l0i6z4aoex55cxoyq5",
+    "name": "Maneuverable Flamethrower",
+    "image": "/media/creatures/maneuverable-flamethrower.png",
+    "description": "Mechanized wooden carriages propelled by fire monks, spewing continuous jets of flame from an ornamental carved visage.",
+    "location": "Liurnia of the Lakes, Guardians' Garrison",
+    "drops": [
+      "Smoldering Butterfly",
+      "Fire Blossom"
+    ]
+  },
+  {
+    "id": "17f6a474991l0i6z4cwbbfkzh4re1b",
+    "name": "Marionette Gargoyle",
+    "image": "/media/creatures/marionette-gargoyle.png",
+    "description": "Winged mechanical puppets perched along church roofs, swooping down with twin scythes to protect academy secrets.",
+    "location": "Raya Lucaria Academy",
+    "drops": [
+      "Marionette Soldier Helm",
+      "Flight Pinion"
+    ]
+  },
+  {
+    "id": "17f6a0988d8l0i6z4hc87seey9tml6",
+    "name": "Marionette Soldier",
+    "image": "/media/creatures/marionette-soldier.png",
+    "description": "Four-armed wooden clockwork automata created by Carian sorcerers, capable of firing multiple bows or flailing wild blade combos.",
+    "location": "Raya Lucaria Academy, Academy Gate Town",
+    "drops": [
+      "Marionette Soldier Helm",
+      "Marionette Soldier Armor"
+    ]
+  },
+  {
+    "id": "17f6a01fd7dl0i6z4m61s5fhcnqbsl",
+    "name": "Miner",
+    "image": "/media/creatures/miner.png",
+    "description": "Toughened laborers whose flesh has petrified into stone, toiling tirelessly in dark shafts and defending tunnels with heavy pickaxes.",
+    "location": "Limgrave Tunnels, Sellia Crystal Tunnel",
+    "drops": [
+      "Smithing Stone [1]",
+      "Explosive Stone"
+    ]
+  },
+  {
+    "id": "17f69d05071l0i6z4v1gz1oqx0zdoi",
+    "name": "Mounted Northern Mercenary",
+    "image": "/media/creatures/mounted-northern-mercenary.png",
+    "description": "Horseback Kaiden raiders patrolling outposts with two-handed curved greatswords, striking from saddleback with heavy slashes.",
+    "location": "Highways and plains of Limgrave and Stormhill",
+    "drops": [
+      "Dismounter",
+      "Kaiden Set"
+    ]
+  },
+  {
+    "id": "17f69e8a2b8l0i6z4x8r2r0q9rh0e",
+    "name": "Mounted Knight",
+    "image": "/media/creatures/mounted-knight.png",
+    "description": "Heavily armored knight mounted on a barded warhorse, patrolling key crossroads across Limgrave and Liurnia with lance and greatshield.",
+    "location": "Roads of Northeast Limgrave & Northern Liurnia",
+    "drops": [
+      "Ash of War: Golden Vow",
+      "Knight's Greatshield"
+    ]
+  },
+  {
+    "id": "17f6a10d252l0i6z5198munduncnjs",
+    "name": "Noble Sorcerer",
+    "image": "/media/creatures/noble-sorcerer.png",
+    "description": "Feeble aristocratic scholars in ragged finery, wandering roadways while leaning on crude glintstone staves to fire weak spells.",
+    "location": "Caravans and ruins across Limgrave and Liurnia",
+    "drops": [
+      "Glintstone Staff",
+      "Old Aristocrat Garb"
+    ]
+  },
+  {
+    "id": "17f69f69a20l0i6z54ww74ju60bty",
+    "name": "Misbegotten",
+    "image": "/media/creatures/misbegotten.png",
+    "description": "Winged, chimeric sub-humans cast down as slaves throughout the Lands Between, rebelling in bloodthirsty fury with iron cleavers.",
+    "location": "Castle Morne, Weeping Peninsula, Mt. Gelmir",
+    "drops": [
+      "Iron Cleaver",
+      "Old Fang"
+    ]
+  },
+  {
+    "id": "17f69d7e1b7l0i6z5a4ncivwwpp2qj",
+    "name": "Kaiden Sellsword",
+    "image": "/media/creatures/kaiden-sellsword.png",
+    "description": "Rugged northern mercenaries hailing from the wintry highlands of Kaiden, wielding hefty Dismounters with savage martial discipline.",
+    "location": "Encampments across Limgrave and Stormhill",
+    "drops": [
+      "Dismounter",
+      "Kaiden Helm",
+      "Kaiden Armor",
+      "Kaiden Gauntlets",
+      "Kaiden Trousers"
+    ]
+  },
+  {
+    "id": "17f6a4fb9a1l0i6z5hvvg1hhcj3ei",
+    "name": "Omen",
+    "image": "/media/creatures/omen.png",
+    "description": "Hulking cursed humanoids born with tangled knot-horns across their bodies, imprisoned in dark pits and wielding massive cleavers.",
+    "location": "Stormveil Castle courtyard, Subterranean Shunning-Grounds",
+    "drops": [
+      "Omen Cleaver",
+      "Omen Bairn"
+    ]
+  },
+  {
+    "id": "17f69db88c7l0i6z5ndofcii9xrcxj",
+    "name": "Pendulum Statue",
+    "image": "/media/creatures/pendulum-statue.png",
+    "description": "Ornate mechanical iron maidens rolling on wheels, extending swinging sickle pendulums and opening iron cages to swallow victims.",
+    "location": "Raya Lucaria Academy, Volcano Manor",
+    "drops": [
+      "Somber Smithing Stone [5]"
+    ]
+  },
+  {
+    "id": "17f6a1f8766l0i6z5q9r5tu6mrj36h",
+    "name": "Old Knight Istvan",
+    "image": "/media/creatures/old-knight-istvan.png",
+    "description": "A veteran Tarnished warrior clad in dragon-scale armor, targeted as Volcano Manor's very first contract on the windswept hills of Limgrave.",
+    "location": "Stormhill (Volcano Manor contract)",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Rune Arc",
+      "Scaled Set"
+    ]
+  },
+  {
+    "id": "17f6a46e932l0i6z5rezx45hbss4r",
+    "name": "Perfumer",
+    "image": "/media/creatures/perfumer.png",
+    "description": "Court herbalists and combat chemists who disperse clouds of flaming starlight and boosting aromatics in battle.",
+    "location": "Leyndell Royal Capital, Perfumer's Grotto",
+    "drops": [
+      "Perfumer's Robe",
+      "Altus Bloom",
+      "Spark Aromatic"
+    ]
+  },
+  {
+    "id": "17f6a3a46ccl0i6z5xed8ncsfqghvd",
+    "name": "Pumpkin Head",
+    "image": "/media/creatures/pumpkin-head.png",
+    "description": "Towering mad brute wearing an iron pumpkin helmet to suppress sensory overload, flailing wildly with heavy spiky flails.",
+    "location": "Castle Morne, Weeping Peninsula, Waypoint Ruins",
+    "drops": [
+      "Pumpkin Helm",
+      "Sanctuary Stone"
+    ]
+  },
+  {
+    "id": "17f69cf2d89l0i6z60v1napt1t9k63",
+    "name": "Raya Lucaria Sorcerer",
+    "image": "/media/creatures/raya-lucaria-sorcerer.png",
+    "description": "Scholars of the Academy of Raya Lucaria, studying the arcane mysteries of the stars and striking intruders with Glintstone sorceries.",
+    "location": "Raya Lucaria Academy",
+    "drops": [
+      "Academy Glintstone Staff",
+      "Raya Lucarian Robe",
+      "Sorcerer Manchettes",
+      "Sorcerer Leggings"
+    ]
+  },
+  {
+    "id": "17f6a59863fl0i6z6burs88c0miyu",
+    "name": "Rileigh The Idle",
+    "image": "/media/creatures/rileigh-the-idle.png",
+    "description": "A lethal assassin from the Crepus confederacy who uses concealing veils and a venomous crossbow, marked for execution by Volcano Manor.",
+    "location": "Altus Plateau ravine (Volcano Manor contract)",
+    "drops": [
+      "Furlcalling Finger Remedy",
+      "Rune Arc",
+      "Crepus's Vial",
+      "Black-Key Bolt x20"
+    ]
+  },
+  {
+    "id": "17f69f71f60l0i6z6caa01v3eaefsv",
+    "name": "Revenant",
+    "image": "/media/creatures/revenant.png",
+    "description": "Horrific multi-limbed amalgamations grafted together into arachnid horrors, screaming through magical portals and unleashing flurries of poisoned slaps.",
+    "location": "Liurnia of the Lakes, Kingsrealm Ruins, Elphael",
+    "drops": [
+      "Ghost Glovewort [2]",
+      "Rowa Fruit"
+    ]
+  },
+  {
+    "id": "17f6a30a47el0i6z6ibwvy43l0c4ve",
+    "name": "Servant Of Rot",
+    "image": "/media/creatures/servant-of-rot.png",
+    "description": "Fanatical worshippers of the goddess of rot whose heads have mutated into parasitic fungal caps, spewing toxic mist and throwing fungal daggers.",
+    "location": "Stillwater Cave, Caelid Waypoint Ruins",
+    "drops": [
+      "Toxic Mushroom",
+      "Mushroom Set"
+    ]
+  },
+  {
+    "id": "17f6a13c3d8l0i6z6jjzorqhmoanqe",
+    "name": "Raya Lucarian Warden",
+    "image": "/media/creatures/raya-lucarian-warden.png",
+    "description": "Elite armored watchmen patrolling the halls of Raya Lucaria Academy, defending scholars with crystalline shields and thrusting swords.",
+    "location": "Raya Lucaria Academy",
+    "drops": [
+      "Glintstone Scrap",
+      "Carian Glintstone Staff"
+    ]
+  },
+  {
+    "id": "17f69d1e7e0l0i6z6mt86j6rq8kd7k",
+    "name": "Soldier",
+    "image": "/media/creatures/soldier.png",
+    "description": "Regular infantry garrisons guarding fortifications and roadways, equipped with shields, straight swords, and cross-guard spears.",
+    "location": "Stormveil Castle, Gatefront, Weeping Peninsula",
+    "drops": [
+      "Lordsworn's Straight Sword",
+      "Dagger",
+      "Lordsworn's Shield"
+    ]
+  },
+  {
+    "id": "17f6a21f232l0i6z6yse22dhf9ffk",
+    "name": "Skeleton Mage",
+    "image": "/media/creatures/skeleton-mage.png",
+    "description": "Necromantic undead sorcerers emerging from graves to cast floating spirit skulls and summon spectral allies.",
+    "location": "Graveyards and ruins across Liurnia of the Lakes",
+    "drops": [
+      "Human Bone Shard",
+      "Grave Violet"
+    ]
+  },
+  {
+    "id": "17f6a529d76l0i6z7317q6dcu048df",
+    "name": "Skeleton",
+    "image": "/media/creatures/skeleton.png",
+    "description": "Restless bones of deceased warriors reanimated by Deathroot, reforming repeatedly unless struck down with holy armaments.",
+    "location": "Cemeteries, ruins, and catacombs across Limgrave",
+    "drops": [
+      "Human Bone Shard",
+      "Bandit's Curved Sword"
+    ]
+  },
+  {
+    "id": "17f69f8a495l0i6z73t2p7blhg5kfk",
+    "name": "Slender Wayfarer",
+    "image": "/media/creatures/slender-wayfarer.png",
+    "description": "Ancient extraterrestrial lifeforms said to have risen after a meteor strike, manipulating gravitational force to pull in and crush foes.",
+    "location": "Seaside Ruins beach, Limgrave",
+    "drops": [
+      "Ash of War: Gravitas"
+    ]
+  },
+  {
+    "id": "17f69d9fd6dl0i6z7g6vzjb17ulqd",
+    "name": "Swordstress",
+    "image": "/media/creatures/swordstress.png",
+    "description": "Nimble priestess-warriors of the Eternal Cities, wielding liquid-metal flowing whips and swords with graceful, flowing motions.",
+    "location": "Nokron, Night's Sacred Ground, Nokstella",
+    "drops": [
+      "Nox Swordstress Set",
+      "Nox Flowing Sword"
+    ]
+  },
+  {
+    "id": "17f6a2e0377l0i6z7guw0djley785",
+    "name": "Troll",
+    "image": "/media/creatures/troll.png",
+    "description": "Enslaved giant humanoids used as draft beasts or shock troops, swinging massive stone pillars and sweeping clubs with earth-shattering force.",
+    "location": "Stormhill highway, Caria Manor, Altus Plateau",
+    "drops": [
+      "Smithing Stone [1]",
+      "Troll's Golden Sword"
+    ]
+  },
+  {
+    "id": "17f6a593684l0i6z7nl19q2aff4zjt",
+    "name": "Troll Knight",
+    "image": "/media/creatures/troll-knight.png",
+    "description": "Distinguished trolls granted chivalric rank by the Carian royal family, outfitted in ornate steel plate armor and wielding enchanted Greatswords.",
+    "location": "Caria Manor staircase, Liurnia of the Lakes",
+    "drops": [
+      "Troll Knight's Sword",
+      "Somber Smithing Stone [4]"
+    ]
+  },
+  {
+    "id": "17f69dd4a95l0i6z7rq2htblkttsdr",
+    "name": "Undead Soldier",
+    "image": "/media/creatures/undead-soldier.png",
+    "description": "Decayed foot soldiers wandering aimlessly across ruined battlefields, shambling forward with broken swords and torches.",
+    "location": "Dragon-Burnt Ruins, Fringefolk Hero's Grave",
+    "drops": [
+      "Human Bone Shard",
+      "Rope"
+    ]
+  },
+  {
+    "id": "17f6a37e8a8l0i6z814i8ubxe1ty0d",
+    "name": "Twinsage Sorcerer",
+    "image": "/media/creatures/twinsage-sorcerer.png",
+    "description": "Senior masters of the Academy wearing twin-headed glintstone crowns, unleashing dual-pronged sorcerous volleys with devastating velocity.",
+    "location": "Raya Lucaria Academy (Debate Parlor / Church)",
+    "drops": [
+      "Twinsage Glintstone Crown",
+      "Glintstone Scrap"
+    ]
+  },
+  {
+    "id": "17f69fd99f0l0i6z81ym04r89cha6i",
+    "name": "Wraith Caller",
+    "image": "/media/creatures/wraith-caller.png",
+    "description": "Vile, hunched zealots who ring cursed bells to summon homing vengeful wraiths, riding spectral steeds through ruined marshes.",
+    "location": "Ruins and marshes of Liurnia of the Lakes",
+    "drops": [
+      "Grave Violet",
+      "Wraith Calling Bell"
+    ]
+  }
+]
