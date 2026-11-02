@@ -111,9 +111,12 @@ RUN --mount=type=bind,from=kons,target=/kons-src     KITSUDEN_KONS="${KITSUDEN_K
 # kons de KITSUDEN_KONS: sus package.json vienen de kitsuden-kons y tienen que
 # estar en pnpm-lock.yaml TAL CUAL (instalarlos en el árbol con `kitsuden kon
 # add`, `pnpm install` y subir el lockfile antes de construir).
+#
+# Pocas conexiones y más reintentos: con la caché vacía, las descargas en paralelo
+# daban ECONNRESET, y una dependencia opcional que falla se omite sin aviso.
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     --mount=type=cache,target=/root/.cache \
-    pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+    pnpm install --frozen-lockfile --prefer-offline --ignore-scripts --network-concurrency=4 --fetch-retries=6
 
 # ===================================================================
 # STAGE 3: Builder - Compile everything
