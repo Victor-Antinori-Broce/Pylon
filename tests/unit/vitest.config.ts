@@ -1,7 +1,54 @@
 // Vitest Configuration for Unit Tests
 
-import { defineConfig } from "vitest/config";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "path";
+
+import { defineConfig } from "vitest/config";
+
+/**
+ * Pruebas que necesitan un kon que NO está instalado → fuera de la suite.
+ *
+ * Desde la fase C los kons viven en el repo kitsuden-kons y se instalan en
+ * packages/kons/<kon>/ (`kitsuden kon add`). Las pruebas DE un kon se fueron
+ * con él; aquí quedan las del núcleo, y algunas usan un kon como ejemplo
+ * (idempotencia con kon-ecommerce, el contrato de Inti con kon-games…). En un
+ * clon limpio, sin kons, esas no tienen qué probar: se excluyen y se dice
+ * cuáles, en vez de fallar con un ENOENT que parece un error del núcleo.
+ */
+function pruebasConKonsAusentes(): string[] {
+  const dir = path.resolve(__dirname);
+  const raiz = path.resolve(__dirname, "../..");
+  const fuera: string[] = [];
+  const ausentes = new Set<string>();
+  const patrones = [
+    /packages\/kons\/(kon-[a-z0-9-]+)/g,
+    /"packages",\s*"kons",\s*"(kon-[a-z0-9-]+)"/g,
+    /from\s+"@kitsuden\/(kon-[a-z0-9-]+)/g,
+    // leer("kon-members/migrations/…") y similares: rutas relativas a packages/kons
+    /["'`](kon-[a-z0-9-]+)\/(?:migrations|src|admin|graphics)\//g,
+  ];
+  for (const nombre of readdirSync(dir)) {
+    if (!nombre.endsWith(".test.ts")) continue;
+    const texto = readFileSync(path.join(dir, nombre), "utf8");
+    // Una prueba que NOMBRA un kon sin necesitarlo (p. ej. que comprueba que
+    // NO existe) lo dice con esta marca y no se excluye nunca.
+    if (texto.includes("kitsuden-test: no-necesita-kons")) continue;
+    const kons = new Set<string>();
+    for (const patron of patrones) for (const m of texto.matchAll(patron)) kons.add(m[1]!);
+    const faltan = [...kons].filter((k) => !existsSync(path.join(raiz, "packages", "kons", k)));
+    if (faltan.length) {
+      fuera.push(`tests/unit/${nombre}`);
+      faltan.forEach((k) => ausentes.add(k));
+    }
+  }
+  if (fuera.length) {
+    console.log(
+      `[vitest] ${fuera.length} prueba(s) fuera: usan kons no instalados ` +
+        `(${[...ausentes].sort().join(", ")}). Instálalos con "kitsuden kon add" para correrlas.`
+    );
+  }
+  return fuera;
+}
 
 export default defineConfig({
   test: {
@@ -14,6 +61,7 @@ export default defineConfig({
       "**/.git/**",
       "**/apps/**/node_modules/**",
       "**/packages/**/node_modules/**",
+      ...pruebasConKonsAusentes(),
     ],
     coverage: {
       reporter: ["text", "json", "html"],

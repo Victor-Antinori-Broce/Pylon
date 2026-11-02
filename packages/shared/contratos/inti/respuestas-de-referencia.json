@@ -1,0 +1,940 @@
+{
+  "$comentario": "Respuestas REALES de la API de Kitsuden (generadas por tests/unit/contrato-inti.test.ts con ACTUALIZAR_CONTRATO_INTI=1). Las leen la suite de Kitsuden (la API sigue respondiendo así) y la de @intijs/adapter-kitsuden (el adaptador las sigue entendiendo). No editar a mano. Política: docs/instalacion/versiones.md.",
+  "kitsuden": "0.9.0-beta",
+  "contratos": {
+    "page-builder": 1,
+    "games": 1,
+    "games-editorial": 1,
+    "admin-registry": 1
+  },
+  "casos": [
+    {
+      "nombre": "version",
+      "contrato": "version",
+      "plantilla": "GET /api/version",
+      "metodo": "GET",
+      "ruta": "/api/version",
+      "estado": 200,
+      "cuerpo": {
+        "producto": "kitsuden",
+        "version": "0.9.0-beta",
+        "contratos": {
+          "page-builder": 1,
+          "games": 1,
+          "games-editorial": 1,
+          "admin-registry": 1
+        }
+      }
+    },
+    {
+      "nombre": "juegoPorSlug",
+      "contrato": "games",
+      "plantilla": "GET /api/games/slug/:slug",
+      "metodo": "GET",
+      "ruta": "/api/games/slug/crimson-desert",
+      "estado": 200,
+      "cuerpo": {
+        "id": "0a6e1c2e-0000-4000-8000-000000000001",
+        "title": "Crimson Desert",
+        "slug": "crimson-desert",
+        "subtitle": null,
+        "description": null,
+        "excerpt": "Mundo abierto en Pywel",
+        "releaseDate": null,
+        "status": "published",
+        "developer": null,
+        "publisher": null,
+        "metacriticScore": null,
+        "userRating": null,
+        "coverArtId": null,
+        "coverFocalPoint": null,
+        "trailerUrl": null,
+        "externalIds": null,
+        "specs": null,
+        "screenshots": null,
+        "blocks": [
+          {
+            "id": "cd-tabla-1",
+            "data": {
+              "titulo": "Armas",
+              "datasetId": "armas"
+            },
+            "type": "smart-grid",
+            "order": 0,
+            "editorial": {
+              "orden": 2
+            }
+          },
+          {
+            "id": "cd-tier-2",
+            "data": {
+              "titulo": "Tier list",
+              "descripcion": "Del cargador"
+            },
+            "type": "tier-list",
+            "order": 1,
+            "editorial": {
+              "titulo": "Tier list del equipo"
+            }
+          },
+          {
+            "id": "cd-dex-3",
+            "data": {
+              "etiqueta": "Índice"
+            },
+            "type": "dex",
+            "order": 2,
+            "editorial": {
+              "oculto": true
+            }
+          },
+          {
+            "id": "cd-mapa-4",
+            "data": {
+              "titulo": "Mapa"
+            },
+            "type": "habitat-map",
+            "order": 3
+          }
+        ],
+        "isFeaturedOnHome": false,
+        "createdAt": "2026-10-01T10:00:00.000Z",
+        "updatedAt": "2026-10-01T10:00:00.000Z",
+        "platforms": [],
+        "tags": [],
+        "media": {
+          "cover": {
+            "hero": null,
+            "card": null,
+            "thumbnail": null,
+            "original": null
+          },
+          "screenshots": null
+        }
+      }
+    },
+    {
+      "nombre": "juegoPorId",
+      "contrato": "games",
+      "plantilla": "GET /api/games/:id",
+      "metodo": "GET",
+      "ruta": "/api/games/0a6e1c2e-0000-4000-8000-000000000001",
+      "estado": 200,
+      "cuerpo": {
+        "id": "0a6e1c2e-0000-4000-8000-000000000001",
+        "title": "Crimson Desert",
+        "slug": "crimson-desert",
+        "subtitle": null,
+        "description": null,
+        "excerpt": "Mundo abierto en Pywel",
+        "releaseDate": null,
+        "status": "published",
+        "developer": null,
+        "publisher": null,
+        "metacriticScore": null,
+        "userRating": null,
+        "coverArtId": null,
+        "coverFocalPoint": null,
+        "trailerUrl": null,
+        "externalIds": null,
+        "specs": null,
+        "screenshots": null,
+        "blocks": [
+          {
+            "id": "cd-tabla-1",
+            "data": {
+              "titulo": "Armas",
+              "datasetId": "armas"
+            },
+            "type": "smart-grid",
+            "order": 0,
+            "editorial": {
+              "orden": 2
+            }
+          },
+          {
+            "id": "cd-tier-2",
+            "data": {
+              "titulo": "Tier list",
+              "descripcion": "Del cargador"
+            },
+            "type": "tier-list",
+            "order": 1,
+            "editorial": {
+              "titulo": "Tier list del equipo"
+            }
+          },
+          {
+            "id": "cd-dex-3",
+            "data": {
+              "etiqueta": "Índice"
+            },
+            "type": "dex",
+            "order": 2,
+            "editorial": {
+              "oculto": true
+            }
+          },
+          {
+            "id": "cd-mapa-4",
+            "data": {
+              "titulo": "Mapa"
+            },
+            "type": "habitat-map",
+            "order": 3
+          }
+        ],
+        "isFeaturedOnHome": false,
+        "createdAt": "2026-10-01T10:00:00.000Z",
+        "updatedAt": "2026-10-01T10:00:00.000Z",
+        "media": {
+          "cover": {
+            "hero": null,
+            "card": null,
+            "thumbnail": null,
+            "original": null
+          },
+          "screenshots": null
+        }
+      }
+    },
+    {
+      "nombre": "paginaPorId",
+      "contrato": "page-builder",
+      "plantilla": "GET /api/page-builder/pages/:id",
+      "metodo": "GET",
+      "ruta": "/api/page-builder/pages/0b6e1c2e-0000-4000-8000-000000000002",
+      "estado": 200,
+      "cuerpo": {
+        "id": "0b6e1c2e-0000-4000-8000-000000000002",
+        "title": "Inicio",
+        "slug": "inicio",
+        "description": "Portada",
+        "status": "published",
+        "metaTitle": null,
+        "metaDescription": null,
+        "ogImageId": null,
+        "layout": "default",
+        "cssClass": null,
+        "customCss": null,
+        "publishedAt": "2026-10-01T10:00:00.000Z",
+        "authorId": null,
+        "isHomepage": true,
+        "requireAuth": false,
+        "createdAt": "2026-10-01T10:00:00.000Z",
+        "updatedAt": "2026-10-01T10:00:00.000Z",
+        "blocks": [
+          {
+            "id": "0c6e1c2e-0000-4000-8000-000000000003",
+            "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+            "type": "hero",
+            "name": null,
+            "sortOrder": 0,
+            "columnSpan": 12,
+            "content": {
+              "headline": "Hola"
+            },
+            "cssClass": null,
+            "backgroundColor": null,
+            "textColor": null,
+            "padding": null,
+            "isVisible": true,
+            "visibleFrom": null,
+            "visibleUntil": null,
+            "createdAt": "2026-10-01T10:00:00.000Z",
+            "updatedAt": "2026-10-01T10:00:00.000Z"
+          },
+          {
+            "id": "0c6e1c2e-0000-4000-8000-000000000004",
+            "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+            "type": "text",
+            "name": null,
+            "sortOrder": 10,
+            "columnSpan": 12,
+            "content": {
+              "body": "Texto"
+            },
+            "cssClass": null,
+            "backgroundColor": null,
+            "textColor": null,
+            "padding": null,
+            "isVisible": true,
+            "visibleFrom": null,
+            "visibleUntil": null,
+            "createdAt": "2026-10-01T10:00:00.000Z",
+            "updatedAt": "2026-10-01T10:00:00.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "nombre": "paginaPorSlug",
+      "contrato": "page-builder",
+      "plantilla": "GET /api/page-builder/pages/:slug",
+      "metodo": "GET",
+      "ruta": "/api/page-builder/pages/inicio",
+      "estado": 200,
+      "cuerpo": {
+        "id": "0b6e1c2e-0000-4000-8000-000000000002",
+        "title": "Inicio",
+        "slug": "inicio",
+        "description": "Portada",
+        "status": "published",
+        "metaTitle": null,
+        "metaDescription": null,
+        "ogImageId": null,
+        "layout": "default",
+        "cssClass": null,
+        "customCss": null,
+        "publishedAt": "2026-10-01T10:00:00.000Z",
+        "authorId": null,
+        "isHomepage": true,
+        "requireAuth": false,
+        "createdAt": "2026-10-01T10:00:00.000Z",
+        "updatedAt": "2026-10-01T10:00:00.000Z",
+        "blocks": [
+          {
+            "id": "0c6e1c2e-0000-4000-8000-000000000003",
+            "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+            "type": "hero",
+            "name": null,
+            "sortOrder": 0,
+            "columnSpan": 12,
+            "content": {
+              "headline": "Hola"
+            },
+            "cssClass": null,
+            "backgroundColor": null,
+            "textColor": null,
+            "padding": null,
+            "isVisible": true,
+            "visibleFrom": null,
+            "visibleUntil": null,
+            "createdAt": "2026-10-01T10:00:00.000Z",
+            "updatedAt": "2026-10-01T10:00:00.000Z"
+          },
+          {
+            "id": "0c6e1c2e-0000-4000-8000-000000000004",
+            "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+            "type": "text",
+            "name": null,
+            "sortOrder": 10,
+            "columnSpan": 12,
+            "content": {
+              "body": "Texto"
+            },
+            "cssClass": null,
+            "backgroundColor": null,
+            "textColor": null,
+            "padding": null,
+            "isVisible": true,
+            "visibleFrom": null,
+            "visibleUntil": null,
+            "createdAt": "2026-10-01T10:00:00.000Z",
+            "updatedAt": "2026-10-01T10:00:00.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "nombre": "listaDePaginas",
+      "contrato": "page-builder",
+      "plantilla": "GET /api/page-builder/pages?status=&limit=&offset=",
+      "metodo": "GET",
+      "ruta": "/api/page-builder/pages?status=published&limit=100&offset=0",
+      "estado": 200,
+      "cuerpo": {
+        "docs": [
+          {
+            "id": "0b6e1c2e-0000-4000-8000-000000000002",
+            "title": "Inicio",
+            "slug": "inicio",
+            "description": "Portada",
+            "status": "published",
+            "layout": "default",
+            "isHomepage": true,
+            "publishedAt": "2026-10-01T10:00:00.000Z",
+            "updatedAt": "2026-10-01T10:00:00.000Z"
+          }
+        ],
+        "totalDocs": 1,
+        "limit": 100,
+        "offset": 0
+      }
+    },
+    {
+      "nombre": "tiposDeBloque",
+      "contrato": "page-builder",
+      "plantilla": "GET /api/page-builder/block-types",
+      "metodo": "GET",
+      "ruta": "/api/page-builder/block-types",
+      "estado": 200,
+      "cuerpo": {
+        "blockTypes": [
+          {
+            "type": "hero",
+            "name": "Hero Section",
+            "category": "layout",
+            "icon": "layout",
+            "description": "Large banner with headline, description, and call-to-action",
+            "schema": {
+              "headline": {
+                "type": "string",
+                "required": true
+              },
+              "subheadline": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "mediaId": {
+                "type": "string",
+                "description": "Background image/video"
+              },
+              "mediaType": {
+                "type": "enum",
+                "options": ["image", "video"],
+                "default": "image"
+              },
+              "alignment": {
+                "type": "enum",
+                "options": ["left", "center", "right"],
+                "default": "center"
+              },
+              "minHeight": {
+                "type": "enum",
+                "options": ["sm", "md", "lg", "xl"],
+                "default": "md"
+              },
+              "focalPoint": {
+                "type": "object",
+                "description": "Smart crop focal point (0-1)",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                  },
+                  "y": {
+                    "type": "number",
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                  }
+                }
+              },
+              "primaryButton": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "variant": {
+                    "type": "enum",
+                    "options": ["primary", "secondary", "outline"]
+                  }
+                }
+              },
+              "secondaryButton": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "text",
+            "name": "Text",
+            "category": "content",
+            "icon": "type",
+            "description": "Rich text content block",
+            "schema": {
+              "text": {
+                "type": "string",
+                "required": true
+              },
+              "format": {
+                "type": "enum",
+                "options": ["html", "markdown", "plain"],
+                "default": "html"
+              },
+              "alignment": {
+                "type": "enum",
+                "options": ["left", "center", "right", "justify"],
+                "default": "left"
+              },
+              "textSize": {
+                "type": "enum",
+                "options": ["sm", "md", "lg", "xl"],
+                "default": "md"
+              }
+            }
+          },
+          {
+            "type": "image",
+            "name": "Image",
+            "category": "media",
+            "icon": "image",
+            "description": "Single image with optional caption and link",
+            "schema": {
+              "mediaId": {
+                "type": "string",
+                "required": true
+              },
+              "altText": {
+                "type": "string"
+              },
+              "caption": {
+                "type": "string"
+              },
+              "alignment": {
+                "type": "enum",
+                "options": ["left", "center", "right", "full"],
+                "default": "center"
+              },
+              "linkUrl": {
+                "type": "string"
+              },
+              "openInNewTab": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
+          {
+            "type": "video",
+            "name": "Video",
+            "category": "media",
+            "icon": "video",
+            "description": "Self-hosted or embedded video",
+            "schema": {
+              "mediaId": {
+                "type": "string",
+                "description": "For self-hosted videos"
+              },
+              "embedUrl": {
+                "type": "string",
+                "description": "YouTube/Vimeo URL"
+              },
+              "provider": {
+                "type": "enum",
+                "options": ["youtube", "vimeo", "self"],
+                "default": "self"
+              },
+              "autoplay": {
+                "type": "boolean",
+                "default": false
+              },
+              "loop": {
+                "type": "boolean",
+                "default": false
+              },
+              "muted": {
+                "type": "boolean",
+                "default": true
+              },
+              "controls": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          },
+          {
+            "type": "grid",
+            "name": "Grid Layout",
+            "category": "layout",
+            "icon": "grid",
+            "description": "Multi-column grid for organizing content",
+            "schema": {
+              "columns": {
+                "type": "number",
+                "min": 1,
+                "max": 4,
+                "default": 2
+              },
+              "gap": {
+                "type": "enum",
+                "options": ["sm", "md", "lg"],
+                "default": "md"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "columnSpan": {
+                      "type": "number",
+                      "min": 1,
+                      "max": 12
+                    },
+                    "content": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "cards",
+            "name": "Cards",
+            "category": "content",
+            "icon": "square-stack",
+            "description": "Card grid with images, titles, and descriptions",
+            "schema": {
+              "cards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string",
+                      "required": true
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "mediaId": {
+                      "type": "string"
+                    },
+                    "linkUrl": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "columns": {
+                "type": "enum",
+                "options": [1, 2, 3, 4],
+                "default": 3
+              },
+              "variant": {
+                "type": "enum",
+                "options": ["default", "horizontal", "compact"],
+                "default": "default"
+              }
+            }
+          },
+          {
+            "type": "quote",
+            "name": "Quote",
+            "category": "content",
+            "icon": "quote",
+            "description": "Testimonial or quote with attribution",
+            "schema": {
+              "quote": {
+                "type": "string",
+                "required": true
+              },
+              "author": {
+                "type": "string"
+              },
+              "authorTitle": {
+                "type": "string"
+              },
+              "authorImageId": {
+                "type": "string"
+              },
+              "style": {
+                "type": "enum",
+                "options": ["default", "large", "minimal"],
+                "default": "default"
+              }
+            }
+          },
+          {
+            "type": "cta",
+            "name": "Call to Action",
+            "category": "marketing",
+            "icon": "megaphone",
+            "description": "Promotional section with button",
+            "schema": {
+              "title": {
+                "type": "string",
+                "required": true
+              },
+              "description": {
+                "type": "string"
+              },
+              "buttonLabel": {
+                "type": "string",
+                "required": true
+              },
+              "buttonUrl": {
+                "type": "string",
+                "required": true
+              },
+              "buttonVariant": {
+                "type": "enum",
+                "options": ["primary", "secondary", "outline"],
+                "default": "primary"
+              },
+              "alignment": {
+                "type": "enum",
+                "options": ["left", "center", "right"],
+                "default": "center"
+              }
+            }
+          },
+          {
+            "type": "embed",
+            "name": "Embed",
+            "category": "media",
+            "icon": "code",
+            "description": "HTML embed code (iframes, widgets, etc.)",
+            "schema": {
+              "code": {
+                "type": "string",
+                "required": true,
+                "description": "HTML embed code"
+              },
+              "caption": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "divider",
+            "name": "Divider",
+            "category": "layout",
+            "icon": "minus",
+            "description": "Horizontal line separator",
+            "schema": {
+              "style": {
+                "type": "enum",
+                "options": ["solid", "dashed", "dotted"],
+                "default": "solid"
+              },
+              "width": {
+                "type": "enum",
+                "options": ["full", "partial"],
+                "default": "full"
+              },
+              "color": {
+                "type": "string",
+                "description": "CSS color value"
+              }
+            }
+          },
+          {
+            "type": "spacer",
+            "name": "Spacer",
+            "category": "layout",
+            "icon": "arrows-out-vertical",
+            "description": "Vertical spacing block",
+            "schema": {
+              "height": {
+                "type": "enum",
+                "options": ["sm", "md", "lg", "xl", "2xl"],
+                "default": "md"
+              }
+            }
+          },
+          {
+            "type": "custom",
+            "name": "Custom Component",
+            "category": "advanced",
+            "icon": "puzzle-piece",
+            "description": "Custom React/Vue/Svelte component",
+            "schema": {
+              "component": {
+                "type": "string",
+                "required": true,
+                "description": "Component identifier"
+              },
+              "props": {
+                "type": "object",
+                "description": "Component props"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "nombre": "editarBloqueDeJuego",
+      "contrato": "games-editorial",
+      "plantilla": "PATCH /api/games/:id/bloques/:bloqueId/editorial",
+      "metodo": "PATCH",
+      "ruta": "/api/games/0a6e1c2e-0000-4000-8000-000000000001/bloques/cd-mapa-4/editorial",
+      "peticion": {
+        "titulo": "Mapa de Pywel",
+        "descripcion": null
+      },
+      "estado": 200,
+      "cuerpo": {
+        "id": "cd-mapa-4",
+        "editorial": {
+          "titulo": "Mapa de Pywel"
+        }
+      }
+    },
+    {
+      "nombre": "ordenarBloquesDeJuego",
+      "contrato": "games-editorial",
+      "plantilla": "PUT /api/games/:id/bloques/orden",
+      "metodo": "PUT",
+      "ruta": "/api/games/0a6e1c2e-0000-4000-8000-000000000001/bloques/orden",
+      "peticion": {
+        "ids": ["cd-tier-2", "cd-tabla-1", "cd-dex-3", "cd-mapa-4"]
+      },
+      "estado": 200,
+      "cuerpo": {
+        "id": "0a6e1c2e-0000-4000-8000-000000000001",
+        "ids": ["cd-tier-2", "cd-tabla-1", "cd-dex-3", "cd-mapa-4"]
+      }
+    },
+    {
+      "nombre": "crearBloque",
+      "contrato": "page-builder",
+      "plantilla": "POST /api/page-builder/pages/:pageId/blocks",
+      "metodo": "POST",
+      "ruta": "/api/page-builder/pages/0b6e1c2e-0000-4000-8000-000000000002/blocks",
+      "peticion": {
+        "type": "text",
+        "content": {
+          "body": "Nuevo"
+        }
+      },
+      "estado": 201,
+      "cuerpo": {
+        "id": "e152c67b-51ea-43e8-965d-4e2251e0d028",
+        "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+        "type": "text",
+        "name": null,
+        "sortOrder": 11,
+        "columnSpan": 12,
+        "content": {
+          "body": "Nuevo"
+        },
+        "cssClass": null,
+        "backgroundColor": null,
+        "textColor": null,
+        "padding": null,
+        "isVisible": true,
+        "visibleFrom": null,
+        "visibleUntil": null,
+        "createdAt": "2026-10-15T17:40:26.665Z",
+        "updatedAt": "2026-10-15T17:40:26.665Z"
+      }
+    },
+    {
+      "nombre": "editarBloque",
+      "contrato": "page-builder",
+      "plantilla": "PATCH /api/page-builder/blocks/:id",
+      "metodo": "PATCH",
+      "ruta": "/api/page-builder/blocks/0c6e1c2e-0000-4000-8000-000000000003",
+      "peticion": {
+        "content": {
+          "headline": "Bienvenida"
+        }
+      },
+      "estado": 200,
+      "cuerpo": {
+        "id": "0c6e1c2e-0000-4000-8000-000000000003",
+        "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+        "type": "hero",
+        "name": null,
+        "sortOrder": 0,
+        "columnSpan": 12,
+        "content": {
+          "headline": "Bienvenida"
+        },
+        "cssClass": null,
+        "backgroundColor": null,
+        "textColor": null,
+        "padding": null,
+        "isVisible": true,
+        "visibleFrom": null,
+        "visibleUntil": null,
+        "createdAt": "2026-10-01T10:00:00.000Z",
+        "updatedAt": "2026-10-15T17:40:26.670Z"
+      }
+    },
+    {
+      "nombre": "reordenarBloques",
+      "contrato": "page-builder",
+      "plantilla": "POST /api/page-builder/pages/:pageId/blocks/reorder",
+      "metodo": "POST",
+      "ruta": "/api/page-builder/pages/0b6e1c2e-0000-4000-8000-000000000002/blocks/reorder",
+      "peticion": {
+        "blockOrders": [
+          {
+            "id": "0c6e1c2e-0000-4000-8000-000000000004",
+            "sortOrder": 0
+          },
+          {
+            "id": "0c6e1c2e-0000-4000-8000-000000000003",
+            "sortOrder": 10
+          }
+        ]
+      },
+      "estado": 200,
+      "cuerpo": {
+        "success": true
+      }
+    },
+    {
+      "nombre": "duplicarBloque",
+      "contrato": "page-builder",
+      "plantilla": "POST /api/page-builder/blocks/:id/duplicate",
+      "metodo": "POST",
+      "ruta": "/api/page-builder/blocks/0c6e1c2e-0000-4000-8000-000000000004/duplicate",
+      "estado": 201,
+      "cuerpo": {
+        "id": "95aae959-3905-4b1a-bda6-705b433c4659",
+        "pageId": "0b6e1c2e-0000-4000-8000-000000000002",
+        "type": "text",
+        "name": "text (Copy)",
+        "sortOrder": 12,
+        "columnSpan": 12,
+        "content": {
+          "body": "Texto"
+        },
+        "cssClass": null,
+        "backgroundColor": null,
+        "textColor": null,
+        "padding": null,
+        "isVisible": true,
+        "visibleFrom": null,
+        "visibleUntil": null,
+        "createdAt": "2026-10-15T17:40:26.696Z",
+        "updatedAt": "2026-10-15T17:40:26.696Z"
+      }
+    },
+    {
+      "nombre": "borrarBloque",
+      "contrato": "page-builder",
+      "plantilla": "DELETE /api/page-builder/blocks/:id",
+      "metodo": "DELETE",
+      "ruta": "/api/page-builder/blocks/0c6e1c2e-0000-4000-8000-000000000004",
+      "estado": 200,
+      "cuerpo": {
+        "success": true
+      }
+    }
+  ]
+}

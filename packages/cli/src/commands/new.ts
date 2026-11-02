@@ -1,727 +1,278 @@
 /**
- * NEW Command - Create a new Kitsuden project from a starter/grimoire
+ * kitsuden new <name> — proyecto de FRONTEND a partir del starter neutro
+ * ============================================================================
  *
- * Fase 3: CLI Mágica - Quickstart con rollback
+ * Crea una web Astro que lee de una API de Kitsuden que ya está en marcha.
+ * NO crea ni arranca la API.
+ *
+ * ── POR QUÉ SOLO EL FRONTEND ───────────────────────────────────────────────
+ *
+ * La versión anterior de este comando prometía un proyecto completo y no
+ * funcionaba: no estaba registrada en `index.ts`, usaba `__dirname` en ESM,
+ * copiaba el starter entero (node_modules y dist incluidos) y ejecutaba
+ * `db:push` en un `apps/api` que el starter no tiene.
+ *
+ * La API de Kitsuden no se puede montar desde aquí con honestidad: a
+ * 2026-10-18 no hay imágenes publicadas en ningún registro (Docker Hub
+ * responde 404 a `kitsuden/api` y a `gremius/api`, las dos que aparecen en el
+ * repositorio), así que un docker-compose generado apuntaría a imágenes que
+ * no existen. `--api` lo explica y manda a `docs/instalacion/`. Desde
+ * 2026-10-29 el workflow `docker-publish.yml` publica en
+ * `ghcr.io/<dueño>/kitsuden/{api,admin,mcp}` al crear una etiqueta `v*`;
+ * hasta que salga la primera, esto sigue igual.
+ *
+ * ── QUÉ HACE ───────────────────────────────────────────────────────────────
+ *
+ *   1. copia `kitsuden-starter-basic` sin node_modules, dist, .astro ni .env
+ *      (filtro en utils/copiar-starter.ts);
+ *   2. renombra el paquete y le quita lo que era del monorepo (repository,
+ *      author, license);
+ *   3. escribe `.env` desde `.env.example` con KITSUDEN_API_URL, SITE_URL y
+ *      SITE_NAME;
+ *   4. con `--install` (o `--quickstart`), ejecuta `pnpm install`;
+ *   5. imprime los siguientes pasos.
+ *
+ * Sin TTY (CI, tuberías) no pregunta nada: usa las opciones o los valores por
+ * defecto.
  */
 
-import crypto from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile, readFile, cp, rmdir, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { readdir, readFile, writeFile } from "node:fs/promises";
+import { basename, join, relative, resolve } from "node:path";
 
 import chalk from "chalk";
-// @ts-ignore -- `degit` no publica tipos y no existe @types/degit.
-import degit from "degit";
 import { execa } from "execa";
 import inquirer from "inquirer";
-import ora, { type Ora } from "ora";
+
+import { copiarStarter, encontrarStarter } from "../utils/copiar-starter.js";
+
+export interface NewOptions {
+  apiUrl?: string;
+  siteUrl?: string;
+  siteName?: string;
+  from?: string;
+  install?: boolean;
+  quickstart?: boolean;
+  yes?: boolean;
+  api?: boolean;
+}
+
+export const API_URL_POR_DEFECTO = "http://localhost:3000";
+export const SITE_URL_POR_DEFECTO = "http://localhost:4321";
+
+/** El mismo que trae el starter (packages/starters/kitsuden-starter-basic/.gitignore). */
+const GITIGNORE_POR_DEFECTO = `# Build output and local state of this site
+dist/
+.astro/
+node_modules/
+.env
+.inti/
+.kitsuden/
+`;
+
+/** Nombre de paquete npm válido sin scope, derivado del nombre de carpeta. */
+export function nombreDePaquete(nombre: string): string {
+  return (
+    basename(nombre)
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/^[._-]+/, "")
+      .replace(/-+$/, "") || "kitsuden-site"
+  );
+}
+
+export function esUrlHttp(valor: string): boolean {
+  try {
+    const u = new URL(valor);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Generate a cryptographically secure random secret string.
+ * Sustituye el valor de `CLAVE=` en un .env, solo en líneas NO comentadas.
+ * Si la clave no está, la añade al final. Exportada para las pruebas.
  */
-function generateSecret(length = 32): string {
-  return crypto.randomBytes(length).toString("hex");
+export function fijarVariable(env: string, clave: string, valor: string): string {
+  const linea = new RegExp(`^${clave}=.*$`, "m");
+  if (linea.test(env)) return env.replace(linea, () => `${clave}=${valor}`);
+  return `${env.replace(/\n?$/, "\n")}${clave}=${valor}\n`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESTADO PARA ROLLBACK
-// ═══════════════════════════════════════════════════════════════════════════
-
-interface QuickstartState {
-  projectName: string;
-  targetDir: string;
-  steps: {
-    directoryCreated: boolean;
-    templateCopied: boolean;
-    envGenerated: boolean;
-    dependenciesInstalled: boolean;
-    gitInitialized: boolean;
-    dockerStarted: boolean;
-    databaseMigrated: boolean;
-  };
-  createdFiles: string[];
+/** Comillas solo si el valor las necesita (espacios, #, comillas). */
+function valorEnv(v: string): string {
+  return /[\s#"'$]/.test(v) ? JSON.stringify(v) : v;
 }
 
-let currentState: QuickstartState | null = null;
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ROLLBACK - Limpiar en caso de fallo
-// ═══════════════════════════════════════════════════════════════════════════
-
-async function performRollback(state: QuickstartState, reason: string) {
-  console.log(chalk.red(`\n✖ Error durante la instalación: ${reason}`));
-  console.log(chalk.yellow("\n🔄 Realizando rollback para mantener el sistema limpio...\n"));
-
-  const spinner = ora("Limpiando archivos...").start();
-
-  try {
-    // 1. Detener Docker si se inició
-    if (state.steps.dockerStarted) {
-      spinner.text = "Deteniendo contenedores Docker...";
-      try {
-        await execa("docker", ["compose", "down", "-v"], {
-          cwd: state.targetDir,
-          stdio: "ignore",
-          timeout: 30000,
-        });
-      } catch {
-        // Ignorar errores al detener Docker
-      }
-    }
-
-    // 2. Eliminar archivos creados
-    for (const file of state.createdFiles.reverse()) {
-      try {
-        if (existsSync(file)) {
-          await unlink(file);
-        }
-      } catch {
-        // Continuar aunque falle
-      }
-    }
-
-    // 3. Eliminar directorio si se creó
-    if (state.steps.directoryCreated && existsSync(state.targetDir)) {
-      spinner.text = "Eliminando directorio...";
-      try {
-        await rmdir(state.targetDir, { recursive: true });
-      } catch {
-        // Ignorar errores al eliminar directorio
-      }
-    }
-
-    spinner.succeed(chalk.green("✓ Rollback completado"));
-    console.log(chalk.gray("\nTu sistema está limpio. Puedes intentar nuevamente.\n"));
-  } catch (error) {
-    spinner.fail(chalk.red("No se pudo completar el rollback completamente"));
-    console.log(chalk.gray("Es posible que necesites limpiar manualmente algunos archivos.\n"));
-  }
-
-  process.exit(1);
+export function textoDeLaApi(): string {
+  return [
+    chalk.bold("About the Kitsuden API"),
+    "",
+    "  This project is only the public website. It needs a running Kitsuden API.",
+    "  There are no published Kitsuden API images yet, so `kitsuden new` does not",
+    "  generate a docker-compose for it. Install the API from the Kitsuden",
+    "  repository (https://github.com/Victor-Antinori-Broce/kitsuden) following:",
+    "",
+    "    docs/instalacion/servidor.md   Docker (recommended)",
+    "    docs/instalacion/local.md      local development (Bun + Postgres + Valkey)",
+    "    docs/instalacion/primer-arranque.md   migrations and the first admin",
+    "",
+    "  (Those guides are in Spanish.) Then set KITSUDEN_API_URL in .env to its address.",
+  ].join("\n");
 }
 
-interface NewOptions {
-  grimoire?: string;
-  template?: string;
-  kons?: string[];
-  quickstart?: boolean;
-  git?: boolean;
-  install?: boolean;
-  skipDb?: boolean;
+async function carpetaVacia(dir: string): Promise<boolean> {
+  if (!existsSync(dir)) return true;
+  return (await readdir(dir)).length === 0;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// AVAILABLE GRIMOIRES (STARTERS)
-// ═══════════════════════════════════════════════════════════════════════════
+async function preguntar(
+  opciones: NewOptions,
+  nombre: string
+): Promise<{ apiUrl: string; siteUrl: string; siteName: string }> {
+  const interactivo = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const sinPreguntas = opciones.yes || opciones.quickstart || !interactivo;
 
-const OFFICIAL_GRIMOIRES: Record<
-  string,
-  {
-    name: string;
-    description: string;
-    repo?: string;
-    kons: string[];
-    tags: string[];
-  }
-> = {
-  default: {
-    name: "Default",
-    description: "Standard Kitsuden with core functionality",
-    kons: ["blog", "blocks", "media"],
-    tags: ["starter", "minimal"],
-  },
-  esports: {
-    name: "Esports",
-    description: "Gaming platform with tournaments, teams, and matches",
-    repo: "kitsuden/grimoire-esports",
-    kons: [
-      "games",
-      "streamers",
-      "platforms",
-      "tags",
-      "collections",
-      "players",
-      "teams",
-      "tournaments",
-      "matches",
-    ],
-    tags: ["gaming", "esports", "competitive"],
-  },
-  blog: {
-    name: "Blog",
-    description: "Content-focused blog with SEO optimization",
-    kons: ["blog", "tags", "blocks"],
-    tags: ["content", "blog", "seo"],
-  },
-  ecommerce: {
-    name: "E-Commerce",
-    description: "Online store with products and payments (coming soon)",
-    kons: ["products", "orders", "payments", "inventory"],
-    tags: ["commerce", "store", "payments"],
-  },
-  corporate: {
-    name: "Corporate",
-    description: "Company website with team and services",
-    kons: ["directory", "blog", "booking", "blocks"],
-    tags: ["business", "company", "services"],
-  },
-  lms: {
-    name: "LMS",
-    description: "Learning Management System with courses",
-    kons: ["academy", "blog", "progress", "certificates"],
-    tags: ["education", "courses", "learning"],
-  },
-};
-
-export async function newCommand(projectName: string, options: NewOptions) {
-  // Quickstart mode - skip all prompts
-  if (options.quickstart) {
-    console.log(chalk.bold("\n🚀 Kitsuden - Quick Start Mode\n"));
-    console.log(chalk.gray("Configurando todo automáticamente...\n"));
-    console.log(chalk.gray("Tiempo estimado: ~3-5 minutos\n"));
-
-    const targetDir = join(process.cwd(), projectName);
-
-    // Check if directory exists
-    if (existsSync(targetDir)) {
-      console.error(chalk.red(`\n✖ El directorio "${projectName}" ya existe.`));
-      console.log(chalk.gray("Elimínalo primero o elige otro nombre.\n"));
-      process.exit(1);
-    }
-
-    // Inicializar estado para posible rollback
-    currentState = {
-      projectName,
-      targetDir,
-      steps: {
-        directoryCreated: false,
-        templateCopied: false,
-        envGenerated: false,
-        dependenciesInstalled: false,
-        gitInitialized: false,
-        dockerStarted: false,
-        databaseMigrated: false,
+  let apiUrl = opciones.apiUrl;
+  if (!apiUrl && !sinPreguntas) {
+    const r = await inquirer.prompt([
+      {
+        type: "input",
+        name: "apiUrl",
+        message: "URL of your Kitsuden API (as this server will reach it):",
+        default: API_URL_POR_DEFECTO,
+        validate: (v: string) => esUrlHttp(v) || "Use an http:// or https:// URL",
       },
-      createdFiles: [],
-    };
+    ]);
+    apiUrl = r.apiUrl as string;
+  }
+  apiUrl = apiUrl || API_URL_POR_DEFECTO;
+  if (!esUrlHttp(apiUrl)) throw new Error(`--api-url is not an http(s) URL: ${apiUrl}`);
 
-    const grimoireInfo = OFFICIAL_GRIMOIRES["default"];
+  const siteUrl = opciones.siteUrl || SITE_URL_POR_DEFECTO;
+  if (!esUrlHttp(siteUrl)) throw new Error(`--site-url is not an http(s) URL: ${siteUrl}`);
 
-    try {
-      await createProjectQuickstart(projectName, targetDir, "default", grimoireInfo, currentState);
+  return { apiUrl, siteUrl, siteName: opciones.siteName || nombre };
+}
 
-      console.log(chalk.bold("\n" + "=".repeat(60)));
-      console.log(chalk.green.bold("✓ ¡Proyecto creado exitosamente!"));
-      console.log(chalk.bold("=".repeat(60) + "\n"));
+/**
+ * El trabajo de verdad, sin `process.exit` ni prompts: lo usan el comando y
+ * las pruebas. Devuelve la carpeta creada.
+ */
+export async function crearProyecto(
+  nombre: string,
+  valores: { apiUrl: string; siteUrl: string; siteName: string; from?: string; cwd?: string }
+): Promise<{ destino: string; origen: string; tipoDeOrigen: string }> {
+  const destino = resolve(valores.cwd ?? process.cwd(), nombre);
+  if (!(await carpetaVacia(destino))) {
+    throw new Error(`${destino} already exists and is not empty`);
+  }
 
-      console.log(chalk.bold("Próximos pasos:\n"));
-      console.log(chalk.gray(`  cd ${projectName}`));
-      console.log(chalk.gray("  pnpm dev\n"));
-      console.log(chalk.gray("Servicios disponibles:"));
-      console.log(chalk.gray("  API:     http://localhost:3000"));
-      console.log(chalk.gray("  Admin:   http://localhost:3001"));
-      console.log(chalk.gray("  Web:     http://localhost:3002\n"));
+  const starter = encontrarStarter(valores.from);
+  if (!starter) {
+    throw new Error(
+      valores.from
+        ? `--from ${valores.from} is not a Kitsuden starter (needs package.json, astro.config.mjs and .env.example)`
+        : "The Kitsuden starter was not found. Run from the Kitsuden repository, use a CLI " +
+            "installed from npm (it bundles the starter), or pass --from <path-to-kitsuden-starter-basic>."
+    );
+  }
 
-      // Guardar progreso exitoso
-      await saveProgressToFile(projectName, true);
-    } catch (error: any) {
-      await performRollback(currentState, error.message);
-    }
+  await copiarStarter(starter.dir, destino);
 
+  // package.json: nombre propio y fuera lo que describía al starter del monorepo.
+  const rutaPkg = join(destino, "package.json");
+  const pkg = JSON.parse(await readFile(rutaPkg, "utf8")) as Record<string, unknown>;
+  pkg.name = nombreDePaquete(nombre);
+  pkg.version = "0.1.0";
+  pkg.description = `Website built on Kitsuden (from kitsuden-starter-basic)`;
+  delete pkg.repository;
+  delete pkg.author;
+  delete pkg.license;
+  await writeFile(rutaPkg, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+
+  // npm nunca publica un `.gitignore` dentro de un paquete, así que el starter
+  // que viaja en el CLI de npm llega sin él. Sin esto, el `.env` de abajo
+  // (que puede acabar con KITSUDEN_SITE_KEY) entraría en el primer commit.
+  if (!existsSync(join(destino, ".gitignore"))) {
+    await writeFile(join(destino, ".gitignore"), GITIGNORE_POR_DEFECTO, "utf8");
+  }
+
+  // .env desde .env.example. KITSUDEN_SITE_KEY se queda comentada: es un
+  // secreto, y pedirlo como opción lo dejaría en el historial del shell.
+  let env = await readFile(join(destino, ".env.example"), "utf8");
+  env = fijarVariable(env, "KITSUDEN_API_URL", valorEnv(valores.apiUrl));
+  env = fijarVariable(env, "SITE_URL", valorEnv(valores.siteUrl));
+  env = fijarVariable(env, "SITE_NAME", valorEnv(valores.siteName));
+  await writeFile(join(destino, ".env"), env, "utf8");
+
+  return { destino, origen: starter.dir, tipoDeOrigen: starter.origen };
+}
+
+export async function newCommand(nombre: string | undefined, opciones: NewOptions = {}) {
+  if (!nombre && opciones.api) {
+    apiInfoCommand();
     return;
   }
-
-  // Interactive mode
-  console.log(chalk.bold("\n📦 Kitsuden - Create New Project\n"));
-
-  const targetDir = join(process.cwd(), projectName);
-
-  // Check if directory exists
-  if (existsSync(targetDir)) {
-    const { overwrite } = await inquirer.prompt([
-      {
-        type: "confirm",
-        name: "overwrite",
-        message: `Directory "${projectName}" already exists. Overwrite?`,
-        default: false,
-      },
-    ]);
-
-    if (!overwrite) {
-      console.log(chalk.yellow("\n✖ Cancelled"));
-      process.exit(0);
-    }
-  }
-
-  // Select grimoire if not specified
-  let grimoire = options.grimoire || "default";
-  if (!options.grimoire) {
-    const { selectedGrimoire } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "selectedGrimoire",
-        message: "Select a starter template:",
-        choices: Object.entries(OFFICIAL_GRIMOIRES).map(([key, info]) => ({
-          name: `${chalk.bold(info.name)} ${chalk.gray(`- ${info.description}`)}`,
-          value: key,
-          short: info.name,
-        })),
-      },
-    ]);
-    grimoire = selectedGrimoire;
-  }
-
-  const grimoireInfo = OFFICIAL_GRIMOIRES[grimoire];
-  if (!grimoireInfo) {
-    console.error(chalk.red(`\n✖ Unknown grimoire: ${grimoire}`));
-    console.log(chalk.gray(`Available grimoires: ${Object.keys(OFFICIAL_GRIMOIRES).join(", ")}`));
+  if (!nombre) {
+    console.error(chalk.red("Missing project name. Example: kitsuden new my-site"));
     process.exit(1);
   }
 
-  console.log(
-    chalk.blue(
-      `\n🚀 Creating ${chalk.bold(projectName)} with ${chalk.bold(grimoireInfo.name)} grimoire...\n`
-    )
-  );
-
-  // Create project
-  await createProject(projectName, targetDir, grimoire, grimoireInfo, options);
-}
-
-async function createProjectQuickstart(
-  name: string,
-  targetDir: string,
-  grimoire: string,
-  grimoireInfo: (typeof OFFICIAL_GRIMOIRES)[string],
-  state: QuickstartState
-) {
-  const spinner = ora("Creando directorio del proyecto...").start();
-
   try {
-    // 1. Crear directorio
-    await mkdir(targetDir, { recursive: true });
-    state.steps.directoryCreated = true;
-    state.createdFiles.push(targetDir);
+    const valores = await preguntar(opciones, basename(nombre));
+    const { destino, origen, tipoDeOrigen } = await crearProyecto(nombre, {
+      ...valores,
+      from: opciones.from,
+    });
 
-    // 2. Copiar template
-    spinner.text = "Descargando plantilla...";
-    await copyLocalTemplate(grimoire, targetDir);
-    state.steps.templateCopied = true;
+    console.log(chalk.green(`✔ Created ${destino}`));
+    console.log(chalk.gray(`  starter: ${origen} (${tipoDeOrigen})`));
+    console.log(
+      chalk.gray(`  .env: KITSUDEN_API_URL=${valores.apiUrl} SITE_URL=${valores.siteUrl}`)
+    );
 
-    // Registrar archivos creados
-    const templateFiles = [
-      "package.json",
-      "docker-compose.yml",
-      "apps/api/package.json",
-      "apps/api/src/db/schema.ts",
-      "apps/api/.env.example",
-    ];
-
-    for (const file of templateFiles) {
-      const fullPath = join(targetDir, file);
-      if (existsSync(fullPath)) {
-        state.createdFiles.push(fullPath);
-      }
-    }
-
-    // 3. Configurar proyecto
-    spinner.text = "Configurando proyecto...";
-    await updatePackageJson(targetDir, name);
-    await updateKitsudenConfig(targetDir, grimoireInfo.kons, []);
-    await updateEnvFiles(targetDir, name);
-    state.steps.envGenerated = true;
-
-    // 4. Inicializar git
-    spinner.text = "Inicializando repositorio git...";
-    try {
-      await execa("git", ["init"], { cwd: targetDir, stdio: "ignore" });
-      await execa("git", ["add", "."], { cwd: targetDir, stdio: "ignore" });
-      await execa("git", ["commit", "-m", "Initial commit from Kitsuden CLI"], {
-        cwd: targetDir,
-        stdio: "ignore",
-      });
-      state.steps.gitInitialized = true;
-    } catch {
-      // Git es opcional
-    }
-
-    // 5. Instalar dependencias
-    spinner.text = "Instalando dependencias (esto puede tomar varios minutos)...";
-    try {
-      await execa("pnpm", ["install"], {
-        cwd: targetDir,
-        stdio: "ignore",
-        timeout: 300000, // 5 minutos
-      });
-      state.steps.dependenciesInstalled = true;
-    } catch {
-      // Intentar con npm
-      spinner.text = "Intentando con npm...";
+    const instalar = opciones.install || opciones.quickstart;
+    if (instalar) {
+      console.log(chalk.cyan("\n→ pnpm install"));
       try {
-        await execa("npm", ["install"], {
-          cwd: targetDir,
-          stdio: "ignore",
-          timeout: 300000,
-        });
-        state.steps.dependenciesInstalled = true;
-      } catch (error: any) {
-        throw new Error(`No se pudieron instalar las dependencias: ${error.message}`);
+        await execa("pnpm", ["install"], { cwd: destino, stdio: "inherit" });
+      } catch (e) {
+        console.error(
+          chalk.red(`pnpm install failed: ${(e as Error).message.split("\n")[0]}`) +
+            "\nThe project was created; run `pnpm install` inside it once the problem is fixed."
+        );
+        process.exit(1);
       }
     }
 
-    // 6. Levantar Docker
-    spinner.text = "Iniciando contenedores Docker...";
-    try {
-      await execa("docker", ["compose", "up", "-d"], {
-        cwd: targetDir,
-        stdio: "ignore",
-        timeout: 60000,
-      });
-      state.steps.dockerStarted = true;
+    const ir = relative(process.cwd(), destino) || ".";
+    console.log(`\n${chalk.bold("Next steps")}\n`);
+    console.log(`  cd ${ir}`);
+    if (!instalar) console.log("  pnpm install");
+    console.log("  pnpm dev            # http://localhost:4321 (needs the API running)");
+    console.log("  pnpm build          # production build; it does not call the API");
+    console.log("  pnpm start          # serve dist/ (reads KITSUDEN_API_URL at start)");
+    console.log(
+      `\n  In the Kitsuden admin, publish a page with the slug "home" to fill "/".` +
+        `\n  Optional: set KITSUDEN_SITE_KEY in .env (see the project's README).\n`
+    );
 
-      // Esperar a que PostgreSQL esté listo
-      spinner.text = "Esperando a PostgreSQL (30s)...";
-      await waitForPostgresQuickstart(targetDir, spinner);
-    } catch (error: any) {
-      throw new Error(`No se pudieron iniciar los contenedores Docker: ${error.message}`);
-    }
-
-    // 7. Migrar base de datos
-    spinner.text = "Configurando base de datos...";
-    try {
-      await execa("pnpm", ["db:push"], {
-        cwd: targetDir,
-        stdio: "ignore",
-        timeout: 60000,
-      });
-      state.steps.databaseMigrated = true;
-    } catch (error: any) {
-      throw new Error(`No se pudo configurar la base de datos: ${error.message}`);
-    }
-
-    spinner.succeed(chalk.green("¡Proyecto configurado exitosamente!"));
-  } catch (error: any) {
-    spinner.fail(chalk.red(`Error: ${error.message}`));
-    throw error;
-  }
-}
-
-async function waitForPostgresQuickstart(targetDir: string, spinner: Ora): Promise<void> {
-  const maxAttempts = 30;
-  for (let i = 0; i < maxAttempts; i++) {
-    try {
-      await execa("docker", ["compose", "exec", "-T", "postgres", "pg_isready", "-U", "kitsuden"], {
-        cwd: targetDir,
-        stdio: "ignore",
-        timeout: 2000,
-      });
-      return;
-    } catch {
-      spinner.text = `Esperando a PostgreSQL... (${i + 1}/${maxAttempts})`;
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-  }
-  throw new Error("PostgreSQL no respondió a tiempo");
-}
-
-async function saveProgressToFile(projectName: string, success: boolean) {
-  try {
-    // Progress entry for logging
-    void {
-      timestamp: new Date().toISOString(),
-      command: "new --quickstart",
-      projectName,
-      success,
-    };
-
-    // Actualizar progress.txt en la raíz
-    const progressPath = join(process.cwd(), "progress.txt");
-    let content = "";
-
-    try {
-      content = await readFile(progressPath, "utf-8");
-    } catch {
-      // File doesn't exist yet
-    }
-
-    const newEntry = `\n[CLI Quickstart] ${new Date().toLocaleString()} - Proyecto: ${projectName} - ${success ? "✅ ÉXITO" : "❌ FALLIDO"}\n`;
-    await writeFile(progressPath, content + newEntry);
-  } catch {
-    // No crítico si falla
-  }
-}
-
-async function createProject(
-  name: string,
-  targetDir: string,
-  grimoire: string,
-  grimoireInfo: (typeof OFFICIAL_GRIMOIRES)[string],
-  options: NewOptions
-) {
-  const spinner = ora("Creating project directory...").start();
-
-  try {
-    // Create directory
-    await mkdir(targetDir, { recursive: true });
-    spinner.text = "Downloading starter template...";
-
-    // Download from repo or use local template
-    if (grimoireInfo.repo) {
-      // Clone from GitHub
-      const emitter = degit(grimoireInfo.repo, {
-        cache: false,
-        force: true,
-        verbose: false,
-      });
-
-      await emitter.clone(targetDir);
-    } else {
-      // Use local template
-      await copyLocalTemplate(grimoire, targetDir);
-    }
-
-    spinner.text = "Configuring project...";
-
-    // Update package.json
-    await updatePackageJson(targetDir, name);
-
-    // Update kitsuden.config.ts with kons
-    await updateKitsudenConfig(targetDir, grimoireInfo.kons, options.kons);
-
-    // Update .env files
-    await updateEnvFiles(targetDir, name);
-
-    // Initialize git
-    if (options.git) {
-      spinner.text = "Initializing git repository...";
-      try {
-        await execa("git", ["init"], { cwd: targetDir, stdio: "ignore" });
-        await execa("git", ["add", "."], { cwd: targetDir, stdio: "ignore" });
-        await execa("git", ["commit", "-m", "Initial commit"], { cwd: targetDir, stdio: "ignore" });
-      } catch {
-        // Git init failed, continue anyway
-      }
-    }
-
-    // Install dependencies
-    if (options.install) {
-      spinner.text = "Installing dependencies (this may take a while)...";
-      try {
-        await execa("pnpm", ["install"], { cwd: targetDir, stdio: "ignore" });
-      } catch {
-        // Try npm if pnpm fails
-        try {
-          await execa("npm", ["install"], { cwd: targetDir, stdio: "ignore" });
-        } catch {
-          spinner.warn("Failed to install dependencies. Run 'pnpm install' manually.");
-        }
-      }
-    }
-
-    // Database setup
-    if (!options.skipDb && options.install) {
-      spinner.text = "Setting up database...";
-      try {
-        // Start Docker containers
-        await execa("docker", ["compose", "up", "-d"], { cwd: targetDir, stdio: "ignore" });
-
-        // Wait a bit for DB to be ready
-        await new Promise((r) => setTimeout(r, 3000));
-
-        // Push schema
-        await execa("pnpm", ["db:push"], { cwd: targetDir, stdio: "ignore" });
-      } catch {
-        spinner.warn("Database setup failed. Run 'pnpm db:push' manually after starting Docker.");
-      }
-    }
-
-    spinner.succeed(chalk.green(`Project ${chalk.bold(name)} created successfully!`));
-
-    // Print next steps
-    console.log(chalk.bold("\nNext steps:\n"));
-    console.log(chalk.gray(`  cd ${name}`));
-    if (!options.install) {
-      console.log(chalk.gray("  pnpm install"));
-    }
-    console.log(chalk.gray("  pnpm dev"));
-    console.log(chalk.gray("\n  API:     http://localhost:3000"));
-    console.log(chalk.gray("  Admin:   http://localhost:3001"));
-    console.log(chalk.gray("  Web:     http://localhost:3002\n"));
-  } catch (error: any) {
-    spinner.fail(chalk.red(`Failed to create project: ${error.message}`));
+    if (opciones.api) console.log(`${textoDeLaApi()}\n`);
+    else
+      console.log(
+        chalk.gray(
+          "  No Kitsuden API yet? Run `kitsuden new --api` or read docs/instalacion/ in the Kitsuden repository.\n"
+        )
+      );
+  } catch (e) {
+    console.error(chalk.red(`✖ ${(e as Error).message}`));
     process.exit(1);
   }
 }
 
-async function copyLocalTemplate(grimoire: string, targetDir: string) {
-  // In development, copy from local packages/starters
-  // In production, copy from bundled templates
-  const starterDir = join(__dirname, "../../../starters", `kitsuden-starter-${grimoire}`);
-  const templateDir = join(__dirname, "../../templates", grimoire);
-
-  if (existsSync(starterDir)) {
-    // Use official starter
-    await cp(starterDir, targetDir, { recursive: true });
-
-    // Copy setup.js if it exists
-    const setupScript = join(starterDir, "setup.js");
-    if (existsSync(setupScript)) {
-      await cp(setupScript, join(targetDir, "setup.js"));
-    }
-  } else if (existsSync(templateDir)) {
-    await cp(templateDir, targetDir, { recursive: true });
-  } else {
-    // Create minimal structure
-    await createMinimalTemplate(targetDir, grimoire);
-  }
-}
-
-async function createMinimalTemplate(targetDir: string, _grimoire: string) {
-  // Create basic project structure
-  const dirs = ["apps/api", "apps/admin", "packages/shared", "packages/kons"];
-
-  for (const dir of dirs) {
-    await mkdir(join(targetDir, dir, "src"), { recursive: true });
-  }
-
-  // Create package.json
-  await writeFile(
-    join(targetDir, "package.json"),
-    JSON.stringify(
-      {
-        name: "kitsuden-project",
-        private: true,
-        type: "module",
-        scripts: {
-          dev: "pnpm -r dev",
-          build: "pnpm -r build",
-          "db:push": "cd apps/api && pnpm db:push",
-          "db:studio": "cd apps/api && pnpm db:studio",
-        },
-        devDependencies: {
-          typescript: "^5.3.0",
-        },
-      },
-      null,
-      2
-    )
-  );
-
-  // Create docker-compose.yml
-  await writeFile(
-    join(targetDir, "docker-compose.yml"),
-    `version: "3.8"
-services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: kitsuden
-      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - set it in .env}
-      POSTGRES_DB: kitsuden
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-  
-  valkey:
-    image: valkey/valkey:8-alpine
-    ports:
-      - "6379:6379"
-  
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: \${S3_ACCESS_KEY:-kitsuden_minio}
-      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
-
-volumes:
-  postgres_data:
-`
-  );
-}
-
-async function updatePackageJson(targetDir: string, projectName: string) {
-  const packageJsonPath = join(targetDir, "package.json");
-
-  try {
-    const content = await readFile(packageJsonPath, "utf-8");
-    const pkg = JSON.parse(content);
-    pkg.name = projectName.toLowerCase().replace(/\s+/g, "-");
-    await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2));
-  } catch {
-    // Ignore if file doesn't exist
-  }
-}
-
-async function updateKitsudenConfig(
-  targetDir: string,
-  defaultKons: string[],
-  extraKons?: string[]
-) {
-  const configPath = join(targetDir, "apps/api/kitsuden.config.ts");
-
-  const kons = [...defaultKons];
-  if (extraKons) {
-    kons.push(...extraKons);
-  }
-
-  const configContent = `/**
- * Kitsuden Configuration
- */
-
-const config = {
-  core: {
-    dataSets: { enabled: true, alwaysActive: true },
-    mediaLibrary: { enabled: true },
-    webhooks: { enabled: true },
-    connectors: { enabled: true },
-  },
-  kons: [
-${kons.map((g) => `    "${g}",`).join("\n")}
-  ],
-};
-
-export default config;
-`;
-
-  try {
-    await writeFile(configPath, configContent);
-  } catch {
-    // Ignore if can't write
-  }
-}
-
-async function updateEnvFiles(targetDir: string, projectName: string) {
-  const envContent = `# Database
-DATABASE_URL=postgres://kitsuden:changeme@localhost:5432/kitsuden
-
-# Better Auth
-# Generate a strong secret (min 32 chars), e.g.: openssl rand -base64 48
-BETTER_AUTH_SECRET=change-me-to-a-random-string-at-least-32-chars
-BETTER_AUTH_URL=http://localhost:3000
-
-# Storage (MinIO)
-S3_ENDPOINT=http://localhost:9000
-S3_ACCESS_KEY=kitsuden_minio
-S3_SECRET_KEY=changeme
-S3_BUCKET=kitsuden
-
-# Cache (Valkey)
-VALKEY_URL=redis://localhost:6379
-
-# Site
-SITE_NAME=${projectName}
-SITE_URL=http://localhost:3000
-`;
-
-  try {
-    await writeFile(join(targetDir, "apps/api/.env"), envContent);
-    await writeFile(join(targetDir, ".env"), envContent);
-  } catch {
-    // Ignore
-  }
+/** `kitsuden new --api` sin nombre: solo la explicación. */
+export function apiInfoCommand(): void {
+  console.log(`${textoDeLaApi()}\n`);
 }

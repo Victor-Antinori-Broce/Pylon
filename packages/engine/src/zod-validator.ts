@@ -30,6 +30,7 @@
 import { z, ZodSchema, ZodError, ZodObject, ZodRawShape } from "zod";
 
 import type { ValidationRule, ValidationSchema } from "./validator";
+import { LONGITUD_MAXIMA_A_PROBAR, patronSeguro } from "@kitsuden/shared";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS ZOD PREDEFINIDOS - Anti-Alucinaciones
@@ -40,7 +41,7 @@ import type { ValidationRule, ValidationSchema } from "./validator";
  * Previene campos peligrosos o desconocidos.
  */
 export const baseEntitySchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   name: z.string().min(1).max(200),
   description: z.string().max(5000).optional(),
   createdAt: z.string().datetime().optional(),
@@ -58,9 +59,7 @@ export const characterSchema = baseEntitySchema.extend({
 
   // Elementos válidos del juego
   element: z.enum(["pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"], {
-    errorMap: () => ({
-      message: "Elemento inválido. Opciones: pyro, hydro, electro, cryo, anemo, geo, dendro",
-    }),
+    error: "Elemento inválido. Opciones: pyro, hydro, electro, cryo, anemo, geo, dendro",
   }),
 
   // Tipos de arma permitidos
@@ -80,14 +79,14 @@ export const characterSchema = baseEntitySchema.extend({
     .max(200),
 
   // Metadata flexible pero controlada
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
  * Schema para habilidades (skills).
  */
 export const skillSchema = baseEntitySchema.extend({
-  character_id: z.string().uuid(),
+  character_id: z.guid(),
 
   // Daño/healing con rangos razonables
   damage: z.number().min(0).max(999999).optional(),
@@ -136,9 +135,9 @@ export const weaponSchema = baseEntitySchema.extend({
  * Schema para builds (snapshots inmutables).
  */
 export const buildSchema = z.object({
-  character_id: z.string().uuid(),
-  weapon_id: z.string().uuid(),
-  artifact_ids: z.array(z.string().uuid()).max(5),
+  character_id: z.guid(),
+  weapon_id: z.guid(),
+  artifact_ids: z.array(z.guid()).max(5),
 
   // Valores calculados (denormalizados)
   total_atk: z.number().min(0),
@@ -147,9 +146,9 @@ export const buildSchema = z.object({
 
   // Snapshot de datos para inmutabilidad
   _snapshot: z.object({
-    character: z.record(z.unknown()),
-    weapon: z.record(z.unknown()),
-    artifacts: z.array(z.record(z.unknown())),
+    character: z.record(z.string(), z.unknown()),
+    weapon: z.record(z.string(), z.unknown()),
+    artifacts: z.array(z.record(z.string(), z.unknown())),
     calculated_at: z.string().datetime(),
   }),
 });
@@ -194,7 +193,7 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
       schema = z.array(z.any());
       break;
     case "object":
-      schema = z.record(z.any());
+      schema = z.record(z.string(), z.any());
       break;
     case "date":
       schema = z.union([z.date(), z.string().datetime()]);
@@ -241,15 +240,19 @@ export function ruleToZod(rule: ValidationRule): ZodSchema {
   // Enum
   if (rule.enum) {
     schema = z.enum(rule.enum as [string, ...string[]], {
-      errorMap: () => ({ message: rule.message || `Valores permitidos: ${rule.enum?.join(", ")}` }),
+      error: rule.message || `Valores permitidos: ${rule.enum?.join(", ")}`,
     });
   }
 
   // Pattern (regex)
   if (rule.pattern) {
-    schema = (schema as z.ZodString).regex(new RegExp(rule.pattern), {
-      message: rule.message || "Formato inválido",
-    });
+    // Sin ReDoS: ver @kitsuden/shared patron-seguro (auditoría 2026-10-25)
+    const re = patronSeguro(rule.pattern);
+    if (re) {
+      schema = (schema as z.ZodString).max(LONGITUD_MAXIMA_A_PROBAR).regex(re, {
+        message: rule.message || "Formato inválido",
+      });
+    }
   }
 
   return schema;
@@ -297,7 +300,7 @@ export function validateWithZod(schema: ZodSchema, data: unknown): ZodValidation
     if (error instanceof ZodError) {
       return {
         success: false,
-        errors: error.errors.map((err) => ({
+        errors: error.issues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
           received: err.code,

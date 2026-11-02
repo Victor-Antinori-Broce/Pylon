@@ -1,0 +1,292 @@
+[
+  {
+    "nombre": "tabla plana",
+    "json": [
+      {
+        "id": 0,
+        "slug": "fila-0",
+        "nombre": "Fila 0",
+        "activo": true,
+        "nota": 0
+      },
+      {
+        "id": 1,
+        "slug": "fila-1",
+        "nombre": "Fila 1",
+        "activo": false,
+        "nota": 1.5
+      },
+      {
+        "id": 2,
+        "slug": "fila-2",
+        "nombre": "Fila 2",
+        "activo": true,
+        "nota": 3
+      },
+      {
+        "id": 3,
+        "slug": "fila-3",
+        "nombre": "Fila 3",
+        "activo": false,
+        "nota": 4.5
+      }
+    ],
+    "toon": "[4]{id,slug,nombre,activo,nota}:\n  0,fila-0,Fila 0,true,0\n  1,fila-1,Fila 1,false,1.5\n  2,fila-2,Fila 2,true,3\n  3,fila-3,Fila 3,false,4.5"
+  },
+  {
+    "nombre": "listado con sobre",
+    "json": {
+      "docs": [
+        {
+          "id": 1,
+          "slug": "fila-1",
+          "nombre": "Fila 1",
+          "activo": false,
+          "nota": 1.5
+        },
+        {
+          "id": 2,
+          "slug": "fila-2",
+          "nombre": "Fila 2",
+          "activo": true,
+          "nota": 3
+        }
+      ],
+      "totalDocs": 2,
+      "page": 1,
+      "hasNextPage": false
+    },
+    "toon": "docs[2]{id,slug,nombre,activo,nota}:\n  1,fila-1,Fila 1,false,1.5\n  2,fila-2,Fila 2,true,3\ntotalDocs: 2\npage: 1\nhasNextPage: false"
+  },
+  {
+    "nombre": "columna plegada en la cabecera",
+    "json": {
+      "docs": [
+        {
+          "id": "e1",
+          "_meta": {
+            "datasetId": "d1",
+            "createdAt": "2026-10-25T10:00:00.000Z"
+          },
+          "nombre": "Uno"
+        },
+        {
+          "id": "e2",
+          "_meta": {
+            "datasetId": "d1",
+            "createdAt": "2026-10-24T09:00:00.000Z"
+          },
+          "nombre": "Dos"
+        }
+      ]
+    },
+    "toon": "docs[2]{id,_meta{datasetId,createdAt},nombre}:\n  e1,d1,\"2026-10-25T10:00:00.000Z\",Uno\n  e2,d1,\"2026-10-24T09:00:00.000Z\",Dos"
+  },
+  {
+    "nombre": "tabla con clave",
+    "json": {
+      "porId": {
+        "a": {
+          "x": 1,
+          "y": "uno"
+        },
+        "b": {
+          "x": 2,
+          "y": "dos"
+        }
+      }
+    },
+    "toon": "porId[2:]{x,y}:\n  a: 1,uno\n  b: 2,dos"
+  },
+  {
+    "nombre": "forma de lista con anidados",
+    "json": {
+      "docs": [
+        {
+          "id": 1,
+          "data": {
+            "skills": [
+              "fuego",
+              "hielo"
+            ],
+            "stats": {
+              "atk": 10
+            }
+          },
+          "tags": []
+        },
+        {
+          "id": 2,
+          "data": {
+            "skills": [],
+            "stats": {
+              "atk": 0
+            }
+          },
+          "extra": {
+            "nota": null
+          }
+        }
+      ]
+    },
+    "toon": "docs[2]:\n  - id: 1\n    data:\n      skills[2]: fuego,hielo\n      stats:\n        atk: 10\n    tags: []\n  - id: 2\n    data:\n      skills: []\n      stats:\n        atk: 0\n    extra:\n      nota: null"
+  },
+  {
+    "nombre": "objetos vacíos",
+    "json": {
+      "content": {},
+      "externalIds": {},
+      "lista": [
+        {},
+        {
+          "a": {}
+        }
+      ]
+    },
+    "toon": "content:\nexternalIds:\nlista[2]:\n  -\n  - a:"
+  },
+  {
+    "nombre": "hermanos de data",
+    "json": {
+      "data": {
+        "slug": "x"
+      },
+      "view": {
+        "filas": [
+          [
+            "a",
+            "b"
+          ],
+          [
+            "c"
+          ]
+        ]
+      },
+      "profile": null
+    },
+    "toon": "data:\n  slug: x\nview:\n  filas[2]:\n    - [2]: a,b\n    - [1]: c\nprofile: null"
+  },
+  {
+    "nombre": "array raíz de objetos",
+    "json": [
+      {
+        "id": 1,
+        "slug": "fila-1",
+        "nombre": "Fila 1",
+        "activo": false,
+        "nota": 1.5
+      },
+      {
+        "id": 2,
+        "slug": "fila-2",
+        "nombre": "Fila 2",
+        "activo": true,
+        "nota": 3
+      }
+    ],
+    "toon": "[2]{id,slug,nombre,activo,nota}:\n  1,fila-1,Fila 1,false,1.5\n  2,fila-2,Fila 2,true,3"
+  },
+  {
+    "nombre": "array raíz de escalares",
+    "json": [
+      1,
+      "dos",
+      null,
+      true,
+      2.5
+    ],
+    "toon": "[5]: 1,dos,null,true,2.5"
+  },
+  {
+    "nombre": "array raíz vacío",
+    "json": [],
+    "toon": "[]"
+  },
+  {
+    "nombre": "objeto raíz vacío",
+    "json": {},
+    "toon": ""
+  },
+  {
+    "nombre": "arrays de arrays",
+    "json": {
+      "matriz": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "mezcla": [
+        1,
+        [
+          2,
+          3
+        ],
+        {
+          "a": 1
+        }
+      ]
+    },
+    "toon": "matriz[2]:\n  - [2]: 1,2\n  - [2]: 3,4\nmezcla[3]:\n  - 1\n  - [2]: 2,3\n  - a: 1"
+  },
+  {
+    "nombre": "textos que necesitan comillas",
+    "json": {
+      "numero": "42",
+      "ceros": "05",
+      "verdad": "true",
+      "nulo": "null",
+      "coma": "a,b",
+      "dosPuntos": "a:b",
+      "guion": "-x",
+      "almohadilla": "#tema",
+      "vacio": "",
+      "espacios": " a ",
+      "salto": "línea\nnueva",
+      "tab": "a\tb",
+      "comillas": "dice \"hola\"",
+      "barra": "a\\b",
+      "control": "\u0001",
+      "unicode": "ñandú 😀",
+      "corchetes": "[x]",
+      "llaves": "{y}",
+      "tuberia": "a|b"
+    },
+    "toon": "numero: \"42\"\nceros: \"05\"\nverdad: \"true\"\nnulo: \"null\"\ncoma: \"a,b\"\ndosPuntos: \"a:b\"\nguion: \"-x\"\nalmohadilla: \"#tema\"\nvacio: \"\"\nespacios: \" a \"\nsalto: \"línea\\nnueva\"\ntab: \"a\\tb\"\ncomillas: \"dice \\\"hola\\\"\"\nbarra: \"a\\\\b\"\ncontrol: \"\\u0001\"\nunicode: ñandú 😀\ncorchetes: \"[x]\"\nllaves: \"{y}\"\ntuberia: a|b"
+  },
+  {
+    "nombre": "claves con comillas",
+    "json": {
+      "x-y": 1,
+      "1a": 2,
+      "con espacio": 3,
+      "": 4,
+      "a.b": 5,
+      "__proto__": {
+        "k": 6
+      }
+    },
+    "toon": "\"x-y\": 1\n\"1a\": 2\n\"con espacio\": 3\n\"\": 4\na.b: 5\n__proto__:\n  k: 6"
+  },
+  {
+    "nombre": "números",
+    "json": {
+      "entero": 42,
+      "negativo": -7,
+      "decimal": 3.25,
+      "grande": 1e+21,
+      "pequeno": 1e-7,
+      "cero": 0
+    },
+    "toon": "entero: 42\nnegativo: -7\ndecimal: 3.25\ngrande: 1e+21\npequeno: 1e-7\ncero: 0"
+  },
+  {
+    "nombre": "escalar",
+    "json": "hola",
+    "toon": "hola"
+  }
+]

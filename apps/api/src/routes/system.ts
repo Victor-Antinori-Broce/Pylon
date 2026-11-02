@@ -20,6 +20,7 @@ import { siteSettings, modules } from "../db/schema";
 import { protectRoute } from "../middleware/auth-guard";
 import { CORE_MODULES, CORE_MODULE_KEYS } from "../services/module-registry";
 import { scanPackages, scanPackages as scanGrimoires } from "../services/scanner";
+import { cuerpoDeFichero, fichero } from "../lib/fichero";
 
 export const systemRoutes = new Hono();
 
@@ -119,6 +120,38 @@ export function listAuthProvidersHandler(c: Context) {
 }
 systemRoutes.get("/auth-providers", listAuthProvidersHandler);
 
+/**
+ * Lo único de `config` del grimoire.json que el panel necesita:
+ * `config.theme` (lo lee `applyGrimoireTheme` en packages/admin/src/lib/theme.svelte.ts).
+ * Sin esto el tema del grimorio no se aplicaba nunca. Se copia campo a campo y
+ * solo cadenas: el resto de `config` (o claves que un tercero meta en
+ * `theme`) no sale, por si algún manifiesto lleva algo que no debe.
+ */
+export function configPublicaDeGrimoire(config: unknown): {
+  theme?: {
+    primary_color?: string;
+    accent_color?: string;
+    secondary_color?: string;
+    css_vars?: Record<string, string>;
+  };
+} {
+  const theme = (config as { theme?: unknown } | null | undefined)?.theme;
+  if (!theme || typeof theme !== "object") return {};
+  const t = theme as Record<string, unknown>;
+  const salida: Record<string, unknown> = {};
+  for (const clave of ["primary_color", "accent_color", "secondary_color"] as const) {
+    if (typeof t[clave] === "string") salida[clave] = t[clave];
+  }
+  if (t.css_vars && typeof t.css_vars === "object") {
+    const vars: Record<string, string> = {};
+    for (const [k, v] of Object.entries(t.css_vars as Record<string, unknown>)) {
+      if (k.startsWith("--kitsuden-") && typeof v === "string") vars[k] = v;
+    }
+    salida.css_vars = vars;
+  }
+  return { theme: salida };
+}
+
 // ── GET /grimoires — List installed grimoires with detailed kon info ──
 export async function listGrimoiresHandler(c: any) {
   const grimoires = await scanPackages("grimoires");
@@ -153,6 +186,7 @@ export async function listGrimoiresHandler(c: any) {
         description: r.description,
         version: r.version,
         isActive: r.id === activeId,
+        config: configPublicaDeGrimoire((r as { config?: unknown }).config),
         kons: {
           required,
           optional,
@@ -739,7 +773,7 @@ export async function getActiveThemeConfigHandler(c: any) {
       theme.css_entry || "variables.css"
     );
     try {
-      const cssFile = Bun.file(cssPath);
+      const cssFile = fichero(cssPath);
       if (await cssFile.exists()) {
         const cssContent = await cssFile.text();
         const colors: Record<string, string> = {};
@@ -782,7 +816,7 @@ export async function getActiveThemeConfigHandler(c: any) {
     // Also try to read a dedicated theme.json if it exists
     const themeJsonPath = join(process.cwd(), "../../packages/grimoires", activeId, "theme.json");
     try {
-      const jsonFile = Bun.file(themeJsonPath);
+      const jsonFile = fichero(themeJsonPath);
       if (await jsonFile.exists()) {
         const overrides = await jsonFile.json();
         if (overrides.colors)
@@ -822,9 +856,9 @@ export async function getThemeCssHandler(c: any) {
   const cssPath = join(process.cwd(), "../../packages/grimoires", themeId, cssFile);
 
   try {
-    const file = Bun.file(cssPath);
+    const file = fichero(cssPath);
     if (await file.exists()) {
-      return new Response(file, {
+      return new Response(cuerpoDeFichero(cssPath).cuerpo, {
         headers: { "Content-Type": "text/css" },
       });
     }

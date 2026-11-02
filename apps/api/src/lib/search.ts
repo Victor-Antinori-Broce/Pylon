@@ -7,13 +7,17 @@
  * búsqueda semántica usando embeddings y PGVector.
  */
 
+import { esUuid } from "@kitsuden/engine";
+import { publishedOrOwn } from "@kitsuden/shared";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 
 import { db } from "../db";
-import { requireAuth } from "../middleware/auth";
-import { generateEmbedding as generateRealEmbedding } from "../services/embeddings";
+import { exigirAdmin } from "../middleware/auth-guard";
+import { generateEmbedding as generateRealEmbedding, hasRealEmbeddingProvider } from "../services/embeddings";
 import type { AppVariables } from "../types/hono";
+
+import { enProduccion } from "./entorno";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -73,102 +77,55 @@ export async function initializeSearchExtensions(): Promise<void> {
 }
 
 /**
- * Crea índices de búsqueda en una tabla
- */
-export async function createSearchIndexes(tableName: string, textColumns: string[]): Promise<void> {
-  const tsvectorColumn = `${tableName}_search_vector`;
-
-  // Crear columna tsvector si no existe
-  await db.execute(sql`
-    ALTER TABLE ${sql.identifier(tableName)} 
-    ADD COLUMN IF NOT EXISTS ${sql.identifier(tsvectorColumn)} tsvector
-  `);
-
-  // Crear trigger para auto-actualizar tsvector
-  const triggerFunction = `
-    CREATE OR REPLACE FUNCTION ${tableName}_search_update() RETURNS trigger AS $$
-    BEGIN
-      NEW.${tsvectorColumn} := to_tsvector('english', 
-        ${textColumns.map((col) => `COALESCE(NEW.${col}, '')`).join(" || ' ' || ")}
-      );
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-  `;
-
-  await db.execute(sql.raw(triggerFunction));
-
-  // Crear trigger
-  await db.execute(sql`
-    DROP TRIGGER IF EXISTS ${sql.identifier(`${tableName}_search_trigger`)} 
-    ON ${sql.identifier(tableName)};
-    
-    CREATE TRIGGER ${sql.identifier(`${tableName}_search_trigger`)}
-    BEFORE INSERT OR UPDATE ON ${sql.identifier(tableName)}
-    FOR EACH ROW
-    EXECUTE FUNCTION ${sql.identifier(`${tableName}_search_update`)}();
-  `);
-
-  // Crear índice GIN
-  await db.execute(sql`
-    CREATE INDEX IF NOT EXISTS ${sql.identifier(`${tableName}_search_idx`)}
-    ON ${sql.identifier(tableName)} USING GIN (${sql.identifier(tsvectorColumn)});
-  `);
-
-  // Crear índice para búsqueda fuzzy (trigram)
-  for (const column of textColumns) {
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS ${sql.identifier(`${tableName}_${column}_trgm_idx`)}
-      ON ${sql.identifier(tableName)} USING GIN (${sql.identifier(column)} gin_trgm_ops);
-    `);
-  }
-
-  console.log(`✅ Search indexes created for ${tableName}`);
-}
-
-/**
  * Búsqueda full-text tradicional
  */
 export async function searchFullText(options: SearchOptions): Promise<SearchResult[]> {
   const { query, limit = 20, offset = 0 } = options;
 
-  // Normalizar query para tsquery
+  // `data_entries` has no `content` or `type`, and its dataset column is
+  // `data_set_id`: this query answered 500 to every search. Public rows only, in
+  // the SQL itself, so a page is not emptied by filtering it afterwards. The
+  // headline runs on the outer query: only on the page, not on every match.
   const results = await db.execute<{
     id: string;
     title: string;
-    content: string;
-    type: string;
     dataset_id: string;
     score: number;
-    highlights: string[];
+    fragment: string;
     created_at: string;
   }>(sql`
-    SELECT 
-      id,
-      title,
-      content,
-      type,
-      dataset_id,
-      ts_rank_cd(search_vector, query) as score,
-      ts_headline('english', content, query, 'MaxFragments=3,MaxWords=50,MinWords=10') as highlights,
-      created_at
-    FROM data_entries,
-    plainto_tsquery('english', ${query}) query
-    WHERE search_vector @@ query
-    ${options.datasetId ? sql`AND dataset_id = ${options.datasetId}` : sql``}
-    ORDER BY score DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
+    SELECT
+      m.id,
+      m.title,
+      m.data_set_id AS dataset_id,
+      m.score,
+      ts_headline('english', m.title || ' ' || m.data::text, m.query, 'MaxFragments=3,MaxWords=50,MinWords=10,StartSel="",StopSel=""') AS fragment,
+      m.created_at
+    FROM (
+      SELECT e.id, e.title, e.data, e.data_set_id, e.created_at, q.query,
+             ts_rank_cd(e.search_vector, q.query) AS score
+      FROM data_entries e
+      JOIN data_sets d ON d.id = e.data_set_id
+      CROSS JOIN plainto_tsquery('english', ${query}) AS q(query)
+      WHERE e.search_vector @@ q.query
+        AND ${SQL_DATASET_PUBLICO}
+        AND ${publishedOrOwn(null, "e")}
+        ${options.datasetId ? sql`AND e.data_set_id = ${options.datasetId}` : sql``}
+      ORDER BY score DESC, e.id
+      LIMIT ${limit}
+      OFFSET ${offset}
+    ) m
+    ORDER BY m.score DESC, m.id
   `);
 
   return results.rows.map((row) => ({
     id: row.id,
     title: row.title,
-    content: row.content,
-    type: row.type,
+    content: row.fragment,
+    type: "data_entry",
     datasetId: row.dataset_id,
     score: row.score,
-    highlights: row.highlights ? [row.highlights as unknown as string] : undefined,
+    highlights: row.fragment ? [row.fragment] : undefined,
     createdAt: row.created_at,
   }));
 }
@@ -270,7 +227,7 @@ export async function upsertVectorDocument(
       UPDATE vector_documents
       SET 
         content = ${content},
-        embedding = ${sql.raw(embeddingLiteral)}::vector,
+        embedding = ${embeddingLiteral}::vector,
         metadata = ${JSON.stringify(metadata)}::jsonb,
         updated_at = NOW()
       WHERE id = ${options.id}
@@ -282,7 +239,7 @@ export async function upsertVectorDocument(
       INSERT INTO vector_documents (content, embedding, metadata, dataset_id, source_type, source_id)
       VALUES (
         ${content},
-        ${sql.raw(embeddingLiteral)}::vector,
+        ${embeddingLiteral}::vector,
         ${JSON.stringify(metadata)}::jsonb,
         ${options.datasetId || null},
         ${options.sourceType || null},
@@ -308,6 +265,10 @@ export async function searchVector(
 ): Promise<SearchResult[]> {
   const { limit = 10, threshold = 0.7 } = options;
 
+  // Without a provider the embedding is a mock: useless as a search, and it runs
+  // on the event loop. Not in production (audit 2026-10-31).
+  if (enProduccion() && !hasRealEmbeddingProvider()) return [];
+
   const queryEmbedding = await generateEmbedding(query);
   const embeddingLiteral = `[${queryEmbedding.join(",")}]`;
 
@@ -326,13 +287,13 @@ export async function searchVector(
       metadata,
       dataset_id,
       source_type,
-      1 - (embedding <=> ${sql.raw(embeddingLiteral)}::vector) as similarity,
+      1 - (embedding <=> ${embeddingLiteral}::vector) as similarity,
       created_at
     FROM vector_documents
     WHERE embedding IS NOT NULL
     ${options.datasetId ? sql`AND dataset_id = ${options.datasetId}` : sql``}
     ${options.sourceType ? sql`AND source_type = ${options.sourceType}` : sql``}
-    ORDER BY embedding <=> ${sql.raw(embeddingLiteral)}::vector
+    ORDER BY embedding <=> ${embeddingLiteral}::vector
     LIMIT ${limit}
   `);
 
@@ -361,9 +322,14 @@ export async function searchHybrid(options: SearchOptions): Promise<SearchResult
   // Ejecutar ambas búsquedas en paralelo
   const [fulltextResults, vectorResults] = await Promise.all([
     searchFullText({ ...options, limit: (options.limit || 10) * 2 }),
+    // The semantic half is optional: `vector_documents` has a fixed dimension, and a
+    // provider with another one must not take the full-text results down with it.
     searchVector(options.query, {
       datasetId: options.datasetId,
       limit: (options.limit || 10) * 2,
+    }).catch((error) => {
+      console.error("Vector search failed, using full text only:", error);
+      return [] as SearchResult[];
     }),
   ]);
 
@@ -434,15 +400,76 @@ export async function search(options: SearchOptions): Promise<SearchResult[]> {
 export const searchRoutes = new Hono<{ Variables: AppVariables }>();
 
 /**
+ * Lo que el buscador PÚBLICO puede devolver: entradas de datasets cuya
+ * política es `readAccess: "public"` y sin `rlsRules` (sin aislamiento por
+ * dueño).
+ *
+ * Auditoría 2026-10-15: `/api/search/suggestions` (sin sesión) devolvía
+ * títulos de TODAS las filas de `data_entries`, de cualquier dataset —
+ * privados, de solo admin o aislados por usuario—, y `POST /api/search` no
+ * miraba la política de ningún dataset. Las rutas montan antes del middleware
+ * de sesión, así que aquí no hay usuario: lo público es lo único seguro.
+ */
+const SQL_DATASET_PUBLICO = sql`
+  d.policy_json->>'readAccess' = 'public'
+  AND COALESCE(jsonb_array_length(
+    CASE WHEN jsonb_typeof(d.policy_json->'rlsRules') = 'array'
+         THEN d.policy_json->'rlsRules' ELSE '[]'::jsonb END), 0) = 0`;
+
+async function datasetsPublicos(): Promise<Set<string>> {
+  const r = await db.execute<{ id: string }>(
+    sql`SELECT d.id::text AS id FROM data_sets d WHERE ${SQL_DATASET_PUBLICO}`
+  );
+  return new Set(r.rows.map((f) => f.id));
+}
+
+/** Se queda solo con los resultados de datasets públicos (exportada para probarla). */
+export function soloResultadosPublicos(
+  resultados: SearchResult[],
+  publicos: ReadonlySet<string>
+): SearchResult[] {
+  return resultados.filter((r) => r.datasetId !== undefined && publicos.has(String(r.datasetId)));
+}
+
+/** Longest `query` of the public search (same limit as the model search). */
+export const MAX_SEARCH_QUERY_CHARS = 2000;
+
+/** Deepest page of the public search: a large OFFSET still walks every match. */
+export const MAX_SEARCH_OFFSET = 10_000;
+
+/**
  * POST /api/search - Búsqueda unificada
  */
 searchRoutes.post("/", async (c) => {
-  const body = await c.req.json();
+  const body = await c.req.json().catch(() => null);
+  if (body === null || typeof body !== "object") {
+    return c.json({ error: "Body must be a JSON object" }, 400);
+  }
+  if (typeof body.query === "string" && body.query.length > MAX_SEARCH_QUERY_CHARS) {
+    return c.json({ error: `Query must be at most ${MAX_SEARCH_QUERY_CHARS} characters` }, 400);
+  }
+  if (body.query !== undefined && typeof body.query !== "string") {
+    return c.json({ error: "Query must be a string" }, 400);
+  }
+  const limit = body.limit === undefined ? 20 : Number(body.limit);
+  const offset = body.offset === undefined ? 0 : Number(body.offset);
+  if (!Number.isInteger(limit) || limit < 1) {
+    return c.json({ error: "Limit must be a positive integer" }, 400);
+  }
+  if (!Number.isInteger(offset) || offset < 0 || offset > MAX_SEARCH_OFFSET) {
+    return c.json({ error: `Offset must be an integer from 0 to ${MAX_SEARCH_OFFSET}` }, 400);
+  }
+  if (body.type !== undefined && !["fulltext", "vector", "hybrid"].includes(body.type)) {
+    return c.json({ error: "Type must be fulltext, vector or hybrid" }, 400);
+  }
+  if (body.datasetId !== undefined && !esUuid(String(body.datasetId))) {
+    return c.json({ error: "datasetId must be a UUID" }, 400);
+  }
   const options: SearchOptions = {
     query: body.query,
     type: body.type || "hybrid",
-    limit: Math.min(body.limit || 20, 100),
-    offset: body.offset || 0,
+    limit: Math.min(limit, 100),
+    offset,
     datasetId: body.datasetId,
     filters: body.filters,
     sortBy: body.sortBy || "relevance",
@@ -453,7 +480,7 @@ searchRoutes.post("/", async (c) => {
   }
 
   try {
-    const results = await search(options);
+    const results = soloResultadosPublicos(await search(options), await datasetsPublicos());
     return c.json({
       results,
       total: results.length,
@@ -478,8 +505,17 @@ searchRoutes.get("/suggestions", async (c) => {
   }
 
   try {
-    // Búsqueda fuzzy rápida
-    const results = await searchFuzzy(query, "data_entries", "title", limit);
+    // Búsqueda fuzzy rápida, SOLO sobre datasets públicos (ver arriba)
+    const results = (
+      await db.execute<{ id: string; title: string; similarity: number }>(sql`
+        SELECT e.id, e.title, similarity(e.title, ${query}) AS similarity
+        FROM data_entries e
+        JOIN data_sets d ON d.id = e.data_set_id
+        WHERE e.title % ${query} AND ${SQL_DATASET_PUBLICO} AND ${publishedOrOwn(null, "e")}
+        ORDER BY similarity DESC
+        LIMIT ${limit}
+      `)
+    ).rows;
 
     return c.json({
       suggestions: results.map((r) => ({
@@ -495,7 +531,7 @@ searchRoutes.get("/suggestions", async (c) => {
 /**
  * POST /api/search/index - Indexar contenido (para admins)
  */
-searchRoutes.post("/index", requireAuth, async (c) => {
+searchRoutes.post("/index", exigirAdmin, async (c) => {
   const body = await c.req.json();
 
   try {
@@ -516,7 +552,7 @@ searchRoutes.post("/index", requireAuth, async (c) => {
 /**
  * GET /api/search/stats - Estadísticas de búsqueda
  */
-searchRoutes.get("/stats", requireAuth, async (c) => {
+searchRoutes.get("/stats", exigirAdmin, async (c) => {
   try {
     const [vectorCount, tableInfo] = await Promise.all([
       db.execute<{ count: number }>(sql`SELECT COUNT(*) as count FROM vector_documents`),
@@ -545,15 +581,10 @@ searchRoutes.get("/stats", requireAuth, async (c) => {
 /**
  * POST /api/search/init - Inicializar búsqueda (setup)
  */
-searchRoutes.post("/init", requireAuth, async (c) => {
+searchRoutes.post("/init", exigirAdmin, async (c) => {
   try {
     await initializeSearchExtensions();
     await createVectorTable();
-
-    // Crear índices para tablas principales
-    await createSearchIndexes("data_entries", ["title", "content"]);
-    await createSearchIndexes("blog_posts", ["title", "excerpt", "content"]);
-    await createSearchIndexes("games", ["title", "description"]);
 
     return c.json({ success: true, message: "Search initialized successfully" });
   } catch (error) {

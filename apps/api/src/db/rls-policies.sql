@@ -62,10 +62,12 @@ CREATE POLICY data_entries_owner_isolation ON data_entries
     FOR ALL
     TO PUBLIC
     USING (
-        -- Si no hay contexto RLS (app.current_user_id vacío), permitir todo
-        -- (para compatibilidad con migraciones y scripts admin)
-        (current_setting('app.current_user_id', true) IS NULL
-         OR current_setting('app.current_user_id', true) = '')
+        -- Sin contexto RLS (id Y rol vacíos o sin fijar) es el SISTEMA:
+        -- migraciones, cargadores, workers. Solo el id vacío NO basta: el
+        -- anónimo de una petición lleva id '' y rol `anonymous`, y antes
+        -- atravesaba esta política como si fuera el sistema (2026-10-23).
+        (COALESCE(current_setting('app.current_user_id', true), '') = ''
+         AND COALESCE(current_setting('app.current_user_role', true), '') = '')
         OR
         -- Si es admin, permitir todo
         current_setting('app.current_user_role', true) = 'admin'
@@ -80,9 +82,9 @@ CREATE POLICY data_entries_owner_isolation ON data_entries
         )
     )
     WITH CHECK (
-        -- Solo el dueño puede modificar
-        (current_setting('app.current_user_id', true) IS NULL
-         OR current_setting('app.current_user_id', true) = '')
+        -- Solo el dueño puede modificar (o el sistema, ver arriba)
+        (COALESCE(current_setting('app.current_user_id', true), '') = ''
+         AND COALESCE(current_setting('app.current_user_role', true), '') = '')
         OR
         current_setting('app.current_user_role', true) = 'admin'
         OR
@@ -102,6 +104,230 @@ CREATE POLICY data_entries_public_read ON data_entries
         AND (data->>'isPublic' = 'true' OR data->>'visibility' = 'public')
     );
 
+-- Política: lo que el DATASET declara legible, se lee (2026-10-23)
+--
+-- La visibilidad de un dataset vive en `data_sets.policy_json` (`readAccess`:
+-- public | authenticated | admin), y la aplicación la comprueba con
+-- `checkReadAccess()`. La base no la miraba: para un usuario con sesión que
+-- no fuera admin, las entradas de un dataset PÚBLICO sin dueño (todas las de
+-- los juegos) no casaban con ninguna política y salían CERO filas. Y el
+-- anónimo las veía solo porque pasaba por la escotilla del sistema.
+--
+-- Con esto, la base dice lo mismo que la aplicación: `public` lo lee
+-- cualquiera, `authenticated` quien tenga sesión. Solo para datasets SIN
+-- `rlsRules`: los que las tienen son por dueño y los filtra
+-- `data_entries_owner_isolation` (y `buildDatasetWhere` en la aplicación).
+--
+-- La subconsulta no depende de la fila: Postgres la evalúa una vez por
+-- consulta (hashed subplan), no una vez por entrada.
+DROP POLICY IF EXISTS data_entries_lectura_por_dataset ON data_entries;
+
+CREATE POLICY data_entries_lectura_por_dataset ON data_entries
+    FOR SELECT
+    TO PUBLIC
+    USING (
+        data_set_id IN (
+            SELECT ds.id FROM data_sets ds
+            WHERE (
+                ds.policy_json->>'readAccess' = 'public'
+                OR (
+                    ds.policy_json->>'readAccess' = 'authenticated'
+                    AND COALESCE(current_setting('app.current_user_id', true), '') <> ''
+                )
+            )
+            AND COALESCE(
+                jsonb_array_length(
+                    CASE WHEN jsonb_typeof(ds.policy_json->'rlsRules') = 'array'
+                         THEN ds.policy_json->'rlsRules' END
+                ), 0) = 0
+        )
+    );
+
+-- Fase E: datasets abiertos por los SCOPES de un agente (`datasets:<slug>:read|write|delete`).
+-- La API fija los scopes del agente en app.agent_scopes (separados por comas,
+-- local a la transacción: engine/src/rls-peticion.ts). Estas funciones son la
+-- MISMA regla que @kitsuden/shared (permisos-de-agente.ts): comodines `x:*`,
+-- `*:y`, `a:*:c`, `admin`, y una denegación `!patrón` que gana a todo. Un test
+-- (src/tests/permisos-finos-de-agentes.test.ts) compara las dos con una tabla.
+-- Sin app.agent_scopes (humanos, anónimos, sistema) no abren nada.
+CREATE OR REPLACE FUNCTION kitsuden_patron_cubre(patron text, requerido text)
+RETURNS boolean LANGUAGE plpgsql IMMUTABLE AS $FN$
+DECLARE
+  p text[];
+  r text[];
+  n int;
+  i int;
+BEGIN
+  IF patron IS NULL OR requerido IS NULL OR patron = '' OR requerido = '' THEN RETURN false; END IF;
+  IF patron = requerido THEN RETURN true; END IF;
+  p := string_to_array(patron, ':');
+  n := array_length(p, 1);
+  IF n < 2 THEN RETURN false; END IF;
+  IF NOT EXISTS (SELECT 1 FROM unnest(p) AS x WHERE x <> '*') THEN RETURN false; END IF;
+  IF p[1] = '*' THEN
+    RETURN length(requerido) >= length(patron) - 1
+       AND right(requerido, length(patron) - 1) = substr(patron, 2);
+  END IF;
+  r := string_to_array(requerido, ':');
+  IF p[n] = '*' THEN
+    IF array_length(r, 1) <= n - 1 THEN RETURN false; END IF;
+    n := n - 1;
+  ELSIF array_length(r, 1) <> n THEN
+    RETURN false;
+  END IF;
+  FOR i IN 1..n LOOP
+    IF p[i] = '*' THEN
+      IF coalesce(r[i], '') = '' THEN RETURN false; END IF;
+    ELSIF p[i] IS DISTINCT FROM r[i] THEN
+      RETURN false;
+    END IF;
+  END LOOP;
+  RETURN true;
+END
+$FN$;
+
+CREATE OR REPLACE FUNCTION kitsuden_agente_abre_dataset(p_data_set_id uuid, p_accion text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $FN$
+DECLARE
+  crudo text := coalesce(current_setting('app.agent_scopes', true), '');
+  scopes text[];
+  s text;
+  req text;
+BEGIN
+  IF crudo = '' THEN RETURN false; END IF;
+  SELECT 'datasets:' || ds.slug || ':' || p_accion INTO req FROM data_sets ds WHERE ds.id = p_data_set_id;
+  IF req IS NULL THEN RETURN false; END IF;
+  scopes := string_to_array(crudo, ',');
+  FOREACH s IN ARRAY scopes LOOP
+    IF left(s, 1) = '!' AND kitsuden_patron_cubre(substr(s, 2), req) THEN RETURN false; END IF;
+  END LOOP;
+  FOREACH s IN ARRAY scopes LOOP
+    IF left(s, 1) <> '!' AND (s = 'admin' OR s = 'admin:*' OR kitsuden_patron_cubre(s, req)) THEN
+      RETURN true;
+    END IF;
+  END LOOP;
+  RETURN false;
+END
+$FN$;
+
+-- La lectura incluye escribir y borrar: un INSERT/UPDATE con RETURNING tiene
+-- que poder ver la fila que escribe. Qué puede LEER el agente lo decide la
+-- aplicación (puedeVerDataset en kon-datasets).
+DROP POLICY IF EXISTS data_entries_agente_lectura ON data_entries;
+CREATE POLICY data_entries_agente_lectura ON data_entries FOR SELECT
+    USING (
+        coalesce(current_setting('app.agent_scopes', true), '') <> ''
+        AND (kitsuden_agente_abre_dataset(data_set_id, 'read')
+             OR kitsuden_agente_abre_dataset(data_set_id, 'write')
+             OR kitsuden_agente_abre_dataset(data_set_id, 'delete'))
+    );
+DROP POLICY IF EXISTS data_entries_agente_alta ON data_entries;
+CREATE POLICY data_entries_agente_alta ON data_entries FOR INSERT
+    WITH CHECK (coalesce(current_setting('app.agent_scopes', true), '') <> ''
+                AND kitsuden_agente_abre_dataset(data_set_id, 'write'));
+DROP POLICY IF EXISTS data_entries_agente_edicion ON data_entries;
+CREATE POLICY data_entries_agente_edicion ON data_entries FOR UPDATE
+    USING (coalesce(current_setting('app.agent_scopes', true), '') <> ''
+           AND kitsuden_agente_abre_dataset(data_set_id, 'write'))
+    WITH CHECK (coalesce(current_setting('app.agent_scopes', true), '') <> ''
+                AND kitsuden_agente_abre_dataset(data_set_id, 'write'));
+DROP POLICY IF EXISTS data_entries_agente_borrado ON data_entries;
+CREATE POLICY data_entries_agente_borrado ON data_entries FOR DELETE
+    USING (coalesce(current_setting('app.agent_scopes', true), '') <> ''
+           AND kitsuden_agente_abre_dataset(data_set_id, 'delete'));
+
+-- Fase F en la base (auditoría 2026-10-25): la OTRA vía por la que la
+-- aplicación abre un dataset a un agente, sin scope fino. Es la regla de
+-- `exigirDataset` (apps/api/src/services/mcp-tools.ts) y de
+-- checkReadAccess/checkWriteAccess (@kitsuden/shared rls-builder.ts):
+--
+--   · la herramienta: `mcp:read` para leer, `mcp:write` para escribir/borrar;
+--   · leer: `readAccess` public/authenticated, o el scope `dataset:view`;
+--   · escribir: además `writeAccess` authenticated, o `dataset-entry:create`;
+--   · borrar: además `writeAccess` authenticated, o `dataset-entry:delete`;
+--   · una denegación `!datasets:<slug>:<acción>` (o más amplia) gana siempre.
+--
+-- Sin esto, las herramientas MCP del núcleo no podían correr dentro de la
+-- transacción RLS del agente: Postgres solo conocía los scopes finos y la
+-- aplicación también abre por política (con el firmante como dueño).
+
+-- ¿Concede la lista de scopes del agente `p_requerido`? (denegación gana)
+CREATE OR REPLACE FUNCTION kitsuden_agente_concede(p_requerido text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $FN$
+DECLARE
+  crudo text := coalesce(current_setting('app.agent_scopes', true), '');
+  scopes text[];
+  s text;
+BEGIN
+  IF crudo = '' OR p_requerido IS NULL THEN RETURN false; END IF;
+  scopes := string_to_array(crudo, ',');
+  FOREACH s IN ARRAY scopes LOOP
+    IF left(s, 1) = '!' AND kitsuden_patron_cubre(substr(s, 2), p_requerido) THEN RETURN false; END IF;
+  END LOOP;
+  FOREACH s IN ARRAY scopes LOOP
+    IF left(s, 1) <> '!' AND (s = 'admin' OR s = 'admin:*' OR kitsuden_patron_cubre(s, p_requerido)) THEN
+      RETURN true;
+    END IF;
+  END LOOP;
+  RETURN false;
+END
+$FN$;
+
+-- ¿Hay una denegación del agente que cubra `p_requerido`?
+CREATE OR REPLACE FUNCTION kitsuden_agente_denegado(p_requerido text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $FN$
+DECLARE
+  crudo text := coalesce(current_setting('app.agent_scopes', true), '');
+  s text;
+BEGIN
+  IF crudo = '' THEN RETURN false; END IF;
+  FOREACH s IN ARRAY string_to_array(crudo, ',') LOOP
+    IF left(s, 1) = '!' AND kitsuden_patron_cubre(substr(s, 2), p_requerido) THEN RETURN true; END IF;
+  END LOOP;
+  RETURN false;
+END
+$FN$;
+
+CREATE OR REPLACE FUNCTION kitsuden_agente_abre_por_politica(p_data_set_id uuid, p_accion text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $FN$
+DECLARE
+  v_slug text;
+  v_politica jsonb;
+  v_lee boolean;
+BEGIN
+  IF coalesce(current_setting('app.agent_scopes', true), '') = '' THEN RETURN false; END IF;
+  SELECT ds.slug, ds.policy_json INTO v_slug, v_politica FROM data_sets ds WHERE ds.id = p_data_set_id;
+  IF v_slug IS NULL THEN RETURN false; END IF;
+  IF kitsuden_agente_denegado('datasets:' || v_slug || ':' || p_accion) THEN RETURN false; END IF;
+  IF NOT kitsuden_agente_concede(CASE WHEN p_accion = 'read' THEN 'mcp:read' ELSE 'mcp:write' END) THEN
+    RETURN false;
+  END IF;
+  v_lee := coalesce(v_politica->>'readAccess', '') IN ('public', 'authenticated')
+           OR kitsuden_agente_concede('dataset:view');
+  IF p_accion = 'read' THEN RETURN v_lee; END IF;
+  RETURN v_lee AND (
+    coalesce(v_politica->>'writeAccess', '') = 'authenticated'
+    OR kitsuden_agente_concede(CASE WHEN p_accion = 'delete' THEN 'dataset-entry:delete' ELSE 'dataset-entry:create' END)
+  );
+END
+$FN$;
+
+DROP POLICY IF EXISTS data_entries_agente_politica_lectura ON data_entries;
+CREATE POLICY data_entries_agente_politica_lectura ON data_entries FOR SELECT
+    USING (kitsuden_agente_abre_por_politica(data_set_id, 'read')
+           OR kitsuden_agente_abre_por_politica(data_set_id, 'write')
+           OR kitsuden_agente_abre_por_politica(data_set_id, 'delete'));
+DROP POLICY IF EXISTS data_entries_agente_politica_alta ON data_entries;
+CREATE POLICY data_entries_agente_politica_alta ON data_entries FOR INSERT
+    WITH CHECK (kitsuden_agente_abre_por_politica(data_set_id, 'write'));
+DROP POLICY IF EXISTS data_entries_agente_politica_edicion ON data_entries;
+CREATE POLICY data_entries_agente_politica_edicion ON data_entries FOR UPDATE
+    USING (kitsuden_agente_abre_por_politica(data_set_id, 'write'))
+    WITH CHECK (kitsuden_agente_abre_por_politica(data_set_id, 'write'));
+DROP POLICY IF EXISTS data_entries_agente_politica_borrado ON data_entries;
+CREATE POLICY data_entries_agente_politica_borrado ON data_entries FOR DELETE
+    USING (kitsuden_agente_abre_por_politica(data_set_id, 'delete'));
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 3. POLÍTICAS PARA ai_memories (si existe)
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -116,8 +342,9 @@ BEGIN
             FOR ALL
             TO PUBLIC
             USING (
-                (current_setting('app.current_user_id', true) IS NULL
-         OR current_setting('app.current_user_id', true) = '')
+                -- Sistema = id Y rol vacíos (el anónimo lleva rol `anonymous`)
+                (COALESCE(current_setting('app.current_user_id', true), '') = ''
+                 AND COALESCE(current_setting('app.current_user_role', true), '') = '')
                 OR
                 user_id = current_setting('app.current_user_id', true)
             )

@@ -55,7 +55,7 @@ Esto generará:
       "args": ["run", "apps/api/src/mcp-server.ts"],
       "cwd": "C:\\Users\\vantinori\\Documents\\github\\cms",
       "env": {
-        "GREMUS_MCP_TOKEN": "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g",
+        "GREMUS_MCP_TOKEN": "<YOUR_AGENT_KEY>",
         "GREMUS_API_URL": "http://localhost:3001",
         "NODE_ENV": "development"
       }

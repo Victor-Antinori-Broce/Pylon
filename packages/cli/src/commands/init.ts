@@ -692,6 +692,12 @@ function generateVibecoderDockerCompose(
 # Quick start:
 #   ./init.sh      (Linux/Mac)  — auto-detects best option
 #   init.bat       (Windows)    — auto-detects best option
+#
+# TWO SERVICES by default (kitsuden2.md H1): the API and Postgres. Jobs run on
+# a Postgres queue and uploads go to a local volume. The rest is opt-in:
+#   docker compose --profile replicas up -d   # Valkey, for several API replicas
+#   docker compose --profile s3 up -d         # MinIO (S3) instead of the local volume
+#     (then set REDIS_URL / STORAGE_PROVIDER=minio and S3_* in .env)
 
 services:
   kitsuden_db:
@@ -716,6 +722,7 @@ services:
 
   kitsuden_state:
     image: valkey/valkey:7-alpine
+    profiles: ["replicas"]
     container_name: kitsuden_cache
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
@@ -733,12 +740,13 @@ services:
 
   kitsuden_minio:
     image: minio/minio:latest
+    profiles: ["s3"]
     container_name: kitsuden_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: \${S3_ACCESS_KEY:-kitsuden_minio}
-      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:?S3_SECRET_KEY is required - set it in .env}
+      MINIO_ROOT_PASSWORD: \${S3_SECRET_KEY:-change-me-minio-secret}
     ports:
       - "\${MINIO_PORT:-9000}:9000"
       - "\${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -761,18 +769,18 @@ services:
     depends_on:
       kitsuden_db:
         condition: service_healthy
-      kitsuden_state:
-        condition: service_healthy
     environment:
       - NODE_ENV=production
       - PORT=3000
       - DATABASE_URL=postgresql://\${POSTGRES_USER:-kitsuden}:\${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db:5432/\${POSTGRES_DB:-kitsuden}
-      - REDIS_URL=redis://kitsuden_state:6379
-      - DEFAULT_STORAGE_PROVIDER=minio
+      # Empty = no Valkey (single instance). With --profile replicas: redis://kitsuden_state:6379
+      - REDIS_URL=\${REDIS_URL:-}
+      - DEFAULT_STORAGE_PROVIDER=\${STORAGE_PROVIDER:-local}
+      - STORAGE_LOCAL_PATH=/app/data
       - S3_ENDPOINT=http://kitsuden_minio:9000
       - S3_PUBLIC_URL=\${S3_PUBLIC_URL:-http://localhost:9000}
       - S3_ACCESS_KEY=\${S3_ACCESS_KEY:-kitsuden_minio}
-      - S3_SECRET_KEY=\${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+      - S3_SECRET_KEY=\${S3_SECRET_KEY:-}
       - S3_BUCKET=\${S3_BUCKET:-kitsuden-media}
       - S3_REGION=\${S3_REGION:-us-east-1}
       - BETTER_AUTH_SECRET=\${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required - set it in .env (min 32 chars)}
@@ -786,11 +794,14 @@ services:
       - HEADLESS=${headless ? "true" : "false"}
     ports:
       - "\${API_PORT:-3000}:3000"
+    volumes:
+      - kitsuden_media:/app/data
     networks:
       - kitsuden_net
 ${adminService}
 volumes:
   kitsuden_postgres:
+  kitsuden_media:
   kitsuden_valkey:
   kitsuden_minio:
 

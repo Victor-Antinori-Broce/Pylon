@@ -49,6 +49,16 @@ export default tseslint.config(
       // serializa y revienta con `RangeError: Invalid string length`, asi que
       // `pnpm lint` —y con el `pnpm qa`— no terminaba nunca en local.
       "**/tmp_build_*/**",
+      // `gamedata/` esta en .gitignore: scrapers sueltos y repositorios de
+      // terceros clonados (~860 ficheros JS/TS). No es codigo del producto y,
+      // como el flat config no lee .gitignore, `pnpm lint` los recorria todos
+      // con `import/no-cycle` y pasaba de 40 minutos.
+      "gamedata/**",
+      // Las webs compiladas (`dist-*` de un starter que compila varias). El
+      // `**/dist/**` de arriba no las cubre: ESLint se metia en los bundles de
+      // Astro y, si una compilacion los regeneraba a la vez, caia con ENOENT.
+      "**/dist-*/**",
+      "**/.astro/**",
       "**/tserrors-*.txt",
       "**/build-diag*.txt",
       "**/kitsuden_progress.txt",
@@ -185,6 +195,45 @@ export default tseslint.config(
     ],
     rules: {
       "no-console": "off",
+    },
+  },
+
+  // ── Muro cortafuegos de los kons (kitsuden2.md C1, 2026-10-28) ──
+  //
+  // Un kon no elige la versión de las piezas que el engine controla: las
+  // importa del engine. Así hay UNA versión de Zod en todo el monorepo y
+  // subirla es un cambio en un sitio (la migración a Zod 4 tocó 59 ficheros).
+  //
+  //   · zod → `@kitsuden/engine/zod` (pura) o `@kitsuden/engine`.
+  //   · bullmq → la cola es de Postgres (`queue` del engine); BullMQ se retiró.
+  //
+  // `drizzle-orm` y `hono` NO se prohíben a propósito: son parte del contrato
+  // de un kon (88 y 83 ficheros los usan: pgTable, eq, sql, Hono) y basta con
+  // fijar una sola versión en el monorepo.
+  {
+    files: ["packages/kons/**/*.{ts,tsx,js,mjs}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "zod",
+              message: 'Los kons importan Zod del engine: import { z } from "@kitsuden/engine/zod".',
+            },
+            {
+              name: "bullmq",
+              message: "La cola es de Postgres: import { queue } from \"@kitsuden/engine\".",
+            },
+          ],
+          patterns: [
+            {
+              group: ["zod/*"],
+              message: 'Los kons importan Zod del engine: import { z } from "@kitsuden/engine/zod".',
+            },
+          ],
+        },
+      ],
     },
   },
 

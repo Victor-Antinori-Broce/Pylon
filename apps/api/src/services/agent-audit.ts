@@ -37,10 +37,40 @@ export type AuditAction =
   | "data_write"
   | "data_delete"
   | "permission_denied"
-  | "rate_limited";
+  | "rate_limited"
+  /** Fase E: un admin cambió scopes, claves o cuotas del agente. */
+  | "config_change"
+  /** Fase F (aprobación humana): ver lib/aprobaciones.ts. */
+  | "approval_settings_changed"
+  | "approval_mode_changed"
+  | "proposal_created"
+  | "proposal_approved"
+  | "proposal_rejected"
+  | "proposal_executed"
+  | "proposal_failed"
+  | "proposal_expired"
+  /** Fase I (promoción de código): ver lib/promocion.ts y docs/agents/promotion.md. */
+  | "promotion_submitted"
+  | "promotion_activated"
+  | "promotion_activation_blocked"
+  | "promotion_activation_failed"
+  | "promotion_rejected"
+  | "promotion_rolled_back"
+  | "promotion_manual_edit"
+  | "promotion_watch_passed"
+  | "promotion_settings_changed"
+  | "promotion_mode_changed";
 
 export interface AuditLogEntry {
-  agentId: string;
+  /**
+   * `null` cuando no se sabe qué agente es: una autenticación fallida con una
+   * clave que no existe, mal formada o de un agente borrado. Antes se escribía
+   * la cadena "unknown", que viola la FK a `agent_identities` (23503): el
+   * INSERT fallaba, se logueaba "Failed to write agent audit log" y el intento
+   * —justo el que más interesa auditar— no quedaba registrado. Desde la
+   * migración 0044 la columna admite NULL.
+   */
+  agentId: string | null;
   keyId?: string;
   action: AuditAction;
   resource?: string;
@@ -97,6 +127,27 @@ export function logAgentAction(entry: AuditLogEntry): void {
 }
 
 /**
+ * Igual que `logAgentAction`, pero ESPERA a que quede escrito. Para lo que
+ * no puede perderse en silencio (fase F: quién encendió la aprobación, quién
+ * aprobó o rechazó): si el INSERT falla, lanza.
+ */
+export async function registrarAccionDeAgente(entry: AuditLogEntry): Promise<void> {
+  await db.insert(agentAuditLogs).values({
+    agentId: entry.agentId,
+    keyId: entry.keyId,
+    action: entry.action,
+    resource: entry.resource,
+    resourceId: entry.resourceId,
+    details: entry.details || {},
+    ipAddress: entry.ipAddress,
+    userAgent: entry.userAgent,
+    durationMs: entry.durationMs,
+    success: entry.success,
+    errorMessage: entry.errorMessage,
+  });
+}
+
+/**
  * Helper para loguear autenticación exitosa
  */
 export function logAuthSuccess(
@@ -119,25 +170,31 @@ export function logAuthSuccess(
 }
 
 /**
- * Helper para loguear fallo de autenticación
+ * Helper para loguear fallo de autenticación.
+ *
+ * `agentId` es `null` si el intento no corresponde a un agente existente.
+ * Lo que se sepa de la clave que se intentó (su id público, nunca el secreto)
+ * va en `details`.
  */
 export function logAuthFailure(
-  agentId: string,
+  agentId: string | null,
   errorMessage: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
+  details?: Record<string, unknown>
 ): void {
   logAgentAction({
     agentId,
     action: "auth_failure",
+    details,
     ipAddress,
     userAgent,
     success: false,
     errorMessage,
   });
 
-  // Notificar webhook
-  notifyAuthFailure(agentId, "", errorMessage, { ipAddress, userAgent });
+  // Notificar webhook (su contrato pide un id de texto)
+  notifyAuthFailure(agentId ?? "unknown", "", errorMessage, { ipAddress, userAgent });
 }
 
 /**
@@ -147,7 +204,8 @@ export function logToolCall(
   agentId: string,
   keyId: string,
   toolName: string,
-  params: any,
+  /** Los NOMBRES de los argumentos; nunca sus valores. */
+  argumentos: string[],
   durationMs: number,
   success: boolean,
   error?: string
@@ -157,7 +215,7 @@ export function logToolCall(
     keyId,
     action: "tool_call",
     resource: toolName,
-    details: { params },
+    details: { argumentos },
     durationMs,
     success,
     errorMessage: error,

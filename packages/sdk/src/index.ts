@@ -2,7 +2,7 @@
  * @kitsuden/sdk — Universal SDK for Kitsuden
  *
  * The official JavaScript/TypeScript SDK for Kitsuden BaaS.
- * CRUD in 3 lines of code. Edge-ready. Type-safe. TOON-enabled.
+ * CRUD in 3 lines of code. Edge-ready. Type-safe. Reads JSON and TOON.
  *
  * @example
  * ```typescript
@@ -26,11 +26,66 @@
  * // Schema
  * const schema = await kitsuden.schema('games');
  *
- * // TOON (for AI agents — 60% fewer tokens)
- * const toonKitsuden = new KitsudenClient({ url: '...', apiKey: '...', format: 'toon' });
- * const toonData = await toonKitsuden.from('games').list(); // Returns raw TOON string
+ * // Smaller responses on the wire: the server picks compact JSON or TOON per
+ * // response (whichever is shorter and decodes back to the same data). You
+ * // still get plain objects back.
+ * const lean = new KitsudenClient({ url: '...', apiKey: '...', format: 'auto' });
+ * const sameData = await lean.from('games').list();
  * ```
  */
+
+import { decodeToon } from "./toon";
+
+export { decodeToon, encodeToon, ToonDecodeError } from "./toon";
+
+// ═══════════════════════════════════════════════════════════════
+// Typed client (generated from the API's OpenAPI 3.1: pnpm sdk:generate)
+// ═══════════════════════════════════════════════════════════════
+
+export {
+  KitsudenApi,
+  createKitsuden,
+  expectOk,
+  isProposalPending,
+  provenanceOf,
+  normalizeBaseUrl,
+  type KitsudenApiOptions,
+  type RawCall,
+} from "./api/client";
+export {
+  KitsudenApiError,
+  KitsudenNetworkError,
+  KitsudenDecodeError,
+  ProposalPendingError,
+  isKitsudenError,
+} from "./api/errors";
+export { decodeTron, TronDecodeError } from "./api/tron";
+export { decodeBody, parseProvenance, parseRetryAfter, DEFAULT_RETRY } from "./api/transport";
+export { itemsOf } from "./api/pagination";
+export { operationSchemas, toStandardSchema } from "./api/standard-schema";
+export type { StandardIssue, StandardResult, StandardSchemaV1 } from "./api/standard-schema";
+export type {
+  CallOptions,
+  Format,
+  Ok,
+  Operation,
+  OperationInfo,
+  Outcome,
+  PageableOperation,
+  PaginationInfo,
+  Problem,
+  Proposal,
+  ProposalPending,
+  ProposalStatus,
+  ProvenanceSummary,
+  RecordProvenance,
+  RedirectResult,
+  ResponseKind,
+  ResponseMeta,
+  RetryPolicy,
+  StreamOperation,
+} from "./api/types";
+export * from "./generated/index";
 
 // ═══════════════════════════════════════════════════════════════
 // Types & Configuration
@@ -41,9 +96,16 @@ export interface KitsudenClientConfig {
   url: string;
   /** API Key for authentication (Bearer token) */
   apiKey?: string;
-  /** Response format: 'json' (default) or 'toon' (Token-Optimized Object Notation) */
-  format?: "json" | "toon";
+  /**
+   * Wire format: 'json' (default), 'toon', or 'auto' (the server sends compact
+   * JSON or TOON, whichever is shorter for each response). The client always
+   * decodes, so methods return the same objects in every mode.
+   */
+  format?: ClientFormat;
 }
+
+/** Wire formats this SDK can decode (TRON is not one: it would add a dependency). */
+export type ClientFormat = "json" | "toon" | "auto";
 
 export interface ListOptions {
   limit?: number;
@@ -96,73 +158,11 @@ export interface OptionItem {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TOON Parser
+// TOON (the same codec the API uses: ./toon.ts is a byte-identical copy)
 // ═══════════════════════════════════════════════════════════════
 
 const TOON_MIME = "application/vnd.toon";
-
-/**
- * Parse TOON format into JavaScript objects.
- * TOON format: key:value lines, separated by --- for arrays.
- */
-function parseTOON(toonString: string): any {
-  const records = toonString.split("\n---\n");
-
-  if (records.length === 1) {
-    return parseTOONRecord(records[0]);
-  }
-
-  return records.filter((r) => r.trim()).map((r) => parseTOONRecord(r));
-}
-
-function parseTOONRecord(record: string): Record<string, any> {
-  const obj: Record<string, any> = {};
-  const lines = record.trim().split("\n");
-
-  for (const line of lines) {
-    const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) continue;
-
-    const key = line.slice(0, colonIdx).trim();
-    const value = line.slice(colonIdx + 1).trim();
-
-    // Skip type hints
-    if (key.startsWith("~")) continue;
-
-    // Handle nested paths: user.name → { user: { name: value } }
-    setNestedValue(obj, key, parseValue(value));
-  }
-
-  return obj;
-}
-
-function setNestedValue(obj: Record<string, any>, path: string, value: any): void {
-  // Handle array notation: items[0].name
-  const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".");
-  let current = obj;
-
-  for (let i = 0; i < parts.length - 1; i++) {
-    const part = parts[i];
-    const nextPart = parts[i + 1];
-    const isNextArray = /^\d+$/.test(nextPart);
-
-    if (!(part in current)) {
-      current[part] = isNextArray ? [] : {};
-    }
-    current = current[part];
-  }
-
-  current[parts[parts.length - 1]] = value;
-}
-
-function parseValue(value: string): any {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  if (value === "null" || value === "") return null;
-  const num = Number(value);
-  if (!isNaN(num) && value !== "") return num;
-  return value;
-}
+const AUTO_ACCEPT = 'application/vnd.kitsuden.auto; formats="json,toon"';
 
 // ═══════════════════════════════════════════════════════════════
 // HTTP Client
@@ -171,7 +171,7 @@ function parseValue(value: string): any {
 class HttpClient {
   private baseUrl: string;
   private apiKey?: string;
-  private format: "json" | "toon";
+  private format: ClientFormat;
 
   constructor(config: KitsudenClientConfig) {
     this.baseUrl = config.url.replace(/\/$/, "");
@@ -183,7 +183,7 @@ class HttpClient {
     method: string,
     path: string,
     body?: unknown,
-    overrideFormat?: "json" | "toon"
+    overrideFormat?: ClientFormat
   ): Promise<T> {
     const format = overrideFormat || this.format;
     let url = `${this.baseUrl}/api${path}`;
@@ -200,6 +200,8 @@ class HttpClient {
 
     if (format === "toon") {
       headers["Accept"] = TOON_MIME;
+    } else if (format === "auto") {
+      headers["Accept"] = AUTO_ACCEPT;
     }
 
     if (this.apiKey) {
@@ -229,13 +231,13 @@ class HttpClient {
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes(TOON_MIME)) {
       const text = await res.text();
-      return parseTOON(text) as T;
+      return decodeToon(text) as T;
     }
 
     return res.json();
   }
 
-  get<T>(path: string, format?: "json" | "toon"): Promise<T> {
+  get<T>(path: string, format?: ClientFormat): Promise<T> {
     return this.request<T>("GET", path, undefined, format);
   }
 
@@ -431,8 +433,8 @@ export class KitsudenClient {
    * // JSON mode (default)
    * const kitsuden = new KitsudenClient({ url: 'http://localhost:3000', apiKey: 'kitsuden_agent_xxx' });
    *
-   * // TOON mode (for AI agents — 60% fewer tokens)
-   * const agent = new KitsudenClient({ url: 'http://localhost:3000', apiKey: 'kitsuden_agent_xxx', format: 'toon' });
+   * // Smaller responses: the server picks compact JSON or TOON per response
+   * const agent = new KitsudenClient({ url: 'http://localhost:3000', apiKey: 'kitsuden_agent_xxx', format: 'auto' });
    */
   constructor(config: KitsudenClientConfig) {
     this.httpClient = new HttpClient(config);
@@ -580,12 +582,12 @@ export class GraphAPI {
  *
  * @example
  * const kitsuden = createClient('http://localhost:3000', 'kitsuden_agent_xxx');
- * const toon = createClient('http://localhost:3000', 'kitsuden_agent_xxx', 'toon');
+ * const lean = createClient('http://localhost:3000', 'kitsuden_agent_xxx', 'auto');
  */
 export function createClient(
   url: string,
   apiKey?: string,
-  format: "json" | "toon" = "json"
+  format: ClientFormat = "json"
 ): KitsudenClient {
   return new KitsudenClient({ url, apiKey, format });
 }

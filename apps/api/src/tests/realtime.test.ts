@@ -139,10 +139,12 @@ describe("Real-time WebSocket", () => {
     expect(result).toBe(true);
   });
 
-  it("should handle presence system", async () => {
+  it("presence: sin sesión no se entra en una sala (auditoría 2026-10-25)", async () => {
     if (!wsAvailable) return;
     const ws = new WebSocket(WS_URL);
 
+    // Antes cualquiera que abriera el socket entraba en cualquier sala y veía
+    // quién estaba. Ahora un anónimo recibe un error y ninguna lista.
     const result = await Promise.race([
       new Promise<boolean>((resolve) => {
         ws.onmessage = (event) => {
@@ -150,11 +152,13 @@ describe("Real-time WebSocket", () => {
           if (msg.type === "connected") {
             ws.send(JSON.stringify({ type: "presence:join", room: "test-room" }));
           }
-          if (msg.type === "presence" && msg.room === "test-room") {
-            if (msg.count >= 1 && Array.isArray(msg.users)) {
-              ws.close();
-              resolve(true);
-            }
+          if (msg.type === "presence") {
+            ws.close();
+            resolve(false);
+          }
+          if (msg.type === "error" && String(msg.message ?? msg.error ?? "").includes("Presence")) {
+            ws.close();
+            resolve(true);
           }
         };
         ws.onerror = () => resolve(false);

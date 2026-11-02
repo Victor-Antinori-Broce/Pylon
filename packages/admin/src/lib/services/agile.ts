@@ -3,7 +3,9 @@
  * API client tipado para el grimoire Agile
  */
 
-const API_BASE = "/api/agile";
+// Con VITE_API_URL (panel y API en orígenes distintos) una ruta relativa iba al
+// servidor del panel y devolvía su index.html con 404.
+const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api/agile`;
 
 // ============== Types ==============
 

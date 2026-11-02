@@ -14,7 +14,7 @@
  * - Supports tags, webhooks, and reusable components
  */
 
-import type { KonDefinition, KonOpenApiPath, OpenApiMethod } from "@kitsuden/shared";
+import { VERSION_DE_KITSUDEN, camposDelSchema, type OperacionDeKon , KonDefinition, KonOpenApiPath, OpenApiMethod } from "@kitsuden/shared";
 import type {
   OpenAPIObject,
   PathItemObject,
@@ -23,12 +23,13 @@ import type {
   SchemaObject,
 } from "openapi3-ts/oas30";
 import type { ZodTypeAny } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { db } from "../db";
 import { dataSets } from "../db/schema";
 
 import { logger } from "./logger";
+import { componentesComunes, esquemaJson, operacionOpenApi } from "./operaciones-openapi";
+import { operacionesDelNucleo } from "./operaciones-del-nucleo";
 import { rutasDeKons } from "./rutas-de-kons";
 
 /**
@@ -83,15 +84,7 @@ Authorization: Bearer your_token_here
  */
 function zodToOpenApiSchema(zodSchema: ZodTypeAny, name?: string): SchemaObject {
   try {
-    const jsonSchema = zodToJsonSchema(zodSchema, {
-      name: name || "Schema",
-      $refStrategy: "none", // Inline all references
-    });
-
-    // Remove the $schema property if present
-    const { $schema, ...schemaWithoutMeta } = jsonSchema as any;
-
-    return schemaWithoutMeta as SchemaObject;
+    return esquemaJson(zodSchema) as SchemaObject;
   } catch (error) {
     logger.error({ error, name }, "Failed to convert Zod schema to JSON Schema");
     return { type: "object", description: "Schema conversion failed" };
@@ -99,20 +92,12 @@ function zodToOpenApiSchema(zodSchema: ZodTypeAny, name?: string): SchemaObject 
 }
 
 /**
- * Convierte un esquema zod a JSON Schema EN LÍNEA, sin `definitions` ni `$ref`.
- *
- * `zodToOpenApiSchema` pasa `name`, y con nombre `zod-to-json-schema` devuelve
- * un `$ref` a `#/definitions/<name>` que en un OpenAPI no apunta a ninguna
- * parte. Para los cuerpos descubiertos se quiere el esquema tal cual.
+ * Convierte el esquema zod de un cuerpo descubierto a JSON Schema en línea.
+ * Si el esquema no es de zod 4 (un kon con otra versión), cae al genérico.
  */
 function zodToOpenApiSchemaInline(schema: unknown): SchemaObject {
   try {
-    const convertido = zodToJsonSchema(schema as ZodTypeAny, {
-      $refStrategy: "none",
-      target: "openApi3",
-    }) as Record<string, unknown>;
-    const { $schema: _s, definitions: _d, ...resto } = convertido;
-    return resto as SchemaObject;
+    return esquemaJson(schema as ZodTypeAny) as SchemaObject;
   } catch (error) {
     logger.warn({ error }, "No se pudo convertir un esquema zod a JSON Schema");
     return { type: "object", description: "No se pudo convertir el esquema de esta ruta." };
@@ -150,6 +135,27 @@ function añadirRutasDescubiertas(
 
     const metodo = ruta.method.toLowerCase();
     if (!["get", "post", "put", "patch", "delete"].includes(metodo)) continue;
+
+    // ── Operación del SDK de kons: la declaración manda (esquemas de entrada
+    // y salida, errores, scope, MCP). Nada de deducirlo de los middlewares.
+    if (ruta.operacion) {
+      const { konId, declaracion } = ruta.operacion;
+      const generada = operacionOpenApi(
+        konId,
+        ruta.mountPath,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- la declaración viaja como unknown por los metadatos de ruta
+        declaracion as OperacionDeKon<any, any, any>
+      );
+      if (!addedTags.has(konId)) {
+        const kon = konPorId.get(konId);
+        spec.tags!.push({ name: konId, description: kon?.description ?? kon?.name ?? konId });
+        addedTags.add(konId);
+      }
+      usados.add(String(generada.operacion.operationId));
+      const item = (spec.paths![generada.camino] ??= {}) as PathItemObject & Record<string, unknown>;
+      if (!item[generada.metodo]) item[generada.metodo] = generada.operacion as unknown as OperationObject;
+      continue;
+    }
 
     const camino =
       ruta.path.replace(/^\/api(?=\/|$)/, "").replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "{$1}") || "/";
@@ -368,11 +374,18 @@ export async function generateOpenAPISpec(
 ): Promise<OpenAPIObject> {
   const {
     title = DEFAULT_INFO.title,
-    version = DEFAULT_INFO.version,
+    version = VERSION_DE_KITSUDEN,
     description = DEFAULT_INFO.description,
     servers = [
       { url: "http://localhost:3001/api", description: "Local development" },
-      { url: "{protocol}://{host}/api", description: "Production" },
+      {
+        url: "{protocol}://{host}/api",
+        description: "Production",
+        variables: {
+          protocol: { default: "https", enum: ["https", "http"] },
+          host: { default: "localhost:3000" },
+        },
+      },
     ],
     includeKons,
     excludeKons = [],
@@ -395,7 +408,10 @@ export async function generateOpenAPISpec(
 
   // Initialize spec
   const spec: OpenAPIObject = {
-    openapi: "3.0.0",
+    // 3.1: los esquemas son JSON Schema de verdad (los del SDK de kons salen
+    // de zod tal cual). Lo valida tests/unit/cobertura-de-operaciones.test.ts
+    // con un validador real.
+    openapi: "3.1.0",
     info: {
       title,
       version,
@@ -412,7 +428,9 @@ export async function generateOpenAPISpec(
     servers,
     paths: {},
     components: {
-      schemas: {},
+      // `Problem`: el cuerpo de error (RFC 9457) al que apuntan las
+      // respuestas de error de las operaciones del SDK.
+      schemas: { ...(componentesComunes().schemas as Record<string, SchemaObject>) },
       securitySchemes: {
         bearerAuth: {
           type: "http",
@@ -441,13 +459,8 @@ export async function generateOpenAPISpec(
     name: string;
     slug: string;
     description: string | null;
-    schema: Array<{
-      fieldName: string;
-      fieldType: string;
-      required?: boolean;
-      options?: string;
-      defaultValue?: string;
-    }> | null;
+    /** Lista de campos u objeto `{fields}`: se lee con `camposDelSchema`. */
+    schema: unknown;
   }> = [];
 
   try {
@@ -481,11 +494,20 @@ export async function generateOpenAPISpec(
     properties.id = { type: "string", format: "uuid", readOnly: true };
 
     // Build properties from dataset schema
-    for (const field of ds.schema || []) {
-      const prop = datasetFieldTypeToJsonSchema(field.fieldType, field.options);
+    // `data_sets.schema` tiene dos formas (lista de campos u objeto `{fields}`)
+    // y puede venir vacía como `{}`. Iterarla tal cual tumbaba el documento
+    // entero con 500 «{} is not iterable». `camposDelSchema` normaliza las dos.
+    for (const campo of camposDelSchema(ds.schema)) {
+      const nombre = campo.fieldName ?? campo.name;
+      const tipo = campo.fieldType ?? campo.type;
+      if (typeof nombre !== "string" || typeof tipo !== "string") continue;
+      const prop = datasetFieldTypeToJsonSchema(
+        tipo,
+        typeof campo.options === "string" ? campo.options : undefined
+      );
       if (prop) {
-        properties[field.fieldName] = prop;
-        if (field.required) required.push(field.fieldName);
+        properties[nombre] = prop;
+        if (campo.required) required.push(nombre);
       }
     }
 
@@ -715,6 +737,22 @@ export async function generateOpenAPISpec(
   // ═══════════════════════════════════════════════════════════════════════════
   // Las rutas que los kons tienen MONTADAS, se hayan declarado o no.
   añadirRutasDescubiertas(spec, kons, addedTags, { includeKons, excludeKons });
+
+  // Las operaciones del SDK que monta el núcleo (permisos de agentes,
+  // aprobación humana, estado de las propuestas): no son de un kon montado.
+  for (const { konId, mountPath, descripcion, operaciones } of operacionesDelNucleo()) {
+    if (includeKons && !includeKons.includes(konId)) continue;
+    if (excludeKons.includes(konId)) continue;
+    if (!addedTags.has(konId)) {
+      spec.tags!.push({ name: konId, description: descripcion });
+      addedTags.add(konId);
+    }
+    for (const op of operaciones) {
+      const g = operacionOpenApi(konId, mountPath, op);
+      const item = (spec.paths![g.camino] ??= {}) as PathItemObject & Record<string, unknown>;
+      if (!item[g.metodo]) item[g.metodo] = g.operacion as unknown as OperationObject;
+    }
+  }
 
   for (const kon of filteredKons) {
     if (!kon.openApi) continue;

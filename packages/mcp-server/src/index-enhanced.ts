@@ -82,7 +82,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
       const results = await query.limit(Math.min(limit, 100));
 
       return {
-        content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(results) }],
       };
     }
   );
@@ -96,7 +96,7 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
       inputSchema: z.object({
         datasetId: z.string().describe("UUID of the dataset"),
         title: z.string().describe("Title of the record"),
-        data: z.record(z.any()).describe("JSON payload"),
+        data: z.record(z.string(), z.any()).describe("JSON payload"),
         status: z.string().default("draft").describe("Initial status"),
       }),
       outputSchema: z.any(),
@@ -128,11 +128,11 @@ function registerBasicTools(server: McpServer, deps: McpServerDependencies) {
     "kitsuden_dispatch_worker",
     {
       title: "Dispatch Worker",
-      description: "Enqueue an async task to BullMQ",
+      description: "Enqueue an async background job (Postgres queue)",
       inputSchema: z.object({
         queueName: z.string().describe("Queue name"),
         jobName: z.string().describe("Job name"),
-        payload: z.record(z.any()).describe("Job payload"),
+        payload: z.record(z.string(), z.any()).describe("Job payload"),
       }),
       outputSchema: z.any(),
     },

@@ -49,6 +49,19 @@ const EVENT_MAP: Record<string, { trigger: ActionTrigger; eventName: string }> =
 /** Auto-disable threshold for consecutive errors */
 const ERROR_THRESHOLD = 10;
 
+/**
+ * Quien quiera saber que una acción `code` terminó una ejecución (ya
+ * registrada en action_executions). Hoy: la vigilancia de la promoción de
+ * código (lib/promocion.ts, fase I), que vuelve atrás una versión nueva que
+ * falla. Un registro y no un import: sin ciclos entre el motor y la promoción.
+ */
+type ObservadorDeEjecucion = (actionId: string, result: ActionResult) => Promise<void>;
+const observadores: ObservadorDeEjecucion[] = [];
+
+export function observarEjecucionesDeCodigo(fn: ObservadorDeEjecucion): void {
+  if (!observadores.includes(fn)) observadores.push(fn);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════════
@@ -101,6 +114,7 @@ export async function executeAction(
     event: triggerContext.event,
     request: triggerContext.request,
     env: triggerContext.env || {},
+    ejecutor: triggerContext.ejecutor,
     executionId,
     startedAt,
   };
@@ -113,7 +127,8 @@ export async function executeAction(
       status: "running",
       triggerType: context.trigger,
       triggerEvent: context.triggerEvent || context.event?.name,
-      triggerPayload: triggerContext as Record<string, unknown>,
+      // Sin `ejecutor`: es la identidad (scopes incluidos), no parte del disparo.
+      triggerPayload: { ...triggerContext, ejecutor: undefined } as Record<string, unknown>,
       httpRequest: context.request,
       startedAt,
     })
@@ -218,6 +233,15 @@ export async function executeAction(
 
   await db.update(actions).set(updateData).where(eq(actions.id, action.id));
 
+  if (action.type === "code") {
+    for (const fn of observadores) {
+      // Un fallo del observador nunca cambia el resultado de la acción.
+      await fn(action.id, result).catch((err: unknown) =>
+        logger.error({ err, actionId: action.id }, "[Actions] observer failed")
+      );
+    }
+  }
+
   return result;
 }
 
@@ -315,6 +339,7 @@ export async function createAction(input: CreateActionInput): Promise<Action> {
       triggerConfig: input.triggerConfig || {},
       config: input.config || {},
       status: input.status || "active",
+      createdById: input.createdById ?? null,
     })
     .returning();
 

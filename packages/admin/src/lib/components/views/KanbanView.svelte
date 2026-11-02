@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Trash2 } from "lucide-svelte";
 
   import type { DatasetDefinition, DatasetEntry } from "../../../types/datasets";
@@ -98,7 +99,7 @@
         ondragover={(e) => e.preventDefault()}
         ondrop={(e) => onDrop(e, group.key)}
         role="region"
-        aria-label="{group.label} column"
+        aria-label={t("kanbanView.column", { label: group.label })}
       >
         <!-- Cards -->
         {#each group.entries as entry (entry.id)}
@@ -117,13 +118,13 @@
                 <div
                   class="w-full h-full flex items-center justify-center text-xs text-kitsuden-text-dim"
                 >
-                  Image
+                  {t("kanbanView.image")}
                 </div>
               </div>
             {/if}
 
             <h4 class="font-medium text-kitsuden-text text-sm mb-1 line-clamp-2">
-              {entry.data.title || "Untitled"}
+              {entry.data.title || t("common.untitled")}
             </h4>
 
             <!-- Fields Preview -->
@@ -156,7 +157,7 @@
           <div
             class="h-24 border-2 border-dashed border-kitsuden-border/50 rounded-lg flex items-center justify-center text-xs text-kitsuden-text-dim/50"
           >
-            Empty
+            {t("kanbanView.empty")}
           </div>
         {/if}
       </div>
@@ -168,7 +169,7 @@
     <div class="w-72 shrink-0 flex flex-col">
       <div class="flex items-center gap-2 mb-3 px-1">
         <h3 class="font-semibold text-kitsuden-text-dim text-sm uppercase tracking-wide">
-          Unassigned
+          {t("kanbanView.unassigned")}
         </h3>
         <span class="bg-kitsuden-border text-[10px] px-1.5 rounded-full text-kitsuden-text-dim"
           >{ungroupedEntries.length}</span
@@ -183,7 +184,7 @@
             draggable="true"
             ondragstart={(e) => onDragStart(e, entry)}
           >
-            <h4 class="font-medium text-sm">{entry.data.title || "Untitled"}</h4>
+            <h4 class="font-medium text-sm">{entry.data.title || t("common.untitled")}</h4>
           </div>
         {/each}
       </div>

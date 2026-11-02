@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * BlockPicker.svelte — Grid of available blocks to add
    */
@@ -43,10 +44,10 @@
   };
 
   const categories = [
-    { id: "content", label: "Content" },
-    { id: "media", label: "Media" },
-    { id: "interactive", label: "Interactive" },
-    { id: "layout", label: "Layout" },
+    { id: "content", label: t("common.content") },
+    { id: "media", label: t("common.media") },
+    { id: "interactive", label: t("blockPicker.interactive") },
+    { id: "layout", label: t("blockPicker.layout") },
   ];
 
   function getBlockIcon(iconName: string): typeof Sparkles {
@@ -57,7 +58,7 @@
 <div class="h-full flex flex-col">
   <!-- Header -->
   <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
-    <h3 class="text-sm font-semibold text-kitsuden-text">Add Block</h3>
+    <h3 class="text-sm font-semibold text-kitsuden-text">{t("blockPicker.addBlock")}</h3>
     <button onclick={onClose} class="btn-icon p-1"><X class="w-4 h-4" /></button>
   </div>
 
@@ -110,7 +111,7 @@
   <!-- Footer tip -->
   <div class="p-3 border-t border-kitsuden-border bg-kitsuden-bg/50">
     <p class="text-[10px] text-kitsuden-subtle text-center">
-      Tip: You can also drag blocks to the canvas
+      {t("blockPicker.tipYouCanAlsoDrag")}
     </p>
   </div>
 </div>

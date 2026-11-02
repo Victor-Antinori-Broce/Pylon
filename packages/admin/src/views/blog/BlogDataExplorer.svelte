@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * BlogDataExplorer - Vista del Blog usando DataExplorer genérico
    *
@@ -16,7 +17,7 @@
   const columns = [
     {
       field: "title",
-      label: "Title",
+      label: t("common.title"),
       width: "30%",
       fieldConfig: {
         type: "text",
@@ -25,7 +26,7 @@
     },
     {
       field: "status",
-      label: "Status",
+      label: t("common.status"),
       width: "120px",
       fieldConfig: {
         type: "status-badge",
@@ -41,7 +42,7 @@
     },
     {
       field: "author",
-      label: "Author",
+      label: t("common.author"),
       width: "150px",
       fieldConfig: {
         type: "calculated",
@@ -52,7 +53,7 @@
     },
     {
       field: "readingTime",
-      label: "Read Time",
+      label: t("blogDataExplorer.readTime"),
       width: "100px",
       fieldConfig: {
         type: "calculated",
@@ -69,7 +70,7 @@
     },
     {
       field: "publishedAt",
-      label: "Published",
+      label: t("common.published"),
       width: "120px",
       fieldConfig: {
         type: "calculated",
@@ -84,7 +85,7 @@
     },
     {
       field: "isLive",
-      label: "Visibility",
+      label: t("common.visibility"),
       width: "100px",
       fieldConfig: {
         type: "calculated",
@@ -104,7 +105,7 @@
   const rowActions = [
     {
       id: "edit",
-      label: "Edit",
+      label: t("common.edit"),
       icon: Edit2,
       handler: (row: any) => {
         goto(`/blog/posts/${row.id}/edit`);
@@ -112,7 +113,7 @@
     },
     {
       id: "view",
-      label: "View",
+      label: t("blogDataExplorer.view"),
       icon: Eye,
       handler: (row: any) => {
         window.open(`/blog/${row.slug}`, "_blank");
@@ -124,7 +125,7 @@
   const bulkActions = [
     {
       id: "publish",
-      label: "Publish Selected",
+      label: t("blogDataExplorer.publishSelected"),
       icon: Megaphone,
       handler: async (ids: string[]) => {
         // Implementar bulk publish
@@ -133,11 +134,11 @@
     },
     {
       id: "delete",
-      label: "Delete",
+      label: t("common.delete"),
       icon: Trash2,
       variant: "danger" as const,
       handler: async (ids: string[]) => {
-        if (confirm(`Delete ${ids.length} posts?`)) {
+        if (confirm(t("blogDataExplorer.deletePosts", { idsCount: ids.length }))) {
           console.log("Deleting:", ids);
         }
       },
@@ -147,7 +148,7 @@
   // Configuración completa
   const config = {
     table: "blog_posts",
-    label: "Blog Posts",
+    label: t("common.blogPosts"),
     columns,
     searchableFields: ["title", "excerpt"],
     filterableFields: ["status", "authorId"],
@@ -168,9 +169,9 @@
         <div class="w-10 h-10 rounded-xl bg-kitsuden-accent/10 flex items-center justify-center">
           <FileText class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Blog Posts
+        {t("common.blogPosts")}
       </h1>
-      <p class="text-kitsuden-subtle mt-1">Manage your content with the DataExplorer</p>
+      <p class="text-kitsuden-subtle mt-1">{t("blogDataExplorer.manageYourContentWithThe")}</p>
     </div>
     <a
       href="/content/edit?collection=blog-posts"
@@ -184,7 +185,7 @@
           d="M12 4v16m8-8H4"
         /></svg
       >
-      <span>Nuevo Post</span>
+      <span>{t("blogDataExplorer.nuevoPost")}</span>
     </a>
   </div>
 

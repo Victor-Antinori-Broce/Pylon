@@ -1,0 +1,32 @@
+{
+  "name": "kon-example",
+  "version": "1.0.0",
+  "description": "Example kon for Kitsuden",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "migrations",
+    "kon.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "@kitsuden/shared": "^0.8.0",
+    "hono": "^4.7.0",
+    "drizzle-orm": "^0.45.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "kitsuden": {
+    "type": "kon",
+    "id": "kon-example",
+    "name": "Example Kon",
+    "minVersion": "0.8.0"
+  }
+}

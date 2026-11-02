@@ -10,6 +10,10 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { db } from "../db";
 import { authUsers, authSessions, authAccounts, authVerifications } from "../db/schema";
+import { fijarDestinoDelEnlace } from "./destino-de-enlaces";
+import { enProduccion } from "./entorno";
+import { RANGOS_DE_PROXY } from "./ip-del-cliente";
+import { signUpClosed } from "./signup-mode";
 
 // Build trusted origins dynamically from environment
 function buildTrustedOrigins(): string[] {
@@ -34,15 +38,30 @@ function buildTrustedOrigins(): string[] {
   }
 
   // Common dev ports as fallbacks
-  if (process.env.NODE_ENV !== "production") {
+  if (!enProduccion()) {
     origins.add("http://localhost:3000");
     origins.add("http://localhost:3001");
     origins.add("http://localhost:5173");
     origins.add("http://localhost:4321");
+    // La misma máquina, pero otro origen para el navegador.
+    origins.add("http://127.0.0.1:3000");
+    origins.add("http://127.0.0.1:3001");
+    origins.add("http://127.0.0.1:5173");
+    origins.add("http://127.0.0.1:4321");
   }
 
   return Array.from(origins).filter(Boolean);
 }
+
+/**
+ * Orígenes de confianza, calculados una vez: los usa `trustedOrigins` y también
+ * `fijarDestinoDelEnlace`, que decide a dónde vuelve el enlace de un correo.
+ */
+const ORIGENES_DE_CONFIANZA = buildTrustedOrigins();
+const URL_DEL_PANEL = process.env.ADMIN_URL || "http://localhost:5173";
+
+/** `KITSUDEN_SIGNUP`: can strangers create accounts? (see signup-mode.ts) */
+const SIGN_UP_CLOSED = signUpClosed();
 
 // Better-Auth plugin context types
 interface AuthContext {
@@ -116,6 +135,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    disableSignUp: SIGN_UP_CLOSED,
 
     /**
      * No se entra con contraseña hasta confirmar el email.
@@ -146,7 +166,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await encolarCorreo("system.password-recovery", {
         to: user.email,
-        resetUrl: url,
+        resetUrl: fijarDestinoDelEnlace(url, URL_DEL_PANEL, ORIGENES_DE_CONFIANZA),
         expiresIn: 60,
       });
     },
@@ -157,10 +177,16 @@ export const auth = betterAuth({
     // Tras pulsar el enlace, dentro: pedir la contraseña otra vez justo
     // después de demostrar que el correo es tuyo solo añade un paso.
     autoSignInAfterVerification: true,
+    /**
+     * El enlace vuelve al PANEL. better-auth pone `callbackURL=/` cuando el alta
+     * no trae destino, y `/` se resolvía contra la API: quien confirmaba su
+     * email acababa en un JSON. Ver `destino-de-enlaces.ts`, que además impide
+     * que el enlace mande a un dominio fuera de `trustedOrigins`.
+     */
     sendVerificationEmail: async ({ user, url }) => {
       await encolarCorreo("system.email-verification", {
         to: user.email,
-        verifyUrl: url,
+        verifyUrl: fijarDestinoDelEnlace(url, URL_DEL_PANEL, ORIGENES_DE_CONFIANZA),
         name: user.name ?? undefined,
         expiresIn: 60,
       });
@@ -196,6 +222,7 @@ export const auth = betterAuth({
         github: {
           clientId: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          disableImplicitSignUp: SIGN_UP_CLOSED,
         },
       }),
     ...(process.env.GOOGLE_CLIENT_ID &&
@@ -203,6 +230,7 @@ export const auth = betterAuth({
         google: {
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          disableImplicitSignUp: SIGN_UP_CLOSED,
         },
       }),
     ...(process.env.AZURE_AD_CLIENT_ID &&
@@ -211,6 +239,7 @@ export const auth = betterAuth({
           clientId: process.env.AZURE_AD_CLIENT_ID,
           clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
           tenantId: process.env.AZURE_AD_TENANT_ID || "common",
+          disableImplicitSignUp: SIGN_UP_CLOSED,
         },
       }),
     /**
@@ -236,6 +265,7 @@ export const auth = betterAuth({
           clientId: process.env.DISCORD_CLIENT_ID,
           clientSecret: process.env.DISCORD_CLIENT_SECRET,
           scope: ["identify", "email"],
+          disableImplicitSignUp: SIGN_UP_CLOSED,
         },
       }),
   },
@@ -253,7 +283,26 @@ export const auth = betterAuth({
   },
 
   // Trusted origins — built dynamically from environment
-  trustedOrigins: buildTrustedOrigins(),
+  trustedOrigins: ORIGENES_DE_CONFIANZA,
+
+  /**
+   * De dónde saca better-auth la IP para su límite de intentos (3 cada 10 s en
+   * `/sign-in`, `/sign-up`…; activo solo en producción).
+   *
+   * Sin `trustedProxies`, better-auth solo acepta un `x-forwarded-for` de UNA
+   * entrada y, si trae más, se queda sin IP y NO limita. Detrás de Caddy →
+   * nginx del panel → API la cabecera llega con dos (cliente, Caddy): el
+   * límite de fuerza bruta del login estaba apagado justo en producción. Con
+   * los rangos privados como proxies de confianza recorre la cadena de derecha
+   * a izquierda y se queda con la primera IP pública: la del visitante, no la
+   * que el cliente haya escrito delante. Misma regla que `ip-del-cliente.ts`.
+   */
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for", "x-real-ip"],
+      trustedProxies: RANGOS_DE_PROXY,
+    },
+  },
 
   // Lifecycle Hooks — Emit events for Workers/Functions to react to
   plugins: [

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { DatasetDefinition } from "@kitsuden/shared";
   import { ArrowLeft, Loader2, AlertCircle } from "lucide-svelte";
   import { onMount } from "svelte";
@@ -33,10 +34,10 @@
       if (data) {
         dataset = data;
       } else {
-        error = "Dataset not found";
+        error = t("editPage.datasetNotFound");
       }
     } catch (err: any) {
-      error = err.message || "Failed to load dataset";
+      error = err.message || t("editPage.failedToLoadDataset");
     } finally {
       loading = false;
     }
@@ -61,10 +62,10 @@
       if (updated) {
         goto("/datasets");
       } else {
-        error = datasetStore.error || "Failed to update dataset";
+        error = datasetStore.error || t("editPage.failedToUpdateDataset");
       }
     } catch (err: any) {
-      error = err.message || "Failed to update dataset";
+      error = err.message || t("editPage.failedToUpdateDataset");
     } finally {
       saving = false;
     }
@@ -91,15 +92,15 @@
     <div>
       <h1 class="text-2xl font-bold text-kitsuden-text">
         {#if loading}
-          Loading...
+          {t("common.loading")}
         {:else if dataset}
-          Edit Dataset: {dataset.name}
+          {t("editEditPage.editDataset", { name: dataset.name })}
         {:else}
-          Edit Dataset
+          {t("editEditPage.editDataset2")}
         {/if}
       </h1>
       <p class="text-sm text-kitsuden-text-dim mt-1">
-        Modify the schema, fields, and configuration of your dataset.
+        {t("editEditPage.modifyTheSchemaFieldsAnd")}
       </p>
     </div>
   </div>
@@ -118,13 +119,13 @@
   {#if loading}
     <div class="card p-12 text-center">
       <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mx-auto mb-4" />
-      <p class="text-kitsuden-subtle">Loading dataset...</p>
+      <p class="text-kitsuden-subtle">{t("editEditPage.loadingDataset")}</p>
     </div>
   {:else if !dataset}
     <div class="card p-12 text-center">
       <div class="text-4xl mb-3">😕</div>
-      <p class="text-kitsuden-text-dim">Dataset not found</p>
-      <button onclick={goBack} class="btn-primary mt-4"> Back to Datasets </button>
+      <p class="text-kitsuden-text-dim">{t("editEditPage.datasetNotFound")}</p>
+      <button onclick={goBack} class="btn-primary mt-4"> {t("editEditPage.backToDatasets")} </button>
     </div>
   {:else}
     <div class="card p-6 border-kitsuden-accent/20">

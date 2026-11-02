@@ -13,6 +13,8 @@ export {
   checkReadAccess,
   checkWriteAccess,
   createRLSFilter,
+  publishedOrOwn,
+  publishedOrOwnQl,
 } from "@kitsuden/shared";
 
 export type { RLSType, RLSRule, PolicyJson, RLSUser } from "@kitsuden/shared";

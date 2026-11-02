@@ -91,34 +91,48 @@ echo "   OK - PostgreSQL ready"
 # el volumen esta vacio. Si despues cambias POSTGRES_USER o POSTGRES_PASSWORD en
 # el .env, el volumen conserva el usuario viejo, el nuevo no existe, y lo unico
 # que ves es `password authentication failed for user "..."`.
-if ! psql "$DB_ADMIN_URL" -c "SELECT 1" >/dev/null 2>&1; then
-    echo ""
-    echo "ERROR: PostgreSQL responde, pero no acepta al usuario '$DB_USER'."
-    echo ""
-    echo "  La imagen de Postgres crea POSTGRES_USER solo al inicializar un"
-    echo "  volumen VACIO. Si cambiaste POSTGRES_USER o POSTGRES_PASSWORD"
-    echo "  despues de la primera vez, el volumen sigue con el usuario anterior"
-    echo "  y el nuevo no existe."
-    echo ""
-    echo "  Opciones, de menos a mas destructiva:"
-    echo ""
-    echo "    1. Devuelve POSTGRES_USER/POSTGRES_PASSWORD a los valores con los"
-    echo "       que se creo el volumen."
-    echo ""
-    echo "    2. Crea el usuario nuevo en la base que ya existe, conectandote"
-    echo "       con el antiguo:"
-    echo "         docker exec -u postgres kitsuden_db_prod psql -d $DB_NAME -U <usuario-antiguo> \\"
-    echo "           -c \"CREATE ROLE $DB_USER LOGIN SUPERUSER PASSWORD '<contrasena>';\""
-    echo ""
-    echo "    3. Empieza de cero. BORRA TODOS LOS DATOS:"
-    echo "         docker compose down -v"
-    echo ""
-    echo "  Para ver que usuarios existen ahora mismo:"
-    echo "    docker exec -u postgres kitsuden_db_prod psql -d $DB_NAME -U <usuario-antiguo> \\"
-    echo "      -c \"SELECT rolname, rolsuper FROM pg_roles WHERE rolcanlogin\""
-    echo ""
-    exit 1
-fi
+#
+# La comprobacion se hace contra la base de mantenimiento `postgres`, no contra
+# $DB_NAME: si la que falta es la BASE (volumen nuevo con otro POSTGRES_DB, o
+# un DATABASE_URL que apunta a una base que nadie ha creado), Postgres dice
+# `database "..." does not exist`, y antes eso se anunciaba como un problema
+# del usuario. Una base que falta no es un error: la crea el paso [2/6].
+ERR_AUTH=$(psql "$ADMIN_DB_URL" -c "SELECT 1" 2>&1 >/dev/null) || {
+    case "$ERR_AUTH" in
+        *"database \""*"\" does not exist"*)
+            # Ni siquiera existe la base `postgres`: el usuario entra, pero no
+            # hay donde comprobarlo. Lo dira el paso [2/6].
+            ;;
+        *)
+            echo ""
+            echo "ERROR: PostgreSQL responde, pero no acepta al usuario '$DB_USER'."
+            echo ""
+            echo "  La imagen de Postgres crea POSTGRES_USER solo al inicializar un"
+            echo "  volumen VACIO. Si cambiaste POSTGRES_USER o POSTGRES_PASSWORD"
+            echo "  despues de la primera vez, el volumen sigue con el usuario anterior"
+            echo "  y el nuevo no existe."
+            echo ""
+            echo "  Opciones, de menos a mas destructiva:"
+            echo ""
+            echo "    1. Devuelve POSTGRES_USER/POSTGRES_PASSWORD a los valores con los"
+            echo "       que se creo el volumen."
+            echo ""
+            echo "    2. Crea el usuario nuevo en la base que ya existe, conectandote"
+            echo "       con el antiguo (<contenedor-db>: el de Postgres, ver docker ps):"
+            echo "         docker exec -u postgres <contenedor-db> psql -d $DB_NAME -U <usuario-antiguo> \\"
+            echo "           -c \"CREATE ROLE $DB_USER LOGIN SUPERUSER PASSWORD '<contrasena>';\""
+            echo ""
+            echo "    3. Empieza de cero. BORRA TODOS LOS DATOS:"
+            echo "         docker compose down -v"
+            echo ""
+            echo "  Para ver que usuarios existen ahora mismo:"
+            echo "    docker exec -u postgres <contenedor-db> psql -d $DB_NAME -U <usuario-antiguo> \\"
+            echo "      -c \"SELECT rolname, rolsuper FROM pg_roles WHERE rolcanlogin\""
+            echo ""
+            exit 1
+            ;;
+    esac
+}
 
 echo "   OK - autenticacion correcta ($DB_USER)"
 
@@ -132,7 +146,19 @@ if [ "$DB_EXISTS" = "1" ]; then
     echo "   OK - Database exists"
 else
     echo "   Creating database..."
-    psql "$ADMIN_DB_URL" -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";" 2>&1 || true
+    # Si no se puede crear, el fallo es de la BASE, y se dice asi. Antes un
+    # `|| true` lo callaba y el error salia en el paso [4/6] como un fallo de
+    # migracion.
+    if ! psql "$ADMIN_DB_URL" -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";" 2>&1; then
+        echo ""
+        echo "ERROR: la base de datos '$DB_NAME' no existe y el usuario '$DB_USER'"
+        echo "  no puede crearla. El usuario SI es valido: lo que falta es la base."
+        echo ""
+        echo "  Creala con un usuario que tenga CREATEDB (o dale ese permiso a"
+        echo "  '$DB_USER'), o corrige el nombre de la base en DATABASE_URL /"
+        echo "  DATABASE_ADMIN_URL (POSTGRES_DB en docker-compose)."
+        exit 1
+    fi
 fi
 
 # Verify pgvector
@@ -169,6 +195,28 @@ echo "[4/6] Running core migrations + RLS..."
 # no arranca. Es lo que queremos.
 # DATABASE_URL se sobreescribe SOLO para este comando: migrar es DDL y necesita
 # el superusuario. La API, mas abajo, arranca con la de servir.
+#
+# El rol de la app tiene que EXISTIR antes de migrar. Varias migraciones dan
+# permisos con `IF EXISTS (SELECT 1 FROM pg_roles ...) THEN GRANT` sobre sus
+# funciones (0056 la cola, 0057 las trazas), y una migracion aplicada no se
+# repite: en una base vacia se saltaban el GRANT y la API recibia «permission
+# denied for function kitsuden_cola_reclamar» para siempre. Los trabajos en
+# segundo plano no corrian. Nadie lo vio porque solo pasa en una instalacion
+# nueva. Aqui solo se crea; los permisos sobre tablas siguen mas abajo.
+APP_USER=$(echo "$DB_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+APP_PASS=$(echo "$DB_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+if [ "$DB_ADMIN_URL" != "$DB_URL" ] && [ -n "$APP_USER" ] && [ -n "$APP_PASS" ]; then
+    psql "$DB_ADMIN_URL" -v ON_ERROR_STOP=1 -q <<SQL
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${APP_USER}') THEN
+    CREATE ROLE "${APP_USER}" LOGIN PASSWORD '${APP_PASS}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+  END IF;
+END
+\$\$;
+SQL
+fi
+
 DATABASE_URL="$DB_ADMIN_URL" bun run scripts/migrate.ts
 
 echo "   Migrations + RLS complete"
@@ -195,16 +243,13 @@ DATABASE_URL="$DB_ADMIN_URL" bun run scripts/verificar-esquema.ts
 
 # ── Rol de aplicacion ──────────────────────────────────────────────────────
 #
-# Se crea DESPUES de migrar, porque los GRANT necesitan que las tablas existan.
-# Idempotente: se puede reejecutar en cada arranque sin efecto.
+# Sus permisos se dan DESPUES de migrar, porque los GRANT necesitan que las
+# tablas existan. Idempotente: se puede reejecutar en cada arranque sin efecto.
 #
 # `ALTER DEFAULT PRIVILEGES` es la parte que se olvida y luego duele: sin ella,
 # cada tabla nueva que cree una migracion futura nace sin permisos para el rol
 # de aplicacion, y la API empieza a dar "permission denied" en produccion por
 # una tabla que en desarrollo funcionaba.
-APP_USER=$(echo "$DB_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
-APP_PASS=$(echo "$DB_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-
 if [ "$DB_ADMIN_URL" = "$DB_URL" ]; then
     echo ""
     echo "   AVISO: DATABASE_ADMIN_URL no esta definida, asi que la API correra"
@@ -233,8 +278,54 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${APP_USER}";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES TO "${APP_USER}";
+
+-- Una consulta colgada o una transacción olvidada no puede bloquear la base:
+-- solo para el rol de la aplicación; las migraciones y cargas usan el de admin.
+ALTER ROLE "${APP_USER}" SET statement_timeout = '60s';
+ALTER ROLE "${APP_USER}" SET idle_in_transaction_session_timeout = '60s';
 SQL
     echo "   Permisos concedidos (incluidas tablas futuras)"
+fi
+
+# ── Rol de DDL limitado (opcional: DATABASE_DDL_URL) ───────────────────────
+#
+# Para lo que la API crea EN CALIENTE (activar un kon desde el panel, el
+# Vault) sin darle el superusuario: un rol sin SUPERUSER, sin BYPASSRLS, sin
+# CREATEROLE/CREATEDB, con CREATE en `public` y nada mas. Es dueno solo de lo
+# que crea; las tablas del nucleo siguen siendo del administrador. Ver
+# apps/api/src/lib/conexion-ddl.ts y docs/agents/sandbox.md.
+DDL_URL="${DATABASE_DDL_URL:-}"
+DDL_USER=$(echo "$DDL_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+DDL_PASS=$(echo "$DDL_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+if [ -n "$DDL_URL" ] && [ -n "$DDL_USER" ] && [ -n "$DDL_PASS" ] && [ "$DDL_URL" != "$DB_ADMIN_URL" ]; then
+    echo ""
+    echo "   Rol de DDL limitado: $DDL_USER"
+    psql "$DB_ADMIN_URL" -v ON_ERROR_STOP=1 <<SQL
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${DDL_USER}') THEN
+    CREATE ROLE "${DDL_USER}" LOGIN PASSWORD '${DDL_PASS}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+  ELSE
+    ALTER ROLE "${DDL_USER}" WITH LOGIN PASSWORD '${DDL_PASS}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+  END IF;
+END
+\$\$;
+
+GRANT CONNECT ON DATABASE "${DB_NAME}" TO "${DDL_USER}";
+GRANT USAGE, CREATE ON SCHEMA public TO "${DDL_USER}";
+GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES ON ALL TABLES IN SCHEMA public TO "${DDL_USER}";
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "${DDL_USER}";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES ON TABLES TO "${DDL_USER}";
+
+-- Lo que cree el rol de DDL lo usa la app (DML) sin pasar por el admin.
+ALTER DEFAULT PRIVILEGES FOR ROLE "${DDL_USER}" IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "${APP_USER}";
+ALTER DEFAULT PRIVILEGES FOR ROLE "${DDL_USER}" IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO "${APP_USER}";
+ALTER ROLE "${DDL_USER}" SET statement_timeout = '120s';
+SQL
+    echo "   Rol de DDL listo (sin superusuario)"
 fi
 
 # ── El aislamiento se PRUEBA, no se declara ────────────────────────────────
@@ -396,5 +487,29 @@ echo ""
 echo "  API: ${API_URL}"
 echo "  Docs: ${API_URL}/api/swagger"
 echo ""
+
+# ── La API sirve SIN el superusuario ───────────────────────────────────────
+#
+# Todo lo que necesitaba la URL de administracion (crear la base, pgvector,
+# migrar, el rol de la app, verificar RLS) ya se hizo arriba, en ESTE shell.
+# Con `exec` la API hereda el entorno: si DATABASE_ADMIN_URL siguiera ahi,
+# cualquier fallo de la API —o codigo de usuario que escapara del sandbox—
+# leeria el superusuario en `process.env` o en /proc/1/environ.
+#
+# `docker exec` NO se ve afectado: toma el entorno de la configuracion del
+# contenedor, no el del proceso 1, asi que `docker exec <api> bun run
+# scripts/migrate.ts --kon <id>` sigue teniendo la cuenta de administracion.
+#
+# KITSUDEN_API_KEEP_ADMIN_URL=true conserva el comportamiento anterior (por
+# ejemplo, para activar kons que alteran tablas del nucleo sin reiniciar).
+# Las variables de este script (DB_ADMIN_URL, ADMIN_DB_URL, DB_PASS…) no
+# estan exportadas: no llegan a la API.
+if [ "${KITSUDEN_API_KEEP_ADMIN_URL:-false}" = "true" ]; then
+    echo "  AVISO: KITSUDEN_API_KEEP_ADMIN_URL=true — la API conserva DATABASE_ADMIN_URL."
+else
+    unset DATABASE_ADMIN_URL
+    echo "  DATABASE_ADMIN_URL retirada del entorno de la API (solo rol de app${DDL_USER:+ + DDL limitado})."
+fi
+unset DDL_PASS DB_PASS APP_PASS
 
 exec bun run dist/index.js

@@ -1,0 +1,9 @@
+{
+  "id": "kon-futuro-prueba",
+  "name": "Futuro (fixture)",
+  "version": "1.0.0",
+  "sdk": 99,
+  "type": "kon",
+  "mount": { "path": "/api/futuro-prueba" },
+  "description": "Fixture: kon escrito para un SDK de kons que este núcleo no ofrece."
+}

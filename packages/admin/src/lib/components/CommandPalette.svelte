@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     Search,
     FilePlus,
@@ -57,42 +58,42 @@
     {
       id: "recent-1",
       type: "recent",
-      label: "Users Dataset",
+      label: t("commandPalette.usersDataset"),
       icon: Database,
       action: () => goto("/datasets"),
     },
     {
       id: "recent-2",
       type: "recent",
-      label: "Blog Posts Dataset",
+      label: t("commandPalette.blogPostsDataset"),
       icon: FileText,
       action: () => goto("/g/kon-blog"),
     },
     {
       id: "recent-3",
       type: "recent",
-      label: "Media Assets",
+      label: t("commandPalette.mediaAssets"),
       icon: Image,
       action: () => goto("/g/kon-media"),
     },
     {
       id: "recent-4",
       type: "recent",
-      label: "Page Builder Blocks",
+      label: t("commandPalette.pageBuilderBlocks"),
       icon: Blocks,
       action: () => goto("/g/kon-blocks"),
     },
     {
       id: "recent-5",
       type: "recent",
-      label: "Academy Courses",
+      label: t("commandPalette.academyCourses"),
       icon: GraduationCap,
       action: () => goto("/academy"),
     },
     {
       id: "recent-6",
       type: "recent",
-      label: "Games Registry",
+      label: t("commandPalette.gamesRegistry"),
       icon: Gamepad2,
       action: () => goto("/g/kon-games"),
     },
@@ -103,7 +104,7 @@
     {
       id: "action-1",
       type: "action",
-      label: "New Post",
+      label: t("common.newPost"),
       shortcut: "N",
       icon: FilePlus,
       action: () => goto("/g/kon-blog"),
@@ -111,7 +112,7 @@
     {
       id: "action-2",
       type: "action",
-      label: "New Dataset",
+      label: t("commandPalette.newDataset"),
       shortcut: "D",
       icon: FolderPlus,
       action: () => goto("/datasets/new"),
@@ -119,7 +120,7 @@
     {
       id: "action-3",
       type: "action",
-      label: "Go to Media",
+      label: t("commandPalette.goToMedia"),
       shortcut: "M",
       icon: Image,
       action: () => goto("/g/kon-media"),
@@ -127,7 +128,7 @@
     {
       id: "action-4",
       type: "action",
-      label: "Go to Dashboard",
+      label: t("commandPalette.goToDashboard"),
       shortcut: "H",
       icon: LayoutDashboard,
       action: () => goto("/"),
@@ -135,7 +136,7 @@
     {
       id: "action-5",
       type: "action",
-      label: "Go to Settings",
+      label: t("commandPalette.goToSettings"),
       shortcut: ",",
       icon: Settings,
       action: () => goto("/settings"),
@@ -143,7 +144,7 @@
     {
       id: "action-brain",
       type: "action",
-      label: "Open KITSUDEN Brain",
+      label: t("commandPalette.openKitsudenBrain"),
       icon: Brain,
       action: () => goto("/brain"),
     },
@@ -264,7 +265,7 @@
       onclick={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
-      aria-label="Command palette"
+      aria-label={t("commandPalette.commandPalette")}
     >
       <!-- Search Input -->
       <div class="flex items-center gap-3 border-b border-kitsuden-border px-4 py-3">
@@ -273,7 +274,7 @@
           bind:this={inputRef}
           bind:value={query}
           type="text"
-          placeholder="Search commands, pages, and recent items..."
+          placeholder={t("commandPalette.searchCommandsPagesAndRecent")}
           class="flex-1 bg-transparent text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none"
         />
         <kbd
@@ -287,7 +288,7 @@
       <div class="max-h-[50vh] overflow-y-auto py-1">
         {#if filteredItems.length === 0}
           <div class="px-4 py-8 text-center text-sm text-kitsuden-text-dim">
-            No results found for "{query}"
+            {t("commandPalette.noResultsFoundFor", { query })}
           </div>
         {:else}
           {#each filteredItems as item, i (item.id)}
@@ -330,17 +331,17 @@
             <kbd class="rounded border border-kitsuden-border bg-kitsuden-bg px-1 py-0.5 font-mono"
               >↓</kbd
             >
-            <span>to navigate</span>
+            <span>{t("commandPalette.toNavigate")}</span>
           </span>
           <span class="flex items-center gap-1">
             <kbd class="rounded border border-kitsuden-border bg-kitsuden-bg px-1 py-0.5 font-mono"
               >↵</kbd
             >
-            <span>to select</span>
+            <span>{t("commandPalette.toSelect")}</span>
           </span>
         </div>
         <div class="text-[10px] text-kitsuden-subtle">
-          {filteredItems.length} result{filteredItems.length === 1 ? "" : "s"}
+          {t("commandPalette.result", { filteredItemsCount: filteredItems.length })}{filteredItems.length === 1 ? "" : "s"}
         </div>
       </div>
     </div>

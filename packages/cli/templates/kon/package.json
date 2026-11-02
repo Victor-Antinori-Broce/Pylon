@@ -1,0 +1,63 @@
+{
+  "name": "kon-example",
+  "version": "1.0.0",
+  "description": "Example Kitsuden kon — use this as a template to build your own.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "migrations",
+    "kon.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "kitsuden",
+    "kon",
+    "cms",
+    "plugin"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "peerDependencies": {
+    "@kitsuden/shared": ">=0.8.0",
+    "hono": "^4.7.0",
+    "drizzle-orm": "^0.45.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "kitsuden": {
+    "type": "kon",
+    "id": "kon-example",
+    "name": "Example Kon",
+    "description": "A minimal example kon demonstrating the package structure.",
+    "category": "optional",
+    "mount": {
+      "path": "/api/example",
+      "requireAuth": true
+    },
+    "dependencies": {
+      "kons": []
+    },
+    "tables": [
+      {
+        "name": "exampleItems",
+        "label": "Example Items",
+        "icon": "box",
+        "description": "Sample table for the example kon",
+        "searchableFields": [
+          "title"
+        ],
+        "filterableFields": [
+          "status"
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import { Plus, MoreHorizontal } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -30,7 +31,7 @@
       if (val !== undefined && val !== null) unique.add(String(val));
     }
     const sorted = Array.from(unique);
-    return sorted.length > 0 ? sorted : ["No Stage"];
+    return sorted.length > 0 ? sorted : [t("kanbanBoard.noStage")];
   });
 
   // Group data by stage
@@ -40,7 +41,7 @@
       groups[stage] = [];
     }
     for (const item of data) {
-      const stage = String(item[view.groupBy] || "No Stage");
+      const stage = String(item[view.groupBy] || t("kanbanBoard.noStage"));
       if (!groups[stage]) groups[stage] = [];
       groups[stage].push(item);
     }
@@ -211,7 +212,7 @@
 
   function formatCardValue(value: any): string {
     if (value === null || value === undefined) return "-";
-    if (typeof value === "number") return value.toLocaleString();
+    if (typeof value === "number") return value.toLocaleString(localeFormato());
     if (typeof value === "boolean") return value ? "✓" : "✗";
     return String(value);
   }
@@ -248,7 +249,7 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <h2 class="text-xl font-semibold text-kitsuden-text">{view.title}</h2>
-    <span class="text-sm text-kitsuden-text-dim">{data.length} records</span>
+    <span class="text-sm text-kitsuden-text-dim">{data.length} {t("kanbanBoard.records")}</span>
   </div>
 
   {#if loading}
@@ -263,14 +264,14 @@
     >
       <div class="text-center max-w-md p-6">
         <div class="text-4xl mb-4">⚠️</div>
-        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">Incompatible Kanban View</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">{t("kanbanBoard.incompatibleKanbanView")}</h3>
         <p class="text-sm text-kitsuden-subtle mb-4">
-          This Kanban view is configured to group cards by <code
+          {t("kanbanBoard.thisKanbanViewIsConfigured")} <code
             class="bg-kitsuden-bg px-1.5 py-0.5 rounded text-kitsuden-accent">'{view.groupBy}'</code
-          >, but the current dataset does not contain this field.
+          >{t("kanbanBoard.butTheCurrentDatasetDoes")}
         </p>
         <p class="text-xs text-kitsuden-text-dim">
-          Please update the grimoire config to use a valid field, or switch to Grid view.
+          {t("kanbanBoard.pleaseUpdateTheGrimoireConfig")}
         </p>
       </div>
     </div>
@@ -351,7 +352,7 @@
 
             {#if items.length === 0}
               <div class="flex items-center justify-center h-20 text-xs text-kitsuden-subtle">
-                No items
+                {t("kanbanBoard.noItems")}
               </div>
             {/if}
           </div>

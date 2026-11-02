@@ -9,7 +9,8 @@
  * - Statistics and monitoring
  */
 
-import { eq, desc, sql, count, and, gte } from "drizzle-orm";
+import { normalizarScopes } from "@kitsuden/shared";
+import { eq, desc, count, and, gte, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 
 import { db } from "@/db";
@@ -80,10 +81,15 @@ agentsRouter.post("/", async (c) => {
       );
     }
 
-    // Validate scopes format
-    const validScopes = (scopes || ["mcp:connect"]).filter((s: string) =>
-      /^[a-z]+:[a-z*]+$/.test(s)
-    );
+    // Validar scopes: amplios, finos (`kon:<kon>:<op>`, `datasets:<slug>:<acción>`)
+    // y denegaciones (`!patrón`). Antes un filtro `^[a-z]+:[a-z*]+$` tiraba EN
+    // SILENCIO todo lo fino (fase E): un scope que no vale es un 400, no un hueco.
+    let validScopes: string[];
+    try {
+      validScopes = normalizarScopes(scopes ?? ["mcp:connect"]);
+    } catch (err) {
+      return c.json({ success: false, error: (err as Error).message }, 400);
+    }
 
     // Validate capabilities (if provided)
     const validCapabilities = (capabilities || []).filter(
@@ -96,7 +102,7 @@ agentsRouter.post("/", async (c) => {
     );
 
     // Generate first API key WITH TYPE
-    const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey(agentType);
+    const { plainKey, keyHash, keyPrefix, keyId, algorithm } = await generateAgentApiKey(agentType);
 
     // Create agent identity with new Persona fields
     const [agent] = await db
@@ -118,10 +124,15 @@ agentsRouter.post("/", async (c) => {
       ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
       : null;
 
+    // `keyId` y `algorithm` son los que usa `authenticateAgent` para encontrar
+    // y verificar la clave. Sin ellos (como se guardaba aquí) la clave salía
+    // del panel y NO autenticaba nunca (2026-10-15). Igual que createAgent().
     await db.insert(agentApiKeys).values({
       agentId: agent.id,
+      keyId,
       keyHash,
       keyPrefix,
+      algorithm,
       expiresAt,
     });
 
@@ -187,7 +198,9 @@ agentsRouter.get("/", async (c) => {
       ? await db
           .select()
           .from(agentApiKeys)
-          .where(sql`${agentApiKeys.agentId} IN (${agentIds.join(",")})`)
+          // `inArray`, no `IN (${ids.join(",")})`: eso mandaba UN parámetro
+          // con todos los ids pegados y la consulta no casaba con ninguno
+          .where(inArray(agentApiKeys.agentId, agentIds))
       : [];
 
     // Group keys by agent
@@ -327,8 +340,13 @@ agentsRouter.put("/:id", async (c) => {
       return c.json({ success: false, error: "Agent not found" }, 404);
     }
 
-    // Validate scopes
-    const validScopes = scopes?.filter((s: string) => /^[a-z]+:[a-z*]+$/.test(s));
+    // Validar scopes (ver el alta): 400 en vez de tirar en silencio lo fino.
+    let validScopes: string[] | undefined;
+    try {
+      validScopes = scopes === undefined ? undefined : normalizarScopes(scopes);
+    } catch (err) {
+      return c.json({ success: false, error: (err as Error).message }, 400);
+    }
 
     // Validate capabilities if provided
     const validCapabilities = capabilities?.filter(
@@ -432,7 +450,9 @@ agentsRouter.post("/:id/keys", async (c) => {
       return c.json({ success: false, error: "Agent not found" }, 404);
     }
 
-    const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey();
+    const { plainKey, keyHash, keyPrefix, keyId, algorithm } = await generateAgentApiKey(
+      agent.type ?? undefined
+    );
 
     const expiresAt = expiresInDays
       ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
@@ -442,8 +462,10 @@ agentsRouter.post("/:id/keys", async (c) => {
       .insert(agentApiKeys)
       .values({
         agentId: id,
+        keyId,
         keyHash,
         keyPrefix,
+        algorithm,
         expiresAt,
       })
       .returning();
@@ -482,7 +504,13 @@ agentsRouter.delete("/:id/keys/:keyId", async (c) => {
       return c.json({ success: false, error: "Key not found" }, 404);
     }
 
-    await db.delete(agentApiKeys).where(eq(agentApiKeys.id, keyId));
+    // Revocar MARCA la clave (deja de valer en la siguiente petición) en vez
+    // de borrarla: la fila queda para la auditoría (fase E).
+    const u = c.get("user") as { id?: string } | null;
+    await db
+      .update(agentApiKeys)
+      .set({ revokedAt: new Date(), revokedBy: u?.id ?? null })
+      .where(eq(agentApiKeys.id, keyId));
 
     logger.info({ agentId, keyId }, "API key revoked");
 

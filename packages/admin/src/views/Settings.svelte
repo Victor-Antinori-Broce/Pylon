@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import {
     Settings,
     Key,
@@ -76,7 +77,7 @@
       // dice tal cual en vez de dejar la pantalla vacia, que es como estaban
       // todas las que se han arreglado esta semana.
       if (ru.status === 403 || re_.status === 403) {
-        errorSistema = "Esta seccion requiere rol administrador.";
+        errorSistema = t("settings.estaSeccionRequiereRolAdministrador");
         return;
       }
       if (!ru.ok || !re_.ok) throw new Error(`HTTP ${ru.status}/${re_.status}`);
@@ -84,7 +85,7 @@
       usuarios = (await ru.json()).data ?? [];
       estado = await re_.json();
     } catch (err) {
-      errorSistema = `No se pudo cargar: ${err instanceof Error ? err.message : err}`;
+      errorSistema = t("settings.noSePudoCargar", { err: err instanceof Error ? err.message : err });
       cargadoSistema = false; // permitir reintento al volver a entrar
     } finally {
       cargandoSistema = false;
@@ -112,7 +113,7 @@
 
       usuarios = usuarios.map((u) => (u.id === id ? { ...u, role } : u));
     } catch (err) {
-      alert(`No se pudo cambiar el rol: ${err instanceof Error ? err.message : err}`);
+      alert(t("settings.noSePudoCambiarEl", { err: err instanceof Error ? err.message : err }));
     }
   }
 
@@ -242,9 +243,21 @@
    */
   type CampoDeMarca = "logoId" | "faviconId" | "ogImageId";
   const CAMPOS_DE_MARCA: Array<{ clave: CampoDeMarca; etiqueta: string; ayuda: string }> = [
-    { clave: "logoId", etiqueta: "Logo", ayuda: "Cabecera y pie del sitio. PNG o SVG con fondo transparente." },
-    { clave: "faviconId", etiqueta: "Icono (favicon)", ayuda: "Pestaña del navegador. Cuadrado, al menos 64×64." },
-    { clave: "ogImageId", etiqueta: "Imagen al compartir", ayuda: "Vista previa en redes y chats. 1200×630." },
+    {
+      clave: "logoId",
+      etiqueta: t("settings.logo"),
+      ayuda: t("settings.cabeceraYPieDelSitio"),
+    },
+    {
+      clave: "faviconId",
+      etiqueta: t("settings.iconoFavicon"),
+      ayuda: t("settings.pestanaDelNavegadorCuadradoAl"),
+    },
+    {
+      clave: "ogImageId",
+      etiqueta: t("settings.imagenAlCompartir"),
+      ayuda: t("settings.vistaPreviaEnRedesY"),
+    },
   ];
   let branding = $state<Record<string, unknown>>({});
   let eligiendoMarca = $state<CampoDeMarca | null>(null);
@@ -274,21 +287,77 @@
     | "kofi"
     | "github";
   const CAMPOS_DE_REDES: Array<{ clave: CamposDeRedes; etiqueta: string; ayuda: string }> = [
-    { clave: "discord", etiqueta: "Discord (URL de invitación)", ayuda: "https://discord.gg/… — tarjeta grande en la sección Comunidad." },
-    { clave: "twitch", etiqueta: "Twitch (login del canal)", ayuda: "Solo el login, sin https://twitch.tv/ — de aquí sale el banner «En directo» y la página /comunidad." },
-    { clave: "twitter", etiqueta: "X / Twitter", ayuda: "https://x.com/… — icono en la fila de redes." },
-    { clave: "instagram", etiqueta: "Instagram", ayuda: "https://instagram.com/… — icono en la fila de redes." },
-    { clave: "tiktok", etiqueta: "TikTok", ayuda: "https://tiktok.com/@… — icono en la fila de redes." },
-    { clave: "tiktok2", etiqueta: "TikTok (2.ª cuenta)", ayuda: "https://tiktok.com/@… — la segunda cuenta, con su propio icono." },
-    { clave: "facebook", etiqueta: "Facebook (página)", ayuda: "https://facebook.com/… — icono en la fila de redes." },
-    { clave: "facebookGroup", etiqueta: "Grupo de Facebook", ayuda: "https://facebook.com/groups/… — tarjeta en Comunidad y bloque «Grupo de Facebook» en las entradas." },
-    { clave: "whatsappGroup", etiqueta: "Grupo de WhatsApp", ayuda: "https://chat.whatsapp.com/… — solo invitaciones de grupo. Sale al lado del bloque «Grupo de Facebook» y en Comunidad. Activa «Aprobar nuevos participantes» en el grupo: quien entra ve los números de los demás." },
-    { clave: "kofi", etiqueta: "Ko-fi", ayuda: "https://ko-fi.com/… — tarjeta en la sección Comunidad." },
-    { clave: "github", etiqueta: "GitHub", ayuda: "https://github.com/… — icono en la fila de redes." },
+    {
+      clave: "discord",
+      etiqueta: t("settings.discordUrlDeInvitacion"),
+      ayuda: "https://discord.gg/… — tarjeta grande en la sección Comunidad.",
+    },
+    {
+      clave: "twitch",
+      etiqueta: t("settings.twitchLoginDelCanal"),
+      ayuda:
+        t("settings.soloElLoginSinHttps"),
+    },
+    {
+      clave: "twitter",
+      etiqueta: "X / Twitter",
+      ayuda: "https://x.com/… — icono en la fila de redes.",
+    },
+    {
+      clave: "instagram",
+      etiqueta: "Instagram",
+      ayuda: "https://instagram.com/… — icono en la fila de redes.",
+    },
+    {
+      clave: "tiktok",
+      etiqueta: "TikTok",
+      ayuda: "https://tiktok.com/@… — icono en la fila de redes.",
+    },
+    {
+      clave: "tiktok2",
+      etiqueta: t("settings.tiktok2Cuenta"),
+      ayuda: "https://tiktok.com/@… — la segunda cuenta, con su propio icono.",
+    },
+    {
+      clave: "facebook",
+      etiqueta: t("settings.facebookPagina"),
+      ayuda: "https://facebook.com/… — icono en la fila de redes.",
+    },
+    {
+      clave: "facebookGroup",
+      etiqueta: t("settings.grupoDeFacebook"),
+      ayuda:
+        "https://facebook.com/groups/… — tarjeta en Comunidad y bloque «Grupo de Facebook» en las entradas.",
+    },
+    {
+      clave: "whatsappGroup",
+      etiqueta: t("settings.grupoDeWhatsapp"),
+      ayuda:
+        "https://chat.whatsapp.com/… — solo invitaciones de grupo. Sale al lado del bloque «Grupo de Facebook» y en Comunidad. Activa «Aprobar nuevos participantes» en el grupo: quien entra ve los números de los demás.",
+    },
+    {
+      clave: "kofi",
+      etiqueta: "Ko-fi",
+      ayuda: "https://ko-fi.com/… — tarjeta en la sección Comunidad.",
+    },
+    {
+      clave: "github",
+      etiqueta: "GitHub",
+      ayuda: "https://github.com/… — icono en la fila de redes.",
+    },
   ];
   let redes = $state<Record<CamposDeRedes, string>>({
-    discord: "", twitch: "", twitter: "", instagram: "", tiktok: "", tiktok2: "",
-    facebook: "", facebookGroup: "", whatsappGroup: "", kofi: "", github: "",
+    discord: "",
+    twitch: "",
+    twitter: "",
+    instagram: "",
+    tiktok: "",
+    tiktok2: "",
+    facebook: "",
+    facebookGroup: "",
+    whatsappGroup: "",
+    kofi: "",
+    github: "",
   });
   let canalesYoutube = $state<CanalYoutube[]>([]);
   let savingRedes = $state(false);
@@ -310,7 +379,9 @@
   // Sin recorte (`fit=inside`): un logo recortado a cuadrado pierde las letras
   function vistaPreviaDeMarca(clave: CampoDeMarca): string | null {
     const id = branding[clave];
-    return typeof id === "string" && id ? `${API_URL}/api/media/transform/${id}?w=240&h=160&fit=inside` : null;
+    return typeof id === "string" && id
+      ? `${API_URL}/api/media/transform/${id}?w=240&h=160&fit=inside`
+      : null;
   }
 
   function quitarMarca(clave: CampoDeMarca) {
@@ -345,13 +416,16 @@
     errorSettings = "";
     try {
       const res = await fetch(`${API_URL}/api/settings`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load settings");
+      if (!res.ok) throw new Error(t("settings.failedToLoadSettings"));
       const data = await res.json();
       siteName = data.siteName || "Kitsuden CMS";
       siteDescription = data.siteDescription || "";
       siteUrl = data.siteUrl || "";
       branding = data.branding && typeof data.branding === "object" ? { ...data.branding } : {};
-      const social = data.social && typeof data.social === "object" ? (data.social as Record<string, unknown>) : {};
+      const social =
+        data.social && typeof data.social === "object"
+          ? (data.social as Record<string, unknown>)
+          : {};
       redes = {
         discord: textoDe(social.discord),
         twitch: textoDe(social.twitch),
@@ -374,7 +448,7 @@
         defaultMetadata = JSON.stringify({ description: data.siteDescription }, null, 2);
       }
     } catch (err: any) {
-      errorSettings = err.message || "Failed to load settings";
+      errorSettings = err.message || t("settings.failedToLoadSettings");
     } finally {
       loadingSettings = false;
     }
@@ -408,7 +482,7 @@
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to save settings");
+        throw new Error(errData.error || t("settings.failedToSaveSettings"));
       }
 
       const data = await res.json();
@@ -417,7 +491,7 @@
       siteUrl = data.siteUrl || siteUrl;
       if (data.branding && typeof data.branding === "object") branding = { ...data.branding };
     } catch (err: any) {
-      errorSettings = err.message || "Failed to save settings";
+      errorSettings = err.message || t("settings.failedToSaveSettings");
     } finally {
       savingGeneral = false;
     }
@@ -445,12 +519,12 @@
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to save social links");
+        throw new Error(errData.error || t("settings.failedToSaveSocialLinks"));
       }
       okRedes = true;
       setTimeout(() => (okRedes = false), 3000);
     } catch (err: any) {
-      errorRedes = err.message || "Failed to save social links";
+      errorRedes = err.message || t("settings.failedToSaveSocialLinks");
     } finally {
       savingRedes = false;
     }
@@ -464,7 +538,7 @@
     try {
       loadingKeys = true;
       const res = await fetch(`${API_URL}/api/keys`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load API keys.");
+      if (!res.ok) throw new Error(t("settings.failedToLoadApiKeys"));
       keys = await res.json();
     } catch (err: any) {
       errorKeys = err.message;
@@ -492,7 +566,7 @@
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create key");
+      if (!res.ok) throw new Error(data.error || t("settings.failedToCreateKey"));
 
       newlyGeneratedToken = data.token;
       showCreateModal = false;
@@ -511,7 +585,7 @@
   async function revokeKey(id: string) {
     if (
       !confirm(
-        "Are you sure you want to revoke this API key? This will break any integrations using it."
+        t("settings.areYouSureYouWant")
       )
     )
       return;
@@ -521,7 +595,7 @@
         method: "DELETE",
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to revoke key");
+      if (!res.ok) throw new Error(t("settings.failedToRevokeKey"));
 
       keys = keys.filter((k) => k.id !== id);
     } catch (err: any) {
@@ -542,10 +616,10 @@
       if (data.success) {
         agents = data.data;
       } else {
-        errorAgents = data.error || "Failed to load agents";
+        errorAgents = data.error || t("settings.failedToLoadAgents");
       }
     } catch (err: any) {
-      errorAgents = err.message || "Failed to load agents";
+      errorAgents = err.message || t("settings.failedToLoadAgents");
     } finally {
       loadingAgents = false;
     }
@@ -577,15 +651,15 @@
         await loadAgents();
         resetAgentForm();
       } else {
-        errorAgents = data.error || "Failed to create agent";
+        errorAgents = data.error || t("settings.failedToCreateAgent");
       }
     } catch (err: any) {
-      errorAgents = err.message || "Failed to create agent";
+      errorAgents = err.message || t("settings.failedToCreateAgent");
     }
   }
 
   async function deleteAgent(agentId: string) {
-    if (!confirm("Are you sure you want to delete this agent?")) return;
+    if (!confirm(t("settings.areYouSureYouWant2"))) return;
 
     try {
       const res = await fetch(`${API_URL}/api/admin/agents/${agentId}`, {
@@ -600,7 +674,7 @@
         }
       }
     } catch (err: any) {
-      errorAgents = err.message || "Failed to delete agent";
+      errorAgents = err.message || t("settings.failedToDeleteAgent");
     }
   }
 
@@ -623,12 +697,12 @@
         if (selectedAgent) await viewAgent(selectedAgent);
       }
     } catch (err: any) {
-      errorAgents = err.message || "Failed to create API key";
+      errorAgents = err.message || t("settings.failedToCreateApiKey");
     }
   }
 
   async function revokeAgentApiKey(agentId: string, keyId: string) {
-    if (!confirm("Revoke this API key?")) return;
+    if (!confirm(t("settings.revokeThisApiKey"))) return;
 
     try {
       await fetch(`${API_URL}/api/admin/agents/${agentId}/keys/${keyId}`, {
@@ -638,7 +712,7 @@
       await loadAgents();
       if (selectedAgent) await viewAgent(selectedAgent);
     } catch (err: any) {
-      errorAgents = err.message || "Failed to revoke API key";
+      errorAgents = err.message || t("settings.failedToRevokeApiKey");
     }
   }
 
@@ -688,7 +762,7 @@
   }
 
   function formatDate(date: string) {
-    return new Date(date).toLocaleString();
+    return new Date(date).toLocaleString(localeFormato());
   }
 
   function getScopeColor(scope: string): string {
@@ -743,10 +817,10 @@
       if (data.success) {
         dataSources = data.data;
       } else {
-        errorDataSources = data.error || "Failed to load data sources";
+        errorDataSources = data.error || t("settings.failedToLoadDataSources");
       }
     } catch (err: any) {
-      errorDataSources = err.message || "Failed to load data sources";
+      errorDataSources = err.message || t("settings.failedToLoadDataSources");
     } finally {
       loadingDataSources = false;
     }
@@ -782,10 +856,10 @@
         resetDataSourceForm();
         await loadDataSources();
       } else {
-        errorDataSources = data.error || "Failed to create data source";
+        errorDataSources = data.error || t("settings.failedToCreateDataSource");
       }
     } catch (err: any) {
-      errorDataSources = err.message || "Failed to create data source";
+      errorDataSources = err.message || t("settings.failedToCreateDataSource");
     }
   }
 
@@ -817,17 +891,17 @@
       const data = await res.json();
       testResult = {
         success: data.success,
-        message: data.message || (data.success ? "Connection successful!" : "Connection failed"),
+        message: data.message || (data.success ? t("settings.connectionSuccessful") : t("settings.connectionFailed")),
       };
     } catch (err: any) {
-      testResult = { success: false, message: err.message || "Connection test failed" };
+      testResult = { success: false, message: err.message || t("settings.connectionTestFailed") };
     } finally {
       testingConnection = false;
     }
   }
 
   async function deleteDataSource(id: string) {
-    if (!confirm("Are you sure you want to delete this data source?")) return;
+    if (!confirm(t("settings.areYouSureYouWant3"))) return;
 
     try {
       const res = await fetch(`${API_URL}/api/admin/data-sources/${id}`, {
@@ -839,7 +913,7 @@
         await loadDataSources();
       }
     } catch (err: any) {
-      errorDataSources = err.message || "Failed to delete data source";
+      errorDataSources = err.message || t("settings.failedToDeleteDataSource");
     }
   }
 
@@ -913,10 +987,10 @@
         >
           <Settings class="w-5 h-5 text-kitsuden-green" />
         </div>
-        Settings
+        {t("common.settings")}
       </h1>
       <p class="text-sm text-kitsuden-subtle mt-1">
-        Configure your CMS preferences and integrations.
+        {t("settings.configureYourCmsPreferencesAnd")}
       </p>
     </div>
   </div>
@@ -929,7 +1003,7 @@
         : 'border-transparent text-kitsuden-subtle hover:text-kitsuden-text'}"
       onclick={() => (activeTab = "general")}
     >
-      General
+      {t("settings.general")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -939,7 +1013,7 @@
       onclick={() => (activeTab = "appearance")}
     >
       <Palette class="w-4 h-4" />
-      Appearance
+      {t("settings.appearance")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -949,7 +1023,7 @@
       onclick={() => (activeTab = "keys")}
     >
       <Key class="w-4 h-4" />
-      API Keys
+      {t("settings.apiKeys")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -959,7 +1033,7 @@
       onclick={() => (activeTab = "secrets")}
     >
       <ShieldAlert class="w-4 h-4" />
-      Secrets
+      {t("settings.secrets")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -969,7 +1043,7 @@
       onclick={() => (activeTab = "agents")}
     >
       <Bot class="w-4 h-4" />
-      Agents
+      {t("settings.agents")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -979,7 +1053,7 @@
       onclick={() => (activeTab = "mcp")}
     >
       <Cpu class="w-4 h-4" />
-      MCP
+      {t("settings.mcp")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -989,7 +1063,7 @@
       onclick={() => (activeTab = "datasources")}
     >
       <Database class="w-4 h-4" />
-      Data Sources
+      {t("settings.dataSources")}
     </button>
     <button
       class="pb-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 {activeTab ===
@@ -999,7 +1073,7 @@
       onclick={() => (activeTab = "sistema")}
     >
       <ShieldAlert class="w-4 h-4" />
-      Sistema
+      {t("settings.sistema")}
     </button>
   </div>
 
@@ -1007,9 +1081,9 @@
   {#if activeTab === "general"}
     <div class="card p-8 animate-fade-in border border-kitsuden-border">
       <div class="mb-6">
-        <h2 class="text-xl font-bold text-kitsuden-text">General Configuration</h2>
+        <h2 class="text-xl font-bold text-kitsuden-text">{t("settings.generalConfiguration")}</h2>
         <p class="text-sm text-kitsuden-subtle mt-1">
-          Manage core settings for your digital presence.
+          {t("settings.manageCoreSettingsForYour")}
         </p>
       </div>
 
@@ -1034,19 +1108,18 @@
               for="sitename"
               class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
             >
-              Site Name
+              {t("settings.siteName")}
             </label>
             <input
               id="sitename"
               bind:value={siteName}
               type="text"
-              placeholder="e.g. Valhalla Legion"
+              placeholder={t("settings.eGMySite")}
               class="input w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border placeholder-kitsuden-text-dim"
               required
             />
             <p class="text-xs text-kitsuden-text-dim">
-              El nombre del sitio público: título de la pestaña, cabecera, pie y al compartir.
-              Kitsuden es el CMS; este es el nombre que ven tus visitantes.
+              {t("settings.elNombreDelSitioPublico")}
             </p>
           </div>
 
@@ -1055,13 +1128,13 @@
               for="sitedescription"
               class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
             >
-              Site Description
+              {t("settings.siteDescription")}
             </label>
             <input
               id="sitedescription"
               bind:value={siteDescription}
               type="text"
-              placeholder="Short description for SEO and meta tags"
+              placeholder={t("settings.shortDescriptionForSeoAnd")}
               class="input w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border placeholder-kitsuden-text-dim"
             />
           </div>
@@ -1071,7 +1144,7 @@
               for="siteurl"
               class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
             >
-              Site URL
+              {t("settings.siteUrl")}
             </label>
             <input
               id="siteurl"
@@ -1086,19 +1159,27 @@
               el DNS comodín y el certificado tienen que seguirle.
             -->
             <p class="text-xs text-kitsuden-text-dim">
-              Dirección pública del sitio. Cada wiki se sirve en
-              <code class="font-mono">&lt;wiki&gt;.{siteUrl ? siteUrl.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/+$/, "") : "este-dominio"}</code>
-              y cada juego en <code class="font-mono">/&lt;juego&gt;/</code>. Cambiarlo mueve todas las wikis:
-              el DNS comodín tiene que apuntar al dominio nuevo.
+              {t("settings.direccionPublicaDelSitioCada")}
+              <code class="font-mono"
+                >&lt;wiki&gt;.{siteUrl
+                  ? siteUrl
+                      .replace(/^https?:\/\//, "")
+                      .replace(/^www\./, "")
+                      .replace(/\/+$/, "")
+                  : "este-dominio"}</code
+              >
+              {t("settings.yCadaJuegoEn")} <code class="font-mono">/&lt;juego&gt;/</code>{t("settings.cambiarloMueveTodasLasWikis")}
             </p>
           </div>
 
           <div class="space-y-3">
-            <p class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider">
-              Identidad del sitio público
+            <p
+              class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
+            >
+              {t("settings.identidadDelSitioPublico")}
             </p>
             <p class="text-xs text-kitsuden-text-dim">
-              Lo que ven los visitantes del sitio, no este panel. Se eligen de la mediateca.
+              {t("settings.loQueVenLosVisitantes")}
             </p>
             <div class="grid gap-3 sm:grid-cols-3">
               {#each CAMPOS_DE_MARCA as campo (campo.clave)}
@@ -1109,17 +1190,25 @@
                     {#if vista}
                       <img src={vista} alt="" class="max-h-16 max-w-full object-contain" />
                     {:else}
-                      <span class="text-xs text-kitsuden-text-dim">Sin elegir</span>
+                      <span class="text-xs text-kitsuden-text-dim">{t("settings.sinElegir")}</span>
                     {/if}
                   </div>
                   <p class="text-[11px] leading-snug text-kitsuden-text-dim">{campo.ayuda}</p>
                   <div class="flex gap-2">
-                    <button type="button" class="btn-secondary btn-sm" onclick={() => (eligiendoMarca = campo.clave)}>
-                      {vista ? "Cambiar" : "Elegir"}
+                    <button
+                      type="button"
+                      class="btn-secondary btn-sm"
+                      onclick={() => (eligiendoMarca = campo.clave)}
+                    >
+                      {vista ? t("settings.cambiar") : t("settings.elegir")}
                     </button>
                     {#if vista}
-                      <button type="button" class="btn-ghost btn-sm" onclick={() => quitarMarca(campo.clave)}>
-                        Quitar
+                      <button
+                        type="button"
+                        class="btn-ghost btn-sm"
+                        onclick={() => quitarMarca(campo.clave)}
+                      >
+                        {t("settings.quitar")}
                       </button>
                     {/if}
                   </div>
@@ -1130,7 +1219,7 @@
 
           <MediaPicker
             open={eligiendoMarca !== null}
-            title="Elegir imagen del sitio"
+            title={t("settings.elegirImagenDelSitio")}
             onSelect={(medio) => {
               if (eligiendoMarca) branding = { ...branding, [eligiendoMarca]: medio.id };
               eligiendoMarca = null;
@@ -1143,13 +1232,13 @@
               for="defaultmetadata"
               class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
             >
-              Default Metadata (JSON)
+              {t("settings.defaultMetadataJson")}
             </label>
             <textarea
               id="defaultmetadata"
               bind:value={defaultMetadata}
               rows="5"
-              placeholder="JSON metadata for headers"
+              placeholder={t("settings.jsonMetadataForHeaders")}
               class="textarea w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border placeholder-kitsuden-text-dim font-mono text-sm"
             ></textarea>
           </div>
@@ -1160,21 +1249,22 @@
                 <div
                   class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block"
                 ></div>
-                Saving...
+                {t("common.saving")}
               {:else}
-                Save Configuration
+                {t("settings.saveConfiguration")}
               {/if}
             </button>
           </div>
         </form>
 
-        <form onsubmit={saveRedes} class="mt-10 space-y-6 max-w-2xl border-t border-kitsuden-border pt-6">
+        <form
+          onsubmit={saveRedes}
+          class="mt-10 space-y-6 max-w-2xl border-t border-kitsuden-border pt-6"
+        >
           <div>
-            <h3 class="text-lg font-semibold text-kitsuden-text">Redes del grupo</h3>
+            <h3 class="text-lg font-semibold text-kitsuden-text">{t("settings.redesDelGrupo")}</h3>
             <p class="text-sm text-kitsuden-text-dim mt-1">
-              Discord, Twitch, YouTube y el resto de enlaces sociales que ven las webs públicas
-              (sección Comunidad, banner «En directo» y página /comunidad). Se guarda aparte de la
-              configuración general: cambiar una red no toca nada más.
+              {t("settings.discordTwitchYoutubeYEl")}
             </p>
           </div>
 
@@ -1187,8 +1277,10 @@
             </div>
           {/if}
           {#if okRedes}
-            <div class="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
-              Redes guardadas.
+            <div
+              class="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm"
+            >
+              {t("settings.redesGuardadas")}
             </div>
           {/if}
 
@@ -1213,41 +1305,45 @@
           </div>
 
           <div class="space-y-3">
-            <p class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider">
-              Canales de YouTube
+            <p
+              class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
+            >
+              {t("settings.canalesDeYoutube")}
             </p>
             <p class="text-xs text-kitsuden-text-dim">
-              El bloque «Últimos vídeos» mezcla todos estos canales ordenados por fecha, con el
-              nombre del canal visible en cada ficha. El <code class="font-mono">id</code> es el
-              identificador del canal (empieza por UC…), no el @handle.
+              {t("settings.elBloqueUltimosVideosMezcla")} <code class="font-mono">id</code> {t("settings.esElIdentificadorDelCanal")}
             </p>
             {#each canalesYoutube as canal, i (i)}
               <div class="flex flex-wrap items-end gap-2">
                 <div class="flex-1 min-w-[10rem] space-y-1">
-                  <span class="block text-[11px] text-kitsuden-subtle">Nombre visible</span>
+                  <span class="block text-[11px] text-kitsuden-subtle">{t("settings.nombreVisible")}</span>
                   <input
                     bind:value={canal.nombre}
                     type="text"
-                    placeholder="Kitsuden"
+                    placeholder={t("common.kitsuden")}
                     class="input w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border placeholder-kitsuden-text-dim"
                   />
                 </div>
                 <div class="flex-[2] min-w-[12rem] space-y-1">
-                  <span class="block text-[11px] text-kitsuden-subtle">Id del canal</span>
+                  <span class="block text-[11px] text-kitsuden-subtle">{t("settings.idDelCanal")}</span>
                   <input
                     bind:value={canal.id}
                     type="text"
-                    placeholder="UCxxxxxxxxxxxxxxxxxxxxxx"
+                    placeholder={t("settings.ucxxxxxxxxxxxxxxxxxxxxxx")}
                     class="input w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border placeholder-kitsuden-text-dim font-mono text-sm"
                   />
                 </div>
-                <button type="button" class="btn-ghost btn-sm" onclick={() => quitarCanalYoutube(i)}>
-                  Quitar
+                <button
+                  type="button"
+                  class="btn-ghost btn-sm"
+                  onclick={() => quitarCanalYoutube(i)}
+                >
+                  {t("settings.quitar")}
                 </button>
               </div>
             {/each}
             <button type="button" class="btn-secondary btn-sm" onclick={anadirCanalYoutube}>
-              + Añadir canal
+              {t("settings.anadirCanal")}
             </button>
           </div>
 
@@ -1257,9 +1353,9 @@
                 <div
                   class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block"
                 ></div>
-                Guardando...
+                {t("settings.guardando")}
               {:else}
-                Guardar redes
+                {t("settings.guardarRedes")}
               {/if}
             </button>
           </div>
@@ -1272,15 +1368,14 @@
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-lg font-semibold text-kitsuden-text">Machine Authentication</h3>
+          <h3 class="text-lg font-semibold text-kitsuden-text">{t("settings.machineAuthentication")}</h3>
           <p class="text-xs text-kitsuden-subtle mt-1">
-            API keys allow Astro, n8n, and external tools to authenticate as Admin without a user
-            interface.
+            {t("settings.apiKeysAllowAstroN8n")}
           </p>
         </div>
         <button class="btn-primary" onclick={() => (showCreateModal = true)}>
           <Plus class="w-4 h-4" />
-          Create API Key
+          {t("settings.createApiKey")}
         </button>
       </div>
 
@@ -1293,13 +1388,13 @@
               <Key class="w-5 h-5 text-kitsuden-green" />
             </div>
             <div class="flex-1 min-w-0">
-              <h4 class="text-kitsuden-green font-medium">API Key generated successfully!</h4>
+              <h4 class="text-kitsuden-green font-medium">{t("settings.apiKeyGeneratedSuccessfully")}</h4>
               <p class="text-xs text-kitsuden-green/80 mt-1 mb-3">
-                Please copy your API key using the button below. <strong
-                  >It will not be shown again.</strong
+                {t("settings.pleaseCopyYourApiKey")} <strong
+                  >{t("settings.itWillNotBeShown")}</strong
                 >
-                You must include it in your HTTP requests as an
-                <code>Authorization: Bearer &lt;token&gt;</code> header.
+                {t("settings.youMustIncludeItIn")}
+                <code>Authorization: Bearer &lt;token&gt;</code> {t("settings.header")}
               </p>
 
               <div class="flex items-center gap-2 max-w-lg relative">
@@ -1312,7 +1407,7 @@
                 <button
                   class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-white/10 text-kitsuden-green transition-colors"
                   onclick={copyToClipboard}
-                  title="Copy to clipboard"
+                  title={t("settings.copyToClipboard")}
                 >
                   {#if copied}
                     <CheckCircle2 class="w-4 h-4" />
@@ -1323,7 +1418,7 @@
               </div>
 
               <button class="btn-ghost mt-4 text-xs" onclick={() => (newlyGeneratedToken = null)}>
-                I have copied my key safely
+                {t("settings.iHaveCopiedMyKey")}
               </button>
             </div>
           </div>
@@ -1341,7 +1436,7 @@
 
       <div class="card overflow-hidden">
         {#if loadingKeys}
-          <div class="p-12 text-center text-kitsuden-subtle text-sm">Loading keys...</div>
+          <div class="p-12 text-center text-kitsuden-subtle text-sm">{t("settings.loadingKeys")}</div>
         {:else if keys.length === 0}
           <div class="p-12 text-center">
             <div
@@ -1349,9 +1444,9 @@
             >
               <Key class="w-5 h-5 text-kitsuden-subtle" />
             </div>
-            <p class="text-kitsuden-text text-sm">No API keys found.</p>
+            <p class="text-kitsuden-text text-sm">{t("settings.noApiKeysFound")}</p>
             <p class="text-kitsuden-subtle text-xs mt-1">
-              Generate a key to connect external integrations.
+              {t("settings.generateAKeyToConnect")}
             </p>
           </div>
         {:else}
@@ -1360,11 +1455,11 @@
               <tr
                 class="border-b border-kitsuden-border text-kitsuden-subtle text-xs uppercase tracking-wider"
               >
-                <th class="px-5 py-3 font-semibold text-left">Name</th>
-                <th class="px-5 py-3 font-semibold text-left">Hint</th>
-                <th class="px-5 py-3 font-semibold text-left">Created</th>
-                <th class="px-5 py-3 font-semibold text-left">Last Used</th>
-                <th class="px-5 py-3 font-semibold pr-5 text-right">Actions</th>
+                <th class="px-5 py-3 font-semibold text-left">{t("common.name")}</th>
+                <th class="px-5 py-3 font-semibold text-left">{t("settings.hint")}</th>
+                <th class="px-5 py-3 font-semibold text-left">{t("settings.created")}</th>
+                <th class="px-5 py-3 font-semibold text-left">{t("settings.lastUsed")}</th>
+                <th class="px-5 py-3 font-semibold pr-5 text-right">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-kitsuden-border/50">
@@ -1381,16 +1476,16 @@
                     </span>
                   </td>
                   <td class="px-5 py-3 text-kitsuden-text-dim text-xs">
-                    {new Date(k.createdAt).toLocaleDateString()}
+                    {new Date(k.createdAt).toLocaleDateString(localeFormato())}
                   </td>
                   <td class="px-5 py-3 text-kitsuden-text-dim text-xs">
-                    {k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : "Never"}
+                    {k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString(localeFormato()) : t("settings.never")}
                   </td>
                   <td class="px-5 py-3 text-right">
                     <button
                       class="btn-icon p-1.5 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-400/10 transition-all text-kitsuden-subtle rounded"
                       onclick={() => revokeKey(k.id)}
-                      title="Revoke Key"
+                      title={t("settings.revokeKey")}
                     >
                       <Trash2 class="w-4 h-4" />
                     </button>
@@ -1412,10 +1507,10 @@
         <div>
           <h3 class="text-lg font-semibold text-kitsuden-text flex items-center gap-2">
             <Bot class="w-5 h-5 text-kitsuden-accent" />
-            Agent Identities
+            {t("settings.agentIdentities")}
           </h3>
           <p class="text-xs text-kitsuden-subtle mt-1">
-            Manage Non-Human Identities (NHI) for AI agents, MCP servers, and automation.
+            {t("settings.manageNonHumanIdentitiesNhi")}
           </p>
         </div>
         <button
@@ -1423,7 +1518,7 @@
           class="flex items-center gap-2 px-4 py-2 bg-kitsuden-accent/10 hover:bg-kitsuden-accent/20 text-kitsuden-accent rounded-lg border border-kitsuden-accent/30 transition-colors"
         >
           <Plus class="w-4 h-4" />
-          Create Agent
+          {t("settings.createAgent")}
         </button>
       </div>
 
@@ -1446,15 +1541,15 @@
       {:else if agents.length === 0}
         <div class="p-12 text-center border border-kitsuden-border rounded-xl bg-kitsuden-card">
           <Bot class="w-12 h-12 text-kitsuden-subtle mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-kitsuden-text mb-2">No agents yet</h3>
+          <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("settings.noAgentsYet")}</h3>
           <p class="text-kitsuden-subtle mb-4">
-            Create your first AI agent to get started with MCP
+            {t("settings.createYourFirstAiAgent")}
           </p>
           <button
             onclick={() => (showCreateAgentModal = true)}
             class="px-4 py-2 bg-kitsuden-accent/10 text-kitsuden-accent rounded-lg border border-kitsuden-accent/30"
           >
-            Create Your First Agent
+            {t("settings.createYourFirstAgent")}
           </button>
         </div>
       {:else}
@@ -1475,7 +1570,7 @@
                     ? 'bg-kitsuden-green/20 text-kitsuden-green'
                     : 'bg-kitsuden-subtle/20 text-kitsuden-subtle'}"
                 >
-                  {agent.isActive ? "Active" : "Inactive"}
+                  {agent.isActive ? t("common.active") : t("settings.inactive")}
                 </span>
               </div>
 
@@ -1501,9 +1596,9 @@
               <div class="flex justify-between items-center text-sm text-kitsuden-subtle">
                 <span class="flex items-center gap-1">
                   <Key class="w-4 h-4" />
-                  {agent.keys.length} key{agent.keys.length !== 1 ? "s" : ""}
+                  {t("settings.key", { keysCount: agent.keys.length })}{agent.keys.length !== 1 ? "s" : ""}
                 </span>
-                <span>{agent.rateLimit} req/min</span>
+                <span>{agent.rateLimit} {t("settings.reqMin")}</span>
               </div>
             </button>
           {/each}
@@ -1520,11 +1615,10 @@
           >
             <LibraryBig class="w-5 h-5 text-kitsuden-accent" />
           </div>
-          MCP Capabilities
+          {t("settings.mcpCapabilities")}
         </h2>
         <p class="text-sm text-kitsuden-subtle mt-1">
-          Model Context Protocol integration for external AI agents (Cursor, Claude Desktop,
-          Windsurf).
+          {t("settings.modelContextProtocolIntegrationFor")}
         </p>
       </div>
 
@@ -1532,12 +1626,10 @@
       <div class="card p-6 border-l-4 border-l-kitsuden-accent">
         <h3 class="font-semibold text-lg text-kitsuden-text mb-2 flex items-center gap-2">
           <Cpu class="w-5 h-5 text-kitsuden-accent" />
-          SSE Connection Endpoint
+          {t("settings.sseConnectionEndpoint")}
         </h3>
         <p class="text-sm text-kitsuden-subtle mb-4">
-          Use this SSE endpoint to connect your MCP clients to your Kitsuden CMS data layer and
-          background workers. Authentication requires a valid Kitsuden API Key passed as a Bearer
-          token.
+          {t("settings.useThisSseEndpointTo")}
         </p>
 
         <div class="flex items-center gap-2">
@@ -1548,9 +1640,9 @@
           </code>
           <button class="btn-secondary px-4 py-3 min-w-[120px]" onclick={copyMcpUrl}>
             {#if mcpCopied}
-              <Check class="w-4 h-4 text-kitsuden-green inline mr-1" /> Copied
+              <Check class="w-4 h-4 text-kitsuden-green inline mr-1" /> {t("settings.copied")}
             {:else}
-              <Copy class="w-4 h-4 inline mr-1" /> Copy URL
+              <Copy class="w-4 h-4 inline mr-1" /> {t("settings.copyUrl")}
             {/if}
           </button>
         </div>
@@ -1562,10 +1654,10 @@
         <div class="card p-5">
           <h4 class="font-medium text-kitsuden-text mb-3 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-kitsuden-accent"></span>
-            Stdio Configuration
+            {t("settings.stdioConfiguration")}
           </h4>
           <p class="text-xs text-kitsuden-text-dim mb-3">
-            For Claude Desktop, Cursor, or any local agent using stdio transport.
+            {t("settings.forClaudeDesktopCursorOr")}
           </p>
           <div class="p-3 rounded-lg bg-black/40 border border-kitsuden-border font-mono text-xs">
             <code class="text-kitsuden-accent block">"kitsuden-cms": {"{"}</code>
@@ -1584,7 +1676,7 @@
                 )}
             >
               <Key class="w-3 h-3 inline mr-1" />
-              View Docs
+              {t("settings.viewDocs")}
             </button>
           </div>
         </div>
@@ -1593,10 +1685,10 @@
         <div class="card p-5">
           <h4 class="font-medium text-kitsuden-text mb-3 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-kitsuden-purple"></span>
-            HTTP/SSE Configuration
+            {t("settings.httpSseConfiguration")}
           </h4>
           <p class="text-xs text-kitsuden-text-dim mb-3">
-            For remote agents or cloud-based AI tools using Server-Sent Events.
+            {t("settings.forRemoteAgentsOrCloud")}
           </p>
           <div
             class="p-3 rounded-lg bg-black/40 border border-kitsuden-border font-mono text-xs space-y-1"
@@ -1607,7 +1699,7 @@
           <div class="mt-3 flex gap-2">
             <button class="btn-ghost text-xs" onclick={copyMcpUrl}>
               <Copy class="w-3 h-3 inline mr-1" />
-              Copy Endpoint
+              {t("settings.copyEndpoint")}
             </button>
           </div>
         </div>
@@ -1618,33 +1710,33 @@
         <div class="card p-5 border-t-2 border-t-kitsuden-purple/50">
           <h4 class="font-medium text-kitsuden-text mb-2 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-kitsuden-purple"></span>
-            Visible Resources
+            {t("settings.visibleResources")}
           </h4>
           <p class="text-[11px] text-kitsuden-text-dim mb-3">
-            AI agents can read these live schemas.
+            {t("settings.aiAgentsCanReadThese")}
           </p>
           <ul class="text-sm text-kitsuden-subtle space-y-2 list-disc pl-4 font-mono text-xs">
-            <li>kitsuden://datasets</li>
-            <li>kitsuden://dataset/id</li>
-            <li>kitsuden://grimoires</li>
+            <li>{t("settings.kitsudenDatasets")}</li>
+            <li>{t("settings.kitsudenDatasetId")}</li>
+            <li>{t("settings.kitsudenGrimoires")}</li>
           </ul>
         </div>
 
         <div class="card p-5 border-t-2 border-t-kitsuden-amber/50">
           <h4 class="font-medium text-kitsuden-text mb-2 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-kitsuden-amber"></span>
-            Callable Tools
+            {t("settings.callableTools")}
           </h4>
           <p class="text-[11px] text-kitsuden-text-dim mb-3">
-            AI agents have permission to execute these actions.
+            {t("settings.aiAgentsHavePermissionTo")}
           </p>
           <ul class="text-sm text-kitsuden-subtle space-y-2 list-disc pl-4 font-mono text-xs">
-            <li>kitsuden_query_dataset</li>
-            <li>kitsuden_insert_record</li>
-            <li>kitsuden_update_record</li>
-            <li>kitsuden_delete_record</li>
-            <li>kitsuden_list_datasets</li>
-            <li>kitsuden_dispatch_worker</li>
+            <li>{t("settings.kitsudenQueryDataset")}</li>
+            <li>{t("settings.kitsudenInsertRecord")}</li>
+            <li>{t("settings.kitsudenUpdateRecord")}</li>
+            <li>{t("settings.kitsudenDeleteRecord")}</li>
+            <li>{t("settings.kitsudenListDatasets")}</li>
+            <li>{t("settings.kitsudenDispatchWorker")}</li>
           </ul>
         </div>
       </div>
@@ -1657,10 +1749,10 @@
         <div>
           <h3 class="text-lg font-semibold text-kitsuden-text flex items-center gap-2">
             <Database class="w-5 h-5 text-kitsuden-accent" />
-            External Data Sources
+            {t("settings.externalDataSources")}
           </h3>
           <p class="text-xs text-kitsuden-subtle mt-1">
-            Connect to external databases, APIs, and webhooks to sync data with your CMS.
+            {t("settings.connectToExternalDatabasesApis")}
           </p>
         </div>
         <button
@@ -1671,7 +1763,7 @@
           class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
         >
           <Plus class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          Connect Source
+          {t("settings.connectSource")}
         </button>
       </div>
 
@@ -1697,8 +1789,8 @@
       {:else if dataSources.length === 0}
         <div class="p-12 text-center border border-kitsuden-border rounded-xl bg-kitsuden-card">
           <Database class="w-12 h-12 text-kitsuden-subtle mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-kitsuden-text mb-2">No data sources connected</h3>
-          <p class="text-kitsuden-subtle mb-6">Connect external databases or APIs to sync data</p>
+          <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("settings.noDataSourcesConnected")}</h3>
+          <p class="text-kitsuden-subtle mb-6">{t("settings.connectExternalDatabasesOrApis")}</p>
           <button
             onclick={() => {
               resetDataSourceForm();
@@ -1707,7 +1799,7 @@
             class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
           >
             <Plus class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-            Connect First Source
+            {t("settings.connectFirstSource")}
           </button>
         </div>
       {:else}
@@ -1738,19 +1830,19 @@
 
               {#if source.host}
                 <div class="text-xs text-kitsuden-subtle mb-1">
-                  <span class="text-kitsuden-text-dim">Host:</span>
+                  <span class="text-kitsuden-text-dim">{t("settings.host")}</span>
                   {source.host}:{source.port}
                 </div>
               {/if}
               {#if source.database}
                 <div class="text-xs text-kitsuden-subtle mb-1">
-                  <span class="text-kitsuden-text-dim">Database:</span>
+                  <span class="text-kitsuden-text-dim">{t("settings.database")}</span>
                   {source.database}
                 </div>
               {/if}
               {#if source.url}
                 <div class="text-xs text-kitsuden-subtle mb-1 truncate">
-                  <span class="text-kitsuden-text-dim">URL:</span>
+                  <span class="text-kitsuden-text-dim">{t("common.url")}</span>
                   {source.url}
                 </div>
               {/if}
@@ -1760,13 +1852,13 @@
               >
                 <span class="text-xs text-kitsuden-subtle">
                   {source.lastSyncAt
-                    ? `Last sync: ${new Date(source.lastSyncAt).toLocaleDateString()}`
-                    : "Never synced"}
+                    ? t("settings.lastSync", { v: new Date(source.lastSyncAt).toLocaleDateString(localeFormato()) })
+                    : t("settings.neverSynced")}
                 </span>
                 <button
                   onclick={() => deleteDataSource(source.id)}
                   class="p-2 rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/10 transition-all duration-200 hover:scale-110"
-                  title="Delete data source"
+                  title={t("settings.deleteDataSource")}
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
@@ -1789,15 +1881,14 @@
       <section>
         <h3 class="text-lg font-semibold text-kitsuden-text flex items-center gap-2">
           <Users class="w-5 h-5 text-kitsuden-accent" />
-          Usuarios
+          {t("settings.usuarios")}
         </h3>
         <p class="text-xs text-kitsuden-subtle mt-1 mb-4">
-          Quien puede entrar al panel y con que rol. Las credenciales viven en otra tabla y no se
-          muestran nunca.
+          {t("settings.quienPuedeEntrarAlPanel")}
         </p>
 
         {#if cargandoSistema}
-          <p class="text-sm text-kitsuden-subtle">Cargando…</p>
+          <p class="text-sm text-kitsuden-subtle">{t("common.cargando")}</p>
         {:else if errorSistema}
           <p class="text-sm text-kitsuden-danger">{errorSistema}</p>
         {:else}
@@ -1805,10 +1896,10 @@
             <table class="w-full text-sm">
               <thead class="bg-kitsuden-bg text-kitsuden-subtle">
                 <tr>
-                  <th class="px-4 py-2 text-left font-medium">Email</th>
-                  <th class="px-4 py-2 text-left font-medium">Nombre</th>
-                  <th class="px-4 py-2 text-left font-medium">Rol</th>
-                  <th class="px-4 py-2 text-left font-medium">Alta</th>
+                  <th class="px-4 py-2 text-left font-medium">{t("common.email")}</th>
+                  <th class="px-4 py-2 text-left font-medium">{t("common.nombre")}</th>
+                  <th class="px-4 py-2 text-left font-medium">{t("settings.rol")}</th>
+                  <th class="px-4 py-2 text-left font-medium">{t("settings.alta")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1822,13 +1913,13 @@
                         value={u.role}
                         onchange={(e) => cambiarRol(u.id, e.currentTarget.value)}
                       >
-                        <option value="admin">admin</option>
-                        <option value="editor">editor</option>
-                        <option value="user">user</option>
+                        <option value="admin">{t("settings.admin")}</option>
+                        <option value="editor">{t("settings.editor")}</option>
+                        <option value="user">{t("settings.user")}</option>
                       </select>
                     </td>
                     <td class="px-4 py-2 text-kitsuden-subtle">
-                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString(localeFormato()) : "—"}
                     </td>
                   </tr>
                 {/each}
@@ -1841,21 +1932,20 @@
       <section>
         <h3 class="text-lg font-semibold text-kitsuden-text flex items-center gap-2">
           <Database class="w-5 h-5 text-kitsuden-accent" />
-          Estado del esquema
+          {t("settings.estadoDelEsquema")}
         </h3>
         <p class="text-xs text-kitsuden-subtle mt-1 mb-4">
-          Solo lectura. El historial de migraciones se toca con el runner, nunca desde aqui:
-          editarlo desincroniza historial y esquema en silencio.
+          {t("settings.soloLecturaElHistorialDe")}
         </p>
 
         {#if estado}
           <div class="grid gap-4 sm:grid-cols-3">
             <div class="card p-4">
-              <p class="text-xs uppercase tracking-wider text-kitsuden-subtle">Migraciones</p>
+              <p class="text-xs uppercase tracking-wider text-kitsuden-subtle">{t("settings.migraciones")}</p>
               <p class="mt-1 text-2xl font-bold">{estado.migraciones.total}</p>
             </div>
             <div class="card p-4">
-              <p class="text-xs uppercase tracking-wider text-kitsuden-subtle">Kons activos</p>
+              <p class="text-xs uppercase tracking-wider text-kitsuden-subtle">{t("settings.konsActivos")}</p>
               <p class="mt-1 text-2xl font-bold">
                 {estado.kons.activos}<span class="text-base text-kitsuden-subtle"
                   >/{estado.kons.total}</span
@@ -1863,17 +1953,17 @@
               </p>
             </div>
             <div class="card p-4">
-              <p class="text-xs uppercase tracking-wider text-kitsuden-subtle">Instalados</p>
+              <p class="text-xs uppercase tracking-wider text-kitsuden-subtle">{t("settings.instalados")}</p>
               <p class="mt-1 text-2xl font-bold">{estado.instalados.length}</p>
             </div>
           </div>
 
           <p class="mt-4 mb-2 text-xs uppercase tracking-wider text-kitsuden-subtle">
-            Ultimas migraciones aplicadas
+            {t("settings.ultimasMigracionesAplicadas")}
           </p>
           <ul class="space-y-1 text-xs font-mono text-kitsuden-subtle">
             {#each estado.migraciones.ultimas as m (m.name)}
-              <li>{m.name}{m.baselined ? "  (baseline)" : ""}</li>
+              <li>{m.name}{m.baselined ? t("settings.baseline") : ""}</li>
             {/each}
           </ul>
         {/if}
@@ -1893,7 +1983,7 @@
       >
         <h3 class="font-bold text-kitsuden-text flex items-center gap-2">
           <Key class="w-4 h-4 text-kitsuden-accent" />
-          Create new API Key
+          {t("settings.createNewApiKey")}
         </h3>
       </div>
 
@@ -1903,13 +1993,13 @@
             for="newkeyname"
             class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
           >
-            Key Name
+            {t("settings.keyName")}
           </label>
           <input
             id="newkeyname"
             bind:value={newKeyName}
             type="text"
-            placeholder="e.g. Astro Frontend SSG"
+            placeholder={t("settings.eGAstroFrontendSsg")}
             class="input w-full"
             required
             autocomplete="off"
@@ -1921,14 +2011,14 @@
             for="newkeyexpiresinstr"
             class="label block text-xs font-semibold uppercase text-kitsuden-subtle tracking-wider"
           >
-            Expiration
+            {t("settings.expiration")}
           </label>
           <select id="newkeyexpiresinstr" bind:value={newKeyExpiresInStr} class="select w-full">
-            <option value="0">Never expire</option>
-            <option value="7">7 Days</option>
-            <option value="30">30 Days</option>
-            <option value="90">90 Days</option>
-            <option value="365">1 Year</option>
+            <option value="0">{t("settings.neverExpire")}</option>
+            <option value="7">{t("settings.n7Days")}</option>
+            <option value="30">{t("settings.n30Days")}</option>
+            <option value="90">{t("settings.n90Days")}</option>
+            <option value="365">{t("settings.n1Year")}</option>
           </select>
         </div>
 
@@ -1942,10 +2032,10 @@
             }}
             disabled={creatingKey}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button type="submit" class="btn-primary" disabled={creatingKey || !newKeyName.trim()}>
-            {creatingKey ? "Creating..." : "Create Key"}
+            {creatingKey ? t("common.creating") : t("settings.createKey")}
           </button>
         </div>
       </form>
@@ -1957,50 +2047,50 @@
 {#if showCreateAgentModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
     <div class="w-full max-w-lg p-6 border border-kitsuden-border rounded-xl bg-kitsuden-card">
-      <h2 class="text-xl font-semibold text-kitsuden-text mb-4">Create New Agent</h2>
+      <h2 class="text-xl font-semibold text-kitsuden-text mb-4">{t("settings.createNewAgent")}</h2>
 
       <div class="space-y-4">
         <div>
-          <label for="agentformname" class="block text-sm text-kitsuden-subtle mb-1">Name *</label>
+          <label for="agentformname" class="block text-sm text-kitsuden-subtle mb-1">{t("common.name2")}</label>
           <input
             id="agentformname"
             bind:value={agentFormName}
-            placeholder="e.g., DevBot Frontend"
+            placeholder={t("settings.eGDevbotFrontend")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
           />
         </div>
 
         <div>
           <label for="agentformdescription" class="block text-sm text-kitsuden-subtle mb-1"
-            >Description</label
+            >{t("common.description")}</label
           >
           <input
             id="agentformdescription"
             bind:value={agentFormDescription}
-            placeholder="What does this agent do?"
+            placeholder={t("settings.whatDoesThisAgentDo")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
           />
         </div>
 
         <div>
           <label for="agentformscopes" class="block text-sm text-kitsuden-subtle mb-1"
-            >Scopes (comma-separated)</label
+            >{t("settings.scopesCommaSeparated")}</label
           >
           <input
             id="agentformscopes"
             bind:value={agentFormScopes}
-            placeholder="mcp:connect, read:datasets, write:posts"
+            placeholder={t("settings.mcpConnectReadDatasetsWrite")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
           />
           <p class="text-xs text-kitsuden-subtle mt-1">
-            Examples: mcp:connect, read:*, write:posts
+            {t("settings.examplesMcpConnectReadWrite")}
           </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="agentformratelimit" class="block text-sm text-kitsuden-subtle mb-1"
-              >Rate Limit (req/min)</label
+              >{t("settings.rateLimitReqMin")}</label
             >
             <input
               id="agentformratelimit"
@@ -2014,13 +2104,13 @@
 
           <div>
             <label for="agentformexpiresindays" class="block text-sm text-kitsuden-subtle mb-1"
-              >Key Expires (days)</label
+              >{t("settings.keyExpiresDays")}</label
             >
             <input
               id="agentformexpiresindays"
               type="number"
               bind:value={agentFormExpiresInDays}
-              placeholder="Never"
+              placeholder={t("settings.never")}
               min={1}
               class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
@@ -2033,14 +2123,14 @@
           onclick={() => (showCreateAgentModal = false)}
           class="px-4 py-2 text-kitsuden-subtle hover:text-kitsuden-text transition-colors"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
         <button
           onclick={createAgent}
           disabled={!agentFormName}
           class="px-4 py-2 bg-kitsuden-accent/10 text-kitsuden-accent rounded-lg border border-kitsuden-accent/30 hover:bg-kitsuden-accent/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Create Agent
+          {t("settings.createAgent")}
         </button>
       </div>
     </div>
@@ -2053,12 +2143,11 @@
     <div class="w-full max-w-lg p-6 border border-kitsuden-border rounded-xl bg-kitsuden-card">
       <div class="flex items-center gap-3 mb-4 text-kitsuden-amber">
         <AlertCircle class="w-5 h-5" />
-        <h2 class="text-xl font-semibold">API Key Created</h2>
+        <h2 class="text-xl font-semibold">{t("settings.apiKeyCreated")}</h2>
       </div>
 
       <p class="text-kitsuden-subtle mb-4">
-        <strong class="text-kitsuden-text">Important:</strong> Copy this API key now. You won't be able
-        to see it again!
+        <strong class="text-kitsuden-text">{t("settings.important")}</strong> {t("settings.copyThisApiKeyNow")}
       </p>
 
       <div class="flex gap-2 mb-6">
@@ -2070,7 +2159,7 @@
         <button
           onclick={() => copyAgentKeyToClipboard(newAgentApiKey)}
           class="px-3 py-2 bg-kitsuden-accent/10 text-kitsuden-accent rounded-lg border border-kitsuden-accent/30 hover:bg-kitsuden-accent/20"
-          title="Copy to clipboard"
+          title={t("settings.copyToClipboard")}
         >
           {#if agentKeyCopied}
             <Check class="w-5 h-5" />
@@ -2087,7 +2176,7 @@
         }}
         class="w-full px-4 py-2 bg-kitsuden-accent/10 text-kitsuden-accent rounded-lg border border-kitsuden-accent/30 hover:bg-kitsuden-accent/20"
       >
-        I've Saved The Key
+        {t("settings.iVeSavedTheKey")}
       </button>
     </div>
   </div>
@@ -2110,7 +2199,7 @@
               ? 'bg-kitsuden-green/20 text-kitsuden-green'
               : 'bg-kitsuden-subtle/20 text-kitsuden-subtle'}"
           >
-            {selectedAgent.isActive ? "Active" : "Inactive"}
+            {selectedAgent.isActive ? t("common.active") : t("settings.inactive")}
           </span>
         </div>
         <button
@@ -2141,13 +2230,13 @@
           <div class="space-y-6">
             <!-- Info -->
             <div>
-              <label class="block text-sm text-kitsuden-subtle mb-1">Description</label>
-              <p class="text-kitsuden-text">{selectedAgent.description || "No description"}</p>
+              <label class="block text-sm text-kitsuden-subtle mb-1">{t("common.description")}</label>
+              <p class="text-kitsuden-text">{selectedAgent.description || t("settings.noDescription")}</p>
             </div>
 
             <!-- Scopes -->
             <div>
-              <label class="block text-sm text-kitsuden-subtle mb-2">Scopes</label>
+              <label class="block text-sm text-kitsuden-subtle mb-2">{t("settings.scopes")}</label>
               <div class="flex flex-wrap gap-2">
                 {#each selectedAgent.scopes as scope}
                   <span class="px-2 py-1 text-sm rounded {getScopeColor(scope)}">
@@ -2160,12 +2249,12 @@
             <!-- Stats -->
             <div class="grid grid-cols-2 gap-4">
               <div class="p-4 border border-kitsuden-border rounded-lg">
-                <p class="text-sm text-kitsuden-subtle">Rate Limit</p>
+                <p class="text-sm text-kitsuden-subtle">{t("settings.rateLimit")}</p>
                 <p class="text-2xl font-bold text-kitsuden-text">{selectedAgent.rateLimit}</p>
-                <p class="text-xs text-kitsuden-subtle">requests per minute</p>
+                <p class="text-xs text-kitsuden-subtle">{t("settings.requestsPerMinute")}</p>
               </div>
               <div class="p-4 border border-kitsuden-border rounded-lg">
-                <p class="text-sm text-kitsuden-subtle">Created</p>
+                <p class="text-sm text-kitsuden-subtle">{t("settings.created")}</p>
                 <p class="text-kitsuden-text">{formatDate(selectedAgent.createdAt)}</p>
               </div>
             </div>
@@ -2173,18 +2262,18 @@
             <!-- API Keys -->
             <div>
               <div class="flex justify-between items-center mb-3">
-                <label class="block text-sm text-kitsuden-subtle">API Keys</label>
+                <label class="block text-sm text-kitsuden-subtle">{t("settings.apiKeys")}</label>
                 <button
                   onclick={() => selectedAgent && createAgentApiKey(selectedAgent.id)}
                   class="flex items-center gap-1 px-3 py-1 text-sm bg-kitsuden-accent/10 text-kitsuden-accent rounded border border-kitsuden-accent/30 hover:bg-kitsuden-accent/20"
                 >
                   <Plus class="w-3 h-3" />
-                  New Key
+                  {t("settings.newKey")}
                 </button>
               </div>
 
               {#if selectedAgent?.keys.length === 0}
-                <p class="text-kitsuden-subtle text-sm">No API keys</p>
+                <p class="text-kitsuden-subtle text-sm">{t("settings.noApiKeys")}</p>
               {:else}
                 <div class="space-y-2">
                   {#each selectedAgent?.keys || [] as key}
@@ -2194,19 +2283,19 @@
                       <div>
                         <code class="text-sm text-kitsuden-text">{key.keyPrefix}</code>
                         <p class="text-xs text-kitsuden-subtle">
-                          Created: {formatDate(key.createdAt)}
+                          {t("settings.created2", { v: formatDate(key.createdAt) })}
                           {#if key.lastUsedAt}
-                            • Last used: {formatDate(key.lastUsedAt)}
+                            {t("settings.lastUsed2", { v: formatDate(key.lastUsedAt) })}
                           {/if}
                           {#if key.expiresAt}
-                            • Expires: {formatDate(key.expiresAt)}
+                            {t("settings.expires", { v: formatDate(key.expiresAt) })}
                           {/if}
                         </p>
                       </div>
                       <button
                         onclick={() => selectedAgent && revokeAgentApiKey(selectedAgent.id, key.id)}
                         class="p-2 text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/10 rounded"
-                        title="Revoke key"
+                        title={t("settings.revokeKey2")}
                       >
                         <Trash2 class="w-4 h-4" />
                       </button>
@@ -2223,13 +2312,13 @@
                 class="flex items-center gap-2 px-4 py-2 bg-kitsuden-accent-2/10 text-kitsuden-accent-2 rounded-lg border border-kitsuden-accent-2/30 hover:bg-kitsuden-accent-2/20"
               >
                 <Trash2 class="w-4 h-4" />
-                Delete Agent
+                {t("settings.deleteAgent")}
               </button>
             </div>
           </div>
         {:else if agentDetailTab === "logs"}
           {#if auditLogs.length === 0}
-            <p class="text-kitsuden-subtle text-center py-8">No audit logs yet</p>
+            <p class="text-kitsuden-subtle text-center py-8">{t("settings.noAuditLogsYet")}</p>
           {:else}
             <div class="space-y-2">
               {#each auditLogs as log}
@@ -2252,21 +2341,21 @@
           {/if}
         {:else if agentDetailTab === "stats"}
           {#if !agentStats}
-            <p class="text-kitsuden-subtle text-center py-8">Loading statistics...</p>
+            <p class="text-kitsuden-subtle text-center py-8">{t("settings.loadingStatistics")}</p>
           {:else}
             <div class="grid grid-cols-2 gap-4 mb-6">
               <div class="p-4 border border-kitsuden-border rounded-lg">
-                <p class="text-sm text-kitsuden-subtle">Total Calls</p>
+                <p class="text-sm text-kitsuden-subtle">{t("settings.totalCalls")}</p>
                 <p class="text-2xl font-bold text-kitsuden-text">{agentStats.totalCalls}</p>
               </div>
               <div class="p-4 border border-kitsuden-border rounded-lg">
-                <p class="text-sm text-kitsuden-subtle">Success Rate</p>
+                <p class="text-sm text-kitsuden-subtle">{t("settings.successRate")}</p>
                 <p class="text-2xl font-bold text-kitsuden-text">{agentStats.successRate}</p>
               </div>
             </div>
 
             {#if Object.keys(agentStats.actionsByType || {}).length > 0}
-              <h4 class="font-medium text-kitsuden-text mb-3">Actions Breakdown</h4>
+              <h4 class="font-medium text-kitsuden-text mb-3">{t("settings.actionsBreakdown")}</h4>
               <div class="space-y-2">
                 {#each Object.entries(agentStats.actionsByType) as [action, data]}
                   <div
@@ -2276,12 +2365,12 @@
                     <div class="flex gap-2">
                       <span
                         class="px-2 py-0.5 text-xs rounded bg-kitsuden-green/20 text-kitsuden-green"
-                        >{(data as any).success} OK</span
+                        >{(data as any).success} {t("settings.ok")}</span
                       >
                       {#if (data as any).failed > 0}
                         <span
                           class="px-2 py-0.5 text-xs rounded bg-kitsuden-accent-2/20 text-kitsuden-accent-2"
-                          >{(data as any).failed} FAIL</span
+                          >{(data as any).failed} {t("settings.fail")}</span
                         >
                       {/if}
                     </div>
@@ -2305,46 +2394,46 @@
       <div class="p-6 border-b border-kitsuden-border">
         <h2 class="text-xl font-semibold text-kitsuden-text flex items-center gap-2">
           <Database class="w-5 h-5 text-kitsuden-accent" />
-          Connect Data Source
+          {t("settings.connectDataSource")}
         </h2>
         <p class="text-sm text-kitsuden-subtle mt-1">
-          Configure connection to external database or API
+          {t("settings.configureConnectionToExternalDatabase")}
         </p>
       </div>
 
       <div class="p-6 space-y-4">
         <!-- Name -->
         <div>
-          <label for="name" class="block text-sm text-kitsuden-subtle mb-1">Name *</label>
+          <label for="name" class="block text-sm text-kitsuden-subtle mb-1">{t("common.name2")}</label>
           <input
             id="name"
             bind:value={dataSourceForm.name}
-            placeholder="e.g., Production PostgreSQL"
+            placeholder={t("settings.eGProductionPostgresql")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
           />
         </div>
 
         <!-- Type -->
         <div>
-          <label for="type" class="block text-sm text-kitsuden-subtle mb-1">Type *</label>
+          <label for="type" class="block text-sm text-kitsuden-subtle mb-1">{t("settings.type")}</label>
           <select
             id="type"
             bind:value={dataSourceForm.type}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
           >
-            <option value="postgresql">PostgreSQL</option>
-            <option value="mysql">MySQL</option>
-            <option value="mongodb">MongoDB</option>
-            <option value="redis">Redis</option>
-            <option value="api">REST API</option>
-            <option value="webhook">Webhook</option>
+            <option value="postgresql">{t("settings.postgresql")}</option>
+            <option value="mysql">{t("settings.mysql")}</option>
+            <option value="mongodb">{t("settings.mongodb")}</option>
+            <option value="redis">{t("settings.redis")}</option>
+            <option value="api">{t("settings.restApi")}</option>
+            <option value="webhook">{t("settings.webhook")}</option>
           </select>
         </div>
 
         {#if dataSourceForm.type === "api" || dataSourceForm.type === "webhook"}
           <!-- API/Webhook fields -->
           <div>
-            <label for="url" class="block text-sm text-kitsuden-subtle mb-1">URL *</label>
+            <label for="url" class="block text-sm text-kitsuden-subtle mb-1">{t("settings.url")}</label>
             <input
               id="url"
               bind:value={dataSourceForm.url}
@@ -2355,12 +2444,12 @@
 
           <div>
             <label for="headers" class="block text-sm text-kitsuden-subtle mb-1"
-              >Headers (JSON)</label
+              >{t("settings.headersJson")}</label
             >
             <textarea
               id="headers"
               bind:value={dataSourceForm.headers}
-              placeholder={`{ "Authorization": "Bearer token" }`}
+              placeholder={"{ \"Authorization\": \"Bearer token\" }"}
               rows="3"
               class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent font-mono text-sm"
             ></textarea>
@@ -2369,7 +2458,7 @@
           <!-- Database fields -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="host" class="block text-sm text-kitsuden-subtle mb-1">Host *</label>
+              <label for="host" class="block text-sm text-kitsuden-subtle mb-1">{t("settings.host2")}</label>
               <input
                 id="host"
                 bind:value={dataSourceForm.host}
@@ -2378,7 +2467,7 @@
               />
             </div>
             <div>
-              <label for="port" class="block text-sm text-kitsuden-subtle mb-1">Port *</label>
+              <label for="port" class="block text-sm text-kitsuden-subtle mb-1">{t("settings.port")}</label>
               <input
                 id="port"
                 type="number"
@@ -2389,7 +2478,7 @@
           </div>
 
           <div>
-            <label for="database" class="block text-sm text-kitsuden-subtle mb-1">Database *</label>
+            <label for="database" class="block text-sm text-kitsuden-subtle mb-1">{t("settings.database2")}</label>
             <input
               id="database"
               bind:value={dataSourceForm.database}
@@ -2399,7 +2488,7 @@
           </div>
 
           <div>
-            <label for="username" class="block text-sm text-kitsuden-subtle mb-1">Username</label>
+            <label for="username" class="block text-sm text-kitsuden-subtle mb-1">{t("settings.username")}</label>
             <input
               id="username"
               bind:value={dataSourceForm.username}
@@ -2409,7 +2498,7 @@
           </div>
 
           <div>
-            <label for="password" class="block text-sm text-kitsuden-subtle mb-1">Password</label>
+            <label for="password" class="block text-sm text-kitsuden-subtle mb-1">{t("common.password")}</label>
             <input
               id="password"
               type="password"
@@ -2445,7 +2534,7 @@
           }}
           class="px-5 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-bg transition-all duration-200"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
         <button
           onclick={testDataSourceConnection}
@@ -2454,10 +2543,10 @@
         >
           {#if testingConnection}
             <RefreshCw class="w-4 h-4 animate-spin" />
-            Testing...
+            {t("settings.testing")}
           {:else}
             <TestTube class="w-4 h-4 group-hover:scale-110 transition-transform" />
-            Test Connection
+            {t("settings.testConnection")}
           {/if}
         </button>
         <button
@@ -2469,7 +2558,7 @@
           class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100"
         >
           <Plus class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          Connect
+          {t("settings.connect")}
         </button>
       </div>
     </div>

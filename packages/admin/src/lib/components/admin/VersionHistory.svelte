@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import { History, Trash2, RotateCcw } from "lucide-svelte";
 
   import { autosaveStore } from "$lib/states/autosave.svelte";
@@ -10,7 +11,7 @@
   const { onRestore }: Props = $props();
 
   function formatTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString(localeFormato());
   }
 
   function handleRestore(index: number) {
@@ -19,7 +20,7 @@
   }
 
   function handleDeleteAll() {
-    if (confirm("Delete all autosaved versions for this entry?")) {
+    if (confirm(t("versionHistory.deleteAllAutosavedVersionsFor"))) {
       autosaveStore.deleteAllVersions();
     }
   }
@@ -29,7 +30,7 @@
   <div class="flex items-center justify-between mb-2 pb-2 border-b border-kitsuden-border">
     <h3 class="text-sm font-semibold text-kitsuden-text flex items-center gap-2">
       <History class="w-4 h-4 text-kitsuden-accent" />
-      Version History
+      {t("versionHistory.versionHistory")}
     </h3>
     {#if autosaveStore.versions.length > 0}
       <button
@@ -37,13 +38,13 @@
         onclick={handleDeleteAll}
       >
         <Trash2 class="w-3 h-3" />
-        Delete all
+        {t("versionHistory.deleteAll")}
       </button>
     {/if}
   </div>
 
   {#if autosaveStore.versions.length === 0}
-    <p class="text-sm text-kitsuden-text-dim text-center py-4">No autosaved versions yet.</p>
+    <p class="text-sm text-kitsuden-text-dim text-center py-4">{t("versionHistory.noAutosavedVersionsYet")}</p>
   {:else}
     <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
       {#each autosaveStore.versions as version, i}
@@ -52,7 +53,7 @@
         >
           <div class="min-w-0 flex-1">
             <p class="text-xs font-medium text-kitsuden-text">
-              Version {autosaveStore.versions.length - i}
+              {t("versionHistory.version", { i: autosaveStore.versions.length - i })}
             </p>
             <p class="text-[10px] text-kitsuden-text-dim truncate">
               {formatTime(version.timestamp)}
@@ -63,7 +64,7 @@
             onclick={() => handleRestore(i)}
           >
             <RotateCcw class="w-3 h-3" />
-            Restore
+            {t("versionHistory.restore")}
           </button>
         </div>
       {/each}

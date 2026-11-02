@@ -4,11 +4,10 @@ Shared types, schemas, and utilities for Kitsuden.
 
 ## Installation
 
-```bash
-npm install @kitsuden/shared
-# or
-bun add @kitsuden/shared
-```
+`@kitsuden/shared` is **not published on npm**. It is a workspace package of
+the Kitsuden monorepo (`"@kitsuden/shared": "workspace:*"`). `pnpm install`
+at the root builds it (its `prepare` script uses Bun); after changing
+`src/`, rebuild it with `pnpm --filter @kitsuden/shared build`.
 
 ## Usage
 

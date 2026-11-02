@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   /**
    * FormulaBuilder - Constructor visual de fórmulas/KPIs
    *
@@ -120,7 +121,7 @@
     for (const match of fieldMatches) {
       const fieldName = match.slice(1, -1);
       if (!availableFields.find((f) => f.name === fieldName)) {
-        error = `Field "${fieldName}" not found`;
+        error = tr("formulaBuilder.fieldNotFound", { fieldName });
         return;
       }
     }
@@ -129,7 +130,7 @@
     const openBraces = (expression.match(/\{/g) || []).length;
     const closeBraces = (expression.match(/\}/g) || []).length;
     if (openBraces !== closeBraces) {
-      error = "Unmatched braces";
+      error = tr("formulaBuilder.unmatchedBraces");
       return;
     }
   }
@@ -214,7 +215,7 @@
   <div class="bg-kitsuden-surface/50 border border-kitsuden-border rounded-xl p-4">
     <label class="text-sm font-medium text-kitsuden-text mb-3 block flex items-center gap-2">
       <Calculator class="w-4 h-4 text-kitsuden-accent" />
-      Formula Builder
+      {tr("formulaBuilder.formulaBuilder")}
     </label>
 
     <!-- Tokens -->
@@ -223,7 +224,7 @@
     >
       {#if formulaTokens.length === 0}
         <span class="text-kitsuden-subtle text-sm italic"
-          >Click buttons below to build your formula...</span
+          >{tr("formulaBuilder.clickButtonsBelowToBuild")}</span
         >
       {:else}
         {#each formulaTokens as token, index}
@@ -280,7 +281,7 @@
     <!-- Preview -->
     {#if previewValue !== null && !error}
       <div class="mt-3 flex items-center gap-2 text-sm">
-        <span class="text-kitsuden-subtle">Preview:</span>
+        <span class="text-kitsuden-subtle">{tr("formulaBuilder.preview")}</span>
         <span class="font-mono text-kitsuden-accent bg-kitsuden-accent/10 px-2 py-0.5 rounded">
           {previewValue}
         </span>
@@ -299,7 +300,7 @@
       >
         <span class="flex items-center gap-2">
           <Hash class="w-4 h-4" />
-          Fields
+          {tr("common.fields")}
         </span>
         <ChevronDown class="w-4 h-4 transition-transform {showFieldMenu ? 'rotate-180' : ''}" />
       </button>
@@ -327,7 +328,7 @@
     <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl p-3">
       <h4 class="text-sm font-medium text-kitsuden-text mb-3 flex items-center gap-2">
         <Calculator class="w-4 h-4" />
-        Operators
+        {tr("formulaBuilder.operators")}
       </h4>
       <div class="grid grid-cols-4 gap-1">
         {#each FORMULA_OPERATORS.slice(0, 8) as op}
@@ -350,7 +351,7 @@
       >
         <span class="flex items-center gap-2">
           <Sigma class="w-4 h-4" />
-          Functions
+          {tr("formulaBuilder.functions")}
         </span>
         <ChevronDown class="w-4 h-4 transition-transform {showFunctionMenu ? 'rotate-180' : ''}" />
       </button>
@@ -374,7 +375,7 @@
 
   <!-- Expression Raw (editable) -->
   <div class="space-y-2">
-    <label for="expression" class="text-sm text-kitsuden-subtle">Raw Expression</label>
+    <label for="expression" class="text-sm text-kitsuden-subtle">{tr("formulaBuilder.rawExpression")}</label>
     <textarea
       id="expression"
       bind:value={expression}
@@ -389,7 +390,7 @@
       }}
     ></textarea>
     <p class="text-xs text-kitsuden-subtle">
-      Use {"{fieldName}"} to reference fields. Example:
+      {tr("formulaBuilder.useToReferenceFieldsExample", { v: "{fieldName}" })}
       <code class="text-kitsuden-accent">{"{price} * {quantity}"}</code>
     </p>
   </div>

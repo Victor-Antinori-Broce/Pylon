@@ -23,6 +23,15 @@ import { db } from "../db";
 import { kitsudenFunctions, functionExecutions, dataSets } from "../db/schema";
 import { refreshCronJob, removeCronJob, getCronJobStatus } from "../lib/cron-scheduler";
 import { executeManually } from "../lib/function-dispatcher";
+import { problemaDeCodigoFueraDePromocion, responderProblema } from "../lib/codigo-de-acciones";
+import { creadorDePeticion, ejecutorDePeticion } from "../lib/sandbox/identidad";
+
+/** Fase I (decisión 2): un agente no escribe código de funciones; usa la promoción. */
+function codigoDeAgente(c: Context, body: { code?: unknown }): Response | null {
+  if (body?.code === undefined || ejecutorDePeticion(c)?.tipo !== "agente") return null;
+  const requestId = ((c.get as (k: string) => unknown)("requestId") as string | undefined) ?? null;
+  return responderProblema(c as never, problemaDeCodigoFueraDePromocion(c.req.path, requestId));
+}
 import { protectRoute } from "../middleware/auth-guard";
 
 export const functionsRoutes = new Hono();
@@ -77,7 +86,7 @@ export async function getFunctionHandler(c: Context) {
   const [fn] = await db
     .select()
     .from(kitsudenFunctions)
-    .where(eq(kitsudenFunctions.id, c.req.param("id")))
+    .where(eq(kitsudenFunctions.id, c.req.param("id")!))
     .limit(1);
 
   if (!fn) return c.json({ error: "Function not found" }, 404);
@@ -100,6 +109,8 @@ functionsRoutes.get("/:id", getFunctionHandler);
 // ── Create function ──
 export async function createFunctionHandler(c: Context) {
   const body = await c.req.json();
+  const vetado = codigoDeAgente(c, body);
+  if (vetado) return vetado;
 
   if (!body.name || !body.code || !body.trigger) {
     return c.json({ error: "name, code, and trigger are required" }, 400);
@@ -131,7 +142,8 @@ export async function createFunctionHandler(c: Context) {
       memoryLimitMb: body.memoryLimitMb || 64,
       status: body.status || "active",
       envVars: body.envVars || {},
-      createdById: body.createdById || null,
+      // De la sesión, no del cuerpo: antes cualquiera podía atribuírsela a otro.
+      createdById: creadorDePeticion(c),
     })
     .returning();
 
@@ -145,6 +157,8 @@ functionsRoutes.post("/", createFunctionHandler);
 // ── Update function ──
 export async function updateFunctionHandler(c: Context) {
   const body = await c.req.json();
+  const vetado = codigoDeAgente(c, body);
+  if (vetado) return vetado;
   const updates: Record<string, unknown> = { updatedAt: new Date() };
 
   const allowedFields = [
@@ -175,7 +189,7 @@ export async function updateFunctionHandler(c: Context) {
   const [updated] = await db
     .update(kitsudenFunctions)
     .set(updates)
-    .where(eq(kitsudenFunctions.id, c.req.param("id")))
+    .where(eq(kitsudenFunctions.id, c.req.param("id")!))
     .returning();
 
   if (!updated) return c.json({ error: "Function not found" }, 404);
@@ -189,7 +203,7 @@ functionsRoutes.patch("/:id", updateFunctionHandler);
 
 // ── Delete function ──
 export async function deleteFunctionHandler(c: Context) {
-  const id = c.req.param("id");
+  const id = c.req.param("id")!;
 
   // Remove cron job first
   removeCronJob(id);
@@ -214,7 +228,7 @@ export async function executeFunctionHandler(c: Context) {
   const body = await c.req.json().catch(() => ({}));
 
   try {
-    const result = await executeManually(c.req.param("id"), body.payload);
+    const result = await executeManually(c.req.param("id")!, body.payload, ejecutorDePeticion(c));
     return c.json({
       success: result.success,
       result: result.result,
@@ -234,7 +248,7 @@ export async function listExecutionsHandler(c: Context) {
   const limit = Math.min(Number(c.req.query("limit")) || 25, 100);
   const status = c.req.query("status");
 
-  const conditions = [eq(functionExecutions.functionId, c.req.param("id"))];
+  const conditions = [eq(functionExecutions.functionId, c.req.param("id")!)];
   // `eqEnum` devuelve undefined si el valor no pertenece al enum.
   const filtro233 = eqEnum(functionExecutions.status, status);
   if (filtro233) conditions.push(filtro233);

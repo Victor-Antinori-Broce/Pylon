@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   /**
    * SchemaBuilder.svelte — Drag-and-drop field designer
    * Three-panel layout: Field Palette | Field List | Field Settings
@@ -67,29 +68,29 @@
   let activeTab = $state<TabId>("fields");
 
   const tabs = [
-    { id: "fields" as const, label: "Fields", icon: Layers },
-    { id: "security" as const, label: "Security", icon: Shield },
-    { id: "workflow" as const, label: "Workflow", icon: GitPullRequest },
+    { id: "fields" as const, label: tr("common.fields"), icon: Layers },
+    { id: "security" as const, label: tr("schemaBuilder.security"), icon: Shield },
+    { id: "workflow" as const, label: tr("schemaBuilder.workflow"), icon: GitPullRequest },
   ];
 
   // ─── Access option cards ────────────────────────────
   const readAccessOptions = [
-    { value: "admin" as const, label: "Admin", desc: "Only admins", icon: Lock },
-    { value: "authenticated" as const, label: "Users", desc: "Logged-in users", icon: Users },
-    { value: "public" as const, label: "Public", desc: "Everyone", icon: Globe },
+    { value: "admin" as const, label: tr("schemaBuilder.admin"), desc: tr("schemaBuilder.onlyAdmins"), icon: Lock },
+    { value: "authenticated" as const, label: tr("schemaBuilder.users"), desc: tr("schemaBuilder.loggedInUsers"), icon: Users },
+    { value: "public" as const, label: tr("schemaBuilder.public"), desc: "Everyone", icon: Globe },
   ];
 
   const writeAccessOptions = [
     {
       value: "admin" as const,
-      label: "Admin Only",
-      desc: "Only admins can create/edit",
+      label: tr("schemaBuilder.adminOnly"),
+      desc: tr("schemaBuilder.onlyAdminsCanCreateEdit"),
       icon: Lock,
     },
     {
       value: "authenticated" as const,
-      label: "Authenticated",
-      desc: "Any logged-in user",
+      label: tr("schemaBuilder.authenticated"),
+      desc: tr("schemaBuilder.anyLoggedInUser"),
       icon: UserCheck,
     },
   ];
@@ -162,15 +163,15 @@
 
   const validationErrors = $derived.by(() => {
     const errs: string[] = [];
-    if (!localDef.name.trim()) errs.push("Dataset name is required");
-    if (localDef.fields.length === 0) errs.push("Add at least one field");
+    if (!localDef.name.trim()) errs.push(tr("schemaBuilder.datasetNameIsRequired"));
+    if (localDef.fields.length === 0) errs.push(tr("schemaBuilder.addAtLeastOneField"));
     for (const f of localDef.fields) {
-      if (!f.label.trim()) errs.push(`Field at position ${f.order + 1} needs a label`);
-      if (!f.key.trim()) errs.push(`Field "${f.label}" needs a key`);
+      if (!f.label.trim()) errs.push(tr("schemaBuilder.fieldAtPositionNeedsA", { v: f.order + 1 }));
+      if (!f.key.trim()) errs.push(tr("schemaBuilder.fieldNeedsAKey", { label: f.label }));
     }
     const keys = localDef.fields.map((f) => f.key).filter(Boolean);
     const dups = keys.filter((k, i) => keys.indexOf(k) !== i);
-    if (dups.length) errs.push(`Duplicate field key: "${dups[0]}"`);
+    if (dups.length) errs.push(tr("schemaBuilder.duplicateFieldKey", { v: dups[0] }));
     return errs;
   });
 
@@ -386,8 +387,8 @@
   {#if activeTab === "fields"}
     <div class="w-56 shrink-0 card overflow-y-auto">
       <div class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
-        <p class="label">Field Types</p>
-        <p class="text-[10px] text-kitsuden-subtle mt-0.5">Drag or click to add</p>
+        <p class="label">{tr("schemaBuilder.fieldTypes")}</p>
+        <p class="text-[10px] text-kitsuden-subtle mt-0.5">{tr("schemaBuilder.dragOrClickToAdd")}</p>
       </div>
       <div class="p-2 space-y-1">
         {#each FIELD_TYPE_OPTIONS as ft}
@@ -426,18 +427,18 @@
     <div class="card p-4 mb-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="name" class="label mb-1.5 block">Dataset Name *</label>
+          <label for="name" class="label mb-1.5 block">{tr("schemaBuilder.datasetName")}</label>
           <input
             id="name"
             bind:value={localDef.name}
             oninput={autoSlug}
             type="text"
-            placeholder="e.g. Products"
+            placeholder={tr("schemaBuilder.eGProducts")}
             class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
         <div>
-          <label class="label mb-1.5 block">Slug</label>
+          <label class="label mb-1.5 block">{tr("common.slug")}</label>
           <div class="flex items-center gap-2">
             <input
               bind:value={localDef.slug}
@@ -457,12 +458,12 @@
         </div>
       </div>
       <div class="mt-3">
-        <label for="description" class="label mb-1.5 block">Description</label>
+        <label for="description" class="label mb-1.5 block">{tr("common.description")}</label>
         <input
           id="description"
           bind:value={localDef.description}
           type="text"
-          placeholder="Optional description for this data set"
+          placeholder={tr("schemaBuilder.optionalDescriptionForThisData")}
           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
       </div>
@@ -511,12 +512,12 @@
             class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10 flex items-center justify-between"
           >
             <div class="flex items-center gap-2">
-              <p class="label">Schema Fields</p>
+              <p class="label">{tr("schemaBuilder.schemaFields")}</p>
               <span class="badge-cyan text-[9px]">{localDef.fields.length}</span>
             </div>
             {#if localDef.fields.length > 0}
               <button onclick={collapseAll} class="btn-ghost btn-sm text-[10px]"
-                >Collapse All</button
+                >{tr("schemaBuilder.collapseAll")}</button
               >
             {/if}
           </div>
@@ -524,8 +525,8 @@
           {#if localDef.fields.length === 0}
             <div class="flex flex-col items-center justify-center py-12 text-kitsuden-subtle">
               <Layers class="w-10 h-10 mb-3 text-kitsuden-muted" />
-              <p class="text-sm font-medium">No fields yet</p>
-              <p class="text-xs mt-1">Click or drag field types from the left panel</p>
+              <p class="text-sm font-medium">{tr("schemaBuilder.noFieldsYet")}</p>
+              <p class="text-xs mt-1">{tr("schemaBuilder.clickOrDragFieldTypes")}</p>
             </div>
           {:else}
             <div class="divide-y divide-kitsuden-border/50">
@@ -579,18 +580,18 @@
                     <!-- Label + Key -->
                     <div class="flex-1 min-w-0">
                       <p class="text-sm font-medium text-kitsuden-text truncate">
-                        {field.label || "Untitled Field"}
+                        {field.label || tr("schemaBuilder.untitledField")}
                         {#if field.isRequired}<span class="text-kitsuden-accent-2 ml-1">*</span
                           >{/if}
                       </p>
                       <p class="text-[10px] font-mono text-kitsuden-subtle">
-                        {field.key || "(no key)"} · {field.type}
+                        {field.key || tr("schemaBuilder.noKey")} · {field.type}
                       </p>
                     </div>
 
                     <!-- Badges -->
                     <div class="flex items-center gap-1.5 shrink-0">
-                      {#if field.isUnique}<span class="badge-amber text-[8px] py-0">UNQ</span>{/if}
+                      {#if field.isUnique}<span class="badge-amber text-[8px] py-0">{tr("schemaBuilder.unq")}</span>{/if}
                       {#if field.relation}
                         <span class="badge-pink text-[8px] py-0">
                           {field.relation.type === "many-to-many"
@@ -630,10 +631,10 @@
         <div class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
           <div class="flex items-center gap-2">
             <Shield class="w-4 h-4 text-kitsuden-amber" />
-            <p class="label">Access Control</p>
+            <p class="label">{tr("schemaBuilder.accessControl")}</p>
           </div>
           <p class="text-[10px] text-kitsuden-subtle mt-0.5">
-            Configure who can read and write. Leave disabled for admin-only access.
+            {tr("schemaBuilder.configureWhoCanReadAnd")}
           </p>
         </div>
 
@@ -642,13 +643,12 @@
             <div class="flex items-start gap-4 w-full max-w-lg">
               <ShieldOff class="w-10 h-10 text-kitsuden-muted shrink-0 mt-1" />
               <div class="flex-1">
-                <p class="text-sm font-medium text-kitsuden-text">Default: Admin Only</p>
+                <p class="text-sm font-medium text-kitsuden-text">{tr("schemaBuilder.defaultAdminOnly")}</p>
                 <p class="text-xs mt-1 text-kitsuden-subtle">
-                  Only admins can read and write this dataset. Enable custom security to allow
-                  public or authenticated access.
+                  {tr("schemaBuilder.onlyAdminsCanReadAnd")}
                 </p>
                 <button onclick={enablePolicy} class="btn-primary mt-4">
-                  <Shield class="w-4 h-4" /> Enable Custom Security
+                  <Shield class="w-4 h-4" /> {tr("schemaBuilder.enableCustomSecurity")}
                 </button>
               </div>
             </div>
@@ -657,7 +657,7 @@
           <div class="p-5 space-y-6">
             <!-- Read Access -->
             <div>
-              <label class="label mb-2 block">Who can read?</label>
+              <label class="label mb-2 block">{tr("schemaBuilder.whoCanRead")}</label>
               <div class="grid grid-cols-3 gap-2">
                 {#each readAccessOptions as opt}
                   <button
@@ -677,7 +677,7 @@
 
             <!-- Write Access -->
             <div>
-              <label class="label mb-2 block">Who can write?</label>
+              <label class="label mb-2 block">{tr("schemaBuilder.whoCanWrite")}</label>
               <div class="grid grid-cols-2 gap-2">
                 {#each writeAccessOptions as opt}
                   <button
@@ -701,10 +701,10 @@
                 <div>
                   <p class="text-sm font-medium text-kitsuden-text flex items-center gap-2">
                     <Lock class="w-3.5 h-3.5 text-kitsuden-amber" />
-                    Row-Level Security
+                    {tr("schemaBuilder.rowLevelSecurity")}
                   </p>
                   <p class="text-[10px] text-kitsuden-subtle mt-0.5">
-                    Filter rows based on user context
+                    {tr("schemaBuilder.filterRowsBasedOnUser")}
                   </p>
                 </div>
                 <button
@@ -738,16 +738,16 @@
                         bind:value={rule.operator}
                         class="px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none w-24 text-xs"
                       >
-                        <option value="eq">equals</option>
-                        <option value="neq">not equal</option>
-                        <option value="contains">contains</option>
-                        <option value="gt">greater</option>
-                        <option value="lt">less</option>
+                        <option value="eq">{tr("schemaBuilder.equals")}</option>
+                        <option value="neq">{tr("schemaBuilder.notEqual")}</option>
+                        <option value="contains">{tr("schemaBuilder.contains")}</option>
+                        <option value="gt">{tr("schemaBuilder.greater")}</option>
+                        <option value="lt">{tr("schemaBuilder.less")}</option>
                       </select>
                       <input
                         bind:value={rule.value}
                         type="text"
-                        placeholder="value or __USER_ID__"
+                        placeholder={tr("schemaBuilder.valueOrUserId")}
                         class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 flex-1 text-xs"
                       />
                       <button
@@ -759,7 +759,7 @@
                     </div>
                   {/each}
                   <button onclick={addRLSRule} class="btn-ghost btn-sm w-full justify-center">
-                    <Plus class="w-3.5 h-3.5" /> Add Rule
+                    <Plus class="w-3.5 h-3.5" /> {tr("schemaBuilder.addRule")}
                   </button>
                 </div>
               {/if}
@@ -771,7 +771,7 @@
                 onclick={() => (localDef.policyJson = null)}
                 class="btn-ghost btn-sm text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/5"
               >
-                <X class="w-3.5 h-3.5" /> Remove Custom Security
+                <X class="w-3.5 h-3.5" /> {tr("schemaBuilder.removeCustomSecurity")}
               </button>
             </div>
           </div>
@@ -787,10 +787,10 @@
         <div class="p-3 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
           <div class="flex items-center gap-2">
             <GitPullRequest class="w-4 h-4 text-kitsuden-purple" />
-            <p class="label">Workflow & Approvals</p>
+            <p class="label">{tr("schemaBuilder.workflowApprovals")}</p>
           </div>
           <p class="text-[10px] text-kitsuden-subtle mt-0.5">
-            Require review before entries go live. Leave disabled for instant publish.
+            {tr("schemaBuilder.requireReviewBeforeEntriesGo")}
           </p>
         </div>
 
@@ -799,13 +799,12 @@
             <div class="flex items-start gap-4 w-full max-w-lg">
               <Zap class="w-10 h-10 text-kitsuden-muted shrink-0 mt-1" />
               <div class="flex-1">
-                <p class="text-sm font-medium text-kitsuden-text">Default: Instant Publish</p>
+                <p class="text-sm font-medium text-kitsuden-text">{tr("schemaBuilder.defaultInstantPublish")}</p>
                 <p class="text-xs mt-1 text-kitsuden-subtle">
-                  New entries are published immediately. Enable approval workflow to require review
-                  before publishing.
+                  {tr("schemaBuilder.newEntriesArePublishedImmediately")}
                 </p>
                 <button onclick={enableWorkflow} class="btn-primary mt-4">
-                  <GitPullRequest class="w-4 h-4" /> Enable Approval Workflow
+                  <GitPullRequest class="w-4 h-4" /> {tr("schemaBuilder.enableApprovalWorkflow")}
                 </button>
               </div>
             </div>
@@ -817,10 +816,10 @@
               <div>
                 <p class="text-sm font-medium text-kitsuden-text flex items-center gap-2">
                   <CheckCircle class="w-3.5 h-3.5 text-kitsuden-purple" />
-                  Require Approval
+                  {tr("schemaBuilder.requireApproval")}
                 </p>
                 <p class="text-[10px] text-kitsuden-subtle mt-0.5">
-                  New entries start as drafts until approved
+                  {tr("schemaBuilder.newEntriesStartAsDrafts")}
                 </p>
               </div>
               <button
@@ -843,9 +842,9 @@
 
             <!-- Approver IDs -->
             <div>
-              <label class="label mb-2 block">Approver User IDs</label>
+              <label class="label mb-2 block">{tr("schemaBuilder.approverUserIds")}</label>
               <p class="text-[10px] text-kitsuden-subtle mb-3">
-                Users who can review and publish draft entries
+                {tr("schemaBuilder.usersWhoCanReviewAnd")}
               </p>
               <div class="space-y-2">
                 {#each localDef.workflowJson!.approverUserIds || [] as _, ai}
@@ -853,7 +852,7 @@
                     <input
                       bind:value={localDef.workflowJson!.approverUserIds![ai]}
                       type="text"
-                      placeholder="User ID"
+                      placeholder={tr("common.userId")}
                       class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 flex-1 font-mono text-xs"
                     />
                     <button
@@ -866,7 +865,7 @@
                 {/each}
               </div>
               <button onclick={addApprover} class="btn-ghost btn-sm mt-2 w-full justify-center">
-                <Plus class="w-3.5 h-3.5" /> Add Approver
+                <Plus class="w-3.5 h-3.5" /> {tr("schemaBuilder.addApprover")}
               </button>
             </div>
 
@@ -876,7 +875,7 @@
                 onclick={() => (localDef.workflowJson = null)}
                 class="btn-ghost btn-sm text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/5"
               >
-                <X class="w-3.5 h-3.5" /> Remove Workflow
+                <X class="w-3.5 h-3.5" /> {tr("schemaBuilder.removeWorkflow")}
               </button>
             </div>
           </div>
@@ -892,10 +891,10 @@
         <div></div>
       {/if}
       <div class="flex items-center gap-3">
-        <button onclick={onCancel} class="btn-ghost">Cancel</button>
+        <button onclick={onCancel} class="btn-ghost">{tr("common.cancel")}</button>
         <button onclick={save} disabled={!canSave} class="btn-primary">
           <Save class="w-4 h-4" />
-          {localDef.id ? "Update Schema" : "Create Dataset"}
+          {localDef.id ? tr("schemaBuilder.updateSchema") : tr("common.createDataset")}
         </button>
       </div>
     </div>
@@ -906,7 +905,7 @@
     <div transition:slide={{ duration: 200, axis: "x" }} class="w-80 shrink-0 card overflow-y-auto">
       <div class="p-4 border-b border-kitsuden-border sticky top-0 bg-kitsuden-card z-10">
         <div class="flex items-center justify-between">
-          <p class="label">Field Settings</p>
+          <p class="label">{tr("schemaBuilder.fieldSettings")}</p>
           <button onclick={() => (selectedFieldId = null)} class="btn-icon p-1">
             <X class="w-4 h-4" />
           </button>
@@ -930,50 +929,50 @@
       <div class="p-4 space-y-5">
         <!-- Label -->
         <div>
-          <label for="label" class="label mb-1.5 block">Label *</label>
+          <label for="label" class="label mb-1.5 block">{tr("schemaBuilder.label")}</label>
           <input
             id="label"
             bind:value={selectedField.label}
             oninput={() => autoFieldKey(selectedField)}
             type="text"
-            placeholder="e.g. Weapon Name"
+            placeholder={tr("schemaBuilder.eGWeaponName")}
             class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
 
         <!-- Key -->
         <div>
-          <label for="key" class="label mb-1.5 block">Machine Key</label>
+          <label for="key" class="label mb-1.5 block">{tr("schemaBuilder.machineKey")}</label>
           <input
             id="key"
             bind:value={selectedField.key}
             type="text"
-            placeholder="e.g. weapon_name"
+            placeholder={tr("schemaBuilder.eGWeaponName2")}
             class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-xs"
           />
         </div>
 
         <!-- Help text -->
         <div>
-          <label for="helptext" class="label mb-1.5 block">Help Text</label>
+          <label for="helptext" class="label mb-1.5 block">{tr("schemaBuilder.helpText")}</label>
           <input
             id="helptext"
             bind:value={selectedField.helpText}
             type="text"
-            placeholder="Shown below the field"
+            placeholder={tr("schemaBuilder.shownBelowTheField")}
             class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
 
         <!-- ── Validation Rules ── -->
         <div class="pt-3 border-t border-kitsuden-border">
-          <p class="label mb-3">Validation Rules</p>
+          <p class="label mb-3">{tr("schemaBuilder.validationRules")}</p>
 
           <!-- Required -->
           <div class="flex items-center justify-between py-2">
             <div>
-              <p class="text-sm text-kitsuden-text">Required</p>
-              <p class="text-[10px] text-kitsuden-subtle">Must have a value</p>
+              <p class="text-sm text-kitsuden-text">{tr("schemaBuilder.required")}</p>
+              <p class="text-[10px] text-kitsuden-subtle">{tr("schemaBuilder.mustHaveAValue")}</p>
             </div>
             <button
               onclick={() => (selectedField.isRequired = !selectedField.isRequired)}
@@ -992,8 +991,8 @@
           <!-- Unique -->
           <div class="flex items-center justify-between py-2">
             <div>
-              <p class="text-sm text-kitsuden-text">Unique</p>
-              <p class="text-[10px] text-kitsuden-subtle">No duplicate values</p>
+              <p class="text-sm text-kitsuden-text">{tr("schemaBuilder.unique")}</p>
+              <p class="text-[10px] text-kitsuden-subtle">{tr("schemaBuilder.noDuplicateValues")}</p>
             </div>
             <button
               onclick={() => (selectedField.isUnique = !selectedField.isUnique)}
@@ -1011,12 +1010,12 @@
 
           <!-- Default value -->
           <div class="pt-2">
-            <label for="defaultvalue" class="label mb-1.5 block">Default Value</label>
+            <label for="defaultvalue" class="label mb-1.5 block">{tr("schemaBuilder.defaultValue")}</label>
             <input
               id="defaultvalue"
               bind:value={selectedField.defaultValue}
               type="text"
-              placeholder="e.g. Unknown"
+              placeholder={tr("schemaBuilder.eGUnknown")}
               class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -1024,12 +1023,12 @@
           <!-- Regex (text, email, url) -->
           {#if ["text", "email", "url"].includes(selectedField.type)}
             <div class="pt-2">
-              <label for="validationregex" class="label mb-1.5 block">Validation Regex</label>
+              <label for="validationregex" class="label mb-1.5 block">{tr("schemaBuilder.validationRegex")}</label>
               <input
                 id="validationregex"
                 bind:value={selectedField.validationRegex}
                 type="text"
-                placeholder="e.g. ^[A-Za-z0-9]+$"
+                placeholder={tr("schemaBuilder.eGAZaZ0")}
                 class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-xs"
               />
             </div>
@@ -1039,7 +1038,7 @@
           {#if selectedField.type === "number"}
             <div class="pt-2 grid grid-cols-2 gap-3">
               <div>
-                <label for="minvalue" class="label mb-1.5 block">Min</label>
+                <label for="minvalue" class="label mb-1.5 block">{tr("schemaBuilder.min")}</label>
                 <input
                   id="minvalue"
                   bind:value={selectedField.minValue}
@@ -1049,7 +1048,7 @@
                 />
               </div>
               <div>
-                <label for="maxvalue" class="label mb-1.5 block">Max</label>
+                <label for="maxvalue" class="label mb-1.5 block">{tr("schemaBuilder.max")}</label>
                 <input
                   id="maxvalue"
                   bind:value={selectedField.maxValue}
@@ -1065,7 +1064,7 @@
           {#if selectedField.type === "text"}
             <div class="pt-2 grid grid-cols-2 gap-3">
               <div>
-                <label for="minlength" class="label mb-1.5 block">Min Length</label>
+                <label for="minlength" class="label mb-1.5 block">{tr("schemaBuilder.minLength")}</label>
                 <input
                   id="minlength"
                   bind:value={selectedField.minLength}
@@ -1075,7 +1074,7 @@
                 />
               </div>
               <div>
-                <label for="maxlength" class="label mb-1.5 block">Max Length</label>
+                <label for="maxlength" class="label mb-1.5 block">{tr("schemaBuilder.maxLength")}</label>
                 <input
                   id="maxlength"
                   bind:value={selectedField.maxLength}
@@ -1091,7 +1090,7 @@
         <!-- ── Select Options ── -->
         {#if selectedField.type === "select"}
           <div class="pt-3 border-t border-kitsuden-border">
-            <p class="label mb-3">Options</p>
+            <p class="label mb-3">{tr("schemaBuilder.options")}</p>
             <div class="space-y-2">
               {#each selectedField.options || [] as opt, oi}
                 <div class="flex items-center gap-2">
@@ -1100,7 +1099,7 @@
                     oninput={() =>
                       (opt.value = opt.label.toLowerCase().replace(/[^a-z0-9]+/g, "_"))}
                     type="text"
-                    placeholder="Option {oi + 1}"
+                    placeholder={tr("schemaBuilder.option", { v: oi + 1 })}
                     class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 flex-1"
                   />
                   <button
@@ -1113,7 +1112,7 @@
               {/each}
             </div>
             <button onclick={addSelectOption} class="btn-ghost btn-sm mt-2 w-full justify-center">
-              <Plus class="w-3.5 h-3.5" /> Add Option
+              <Plus class="w-3.5 h-3.5" /> {tr("schemaBuilder.addOption")}
             </button>
           </div>
         {/if}
@@ -1123,24 +1122,24 @@
           <div class="pt-3 border-t border-kitsuden-border">
             <p class="label mb-3">
               <GitBranch class="w-3 h-3 inline text-kitsuden-accent-2 mr-1" />
-              Relationship
+              {tr("schemaBuilder.relationship")}
             </p>
 
             <!-- Target collection -->
             <div class="mb-3">
-              <label class="label mb-1.5 block">Link to Collection</label>
+              <label class="label mb-1.5 block">{tr("schemaBuilder.linkToCollection")}</label>
               {#if selectedField.relation}
                 <select
                   bind:value={selectedField.relation.target}
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none"
                 >
-                  <option value="">— Select collection —</option>
-                  <option value="games">🎮 Games</option>
-                  <option value="blog-posts">📝 Blog Posts</option>
-                  <option value="platforms">🖥️ Platforms</option>
-                  <option value="tags">🏷️ Tags</option>
-                  <option value="streamers">📺 Streamers</option>
-                  <optgroup label="── Datasets ──">
+                  <option value="">{tr("schemaBuilder.selectCollection")}</option>
+                  <option value="games">{tr("schemaBuilder.games")}</option>
+                  <option value="blog-posts">{tr("schemaBuilder.blogPosts")}</option>
+                  <option value="platforms">{tr("schemaBuilder.platforms")}</option>
+                  <option value="tags">{tr("schemaBuilder.tags")}</option>
+                  <option value="streamers">{tr("schemaBuilder.streamers")}</option>
+                  <optgroup label={tr("schemaBuilder.datasets")}>
                     {#each otherDatasets as ds}
                       <option value="dataset:{ds.id}">{ds.icon || "📦"} {ds.name}</option>
                     {/each}
@@ -1151,7 +1150,7 @@
 
             <!-- Relationship type -->
             <div class="mb-3">
-              <label class="label mb-1.5 block">Cardinality</label>
+              <label class="label mb-1.5 block">{tr("schemaBuilder.cardinality")}</label>
               <div class="grid grid-cols-3 gap-2">
                 {#each ["one-to-one", "one-to-many", "many-to-many"] as rt}
                   <button
@@ -1166,10 +1165,10 @@
                     </p>
                     <p>
                       {rt === "one-to-one"
-                        ? "Has One"
+                        ? tr("schemaBuilder.hasOne")
                         : rt === "one-to-many"
-                          ? "Has Many"
-                          : "Many-Many"}
+                          ? tr("schemaBuilder.hasMany")
+                          : tr("schemaBuilder.manyMany")}
                     </p>
                   </button>
                 {/each}
@@ -1178,16 +1177,16 @@
 
             <!-- Display field -->
             <div>
-              <label class="label mb-1.5 block">Display Field</label>
+              <label class="label mb-1.5 block">{tr("schemaBuilder.displayField")}</label>
               {#if selectedField.relation}
                 <input
                   bind:value={selectedField.relation.displayField}
                   type="text"
-                  placeholder="e.g. title, name"
+                  placeholder={tr("schemaBuilder.eGTitleName")}
                   class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
                 <p class="text-[10px] text-kitsuden-subtle mt-1">
-                  Which field to show in the selector
+                  {tr("schemaBuilder.whichFieldToShowIn")}
                 </p>
               {/if}
             </div>
@@ -1199,10 +1198,10 @@
           <div class="pt-3 border-t border-kitsuden-border">
             <p class="label mb-1">
               <Rows3 class="w-3 h-3 inline text-kitsuden-accent-2 mr-1" />
-              Row fields
+              {tr("schemaBuilder.rowFields")}
             </p>
             <p class="text-[10px] text-kitsuden-subtle mb-3">
-              Each entry stores a list of rows with this shape.
+              {tr("schemaBuilder.eachEntryStoresAList")}
             </p>
 
             <div class="space-y-2">
@@ -1214,20 +1213,20 @@
                       bind:value={sub.label}
                       oninput={() => autoSubKey(sub)}
                       type="text"
-                      placeholder="Label"
+                      placeholder={tr("schemaBuilder.label2")}
                       class="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
                     <button
                       onclick={() => moveSubField(si, -1)}
                       disabled={si === 0}
-                      title="Move up"
+                      title={tr("schemaBuilder.moveUp")}
                       class="btn-icon p-1 disabled:opacity-30"
                     >
                       <GripVertical class="w-3 h-3" />
                     </button>
                     <button
                       onclick={() => removeSubField(si)}
-                      title="Remove subfield"
+                      title={tr("schemaBuilder.removeSubfield")}
                       class="btn-icon p-1 hover:!text-kitsuden-accent-2"
                     >
                       <Trash2 class="w-3 h-3" />
@@ -1253,14 +1252,14 @@
 
                   <label class="flex items-center gap-2 mt-2 text-[11px] text-kitsuden-subtle">
                     <input type="checkbox" bind:checked={sub.isRequired} class="accent-teal-500" />
-                    Required in every row
+                    {tr("schemaBuilder.requiredInEveryRow")}
                   </label>
 
                   {#if sub.type === "select"}
                     <!-- Un desplegable sin opciones no se puede rellenar; se
                          avisa aquí en vez de dejar que falle al guardar. -->
                     <p class="text-[10px] text-kitsuden-subtle mt-1.5">
-                      Options for subfield selects are set via API for now.
+                      {tr("schemaBuilder.optionsForSubfieldSelectsAre")}
                     </p>
                   {/if}
                 </div>
@@ -1269,18 +1268,18 @@
 
             {#if !selectedField.subFields?.length}
               <p class="text-[11px] text-kitsuden-subtle italic py-2">
-                No row fields yet — rows would be empty.
+                {tr("schemaBuilder.noRowFieldsYetRows")}
               </p>
             {/if}
 
             <button onclick={addSubField} class="btn-ghost btn-sm mt-2 w-full justify-center">
-              <Plus class="w-3.5 h-3.5" /> Add row field
+              <Plus class="w-3.5 h-3.5" /> {tr("schemaBuilder.addRowField")}
             </button>
 
             <!-- minLength/maxLength de un repeater son filas, no caracteres. -->
             <div class="pt-3 grid grid-cols-2 gap-3">
               <div>
-                <label for="minrows" class="label mb-1.5 block">Min rows</label>
+                <label for="minrows" class="label mb-1.5 block">{tr("schemaBuilder.minRows")}</label>
                 <input
                   id="minrows"
                   bind:value={selectedField.minLength}
@@ -1291,7 +1290,7 @@
                 />
               </div>
               <div>
-                <label for="maxrows" class="label mb-1.5 block">Max rows</label>
+                <label for="maxrows" class="label mb-1.5 block">{tr("schemaBuilder.maxRows")}</label>
                 <input
                   id="maxrows"
                   bind:value={selectedField.maxLength}
@@ -1311,9 +1310,9 @@
             <div>
               <p class="label mb-0.5">
                 <Eye class="w-3 h-3 inline text-kitsuden-accent mr-1" />
-                Conditional
+                {tr("schemaBuilder.conditional")}
               </p>
-              <p class="text-[10px] text-kitsuden-subtle">Show only when another field matches</p>
+              <p class="text-[10px] text-kitsuden-subtle">{tr("schemaBuilder.showOnlyWhenAnotherField")}</p>
             </div>
             <button
               onclick={toggleCondition}
@@ -1332,7 +1331,7 @@
 
           {#if conditionSources(selectedField).length === 0}
             <p class="text-[10px] text-kitsuden-subtle italic mt-2">
-              Needs at least one other field with a key.
+              {tr("schemaBuilder.needsAtLeastOneOther")}
             </p>
           {/if}
 
@@ -1352,11 +1351,11 @@
                   bind:value={selectedField.showIf.operator}
                   class="px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  <option value="eq">equals</option>
-                  <option value="neq">not equals</option>
-                  <option value="contains">contains</option>
-                  <option value="gt">greater than</option>
-                  <option value="lt">less than</option>
+                  <option value="eq">{tr("schemaBuilder.equals")}</option>
+                  <option value="neq">{tr("schemaBuilder.notEquals")}</option>
+                  <option value="contains">{tr("schemaBuilder.contains")}</option>
+                  <option value="gt">{tr("schemaBuilder.greaterThan")}</option>
+                  <option value="lt">{tr("schemaBuilder.lessThan")}</option>
                 </select>
                 <input
                   bind:value={selectedField.showIf.value}
@@ -1370,12 +1369,12 @@
                 <!-- Lo que la gente no espera: un obligatorio condicional solo
                      se exige cuando se muestra. Decirlo aquí evita el ticket. -->
                 <p class="text-[10px] text-kitsuden-subtle">
-                  Required only while this condition holds.
+                  {tr("schemaBuilder.requiredOnlyWhileThisCondition")}
                 </p>
               {/if}
               {#if selectedField.showIf.operator === "gt" || selectedField.showIf.operator === "lt"}
                 <p class="text-[10px] text-kitsuden-subtle">
-                  Compared as numbers; non-numeric values never match.
+                  {tr("schemaBuilder.comparedAsNumbersNonNumeric")}
                 </p>
               {/if}
             </div>
@@ -1384,11 +1383,11 @@
 
         <!-- Grid settings -->
         <div class="pt-3 border-t border-kitsuden-border">
-          <p class="label mb-3">Display</p>
+          <p class="label mb-3">{tr("schemaBuilder.display")}</p>
           <div class="flex items-center justify-between py-2">
             <div>
-              <p class="text-sm text-kitsuden-text">Hidden in Grid</p>
-              <p class="text-[10px] text-kitsuden-subtle">Only visible in form</p>
+              <p class="text-sm text-kitsuden-text">{tr("schemaBuilder.hiddenInGrid")}</p>
+              <p class="text-[10px] text-kitsuden-subtle">{tr("schemaBuilder.onlyVisibleInForm")}</p>
             </div>
             <button
               onclick={() => (selectedField.hidden = !selectedField.hidden)}
@@ -1404,12 +1403,12 @@
             </button>
           </div>
           <div class="pt-2">
-            <label for="width" class="label mb-1.5 block">Column Width (px)</label>
+            <label for="width" class="label mb-1.5 block">{tr("schemaBuilder.columnWidthPx")}</label>
             <input
               id="width"
               bind:value={selectedField.width}
               type="number"
-              placeholder="Auto"
+              placeholder={tr("schemaBuilder.auto")}
               class="w-full px-3 py-2 bg-slate-800 border border-slate-700 text-gray-100 placeholder-slate-400 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>

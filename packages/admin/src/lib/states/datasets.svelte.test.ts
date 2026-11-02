@@ -68,7 +68,9 @@ describe("DatasetStore", () => {
       // demás espera un array
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ docs: [{ id: "1", name: "Raro", slug: "raro", schema: { fields: [] } }] }),
+        json: async () => ({
+          docs: [{ id: "1", name: "Raro", slug: "raro", schema: { fields: [] } }],
+        }),
       } as Response);
 
       await store.fetchDatasets();

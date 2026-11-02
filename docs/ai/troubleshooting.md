@@ -13,7 +13,7 @@
 | `RLS blocked the query` / `policy denied`         | Auth disabled or user lacks ownership                         | `kitsuden_enable_auth` + verify dataset policy          |
 | `Kon not installed` / `module not found`          | Kon package missing or not registered                         | `kitsuden_install_kon`                                  |
 | `Migration failed` / `SQL syntax error`           | Invalid DDL in kon migration or manual schema drift           | Check migration SQL, fix syntax, retry install          |
-| `Queue not available` / `BullMQ connection error` | Valkey (Redis) is down or unreachable                         | Verify `docker compose up -d valkey`                    |
+| `relation "kitsuden_outbox" does not exist`       | Migration 0056 (Postgres queue) not applied                   | `pnpm --dir apps/api db:migrate`                        |
 | `Invalid API key` / `Unauthorized`                | Missing or expired `kitsuden_sk_*` / `kitsuden_agent_*` token | Regenerate token via `bun run seed:mcp`                 |
 | `Entry not found` / `Record not found`            | Wrong entryId or record already deleted                       | Re-query with `kitsuden_query_dataset`                  |
 | `Unknown tool: x`                                 | Tool name typo or server version mismatch                     | Verify exact tool name in `docs/ai/tool-reference.json` |
@@ -93,20 +93,19 @@ FIX:
 
 ---
 
-### 5. "Queue not available"
+### 5. "kitsuden_outbox does not exist" / jobs never run
 
 ```
-SYMPTOM:  kitsuden_dispatch_worker returns "BullMQ connection error" or timeout.
-CAUSE:    Valkey (the Redis-compatible queue store) is not running or the
-          API cannot reach it.
+SYMPTOM:  kitsuden_dispatch_worker fails, or jobs stay pending forever.
+CAUSE:    The queue lives in Postgres (table kitsuden_outbox, migration 0056).
+          Either the migration was not applied or no process runs the worker.
 FIX:
-  1. CHECK: docker compose ps | findstr valkey
-  2. IF not running: docker compose up -d valkey
-  3. IF running but API still errors:
-     ├─ Check API env var VALKEY_URL (default: redis://localhost:6379)
-     ├─ Verify network between API container and valkey container
-     └─ Restart API service
-  4. RETRY kitsuden_dispatch_worker with a small test payload.
+  1. CHECK: GET /api/health → checks.queue.details (worker, waiting, dead)
+  2. IF the table is missing: pnpm --dir apps/api db:migrate
+  3. IF worker = "stopped": the API was started with QUEUE_WORKER=false
+     (enqueue-only); start one process without it.
+  4. IF dead > 0: GET /api/admin/queue lists the dead letters with their last
+     error; POST /api/admin/queue/<id>/retry re-queues one.
 ```
 
 ---
@@ -168,4 +167,4 @@ FIX:
 - [ ] Auth enabled? If dataset has RLS, ensure `kitsuden_enable_auth` was called.
 - [ ] Dependencies satisfied? If installing a kon, install upstream kons first.
 - [ ] Valkey running? If dispatching workers, verify queue health.
-- [ ] TOON needed? If expecting >25 records, set `format: "toon"`.
+- [ ] Need JSON for code? Results default to the shortest lossless format (`auto`); pass `format: "json"` to force compact JSON.

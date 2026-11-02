@@ -8,6 +8,7 @@
  * - GET /api/v1/identities -> alias for agents list
  */
 
+import { normalizarScopes } from "@kitsuden/shared";
 import { desc, eq, sql, and } from "drizzle-orm";
 import { Hono } from "hono";
 
@@ -66,15 +67,24 @@ const agentsV1Router = new Hono<{ Variables: AppVariables }>()
   .post("/agents", async (c) => {
     try {
       const body = await c.req.json();
-      const { name, description, model, enabled } = body;
+      const { name, description, model, enabled, scopes } = body;
 
       if (!name) {
         return c.json({ error: "Name is required" }, 400);
       }
 
+      // Sin scopes, solo conectar: el agente del panel no podía usar ninguna
+      // herramienta. Misma validación que POST /api/admin/agents.
+      let validScopes: string[];
+      try {
+        validScopes = normalizarScopes(scopes ?? ["mcp:connect"]);
+      } catch (err) {
+        return c.json({ error: (err as Error).message }, 400);
+      }
+
       // Import generateAgentApiKey
       const { generateAgentApiKey } = await import("../services/agent-auth");
-      const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey("custom");
+      const { plainKey, keyHash, keyPrefix, keyId, algorithm } = await generateAgentApiKey("custom");
 
       const [agent] = await db
         .insert(agentIdentities)
@@ -83,17 +93,21 @@ const agentsV1Router = new Hono<{ Variables: AppVariables }>()
           description: description || null,
           systemPrompt: `Model: ${model || "gpt-4"}`,
           type: "custom",
-          scopes: ["mcp:connect"],
+          scopes: validScopes,
           rateLimit: 60,
           isActive: enabled !== false,
         })
         .returning();
 
       // Create API key
+      // keyId y algorithm: sin ellos authenticateAgent (que busca por keyId) no
+      // encontraba nunca la clave y el token devuelto daba 401 siempre
       await db.insert(agentApiKeys).values({
         agentId: agent.id,
+        keyId,
         keyHash,
         keyPrefix,
+        algorithm,
       });
 
       return c.json({ agent, token: plainKey }, 201);
@@ -147,10 +161,17 @@ const agentsV1Router = new Hono<{ Variables: AppVariables }>()
         return c.json({ error: "Agent not found" }, 404);
       }
 
+      let cambios: Record<string, unknown>;
+      try {
+        cambios = cambiosDeAgente(body);
+      } catch (err) {
+        return c.json({ error: (err as Error).message }, 400);
+      }
+
       const [updated] = await db
         .update(agentIdentities)
         .set({
-          ...body,
+          ...cambios,
           updatedAt: new Date(),
         })
         .where(eq(agentIdentities.id, id))
@@ -209,12 +230,14 @@ const agentsV1Router = new Hono<{ Variables: AppVariables }>()
       }
 
       const { generateAgentApiKey } = await import("../services/agent-auth");
-      const { plainKey, keyHash, keyPrefix } = await generateAgentApiKey(agent.type || "custom");
+      const { plainKey, keyHash, keyPrefix, keyId, algorithm } = await generateAgentApiKey(agent.type || "custom");
 
       await db.insert(agentApiKeys).values({
         agentId: id,
+        keyId,
         keyHash,
         keyPrefix,
+        algorithm,
       });
 
       return c.json({ token: plainKey });
@@ -452,10 +475,17 @@ const agentsV1Router = new Hono<{ Variables: AppVariables }>()
         return c.json({ error: "Identity not found" }, 404);
       }
 
+      let cambios: Record<string, unknown>;
+      try {
+        cambios = cambiosDeAgente(body);
+      } catch (err) {
+        return c.json({ error: (err as Error).message }, 400);
+      }
+
       const [updated] = await db
         .update(agentIdentities)
         .set({
-          ...body,
+          ...cambios,
           updatedAt: new Date(),
         })
         .where(eq(agentIdentities.id, id))
@@ -630,3 +660,20 @@ export const agentsV1Routes = agentsV1Router;
 export type AgentsV1RoutesType = typeof agentsV1Router;
 
 export default agentsV1Router;
+
+/**
+ * Lo que un PATCH de agente puede cambiar. Era `.set({ ...body })`: se podía
+ * escribir cualquier columna (id, fechas) y meter scopes sin validar (fase E).
+ * Los scopes, claves y cuotas tienen sus rutas en routes/permisos-de-agentes.ts;
+ * aquí se aceptan los scopes solo validados.
+ */
+function cambiosDeAgente(body: unknown): Record<string, unknown> {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const cambios: Record<string, unknown> = {};
+  for (const k of ["name", "description", "systemPrompt", "type", "isActive", "capabilities", "allowedTools"]) {
+    if (b[k] !== undefined) cambios[k] = b[k];
+  }
+  if (b.enabled !== undefined && b.isActive === undefined) cambios.isActive = b.enabled !== false;
+  if (b.scopes !== undefined) cambios.scopes = normalizarScopes(b.scopes);
+  return cambios;
+}

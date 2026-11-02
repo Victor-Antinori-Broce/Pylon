@@ -6,7 +6,7 @@
  *   - Explorer table CRUD (list, create, update, delete)
  *   - Schema introspection (JSON Schema)
  *   - Module management (list, toggle)
- *   - TOON encoding (AI token optimization)
+ *   - Compact results: compact JSON, TOON or TRON, whichever is shortest without loss
  *   - Generic API escape hatch
  *
  * Transports: SSE (legacy) + Streamable HTTP (2025 spec)
@@ -18,6 +18,7 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
@@ -28,10 +29,11 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+import { META_FORMATO } from "./formato.js";
 import { DOMAIN_TOOL_DEFINITIONS, runDomainTool } from "./herramientas-de-dominio.js";
+import { encodeToon } from "./toon.js";
 
 const app = new Hono();
 
@@ -42,6 +44,21 @@ const app = new Hono();
 const API_URL = process.env.KITSUDEN_API_URL || "http://localhost:3000";
 const API_TOKEN = process.env.KITSUDEN_API_TOKEN || "";
 const PORT = parseInt(process.env.PORT || "3002");
+/**
+ * Solo en local (auditoría 2026-10-25). Este servidor no autentica a quien le
+ * habla y llama a la API con el token del operador: escuchando en todas las
+ * interfaces y con CORS `*`, cualquier máquina de la red —o una web abierta en
+ * el navegador— lo usaba como proxy con ese token. Ahora escucha en
+ * 127.0.0.1, sin CORS, y solo acepta un `Host` local (contra DNS rebinding).
+ * `MCP_HOST` / `MCP_ALLOWED_HOSTS` lo abren si de verdad hace falta.
+ */
+const HOSTNAME = process.env.MCP_HOST || "127.0.0.1";
+const HOSTS_PERMITIDOS = new Set(
+  (process.env.MCP_ALLOWED_HOSTS || "localhost,127.0.0.1,[::1]")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean)
+);
 const SERVER_NAME = "kitsuden-mcp-server";
 const SERVER_VERSION = "1.0.0";
 
@@ -49,22 +66,39 @@ const SERVER_VERSION = "1.0.0";
 // API Client Helper
 // ═══════════════════════════════════════════════════════════════
 
+type FormatoPedido = "json" | "toon" | "tron" | "auto";
+
+const ACCEPT_DE: Record<FormatoPedido, string> = {
+  json: "application/json",
+  toon: "application/vnd.toon",
+  tron: "application/vnd.tron",
+  // La API elige, por respuesta, el más corto que vuelva a dar los mismos datos
+  auto: "application/vnd.kitsuden.auto",
+};
+
 async function apiRequest(
   path: string,
   method: string = "GET",
   body?: any,
-  format: "json" | "toon" = "json"
+  format: FormatoPedido = "json"
 ): Promise<any> {
+  return (await apiRequestConFormato(path, method, body, format)).data;
+}
+
+/** Como `apiRequest`, y además en qué formato vino el cuerpo (cabecera X-Kitsuden-Format). */
+async function apiRequestConFormato(
+  path: string,
+  method: string,
+  body: any,
+  format: FormatoPedido
+): Promise<{ data: any; formato: string | null }> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    Accept: ACCEPT_DE[format] ?? ACCEPT_DE.json,
   };
 
   if (API_TOKEN) {
     headers["Authorization"] = `Bearer ${API_TOKEN}`;
-  }
-
-  if (format === "toon") {
-    headers["Accept"] = "application/vnd.toon";
   }
 
   const url = `${API_URL}/api${path}`;
@@ -79,49 +113,29 @@ async function apiRequest(
     throw new Error(`API ${method} ${path} failed (${res.status}): ${error}`);
   }
 
-  if (res.status === 204) return null;
+  if (res.status === 204) return { data: null, formato: null };
 
   const contentType = res.headers.get("content-type") || "";
+  const formato = res.headers.get("x-kitsuden-format");
   // La guía para agentes (`/llms.txt`) es Markdown: sin esto `res.json()`
   // lanzaba y la herramienta que la sirve fallaba con un error de JSON.
-  if (contentType.includes("application/vnd.toon") || !contentType.includes("json")) {
-    return await res.text();
+  // TOON y TRON llegan como texto y así se pasan al agente.
+  if (!contentType.includes("json")) {
+    return { data: await res.text(), formato };
   }
 
-  return res.json();
+  return { data: await res.json(), formato: "json" };
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TOON Encoder (local, no API needed)
-// ═══════════════════════════════════════════════════════════════
-
-function encodeTOON(data: any, prefix = "", lines: string[] = []): string[] {
-  if (data === null || data === undefined) return lines;
-
-  if (Array.isArray(data)) {
-    for (let i = 0; i < data.length; i++) {
-      encodeTOON(data[i], `${prefix}[${i}]`, lines);
-    }
-    return lines;
-  }
-
-  if (typeof data === "object") {
-    for (const [key, value] of Object.entries(data)) {
-      const path = prefix ? `${prefix}.${key}` : key;
-      encodeTOON(value, path, lines);
-    }
-    return lines;
-  }
-
-  lines.push(`${prefix}:${String(data)}`);
-  return lines;
-}
-
-function toTOON(data: any): string {
-  if (Array.isArray(data)) {
-    return data.map((item) => encodeTOON(item).join("\n")).join("\n---\n") + "\n";
-  }
-  return encodeTOON(data).join("\n") + "\n";
+/**
+ * Pide a la API en `auto` y devuelve el resultado MCP con el texto tal cual
+ * (JSON compacto, TOON o TRON) y su formato en `_meta`.
+ */
+async function volcar(path: string, method: string = "GET", body?: any, format: FormatoPedido = "auto") {
+  const { data, formato: deLaApi } = await apiRequestConFormato(path, method, body, format);
+  const formato = typeof data === "string" ? (deLaApi ?? "text") : "json";
+  const text = typeof data === "string" ? data : JSON.stringify(data);
+  return { content: [{ type: "text", text }], _meta: { [META_FORMATO]: formato } };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -129,7 +143,11 @@ function toTOON(data: any): string {
 // ═══════════════════════════════════════════════════════════════
 
 app.use(logger());
-app.use(cors({ origin: "*" }));
+app.use(async (c, next) => {
+  const host = (c.req.header("host") || "").toLowerCase().replace(/:\d+$/, "");
+  if (!HOSTS_PERMITIDOS.has(host)) return c.json({ error: "Host not allowed" }, 403);
+  await next();
+});
 
 // Health check
 app.get("/health", (c) => {
@@ -199,9 +217,10 @@ const TOOL_DEFINITIONS = [
         filter_value: { type: "string", description: "Filter value" },
         format: {
           type: "string",
-          enum: ["json", "toon"],
-          description: "Response format. Use 'toon' for 60% fewer tokens.",
-          default: "json",
+          enum: ["auto", "json", "toon", "tron"],
+          description:
+            "Result format. 'auto' (default): the API returns compact JSON, TOON or TRON, whichever is shortest for this result and decodes back to the same data. 'json' forces compact JSON.",
+          default: "auto",
         },
       },
       required: ["table"],
@@ -286,7 +305,7 @@ const TOOL_DEFINITIONS = [
   {
     name: "kitsuden_encode_toon",
     description:
-      "Encode any JSON data into TOON (Token-Optimized Object Notation) format. TOON uses ~60% fewer LLM tokens than JSON. Use this when you need to include large datasets in your context.",
+      "Encode JSON data as TOON (https://toonformat.dev). TOON is shorter than compact JSON for flat, uniform lists of objects and usually longer for nested records; the result says how many characters each takes.",
     inputSchema: {
       type: "object",
       properties: {
@@ -323,9 +342,9 @@ const TOOL_DEFINITIONS = [
         body: { type: "object", description: "Request body for POST/PUT/PATCH" },
         format: {
           type: "string",
-          enum: ["json", "toon"],
-          description: "Response format",
-          default: "json",
+          enum: ["auto", "json", "toon", "tron"],
+          description: "Response format ('auto' = shortest lossless of compact JSON / TOON / TRON)",
+          default: "auto",
         },
       },
       required: ["path"],
@@ -600,28 +619,28 @@ function createStandaloneMcpServer() {
       if (uri === "kitsuden://tables") {
         const data = await apiRequest("/explorer/tables");
         return {
-          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
+          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data) }],
         };
       }
 
       if (uri === "kitsuden://modules") {
         const data = await apiRequest("/modules");
         return {
-          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
+          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data) }],
         };
       }
 
       if (uri === "kitsuden://health") {
         const data = await apiRequest("/health");
         return {
-          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
+          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data) }],
         };
       }
 
       if (uri === "kitsuden://datasets") {
         const data = await apiRequest("/datasets");
         return {
-          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
+          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data) }],
         };
       }
 
@@ -631,7 +650,7 @@ function createStandaloneMcpServer() {
         const table = schemaMatch[1];
         const data = await apiRequest(`/explorer/schema/json/${table}`);
         return {
-          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
+          contents: [{ uri, mimeType: "application/json", text: JSON.stringify(data) }],
         };
       }
 
@@ -654,8 +673,7 @@ function createStandaloneMcpServer() {
       switch (name) {
         // ── Explorer CRUD ──
         case "kitsuden_list_tables": {
-          const data = await apiRequest("/explorer/tables");
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar("/explorer/tables");
         }
 
         case "kitsuden_query_table": {
@@ -668,7 +686,7 @@ function createStandaloneMcpServer() {
             filter_field,
             filter_op,
             filter_value,
-            format = "json",
+            format = "auto",
           } = args as any;
           const params = new URLSearchParams();
           params.set("limit", String(Math.min(limit, 100)));
@@ -679,18 +697,7 @@ function createStandaloneMcpServer() {
           if (filter_op) params.set("filter_op", filter_op);
           if (filter_value) params.set("filter_value", filter_value);
 
-          const data = await apiRequest(
-            `/explorer/${table}?${params.toString()}`,
-            "GET",
-            undefined,
-            format as any
-          );
-
-          if (format === "toon" && typeof data === "string") {
-            return { content: [{ type: "text", text: data }] };
-          }
-
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar(`/explorer/${table}?${params.toString()}`, "GET", undefined, format);
         }
 
         case "kitsuden_create_record": {
@@ -700,7 +707,7 @@ function createStandaloneMcpServer() {
             content: [
               {
                 type: "text",
-                text: `Record created successfully:\n${JSON.stringify(result, null, 2)}`,
+                text: `Record created successfully:\n${JSON.stringify(result)}`,
               },
             ],
           };
@@ -713,7 +720,7 @@ function createStandaloneMcpServer() {
             content: [
               {
                 type: "text",
-                text: `Record updated successfully:\n${JSON.stringify(result, null, 2)}`,
+                text: `Record updated successfully:\n${JSON.stringify(result)}`,
               },
             ],
           };
@@ -728,14 +735,12 @@ function createStandaloneMcpServer() {
         // ── Schema ──
         case "kitsuden_get_schema": {
           const { table } = args as any;
-          const data = await apiRequest(`/explorer/schema/json/${table}`);
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar(`/explorer/schema/json/${table}`);
         }
 
         // ── Modules ──
         case "kitsuden_list_modules": {
-          const data = await apiRequest("/modules");
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar("/modules");
         }
 
         case "kitsuden_toggle_module": {
@@ -745,7 +750,7 @@ function createStandaloneMcpServer() {
             content: [
               {
                 type: "text",
-                text: `Module '${key}' toggled:\n${JSON.stringify(result, null, 2)}`,
+                text: `Module '${key}' toggled:\n${JSON.stringify(result)}`,
               },
             ],
           };
@@ -754,16 +759,14 @@ function createStandaloneMcpServer() {
         // ── TOON ──
         case "kitsuden_encode_toon": {
           const { data } = args as any;
-          const toonOutput = toTOON(data);
-          const jsonLen = JSON.stringify(data).length;
-          const toonLen = toonOutput.length;
-          const savings = Math.round((1 - toonLen / jsonLen) * 100);
+          const toonOutput = encodeToon(data);
+          const jsonLen = (JSON.stringify(data) ?? "null").length;
 
           return {
             content: [
               {
                 type: "text",
-                text: `# TOON Encoded (${savings}% smaller than JSON)\n\n${toonOutput}`,
+                text: `# TOON (${toonOutput.length} characters; compact JSON: ${jsonLen})\n\n${toonOutput}`,
               },
             ],
           };
@@ -771,47 +774,38 @@ function createStandaloneMcpServer() {
 
         // ── Datasets (legacy) ──
         case "kitsuden_list_datasets": {
-          const data = await apiRequest("/datasets");
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar("/datasets");
         }
 
         // ── Escape Hatch ──
         case "kitsuden_api_request": {
-          const { method = "GET", path, body, format = "json" } = args as any;
-          const data = await apiRequest(path.replace(/^\/api/, ""), method, body, format as any);
-          if (typeof data === "string") {
-            return { content: [{ type: "text", text: data }] };
-          }
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          const { method = "GET", path, body, format = "auto" } = args as any;
+          return volcar(path.replace(/^\/api/, ""), method, body, format);
         }
 
         // ── Code Intelligence ──
         case "kitsuden_find_symbol": {
           const { name: symbolName } = args as any;
-          const data = await apiRequest(`/code-graph/symbol/${encodeURIComponent(symbolName)}`);
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar(`/code-graph/symbol/${encodeURIComponent(symbolName)}`);
         }
 
         case "kitsuden_file_outline": {
           const { file } = args as any;
-          const data = await apiRequest(`/code-graph/outline?file=${encodeURIComponent(file)}`);
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar(`/code-graph/outline?file=${encodeURIComponent(file)}`);
         }
 
         case "kitsuden_search_code": {
           const { pattern, limit = 50 } = args as any;
-          const data = await apiRequest(
+          return volcar(
             `/code-graph/search?q=${encodeURIComponent(pattern)}&limit=${limit}`
           );
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         case "kitsuden_graph_path": {
           const { from, to } = args as any;
-          const data = await apiRequest(
+          return volcar(
             `/code-graph/path?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
           );
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         case "kitsuden_commit_history": {
@@ -820,62 +814,55 @@ function createStandaloneMcpServer() {
           if (histPath) qs.set("path", histPath);
           if (grep) qs.set("grep", grep);
           qs.set("limit", String(limit));
-          const data = await apiRequest(`/code-graph/history?${qs.toString()}`);
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar(`/code-graph/history?${qs.toString()}`);
         }
 
         case "kitsuden_semantic_search": {
           const { query, limit = 10 } = args as any;
-          const data = await apiRequest(
+          return volcar(
             `/code-graph/semantic?q=${encodeURIComponent(query)}&limit=${limit}`
           );
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         // ── Semantic editing: dry-run unless apply:true ──
         case "kitsuden_rename_symbol": {
           const { name: symName, newName, apply = false } = args as any;
-          const data = await apiRequest("/code-graph/edit/rename", "POST", {
+          return volcar("/code-graph/edit/rename", "POST", {
             name: symName,
             newName,
             apply,
           });
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         case "kitsuden_replace_symbol_body": {
           const { name: symName, code, apply = false } = args as any;
-          const data = await apiRequest("/code-graph/edit/replace", "POST", {
+          return volcar("/code-graph/edit/replace", "POST", {
             name: symName,
             code,
             apply,
           });
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         case "kitsuden_safe_delete_symbol": {
           const { name: symName, apply = false } = args as any;
-          const data = await apiRequest("/code-graph/edit/delete", "POST", {
+          return volcar("/code-graph/edit/delete", "POST", {
             name: symName,
             apply,
           });
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         // ── Mail ──
         case "kitsuden_list_mailables": {
-          const data = await apiRequest("/mail");
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          return volcar("/mail");
         }
 
         case "kitsuden_preview_mail": {
           const { name: mailName, data: mailData, locale } = args as any;
-          const data = await apiRequest("/mail/preview", "POST", {
+          return volcar("/mail/preview", "POST", {
             name: mailName,
             data: mailData ?? {},
             locale,
           });
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         // ── Tree retrieval ──
@@ -896,13 +883,12 @@ function createStandaloneMcpServer() {
 
         case "kitsuden_read_sections": {
           const { content, query, sections, maxSections } = args as any;
-          const data = await apiRequest("/brain/tree/retrieve", "POST", {
+          return volcar("/brain/tree/retrieve", "POST", {
             content,
             query,
             sections,
             maxSections,
           });
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
         }
 
         default: {
@@ -983,7 +969,8 @@ app.get("/ide-config/:ide", (c) => {
         mcpServers: {
           kitsuden: {
             url: sseUrl,
-            env: { KITSUDEN_API_TOKEN: API_TOKEN || "<your-api-key>" },
+            // Nunca el token real: esta respuesta la puede pedir cualquiera
+            env: { KITSUDEN_API_TOKEN: "<your-api-key>" },
           },
         },
       },
@@ -997,7 +984,7 @@ app.get("/ide-config/:ide", (c) => {
             args: ["-y", "@kitsuden/mcp-server"],
             env: {
               KITSUDEN_API_URL: API_URL,
-              KITSUDEN_API_TOKEN: API_TOKEN || "<your-api-key>",
+              KITSUDEN_API_TOKEN: "<your-api-key>",
             },
           },
         },
@@ -1057,7 +1044,22 @@ app.get("/ide-config", (c) => {
 // Startup
 // ═══════════════════════════════════════════════════════════════
 
-console.log(`
+/**
+ * `--stdio` (o `MCP_TRANSPORT=stdio`): el cliente lanza este proceso y le habla
+ * por stdin/stdout, sin puerto. Es lo que usan `.mcp.json` y los agentes que
+ * corren en paralelo (docs/agents/orca.md): cada uno arranca el suyo con su
+ * propio token, y el registro de auditoría los separa. En este modo stdout es
+ * el canal JSON-RPC: el cartel va a stderr y no se abre el servidor HTTP.
+ */
+const POR_STDIO = process.argv.includes("--stdio") || process.env.MCP_TRANSPORT === "stdio";
+
+if (POR_STDIO) {
+  await mcpServer.connect(new StdioServerTransport());
+  console.error(
+    `Kitsuden MCP v${SERVER_VERSION} por stdio · API ${API_URL} · ` +
+      (API_TOKEN ? "token configurado" : "sin token (KITSUDEN_API_TOKEN)")
+  );
+} else console.log(`
 ╔══════════════════════════════════════════════╗
 ║   🧙 Kitsuden MCP Server v${SERVER_VERSION}            ║
 ║   Enterprise AI Agent Integration            ║
@@ -1077,7 +1079,11 @@ console.log(`
   Resources: ${RESOURCE_DEFINITIONS.length} + ${RESOURCE_TEMPLATE_DEFINITIONS.length} templates
 `);
 
-export default {
-  port: PORT,
-  fetch: app.fetch,
-};
+// Bun solo abre el puerto si el export por defecto trae `fetch`
+export default POR_STDIO
+  ? {}
+  : {
+      port: PORT,
+      hostname: HOSTNAME,
+      fetch: app.fetch,
+    };

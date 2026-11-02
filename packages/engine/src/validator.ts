@@ -27,6 +27,8 @@
  * ```
  */
 
+import { probarPatron } from "@kitsuden/shared";
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS Y CONFIGURACIÓN
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -194,8 +196,8 @@ function validateRule(
 
   // Validar pattern
   if (rule.pattern && typeof value === "string") {
-    const regex = new RegExp(rule.pattern);
-    if (!regex.test(value)) {
+    // Sin ReDoS: ver @kitsuden/shared patron-seguro (auditoría 2026-10-25)
+    if (!probarPatron(rule.pattern, value)) {
       errors.push({
         field: fieldName,
         path: fieldPath,

@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 /**
  * Auth Store (Svelte 5 Runes)
  *
@@ -24,6 +25,7 @@ let loading = $state(false);
 let error = $state<string | null>(null);
 let checked = $state(false);
 let initialized = $state(true); // Default to true to prevent flash of setup screen
+let setupTokenRequired = $state(false);
 
 // Getters for readonly access (cannot export derived directly)
 export function getUser() {
@@ -44,12 +46,25 @@ export function isLoggedIn() {
 export function isAdmin() {
   return user?.role === "admin";
 }
+/**
+ * Quien puede usar el panel: `admin` o `editor` (el «staff» de la API, ver
+ * apps/api/src/middleware/auth-guard.ts). El editor gestiona contenido —blog,
+ * medios, páginas— y no ve la parte de sistema. Antes el login solo admitía
+ * admin, así que dar el rol de editor desde Ajustes no servía para nada.
+ */
+export function isStaff() {
+  return user?.role === "admin" || user?.role === "editor";
+}
 export function isInitialized() {
   return initialized;
 }
+/** The API asks for the one-time token printed in its log (production, public mode). */
+export function needsSetupToken() {
+  return setupTokenRequired;
+}
 
 /**
- * Check if the system is initialized (has at least one user)
+ * Check if the system is initialized (has at least one administrator)
  */
 export async function checkInit() {
   try {
@@ -58,6 +73,7 @@ export async function checkInit() {
     if (data.initialized !== undefined) {
       initialized = data.initialized;
     }
+    setupTokenRequired = data.setupTokenRequired === true;
   } catch {
     initialized = true; // Fallback assumption
   }
@@ -111,7 +127,7 @@ export async function signIn(email: string, password: string) {
        * piden cosas distintas —la segunda, un botón para reenviar el enlace—
        * y sin el código solo quedaba comparar el mensaje en inglés.
        */
-      const fallo = new Error(body.message || body.error || "Invalid credentials") as Error & {
+      const fallo = new Error(body.message || body.error || t("auth.credencialesInvalidas")) as Error & {
         code?: string;
       };
       fallo.code = body.code;
@@ -153,7 +169,7 @@ export async function requestPasswordReset(email: string) {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || "No se pudo solicitar el restablecimiento");
+    throw new Error(body.message || t("auth.noSePudoSolicitarRestablecimiento"));
   }
 }
 
@@ -167,7 +183,7 @@ export async function resetPassword(token: string, newPassword: string) {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || "No se pudo cambiar la contraseña");
+    throw new Error(body.message || t("auth.noSePudoCambiarContrasena"));
   }
 }
 
@@ -181,7 +197,7 @@ export async function resendVerification(email: string) {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || "No se pudo reenviar el correo");
+    throw new Error(body.message || t("auth.noSePudoReenviarCorreo"));
   }
 }
 
@@ -235,7 +251,7 @@ export async function signInWithProvider(providerId: string, callbackURL = "/") 
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data?.url) {
       throw new Error(
-        data?.message || data?.error || `No se pudo iniciar sesión con ${providerId}`
+        data?.message || data?.error || t("auth.noSePudoIniciarSesionCon", { providerId })
       );
     }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * BlockEditor.svelte — Edit form for a single block's data
    */
@@ -94,7 +95,7 @@
     opcionesRemotas = { ...opcionesRemotas, [clave]: [] };
 
     try {
-      const res = await fetch(`/api${fuente.endpoint}`, { credentials: "same-origin" });
+      const res = await fetch(`${import.meta.env.VITE_API_URL ?? ""}/api${fuente.endpoint}`, { credentials: "include" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const cuerpo = await res.json();
@@ -222,7 +223,7 @@
       updateField(key, parsed);
       delete jsonErrors[key];
     } catch {
-      jsonErrors[key] = "Invalid JSON";
+      jsonErrors[key] = t("blockEditor.invalidJson");
     }
   }
 
@@ -252,7 +253,7 @@
           </div>
         {/if}
         <div>
-          <h3 class="text-sm font-semibold text-kitsuden-text">{blockDef?.label || "Block"}</h3>
+          <h3 class="text-sm font-semibold text-kitsuden-text">{blockDef?.label || t("blockEditor.block")}</h3>
           <p class="text-[10px] text-kitsuden-subtle font-mono">{block.type}</p>
         </div>
       </div>
@@ -324,10 +325,10 @@
                 type="button"
                 class="btn-ghost btn-sm shrink-0 gap-1.5"
                 onclick={() => (campoEligiendo = field.key)}
-                title="Elegir de la biblioteca o subir una"
+                title={t("blockEditor.elegirDeLaBibliotecaO")}
               >
                 <ImageIcon class="h-4 w-4" />
-                Biblioteca
+                {t("blockEditor.biblioteca")}
               </button>
             {/if}
           </div>
@@ -373,7 +374,7 @@
               onchange={(e) => updateField(field.key, e.currentTarget.value)}
               class="select"
             >
-              <option value="">— elige —</option>
+              <option value="">{t("blockEditor.elige")}</option>
               {#each opcionesRemotas[field.key] || [] as opt}
                 <option value={opt.value}>{opt.label}</option>
               {/each}
@@ -381,12 +382,11 @@
 
             {#if fallosRemotos[field.key]}
               <p class="text-xs text-kitsuden-accent-2 mt-1">
-                No se pudieron cargar las opciones ({fallosRemotos[field.key]}). Puede que el kon
-                que las aporta esté apagado.
+                {t("blockEditor.noSePudieronCargarLas", { v: fallosRemotos[field.key] })}
               </p>
             {:else if opcionesRemotas[field.key]?.length === 0}
               <p class="text-xs text-kitsuden-text-dim mt-1">
-                Todavía no hay ninguna creada. Créala primero en su propia pantalla.
+                {t("blockEditor.todaviaNoHayNingunaCreada")}
               </p>
             {/if}
           {/if}
@@ -452,7 +452,7 @@
           </span>
 
           {#if imagenes.length === 0}
-            <p class="text-xs text-kitsuden-subtle italic">Sin imágenes todavía.</p>
+            <p class="text-xs text-kitsuden-subtle italic">{t("blockEditor.sinImagenesTodavia")}</p>
           {:else}
             <div class="space-y-2">
               {#each imagenes as img, i (img.mediaId ?? img.url ?? i)}
@@ -468,13 +468,13 @@
                     <input
                       value={img.alt ?? ""}
                       oninput={(e) => editarImagen(field.key, i, "alt", e.currentTarget.value)}
-                      placeholder="Texto alternativo (accesibilidad y SEO)"
+                      placeholder={t("blockEditor.textoAlternativoAccesibilidadYSeo")}
                       class="input w-full text-xs"
                     />
                     <input
                       value={img.caption ?? ""}
                       oninput={(e) => editarImagen(field.key, i, "caption", e.currentTarget.value)}
-                      placeholder="Pie de foto (opcional)"
+                      placeholder={t("blockEditor.pieDeFotoOpcional")}
                       class="input w-full text-xs"
                     />
                   </div>
@@ -485,7 +485,7 @@
                       class="btn-ghost px-1.5 py-0.5 text-xs disabled:opacity-30"
                       disabled={i === 0}
                       onclick={() => moverImagen(field.key, i, -1)}
-                      title="Subir"
+                      title={t("blockEditor.subir")}
                     >
                       ↑
                     </button>
@@ -494,7 +494,7 @@
                       class="btn-ghost px-1.5 py-0.5 text-xs disabled:opacity-30"
                       disabled={i === imagenes.length - 1}
                       onclick={() => moverImagen(field.key, i, 1)}
-                      title="Bajar"
+                      title={t("blockEditor.bajar")}
                     >
                       ↓
                     </button>
@@ -502,7 +502,7 @@
                       type="button"
                       class="btn-ghost px-1.5 py-0.5 text-xs text-kitsuden-accent-2"
                       onclick={() => quitarImagen(field.key, i)}
-                      title="Quitar"
+                      title={t("blockEditor.quitar")}
                     >
                       <Trash2 class="h-3 w-3" />
                     </button>
@@ -518,7 +518,7 @@
             onclick={() => (galeriaEligiendo = field.key)}
           >
             <ImageIcon class="h-3.5 w-3.5" />
-            {imagenes.length === 0 ? "Elegir o subir imágenes" : "Añadir más"}
+            {imagenes.length === 0 ? t("blockEditor.elegirOSubirImagenes") : t("blockEditor.anadirMas")}
           </button>
         {/if}
 
@@ -553,15 +553,15 @@
     <button
       onclick={onDelete}
       class="btn-ghost btn-sm text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/10"
-      ><Trash2 class="w-3.5 h-3.5" /> Remove</button
+      ><Trash2 class="w-3.5 h-3.5" /> {t("blockEditor.remove")}</button
     >
-    <button onclick={onClose} class="btn-primary btn-sm"><Check class="w-3.5 h-3.5" /> Done</button>
+    <button onclick={onClose} class="btn-primary btn-sm"><Check class="w-3.5 h-3.5" /> {t("blockEditor.done")}</button>
   </div>
 </div>
 
 <MediaPicker
   open={campoEligiendo !== null}
-  title="Elegir imagen del bloque"
+  title={t("blockEditor.elegirImagenDelBloque")}
   onSelect={(media) => {
     if (campoEligiendo) updateField(campoEligiendo, media.url);
     campoEligiendo = null;
@@ -577,7 +577,7 @@
 <MediaPicker
   open={galeriaEligiendo !== null}
   multiple
-  title="Imágenes de la galería"
+  title={t("blockEditor.imagenesDeLaGaleria")}
   selectedIds={galeriaEligiendo
     ? imagenesDe(galeriaEligiendo)
         .map((img) => img.mediaId)

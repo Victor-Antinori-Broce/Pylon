@@ -1,0 +1,7 @@
+# Ignored files copied into each new worktree (works with Orca).
+#
+# .env holds where the server reaches the Kitsuden API and, optionally, the
+# site key. Keep DEVELOPMENT values in the primary checkout's .env: a
+# production site key belongs in the deployment's environment, never here,
+# because every agent worktree gets a copy of this file.
+.env

@@ -317,7 +317,7 @@ test.describe.serial("🔴 MCP Server - Model Context Protocol", () => {
       });
       const data = await res.json();
       expect(data.result.content[0].type).toBe("text");
-      expect(data.result.content[0].text).toContain("Job dispatched"); // El BullMQ debería devolver el Job ID
+      expect(data.result.content[0].text).toContain("Job dispatched"); // La cola de Postgres devuelve el id del trabajo
     });
 
     test("Should fail gracefully 'kitsuden_dispatch_worker' with unknown queue", async ({

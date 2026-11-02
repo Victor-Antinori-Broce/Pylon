@@ -8,14 +8,20 @@ import { describe, it, expect } from "bun:test";
 
 import { buildAdminRegistry, getKonAdminConfig } from "../services/admin-registry";
 import { scanPackages } from "../services/scanner";
+import { konsInstalados } from "../lib/kons-instalados";
+
+// Sin kons instalados (clon limpio del núcleo) no hay nada que escanear.
+const hayKons = konsInstalados().some((k) => k.origen !== "nucleo" && Boolean(k.ruta));
 
 describe("Admin Registry", () => {
   describe("Service", () => {
+    // El primero construye el registro EN FRÍO (escanea todos los kons
+    // instalados): con los 18 de producción pasa de los 5 s de bun por defecto.
     it("should build registry without errors", async () => {
       const registry = await buildAdminRegistry();
       expect(registry).toBeDefined();
       expect(Array.isArray(registry)).toBe(true);
-    });
+    }, 30_000);
 
     it("should return kons with required fields", async () => {
       const registry = await buildAdminRegistry();
@@ -101,7 +107,7 @@ describe("Admin Registry", () => {
   });
 
   describe("Scanner Integration", () => {
-    it("should scan kons successfully", async () => {
+    (hayKons ? it : it.skip)("should scan kons successfully", async () => {
       const kons = await scanPackages("kons");
       expect(kons).toBeDefined();
       expect(Array.isArray(kons)).toBe(true);

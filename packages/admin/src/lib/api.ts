@@ -547,8 +547,9 @@ class ApiClient {
   }
 
   // ── Page Builder (Blocks) ──
+  // La API responde { docs, totalDocs } (packages/core/blocks/blocks.routes.ts).
   getPages() {
-    return this.request<{ pages: any[] }>("/page-builder/pages");
+    return this.request<{ docs: any[]; totalDocs: number }>("/page-builder/pages");
   }
   getPage(id: string) {
     return this.request<any>(`/page-builder/pages/${id}`);
@@ -580,14 +581,16 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
-  updateBlock(pageId: string, blockId: string, data: Partial<any>) {
-    return this.request<any>(`/page-builder/pages/${pageId}/blocks/${blockId}`, {
+  // Los bloques se editan y borran por su id, sin la página: PATCH/DELETE
+  // /page-builder/blocks/:id. La ruta con la página delante no existe (404).
+  updateBlock(_pageId: string, blockId: string, data: Partial<any>) {
+    return this.request<any>(`/page-builder/blocks/${blockId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
   }
-  deleteBlock(pageId: string, blockId: string) {
-    return this.request<{ deleted: boolean }>(`/page-builder/pages/${pageId}/blocks/${blockId}`, {
+  deleteBlock(_pageId: string, blockId: string) {
+    return this.request<{ deleted: boolean }>(`/page-builder/blocks/${blockId}`, {
       method: "DELETE",
     });
   }

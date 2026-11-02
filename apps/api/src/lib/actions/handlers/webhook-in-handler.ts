@@ -5,7 +5,7 @@
  * Validates signatures, parses requests, and executes associated actions.
  */
 
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 
 import type { Action, ActionContext, ActionResult } from "../types";
 
@@ -100,11 +100,19 @@ function validateHmacSignature(request: WebhookInRequest, config: { secret?: str
   }
 }
 
-function validateBearerToken(request: WebhookInRequest, config: { secret?: string }): boolean {
+export function validateBearerToken(
+  request: WebhookInRequest,
+  config: { secret?: string }
+): boolean {
   if (!config.secret) return true;
 
   const authHeader = request.headers["authorization"] || "";
   const token = authHeader.replace("Bearer ", "").trim();
 
-  return token === config.secret;
+  // En tiempo constante, como la firma HMAC de arriba: `===` corta en el
+  // primer carácter distinto y el tiempo de respuesta delata el prefijo.
+  // Se comparan los HASHES para que la longitud tampoco se filtre.
+  const a = createHash("sha256").update(token).digest();
+  const b = createHash("sha256").update(config.secret).digest();
+  return timingSafeEqual(a, b);
 }

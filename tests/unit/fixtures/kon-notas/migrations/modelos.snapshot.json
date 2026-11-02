@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "modelos": {
+    "category": {
+      "nombre": "category",
+      "tabla": "categories",
+      "kon": "notas",
+      "acceso": {
+        "leer": "publico",
+        "escribir": "staff"
+      },
+      "columnas": [
+        {
+          "clave": "name",
+          "columna": "name",
+          "tipo": "varchar(80)",
+          "nulo": false,
+          "porDefecto": null,
+          "check": null,
+          "unico": true,
+          "indice": false
+        },
+        {
+          "clave": "color",
+          "columna": "color",
+          "tipo": "varchar(20)",
+          "nulo": true,
+          "porDefecto": null,
+          "check": null,
+          "unico": false,
+          "indice": false
+        }
+      ]
+    },
+    "note": {
+      "nombre": "note",
+      "tabla": "notes",
+      "kon": "notas",
+      "acceso": {
+        "leer": "dueno",
+        "escribir": "dueno"
+      },
+      "columnas": [
+        {
+          "clave": "title",
+          "columna": "title",
+          "tipo": "varchar(200)",
+          "nulo": false,
+          "porDefecto": null,
+          "check": null,
+          "unico": false,
+          "indice": false
+        },
+        {
+          "clave": "body",
+          "columna": "body",
+          "tipo": "text",
+          "nulo": true,
+          "porDefecto": null,
+          "check": null,
+          "unico": false,
+          "indice": false
+        },
+        {
+          "clave": "status",
+          "columna": "status",
+          "tipo": "text",
+          "nulo": false,
+          "porDefecto": "'draft'",
+          "check": "\"status\" IN ('draft', 'published')",
+          "unico": false,
+          "indice": false
+        },
+        {
+          "clave": "priority",
+          "columna": "priority",
+          "tipo": "integer",
+          "nulo": false,
+          "porDefecto": "0",
+          "check": "\"priority\" >= 0 AND \"priority\" <= 5",
+          "unico": false,
+          "indice": false
+        },
+        {
+          "clave": "pinned",
+          "columna": "pinned",
+          "tipo": "boolean",
+          "nulo": false,
+          "porDefecto": "false",
+          "check": null,
+          "unico": false,
+          "indice": false
+        },
+        {
+          "clave": "dueAt",
+          "columna": "due_at",
+          "tipo": "timestamp with time zone",
+          "nulo": true,
+          "porDefecto": null,
+          "check": null,
+          "unico": false,
+          "indice": false
+        },
+        {
+          "clave": "slug",
+          "columna": "slug",
+          "tipo": "varchar(80)",
+          "nulo": true,
+          "porDefecto": null,
+          "check": null,
+          "unico": true,
+          "indice": false
+        },
+        {
+          "clave": "meta",
+          "columna": "meta",
+          "tipo": "jsonb",
+          "nulo": true,
+          "porDefecto": null,
+          "check": null,
+          "unico": false,
+          "indice": false
+        }
+      ]
+    }
+  }
+}

@@ -94,7 +94,10 @@ apiKeysRoutes.post("/", zValidator("json", createKeySchema), async (c) => {
     description: "Machine API key created via /api/keys",
     scopes: ["admin"],
     rateLimit: 1000,
-    expiresInDays: body.expiresInDays ?? undefined,
+    // Una clave `admin` sin caducidad es la puerta trasera perfecta: si no se
+    // pide otra cosa, caduca a los 90 días (auditoría 2026-10-25). `null`
+    // explícito sigue pidiendo una sin caducidad.
+    expiresInDays: body.expiresInDays === undefined ? 90 : (body.expiresInDays ?? undefined),
   });
 
   c.header("Deprecation", "kitsuden_sk_*; kitsuden_agent_*");

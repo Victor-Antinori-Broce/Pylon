@@ -18,6 +18,7 @@ import { logger } from "../lib/logger";
 
 import { scanPackages, KitsudenManifest } from "./scanner";
 import { introspectTable, type IntrospectedColumn } from "./schema-introspector";
+import { fichero } from "../lib/fichero";
 
 // Resolve workspace root (Docker vs dev)
 function getPackagesRoot(): string {
@@ -786,7 +787,7 @@ async function detectCustomView(konId: string): Promise<boolean> {
   const viewPath = getViewPath(konId);
 
   // Primary: the mapped view path (handles all special cases)
-  if (await Bun.file(join(process.cwd(), "../../packages/admin/src/views", viewPath)).exists()) {
+  if (await fichero(join(process.cwd(), "../../packages/admin/src/views", viewPath)).exists()) {
     return true;
   }
 
@@ -795,7 +796,7 @@ async function detectCustomView(konId: string): Promise<boolean> {
     ? viewPath.replace(/\/[^/]+\.svelte$/, "/index.svelte")
     : `${viewPath.replace(/\.svelte$/, "")}/index.svelte`;
 
-  if (await Bun.file(join(process.cwd(), "../../packages/admin/src/views", indexPath)).exists()) {
+  if (await fichero(join(process.cwd(), "../../packages/admin/src/views", indexPath)).exists()) {
     return true;
   }
 

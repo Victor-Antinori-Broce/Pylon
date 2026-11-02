@@ -1,0 +1,25 @@
+{
+  "id": "kon-example",
+  "name": "Example Kon",
+  "version": "1.0.0",
+  "type": "kon",
+  "description": "A minimal example kon demonstrating the package structure.",
+  "category": "optional",
+  "mount": {
+    "path": "/api/example",
+    "requireAuth": true
+  },
+  "dependencies": {
+    "kons": []
+  },
+  "tables": [
+    {
+      "name": "exampleItems",
+      "label": "Example Items",
+      "icon": "box",
+      "description": "Sample table for the example kon",
+      "searchableFields": ["title"],
+      "filterableFields": ["status"]
+    }
+  ]
+}

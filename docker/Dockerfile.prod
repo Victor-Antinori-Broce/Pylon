@@ -36,6 +36,13 @@ WORKDIR /app
 RUN npm install -g pnpm@9.15.4
 
 # ===================================================================
+# Kons: contexto por defecto VACÍO. `--build-context kons=<ruta>` (o
+# `additional_contexts` en compose) lo sustituye por un checkout de
+# kitsuden-kons; ver la etapa `dependencies`.
+# ===================================================================
+FROM scratch AS kons
+
+# ===================================================================
 # STAGE 2: Dependencies - Install all dependencies with cache
 # ===================================================================
 FROM base AS dependencies
@@ -59,6 +66,27 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # niveles (`packages/core/*`, `packages/kons/*`, `packages/starters/*`).
 COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
 
+# ── Kons instalados (fase C) ───────────────────────────────────────────────
+#
+# Los kons ya no viven en este repositorio (repo kitsuden-kons). La imagen
+# instala los que diga KITSUDEN_KONS ("blog,wiki,…"), copiándolos del contexto
+# de build ADICIONAL `kons`:
+#
+#   docker build --build-context kons=../kitsuden-kons #     --build-arg KITSUDEN_KONS="blog,wiki" -f docker/Dockerfile.prod --target api .
+#
+# (con compose: `additional_contexts: { kons: … }` y `args: { KITSUDEN_KONS: … }`).
+# Por defecto el contexto es la etapa vacía `kons` (arriba) y la lista está
+# vacía: la imagen pública lleva solo el núcleo. Las copias de packages/kons/kon-* del
+# árbol de trabajo NO entran (.dockerignore): lo que hay en la imagen es lo
+# declarado, no lo que haya en la carpeta de quien construye.
+#
+# Va ANTES de `pnpm install` porque cada kon es un paquete del workspace con sus
+# propias dependencias. También escribe /app/kitsuden.kons.json, que es lo que
+# la API lee para saber qué está instalado.
+ARG KITSUDEN_KONS=""
+COPY docker/instalar-kons.mjs ./docker/instalar-kons.mjs
+RUN --mount=type=bind,from=kons,target=/kons-src     KITSUDEN_KONS="${KITSUDEN_KONS}" node docker/instalar-kons.mjs /kons-src
+
 # Install dependencies with BuildKit cache mount for pnpm store
 # This makes reinstalls almost instant on rebuilds
 #
@@ -75,9 +103,17 @@ COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.
 # Los scripts de las dependencias (sharp, esbuild, msgpackr...) no se pierden:
 # `builder` hace `pnpm rebuild` cuando ya tiene el codigo completo, y es de
 # `builder` —no de esta etapa— de donde el runtime copia `node_modules`.
+#
+# --frozen-lockfile y SIN respaldo (auditoría 2026-10-25): el `|| pnpm install`
+# de antes volvía a resolver versiones si el lockfile no casaba, y la imagen de
+# producción podía llevar dependencias que nadie había revisado. Ahora un
+# lockfile desfasado para el build con ERR_PNPM_OUTDATED_LOCKFILE. Ojo con los
+# kons de KITSUDEN_KONS: sus package.json vienen de kitsuden-kons y tienen que
+# estar en pnpm-lock.yaml TAL CUAL (instalarlos en el árbol con `kitsuden kon
+# add`, `pnpm install` y subir el lockfile antes de construir).
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     --mount=type=cache,target=/root/.cache \
-    pnpm install --prefer-offline --ignore-scripts || pnpm install --ignore-scripts
+    pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 # ===================================================================
 # STAGE 3: Builder - Compile everything
@@ -115,14 +151,28 @@ RUN --mount=type=cache,target=/app/packages/sdk/.tsbuildinfo \
 RUN --mount=type=cache,target=/app/packages/mcp-server/.tsbuildinfo \
     pnpm --filter @kitsuden/mcp-server build
 
-# Build kon sub-packages that have build scripts
-# Note: Kons function as TS source via Bun, so dist/ is optional.
-# This step is allowed to fail for individual kons without breaking the build.
-RUN pnpm --filter "@kitsuden/kon-*" build 2>&1 || echo "Warning: Some kons failed to build, continuing..."
+# Compilar (tsc) los kons que tienen script de build.
+#
+# Bun los ejecuta como fuente TS, asi que su dist/ no se usa en ejecucion: este
+# paso es la COMPROBACION DE TIPOS de los kons. Antes terminaba en
+# `|| echo "Warning: Some kons failed to build, continuing..."`, que convertia
+# cualquier kon roto en un aviso perdido en el log del build (asi paso con
+# kon-broadcast, auditoria 2026-10-18). Sin el `||`, un kon que no compila
+# para el build: es lo que queremos.
+#
+# Sin kons instalados no hay nada que filtrar: pnpm avisa y sale con 0.
+RUN pnpm --filter "@kitsuden/kon-*" build
 
 # Build API
+#
+# NODE_ENV=production AL COMPILAR, no solo al ejecutar: `bun build` sustituye
+# la expresión literal `process.env.NODE_ENV` por el valor que tiene en este
+# momento, y sin esto se congelaba como "development" (2026-10-12: guardas de
+# producción compiladas como `if (false)` en un contenedor con
+# NODE_ENV=production). El código ya lo lee en ejecución
+# (apps/api/src/lib/entorno.ts); esto cierra lo que quede o se escriba nuevo.
 RUN --mount=type=cache,target=/app/apps/api/.tsbuildinfo \
-    pnpm --filter @kitsuden/api build
+    NODE_ENV=production pnpm --filter @kitsuden/api build
 
 # Remove conflicting generated JS files before admin build
 RUN find packages/admin/src -name "+layout.js" -type f -delete 2>/dev/null || true
@@ -140,7 +190,11 @@ RUN SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm rebuild sharp
 FROM oven/bun:1-alpine AS api
 WORKDIR /app
 
-RUN apk add --no-cache postgresql-client curl
+# nodejs: el sandbox del codigo de usuario corre su interprete (QuickJS) en un
+# proceso hijo con `node --permission` (sin escritura, sin procesos, sin hilos;
+# solo lee los paquetes de QuickJS). Sin Node caeria a Bun, que no tiene modelo
+# de permisos. Ver apps/api/src/lib/worker-sandbox.ts y docs/agents/sandbox.md.
+RUN apk add --no-cache postgresql-client curl nodejs
 
 # Copy built API artifact
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
@@ -179,7 +233,10 @@ COPY --from=builder /app/packages/core ./packages/core
 COPY --from=builder /app/packages/codegen ./packages/codegen
 COPY --from=builder /app/packages/sdk ./packages/sdk
 COPY --from=builder /app/packages/mcp-server ./packages/mcp-server
+# Las COPIAS de los kons instalados (ver la etapa `dependencies`) y la lista
+# que la API lee para saber qué hay instalado.
 COPY --from=builder /app/packages/kons ./packages/kons
+COPY --from=builder /app/kitsuden.kons.json ./kitsuden.kons.json
 COPY --from=builder /app/packages/grimoires ./packages/grimoires
 
 # Copy node_modules with pnpm symlinks intact
@@ -187,11 +244,38 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/pnpm-workspace.yaml ./
 
-# Ensure runtime directories exist
-RUN mkdir -p uploads logs
+# Carpetas en las que la API ESCRIBE en ejecucion, a nombre del usuario `bun`
+# (uid/gid 1000, lo trae la imagen base; el mismo que `user: "1000:1000"` de
+# docker-compose.tls.yml):
+#
+#   /app/data                    STORAGE_LOCAL_PATH: el volumen de medios
+#   /app/uploads, /app/logs      subidas y logs locales
+#   /app/apps/api/.kitsuden      datos locales de la API (el sandbox ya no escribe aqui)
+#   /app/apps/api/drizzle/vault  instantaneas DDL del vault (si se activa)
+#   /tmp                         ya es de todos (1777) en la imagen base
+#
+# Un volumen con nombre VACIO copia el dueno de su carpeta al montarse por
+# primera vez, asi que en una maquina nueva todo funciona sin hacer nada. Un
+# volumen YA EXISTENTE conserva su dueno: si lo lleno root (`docker cp`, una
+# restauracion, una imagen anterior que corria como root), las subidas fallan
+# con EACCES hasta hacer `chown -R 1000:1000` sobre el volumen — ver
+# docs/instalacion/servidor.md.
+#
+# El resto de /app (codigo, node_modules) sigue siendo de root y de solo
+# lectura para la API: un fallo en la API no puede reescribir su propio codigo.
+RUN mkdir -p uploads logs data apps/api/.kitsuden apps/api/drizzle/vault \
+ && chown -R bun:bun uploads logs data apps/api/.kitsuden apps/api/drizzle/vault
+
+# Sin root. start-with-check.sh no necesita privilegios: migrar, crear el rol
+# de aplicacion y verificar RLS son conexiones a Postgres (con la URL de
+# admin), no operaciones del sistema; y en disco solo escribe lo de arriba.
+USER bun
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# Todas las interfaces DENTRO del contenedor (Docker reenvia a su IP, no a su
+# loopback). Lo que se publica en el host lo decide `ports:` del compose.
+ENV HOST=0.0.0.0
 ENV KITSUDEN_AUTO_SETUP=true
 
 EXPOSE 3000

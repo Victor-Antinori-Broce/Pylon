@@ -62,7 +62,12 @@
 import { sql } from "drizzle-orm";
 import type { Context, Next } from "hono";
 
-import { setRequestTx, clearRequestTx } from "../../../../packages/engine/src/request-scope";
+import {
+  comoSistema,
+  contextoRlsDe,
+  fijarContextoRls,
+  transaccionRls,
+} from "../../../../packages/engine/src/rls-peticion";
 import { db, type DatabaseTransaction } from "../db";
 // Logger LOCAL, no el de la fachada: mismo motivo que el deep import de arriba.
 import { logger } from "../lib/logger";
@@ -116,27 +121,28 @@ type TransactionType = DatabaseTransaction;
  * ```
  */
 export async function setRLSContext(tx: TransactionType, user: RLSUser | null): Promise<void> {
-  const userId = user?.id ?? "";
-  const userRole = user?.role ?? "anonymous";
-
   /**
-   * El tercer argumento es `is_local`, y tiene que ser TRUE.
-   *
-   * Con `true` el valor vive lo que vive la transacción y Postgres lo deshace
-   * solo al terminarla. Con `false` —que es lo que había, con un comentario
-   * que decía justo lo contrario— el valor se queda en la SESIÓN, y las
-   * sesiones aquí son conexiones de un pool que se reparten entre peticiones
-   * de gente distinta.
-   *
-   * El síntoma no es un error: es que la petición siguiente que toque esa
-   * conexión y NO pase por este middleware hereda el usuario de la anterior.
-   * Un lector anónimo veía cero filas de un dataset público porque la conexión
-   * venía marcada con el id de otro; el mismo GET, repetido, devolvía cosas
-   * distintas según qué conexión le tocara.
+   * `is_local = true` (en `fijarContextoRls`): el valor vive lo que vive la
+   * transacción y Postgres lo deshace solo al terminarla. Con `false` el valor
+   * se quedaba en la SESIÓN —una conexión del pool que se presta a gente
+   * distinta— y la petición siguiente que la tocara sin pasar por aquí heredaba
+   * el usuario de la anterior.
    */
-  await tx.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
-  await tx.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, true)`);
+  await fijarContextoRls(tx, user);
 }
+
+/**
+ * Qué id y qué rol ve Postgres para un usuario (o para nadie): la regla vive
+ * en el engine (`contextoRlsDe`), compartida con los kons.
+ *
+ * · Sin usuario: id '' y rol `anonymous` —NO es el sistema, que es id Y rol
+ *   vacíos—.
+ * · Con usuario y sin rol: `user` (antes caía en `anonymous`).
+ */
+export const contextoDe = contextoRlsDe;
+
+/** Como sistema dentro de la transacción de la petición (ver el engine). */
+export { comoSistema };
 
 /**
  * Limpia el contexto RLS al final de la transacción.
@@ -222,54 +228,34 @@ export async function getRLSContext(tx: TransactionType): Promise<RLSContext> {
  * @returns Middleware Hono
  */
 export function withTransactionalRLS() {
-  return async (c: Context, next: Next) => {
-    // Obtener usuario de la sesión (seteado por Better-Auth u otro middleware)
-    const user = c.get("user") as RLSUser | undefined;
-    const userId = user?.id ?? null;
-    const userRole = user?.role ?? "anonymous";
-
-    // Log de seguridad. Va por el logger y NO por `console.log`: esto corre en
-    // CADA petición, y una línea suelta en stdout sale sin `trace_id` ni
-    // `request_id`, así que no se puede cruzar con el access-log ni con el
-    // error que venga después. Justo en el middleware de aislamiento, que es
-    // donde uno mira cuando algo se ve que no debería verse.
-    logger.debug({ userId, userRole }, "[RLS] abriendo transacción");
-
-    try {
-      // Envolvente de transacción con RLS
-      await db.transaction(async (tx) => {
-        // ═══ INYECTAR CONTEXTO RLS ═══
-        // Esto es lo que activa el "Muro de Titanio"
-        // PostgreSQL usará estas variables en sus políticas RLS
-        await setRLSContext(tx, user ?? null);
-
-        // Guardar la transacción en el contexto Hono
-        // Los handlers usarán c.get("tx") en lugar de db directamente
-        c.set("tx", tx);
-        c.set("rlsUser", { id: userId, role: userRole });
-
-        // Publicar el tx en el request-scope: repo() y cualquier código que use
-        // resolveExecutor() correrán bajo RLS automáticamente durante next().
-        setRequestTx(tx);
-        try {
-          // Continuar con el siguiente middleware/handler
-          await next();
-        } finally {
-          clearRequestTx();
-        }
-
-        // La transacción se comite automáticamente si next() no lanza error
-      });
-
-      logger.debug({ userId }, "[RLS] transacción confirmada");
-    } catch (error) {
-      // El error ya causó rollback automático de la transacción
-      logger.error({ err: error, userId, userRole }, "[RLS] transacción revertida");
-
-      // Re-lanzar el error para que Hono lo maneje
-      throw error;
-    }
-  };
+  // La transacción, el contexto, la idempotencia (no anidar), el request-scope
+  // y la reversión si la ruta falla viven en el engine (`transaccionRls`),
+  // compartidos con los kons. Aquí solo lo propio del núcleo: `c.get("tx")`,
+  // `rlsUser` y el log. El log va por el logger y NO por `console.log`: corre
+  // en CADA petición y una línea suelta saldría sin `trace_id`.
+  return transaccionRls(() => db, {
+    alAbrir(c, tx, { userId, userRole }) {
+      c.set("tx", tx);
+      c.set("rlsUser", { id: userId || null, role: userRole });
+      logger.debug({ userId: userId || null, userRole }, "[RLS] transacción abierta");
+    },
+    // Un error de SQL capturado y tragado dejó la transacción abortada y
+    // Postgres deshizo la petición entera. Es un fallo de la ruta (le falta un
+    // `conSavepoint`/`intentarSql`): que se vea en el log con su ruta.
+    alPerderConfirmacion(_c, info) {
+      logger.error(
+        {
+          method: info.metodo,
+          path: info.ruta,
+          status: info.estado,
+          sqlCode: info.error?.code,
+          sqlError: info.error?.message,
+          responseReplaced: info.respuestaCambiada,
+        },
+        "[RLS] la transacción de la petición acabó abortada: no se guardó nada"
+      );
+    },
+  });
 }
 
 /**

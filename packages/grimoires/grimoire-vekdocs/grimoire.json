@@ -1,0 +1,21 @@
+{
+  "id": "grimoire-vekdocs",
+  "name": "VekDocs",
+  "description": "Plataforma de procesamiento inteligente de documentos (IDP): OCR con vekocr, gestión documental y flujos de revisión.",
+  "version": "1.0.0",
+  "type": "grimoire",
+  "author": "Kitsuden Team",
+  "industry": "document-processing",
+  "keywords": ["idp", "ocr", "documentos", "digitalización", "vekocr"],
+  "kons": ["kon-vekstudio", "kon-dms"],
+  "optional_kons": ["kon-ocr-training", "kon-directory", "kon-members"],
+  "config": {
+    "theme": {
+      "css_entry": "variables.css",
+      "primary_color": "#c1292e",
+      "accent_color": "#d4a017"
+    }
+  },
+  "konConfig": {},
+  "seed": null
+}

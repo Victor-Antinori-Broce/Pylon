@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   /**
    * PageFromDataset.svelte — Production Ready
    *
@@ -168,7 +169,7 @@
     } catch (err: any) {
       if (err.name !== "AbortError") {
         console.error("Failed to load datasets:", err);
-        error = err.message || "Failed to load datasets. Please try again.";
+        error = err.message || t("pageFromDataset.failedToLoadDatasetsPlease");
       }
     } finally {
       loading = false;
@@ -197,7 +198,7 @@
     } catch (err: any) {
       if (err.name !== "AbortError") {
         console.error("Failed to load entries:", err);
-        error = err.message || "Failed to load entries. Please try again.";
+        error = err.message || t("pageFromDataset.failedToLoadEntriesPlease");
       }
     } finally {
       loading = false;
@@ -220,7 +221,7 @@
 
   function handleConfirm() {
     if (!selectedEntry || !selectedDataset) {
-      error = "Please select a dataset entry";
+      error = t("pageFromDataset.pleaseSelectADatasetEntry");
       return;
     }
 
@@ -230,7 +231,7 @@
       handleClose();
     } catch (err: any) {
       console.error("Failed to transform entry:", err);
-      error = err.message || "Failed to process entry data";
+      error = err.message || t("pageFromDataset.failedToProcessEntryData");
     }
   }
 
@@ -282,7 +283,7 @@
     const data = entry.data;
 
     if (!data || typeof data !== "object") {
-      throw new Error("Invalid entry data");
+      throw new Error(t("pageFromDataset.invalidEntryData"));
     }
 
     const title = extractTitle(data, dataset);
@@ -316,7 +317,7 @@
       }
     }
 
-    return `Page from ${dataset.name}`;
+    return t("pageFromDataset.pageFrom", { name: dataset.name });
   }
 
   function generateSlug(text: string): string {
@@ -337,7 +338,7 @@
     // 1. Hero Block
     blocks.push({
       type: "hero",
-      name: "Hero Section",
+      name: t("pageFromDataset.heroSection"),
       sortOrder: sortOrder++,
       columnSpan: 12,
       content: {
@@ -350,7 +351,7 @@
         ...(data.ctaUrl
           ? {
               primaryButton: {
-                label: data.ctaText || "Learn More",
+                label: data.ctaText || t("pageFromDataset.learnMore"),
                 url: data.ctaUrl,
                 variant: "primary",
               },
@@ -423,7 +424,7 @@
     if (images.length > 1) {
       blocks.push({
         type: "grid",
-        name: "Image Gallery",
+        name: t("pageFromDataset.imageGallery"),
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
@@ -444,7 +445,7 @@
       // Single image that wasn't used in hero
       blocks.push({
         type: "image",
-        name: "Featured Image",
+        name: t("pageFromDataset.featuredImage"),
         sortOrder: sortOrder++,
         columnSpan: 12,
         content: {
@@ -478,14 +479,14 @@
     }
 
     // 7. Call to Action
-    const ctaTitle = data.ctaTitle || `Interested in ${title}?`;
-    const ctaDescription = data.ctaDescription || "Get more information or take action now.";
-    const ctaButton = data.ctaText || "Get Started";
+    const ctaTitle = data.ctaTitle || t("pageFromDataset.interestedIn", { title });
+    const ctaDescription = data.ctaDescription || t("pageFromDataset.getMoreInformationOrTake");
+    const ctaButton = data.ctaText || t("pageFromDataset.getStarted");
     const ctaUrl = data.ctaUrl || data.website || data.url || "#";
 
     blocks.push({
       type: "cta",
-      name: "Call to Action",
+      name: t("pageFromDataset.callToAction"),
       sortOrder: sortOrder++,
       columnSpan: 12,
       content: {
@@ -536,7 +537,7 @@
           features.push({ title: feature, description: "" });
         } else if (typeof feature === "object" && feature) {
           features.push({
-            title: feature.title || feature.name || "Feature",
+            title: feature.title || feature.name || t("pageFromDataset.feature"),
             description: feature.description || "",
             image: feature.image || feature.icon,
           });
@@ -549,7 +550,7 @@
       for (const spec of data.specifications.slice(0, 6)) {
         if (typeof spec === "object" && spec) {
           features.push({
-            title: spec.name || spec.label || "Specification",
+            title: spec.name || spec.label || t("pageFromDataset.specification"),
             description: spec.value || spec.description || "",
             image: spec.image,
           });
@@ -595,19 +596,19 @@
     ];
 
     const detailFields = [
-      { key: "price", label: "Price" },
-      { key: "category", label: "Category" },
-      { key: "genre", label: "Genre" },
-      { key: "platform", label: "Platform" },
-      { key: "releaseDate", label: "Release Date" },
-      { key: "developer", label: "Developer" },
-      { key: "publisher", label: "Publisher" },
-      { key: "rating", label: "Rating" },
-      { key: "duration", label: "Duration" },
-      { key: "location", label: "Location" },
-      { key: "date", label: "Date" },
-      { key: "time", label: "Time" },
-      { key: "status", label: "Status" },
+      { key: "price", label: t("pageFromDataset.price") },
+      { key: "category", label: t("common.category") },
+      { key: "genre", label: t("pageFromDataset.genre") },
+      { key: "platform", label: t("common.platform") },
+      { key: "releaseDate", label: t("pageFromDataset.releaseDate") },
+      { key: "developer", label: t("pageFromDataset.developer") },
+      { key: "publisher", label: t("pageFromDataset.publisher") },
+      { key: "rating", label: t("pageFromDataset.rating") },
+      { key: "duration", label: t("pageFromDataset.duration") },
+      { key: "location", label: t("pageFromDataset.location") },
+      { key: "date", label: t("common.date") },
+      { key: "time", label: t("pageFromDataset.time") },
+      { key: "status", label: t("common.status") },
     ];
 
     for (const { key, label } of detailFields) {
@@ -677,7 +678,7 @@
   function formatDate(dateString: string): string {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString(localeFormato(), {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -708,25 +709,25 @@
 <Modal
   open={isOpen}
   title={step === "datasets"
-    ? "Create Page from Dataset"
+    ? t("pageFromDataset.createPageFromDataset")
     : step === "entries"
-      ? `Select from ${selectedDataset?.name}`
-      : "Preview Blocks"}
+      ? t("pageFromDataset.selectFrom", { name: selectedDataset?.name })
+      : t("pageFromDataset.previewBlocks")}
   onClose={handleClose}
 >
   <div class="w-[700px] max-h-[80vh] flex flex-col">
     <!-- Navigation -->
     <div class="flex items-center gap-2 px-4 py-3 border-b border-kitsuden-border">
       {#if step !== "datasets"}
-        <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> ← Back </button>
+        <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> {t("pageFromDataset.back")} </button>
       {/if}
 
       <div class="flex items-center gap-2 text-sm text-kitsuden-subtle">
-        <span class={step === "datasets" ? "text-kitsuden-accent font-medium" : ""}>Datasets</span>
+        <span class={step === "datasets" ? "text-kitsuden-accent font-medium" : ""}>{t("common.datasets")}</span>
         <ArrowRight class="w-4 h-4" />
-        <span class={step === "entries" ? "text-kitsuden-accent font-medium" : ""}>Entries</span>
+        <span class={step === "entries" ? "text-kitsuden-accent font-medium" : ""}>{t("pageFromDataset.entries")}</span>
         <ArrowRight class="w-4 h-4" />
-        <span class={step === "preview" ? "text-kitsuden-accent font-medium" : ""}>Preview</span>
+        <span class={step === "preview" ? "text-kitsuden-accent font-medium" : ""}>{t("common.preview")}</span>
       </div>
     </div>
 
@@ -738,7 +739,7 @@
           type="text"
           bind:value={searchQuery}
           onkeydown={handleKeyDown}
-          placeholder={step === "datasets" ? "Search datasets..." : "Search entries..."}
+          placeholder={step === "datasets" ? t("pageFromDataset.searchDatasets") : t("pageFromDataset.searchEntries")}
           class="input w-full pl-10"
           disabled={loading}
         />
@@ -757,14 +758,14 @@
       <div class="flex justify-between mt-2">
         <span class="text-xs text-kitsuden-subtle">
           {#if step === "datasets"}
-            {filteredDatasets.length} dataset{filteredDatasets.length !== 1 ? "s" : ""}
+            {t("pageFromDataset.dataset", { filteredDatasetsCount: filteredDatasets.length })}{filteredDatasets.length !== 1 ? "s" : ""}
           {:else if step === "entries"}
-            {entries.length} of {totalEntries} entries
+            {t("pageFromDataset.ofEntries", { entriesCount: entries.length, totalEntries })}
           {/if}
         </span>
         {#if step === "entries" && totalPages > 1}
           <span class="text-xs text-kitsuden-subtle">
-            Page {currentPage} of {totalPages}
+            {t("pageFromDataset.pageOf", { currentPage, totalPages })}
           </span>
         {/if}
       </div>
@@ -786,7 +787,7 @@
             class="text-xs underline mt-1 hover:no-underline flex items-center gap-1"
           >
             <RefreshCw class="w-3 h-3" />
-            Retry
+            {t("pageFromDataset.retry")}
           </button>
         </div>
       </div>
@@ -797,7 +798,7 @@
       {#if loading}
         <div class="flex flex-col items-center justify-center py-12">
           <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mb-3" />
-          <p class="text-kitsuden-subtle text-sm">Loading...</p>
+          <p class="text-kitsuden-subtle text-sm">{t("common.loading")}</p>
         </div>
       {:else if step === "datasets"}
         <!-- Datasets List -->
@@ -823,10 +824,10 @@
                   {/if}
                   <div class="flex items-center gap-3 mt-2">
                     <span class="text-xs text-kitsuden-subtle/60">
-                      {dataset.entryCount || 0} entries
+                      {t("pageFromDataset.entries2", { v: dataset.entryCount || 0 })}
                     </span>
                     <span class="text-xs text-kitsuden-subtle/60">
-                      Updated {formatDate(dataset.updatedAt)}
+                      {t("pageFromDataset.updated", { v: formatDate(dataset.updatedAt) })}
                     </span>
                   </div>
                 </div>
@@ -841,7 +842,7 @@
             <div class="text-center py-12">
               <Database class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
               <p class="text-kitsuden-subtle">
-                {searchQuery ? "No datasets match your search" : "No datasets available"}
+                {searchQuery ? t("pageFromDataset.noDatasetsMatchYourSearch") : t("pageFromDataset.noDatasetsAvailable")}
               </p>
             </div>
           {/if}
@@ -892,7 +893,7 @@
             <div class="text-center py-12">
               <Layout class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
               <p class="text-kitsuden-subtle">
-                {searchQuery ? "No entries match your search" : "No entries available"}
+                {searchQuery ? t("pageFromDataset.noEntriesMatchYourSearch") : t("pageFromDataset.noEntriesAvailable")}
               </p>
             </div>
           {/if}
@@ -908,17 +909,17 @@
               disabled={!hasPrevPage || loading}
               class="btn-ghost btn-sm disabled:opacity-50"
             >
-              Previous
+              {t("pageFromDataset.previous")}
             </button>
             <span class="text-sm text-kitsuden-subtle px-3">
-              Page {currentPage} of {totalPages}
+              {t("pageFromDataset.pageOf", { currentPage, totalPages })}
             </span>
             <button
               onclick={() => goToPage(currentPage + 1)}
               disabled={!hasNextPage || loading}
               class="btn-ghost btn-sm disabled:opacity-50"
             >
-              Next
+              {t("common.next")}
             </button>
           </div>
         {/if}
@@ -926,19 +927,19 @@
         {@const preview = transformEntryToPage(selectedEntry, selectedDataset!)}
         <div class="space-y-4">
           <div>
-            <label class="label text-xs uppercase text-kitsuden-subtle">Page Title</label>
+            <label class="label text-xs uppercase text-kitsuden-subtle">{t("common.pageTitle")}</label>
             <p class="text-lg font-medium text-kitsuden-text">{preview.title}</p>
           </div>
 
           <div>
-            <label class="label text-xs uppercase text-kitsuden-subtle">Slug</label>
+            <label class="label text-xs uppercase text-kitsuden-subtle">{t("common.slug")}</label>
             <p class="text-sm text-kitsuden-accent font-mono">/{preview.slug}</p>
           </div>
 
           <div>
             <label class="label text-xs uppercase text-kitsuden-subtle flex items-center gap-1">
               <Layout class="w-3 h-3" />
-              Generated Blocks ({preview.blocks.length})
+              {t("pageFromDataset.generatedBlocks", { blocksCount: preview.blocks.length })}
             </label>
             <div class="mt-2 space-y-2">
               {#each preview.blocks as block, index}
@@ -963,7 +964,7 @@
           <div class="p-3 rounded-lg bg-kitsuden-accent/5 border border-kitsuden-accent/20">
             <p class="text-xs text-kitsuden-accent flex items-center gap-1">
               <Check class="w-3 h-3" />
-              Source: {selectedDataset?.name} → {selectedEntry.id.substring(0, 8)}...
+              {t("pageFromDataset.source", { name: selectedDataset?.name, v: selectedEntry.id.substring(0, 8) })}
             </p>
           </div>
         </div>
@@ -972,15 +973,15 @@
 
     <!-- Footer -->
     <div class="flex justify-end gap-2 p-4 border-t border-kitsuden-border">
-      <button onclick={handleClose} class="btn-ghost" disabled={loading}> Cancel </button>
+      <button onclick={handleClose} class="btn-ghost" disabled={loading}> {t("common.cancel")} </button>
       {#if step === "preview"}
         <button onclick={handleConfirm} class="btn-primary gap-1.5" disabled={loading}>
           {#if loading}
             <Loader2 class="w-4 h-4 animate-spin" />
-            Processing...
+            {t("pageFromDataset.processing")}
           {:else}
             <Check class="w-4 h-4" />
-            Create Page
+            {t("pageFromDataset.createPage")}
           {/if}
         </button>
       {/if}

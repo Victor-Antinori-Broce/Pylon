@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module";
+
 import chalk from "chalk";
 import { Command } from "commander";
 
@@ -12,6 +14,18 @@ import { genTypesCommand } from "./commands/gen-types.js";
 import { generateSdkCommand } from "./commands/generate-sdk.js";
 import { initCommand } from "./commands/init.js";
 import { inspectCommand } from "./commands/inspect.js";
+import { konAddCommand, konListCommand, konRemoveCommand } from "./commands/kon.js";
+import {
+  konInfoCommand,
+  konKeygenCommand,
+  konOutdatedCommand,
+  konPublishCommand,
+  konSearchCommand,
+  konSyncCommand,
+  konUpdateCommand,
+  konVerifyCommand,
+  konYankCommand,
+} from "./commands/kon-registro.js";
 import { installCommand } from "./commands/install.js";
 import { loaddataCommand } from "./commands/loaddata.js";
 import { logsCommand } from "./commands/logs.js";
@@ -22,6 +36,7 @@ import { makeCommand } from "./commands/make.js";
 import { mapCommand } from "./commands/map.js";
 import { graphCommand } from "./commands/graph.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { newCommand } from "./commands/new.js";
 import { migrateCommand } from "./commands/migrate.js";
 import { shellCommand } from "./commands/shell.js";
 import { startCommand } from "./commands/start.js";
@@ -30,10 +45,14 @@ import { stopCommand } from "./commands/stop.js";
 
 const program = new Command();
 
+// La versión sale del package.json: la cadena fija ("0.1.0") se había quedado
+// atrás respecto al paquete (0.9.0-beta).
+const pkg = createRequire(import.meta.url)("../package.json") as { version: string };
+
 program
   .name("kitsuden")
   .description("Kitsuden CLI - AI-Native Backend as a Service")
-  .version("0.1.0")
+  .version(pkg.version)
   .configureHelp({
     sortSubcommands: true,
     subcommandTerm: (cmd) => chalk.green(cmd.name()),
@@ -93,13 +112,33 @@ program
   .option("--api-url <url>", "Kitsuden API URL", "http://localhost:3000")
   .option("--token <token>", "API authentication token")
   .option("--ide <ide>", "Generate IDE config (cursor, claude, vscode, windsurf)")
+  .option("--stdio", "Run the MCP server over stdin/stdout (for .mcp.json); token from KITSUDEN_API_TOKEN")
+  .option("--agent-env-file <path>", "With --stdio: read KITSUDEN_API_URL/KITSUDEN_API_TOKEN from a file outside any repository")
   .action(mcpCommand);
 
 program
+  .command("new [name]")
+  .description("Create a frontend website from the Kitsuden starter (Astro)")
+  .option("--api-url <url>", "Kitsuden API URL written to .env (KITSUDEN_API_URL)")
+  .option("--site-url <url>", "Public URL of the site written to .env (SITE_URL)")
+  .option("--site-name <name>", "Site name written to .env (SITE_NAME)")
+  .option("--from <dir>", "Copy this starter folder instead of the bundled one")
+  .option("--install", "Run pnpm install in the new project")
+  .option("--quickstart", "No questions, default values, and pnpm install")
+  .option("-y, --yes", "No questions: use the options or the defaults")
+  .option("--api", "Explain how to get a Kitsuden API running (nothing is generated for it)")
+  .action(newCommand);
+
+program
   .command("make <kind> <name>")
-  .description("Genera scaffolding: policy | request | job | test")
-  .option("--force", "Sobrescribir si ya existe")
-  .option("--kon <name>", "Generar DENTRO de un kon (plugin autocontenido)")
+  .description("Scaffolding: kon | model | policy | request | job | test")
+  .option("--force", "Overwrite generated files that already exist")
+  .option("--kon <name>", "Generate inside this kon (model, policy, request, job, test)")
+  .option("--dir <folder>", "make model: folder for a model outside a kon (e.g. apps/api/src/modelos)")
+  .option("--root <dir>", "Kitsuden monorepo root (default: found from the current folder)")
+  .option("--icon <name>", "make kon: lucide icon name from the admin icon map", "Package")
+  .option("--title <title>", "make kon: display name")
+  .option("--description <text>", "make kon: description")
   .action(makeCommand);
 
 program
@@ -201,9 +240,13 @@ program
 
 program
   .command("makemigrations")
-  .description("Auto-detect schema changes and create migrations")
+  .description("Diff the declared models (defineModelo) and write the migration SQL (never applies it)")
   .option("-n, --name <name>", "Migration name")
   .option("--dry-run", "Show what would be created without writing")
+  .option("--kon <name>", "Only this kon")
+  .option("--dir <folder>", "A folder with models (*.modelo.ts / modelos.ts) and its migrations/")
+  .option("--allow-destructive", "Emit DROP TABLE / DROP COLUMN (commented out by default)")
+  .option("--drizzle", "Legacy generator: drizzle-kit export of each kon's schema.ts")
   .action(makemigrationsCommand);
 
 program
@@ -227,10 +270,130 @@ program
   .action(inspectCommand);
 
 // Alias de create-kon (mismo código, stack limpio). El antiguo
+// ── kon add|remove|list: instalar kons (kitsuden-kons) en este proyecto ──
+const konCmd = program
+  .command("kon")
+  .description("Install, remove and list kons (extension modules from kitsuden-kons)");
+
+konCmd
+  .command("add <names...>")
+  .description("Install kons (and the kons they depend on) and run their migrations")
+  .option("--from <source>", "Local path or git URL of the kons repo (default: ../kitsuden-kons, then the official repo)")
+  .option("--ref <ref>", "Git branch or tag when --from is a git URL")
+  .option("--link", "Use the kon where it is instead of copying it to packages/kons (kon development)")
+  .option("--enable", "Seed the kon as active (first time the database hears of it)")
+  .option("--force", "Overwrite an installed copy that has local changes")
+  .option("--no-install", "Do not run pnpm install")
+  .option("--no-migrate", "Do not run the migrations (apps/api/scripts/migrate.ts --kon <id>)")
+  .option("--api-url <url>", "Running API whose GET /api/version gives the kon SDK version")
+  .option("--root <dir>", "Kitsuden project root (default: found from the current folder)")
+  // Registry installs (`kon add blog@^2`): docs/kons/registry.md
+  .option("--registry <name|path|url>", "Install from a signed kon registry (name in kitsuden.registries.json, folder or URL)")
+  .option("--registry-key <key>", "Registry public key (file or base64), if not in kitsuden.registries.json")
+  .option("--yes", "Accept the declared permissions shown (new kons)")
+  .option("--accept-wider", "With --yes: also accept updates that widen scopes, hosts or sensitive operations")
+  .option("--allow-unsigned", "Local development only: accept unsigned packages (refused when KITSUDEN_PUBLIC=true)")
+  .option("--dry-run", "Resolve, verify and show the permissions; install nothing")
+  .action(konAddCommand);
+
+const opcionesDeRegistro = (c: ReturnType<typeof konCmd.command>) =>
+  c
+    .option("--registry <name|path|url>", "Registry (name in kitsuden.registries.json, folder or URL)")
+    .option("--registry-key <key>", "Registry public key (file or base64)")
+    .option("--allow-unsigned", "Local development only (refused when KITSUDEN_PUBLIC=true)")
+    .option("--api-url <url>", "Running API whose GET /api/version gives the core and SDK versions")
+    .option("--root <dir>", "Kitsuden project root (default: found from the current folder)");
+
+opcionesDeRegistro(konCmd.command("search [text]").description("Search the kon registry"))
+  .option("--json", "JSON output")
+  .action(konSearchCommand);
+
+opcionesDeRegistro(konCmd.command("info <kon>").description("Versions, permissions, signer and advisories of a kon (<kon>[@range])"))
+  .option("--json", "JSON output")
+  .action(konInfoCommand);
+
+opcionesDeRegistro(konCmd.command("update [names...]").description("Update registry kons within their ranges (all if none given)"))
+  .option("--yes", "Accept the plan")
+  .option("--accept-wider", "With --yes: accept wider scopes, hosts or sensitive operations")
+  .option("--dry-run", "Show the plan and the permission diff only")
+  .option("--force", "Overwrite installed copies with local changes")
+  .option("--no-install", "Do not run pnpm install")
+  .option("--no-migrate", "Do not run the migrations")
+  .action(konUpdateCommand);
+
+opcionesDeRegistro(konCmd.command("outdated").description("Registry kons with newer versions, yanked or under an advisory"))
+  .option("--json", "JSON output")
+  .action(konOutdatedCommand);
+
+opcionesDeRegistro(konCmd.command("sync").description("Install exactly what kitsuden.kons.lock pins, verifying every package"))
+  .option("--yes", "Non-interactive")
+  .option("--accept-wider", "With --yes: accept a changed signing key")
+  .option("--force", "Overwrite installed copies with local changes")
+  .option("--no-install", "Do not run pnpm install")
+  .option("--no-migrate", "Do not run the migrations")
+  .action(konSyncCommand);
+
+opcionesDeRegistro(konCmd.command("verify [names...]").description("Verify installed registry kons against the lockfile, or one package file offline"))
+  .option("--file <tgz>", "Verify this package file offline (with --key and <tgz>.minisig)")
+  .option("--sig <file>", "Signature file (default: <tgz>.minisig)")
+  .option("--key <pub>", "Publisher public key file (with --file)")
+  .action(konVerifyCommand);
+
+konCmd
+  .command("publish <dir>")
+  .description("Pack, sign and add a kon to a LOCAL registry folder (never uploads)")
+  .requiredOption("--registry <folder>", "Local registry folder (index.json is created if missing)")
+  .requiredOption("--key <file>", "Publisher secret key (kon keygen)")
+  .option("--index-key <file>", "Registry secret key that signs the index (default: --key)")
+  .option("--registry-name <name>", "Name recorded in a new index", "local")
+  .option("--add-owner", "Registry key holder: let this publisher key publish an existing kon")
+  .option("--dry-run", "Validate and pack, write nothing")
+  .action(konPublishCommand);
+
+konCmd
+  .command("yank <spec>")
+  .description("Yank <kon>@<version> in a local registry; --revoke adds a revoking advisory")
+  .requiredOption("--registry <folder>", "Local registry folder")
+  .requiredOption("--index-key <file>", "Registry secret key")
+  .option("--reason <text>", "Why (shown to users)")
+  .option("--undo", "Un-yank")
+  .option("--advisory <summary>", "Also publish an advisory")
+  .option("--revoke", "The advisory revokes: refused even when a lockfile pins it")
+  .option("--severity <level>", "low | moderate | high | critical")
+  .option("--range <range>", "Affected versions (default: =<version>)")
+  .option("--revoke-key <keyId>", "Revoke a publisher key instead (spec is ignored)")
+  .action(konYankCommand);
+
+konCmd
+  .command("keygen")
+  .description("Create an Ed25519 publisher/registry key pair (minisign format public key)")
+  .requiredOption("--out <path>", "Writes <path>.pub and <path>.key (outside any git repository)")
+  .option("--force", "Allow writing inside a git repository")
+  .action(konKeygenCommand);
+
+konCmd
+  .command("remove <names...>")
+  .description("Uninstall kons (their tables and data stay in the database)")
+  .option("--force", "Remove even if another kon depends on it or the copy has local changes")
+  .option("--keep-files", "Keep packages/kons/<kon> on disk, only stop declaring it")
+  .option("--no-install", "Do not run pnpm install")
+  .option("--root <dir>", "Kitsuden project root (default: found from the current folder)")
+  .action(konRemoveCommand);
+
+konCmd
+  .command("list")
+  .description("List installed kons (or --available ones in the source)")
+  .option("--available", "List the kons the source offers, with their maturity")
+  .option("--from <source>", "Source for --available (default: ../kitsuden-kons, then the official repo)")
+  .option("--ref <ref>", "Git branch or tag when --from is a git URL")
+  .option("--json", "JSON output")
+  .option("--root <dir>", "Kitsuden project root (default: found from the current folder)")
+  .action(konListCommand);
+
 // kon-create.ts duplicado fue eliminado — generaba el scaffold obsoleto.
 program
   .command("kon:create")
-  .description("Alias for create-kon")
+  .description("Alias for make kon")
   .argument("<name>", "Kon name")
   .option("--with-admin", "Include admin configuration")
   .option("--with-tests", "Include test files")
@@ -238,7 +401,7 @@ program
 
 program
   .command("create-kon")
-  .description("Alias for kon:create")
+  .description("Alias for make kon")
   .argument("<name>", "Kon name")
   .option("--with-admin", "Include admin configuration")
   .option("--with-tests", "Include test files")

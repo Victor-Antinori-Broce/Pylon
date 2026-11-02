@@ -1,12 +1,15 @@
 /**
- * Kitsuden — Dynamic Kon Loader v3 (Node Modules Support)
+ * Kitsuden — Kon Loader v4 (instalación por configuración)
  *
- * Loads kons from:
- *   1. packages/kons/{name}/ (local)
- *   2. node_modules/@kitsuden/kon-{name}/ (published)
- *   3. node_modules/{scope}/kon-{name}/ (3rd party)
- *   4. apps/api/src/modules/{name}/ (legacy)
- *   5. packages/grimoires/{grimoire}/kons/{name}/ (grimoire bundled)
+ * Monta los kons que están INSTALADOS y ACTIVOS:
+ *
+ *   · instalados  → `kons-instalados.ts`: los módulos de `packages/core`, lo
+ *                   declarado en `kitsuden.kons.json` (`kitsuden kon add`) y
+ *                   en `KITSUDEN_KONS`, más lo registrado en `installed_kons`.
+ *   · activos     → la tabla `modules` (el panel) y el grimoire activo.
+ *
+ * Ya NO se recorre `packages/kons/` ni `node_modules` buscando lo que haya:
+ * un kon que está en disco y no se declaró no existe para la API.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * 3-TIER ARCHITECTURE:
@@ -16,21 +19,14 @@
  *   Always active. Auth, DB, Workers. NOT loaded here.
  *
  * Nivel 2 — CORE (packages/core/):
- *   Switchable. Connectors and Webhooks gated here via Core flags.
+ *   datasets, media, blocks: kons del núcleo, siempre instalados.
  *
- * Nivel 3 — KONS (packages/kons/ + node_modules/):
+ * Nivel 3 — KONS (repo kitsuden-kons, instalados con `kitsuden kon add`):
  *   Loaded dynamically. Modern kons use dependency injection.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * KON RESOLUTION ORDER:
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * 1. Local packages/kons/
- * 2. @kitsuden/kon-{name} (official)
- * 3. @kitsuden/{name} (official shorthand)
- * 4. kon-{name} (community)
- * 5. {scope}/kon-{name} (3rd party)
- * 6. Legacy fallbacks
+ * Antes de importar un kon se comprueba el `sdk` de su manifiesto contra el
+ * de este núcleo (`GET /api/version` → `sdk.kons`): uno escrito para un SDK
+ * más nuevo NO se monta, y el motivo sale en el log y en `getInformeDeCarga()`.
  */
 
 import type {
@@ -42,7 +38,7 @@ import type {
   PromotionData,
   PublishResult,
 } from "@kitsuden/shared";
-import type { Hono } from "hono";
+import type { Hono, MiddlewareHandler } from "hono";
 
 let cachedLoadedKons: KonDefinition[] = [];
 import { db } from "../db";
@@ -52,7 +48,6 @@ import { authUsers } from "../db/schema-core";
 
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import { readdir } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 import { requireAuth, requireRole, optionalAuth } from "../middleware/auth";
@@ -65,12 +60,18 @@ import { leerKonsDelGrimoire, leerManifiestoKon } from "./grimoire-manifest";
 import { events } from "./events";
 import { checkKonCompatibility } from "./kitsuden-compat";
 import type { KonDiferido } from "./kons-diferidos";
+import {
+  idDeKon,
+  konInstalado,
+  konsInstalados,
+  motivoDeSdkIncompatible,
+} from "./kons-instalados";
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql as sqlTag } from "drizzle-orm";
 
-import { borrarObjeto, guardarObjeto, urlPublicaDe } from "./almacen";
+import { borrarObjeto, guardarObjeto, leerObjeto, listarObjetos, urlPublicaDe } from "./almacen";
 import { logger } from "./logger";
-import { rateLimit } from "./rate-limiter";
+import { limitadorEncendido, rateLimit } from "./rate-limiter";
 import { realtimeManager } from "./realtime";
 
 // Deep import (NO la fachada): el index del engine re-exporta loadKons/
@@ -79,6 +80,43 @@ import { realtimeManager } from "./realtime";
 // `@kitsuden/engine` para una utilidad suelta cierra el mismo ciclo. Ya pasó.
 import { messageOf } from "../../../../packages/engine/src/errors";
 import { registerKon } from "../../../../packages/engine/src/kon";
+import {
+  comoSistema,
+  dbDeLaPeticion as dbDePeticion,
+  segundoPlano,
+} from "../../../../packages/engine/src/rls-peticion";
+import {
+  operacionesDe,
+  registrarOperacionesMontadas,
+} from "../../../../packages/engine/src/operaciones";
+import { VERSION_SDK_DE_KONS } from "@kitsuden/shared";
+import { withTransactionalRLS } from "../middleware/transactional-rls";
+import { nodeEnvCrudo } from "./entorno";
+import { fichero } from "./fichero";
+
+/**
+ * El `db` que reciben los kons (`ctx.db.instance`): resuelve, en cada acceso,
+ * a la transacción RLS de la petición en curso o, fuera de una petición, al
+ * `db` global (ver `dbDeLaPeticion` en el engine).
+ */
+const dbDeLaPeticion = dbDePeticion(db);
+
+/** Lo único que `montarRlsDeKon` necesita de la app: registrar middleware. */
+interface AppConMiddleware {
+  use(ruta: string, ...manejadores: MiddlewareHandler[]): unknown;
+}
+
+/**
+ * Monta la transacción RLS delante de un router de kon: en `ruta` y en todo lo
+ * que cuelga de ella. Tiene que registrarse ANTES que el router (en Hono el
+ * middleware solo corre si se registró antes que la ruta).
+ */
+export function montarRlsDeKon(app: AppConMiddleware, ruta: string): void {
+  const base = ruta.replace(/\/+$/, "");
+  app.use(base, withTransactionalRLS());
+  app.use(`${base}/*`, withTransactionalRLS());
+}
+
 /**
  * Content Publishing Registry — definido aquí para no importar desde el engine.
  *
@@ -239,6 +277,8 @@ export function isKonDefinition(val: unknown): val is KonDefinition {
 export function applyKonRateLimits(app: Hono<any>, konDef: KonDefinition, mountPath: string): void {
   const limits = konDef.rateLimits;
   if (!limits?.length) return;
+  // El mismo interruptor que el límite global (critical-features.ts).
+  if (!limitadorEncendido()) return;
 
   const base = mountPath.replace(/\/$/, "");
 
@@ -252,6 +292,9 @@ export function applyKonRateLimits(app: Hono<any>, konDef: KonDefinition, mountP
         window: rule.window,
         message: rule.message,
         failClosed: rule.failClosed,
+        // Contador propio: con la clave por defecto compartía zset con el
+        // limitador global de `/api/*` y cada petición contaba dos veces.
+        espacio: `kon:${konDef.id}`,
       })
     );
 
@@ -303,17 +346,33 @@ export function createKonContext(): KonContext {
     contentPublishing?: KonContext["contentPublishing"];
   } = {
     // Database
+    //
+    // `instance` es la conexión DE LA PETICIÓN: dentro de una ruta del kon
+    // resuelve a la transacción de `withTransactionalRLS()` (montado delante de
+    // cada router en `loadKons`), con `app.current_user_id`/`_role` fijados, así
+    // que Postgres aplica las políticas a todo lo que el kon lea o escriba.
+    // Fuera de una petición (arranque, `onStartup`, tareas de fondo) resuelve al
+    // `db` global, que es el contexto del sistema.
+    //
+    // Antes era el `db` global a secas: en las rutas de los kons la RLS fallaba
+    // ABIERTA (sin contexto = sistema) y cada kon que quiso aislar algo se hizo
+    // su propio apaño (`contexto-rls.ts`, `comoUsuario()`, `set_config` sueltos).
     db: {
-      instance: db,
-      execute: async (sql: string) => db.execute(sql),
+      instance: dbDeLaPeticion,
+      execute: async (sql: string) => dbDeLaPeticion.execute(sql),
       tableExists: async (tableName: string) => {
-        try {
-          await db.execute(`SELECT 1 FROM "${tableName}" LIMIT 1`);
-          return true;
-        } catch {
-          return false;
-        }
+        // Pregunta de esquema, no de datos: al catálogo y con el db global,
+        // para que una política que esconda todas las filas no la confunda.
+        const res = await db.execute(
+          sqlTag`SELECT to_regclass(${`public.${tableName}`}) IS NOT NULL AS existe`
+        );
+        const fila = ((res as unknown as { rows?: { existe: boolean }[] }).rows ?? [])[0];
+        return Boolean(fila?.existe);
       },
+      comoSistema,
+      // Un scope de petición VACÍO: sin `tx`, el proxy resuelve al db global, y
+      // los temporizadores y promesas que `fn` cree heredan ese scope vacío.
+      segundoPlano,
     },
 
     // Cache
@@ -391,6 +450,8 @@ export function createKonContext(): KonContext {
       put: async (key: string, contenido: Buffer, contentType: string) =>
         guardarObjeto(key, contenido, contentType),
       delete: async (key: string) => borrarObjeto(key),
+      get: async (key: string) => leerObjeto(key),
+      list: async (prefijo: string) => listarObjetos(prefijo),
       publicUrl: (key: string) => urlPublicaDe(key),
       getSignedUploadUrl: async (_key: string, _contentType: string, _expiresIn = 3600) => {
         // Subir directamente desde el navegador al bucket exige S3; con disco
@@ -426,7 +487,7 @@ export function createKonContext(): KonContext {
       // Origen de la API para newsletter y broadcast. NO es el sitio público:
       // ese es `sitio.urlPublica()`, que sale del panel.
       siteUrl: process.env.SITE_URL || "http://localhost:3000",
-      environment: entornoValido(process.env.NODE_ENV),
+      environment: entornoValido(nodeEnvCrudo()),
     },
 
     // Configuración general → Site URL, en vivo (ver ajustes-del-sitio.ts)
@@ -507,7 +568,7 @@ let cachedCoreVersion: string | null = null;
 async function getKitsudenCoreVersion(): Promise<string> {
   if (cachedCoreVersion) return cachedCoreVersion;
   try {
-    const pkg = await Bun.file(join(process.cwd(), "package.json")).json();
+    const pkg = await fichero(join(process.cwd(), "package.json")).json();
     cachedCoreVersion = (pkg?.version as string) || "0.0.0";
   } catch {
     cachedCoreVersion = "0.0.0";
@@ -519,7 +580,7 @@ export async function resolveWorkspaceRoot(): Promise<string> {
   const cwdPackages = join(process.cwd(), "packages", "kons", "package.json");
   const devRoot = join(process.cwd(), "../../");
   try {
-    const cwdCheck = Bun.file(cwdPackages);
+    const cwdCheck = fichero(cwdPackages);
     if (await cwdCheck.exists()) {
       return process.cwd();
     }
@@ -566,7 +627,7 @@ export async function readKonManifest(dir: string): Promise<KonManifest | null> 
 
     // Fall back to package.json with kitsuden field
     const packageJsonPath = join(dir, "package.json");
-    const pkgFile = Bun.file(packageJsonPath);
+    const pkgFile = fichero(packageJsonPath);
     if (await pkgFile.exists()) {
       let pkg: any;
       try {
@@ -630,7 +691,7 @@ export async function getGrimoireKonConfig(
 ): Promise<Record<string, Record<string, unknown>>> {
   const root = workspaceRoot || process.cwd();
   try {
-    const file = Bun.file(join(root, "packages/grimoires", grimoireId, "grimoire.json"));
+    const file = fichero(join(root, "packages/grimoires", grimoireId, "grimoire.json"));
     if (!(await file.exists())) return {};
     const manifest: GrimoireManifest = await file.json();
     return manifest.konConfig ?? {};
@@ -737,133 +798,41 @@ export function sortKonsByDependencies(kons: KonSource[]): KonSource[] {
 }
 
 /**
- * Try to resolve a kon from various sources
+ * Dónde está un kon que la base pide cargar.
+ *
+ * ── POR CONFIGURACIÓN, NO RECORRIENDO CARPETAS ─────────────────────────────
+ *
+ * Esto probaba antes, por este orden, `packages/core/<x>`, tres variantes de
+ * `packages/kons/<x>`, `node_modules/@kitsuden/<x>`, `node_modules/kon-<x>` y
+ * CUALQUIER scope de node_modules que tuviera una carpeta con ese nombre. Era
+ * descubrir por el sistema de ficheros: lo que hubiera en disco existía.
+ *
+ * Desde que los kons viven fuera del núcleo (repo `kitsuden-kons`), un kon
+ * existe para la API solo si está INSTALADO —declarado en `kitsuden.kons.json`
+ * o en `KITSUDEN_KONS`, o es un módulo de `packages/core`— y la ruta la da
+ * `kons-instalados.ts`. Lo único que queda aquí aparte es `installed_kons`, la
+ * tabla de la instalación por marketplace (`kitsuden install`), para no dejar
+ * huérfano lo que ya se instaló así.
  */
 async function resolveKon(
   name: string,
-  workspaceRoot: string,
+  _workspaceRoot: string,
   nodeModulesPaths: string[]
 ): Promise<KonSource | null> {
   const cleanName = name.replace(/^kon-/, "");
   const dirName = `kon-${cleanName}`;
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // SOURCE 0: Kitsuden Core (packages/core/) — las baterías del framework.
-  // Los módulos core (datasets, media, blocks) viven aquí, SIN prefijo
-  // `kon-` en la carpeta, aunque conservan su manifest id (`kon-datasets`)
-  // como clave estable para la config/registry/DB. Se resuelven primero: son
-  // infraestructura, no plugins de dominio.
-  // ═══════════════════════════════════════════════════════════════════════
-  const corePath = join(workspaceRoot, "packages/core", cleanName);
-  if (existsSync(join(corePath, "kon.json")) || existsSync(join(corePath, "kitsuden.json"))) {
-    const manifest = await readKonManifest(corePath);
+  const instalado = konInstalado(name);
+  if (instalado?.ruta) {
+    const manifest = await readKonManifest(instalado.ruta);
     return {
-      id: manifest?.id || name,
-      name: manifest?.name || name,
-      source: "local",
-      path: corePath,
+      id: manifest?.id || instalado.id,
+      name: manifest?.name || instalado.id,
+      source: /[\\/]node_modules[\\/]/.test(instalado.ruta) ? "npm" : "local",
+      path: instalado.ruta,
       manifest: manifest || undefined,
       enabled: true,
     };
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // SOURCE 1: Local packages/kons/
-  // ═══════════════════════════════════════════════════════════════════════
-  const localPaths = [
-    join(workspaceRoot, "packages/kons", dirName),
-    join(workspaceRoot, "packages/kons", cleanName),
-    join(workspaceRoot, "packages/kons", name),
-  ];
-
-  for (const localPath of localPaths) {
-    if (existsSync(localPath)) {
-      const manifest = await readKonManifest(localPath);
-      return {
-        id: manifest?.id || name,
-        name: manifest?.name || name,
-        source: "local",
-        path: localPath,
-        manifest: manifest || undefined,
-        enabled: true,
-      };
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // SOURCE 2: node_modules (@kitsuden/kon-xxx)
-  // ═══════════════════════════════════════════════════════════════════════
-  for (const nmPath of nodeModulesPaths) {
-    // Official @kitsuden packages
-    const officialPaths = [
-      join(nmPath, "@kitsuden", dirName),
-      join(nmPath, "@kitsuden", cleanName),
-      join(nmPath, "@kitsuden", name),
-    ];
-
-    for (const officialPath of officialPaths) {
-      if (existsSync(officialPath)) {
-        const manifest = await readKonManifest(officialPath);
-        return {
-          id: manifest?.id || name,
-          name: manifest?.name || name,
-          source: "npm",
-          path: officialPath,
-          manifest: manifest || undefined,
-          enabled: true,
-        };
-      }
-    }
-
-    // Community kon-xxx packages
-    const communityPaths = [join(nmPath, dirName), join(nmPath, `kon-${cleanName}`)];
-
-    for (const communityPath of communityPaths) {
-      if (existsSync(communityPath)) {
-        const manifest = await readKonManifest(communityPath);
-        return {
-          id: manifest?.id || name,
-          name: manifest?.name || name,
-          source: "npm",
-          path: communityPath,
-          manifest: manifest || undefined,
-          enabled: true,
-        };
-      }
-    }
-
-    // Scoped 3rd party packages (@scope/kon-xxx)
-    // Try to find any scope that has this kon
-    try {
-      const entries = await readdir(nmPath, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.isDirectory() && entry.name.startsWith("@")) {
-          const scopePath = join(nmPath, entry.name);
-          const scopeEntries = await readdir(scopePath, { withFileTypes: true });
-          for (const scopeEntry of scopeEntries) {
-            if (
-              scopeEntry.isDirectory() &&
-              (scopeEntry.name === dirName ||
-                scopeEntry.name === cleanName ||
-                scopeEntry.name === name)
-            ) {
-              const thirdPartyPath = join(scopePath, scopeEntry.name);
-              const manifest = await readKonManifest(thirdPartyPath);
-              return {
-                id: manifest?.id || name,
-                name: manifest?.name || name,
-                source: "npm",
-                path: thirdPartyPath,
-                manifest: manifest || undefined,
-                enabled: true,
-              };
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignore errors reading node_modules
-    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1066,8 +1035,28 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
     }
   }
 
-  if (unresolved.length > 0) {
-    console.log(`  ⚠️  Could not resolve: ${unresolved.join(", ")}`);
+  // Lo que la base pide y no está instalado: con su nombre y con la orden que
+  // lo arregla. Antes era un "Could not resolve" sin más, que no distinguía un
+  // kon que falta de uno mal escrito.
+  const noInstalados: string[] = [];
+  for (const name of unresolved) {
+    const declarado = konInstalado(name);
+    if (declarado && !declarado.ruta) {
+      console.warn(
+        `  ⚠️  ${declarado.id} está declarado (${declarado.origen === "entorno" ? "KITSUDEN_KONS" : "kitsuden.kons.json"}) ` +
+          `pero no se encuentra en disco${declarado.declarado.path ? ` (${declarado.declarado.path})` : ""}. ` +
+          `Reinstálalo: kitsuden kon add ${declarado.id.replace(/^kon-/, "")}`
+      );
+    } else {
+      noInstalados.push(idDeKon(name));
+    }
+  }
+  if (noInstalados.length > 0) {
+    console.warn(
+      `  ⚠️  Activos en la base pero NO instalados (no se montan): ${noInstalados.join(", ")}
+` +
+        `     Instálalos con: kitsuden kon add <nombre>  (o decláralos en KITSUDEN_KONS)`
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1101,6 +1090,7 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
   const modern: string[] = [];
   const legacy: string[] = [];
   const fromNpm: string[] = [];
+  const rejected: { id: string; motivo: string }[] = [];
 
   for (const kon of sortedKons) {
     const cleanName = kon.id.replace(/^kon-/, "");
@@ -1111,6 +1101,16 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
     const compatWarning = checkKonCompatibility(await getKitsudenCoreVersion(), kon.manifest);
     if (compatWarning) {
       console.warn(`  ⚠️  ${compatWarning}`);
+    }
+
+    // SDK de kons, ANTES de importar: un kon escrito para un contrato más nuevo
+    // no llega a ejecutar ni una línea en este núcleo.
+    const motivoSdk = motivoDeSdkIncompatible(kon.id, kon.manifest?.sdk);
+    if (motivoSdk) {
+      console.error(`  ❌ ${kon.id} → NO se monta: ${motivoSdk}`);
+      failed.push(kon.id);
+      rejected.push({ id: kon.id, motivo: motivoSdk });
+      continue;
     }
 
     let mountPath = isGrimoireKon ? `/api/${cleanName}` : `/api/custom/${kon.id}`;
@@ -1177,6 +1177,17 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
       if (isKonDefinition(konExport)) {
         const konDef = konExport;
 
+        // SDK de kons: un kon escrito para un contrato más nuevo que este
+        // núcleo no se monta a medias (sus operaciones podrían usar campos
+        // que aquí no se entienden y abrirse sin la autorización que piden).
+        // (El manifiesto ya se comprobó antes de importar; esto cubre el kon
+        // que lo declara solo en el código.)
+        const motivoSdkDelCodigo = motivoDeSdkIncompatible(kon.id, konDef.sdk, VERSION_SDK_DE_KONS);
+        if (motivoSdkDelCodigo) {
+          rejected.push({ id: kon.id, motivo: motivoSdkDelCodigo });
+          throw new Error(motivoSdkDelCodigo);
+        }
+
         // Create router with injected context
         const router = konDef.createRouter(context);
 
@@ -1189,10 +1200,21 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
         // sabe (ni debe saber) dónde acaba enganchado.
         applyKonRateLimits(app, konDef, finalMountPath);
 
+        // Cada petición al kon, en su transacción RLS (ver `dbDeLaPeticion`).
+        montarRlsDeKon(app, finalMountPath);
         app.route(finalMountPath, router);
         // Lo que se monta es lo que se documenta: el OpenAPI, el 404 con
         // sugerencias y la guía para agentes salen de este registro.
         registrarRouterDeKon(kon.id, finalMountPath, router);
+        // Las operaciones del SDK: de aquí salen las herramientas MCP.
+        if (konDef.operaciones) {
+          registrarOperacionesMontadas(
+            kon.id,
+            finalMountPath,
+            operacionesDe(konDef, context),
+            router as never
+          );
+        }
         routerMounted = true;
 
         if (process.env.LOG_LEVEL === "debug") {
@@ -1229,6 +1251,7 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
       // ═══════════════════════════════════════════════════════════════════════
       for (const [, exportValue] of Object.entries(mod)) {
         if (isHonoRouter(exportValue)) {
+          montarRlsDeKon(app, mountPath);
           app.route(mountPath, exportValue as Hono);
           registrarRouterDeKon(kon.id, mountPath, exportValue);
           routerMounted = true;
@@ -1294,6 +1317,8 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
     modernos: [...modern],
     heredados: [...legacy],
     desdeNpm: [...fromNpm],
+    rechazados: [...rejected],
+    noInstalados: [...noInstalados],
   };
 
   // ── Caminos reservados para los kons que NO se cargaron ───────────────────
@@ -1315,17 +1340,18 @@ export async function loadKons(app: Hono<any>, existingContext?: KonContext): Pr
 }
 
 /**
- * Reserva la ruta de montaje de cada kon del disco que no se cargó.
+ * Reserva la ruta de montaje de cada kon INSTALADO que no se cargó.
  *
- * El catálogo sale del sistema de ficheros y no de la configuración: un kon
- * apagado hoy puede encenderse mañana, y para entonces ya no se podrá
- * registrar nada.
+ * El catálogo sale de la instalación (`kons-instalados.ts`), no de la tabla
+ * `modules` ni de recorrer una carpeta: un kon instalado y apagado hoy puede
+ * encenderse mañana desde el panel, y para entonces ya no se podrá registrar
+ * nada. Uno que no está instalado no tiene nada que reservar.
  */
 async function reservarCaminosDeKonsApagados(
   // El mismo tipo que recibe `loadKons`, sin repetir el `any`: si aquella
   // firma se estrecha algún día, esta la sigue sola.
   app: Parameters<typeof loadKons>[0],
-  workspaceRoot: string,
+  _workspaceRoot: string,
   cargados: Set<string>,
   context: KonContext,
   /**
@@ -1335,46 +1361,37 @@ async function reservarCaminosDeKonsApagados(
    * de arriba. Sin esto, un kon sin `mount.path` declarado se reservaba en
    * `/api/<nombre>` mientras el cargador lo habría montado en
    * `/api/custom/<id>`: la ruta habría cambiado al reiniciar, y el kon habría
-   * funcionado en caliente y dejado de funcionar después. Quince de los
-   * veintiocho kons del repo no declaran `mount.path`.
+   * funcionado en caliente y dejado de funcionar después.
    */
   grimoireKonKeys: Set<string>
 ): Promise<void> {
   try {
     const { registrarKonsDiferidos } = await import("./kons-diferidos");
-    const konsDir = join(workspaceRoot, "packages", "kons");
-    if (!existsSync(konsDir)) return;
-
-    const { readdir } = await import("node:fs/promises");
-    const entradas = await readdir(konsDir, { withFileTypes: true });
 
     const diferidos: KonDiferido[] = [];
-    for (const entrada of entradas) {
-      if (!entrada.isDirectory() || !entrada.name.startsWith("kon-")) continue;
+    for (const kon of konsInstalados()) {
+      if (kon.origen === "nucleo" || !kon.ruta) continue;
 
-      const ruta = join(konsDir, entrada.name);
-      const manifest = await readKonManifest(ruta);
+      const manifest = await readKonManifest(kon.ruta);
       if (!manifest?.id) continue;
 
       const cleanName = manifest.id.replace(/^kon-/, "");
       if (cargados.has(manifest.id) || cargados.has(cleanName)) continue;
 
-      // Todos los sitios donde este kon puede acabar montado. La ruta la decide,
-      // por precedencia: `konDef.mountPath` (en el código, ilegible desde aquí)
-      // > `mount.path` del manifiesto > `/api/<nombre>` si es del grimoire >
-      // `/api/custom/<id>`. Como la primera no se puede saber sin importar el
-      // kon —y para entonces el matcher ya está congelado—, se reservan las
-      // candidatas. Ver `KonDiferido.rutasMontaje`.
+      // Uno escrito para un SDK más nuevo tampoco se reserva: activarlo
+      // devolvería un 500 en cada petición en vez del motivo.
+      const motivoSdk = motivoDeSdkIncompatible(manifest.id, manifest.sdk);
+      if (motivoSdk) {
+        console.warn(`  ⚠️  ${manifest.id} no se reserva: ${motivoSdk}`);
+        continue;
+      }
+
       const esDelGrimoire = grimoireKonKeys.has(manifest.id) || grimoireKonKeys.has(cleanName);
 
       diferidos.push({
         id: manifest.id,
-        rutasMontaje: [
-          ...(manifest.mount?.path ? [manifest.mount.path] : []),
-          `/api/${cleanName}`,
-          ...(esDelGrimoire ? [] : [`/api/custom/${manifest.id}`]),
-        ],
-        ruta,
+        rutasMontaje: await rutasDeMontajeCandidatas(kon.ruta, manifest, esDelGrimoire),
+        ruta: kon.ruta,
         tieneRateLimits: !!(manifest as { rateLimits?: unknown }).rateLimits,
       });
     }
@@ -1390,6 +1407,61 @@ async function reservarCaminosDeKonsApagados(
 }
 
 /**
+ * Dónde puede acabar montado un kon que todavía no se ha cargado.
+ *
+ * La ruta la decide, por precedencia: `konDef.mountPath` (en el CÓDIGO) >
+ * `mount.path` del manifiesto > `/api/<nombre>` si es del grimoire >
+ * `/api/custom/<id>`.
+ *
+ * ── EL FALLO QUE ARREGLA ESTO (/api/shop) ──────────────────────────────────
+ *
+ * Antes solo se reservaban las candidatas que se leen sin importar el kon:
+ * `mount.path` del manifiesto, `/api/<nombre>` y `/api/custom/<id>`. Pero
+ * kon-ecommerce declara `mountPath: "/api/shop"` en su código y su kon.json no
+ * decía nada: se reservaban `/api/ecommerce` y `/api/custom/kon-ecommerce`, y
+ * tras activarlo con `PATCH /api/modules/kon-ecommerce` todo `/api/shop/*`
+ * respondía 404 hasta reiniciar. Lo mismo con kon-character-builder
+ * (`/api/builder`).
+ *
+ * Si el manifiesto no declara `mount.path`, ahora se IMPORTA el módulo para leer
+ * `mountPath`. Importar no ejecuta `createRouter` ni `onStartup`: solo evalúa el
+ * módulo, que no debe tener efectos. Si falla, se reservan las candidatas de
+ * siempre y se avisa.
+ */
+export async function rutasDeMontajeCandidatas(
+  ruta: string,
+  manifest: { id: string; mount?: { path?: string } },
+  esDelGrimoire: boolean
+): Promise<string[]> {
+  const cleanName = manifest.id.replace(/^kon-/, "");
+  const rutas: string[] = [];
+
+  if (manifest.mount?.path) {
+    rutas.push(manifest.mount.path);
+  } else {
+    try {
+      for (const fichero of ["index.ts", join("dist", "index.js"), "index.js"]) {
+        const candidato = join(ruta, fichero);
+        if (!existsSync(candidato)) continue;
+        const mod = (await import(pathToFileURL(candidato).href)) as Record<string, unknown>;
+        const exportado = (mod.kon ?? mod.default) as { mountPath?: unknown } | undefined;
+        if (exportado && typeof exportado.mountPath === "string") rutas.push(exportado.mountPath);
+        break;
+      }
+    } catch (err) {
+      console.warn(
+        `  ⚠️  ${manifest.id}: no se pudo leer su mountPath (${messageOf(err)}); ` +
+          `declara "mount": { "path": … } en su kon.json`
+      );
+    }
+  }
+
+  rutas.push(`/api/${cleanName}`);
+  if (!esDelGrimoire) rutas.push(`/api/custom/${manifest.id}`);
+  return [...new Set(rutas)];
+}
+
+/**
  * Resultado del último loadKons().
  *
  * Existe para que el arranque pueda mirar los fallos en vez de confiar en que
@@ -1402,6 +1474,10 @@ export interface InformeDeCarga {
   modernos: string[];
   heredados: string[];
   desdeNpm: string[];
+  /** Kons que no se montaron por su versión del SDK, con el motivo. */
+  rechazados?: { id: string; motivo: string }[];
+  /** Activos en la base pero no instalados (`kitsuden kon add`). */
+  noInstalados?: string[];
 }
 
 let ultimoInforme: InformeDeCarga = {

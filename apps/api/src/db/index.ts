@@ -8,6 +8,11 @@ import type {
 } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
+// Deep import del submódulo puro (no la fachada del engine, que importa este db).
+import { conTransaccionesPerezosas } from "../../../../packages/engine/src/rls-peticion";
+import { enPruebas } from "../lib/entorno";
+import { configuracionDelPool, vigilarPool } from "../lib/pool-agotado";
+
 import * as coreSchema from "./schema-core";
 
 const { Pool } = pg;
@@ -39,6 +44,22 @@ if (!connectionString && !isLiteMode) {
 let _mergedSchema: any;
 let _dbInstance: NodePgDatabase<any> | null = null;
 export let isPgMem = false;
+/** El pool de pg del camino normal (dev/prod); `null` en tests, lite y pg-mem. */
+let _pool: pg.Pool | null = null;
+
+/**
+ * Cómo está el pool AHORA (para `/metrics` y los benchmarks): conexiones
+ * abiertas, libres y peticiones esperando una. `null` sin pool de pg.
+ */
+export function estadoDelPool(): { total: number; idle: number; waiting: number; max: number } | null {
+  if (!_pool) return null;
+  return {
+    total: _pool.totalCount,
+    idle: _pool.idleCount,
+    waiting: _pool.waitingCount,
+    max: _pool.options.max ?? 10,
+  };
+}
 
 /**
  * Determine which database backend to use for tests.
@@ -80,7 +101,7 @@ function looksLikeTestDatabase(url: string | undefined): boolean {
 }
 
 async function initDb(): Promise<NodePgDatabase<any>> {
-  const isTest = process.env.NODE_ENV === "test";
+  const isTest = enPruebas();
 
   if (isTest) {
     const mode = getTestDbMode();
@@ -106,12 +127,15 @@ async function initDb(): Promise<NodePgDatabase<any>> {
       return await getPgMemDb();
     }
 
-    const testPool = new Pool({
-      connectionString,
-      max: 5,
-      idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 3000,
-    });
+    // Perezosa como en producción: la suite prueba el mismo camino.
+    const testPool = conTransaccionesPerezosas(
+      new Pool({
+        connectionString,
+        max: 5,
+        idleTimeoutMillis: 5000,
+        connectionTimeoutMillis: 3000,
+      })
+    );
 
     try {
       await testPool.query("SELECT 1");
@@ -184,12 +208,21 @@ async function initDb(): Promise<NodePgDatabase<any>> {
   }
 
   // --- Normal path (dev / prod) ---
-  const pool = new Pool({
-    connectionString,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  });
+  // Tamaño y esperas por entorno (DB_POOL_*); un pool agotado responde 503 +
+  // Retry-After en vez de 500 (ver lib/pool-agotado.ts).
+  //
+  // La transacción RLS de cada petición es PEREZOSA (`conTransaccionesPerezosas`):
+  // no pide conexión hasta la primera consulta, así que una ruta que llama
+  // fuera antes de tocar la base, o que no la toca, no retiene ninguna.
+  const pool = conTransaccionesPerezosas(
+    vigilarPool(
+      new Pool({
+        connectionString,
+        ...configuracionDelPool(),
+      })
+    )
+  );
+  _pool = pool;
 
   const { buildMergedSchema } = await import("../lib/schema-merger");
   console.log("📋 Building merged schema...");

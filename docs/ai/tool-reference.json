@@ -22,9 +22,9 @@
         "properties": {
           "format": {
             "type": "string",
-            "enum": ["json", "toon"],
-            "default": "json",
-            "description": "Response format. Use 'toon' to reduce token usage by ~60% when the list is large."
+            "enum": ["auto", "json", "toon", "tron"],
+            "default": "auto",
+            "description": "Result format. 'auto' (default): compact JSON, TOON or TRON, whichever is shortest for this result and decodes back to the same data; _meta['kitsuden/format'] says which. 'json' forces compact JSON."
           }
         },
         "required": [],
@@ -45,12 +45,12 @@
     },
     {
       "name": "kitsuden_query_dataset",
-      "description": "Query records from a specific dataset. Respects RLS policies automatically. Supports pagination, status filtering, and TOON encoding.",
+      "description": "Query records from a specific dataset. Respects RLS policies automatically. Supports pagination and status filtering; results come in the shortest lossless format.",
       "whenToUse": [
         "Reading records from a JSONB dataset",
         "Filtering by status (published, draft, archived)",
         "Paginating through large result sets",
-        "Returning data in TOON format to save LLM context tokens"
+        "Returning a long list to the LLM (the default 'auto' format keeps it compact)"
       ],
       "whenNotToUse": [
         "You need to query a native SQL table owned by a kon — use kitsuden_query_table or the kon's REST endpoint",
@@ -80,9 +80,9 @@
           },
           "format": {
             "type": "string",
-            "enum": ["json", "toon"],
-            "default": "json",
-            "description": "Response format. Use 'toon' for large payloads."
+            "enum": ["auto", "json", "toon", "tron"],
+            "default": "auto",
+            "description": "Result format. 'auto' (default): compact JSON, TOON or TRON, whichever is shortest for this result and decodes back to the same data; _meta['kitsuden/format'] says which. 'json' forces compact JSON."
           }
         },
         "required": ["datasetId"],
@@ -485,7 +485,7 @@
     },
     {
       "name": "kitsuden_dispatch_worker",
-      "description": "Enqueue an asynchronous background job via BullMQ. Requires Valkey (Redis) to be running.",
+      "description": "Enqueue an asynchronous background job on the Postgres queue (transactional outbox).",
       "whenToUse": [
         "Sending emails asynchronously",
         "Processing images, videos, or imports",
@@ -530,7 +530,7 @@
     },
     {
       "name": "kitsuden_query_collection",
-      "description": "Query any collection — dataset or native table — with pagination, search, sort, and TOON output. No UUID needed; uses slug/table name.",
+      "description": "Query any collection — dataset or native table — with pagination, search and sort; results come in the shortest lossless format. No UUID needed; uses slug/table name.",
       "whenToUse": [
         "Reading records from any collection without needing the dataset UUID",
         "Querying native kon tables directly",
@@ -549,7 +549,11 @@
           "search": { "type": "string" },
           "sort": { "type": "string" },
           "where": { "type": "object", "description": "Filter by field=value (datasets only)." },
-          "format": { "type": "string", "enum": ["json", "toon"], "default": "json" }
+          "format": {
+            "type": "string",
+            "enum": ["auto", "json", "toon", "tron"],
+            "default": "auto"
+          }
         },
         "required": ["collection"],
         "additionalProperties": false
@@ -650,7 +654,7 @@
     },
     {
       "name": "kitsuden_describe_collection",
-      "description": "Get the schema/fields of any collection — dataset or native table. Supports TOON for compact output.",
+      "description": "Get the schema/fields of any collection — dataset or native table. Results come in the shortest lossless format.",
       "whenToUse": [
         "Discovering the fields of a collection before generating code",
         "Inspecting a kon's native table structure"
@@ -660,7 +664,11 @@
         "type": "object",
         "properties": {
           "collection": { "type": "string" },
-          "format": { "type": "string", "enum": ["json", "toon"], "default": "json" }
+          "format": {
+            "type": "string",
+            "enum": ["auto", "json", "toon", "tron"],
+            "default": "auto"
+          }
         },
         "required": ["collection"],
         "additionalProperties": false

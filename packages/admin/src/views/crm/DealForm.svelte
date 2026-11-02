@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   import { ArrowLeft } from "lucide-svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -44,10 +45,10 @@
   });
 
   const statuses = [
-    { value: "open", label: "Open" },
-    { value: "won", label: "Won" },
-    { value: "lost", label: "Lost" },
-    { value: "paused", label: "Paused" },
+    { value: "open", label: tr("dealForm.open") },
+    { value: "won", label: tr("dealForm.won") },
+    { value: "lost", label: tr("dealForm.lost") },
+    { value: "paused", label: tr("dealForm.paused") },
   ];
 
   onMount(async () => {
@@ -73,7 +74,7 @@
         tagsInput = (deal.tags || []).join(", ");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load data");
+      toast.error(e instanceof Error ? e.message : tr("dealForm.failedToLoadData"));
     }
   });
 
@@ -89,7 +90,7 @@
         formData.stageId = stages[0]?.id || "";
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to load stages");
+      toast.error(e instanceof Error ? e.message : tr("dealForm.failedToLoadStages"));
     }
   }
 
@@ -104,11 +105,11 @@
 
   async function handleSubmit() {
     if (!formData.title?.trim()) {
-      toast.error("Deal title is required");
+      toast.error(tr("dealForm.dealTitleIsRequired"));
       return;
     }
     if (!formData.stageId) {
-      toast.error("Stage is required");
+      toast.error(tr("dealForm.stageIsRequired"));
       return;
     }
 
@@ -127,14 +128,14 @@
 
       if (dealId) {
         await api.updateCrmDeal(dealId, payload);
-        toast.success("Deal updated");
+        toast.success(tr("dealForm.dealUpdated"));
       } else {
         await api.createCrmDeal(payload);
-        toast.success("Deal created");
+        toast.success(tr("dealForm.dealCreated"));
       }
       onSave();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to save deal");
+      toast.error(e instanceof Error ? e.message : tr("dealForm.failedToSaveDeal"));
     } finally {
       loading = false;
     }
@@ -145,10 +146,10 @@
   <div class="flex items-center gap-2 text-sm text-zinc-400">
     <Button variant="ghost" size="sm" onclick={onBack} class="gap-1">
       <ArrowLeft class="w-4 h-4" />
-      Deals
+      {tr("dealForm.deals")}
     </Button>
     <span>/</span>
-    <span class="text-zinc-100">{dealId ? "Edit" : "New"} Deal</span>
+    <span class="text-zinc-100">{dealId ? tr("common.edit") : tr("dealForm.new")} {tr("dealForm.deal")}</span>
   </div>
 
   <div class="space-y-8">
@@ -156,29 +157,29 @@
       <h3
         class="text-sm font-semibold text-zinc-200 uppercase tracking-wider mb-3 border-b border-zinc-800 pb-2"
       >
-        Deal Information
+        {tr("dealForm.dealInformation")}
       </h3>
       <div class="grid gap-4 md:grid-cols-2">
         <!-- Title -->
         <div class="space-y-2 md:col-span-2">
-          <Label for="title">Deal Title <span class="text-red-400">*</span></Label>
-          <Input id="title" bind:value={formData.title} placeholder="Enterprise Software License" />
+          <Label for="title">{tr("dealForm.dealTitle")} <span class="text-red-400">*</span></Label>
+          <Input id="title" bind:value={formData.title} placeholder={tr("dealForm.enterpriseSoftwareLicense")} />
         </div>
 
         <!-- Description -->
         <div class="space-y-2 md:col-span-2">
-          <Label for="description">Description</Label>
+          <Label for="description">{tr("common.description")}</Label>
           <Textarea
             id="description"
             bind:value={formData.description}
-            placeholder="Deal details and notes..."
+            placeholder={tr("dealForm.dealDetailsAndNotes")}
             rows={3}
           />
         </div>
 
         <!-- Value -->
         <div class="space-y-2">
-          <Label for="value">Value (cents)</Label>
+          <Label for="value">{tr("dealForm.valueCents")}</Label>
           <input
             id="value"
             type="number"
@@ -190,13 +191,13 @@
 
         <!-- Currency -->
         <div class="space-y-2">
-          <Label for="currency">Currency</Label>
+          <Label for="currency">{tr("common.currency")}</Label>
           <Input id="currency" bind:value={formData.currency} placeholder="USD" />
         </div>
 
         <!-- Status -->
         <div class="space-y-2">
-          <Label for="status">Status</Label>
+          <Label for="status">{tr("common.status")}</Label>
           <select
             id="status"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100"
@@ -210,7 +211,7 @@
 
         <!-- Probability -->
         <div class="space-y-2">
-          <Label for="probability">Probability (%)</Label>
+          <Label for="probability">{tr("dealForm.probability")}</Label>
           <input
             id="probability"
             type="number"
@@ -224,13 +225,13 @@
 
         <!-- Pipeline -->
         <div class="space-y-2">
-          <Label for="pipelineId">Pipeline <span class="text-red-400">*</span></Label>
+          <Label for="pipelineId">{tr("dealForm.pipeline")} <span class="text-red-400">*</span></Label>
           <select
             id="pipelineId"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100"
             bind:value={formData.pipelineId}
           >
-            <option value="">Select pipeline...</option>
+            <option value="">{tr("dealForm.selectPipeline")}</option>
             {#each pipelines as pipeline}
               <option value={pipeline.id}>{pipeline.name}</option>
             {/each}
@@ -239,13 +240,13 @@
 
         <!-- Stage -->
         <div class="space-y-2">
-          <Label for="stageId">Stage <span class="text-red-400">*</span></Label>
+          <Label for="stageId">{tr("dealForm.stage")} <span class="text-red-400">*</span></Label>
           <select
             id="stageId"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100"
             bind:value={formData.stageId}
           >
-            <option value="">Select stage...</option>
+            <option value="">{tr("dealForm.selectStage")}</option>
             {#each stages as stage}
               <option value={stage.id}>{stage.name}</option>
             {/each}
@@ -254,7 +255,7 @@
 
         <!-- Expected Close Date -->
         <div class="space-y-2">
-          <Label for="expectedCloseDate">Expected Close Date</Label>
+          <Label for="expectedCloseDate">{tr("dealForm.expectedCloseDate")}</Label>
           <input
             id="expectedCloseDate"
             type="date"
@@ -265,23 +266,23 @@
 
         <!-- Source -->
         <div class="space-y-2">
-          <Label for="source">Source</Label>
-          <Input id="source" bind:value={formData.source} placeholder="Website, Campaign, etc." />
+          <Label for="source">{tr("common.source")}</Label>
+          <Input id="source" bind:value={formData.source} placeholder={tr("dealForm.websiteCampaignEtc")} />
         </div>
 
         <!-- Campaign -->
         <div class="space-y-2">
-          <Label for="campaign">Campaign</Label>
-          <Input id="campaign" bind:value={formData.campaign} placeholder="Summer 2024" />
+          <Label for="campaign">{tr("dealForm.campaign")}</Label>
+          <Input id="campaign" bind:value={formData.campaign} placeholder={tr("dealForm.summer2024")} />
         </div>
 
         <!-- Tags -->
         <div class="space-y-2 md:col-span-2">
-          <Label for="tags">Tags</Label>
+          <Label for="tags">{tr("common.tags")}</Label>
           <Input
             id="tags"
             bind:value={tagsInput}
-            placeholder="enterprise, qualified, urgent (comma separated)"
+            placeholder={tr("dealForm.enterpriseQualifiedUrgentCommaSeparated")}
           />
         </div>
       </div>
@@ -291,47 +292,47 @@
       <h3
         class="text-sm font-semibold text-zinc-200 uppercase tracking-wider mb-3 border-b border-zinc-800 pb-2"
       >
-        Related Entities
+        {tr("dealForm.relatedEntities")}
       </h3>
       <div class="grid gap-4 md:grid-cols-2">
         <div class="space-y-2">
-          <Label for="contactId">Related Contact</Label>
+          <Label for="contactId">{tr("dealForm.relatedContact")}</Label>
           <select
             id="contactId"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100"
             bind:value={formData.contactId}
           >
-            <option value="">— None —</option>
+            <option value="">{tr("dealForm.none")}</option>
             {#each contacts as c}
               <option value={c.id}>{c.firstName} {c.lastName}</option>
             {/each}
           </select>
         </div>
         <div class="space-y-2">
-          <Label for="companyId">Related Company</Label>
+          <Label for="companyId">{tr("dealForm.relatedCompany")}</Label>
           <select
             id="companyId"
             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100"
             bind:value={formData.companyId}
           >
-            <option value="">— None —</option>
+            <option value="">{tr("dealForm.none")}</option>
             {#each companies as c}
               <option value={c.id}>{c.name}</option>
             {/each}
           </select>
         </div>
         <div class="space-y-2">
-          <Label for="assignedTo">Assigned To</Label>
-          <Input id="assignedTo" bind:value={formData.assignedTo} placeholder="User ID" />
+          <Label for="assignedTo">{tr("dealForm.assignedTo")}</Label>
+          <Input id="assignedTo" bind:value={formData.assignedTo} placeholder={tr("common.userId")} />
         </div>
       </div>
     </section>
 
     <div class="border-t border-zinc-800 pt-4 flex gap-2">
       <Button onclick={handleSubmit} disabled={loading}>
-        {loading ? "Saving..." : dealId ? "Save Changes" : "Create Deal"}
+        {loading ? tr("common.saving") : dealId ? tr("dealForm.saveChanges") : tr("dealForm.createDeal")}
       </Button>
-      <Button variant="outline" onclick={onBack} disabled={loading}>Cancel</Button>
+      <Button variant="outline" onclick={onBack} disabled={loading}>{tr("common.cancel")}</Button>
     </div>
   </div>
 </div>

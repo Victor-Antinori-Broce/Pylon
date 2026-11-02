@@ -24,10 +24,10 @@ const searchSchema = z.object({
 });
 
 const indexSchema = z.object({
-  entryId: z.string().uuid(),
+  entryId: z.guid(),
   content: z.string(),
   fieldName: z.string(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   expiresAt: z.string().datetime().optional(),
 });
 

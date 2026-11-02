@@ -29,19 +29,19 @@ test.describe("API Health & Endpoints", () => {
     expect(game).toHaveProperty("slug");
   });
 
-  test("Games search finds Elden Ring", async ({ request }) => {
-    const res = await request.get(`${API}/games?search=elden`);
+  test("Games search finds the seeded example game", async ({ request }) => {
+    const res = await request.get(`${API}/games?search=example`);
     const data = await res.json();
     expect(data.docs.length).toBeGreaterThanOrEqual(1);
-    expect(data.docs[0].title).toContain("Elden");
+    expect(data.docs[0].title).toContain("Example");
   });
 
   test("Games slug lookup works", async ({ request }) => {
-    const res = await request.get(`${API}/games/slug/elden-ring`);
+    const res = await request.get(`${API}/games/slug/example-quest`);
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
-    expect(data.title).toBe("Elden Ring");
-    expect(data.metacriticScore).toBe(96);
+    expect(data.title).toBe("Example Quest");
+    expect(data.metacriticScore).toBe(90);
   });
 
   test("Games 404 for nonexistent slug", async ({ request }) => {

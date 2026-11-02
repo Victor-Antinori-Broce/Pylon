@@ -235,7 +235,7 @@ export type DatasetDefinition = z.infer<typeof DatasetDefinitionSchema>;
 export const DatasetEntrySchema = z.object({
   id: z.string(),
   datasetId: z.string(),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });

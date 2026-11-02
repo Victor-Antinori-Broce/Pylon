@@ -2,45 +2,55 @@ import { randomBytes } from "crypto";
 
 import { eq } from "drizzle-orm";
 
-import { auth } from "../lib/auth";
+import { insertCredentialUser } from "../lib/first-run";
 
 import { authUsers as user } from "./schema";
 
 import { db } from "./index";
 
-async function addVantinori() {
-  const email = "vantinori@fpacifico.com";
+/**
+ * Creates an admin account. Nothing is hardcoded: the email comes from
+ * `SEED_ADMIN_EMAIL` and the display name from `SEED_ADMIN_NAME`.
+ *
+ * It does not promote an account that already exists: with open sign-up, anyone
+ * can pre-register that address with their own password.
+ */
+async function seedAdmin() {
+  const email = process.env.SEED_ADMIN_EMAIL?.trim();
+  if (!email) {
+    console.error("❌ Set SEED_ADMIN_EMAIL to the admin account's email.");
+    process.exit(1);
+  }
   const password = process.env.USER_SEED_PASSWORD || randomBytes(16).toString("hex");
 
   console.log(`Checking if ${email} exists...`);
   const existing = await db.select().from(user).where(eq(user.email, email)).limit(1);
 
-  if (existing.length) {
-    console.log("User already exists. Making sure it has admin role...");
-    await db.update(user).set({ role: "admin" }).where(eq(user.id, existing[0].id));
-    console.log("Done.");
+  if (existing[0]?.role === "admin") {
+    console.log("That account is already an admin. Nothing to do.");
+  } else if (existing.length) {
+    console.error(
+      "❌ That account already exists and is not an admin. This script does not promote it:\n" +
+        "   whoever registered it knows its password. Promote it from the panel (Users) once\n" +
+        "   you know it is yours, or seed another address."
+    );
+    process.exit(1);
   } else {
     console.log("Creating user...");
-    const result = await auth.api.signUpEmail({
-      body: {
+    await db.transaction(async (tx) => {
+      const created = await insertCredentialUser(tx, {
         email,
         password,
-        name: "Vantinori",
-      },
-      headers: new Headers({ "Content-Type": "application/json" }),
-      asResponse: false,
+        name: process.env.SEED_ADMIN_NAME?.trim() || "Admin",
+      });
+      await tx.update(user).set({ role: "admin", emailVerified: true }).where(eq(user.id, created.id));
     });
-
-    if (result && "user" in result && result.user?.id) {
-      await db.update(user).set({ role: "admin" }).where(eq(user.id, result.user.id));
-      console.log(`✅ Created admin ${email}`);
-      console.log(`   Password: ${password}`);
-      console.log(`   ⚠ IMPORTANT: Save this password or set USER_SEED_PASSWORD env var.`);
-    } else {
-      console.log("❌ Failed to create user.");
-    }
+    console.log(`✅ Created admin ${email}`);
+    // Solo si la generó este script: si vino de USER_SEED_PASSWORD ya la tiene quien la puso.
+    console.log(`   Password: ${process.env.USER_SEED_PASSWORD ? "(the one in USER_SEED_PASSWORD)" : password}`);
+    console.log(`   ⚠ IMPORTANT: Save this password or set USER_SEED_PASSWORD env var.`);
   }
   process.exit(0);
 }
 
-addVantinori();
+seedAdmin();

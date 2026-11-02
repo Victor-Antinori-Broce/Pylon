@@ -1,0 +1,86 @@
+/**
+ * Kitsuden CMS — Design System Variables
+ * 
+ * Cyberpunk-industrial aesthetic with high contrast and neon accents.
+ * Optimized for gaming content and dark mode interfaces.
+ */
+
+:root {
+  /* ═══ Background Layers ═══ */
+  --kitsuden-bg: #0a0a0f;
+  --kitsuden-surface: #12121a;
+  --kitsuden-card: #1a1a24;
+  --kitsuden-elevated: #222230;
+
+  /* ═══ Text Hierarchy ═══ */
+  --kitsuden-text: #f4f4f5;
+  --kitsuden-text-secondary: #a1a1aa;
+  --kitsuden-text-dim: #71717a;
+  --kitsuden-text-muted: #52525b;
+
+  /* ═══ Borders & Dividers ═══ */
+  --kitsuden-border: #27272a;
+  --kitsuden-border-subtle: #3f3f46;
+  --kitsuden-divider: #18181b;
+
+  /* ═══ Primary Accent — Cyan ═══ */
+  --kitsuden-cyan: #00e5ff;
+  --kitsuden-cyan-dim: #00b8d4;
+  --kitsuden-cyan-glow: rgba(0, 229, 255, 0.15);
+
+  /* ═══ Secondary Accent — Pink ═══ */
+  --kitsuden-pink: #ff2a6d;
+  --kitsuden-pink-dim: #d61f5c;
+  --kitsuden-pink-glow: rgba(255, 42, 109, 0.15);
+
+  /* ═══ Tertiary Accents ═══ */
+  --kitsuden-purple: #a855f7;
+  --kitsuden-green: #10b981;
+  --kitsuden-amber: #f59e0b;
+  --kitsuden-red: #ef4444;
+
+  /* ═══ Status Colors ═══ */
+  --kitsuden-success: #22c55e;
+  --kitsuden-warning: #eab308;
+  --kitsuden-error: #dc2626;
+  --kitsuden-info: #3b82f6;
+
+  /* ═══ Typography ═══ */
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+
+  /* ═══ Spacing Scale ═══ */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* ═══ Border Radius ═══ */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* ═══ Shadows ═══ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-glow-cyan: 0 0 20px var(--kitsuden-cyan-glow);
+  --shadow-glow-pink: 0 0 20px var(--kitsuden-pink-glow);
+
+  /* ═══ Transitions ═══ */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ═══ Dark Mode Override (if system preference matters) ═══ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}

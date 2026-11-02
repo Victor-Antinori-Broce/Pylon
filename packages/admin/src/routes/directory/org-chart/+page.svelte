@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     Building2,
     Users,
@@ -129,7 +130,7 @@
       await loadOrganizations();
       if (selectedOrg) await loadOrgChart();
     } catch (err: any) {
-      alert(err?.body?.error || "Error al crear organización");
+      alert(err?.body?.error || t("orgChartPage.errorAlCrearOrganizacion"));
     } finally {
       savingOrg = false;
     }
@@ -142,9 +143,9 @@
     <div>
       <h1 class="text-2xl font-semibold text-white flex items-center gap-3">
         <Building2 class="w-7 h-7 text-kitsuden-accent" />
-        Organigrama
+        {t("orgChartPage.organigrama")}
       </h1>
-      <p class="text-kitsuden-subtle mt-1">Visualización jerárquica de la organización</p>
+      <p class="text-kitsuden-subtle mt-1">{t("orgChartPage.visualizacionJerarquicaDeLaOrganizacion")}</p>
     </div>
 
     <div class="flex items-center gap-3">
@@ -166,7 +167,7 @@
       <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
       <input
         type="text"
-        placeholder="Buscar empleado..."
+        placeholder={t("orgChartPage.buscarEmpleado")}
         bind:value={searchQuery}
         class="w-full pl-10 pr-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-white placeholder:text-kitsuden-subtle focus:border-kitsuden-accent/50 focus:outline-none"
       />
@@ -182,8 +183,8 @@
     {:else if organizations.length === 0}
       <div class="text-center py-12">
         <Building2 class="w-16 h-16 text-kitsuden-subtle mx-auto mb-4" />
-        <h3 class="text-lg font-medium text-white mb-2">No hay organizaciones</h3>
-        <p class="text-kitsuden-subtle mb-4">Crea una organización para ver el organigrama</p>
+        <h3 class="text-lg font-medium text-white mb-2">{t("orgChartPage.noHayOrganizaciones")}</h3>
+        <p class="text-kitsuden-subtle mb-4">{t("orgChartPage.creaUnaOrganizacionParaVer")}</p>
         <button
           class="btn btn-primary gap-2"
           onclick={() => {
@@ -192,15 +193,15 @@
           }}
         >
           <Plus class="w-4 h-4" />
-          Crear Organización
+          {t("orgChartPage.crearOrganizacion")}
         </button>
       </div>
     {:else if orgData.length === 0}
       <div class="text-center py-12">
         <Users class="w-16 h-16 text-kitsuden-subtle mx-auto mb-4" />
-        <h3 class="text-lg font-medium text-white mb-2">No hay empleados</h3>
+        <h3 class="text-lg font-medium text-white mb-2">{t("orgChartPage.noHayEmpleados")}</h3>
         <p class="text-kitsuden-subtle">
-          La organización seleccionada no tiene empleados registrados
+          {t("orgChartPage.laOrganizacionSeleccionadaNoTiene")}
         </p>
       </div>
     {:else}
@@ -243,7 +244,7 @@
                 {selectedEmployee.displayName ||
                   `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
               </h3>
-              <p class="text-kitsuden-accent">{selectedEmployee.positionTitle || "Sin cargo"}</p>
+              <p class="text-kitsuden-accent">{selectedEmployee.positionTitle || t("orgChartPage.sinCargo")}</p>
               <p class="text-sm text-kitsuden-subtle">{selectedEmployee.departmentName || ""}</p>
             </div>
           </div>
@@ -265,10 +266,10 @@
               href="/directory/employees/{selectedEmployee.id}"
               class="flex-1 btn btn-primary text-center"
             >
-              Ver Perfil Completo
+              {t("orgChartPage.verPerfilCompleto")}
             </a>
             <button class="btn btn-ghost" onclick={() => (selectedEmployee = null)}>
-              Cerrar
+              {t("orgChartPage.cerrar")}
             </button>
           </div>
         </div>
@@ -288,7 +289,7 @@
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-md w-full mx-4"
     >
       <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
-        <h3 class="text-lg font-semibold text-white">Nueva Organización</h3>
+        <h3 class="text-lg font-semibold text-white">{t("orgChartPage.nuevaOrganizacion")}</h3>
         <button
           onclick={() => (showCreateOrgModal = false)}
           class="p-2 rounded-xl text-kitsuden-subtle hover:text-white hover:bg-white/5"
@@ -299,13 +300,13 @@
       <form onsubmit={createOrganization} class="p-6 space-y-4">
         <div>
           <label for="neworgname" class="block text-sm font-medium text-kitsuden-subtle mb-1.5"
-            >Nombre *</label
+            >{t("orgChartPage.nombre")}</label
           >
           <input
             id="neworgname"
             bind:value={newOrgName}
             type="text"
-            placeholder="Ej. Acme Corp"
+            placeholder={t("orgChartPage.ejAcmeCorp")}
             class="w-full px-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-white placeholder:text-kitsuden-subtle focus:border-kitsuden-accent/50 focus:outline-none"
             required
           />
@@ -315,7 +316,7 @@
             type="button"
             onclick={() => (showCreateOrgModal = false)}
             class="px-4 py-2 rounded-lg text-kitsuden-subtle hover:text-white hover:bg-white/5 transition-all"
-            >Cancelar</button
+            >{t("common.cancelar")}</button
           >
           <button
             type="submit"
@@ -324,10 +325,10 @@
           >
             {#if savingOrg}
               <Loader2 class="w-4 h-4 animate-spin" />
-              Creando...
+              {t("orgChartPage.creando")}
             {:else}
               <Plus class="w-4 h-4" />
-              Crear
+              {t("common.crear")}
             {/if}
           </button>
         </div>
@@ -391,7 +392,7 @@
           {node.displayName || `${node.firstName} ${node.lastName}`}
         </p>
         <p class="text-sm text-kitsuden-subtle truncate">
-          {node.positionTitle || "Sin cargo"}
+          {node.positionTitle || t("orgChartPage.sinCargo")}
         </p>
       </div>
 

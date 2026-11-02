@@ -32,6 +32,7 @@ import * as coreSchema from "../db/schema-core";
 import { installedKons } from "../db/schema-core";
 
 import { leerKonsDelGrimoire } from "./grimoire-manifest";
+import { rutaDeKon } from "./kons-instalados";
 
 /**
  * Kons that handle their own migrations (SQL files)
@@ -155,7 +156,19 @@ export async function buildMergedSchema(consultas?: Database): Promise<Record<st
       const cleanName = name.replace(/^kon-/, "");
       const dirName = KON_DIR_MAP[name] || KON_DIR_MAP[cleanName] || `kon-${cleanName}`;
 
+      // Primero la carpeta del kon INSTALADO (kons-instalados.ts): puede no
+      // estar en packages/kons (enlazado desde kitsuden-kons, node_modules…).
+      const instalada = rutaDeKon(name);
       const possiblePaths = [
+        ...(instalada
+          ? [
+              join(instalada, `${cleanName}.schema.ts`),
+              join(instalada, `${dirName}.schema.ts`),
+              join(instalada, `schema.ts`),
+              join(instalada, `src`, `schema.ts`),
+              join(instalada, `src`, `${cleanName}.schema.ts`),
+            ]
+          : []),
         join(konsPath, name, `${name}.schema.ts`),
         join(konsPath, name, `${cleanName}.schema.ts`),
         join(konsPath, name, `schema.ts`),

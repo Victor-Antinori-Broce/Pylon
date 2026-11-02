@@ -1,0 +1,23 @@
+# Avisos y actualizaciones de seguridad de las dependencias (kitsuden2.md G).
+#
+# `hono` va fijado a una versión exacta (4.13.13): Dependabot abre el PR cuando
+# salga un aviso (como GHSA-5r4p-p66f-jhc7 / CVE-2026-111757, serveStatic,
+# corregido en 4.13.11) y la subida se revisa a mano, no por un rango `^`.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      hono:
+        patterns: ["hono", "@hono/*"]
+      drizzle:
+        patterns: ["drizzle-orm", "drizzle-kit"]
+    labels: ["dependencies"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

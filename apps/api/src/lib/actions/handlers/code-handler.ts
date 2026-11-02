@@ -1,10 +1,12 @@
 /**
  * Code Action Handler
  *
- * Executes JavaScript/TypeScript code in a sandboxed environment.
- * This replaces the old worker-sandbox.ts with a unified interface.
+ * Ejecuta el código de una acción en el sandbox aislado (QuickJS en un proceso
+ * aparte, ver lib/worker-sandbox.ts). La API de Kitsuden que recibe el código
+ * va con la identidad que decide lib/sandbox/identidad.ts.
  */
 
+import { apiDeSandboxPara, identidadDeLaAccion } from "../../sandbox/identidad";
 import { executeSandbox } from "../../worker-sandbox";
 import type { Action, ActionContext, ActionResult } from "../types";
 
@@ -13,6 +15,12 @@ interface CodeActionConfig {
   timeoutMs?: number;
   memoryLimitMb?: number;
   envVars?: Record<string, string>;
+  /** Scopes de la API para el código (ver lib/sandbox/identidad.ts). */
+  scopes?: string[];
+  /** Hosts a los que `fetch` puede llamar (`api.ejemplo.com`, `*.ejemplo.com`). */
+  fetchAllow?: string[];
+  /** Máximo de llamadas a fetch + API por ejecución. */
+  maxCalls?: number;
 }
 
 export async function executeCodeAction(
@@ -44,6 +52,8 @@ export async function executeCodeAction(
     timestamp: new Date().toISOString(),
   };
 
+  const identidad = await identidadDeLaAccion(action, context.ejecutor);
+
   // Execute in sandbox
   const sandboxResult = await executeSandbox({
     code: config.code,
@@ -51,6 +61,9 @@ export async function executeCodeAction(
     envVars: { ...config.envVars, ...context.env },
     timeoutMs: config.timeoutMs || 5000,
     memoryLimitMb: config.memoryLimitMb || 64,
+    fetchAllow: Array.isArray(config.fetchAllow) ? config.fetchAllow.filter((h) => typeof h === "string") : [],
+    maxCalls: config.maxCalls,
+    api: identidad ? apiDeSandboxPara(identidad, action.id) : null,
   });
 
   return {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr, localeFormato } from "$lib/i18n";
   import {
     Gamepad2,
     CheckCircle,
@@ -198,7 +199,7 @@
       gamesTotalPages = res.totalPages;
       selectedGameIds = new Set();
     } catch (e: any) {
-      toast.error("Failed to load games: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.failedToLoadGames") + (e.message || tr("gamesView.unknownError")));
     } finally {
       gamesLoading = false;
     }
@@ -210,7 +211,7 @@
       collections = (res.docs as Collection[]) || [];
       totalCollections = res.totalDocs ?? collections.length;
     } catch (e: any) {
-      toast.error("Failed to load collections: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.failedToLoadCollections") + (e.message || tr("gamesView.unknownError")));
     } finally {
       collectionsLoading = false;
     }
@@ -221,7 +222,7 @@
       const res = await api.getPlatforms();
       platforms = (res.docs as Platform[]) || [];
     } catch (e: any) {
-      toast.error("Failed to load platforms: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.failedToLoadPlatforms") + (e.message || tr("gamesView.unknownError")));
     } finally {
       platformsLoading = false;
     }
@@ -232,7 +233,7 @@
       const res = await api.getTags();
       tags = (res.docs as TagItem[]) || [];
     } catch (e: any) {
-      toast.error("Failed to load tags: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.failedToLoadTags") + (e.message || tr("gamesView.unknownError")));
     } finally {
       tagsLoading = false;
     }
@@ -251,7 +252,7 @@
       draftGames = draft.totalDocs;
       totalCollections = colls.totalDocs ?? 0;
     } catch (e: any) {
-      toast.error("Failed to load stats: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.failedToLoadStats") + (e.message || tr("gamesView.unknownError")));
     } finally {
       statsLoading = false;
     }
@@ -266,35 +267,35 @@
   });
 
   async function deleteGame(id: string) {
-    if (!confirm("Delete this game?")) return;
+    if (!confirm(tr("gamesView.deleteThisGame"))) return;
     try {
       await api.deleteGame(id);
-      toast.success("Game deleted");
+      toast.success(tr("gamesView.gameDeleted"));
       await loadGames();
       await loadStats();
     } catch (e: any) {
-      toast.error("Delete failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.deleteFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
   async function bulkDeleteGames() {
     const ids = Array.from(selectedGameIds);
-    if (!ids.length || !confirm(`Delete ${ids.length} games?`)) return;
+    if (!ids.length || !confirm(tr("gamesView.deleteGames", { idsCount: ids.length }))) return;
     try {
       await Promise.all(ids.map((id) => api.deleteGame(id)));
-      toast.success(`${ids.length} games deleted`);
+      toast.success(tr("gamesView.gamesDeleted", { idsCount: ids.length }));
       await loadGames();
       await loadStats();
     } catch (e: any) {
-      toast.error("Bulk delete failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.bulkDeleteFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
   async function toggleFeatured(game: Game) {
     try {
       await api.updateGame(game.id, { isFeaturedOnHome: !game.isFeaturedOnHome } as any);
       game.isFeaturedOnHome = !game.isFeaturedOnHome;
-      toast.success(game.isFeaturedOnHome ? "Featured" : "Unfeatured");
+      toast.success(game.isFeaturedOnHome ? tr("gamesView.featured") : tr("gamesView.unfeatured"));
     } catch (e: any) {
-      toast.error("Update failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.updateFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
   async function bulkToggleFeatured() {
@@ -302,16 +303,16 @@
     if (!ids.length) return;
     try {
       await Promise.all(ids.map((id) => api.updateGame(id, { isFeaturedOnHome: true } as any)));
-      toast.success(`${ids.length} games featured`);
+      toast.success(tr("gamesView.gamesFeatured", { idsCount: ids.length }));
       await loadGames();
     } catch (e: any) {
-      toast.error("Bulk update failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.bulkUpdateFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
 
   async function createCollection() {
     if (!newCollectionName.trim() || !newCollectionSlug.trim()) {
-      toast.error("Name and slug required");
+      toast.error(tr("gamesView.nameAndSlugRequired"));
       return;
     }
     try {
@@ -319,13 +320,13 @@
         title: newCollectionName.trim(),
         slug: newCollectionSlug.trim(),
       } as any);
-      toast.success("Collection created");
+      toast.success(tr("gamesView.collectionCreated"));
       newCollectionName = "";
       newCollectionSlug = "";
       await loadCollections();
       await loadStats();
     } catch (e: any) {
-      toast.error("Create failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.createFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
   async function updateCollection(c: Collection) {
@@ -335,28 +336,28 @@
         slug: editCollectionSlug,
         displayOrder: editCollectionOrder,
       } as any);
-      toast.success("Collection updated");
+      toast.success(tr("gamesView.collectionUpdated"));
       editingCollectionId = null;
       await loadCollections();
     } catch (e: any) {
-      toast.error("Update failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.updateFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
   async function deleteCollection(id: string) {
-    if (!confirm("Delete this collection?")) return;
+    if (!confirm(tr("gamesView.deleteThisCollection"))) return;
     try {
       await api.deleteGameCollection(id);
-      toast.success("Collection deleted");
+      toast.success(tr("gamesView.collectionDeleted"));
       await loadCollections();
       await loadStats();
     } catch (e: any) {
-      toast.error("Delete failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.deleteFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
 
   async function createPlatform() {
     if (!newPlatformName.trim() || !newPlatformSlug.trim()) {
-      toast.error("Name and slug required");
+      toast.error(tr("gamesView.nameAndSlugRequired"));
       return;
     }
     try {
@@ -366,19 +367,19 @@
         manufacturer: newPlatformManufacturer || undefined,
         shortName: newPlatformShort || undefined,
       } as any);
-      toast.success("Platform created");
+      toast.success(tr("gamesView.platformCreated"));
       newPlatformName = "";
       newPlatformSlug = "";
       newPlatformManufacturer = "";
       newPlatformShort = "";
       await loadPlatforms();
     } catch (e: any) {
-      toast.error("Create failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.createFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
   async function createTag() {
     if (!newTagName.trim() || !newTagSlug.trim()) {
-      toast.error("Name and slug required");
+      toast.error(tr("gamesView.nameAndSlugRequired"));
       return;
     }
     try {
@@ -388,14 +389,14 @@
         color: newTagColor || undefined,
         category: newTagCategory || undefined,
       } as any);
-      toast.success("Tag created");
+      toast.success(tr("gamesView.tagCreated"));
       newTagName = "";
       newTagSlug = "";
       newTagColor = "";
       newTagCategory = "";
       await loadTags();
     } catch (e: any) {
-      toast.error("Create failed: " + (e.message || "Unknown error"));
+      toast.error(tr("gamesView.createFailed") + (e.message || tr("gamesView.unknownError")));
     }
   }
 
@@ -418,7 +419,7 @@
           : "bg-kitsuden-accent-2/10 text-kitsuden-accent-2";
   }
   function formatDate(d?: string) {
-    return d ? new Date(d).toLocaleDateString() : "-";
+    return d ? new Date(d).toLocaleDateString(localeFormato()) : "-";
   }
   function toggleSort(f: keyof Game) {
     gamesSort =
@@ -473,10 +474,10 @@
         >
           <Gamepad2 class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Game Library
+        {tr("gamesView.gameLibrary")}
       </h1>
       <p class="text-sm text-kitsuden-subtle mt-1">
-        Manage games, collections, platforms &amp; tags
+        {tr("gamesView.manageGamesCollectionsPlatformsTags")}
       </p>
     </div>
     <!--
@@ -488,7 +489,7 @@
       abre el alta y lo limpia de la URL para que recargar no lo repita.
     -->
     <a href="/g/kon-games?crear=1" class="btn-primary inline-flex items-center gap-2"
-      ><Plus class="w-4 h-4" /> New Game</a
+      ><Plus class="w-4 h-4" /> {tr("gamesView.newGame")}</a
     >
   </div>
 
@@ -512,8 +513,8 @@
           <Gamepad2 class="w-4 h-4 text-kitsuden-accent" />
         </div>
         <div>
-          <p class="text-xs text-kitsuden-subtle">Total Games</p>
-          <p class="text-xl font-semibold text-kitsuden-text">{totalGames.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">{tr("gamesView.totalGames")}</p>
+          <p class="text-xl font-semibold text-kitsuden-text">{totalGames.toLocaleString(localeFormato())}</p>
         </div>
       </div>
       <div class="card p-4 flex items-center gap-3">
@@ -521,8 +522,8 @@
           <CheckCircle class="w-4 h-4 text-kitsuden-green" />
         </div>
         <div>
-          <p class="text-xs text-kitsuden-subtle">Published</p>
-          <p class="text-xl font-semibold text-kitsuden-text">{publishedGames.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">{tr("common.published")}</p>
+          <p class="text-xl font-semibold text-kitsuden-text">{publishedGames.toLocaleString(localeFormato())}</p>
         </div>
       </div>
       <div class="card p-4 flex items-center gap-3">
@@ -530,8 +531,8 @@
           <FileEdit class="w-4 h-4 text-kitsuden-amber" />
         </div>
         <div>
-          <p class="text-xs text-kitsuden-subtle">Drafts</p>
-          <p class="text-xl font-semibold text-kitsuden-text">{draftGames.toLocaleString()}</p>
+          <p class="text-xs text-kitsuden-subtle">{tr("gamesView.drafts")}</p>
+          <p class="text-xl font-semibold text-kitsuden-text">{draftGames.toLocaleString(localeFormato())}</p>
         </div>
       </div>
       <div class="card p-4 flex items-center gap-3">
@@ -539,9 +540,9 @@
           <Layers class="w-4 h-4 text-purple-400" />
         </div>
         <div>
-          <p class="text-xs text-kitsuden-subtle">Collections</p>
+          <p class="text-xs text-kitsuden-subtle">{tr("gamesView.collections")}</p>
           <p class="text-xl font-semibold text-kitsuden-text">
-            {totalCollections.toLocaleString()}
+            {totalCollections.toLocaleString(localeFormato())}
           </p>
         </div>
       </div>
@@ -550,7 +551,7 @@
 
   <!-- Tabs -->
   <div class="flex items-center gap-1 border-b border-kitsuden-border pb-0">
-    {#each [{ id: "games" as const, label: "Games" }, { id: "collections" as const, label: "Collections" }, { id: "platforms" as const, label: "Platforms" }, { id: "tags" as const, label: "Tags" }] as t}
+    {#each [{ id: "games" as const, label: tr("gamesView.games") }, { id: "collections" as const, label: tr("gamesView.collections2") }, { id: "platforms" as const, label: tr("gamesView.platforms") }, { id: "tags" as const, label: tr("gamesView.tags") }] as t}
       <button
         class="px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 {activeTab ===
         t.id
@@ -568,7 +569,7 @@
           <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-kitsuden-subtle" />
           <input
             type="text"
-            placeholder="Search by title or developer..."
+            placeholder={tr("gamesView.searchByTitleOrDeveloper")}
             class="w-full bg-kitsuden-card border border-kitsuden-border rounded-lg pl-9 pr-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
             bind:value={gamesSearch}
             onkeydown={(e) => {
@@ -587,25 +588,25 @@
             loadGames();
           }}
         >
-          <option value="">All statuses</option><option value="published">Published</option><option
-            value="draft">Draft</option
-          ><option value="archived">Archived</option>
+          <option value="">{tr("gamesView.allStatuses")}</option><option value="published">{tr("common.published")}</option><option
+            value="draft">{tr("gamesView.draft")}</option
+          ><option value="archived">{tr("common.archived")}</option>
         </select>
         <button
           class="btn-secondary text-sm"
           onclick={() => {
             gamesPage = 1;
             loadGames();
-          }}>Filter</button
+          }}>{tr("common.filter")}</button
         >
         {#if selectedGameIds.size > 0}
           <div class="flex items-center gap-2 ml-auto">
-            <span class="text-xs text-kitsuden-subtle">{selectedGameIds.size} selected</span>
+            <span class="text-xs text-kitsuden-subtle">{selectedGameIds.size} {tr("common.selected")}</span>
             <button class="btn-ghost text-sm text-kitsuden-amber" onclick={bulkToggleFeatured}
-              ><Star class="w-3.5 h-3.5" /> Feature</button
+              ><Star class="w-3.5 h-3.5" /> {tr("gamesView.feature")}</button
             >
             <button class="btn-ghost text-sm text-kitsuden-accent-2" onclick={bulkDeleteGames}
-              ><Trash2 class="w-3.5 h-3.5" /> Delete</button
+              ><Trash2 class="w-3.5 h-3.5" /> {tr("common.delete")}</button
             >
           </div>
         {/if}
@@ -625,24 +626,24 @@
                   onchange={toggleAll}
                 /></th
               >
-              <th class="px-4 py-3 w-12">Cover</th>
+              <th class="px-4 py-3 w-12">{tr("gamesView.cover")}</th>
               <th class="px-4 py-3 cursor-pointer select-none" onclick={() => toggleSort("title")}>
                 <span class="flex items-center gap-1"
-                  >Title {#if gamesSort.field === "title"}{#if gamesSort.dir === "asc"}<ArrowUp
+                  >{tr("common.title")} {#if gamesSort.field === "title"}{#if gamesSort.dir === "asc"}<ArrowUp
                         class="w-3 h-3"
                       />{:else}<ArrowDown class="w-3 h-3" />{/if}{:else}<ArrowUpDown
                       class="w-3 h-3 opacity-50"
                     />{/if}</span
                 >
               </th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Developer</th>
+              <th class="px-4 py-3">{tr("common.status")}</th>
+              <th class="px-4 py-3">{tr("gamesView.developer")}</th>
               <th
                 class="px-4 py-3 cursor-pointer select-none"
                 onclick={() => toggleSort("releaseDate")}
               >
                 <span class="flex items-center gap-1"
-                  >Released {#if gamesSort.field === "releaseDate"}{#if gamesSort.dir === "asc"}<ArrowUp
+                  >{tr("gamesView.released")} {#if gamesSort.field === "releaseDate"}{#if gamesSort.dir === "asc"}<ArrowUp
                         class="w-3 h-3"
                       />{:else}<ArrowDown class="w-3 h-3" />{/if}{:else}<ArrowUpDown
                       class="w-3 h-3 opacity-50"
@@ -654,15 +655,15 @@
                 onclick={() => toggleSort("metacriticScore")}
               >
                 <span class="flex items-center gap-1"
-                  >Metacritic {#if gamesSort.field === "metacriticScore"}{#if gamesSort.dir === "asc"}<ArrowUp
+                  >{tr("gamesView.metacritic")} {#if gamesSort.field === "metacriticScore"}{#if gamesSort.dir === "asc"}<ArrowUp
                         class="w-3 h-3"
                       />{:else}<ArrowDown class="w-3 h-3" />{/if}{:else}<ArrowUpDown
                       class="w-3 h-3 opacity-50"
                     />{/if}</span
                 >
               </th>
-              <th class="px-4 py-3 text-center">Featured</th>
-              <th class="px-4 py-3 text-right">Actions</th>
+              <th class="px-4 py-3 text-center">{tr("gamesView.featured")}</th>
+              <th class="px-4 py-3 text-right">{tr("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -675,7 +676,7 @@
             {:else if sortedGames().length === 0}
               <tr
                 ><td colspan="9" class="px-4 py-12 text-center text-kitsuden-subtle"
-                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No games found.</td
+                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />{tr("gamesView.noGamesFound")}</td
                 ></tr
               >
             {:else}
@@ -756,11 +757,11 @@
                   >
                   <td class="px-4 py-2.5 text-right"
                     ><div class="flex items-center justify-end gap-1">
-                      <a href={"/g/kon-games"} class="btn-ghost p-1.5" title="Edit"
+                      <a href={"/g/kon-games"} class="btn-ghost p-1.5" title={tr("common.edit")}
                         ><Pencil class="w-3.5 h-3.5" /></a
                       ><button
                         class="btn-ghost p-1.5 text-kitsuden-accent-2 hover:text-kitsuden-accent-2"
-                        title="Delete"
+                        title={tr("common.delete")}
                         onclick={() => deleteGame(game.id)}><Trash2 class="w-3.5 h-3.5" /></button
                       >
                     </div></td
@@ -774,7 +775,7 @@
 
       <div class="flex items-center justify-between">
         <p class="text-xs text-kitsuden-subtle">
-          Page {gamesPage} of {gamesTotalPages} · {gamesTotal} total
+          {tr("gamesView.pageOfTotal", { gamesPage, gamesTotalPages, gamesTotal })}
         </p>
         <div class="flex items-center gap-2">
           <button
@@ -800,32 +801,32 @@
     <div class="space-y-4 animate-fade-in">
       <div class="card p-4">
         <h3 class="text-sm font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
-          <Layers class="w-4 h-4 text-kitsuden-accent" /> New Collection
+          <Layers class="w-4 h-4 text-kitsuden-accent" /> {tr("gamesView.newCollection")}
         </h3>
         <div class="flex flex-wrap items-end gap-3">
           <div class="flex-1 min-w-[12rem]">
-            <label for="coll-name" class="block text-xs text-kitsuden-subtle mb-1">Name</label
+            <label for="coll-name" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.name")}</label
             ><input
               id="coll-name"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. Indie Gems"
+              placeholder={tr("gamesView.eGIndieGems")}
               value={newCollectionName}
               oninput={(e) => onCollName(e.currentTarget.value)}
             />
           </div>
           <div class="flex-1 min-w-[12rem]">
-            <label for="coll-slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label
+            <label for="coll-slug" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.slug")}</label
             ><input
               id="coll-slug"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. indie-gems"
+              placeholder={tr("gamesView.ejemploSlugEtiqueta")}
               bind:value={newCollectionSlug}
             />
           </div>
           <button class="btn-primary text-sm" onclick={createCollection}
-            ><Plus class="w-4 h-4" /> Create</button
+            ><Plus class="w-4 h-4" /> {tr("common.create")}</button
           >
         </div>
       </div>
@@ -835,9 +836,9 @@
           <thead
             ><tr
               class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
-              ><th class="px-4 py-3">Name</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3"
-                >Order</th
-              ><th class="px-4 py-3">Games</th><th class="px-4 py-3 text-right">Actions</th></tr
+              ><th class="px-4 py-3">{tr("common.name")}</th><th class="px-4 py-3">{tr("common.slug")}</th><th class="px-4 py-3"
+                >{tr("gamesView.order")}</th
+              ><th class="px-4 py-3">{tr("common.games")}</th><th class="px-4 py-3 text-right">{tr("common.actions")}</th></tr
             ></thead
           >
           <tbody>
@@ -848,7 +849,7 @@
               >
             {:else if collections.length === 0}<tr
                 ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-subtle"
-                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No collections yet.</td
+                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />{tr("gamesView.noCollectionsYet")}</td
                 ></tr
               >
             {:else}
@@ -917,43 +918,43 @@
     <div class="space-y-4 animate-fade-in">
       <div class="card p-4">
         <h3 class="text-sm font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
-          <Monitor class="w-4 h-4 text-kitsuden-accent" /> New Platform
+          <Monitor class="w-4 h-4 text-kitsuden-accent" /> {tr("gamesView.newPlatform")}
         </h3>
         <div class="flex flex-wrap items-end gap-3">
           <div class="flex-1 min-w-[10rem]">
-            <label for="plat-name" class="block text-xs text-kitsuden-subtle mb-1">Name</label
+            <label for="plat-name" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.name")}</label
             ><input
               id="plat-name"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. PlayStation 5"
+              placeholder={tr("gamesView.eGPlaystation5")}
               value={newPlatformName}
               oninput={(e) => onPlatName(e.currentTarget.value)}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="plat-slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label
+            <label for="plat-slug" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.slug")}</label
             ><input
               id="plat-slug"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. ps5"
+              placeholder={tr("gamesView.eGPs5")}
               bind:value={newPlatformSlug}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
             <label for="plat-mfr" class="block text-xs text-kitsuden-subtle mb-1"
-              >Manufacturer</label
+              >{tr("gamesView.manufacturer")}</label
             ><input
               id="plat-mfr"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. Sony"
+              placeholder={tr("gamesView.eGSony")}
               bind:value={newPlatformManufacturer}
             />
           </div>
           <div class="w-24">
-            <label for="plat-short" class="block text-xs text-kitsuden-subtle mb-1">Short</label
+            <label for="plat-short" class="block text-xs text-kitsuden-subtle mb-1">{tr("gamesView.short")}</label
             ><input
               id="plat-short"
               type="text"
@@ -963,7 +964,7 @@
             />
           </div>
           <button class="btn-primary text-sm" onclick={createPlatform}
-            ><Plus class="w-4 h-4" /> Add</button
+            ><Plus class="w-4 h-4" /> {tr("gamesView.add")}</button
           >
         </div>
       </div>
@@ -973,9 +974,9 @@
           <thead
             ><tr
               class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
-              ><th class="px-4 py-3">Name</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3"
-                >Manufacturer</th
-              ><th class="px-4 py-3">Short</th></tr
+              ><th class="px-4 py-3">{tr("common.name")}</th><th class="px-4 py-3">{tr("common.slug")}</th><th class="px-4 py-3"
+                >{tr("gamesView.manufacturer")}</th
+              ><th class="px-4 py-3">{tr("gamesView.short")}</th></tr
             ></thead
           >
           <tbody>
@@ -986,7 +987,7 @@
               >
             {:else if platforms.length === 0}<tr
                 ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-subtle"
-                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No platforms yet.</td
+                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />{tr("gamesView.noPlatformsYet")}</td
                 ></tr
               >
             {:else}
@@ -1009,30 +1010,30 @@
     <div class="space-y-4 animate-fade-in">
       <div class="card p-4">
         <h3 class="text-sm font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
-          <Tag class="w-4 h-4 text-kitsuden-accent" /> New Tag
+          <Tag class="w-4 h-4 text-kitsuden-accent" /> {tr("gamesView.newTag")}
         </h3>
         <div class="flex flex-wrap items-end gap-3">
           <div class="flex-1 min-w-[10rem]">
-            <label for="tag-name" class="block text-xs text-kitsuden-subtle mb-1">Name</label><input
+            <label for="tag-name" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.name")}</label><input
               id="tag-name"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. RPG"
+              placeholder={tr("gamesView.eGRpg")}
               value={newTagName}
               oninput={(e) => onTagName(e.currentTarget.value)}
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="tag-slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label><input
+            <label for="tag-slug" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.slug")}</label><input
               id="tag-slug"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. rpg"
+              placeholder={tr("gamesView.eGRpg2")}
               bind:value={newTagSlug}
             />
           </div>
           <div class="w-28">
-            <label for="tag-color" class="block text-xs text-kitsuden-subtle mb-1">Color</label
+            <label for="tag-color" class="block text-xs text-kitsuden-subtle mb-1">{tr("gamesView.color")}</label
             ><input
               id="tag-color"
               type="text"
@@ -1042,17 +1043,17 @@
             />
           </div>
           <div class="flex-1 min-w-[10rem]">
-            <label for="tag-cat" class="block text-xs text-kitsuden-subtle mb-1">Category</label
+            <label for="tag-cat" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.category")}</label
             ><input
               id="tag-cat"
               type="text"
               class="w-full bg-kitsuden-bg border border-kitsuden-border rounded-lg px-3 py-2 text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:ring-1 focus:ring-kitsuden-accent/50"
-              placeholder="e.g. genre"
+              placeholder={tr("gamesView.eGGenre")}
               bind:value={newTagCategory}
             />
           </div>
           <button class="btn-primary text-sm" onclick={createTag}
-            ><Plus class="w-4 h-4" /> Add</button
+            ><Plus class="w-4 h-4" /> {tr("gamesView.add")}</button
           >
         </div>
       </div>
@@ -1062,9 +1063,9 @@
           <thead
             ><tr
               class="border-b border-kitsuden-border text-left text-xs text-kitsuden-subtle uppercase tracking-wider"
-              ><th class="px-4 py-3">Name</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3"
-                >Color</th
-              ><th class="px-4 py-3">Category</th></tr
+              ><th class="px-4 py-3">{tr("common.name")}</th><th class="px-4 py-3">{tr("common.slug")}</th><th class="px-4 py-3"
+                >{tr("gamesView.color")}</th
+              ><th class="px-4 py-3">{tr("common.category")}</th></tr
             ></thead
           >
           <tbody>
@@ -1075,7 +1076,7 @@
               >
             {:else if tags.length === 0}<tr
                 ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-subtle"
-                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />No tags yet.</td
+                  ><PackageOpen class="w-8 h-8 mx-auto mb-2 opacity-50" />{tr("gamesView.noTagsYet")}</td
                 ></tr
               >
             {:else}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Gauge, ImagePlus, X, CheckCircle2, XCircle } from "lucide-svelte";
 
   export interface SEOData {
@@ -20,17 +21,17 @@
   let fileInput: HTMLInputElement | undefined = $state();
 
   const checks = $derived([
-    { label: "Title present", pass: !!data.title },
-    { label: "Slug is set", pass: !!data.slug },
+    { label: t("sEOAnalyzer.titlePresent"), pass: !!data.title },
+    { label: t("sEOAnalyzer.slugIsSet"), pass: !!data.slug },
     {
-      label: `SEO title ≤ 60 chars (${data.seoTitle.length})`,
+      label: t("sEOAnalyzer.seoTitle60Chars", { seoTitleCount: data.seoTitle.length }),
       pass: data.seoTitle.length > 0 && data.seoTitle.length <= 60,
     },
     {
-      label: `Meta desc ≤ 160 chars (${data.seoDescription.length})`,
+      label: t("sEOAnalyzer.metaDesc160Chars", { seoDescriptionCount: data.seoDescription.length }),
       pass: data.seoDescription.length > 0 && data.seoDescription.length <= 160,
     },
-    { label: "OG Image uploaded", pass: !!data.ogImageUrl },
+    { label: t("sEOAnalyzer.ogImageUploaded"), pass: !!data.ogImageUrl },
   ]);
 
   const overallScore = $derived.by(() => {
@@ -70,7 +71,7 @@
   <div class="flex items-center gap-2 mb-4">
     <Gauge class="w-4 h-4 text-kitsuden-accent" />
     <h3 class="text-sm font-semibold uppercase tracking-wider text-kitsuden-text-dim">
-      SEO Guardian
+      {t("sEOAnalyzer.seoGuardian")}
     </h3>
     <span
       class="ml-auto badge {overallScore >= 80
@@ -85,13 +86,13 @@
 
   <!-- Slug -->
   <div>
-    <label class="label mb-1.5 block">URL Slug</label>
+    <label class="label mb-1.5 block">{t("sEOAnalyzer.urlSlug")}</label>
     <div
       class="flex items-center gap-0 rounded-lg border border-kitsuden-border overflow-hidden bg-kitsuden-bg"
     >
       <span
         class="px-3 py-2 text-xs text-kitsuden-subtle bg-kitsuden-card border-r border-kitsuden-border font-mono"
-        >/blog/</span
+        >{t("sEOAnalyzer.blog")}</span
       >
       <input
         value={data.slug}
@@ -105,21 +106,21 @@
   <!-- SEO Title -->
   <div>
     <div class="flex items-center justify-between mb-1.5">
-      <label class="label">SEO Title</label>
+      <label class="label">{t("sEOAnalyzer.seoTitle")}</label>
       {@render charCounter(data.seoTitle.length, 60)}
     </div>
     <input
       value={data.seoTitle}
       oninput={(e) => onUpdate({ ...data, seoTitle: e.currentTarget.value })}
       class="input"
-      placeholder="SEO optimized title..."
+      placeholder={t("sEOAnalyzer.seoOptimizedTitle")}
     />
   </div>
 
   <!-- SEO Description -->
   <div>
     <div class="flex items-center justify-between mb-1.5">
-      <label class="label">Meta Description</label>
+      <label class="label">{t("sEOAnalyzer.metaDescription")}</label>
       {@render charCounter(data.seoDescription.length, 160)}
     </div>
     <textarea
@@ -127,13 +128,13 @@
       oninput={(e) => onUpdate({ ...data, seoDescription: e.currentTarget.value })}
       class="textarea"
       rows="3"
-      placeholder="Compelling description for search results..."
+      placeholder={t("sEOAnalyzer.compellingDescriptionForSearchResults")}
     ></textarea>
   </div>
 
   <!-- OG Image -->
   <div>
-    <label class="label mb-1.5 block">OG Image (Social Preview)</label>
+    <label class="label mb-1.5 block">{t("sEOAnalyzer.ogImageSocialPreview")}</label>
     <div
       ondragover={(e) => {
         e.preventDefault();
@@ -151,7 +152,7 @@
           <img
             src={data.ogImageUrl}
             class="w-full rounded-lg border border-kitsuden-border"
-            alt="OG Image"
+            alt={t("sEOAnalyzer.ogImage")}
           />
           <button
             onclick={(e) => {
@@ -166,8 +167,8 @@
       {:else}
         <div class="flex flex-col items-center gap-2 text-kitsuden-subtle">
           <ImagePlus class="w-8 h-8" />
-          <p class="text-xs">Drop image or click to upload</p>
-          <p class="text-[10px]">Recommended: 1200×630px</p>
+          <p class="text-xs">{t("sEOAnalyzer.dropImageOrClickTo")}</p>
+          <p class="text-[10px]">{t("sEOAnalyzer.recommended1200630px")}</p>
         </div>
       {/if}
     </div>
@@ -182,23 +183,23 @@
 
   <!-- Google Preview -->
   <div>
-    <label class="label mb-2 block">Search Preview</label>
+    <label class="label mb-2 block">{t("sEOAnalyzer.searchPreview")}</label>
     <div class="rounded-lg bg-white p-4 space-y-1">
       <p class="text-sm text-[#1a0dab] truncate font-medium">
-        {data.seoTitle || data.title || "Page Title"}
+        {data.seoTitle || data.title || t("common.pageTitle")}
       </p>
       <p class="text-xs text-[#006621] font-mono truncate">
-        yoursite.com/blog/{data.slug || "post-slug"}
+        {t("sEOAnalyzer.yoursiteComBlog")}{data.slug || "post-slug"}
       </p>
       <p class="text-xs text-[#545454] line-clamp-2 leading-relaxed">
-        {data.seoDescription || "Add a meta description to improve your search result appearance."}
+        {data.seoDescription || t("sEOAnalyzer.addAMetaDescriptionTo")}
       </p>
     </div>
   </div>
 
   <!-- Checks -->
   <div class="space-y-2">
-    <label class="label mb-2 block">SEO Checklist</label>
+    <label class="label mb-2 block">{t("sEOAnalyzer.seoChecklist")}</label>
     {#each checks as check}
       <div class="flex items-center gap-2 text-xs">
         {#if check.pass}

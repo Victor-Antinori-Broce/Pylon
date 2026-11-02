@@ -1,0 +1,10 @@
+# Ignored files copied into each new worktree (works with Orca).
+#
+# Deliberately NOT listed: /.env and apps/api/.env. On a machine that also runs
+# production they hold the production database URL and secrets, and the test
+# suite deletes whole tables. Each worktree's apps/api/.env is written by
+# `node scripts/orca/worktree.mjs setup`, pointing at that worktree's own database.
+# .env.test is tracked, so it needs no entry.
+#
+# Only add files that hold development-only values.
+.vscode/settings.json

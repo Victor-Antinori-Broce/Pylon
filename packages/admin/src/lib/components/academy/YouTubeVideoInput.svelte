@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Video, Loader2, AlertCircle, Check, ExternalLink } from "lucide-svelte";
 
   import { api } from "$lib/api";
@@ -18,7 +19,7 @@
     required?: boolean;
   }
 
-  const { value = "", onChange, label = "Video de YouTube", required = false }: Props = $props();
+  const { value = "", onChange, label = t("youTubeVideoInput.videoDeYoutube"), required = false }: Props = $props();
 
   let loading = $state(false);
   let error = $state<string | null>(null);
@@ -44,7 +45,7 @@
     }
 
     if (!isValidYouTubeUrl(inputValue)) {
-      error = "URL de YouTube no válida. Usa formato: https://www.youtube.com/watch?v=VIDEO_ID";
+      error = t("youTubeVideoInput.urlDeYoutubeNoValida");
       return;
     }
 
@@ -54,7 +55,7 @@
       const info = await api.getYouTubeInfo(inputValue);
 
       if (!info.valido) {
-        error = "No se pudo extraer información del video";
+        error = t("youTubeVideoInput.noSePudoExtraerInformacion");
         return;
       }
 
@@ -62,7 +63,7 @@
       // Guardamos la URL embed que es la que se usa para mostrar el video
       onChange(info.embedUrl, info);
     } catch (err: any) {
-      error = err.message || "Error al validar el video";
+      error = err.message || t("youTubeVideoInput.errorAlValidarElVideo");
     } finally {
       loading = false;
     }
@@ -132,14 +133,14 @@
     <div class="card p-3 border-kitsuden-accent/20">
       <div class="flex gap-3">
         <div class="w-32 h-20 bg-kitsuden-surface rounded-lg overflow-hidden flex-shrink-0">
-          <img src={videoInfo.thumbnailUrl} alt="Thumbnail" class="w-full h-full object-cover" />
+          <img src={videoInfo.thumbnailUrl} alt={t("youTubeVideoInput.thumbnail")} class="w-full h-full object-cover" />
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-kitsuden-text truncate">
-            {videoInfo.titulo || "Video de YouTube"}
+            {videoInfo.titulo || t("youTubeVideoInput.videoDeYoutube")}
           </p>
           <p class="text-xs text-kitsuden-subtle mt-1">
-            ID: {videoInfo.videoId}
+            {t("youTubeVideoInput.id", { videoId: videoInfo.videoId })}
           </p>
           <a
             href={inputValue}
@@ -148,7 +149,7 @@
             class="inline-flex items-center gap-1 text-xs text-kitsuden-accent hover:underline mt-2"
           >
             <ExternalLink class="w-3 h-3" />
-            Ver en YouTube
+            {t("youTubeVideoInput.verEnYoutube")}
           </a>
         </div>
       </div>

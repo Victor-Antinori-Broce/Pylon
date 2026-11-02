@@ -15,6 +15,9 @@
     loading?: boolean;
     class?: string;
     href?: string;
+    /** Nombre accesible: imprescindible en un botón que solo lleva icono. */
+    ariaLabel?: string;
+    title?: string;
     children?: import("svelte").Snippet;
     onclick?: (e: MouseEvent) => void;
   }
@@ -27,6 +30,8 @@
     loading = false,
     class: className = "",
     href,
+    ariaLabel,
+    title,
     children,
     onclick,
   }: Props = $props();
@@ -56,14 +61,14 @@
 </script>
 
 {#if href}
-  <a {href} class={classes} aria-disabled={disabled || loading}>
+  <a {href} class={classes} aria-disabled={disabled || loading} aria-label={ariaLabel} {title}>
     {#if loading}
       <Loader2 size={size === "sm" ? 14 : size === "lg" ? 20 : 16} class="animate-spin" />
     {/if}
     {@render children?.()}
   </a>
 {:else}
-  <button {type} class={classes} disabled={disabled || loading} {onclick}>
+  <button {type} class={classes} disabled={disabled || loading} {onclick} aria-label={ariaLabel} {title}>
     {#if loading}
       <Loader2 size={size === "sm" ? 14 : size === "lg" ? 20 : 16} class="animate-spin" />
     {/if}

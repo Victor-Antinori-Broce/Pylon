@@ -1,0 +1,28 @@
+{
+  "id": "grimoire-viggo",
+  "name": "Viggo",
+  "description": "Producción de torneos de principio a fin: bracket, emisión en directo, inscripción y estaciones. Pensado para FGC y 1v1; sirve para cualquier competición.",
+  "version": "1.0.0",
+  "type": "grimoire",
+  "author": "Kitsuden Team",
+  "industry": "esports",
+  "keywords": ["torneos", "fgc", "broadcast", "overlay", "obs", "brackets"],
+  "kons": ["kon-esports", "kon-broadcast"],
+  "optional_kons": ["kon-booking", "kon-members", "kon-payments", "kon-streamers"],
+  "config": {
+    "theme": {
+      "css_entry": "variables.css",
+      "primary_color": "#00d2a8",
+      "accent_color": "#ff5c72"
+    }
+  },
+  "konConfig": {
+    "kon-broadcast": {
+      "gameProfile": "1v1"
+    },
+    "kon-esports": {
+      "defaultFormat": "double_elimination"
+    }
+  },
+  "seed": null
+}

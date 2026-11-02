@@ -4,6 +4,7 @@
   El token solo se muestra una vez (one-way)
 -->
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   import { Copy, Check, Eye, EyeOff, AlertTriangle } from "lucide-svelte";
 
   import Button from "$lib/components/ui/Button.svelte";
@@ -43,8 +44,8 @@
 {#if token && !dismissed}
   <Modal
     open={true}
-    title="🔐 Token de Agente Generado"
-    description="Este token solo se mostrará una vez. Guárdalo en un lugar seguro."
+    title={tr("tokenDisplay.tokenDeAgenteGenerado")}
+    description={tr("tokenDisplay.esteTokenSoloSeMostrara")}
     size="lg"
     onClose={() => (dismissed = true)}
   >
@@ -53,10 +54,9 @@
       <div class="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
         <AlertTriangle class="text-amber-400 shrink-0 mt-0.5" size={18} />
         <div class="text-sm text-amber-200">
-          <p class="font-medium">Importante</p>
+          <p class="font-medium">{tr("tokenDisplay.importante")}</p>
           <p class="mt-1">
-            El token se almacena como hash en la base de datos. No podrás verlo nuevamente después
-            de cerrar esta ventana.
+            {tr("tokenDisplay.elTokenSeAlmacenaComo")}
           </p>
         </div>
       </div>
@@ -93,7 +93,7 @@
 
       <!-- Usage Example -->
       <div class="p-3 bg-zinc-950 rounded-lg">
-        <span class="text-xs font-medium text-zinc-500 uppercase">Uso en API</span>
+        <span class="text-xs font-medium text-zinc-500 uppercase">{tr("tokenDisplay.usoEnApi")}</span>
         <pre class="mt-2 text-xs text-zinc-400 overflow-x-auto">
 Authorization: Bearer {showToken ? displayToken : maskToken(displayToken)}</pre>
       </div>
@@ -102,9 +102,9 @@ Authorization: Bearer {showToken ? displayToken : maskToken(displayToken)}</pre>
     {#snippet footer()}
       <div class="flex justify-end gap-3">
         <Button variant="secondary" onclick={copyToClipboard}>
-          {copied ? "¡Copiado!" : "Copiar Token"}
+          {copied ? tr("tokenDisplay.copiado") : tr("tokenDisplay.copiarToken")}
         </Button>
-        <Button variant="primary" onclick={() => (dismissed = true)}>Entendido, cerrar</Button>
+        <Button variant="primary" onclick={() => (dismissed = true)}>{tr("tokenDisplay.entendidoCerrar")}</Button>
       </div>
     {/snippet}
   </Modal>
@@ -114,6 +114,6 @@ Authorization: Bearer {showToken ? displayToken : maskToken(displayToken)}</pre>
 {#if !token}
   <div class="flex items-center gap-2 text-sm text-zinc-500">
     <EyeOff size={14} />
-    <span>Token oculto por seguridad</span>
+    <span>{tr("tokenDisplay.tokenOcultoPorSeguridad")}</span>
   </div>
 {/if}

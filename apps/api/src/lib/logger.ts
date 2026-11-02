@@ -12,9 +12,10 @@
 import pino from "pino";
 
 import { getTraceLogFields } from "./tracing";
+import { nodeEnvCrudo } from "./entorno";
 
 const LOG_LEVEL = process.env.LOG_LEVEL || "info";
-const NODE_ENV = process.env.NODE_ENV || "development";
+const NODE_ENV = nodeEnvCrudo() || "development";
 const isDev = NODE_ENV === "development";
 
 // Base logger instance
@@ -42,6 +43,25 @@ export const logger = pino({
   // Inyecta trace_id/span_id/requestId del contexto activo en cada línea.
   mixin() {
     return getTraceLogFields();
+  },
+  // Red por si alguien loguea una petición o un objeto con credenciales: hoy
+  // ningún log las lleva, pero nada lo impedía (auditoría 2026-10-25).
+  redact: {
+    paths: [
+      "req.headers.authorization",
+      "req.headers.cookie",
+      "headers.authorization",
+      "headers.cookie",
+      "*.password",
+      "*.token",
+      "*.apiKey",
+      "*.secret",
+      "*.plainApiKey",
+      "password",
+      "token",
+      "plainApiKey",
+    ],
+    censor: "[redacted]",
   },
 });
 

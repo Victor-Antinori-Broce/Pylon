@@ -12,21 +12,28 @@ import { db } from "../db";
 import { authUsers } from "../db/schema";
 import { app } from "../index";
 
-import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
+import {
+  isDatabaseAvailable,
+  clearTestData,
+  generateTestId,
+  ipDePrueba,
+  cookieDeSesion,
+} from "./setup";
 
 let dbAvailable = false;
 
-// Helper to extract cookies from response headers
-function extractCookie(headers: Headers): string {
-  const setCookie = headers.get("set-cookie") || "";
-  return setCookie.split(";")[0];
-}
+// Solo la cookie de sesión: la de caché (`session_data`) guardaría el rol
+// viejo durante 5 minutos y el test de ascenso a admin no lo vería.
+const extractCookie = cookieDeSesion;
 
 // Helper to build request with cookie
 function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   const headers = new Headers(opts.headers);
   if (cookie) headers.set("Cookie", cookie);
   headers.set("Content-Type", "application/json");
+  // Cada petición, su IP: sin socket todas eran el cliente «unknown» y
+  // agotaban entre todas los cupos de alta/entrada (ver tests/setup.ts).
+  headers.set("X-Forwarded-For", ipDePrueba());
   return new Request(`http://localhost:3000${path}`, {
     ...opts,
     headers,
@@ -73,6 +80,24 @@ describe("Auth HTTP", () => {
       userId = body.user.id;
     });
 
+    it("should NOT sign in before the email is verified (403)", async () => {
+      if (!dbAvailable) return;
+
+      // `requireEmailVerification: true` (lib/auth.ts, ronda de seguridad del
+      // 2026-10-15): darse de alta con el correo de otra persona ya no basta
+      // para entrar con él.
+      const res = await app.request(
+        req("/api/auth/sign-in/email", {
+          method: "POST",
+          body: JSON.stringify({ email: testEmail, password: testPassword }),
+        })
+      );
+      expect(res.status).toBe(403);
+
+      // En un test no hay correo que pulsar: se confirma en la base.
+      await db.update(authUsers).set({ emailVerified: true }).where(eq(authUsers.id, userId));
+    });
+
     it("should reject duplicate sign-up", async () => {
       if (!dbAvailable) return;
 
@@ -87,7 +112,20 @@ describe("Auth HTTP", () => {
         })
       );
 
-      expect(res.status).toBe(400);
+      // Con la verificación de correo obligatoria, better-auth (≥1.6) NO dice
+      // que el correo ya existe: responde 200 con un usuario sintético, sin
+      // sesión, para que el alta no sirva para averiguar quién tiene cuenta.
+      // Lo que importa es que no se crea un segundo usuario ni se entra.
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.token).toBeNull();
+      expect(body.user?.id).not.toBe(userId);
+
+      const filas = await db
+        .select({ id: authUsers.id })
+        .from(authUsers)
+        .where(eq(authUsers.email, testEmail.toLowerCase()));
+      expect(filas.map((f) => f.id)).toEqual([userId]);
     });
   });
 
@@ -165,8 +203,10 @@ describe("Auth HTTP", () => {
       const res = await app.request(req("/api/auth/get-session"));
 
       expect(res.status).toBe(200);
+      // Sin sesión, better-auth responde `null` (el cuerpo entero), no
+      // `{ user: null }`.
       const body = (await res.json()) as any;
-      expect(body.user).toBeNull();
+      expect(body?.user ?? null).toBeNull();
     });
 
     it("should return null session with invalid cookie", async () => {
@@ -177,8 +217,10 @@ describe("Auth HTTP", () => {
       );
 
       expect(res.status).toBe(200);
+      // Sin sesión, better-auth responde `null` (el cuerpo entero), no
+      // `{ user: null }`.
       const body = (await res.json()) as any;
-      expect(body.user).toBeNull();
+      expect(body?.user ?? null).toBeNull();
     });
   });
 
@@ -190,11 +232,15 @@ describe("Auth HTTP", () => {
       expect(res.status).toBe(401);
     });
 
-    it("should allow /api/admin/registry as authenticated user → 200", async () => {
+    it("should reject /api/admin/registry as a plain user → 403", async () => {
       if (!dbAvailable) return;
 
+      // Antes cualquier cuenta entraba. La matriz de autorización
+      // (middleware/matriz-de-autorizacion.ts) lo deja solo para `admin`: el
+      // registro enseña los esquemas de todos los kons.
+      expect(cookie).not.toBe("");
       const res = await app.request(req("/api/admin/registry", {}, cookie));
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
     });
 
     it("should promote user to admin and verify role change", async () => {
@@ -218,7 +264,7 @@ describe("Auth HTTP", () => {
       // Session should be gone after sign-out
       const sessionRes = await app.request(req("/api/auth/get-session", {}, cookie));
       const body = (await sessionRes.json()) as any;
-      expect(body.user).toBeNull();
+      expect(body?.user ?? null).toBeNull();
     });
   });
 
@@ -227,7 +273,9 @@ describe("Auth HTTP", () => {
       if (!dbAvailable) return;
 
       const res = await app.request(
-        req("/api/auth/forget-password", {
+        // better-auth 1.6 renombró `/forget-password` a `/request-password-reset`
+        // (el viejo da 404).
+        req("/api/auth/request-password-reset", {
           method: "POST",
           body: JSON.stringify({ email: testEmail }),
         })

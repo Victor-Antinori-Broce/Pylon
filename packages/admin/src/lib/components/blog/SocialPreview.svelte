@@ -25,6 +25,7 @@
   />
 -->
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import {
     MessageCircle,
     Facebook,
@@ -102,14 +103,14 @@
 
   let {
     seoData = null,
-    postTitle = "Sin título",
+    postTitle = t("socialPreview.sinTitulo"),
     postUrl = "https://ejemplo.com/blog/post",
     postSlug = "",
     comparisonMode = false,
     variantA = null,
     variantB = null,
-    labelA = "Versión A",
-    labelB = "Versión B",
+    labelA = t("socialPreview.versionA"),
+    labelB = t("socialPreview.versionB"),
   }: Props = $props();
 
   // Estado
@@ -135,7 +136,7 @@
     currentData?.openGraph?.description || currentData?.metaDescription || ""
   );
   const ogImage = $derived(currentData?.openGraph?.image?.url || "");
-  const ogSiteName = $derived(currentData?.openGraph?.siteName || "Mi Sitio");
+  const ogSiteName = $derived(currentData?.openGraph?.siteName || t("socialPreview.miSitio"));
   const canonicalUrl = $derived(currentData?.canonicalUrl || postUrl);
   const domain = $derived.by(() => {
     try {
@@ -176,7 +177,7 @@
 
     isRefreshing = true;
     try {
-      const response = await fetch(`/api/blog/seo/${postSlug}?preview=true&t=${Date.now()}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL ?? ""}/api/blog/seo/${postSlug}?preview=true&t=${Date.now()}`);
       if (response.ok) {
         const data = await response.json();
         seoData = data.seo;
@@ -215,7 +216,7 @@
       }
     } catch (err) {
       console.error("Failed to export image:", err);
-      alert("Error al exportar. Asegúrate de tener html2canvas instalado: npm install html2canvas");
+      alert(t("socialPreview.errorAlExportarAsegurateDe"));
     } finally {
       isExporting = false;
     }
@@ -251,9 +252,9 @@
       <ImageIcon size={20} />
       <span>
         {#if comparisonMode}
-          Comparación A/B - Preview Social
+          {t("socialPreview.comparacionABPreviewSocial")}
         {:else}
-          Previsualización en Redes Sociales
+          {t("socialPreview.previsualizacionEnRedesSociales")}
         {/if}
       </span>
     </div>
@@ -294,7 +295,7 @@
         class="action-btn"
         onclick={exportAsImage}
         disabled={isExporting}
-        title="Exportar como imagen"
+        title={t("socialPreview.exportarComoImagen")}
       >
         {#if isExporting}
           <RefreshCw size={16} class="spin" />
@@ -308,7 +309,7 @@
           class="action-btn"
           onclick={refreshPreview}
           disabled={isRefreshing}
-          title="Refrescar preview"
+          title={t("socialPreview.refrescarPreview")}
         >
           <RefreshCw size={16} class={isRefreshing ? "spin" : ""} />
         </button>
@@ -318,13 +319,13 @@
         class="action-btn"
         onclick={() => (showDebug = !showDebug)}
         class:active={showDebug}
-        title="Ver diagnóstico"
+        title={t("socialPreview.verDiagnostico")}
       >
         <AlertCircle size={16} />
       </button>
 
-      <button class="action-btn copy-btn" onclick={copyUrl} title="Copiar URL">
-        {copied ? "✓" : "Copy"}
+      <button class="action-btn copy-btn" onclick={copyUrl} title={t("socialPreview.copiarUrl")}>
+        {copied ? "✓" : t("socialPreview.copy")}
       </button>
     </div>
   </div>
@@ -337,7 +338,7 @@
       onclick={() => (activeTab = "whatsapp")}
     >
       <MessageCircle size={16} />
-      <span>WhatsApp</span>
+      <span>{t("socialPreview.whatsapp")}</span>
       {#if hasWhatsAppIssues}
         <span class="tab-warning">!</span>
       {/if}
@@ -349,7 +350,7 @@
       onclick={() => (activeTab = "telegram")}
     >
       <Send size={16} />
-      <span>Telegram</span>
+      <span>{t("socialPreview.telegram")}</span>
     </button>
 
     <button
@@ -358,7 +359,7 @@
       onclick={() => (activeTab = "facebook")}
     >
       <Facebook size={16} />
-      <span>Facebook</span>
+      <span>{t("socialPreview.facebook")}</span>
     </button>
 
     <button
@@ -367,7 +368,7 @@
       onclick={() => (activeTab = "twitter")}
     >
       <Twitter size={16} />
-      <span>X / Twitter</span>
+      <span>{t("socialPreview.xTwitter")}</span>
     </button>
 
     <button
@@ -376,7 +377,7 @@
       onclick={() => (activeTab = "linkedin")}
     >
       <Linkedin size={16} />
-      <span>LinkedIn</span>
+      <span>{t("socialPreview.linkedin")}</span>
     </button>
   </div>
 
@@ -391,8 +392,8 @@
               <MessageCircle size={20} />
             </div>
             <div class="whatsapp-contact">
-              <div class="whatsapp-name">Tú</div>
-              <div class="whatsapp-status">en línea</div>
+              <div class="whatsapp-name">{t("socialPreview.tu")}</div>
+              <div class="whatsapp-status">{t("socialPreview.enLinea")}</div>
             </div>
           </div>
 
@@ -414,7 +415,7 @@
                 {:else}
                   <div class="whatsapp-no-image">
                     <ImageIcon size={32} />
-                    <span>Sin imagen</span>
+                    <span>{t("socialPreview.sinImagen")}</span>
                   </div>
                 {/if}
 
@@ -427,7 +428,7 @@
               </div>
 
               <div class="whatsapp-time">
-                {new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                {new Date().toLocaleTimeString(localeFormato(), { hour: "2-digit", minute: "2-digit" })}
                 <span class="whatsapp-checks">✓✓</span>
               </div>
             </div>
@@ -439,29 +440,29 @@
             <div class="validation-header">
               {#if whatsAppStatus.isValid}
                 <CheckCircle size={18} class="icon-success" />
-                <span>WhatsApp compatible</span>
+                <span>{t("socialPreview.whatsappCompatible")}</span>
               {:else}
                 <AlertCircle size={18} class="icon-warning" />
-                <span>Problemas detectados</span>
+                <span>{t("socialPreview.problemasDetectados")}</span>
               {/if}
             </div>
 
             <div class="validation-checks">
               <div class="check-item" class:pass={whatsAppStatus.checks.format}>
                 <span class="check-icon">{whatsAppStatus.checks.format ? "✓" : "✗"}</span>
-                <span>Formato (JPG/PNG)</span>
+                <span>{t("socialPreview.formatoJpgPng")}</span>
               </div>
               <div class="check-item" class:pass={whatsAppStatus.checks.fileSize}>
                 <span class="check-icon">{whatsAppStatus.checks.fileSize ? "✓" : "✗"}</span>
-                <span>Tamaño &lt; 300KB</span>
+                <span>{t("socialPreview.tamano300kb")}</span>
               </div>
               <div class="check-item" class:pass={whatsAppStatus.checks.dimensions}>
                 <span class="check-icon">{whatsAppStatus.checks.dimensions ? "✓" : "✗"}</span>
-                <span>Dimensiones</span>
+                <span>{t("socialPreview.dimensiones")}</span>
               </div>
               <div class="check-item" class:pass={whatsAppStatus.checks.isAbsoluteUrl}>
                 <span class="check-icon">{whatsAppStatus.checks.isAbsoluteUrl ? "✓" : "✗"}</span>
-                <span>URL absoluta</span>
+                <span>{t("socialPreview.urlAbsoluta")}</span>
               </div>
             </div>
 
@@ -475,7 +476,7 @@
 
             {#if whatsAppStatus.recommendations.length > 0}
               <div class="validation-recommendations">
-                <strong>Recomendaciones:</strong>
+                <strong>{t("socialPreview.recomendaciones")}</strong>
                 <ul>
                   {#each whatsAppStatus.recommendations as rec}
                     <li>{rec}</li>
@@ -495,8 +496,8 @@
           <div class="telegram-header">
             <div class="telegram-back">←</div>
             <div class="telegram-info">
-              <div class="telegram-name">Guardados</div>
-              <div class="telegram-status">en línea</div>
+              <div class="telegram-name">{t("socialPreview.guardados")}</div>
+              <div class="telegram-status">{t("socialPreview.enLinea")}</div>
             </div>
             <div class="telegram-menu">⋮</div>
           </div>
@@ -526,7 +527,7 @@
               </div>
 
               <div class="telegram-time">
-                {new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                {new Date().toLocaleTimeString(localeFormato(), { hour: "2-digit", minute: "2-digit" })}
                 <span class="telegram-checks">✓✓</span>
               </div>
             </div>
@@ -534,19 +535,18 @@
         </div>
 
         <div class="telegram-info-panel">
-          <h4>ℹ️ Sobre Telegram</h4>
+          <h4>{t("socialPreview.sobreTelegram")}</h4>
           <p>
-            Telegram usa <strong>Open Graph</strong> como WhatsApp, pero es más permisivo:
+            {t("socialPreview.telegramUsa")} <strong>{t("socialPreview.openGraph")}</strong> {t("socialPreview.comoWhatsappPeroEsMas")}
           </p>
           <ul>
-            <li>✓ Acepta WebP sin problemas</li>
-            <li>✓ No tiene límite estricto de 300KB</li>
-            <li>✓ Dimensiones más flexibles</li>
-            <li>✓ Soporta imágenes de alta resolución</li>
+            <li>{t("socialPreview.aceptaWebpSinProblemas")}</li>
+            <li>{t("socialPreview.noTieneLimiteEstrictoDe")}</li>
+            <li>{t("socialPreview.dimensionesMasFlexibles")}</li>
+            <li>{t("socialPreview.soportaImagenesDeAltaResolucion")}</li>
           </ul>
           <p class="telegram-note">
-            Sin embargo, se recomienda seguir los mismos estándares que WhatsApp para asegurar
-            compatibilidad cross-platform.
+            {t("socialPreview.sinEmbargoSeRecomiendaSeguir")}
           </p>
         </div>
       </div>
@@ -584,7 +584,7 @@
         <div class="external-tools">
           <button class="tool-link" onclick={openFacebookDebugger}>
             <ExternalLink size={14} />
-            Abrir Facebook Debugger
+            {t("socialPreview.abrirFacebookDebugger")}
           </button>
         </div>
       </div>
@@ -599,12 +599,12 @@
               <Twitter size={20} />
             </div>
             <div class="twitter-user">
-              <div class="twitter-name">Tu Cuenta</div>
-              <div class="twitter-handle">@usuario</div>
+              <div class="twitter-name">{t("socialPreview.tuCuenta")}</div>
+              <div class="twitter-handle">{t("socialPreview.usuario")}</div>
             </div>
           </div>
 
-          <div class="twitter-text">Mirá este artículo interesante 👇</div>
+          <div class="twitter-text">{t("socialPreview.miraEsteArticuloInteresante")}</div>
 
           <div class="twitter-link-card">
             {#if currentData?.twitterCard?.image || ogImage}
@@ -646,7 +646,7 @@
         <div class="external-tools">
           <button class="tool-link" onclick={openTwitterValidator}>
             <ExternalLink size={14} />
-            Abrir Twitter Card Validator
+            {t("socialPreview.abrirTwitterCardValidator")}
           </button>
         </div>
       </div>
@@ -676,7 +676,7 @@
             <div class="linkedin-meta">
               <span class="linkedin-domain">{domain}</span>
               <span class="linkedin-separator">•</span>
-              <span class="linkedin-readtime">3 min de lectura</span>
+              <span class="linkedin-readtime">{t("socialPreview.n3MinDeLectura")}</span>
             </div>
           </div>
         </div>
@@ -684,7 +684,7 @@
         <div class="external-tools">
           <button class="tool-link" onclick={openLinkedInInspector}>
             <ExternalLink size={14} />
-            Abrir LinkedIn Post Inspector
+            {t("socialPreview.abrirLinkedinPostInspector")}
           </button>
         </div>
       </div>
@@ -695,7 +695,7 @@
   {#if showDebug && currentData}
     <div class="debug-panel">
       <div class="debug-title">
-        Diagnóstico Técnico
+        {t("socialPreview.diagnosticoTecnico")}
         {#if comparisonMode}
           <span class="debug-variant">({activeVariant === "A" ? labelA : labelB})</span>
         {/if}
@@ -703,55 +703,55 @@
 
       <div class="debug-grid">
         <div class="debug-section">
-          <div class="debug-label">Título SEO:</div>
+          <div class="debug-label">{t("socialPreview.tituloSeo")}</div>
           <div class="debug-value" class:ok={(currentData.title?.length || 0) <= 60}>
-            {currentData.title?.length || 0}/60 caracteres
+            {t("socialPreview.n60Caracteres", { v: currentData.title?.length || 0 })}
           </div>
         </div>
 
         <div class="debug-section">
-          <div class="debug-label">Descripción:</div>
+          <div class="debug-label">{t("socialPreview.descripcion")}</div>
           <div class="debug-value" class:ok={(currentData.metaDescription?.length || 0) <= 160}>
-            {currentData.metaDescription?.length || 0}/160 caracteres
+            {t("socialPreview.n160Caracteres", { v: currentData.metaDescription?.length || 0 })}
           </div>
         </div>
 
         <div class="debug-section">
-          <div class="debug-label">OG Title:</div>
+          <div class="debug-label">{t("socialPreview.ogTitle")}</div>
           <div class="debug-value" class:ok={(currentData.openGraph?.title?.length || 0) <= 88}>
-            {currentData.openGraph?.title?.length || 0}/88 caracteres
+            {t("socialPreview.n88Caracteres", { v: currentData.openGraph?.title?.length || 0 })}
           </div>
         </div>
 
         <div class="debug-section">
-          <div class="debug-label">OG Desc:</div>
+          <div class="debug-label">{t("socialPreview.ogDesc")}</div>
           <div
             class="debug-value"
             class:ok={(currentData.openGraph?.description?.length || 0) <= 200}
           >
-            {currentData.openGraph?.description?.length || 0}/200 caracteres
+            {t("socialPreview.n200Caracteres", { v: currentData.openGraph?.description?.length || 0 })}
           </div>
         </div>
 
         <div class="debug-section">
-          <div class="debug-label">OG Image:</div>
+          <div class="debug-label">{t("socialPreview.ogImage")}</div>
           <div class="debug-value" class:ok={!!ogImage}>
-            {ogImage ? "✓ Presente" : "✗ Ausente"}
+            {ogImage ? t("socialPreview.presente") : t("socialPreview.ausente")}
           </div>
         </div>
 
         {#if currentData.openGraph?.image}
           <div class="debug-section">
-            <div class="debug-label">Dimensiones:</div>
+            <div class="debug-label">{t("socialPreview.dimensiones2")}</div>
             <div class="debug-value" class:ok={currentData.openGraph.image.width === 1200}>
               {currentData.openGraph.image.width || "?"} x {currentData.openGraph.image.height ||
-                "?"} px
+                "?"} {t("socialPreview.px")}
             </div>
           </div>
         {/if}
 
         <div class="debug-section">
-          <div class="debug-label">URL:</div>
+          <div class="debug-label">{t("common.url")}</div>
           <div class="debug-value truncate" title={canonicalUrl}>
             {formatUrl(canonicalUrl, 50)}
           </div>
@@ -759,9 +759,9 @@
 
         {#if currentData.whatsAppValidation}
           <div class="debug-section">
-            <div class="debug-label">WhatsApp:</div>
+            <div class="debug-label">{t("socialPreview.whatsapp2")}</div>
             <div class="debug-value" class:ok={currentData.whatsAppValidation.isValid}>
-              {currentData.whatsAppValidation.isValid ? "✓ Compatible" : "✗ Con problemas"}
+              {currentData.whatsAppValidation.isValid ? t("socialPreview.compatible") : t("socialPreview.conProblemas")}
             </div>
           </div>
         {/if}
@@ -769,29 +769,29 @@
 
       {#if comparisonMode && variantA && variantB}
         <div class="comparison-summary">
-          <div class="comparison-title">📊 Resumen Comparación</div>
+          <div class="comparison-title">{t("socialPreview.resumenComparacion")}</div>
           <div class="comparison-stats">
             <div class="stat-item">
               <span class="stat-label">{labelA}:</span>
               <span class="stat-value" class:warning={issuesA > 0} class:success={issuesA === 0}>
-                {issuesA} issues
+                {t("socialPreview.issues", { issuesA })}
               </span>
             </div>
             <div class="stat-item">
               <span class="stat-label">{labelB}:</span>
               <span class="stat-value" class:warning={issuesB > 0} class:success={issuesB === 0}>
-                {issuesB} issues
+                {t("socialPreview.issues2", { issuesB })}
               </span>
             </div>
             <div class="stat-item winner">
-              <span class="stat-label">🏆 Ganador:</span>
+              <span class="stat-label">{t("socialPreview.ganador")}</span>
               <span class="stat-value">
                 {#if issuesA < issuesB}
                   {labelA}
                 {:else if issuesB < issuesA}
                   {labelB}
                 {:else}
-                  Empate
+                  {t("socialPreview.empate")}
                 {/if}
               </span>
             </div>

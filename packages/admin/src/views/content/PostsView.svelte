@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * PostsView.svelte
    *
@@ -16,7 +17,7 @@
   const columns = [
     {
       field: "title",
-      label: "Title",
+      label: t("common.title"),
       width: "30%",
       fieldConfig: {
         type: "text",
@@ -25,7 +26,7 @@
     },
     {
       field: "status",
-      label: "Status",
+      label: t("common.status"),
       width: "120px",
       fieldConfig: {
         type: "status-badge",
@@ -48,7 +49,7 @@
      */
     {
       field: "locale",
-      label: "Idioma",
+      label: t("common.idioma"),
       width: "90px",
       fieldConfig: {
         type: "calculated",
@@ -59,7 +60,7 @@
     },
     {
       field: "author",
-      label: "Author",
+      label: t("common.author"),
       width: "150px",
       fieldConfig: {
         type: "calculated",
@@ -70,7 +71,7 @@
     },
     {
       field: "readingTime",
-      label: "Read Time",
+      label: t("postsView.readTime"),
       width: "100px",
       fieldConfig: {
         type: "calculated",
@@ -87,7 +88,7 @@
     },
     {
       field: "publishedAt",
-      label: "Published",
+      label: t("common.published"),
       width: "120px",
       fieldConfig: {
         type: "calculated",
@@ -102,7 +103,7 @@
     },
     {
       field: "isLive",
-      label: "Visibility",
+      label: t("common.visibility"),
       width: "100px",
       fieldConfig: {
         type: "calculated",
@@ -122,7 +123,7 @@
   const rowActions = [
     {
       id: "edit",
-      label: "Edit",
+      label: t("common.edit"),
       icon: Edit2,
       handler: (row: any) => {
         goto(`/content/edit?collection=blog-posts&id=${row.id}`);
@@ -130,7 +131,7 @@
     },
     {
       id: "view",
-      label: "View",
+      label: t("postsView.view"),
       icon: Eye,
       handler: (row: any) => {
         window.open(`/blog/${row.slug}`, "_blank");
@@ -142,7 +143,7 @@
   const bulkActions = [
     {
       id: "publish",
-      label: "Publish Selected",
+      label: t("postsView.publishSelected"),
       icon: Megaphone,
       handler: async (ids: string[]) => {
         console.log("Publishing:", ids);
@@ -150,11 +151,11 @@
     },
     {
       id: "delete",
-      label: "Delete",
+      label: t("common.delete"),
       icon: Trash2,
       variant: "danger" as const,
       handler: async (ids: string[]) => {
-        if (confirm(`Delete ${ids.length} posts?`)) {
+        if (confirm(t("postsView.deletePosts", { idsCount: ids.length }))) {
           console.log("Deleting:", ids);
         }
       },
@@ -164,7 +165,7 @@
   // Complete configuration
   const config = {
     table: "blog_posts",
-    label: "Blog Posts",
+    label: t("common.blogPosts"),
     columns,
     searchableFields: ["title", "excerpt"],
     filterableFields: ["status", "authorId"],
@@ -187,10 +188,10 @@
         >
           <FileText class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Blog Posts
+        {t("common.blogPosts")}
       </h1>
       <p class="text-sm text-kitsuden-subtle mt-1">
-        Manage your content with rich text editing, SEO, and scheduling
+        {t("postsView.manageYourContentWithRich")}
       </p>
     </div>
     <a
@@ -198,7 +199,7 @@
       class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
     >
       <Plus class="w-4 h-4" />
-      <span>Nuevo Post</span>
+      <span>{t("postsView.nuevoPost")}</span>
     </a>
   </div>
 

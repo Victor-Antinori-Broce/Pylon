@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   interface Props {
     show?: boolean;
     minLeft?: number;
@@ -52,7 +53,7 @@
       class="w-1.5 shrink-0 cursor-col-resize bg-kitsuden-border hover:bg-kitsuden-accent/60 active:bg-kitsuden-accent transition-colors relative flex items-center justify-center group"
       onmousedown={startDrag}
       role="separator"
-      aria-label="Resize panels"
+      aria-label={t("splitPane.resizePanels")}
     >
       <div
         class="w-1 h-8 rounded-full bg-kitsuden-subtle/40 group-hover:bg-kitsuden-accent/80 transition-colors"

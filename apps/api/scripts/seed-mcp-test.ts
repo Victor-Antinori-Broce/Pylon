@@ -261,11 +261,10 @@ INSERT INTO agent_api_keys (
       mcpServers: {
         kitsuden: {
           command: "bun",
-          args: ["run", "apps/api/src/mcp-server.ts"],
-          cwd: "C:\\Users\\vantinori\\Documents\\github\\cms",
+          args: ["run", "/path/to/kitsuden/apps/api/src/mcp-server.ts"],
           env: {
-            GREMUS_MCP_TOKEN: plainToken,
-            GREMUS_API_URL: "http://localhost:3001",
+            KITSUDEN_API_TOKEN: plainToken,
+            KITSUDEN_API_URL: "http://localhost:3001",
             NODE_ENV: "development",
           },
         },

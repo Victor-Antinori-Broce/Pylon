@@ -1,3 +1,4 @@
+import { firmaDeAgente } from "@kitsuden/shared";
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * UNIFIED ITEMS API — /api/items/{collection}
@@ -25,6 +26,8 @@
  */
 
 import { parseKitsudenQuery, KitsudenQLError, messageOf } from "@kitsuden/engine";
+import { TABLAS_PROHIBIDAS } from "../lib/tablas-explorables";
+import { TABLAS_SOLO_POR_SU_RUTA, problemaDeTablaSoloPorSuRuta, responderProblema } from "../lib/codigo-de-acciones";
 import { eq, sql, desc, asc, and, ilike, gt, gte, lt, lte, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Context } from "hono";
@@ -38,6 +41,7 @@ import {
   validateDatasetEntry,
 } from "../lib/dataset-optimizations";
 import { logger } from "../lib/logger";
+import { aplicarProcedenciaEnRest } from "../lib/procedencia";
 import { broadcastMutation } from "../lib/realtime";
 import { requireAuth } from "../middleware/auth";
 import { withTransactionalRLS } from "../middleware/transactional-rls";
@@ -83,6 +87,15 @@ async function findDatasetBySlug(db: any, slug: string) {
 
 /** Get a native table from the merged schema by name (robust plural/singular resolution) */
 function getNativeTable(name: string): any {
+  const tabla = buscarTablaNativa(name);
+  // Ni siquiera un admin lee o escribe sesiones, credenciales o secretos por
+  // la vía genérica: `/api/items/authSessions` devolvía los tokens de sesión.
+  const nombreSql = tabla?.[Symbol.for("drizzle:Name")] as string | undefined;
+  if (nombreSql && TABLAS_PROHIBIDAS.has(nombreSql)) return null;
+  return tabla;
+}
+
+function buscarTablaNativa(name: string): any {
   const clean = name.trim();
   const lower = clean.toLowerCase();
 
@@ -161,6 +174,19 @@ async function resolveCollection(
   return { type: "unknown" };
 }
 
+/**
+ * Fase I (decisión 2): las tablas con ruta propia (el código de las acciones y
+ * su historial, sus ejecuciones, la configuración de aprobaciones) no se
+ * escriben por aquí, con ningún rol. Devuelve la respuesta, o `null`.
+ */
+function escrituraConRutaPropia(c: Context, resolved: { type: string; table?: unknown }): Response | null {
+  if (resolved.type !== "native") return null;
+  const nombre = (resolved.table as Record<symbol, unknown>)[Symbol.for("drizzle:Name")] as string | undefined;
+  if (!nombre || !TABLAS_SOLO_POR_SU_RUTA.has(nombre)) return null;
+  const requestId = ((c.get as (k: string) => unknown)("requestId") as string | undefined) ?? null;
+  return responderProblema(c as never, problemaDeTablaSoloPorSuRuta(nombre, c.req.path, requestId));
+}
+
 /** Parse ?where JSON into Drizzle filters for native tables */
 function buildWhereFilters(table: any, whereJson: string | undefined): any[] {
   if (!whereJson) return [];
@@ -212,7 +238,7 @@ function buildOrderBy(table: any, sort: string | undefined) {
 
 export async function queryItemsHandler(c: Context) {
   const db = getDb(c);
-  const collection = c.req.param("collection");
+  const collection = c.req.param("collection")!;
   const body = await c.req.json().catch(() => ({}));
 
   const resolved = await resolveCollection(db, collection);
@@ -252,7 +278,7 @@ export async function queryItemsHandler(c: Context) {
 
 export async function listItemsHandler(c: Context) {
   const db = getDb(c);
-  const collection = c.req.param("collection");
+  const collection = c.req.param("collection")!;
   const limit = Math.min(Number(c.req.query("limit")) || 50, 1000);
   const offset = Number(c.req.query("offset")) || 0;
   const sort = c.req.query("sort");
@@ -302,12 +328,19 @@ export async function listItemsHandler(c: Context) {
           .where(and(...conditions)),
       ]);
 
-      return c.json({
-        docs: docs.map((d: typeof dataEntries.$inferSelect) => ({
+      // Opcional (X-Kitsuden-Provenance: 1): quién escribió cada fila. Sin pedirlo, igual que siempre.
+      const vistas = await aplicarProcedenciaEnRest(
+        c,
+        docs.map((d: typeof dataEntries.$inferSelect) => ({
           id: d.id,
           ...d.data,
           _meta: { datasetId: d.dataSetId, createdAt: d.createdAt },
         })),
+        db,
+        docs
+      );
+      return c.json({
+        docs: vistas,
         totalDocs: total?.value || 0,
         limit,
         offset,
@@ -336,7 +369,7 @@ export async function listItemsHandler(c: Context) {
     ]);
 
     return c.json({
-      docs,
+      docs: await aplicarProcedenciaEnRest(c, docs as object[], db),
       totalDocs: total?.value || 0,
       limit,
       offset,
@@ -355,8 +388,8 @@ export async function listItemsHandler(c: Context) {
 
 export async function getItemHandler(c: Context) {
   const db = getDb(c);
-  const collection = c.req.param("collection");
-  const id = c.req.param("id");
+  const collection = c.req.param("collection")!;
+  const id = c.req.param("id")!;
 
   const resolved = await resolveCollection(db, collection);
   if (resolved.type === "unknown") {
@@ -371,17 +404,20 @@ export async function getItemHandler(c: Context) {
         .where(and(eq(dataEntries.dataSetId, resolved.dataset.id), eq(dataEntries.id, id)))
         .limit(1);
       if (!doc) return c.json({ error: "Not found" }, 404);
-      return c.json({
-        id: doc.id,
-        ...doc.data,
-        _meta: { datasetId: doc.dataSetId, createdAt: doc.createdAt },
-      });
+      const [vista] = await aplicarProcedenciaEnRest(
+        c,
+        [{ id: doc.id, ...doc.data, _meta: { datasetId: doc.dataSetId, createdAt: doc.createdAt } }],
+        db,
+        [doc]
+      );
+      return c.json(vista);
     }
 
     const table = resolved.table;
     const [doc] = await db.select().from(table).where(eq(table.id, id)).limit(1);
     if (!doc) return c.json({ error: "Not found" }, 404);
-    return c.json(doc);
+    const [vista] = await aplicarProcedenciaEnRest(c, [doc as object], db);
+    return c.json(vista);
   } catch (err: unknown) {
     logger.error({ collection, id, error: messageOf(err) }, "Failed to get item");
     return c.json({ error: "Query failed", details: messageOf(err) }, 500);
@@ -395,13 +431,15 @@ export async function getItemHandler(c: Context) {
 
 export async function createItemHandler(c: Context) {
   const db = getDb(c);
-  const collection = c.req.param("collection");
+  const collection = c.req.param("collection")!;
   const body = await c.req.json();
 
   const resolved = await resolveCollection(db, collection);
   if (resolved.type === "unknown") {
     return c.json({ error: "Collection not found", collection }, 404);
   }
+  const conRuta = escrituraConRutaPropia(c, resolved);
+  if (conRuta) return conRuta;
 
   try {
     if (resolved.type === "dataset") {
@@ -414,7 +452,17 @@ export async function createItemHandler(c: Context) {
       const validated = validation.data;
       const versioned = addSchemaVersionToData(ds.schema ?? [], validated);
       const title = (versioned.title as string) || (versioned.name as string) || "Untitled";
-      const ownerId = versioned.ownerId ?? c.get("user")?.id ?? null;
+      // Fase F: lo que crea un AGENTE lo firma su humano responsable (un
+      // agente no es una cuenta: su id en owner_id rompía la FK a auth_users).
+      const quien = c.get("user") as { id?: string; role?: string } | null;
+      let ownerId: string | null;
+      if (quien?.role === "agent") {
+        const firma = firmaDeAgente(quien as never, versioned.ownerId as string | undefined, "nadie");
+        if (!firma.ok) return c.json({ error: "Forbidden", message: firma.mensaje, code: firma.code }, 403);
+        ownerId = firma.autor;
+      } else {
+        ownerId = (versioned.ownerId as string | undefined) ?? quien?.id ?? null;
+      }
       const [doc] = await db
         .insert(dataEntries)
         .values({
@@ -422,6 +470,7 @@ export async function createItemHandler(c: Context) {
           title,
           data: { ...versioned, ownerId },
           ownerId,
+          createdById: quien?.id ?? null,
         })
         .returning();
 
@@ -448,14 +497,16 @@ export async function createItemHandler(c: Context) {
 
 export async function updateItemHandler(c: Context) {
   const db = getDb(c);
-  const collection = c.req.param("collection");
-  const id = c.req.param("id");
+  const collection = c.req.param("collection")!;
+  const id = c.req.param("id")!;
   const body = await c.req.json();
 
   const resolved = await resolveCollection(db, collection);
   if (resolved.type === "unknown") {
     return c.json({ error: "Collection not found", collection }, 404);
   }
+  const conRuta = escrituraConRutaPropia(c, resolved);
+  if (conRuta) return conRuta;
 
   try {
     if (resolved.type === "dataset") {
@@ -509,13 +560,15 @@ export async function updateItemHandler(c: Context) {
 
 export async function deleteItemHandler(c: Context) {
   const db = getDb(c);
-  const collection = c.req.param("collection");
-  const id = c.req.param("id");
+  const collection = c.req.param("collection")!;
+  const id = c.req.param("id")!;
 
   const resolved = await resolveCollection(db, collection);
   if (resolved.type === "unknown") {
     return c.json({ error: "Collection not found", collection }, 404);
   }
+  const conRuta = escrituraConRutaPropia(c, resolved);
+  if (conRuta) return conRuta;
 
   try {
     if (resolved.type === "dataset") {

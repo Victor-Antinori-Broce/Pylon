@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+  import { tablasConocidas } from "$lib/explorer-tables";
   import { resolveFieldType } from "@kitsuden/shared";
   import { X, Loader2, Save } from "lucide-svelte";
   import { onMount } from "svelte";
@@ -207,6 +209,10 @@
     const promises = relationCols.map(async (col) => {
       const relTable = getRelatedTable(col.name);
       if (!relTable) return;
+      // La tabla se ADIVINA por el nombre de la columna (`room_id` → `rooms`) y casi
+      // nunca existe: cada alta en Reservas lanzaba diez 404. Solo se piden opciones
+      // de tablas que el explorador conoce.
+      if (!(await tablasConocidas()).has(relTable)) return;
       try {
         const res = await fetch(`${API_URL}/api/explorer/${relTable}/options`, {
           credentials: "include",
@@ -253,7 +259,7 @@
           try {
             payload[key] = JSON.parse(value);
           } catch {
-            error = `Invalid JSON in field "${formatLabel(key)}"`;
+            error = t("autoFormModal.invalidJsonInField", { key: formatLabel(key) });
             saving = false;
             return;
           }
@@ -294,7 +300,7 @@
           const fallo = id ? await selectorDelJuego.guardar(String(id)) : null;
           if (fallo) {
             // El juego sí se guardó: se avisa y el formulario se queda abierto para reintentar
-            error = `Juego guardado, pero ${fallo.charAt(0).toLowerCase()}${fallo.slice(1)}`;
+            error = t("autoFormModal.juegoGuardadoPero", { v: fallo.charAt(0).toLowerCase(), v2: fallo.slice(1) });
             onsave?.();
             return;
           }
@@ -304,10 +310,10 @@
         onclose?.();
       } else {
         const err = await res.json().catch(() => ({}));
-        error = err.error || err.message || `Failed to ${isEdit ? "update" : "create"} record`;
+        error = err.error || err.message || t("autoFormModal.failedToRecord", { v: isEdit ? "update" : "create" });
       }
     } catch (e: any) {
-      error = e.message || "Network error";
+      error = e.message || t("autoFormModal.networkError");
     } finally {
       saving = false;
     }
@@ -336,7 +342,7 @@
     >
       <div>
         <h2 class="text-lg font-semibold text-kitsuden-text">
-          {isEdit ? "Edit" : "Create"} Record
+          {isEdit ? t("common.edit") : t("common.create")} {t("autoFormModal.record")}
         </h2>
         <p class="text-xs text-kitsuden-subtle mt-0.5">{tableName}</p>
       </div>
@@ -372,13 +378,13 @@
             >
               <span class="text-2xl">⚠️</span>
             </div>
-            <h3 class="text-kitsuden-text font-medium mb-1">No fields available</h3>
+            <h3 class="text-kitsuden-text font-medium mb-1">{t("autoFormModal.noFieldsAvailable")}</h3>
             <p class="text-sm text-kitsuden-subtle">
-              Could not load schema for table "{tableName}".
+              {t("autoFormModal.couldNotLoadSchemaFor", { tableName })}
             </p>
             <p class="text-xs text-kitsuden-subtle mt-2">
-              Total columns received: {columns.length}<br />
-              Editable columns: {editableColumns.length}
+              {t("autoFormModal.totalColumnsReceived")} {columns.length}<br />
+              {t("autoFormModal.editableColumns", { editableColumnsCount: editableColumns.length })}
             </p>
           </div>
         {/if}
@@ -395,7 +401,7 @@
             {#if inputType === "relation"}
               <!-- FK Dropdown -->
               <select class="input w-full" bind:value={formData[col.name]}>
-                <option value="">— Select —</option>
+                <option value="">{t("common.select")}</option>
                 {#if relationOptions[col.name]}
                   {#each relationOptions[col.name] as opt}
                     <option value={opt.value}>{opt.label}</option>
@@ -403,7 +409,7 @@
                 {/if}
               </select>
               <p class="text-[10px] text-kitsuden-subtle mt-1">
-                Related to: {getRelatedTable(col.name) || "unknown"}
+                {t("autoFormModal.relatedTo")} {getRelatedTable(col.name) || "unknown"}
               </p>
             {:else if inputType === "checkbox"}
               <label class="flex items-center gap-2 cursor-pointer">
@@ -412,7 +418,7 @@
                   bind:checked={formData[col.name]}
                   class="w-4 h-4 rounded border-kitsuden-border accent-kitsuden-accent"
                 />
-                <span class="text-sm text-kitsuden-text-dim">Enabled</span>
+                <span class="text-sm text-kitsuden-text-dim">{t("autoFormModal.enabled")}</span>
               </label>
             {:else if inputType === "textarea"}
               <textarea
@@ -425,7 +431,7 @@
               <textarea
                 class="input w-full font-mono text-xs min-h-[80px] resize-y"
                 bind:value={formData[col.name]}
-                placeholder={'{"key": "value"}'}
+                placeholder={"{\"key\": \"value\"}"}
                 rows="3"
               ></textarea>
             {:else if inputType === "number"}
@@ -464,15 +470,15 @@
       class="flex items-center justify-end gap-3 px-6 py-4 border-t border-kitsuden-border shrink-0"
     >
       <button class="btn-secondary-sm" onclick={() => onclose?.()} disabled={saving}>
-        Cancel
+        {t("common.cancel")}
       </button>
       <button class="btn-primary flex items-center gap-2" onclick={handleSubmit} disabled={saving}>
         {#if saving}
           <Loader2 class="w-4 h-4 animate-spin" />
-          Saving...
+          {t("common.saving")}
         {:else}
           <Save class="w-4 h-4" />
-          {isEdit ? "Update" : "Create"}
+          {isEdit ? t("autoFormModal.update") : t("common.create")}
         {/if}
       </button>
     </div>

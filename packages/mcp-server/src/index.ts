@@ -16,6 +16,9 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 
+import { META_FORMATO, textoDeResultado } from "./formato.js";
+import { encodeToon } from "./toon.js";
+
 export interface McpServerDependencies {
   db: any;
   schema: {
@@ -93,7 +96,7 @@ function registerResourceHandlers(server: Server, deps: McpServerDependencies) {
           {
             uri,
             mimeType: "application/json",
-            text: JSON.stringify(mapped, null, 2),
+            text: JSON.stringify(mapped),
           },
         ],
       };
@@ -105,7 +108,7 @@ function registerResourceHandlers(server: Server, deps: McpServerDependencies) {
           {
             uri,
             mimeType: "application/json",
-            text: JSON.stringify(konRegistry, null, 2),
+            text: JSON.stringify(konRegistry),
           },
         ],
       };
@@ -173,7 +176,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
         },
         {
           name: "kitsuden_dispatch_worker",
-          description: "Enqueue an asynchronous task to Valkey via BullMQ",
+          description: "Enqueue an asynchronous background job (Postgres queue)",
           inputSchema: {
             type: "object",
             properties: {
@@ -196,7 +199,7 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
         {
           name: "kitsuden_encode_toon",
           description:
-            "Encode arbitrary JSON data into TOON (Token-Optimized Object Notation) format to save LLM context window space",
+            "Encode JSON data as TOON (https://toonformat.dev). Shorter than compact JSON for flat, uniform lists of objects; usually longer for nested records.",
           inputSchema: {
             type: "object",
             properties: {
@@ -237,14 +240,12 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
           }
 
           const results = await query.limit(Math.min(limit, 100));
+          // JSON compacto o TOON, el más corto sin pérdida; `_meta` dice cuál
+          const { texto, formato } = textoDeResultado(results);
 
           return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(results, null, 2),
-              },
-            ],
+            content: [{ type: "text", text: texto }],
+            _meta: { [META_FORMATO]: formato },
           };
         }
 
@@ -299,20 +300,8 @@ function registerToolHandlers(server: Server, deps: McpServerDependencies) {
 
         case "kitsuden_encode_toon": {
           const { data } = args as any;
-
-          // We must import it. If mcp-server is used outside api, it might need to provide a function in deps.
-          // For now, since mcp-server is part of the workspace, we can assume it will receive the stringified JSON and we could do a simple string conversion, or let's assume `deps.encodeTOON` is provided.
-          // Given the current structure, we can just flatten it manually or require the host (API) to provide `deps.encodeTOON`
-          // As a fallback, we will just return stringified json if TOON encoder is not passed, but we'll try to use a simple flatten.
-          return {
-            content: [
-              {
-                type: "text",
-                // Note: we should inject encodeTOON into deps in a real scenario
-                text: JSON.stringify(data),
-              },
-            ],
-          };
+          // El mismo códec que la API (./toon.ts es una copia idéntica)
+          return { content: [{ type: "text", text: encodeToon(data) }] };
         }
 
         default:

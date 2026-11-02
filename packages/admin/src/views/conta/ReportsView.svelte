@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
 
@@ -80,7 +81,7 @@
       onclick={() => {
         activeTab = "trial";
         loadTrial();
-      }}>Trial Balance</button
+      }}>{t("reportsView.trialBalance")}</button
     >
     <button
       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'balance'
@@ -89,7 +90,7 @@
       onclick={() => {
         activeTab = "balance";
         loadBalance();
-      }}>Balance Sheet</button
+      }}>{t("reportsView.balanceSheet")}</button
     >
     <button
       class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {activeTab === 'pl'
@@ -98,7 +99,7 @@
       onclick={() => {
         activeTab = "pl";
         loadPL();
-      }}>Profit & Loss</button
+      }}>{t("reportsView.profitLoss")}</button
     >
   </div>
 
@@ -106,10 +107,10 @@
     {#if activeTab === "balance"}
       <Input type="date" bind:value={asOf} class="w-48" />
     {:else}
-      <Input type="date" bind:value={dateFrom} class="w-48" placeholder="From" />
-      <Input type="date" bind:value={dateTo} class="w-48" placeholder="To" />
+      <Input type="date" bind:value={dateFrom} class="w-48" placeholder={t("reportsView.from")} />
+      <Input type="date" bind:value={dateTo} class="w-48" placeholder={t("reportsView.to")} />
     {/if}
-    <Button onclick={loadActive}>Run Report</Button>
+    <Button onclick={loadActive}>{t("reportsView.runReport")}</Button>
   </div>
 
   {#if loading}
@@ -121,11 +122,11 @@
       <table class="w-full text-sm">
         <thead class="bg-zinc-900/80 text-zinc-400 text-left">
           <tr
-            ><th class="px-4 py-3 font-medium">Code</th><th class="px-4 py-3 font-medium"
-              >Account</th
-            ><th class="px-4 py-3 font-medium text-right">Debit</th><th
-              class="px-4 py-3 font-medium text-right">Credit</th
-            ><th class="px-4 py-3 font-medium text-right">Balance</th></tr
+            ><th class="px-4 py-3 font-medium">{t("reportsView.code")}</th><th class="px-4 py-3 font-medium"
+              >{t("reportsView.account")}</th
+            ><th class="px-4 py-3 font-medium text-right">{t("reportsView.debit")}</th><th
+              class="px-4 py-3 font-medium text-right">{t("reportsView.credit")}</th
+            ><th class="px-4 py-3 font-medium text-right">{t("reportsView.balance")}</th></tr
           >
         </thead>
         <tbody class="divide-y divide-zinc-800">
@@ -138,7 +139,7 @@
               <td class="px-4 py-2 text-right font-mono">{Number(row.balance).toFixed(2)}</td>
             </tr>
           {:else}
-            <tr><td colspan="5" class="px-4 py-12 text-center text-zinc-500">No data.</td></tr>
+            <tr><td colspan="5" class="px-4 py-12 text-center text-zinc-500">{t("reportsView.noData")}</td></tr>
           {/each}
         </tbody>
       </table>
@@ -146,17 +147,17 @@
   {:else if activeTab === "balance" && balanceData}
     <div class="grid gap-4 md:grid-cols-3">
       <Card
-        ><CardHeader><CardTitle class="text-sm">Assets</CardTitle></CardHeader><CardContent>
+        ><CardHeader><CardTitle class="text-sm">{t("reportsView.assets")}</CardTitle></CardHeader><CardContent>
           <div class="text-2xl font-bold">{Number(balanceData.totalAssets).toFixed(2)}</div>
         </CardContent></Card
       >
       <Card
-        ><CardHeader><CardTitle class="text-sm">Liabilities</CardTitle></CardHeader><CardContent>
+        ><CardHeader><CardTitle class="text-sm">{t("reportsView.liabilities")}</CardTitle></CardHeader><CardContent>
           <div class="text-2xl font-bold">{Number(balanceData.totalLiabilities).toFixed(2)}</div>
         </CardContent></Card
       >
       <Card
-        ><CardHeader><CardTitle class="text-sm">Equity</CardTitle></CardHeader><CardContent>
+        ><CardHeader><CardTitle class="text-sm">{t("reportsView.equity")}</CardTitle></CardHeader><CardContent>
           <div class="text-2xl font-bold">{Number(balanceData.totalEquity).toFixed(2)}</div>
         </CardContent></Card
       >
@@ -164,7 +165,7 @@
     <div class="border border-zinc-800 rounded-lg overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-zinc-900/80 text-zinc-400 text-left"
-          ><tr><th class="px-4 py-3">Account</th><th class="px-4 py-3 text-right">Balance</th></tr
+          ><tr><th class="px-4 py-3">{t("reportsView.account")}</th><th class="px-4 py-3 text-right">{t("reportsView.balance")}</th></tr
           ></thead
         >
         <tbody class="divide-y divide-zinc-800">
@@ -189,21 +190,21 @@
   {:else if activeTab === "pl" && plData}
     <div class="grid gap-4 md:grid-cols-3">
       <Card
-        ><CardHeader><CardTitle class="text-sm">Revenue</CardTitle></CardHeader><CardContent
+        ><CardHeader><CardTitle class="text-sm">{t("reportsView.revenue")}</CardTitle></CardHeader><CardContent
           ><div class="text-2xl font-bold text-emerald-400">
             {Number(plData.totalRevenue).toFixed(2)}
           </div></CardContent
         ></Card
       >
       <Card
-        ><CardHeader><CardTitle class="text-sm">Expenses</CardTitle></CardHeader><CardContent
+        ><CardHeader><CardTitle class="text-sm">{t("reportsView.expenses")}</CardTitle></CardHeader><CardContent
           ><div class="text-2xl font-bold text-red-400">
             {Number(plData.totalExpenses).toFixed(2)}
           </div></CardContent
         ></Card
       >
       <Card
-        ><CardHeader><CardTitle class="text-sm">Net Income</CardTitle></CardHeader><CardContent
+        ><CardHeader><CardTitle class="text-sm">{t("reportsView.netIncome")}</CardTitle></CardHeader><CardContent
           ><div class="text-2xl font-bold">{Number(plData.netIncome).toFixed(2)}</div></CardContent
         ></Card
       >
@@ -211,7 +212,7 @@
     <div class="border border-zinc-800 rounded-lg overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-zinc-900/80 text-zinc-400 text-left"
-          ><tr><th class="px-4 py-3">Account</th><th class="px-4 py-3 text-right">Balance</th></tr
+          ><tr><th class="px-4 py-3">{t("reportsView.account")}</th><th class="px-4 py-3 text-right">{t("reportsView.balance")}</th></tr
           ></thead
         >
         <tbody class="divide-y divide-zinc-800">

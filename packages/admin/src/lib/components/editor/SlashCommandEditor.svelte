@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * SlashCommandEditor.svelte
    * A lightweight rich-text editor with slash commands
@@ -47,7 +48,7 @@
     value = "",
     onChange,
     onSubirFicheros,
-    placeholder = "Type '/' for commands...",
+    placeholder = t("slashCommandEditor.typeForCommands"),
     onPedirImagen,
   }: Props = $props();
 
@@ -68,73 +69,73 @@
   const commands = [
     {
       id: "heading1",
-      label: "Heading 1",
+      label: t("slashCommandEditor.heading1"),
       icon: Heading,
       shortcut: "# ",
-      description: "Large section heading",
+      description: t("slashCommandEditor.largeSectionHeading"),
     },
     {
       id: "heading2",
-      label: "Heading 2",
+      label: t("slashCommandEditor.heading2"),
       icon: Heading,
       shortcut: "## ",
-      description: "Medium section heading",
+      description: t("slashCommandEditor.mediumSectionHeading"),
     },
     {
       id: "heading3",
-      label: "Heading 3",
+      label: t("slashCommandEditor.heading3"),
       icon: Heading,
       shortcut: "### ",
-      description: "Small section heading",
+      description: t("slashCommandEditor.smallSectionHeading"),
     },
     {
       id: "bullet",
-      label: "Bullet List",
+      label: t("slashCommandEditor.bulletList"),
       icon: List,
       shortcut: "- ",
-      description: "Create a bullet list",
+      description: t("slashCommandEditor.createABulletList"),
     },
     {
       id: "numbered",
-      label: "Numbered List",
+      label: t("slashCommandEditor.numberedList"),
       icon: ListOrdered,
       shortcut: "1. ",
-      description: "Create a numbered list",
+      description: t("slashCommandEditor.createANumberedList"),
     },
     {
       id: "todo",
-      label: "To-do List",
+      label: t("slashCommandEditor.toDoList"),
       icon: CheckSquare,
       shortcut: "- [ ] ",
-      description: "Create a to-do list",
+      description: t("slashCommandEditor.createAToDoList"),
     },
     {
       id: "quote",
-      label: "Quote",
+      label: t("slashCommandEditor.quote"),
       icon: Quote,
       shortcut: "> ",
-      description: "Create a blockquote",
+      description: t("slashCommandEditor.createABlockquote"),
     },
     {
       id: "code",
-      label: "Code Block",
+      label: t("slashCommandEditor.codeBlock"),
       icon: Code,
       shortcut: "```\n\n```",
-      description: "Insert a code block",
+      description: t("slashCommandEditor.insertACodeBlock"),
     },
     {
       id: "divider",
-      label: "Divider",
+      label: t("slashCommandEditor.divider"),
       icon: Minus,
       shortcut: "---\n",
-      description: "Insert a horizontal divider",
+      description: t("slashCommandEditor.insertAHorizontalDivider"),
     },
     {
       id: "image",
-      label: "Image",
+      label: t("slashCommandEditor.image"),
       icon: Image,
       shortcut: "![alt](url)",
-      description: "Insert an image",
+      description: t("slashCommandEditor.insertAnImage"),
     },
   ];
 
@@ -411,7 +412,7 @@
       type="button"
       onclick={() => wrapSelection("**", "**")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Bold (Ctrl+B)"
+      title={t("slashCommandEditor.boldCtrlB")}
     >
       <Bold class="w-4 h-4" />
     </button>
@@ -419,7 +420,7 @@
       type="button"
       onclick={() => wrapSelection("*", "*")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Italic (Ctrl+I)"
+      title={t("slashCommandEditor.italicCtrlI")}
     >
       <Italic class="w-4 h-4" />
     </button>
@@ -427,7 +428,7 @@
       type="button"
       onclick={() => wrapSelection("[", "](url)")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Link (Ctrl+K)"
+      title={t("slashCommandEditor.linkCtrlK")}
     >
       <Link class="w-4 h-4" />
     </button>
@@ -438,7 +439,7 @@
       type="button"
       onclick={() => insertAtCursor("# ")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Heading 1"
+      title={t("slashCommandEditor.heading1")}
     >
       <Heading class="w-4 h-4" />
     </button>
@@ -446,7 +447,7 @@
       type="button"
       onclick={() => insertAtCursor("- ")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Bullet List"
+      title={t("slashCommandEditor.bulletList")}
     >
       <List class="w-4 h-4" />
     </button>
@@ -454,7 +455,7 @@
       type="button"
       onclick={() => insertAtCursor("> ")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Quote"
+      title={t("slashCommandEditor.quote")}
     >
       <Quote class="w-4 h-4" />
     </button>
@@ -463,7 +464,7 @@
         type="button"
         onclick={pedirImagen}
         class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-        title="Insertar imagen de la biblioteca"
+        title={t("slashCommandEditor.insertarImagenDeLaBiblioteca")}
       >
         <Image class="w-4 h-4" />
       </button>
@@ -472,14 +473,14 @@
       type="button"
       onclick={() => insertAtCursor("```\n\n```")}
       class="p-1.5 rounded hover:bg-kitsuden-border/50 text-kitsuden-text-dim hover:text-kitsuden-text transition-colors"
-      title="Code Block"
+      title={t("slashCommandEditor.codeBlock")}
     >
       <Code class="w-4 h-4" />
     </button>
 
     <div class="flex-1"></div>
 
-    <span class="text-[10px] text-kitsuden-subtle px-2">Type "/" for commands</span>
+    <span class="text-[10px] text-kitsuden-subtle px-2">{t("slashCommandEditor.typeForCommands2")}</span>
   </div>
 
   <!-- Editor -->
@@ -509,7 +510,7 @@
         <div
           class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-kitsuden-subtle border-b border-kitsuden-border"
         >
-          Basic Blocks
+          {t("slashCommandEditor.basicBlocks")}
         </div>
         <div class="max-h-64 overflow-y-auto py-1">
           {#each filteredCommands as cmd, i}
@@ -541,7 +542,7 @@
         <div
           class="px-3 py-2 border-t border-kitsuden-border bg-kitsuden-bg/50 text-[10px] text-kitsuden-subtle"
         >
-          ↑↓ to navigate · Enter to select · Esc to close
+          {t("slashCommandEditor.toNavigateEnterToSelect")}
         </div>
       </div>
     {/if}

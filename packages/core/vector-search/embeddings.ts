@@ -5,14 +5,16 @@
  */
 
 // @ts-ignore - openai may not be installed
-import OpenAI from "openai";
+import type OpenAI from "openai";
 
-// Lazy initialization
+// Lazy initialization: el SDK se importa solo con OPENAI_API_KEY (kitsuden2.md
+// D1: dependencia opcional del paquete publicado).
 let openai: OpenAI | null = null;
 
-function getOpenAI(): OpenAI | null {
+async function getOpenAI(): Promise<OpenAI | null> {
   if (!openai && process.env.OPENAI_API_KEY) {
-    openai = new OpenAI({
+    const { default: Cliente } = await import("openai");
+    openai = new Cliente({
       apiKey: process.env.OPENAI_API_KEY,
     });
   }
@@ -34,7 +36,7 @@ export async function generateEmbedding(
   text: string,
   options: EmbeddingOptions = {}
 ): Promise<number[]> {
-  const client = getOpenAI();
+  const client = await getOpenAI();
 
   if (!client) {
     // Return zero vector if no OpenAI key (allows testing without API)
@@ -63,7 +65,7 @@ export async function generateEmbeddings(
   texts: string[],
   options: EmbeddingOptions = {}
 ): Promise<number[][]> {
-  const client = getOpenAI();
+  const client = await getOpenAI();
 
   if (!client) {
     const dims = options.dimensions || DEFAULT_DIMENSIONS;

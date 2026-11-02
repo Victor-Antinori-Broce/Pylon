@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * MdxEditor.svelte — Split-screen MDX editor with content preview
    * CodeMirror 6 integration for Svelte
    */
   import { Loader2 } from "lucide-svelte";
   import { marked } from "marked";
+  import DOMPurify from "dompurify";
   import { onMount, tick } from "svelte";
 
   // ─── Props ──────────────────────────────────────────
@@ -233,11 +235,11 @@
       try {
         previewHtml = await marked.parse(content);
         previewError =
-          `No se pudo usar el motor del sitio (${err instanceof Error ? err.message : err}). ` +
-          `Vista previa aproximada.`;
+          t("mdxEditor.noSePudoUsarEl", { err: err instanceof Error ? err.message : err }) +
+          t("mdxEditor.vistaPreviaAproximada");
       } catch (err2) {
         previewHtml = "";
-        previewError = `No se pudo componer la vista previa: ${err2 instanceof Error ? err2.message : err2}`;
+        previewError = t("mdxEditor.noSePudoComponerLa", { err2: err2 instanceof Error ? err2.message : err2 });
       }
     } finally {
       isCompiling = false;
@@ -256,7 +258,7 @@
       class="flex items-center justify-between px-4 py-2 border-b border-kitsuden-border bg-kitsuden-bg"
     >
       <h3 class="text-xs font-semibold uppercase tracking-wider text-kitsuden-text-dim">
-        Markdown / MDX
+        {t("mdxEditor.markdownMdx")}
       </h3>
     </div>
     <div
@@ -275,7 +277,7 @@
       class="flex items-center justify-between px-4 py-2 border-b border-kitsuden-border bg-kitsuden-bg flex-shrink-0"
     >
       <h3 class="text-xs font-semibold uppercase tracking-wider text-kitsuden-text-dim">
-        Content Preview
+        {t("common.contentPreview")}
       </h3>
       {#if isCompiling}
         <Loader2 class="w-4 h-4 text-kitsuden-accent animate-spin" />
@@ -300,12 +302,13 @@
         bind:this={previewContainer}
         class="prose prose-invert prose-slate max-w-none prose-headings:font-bold prose-a:text-kitsuden-accent prose-img:rounded-xl prose-pre:bg-kitsuden-card prose-pre:border prose-pre:border-kitsuden-border"
       >
-        {@html previewHtml}
+        <!-- Lo escribe cualquier editor: se limpia antes de pintarlo. -->
+        {@html DOMPurify.sanitize(previewHtml)}
       </article>
 
       {#if !localContent.trim()}
         <div class="h-full flex flex-col items-center justify-center text-kitsuden-subtle">
-          <p class="text-sm">Preview will appear here...</p>
+          <p class="text-sm">{t("mdxEditor.previewWillAppearHere")}</p>
         </div>
       {/if}
     </div>

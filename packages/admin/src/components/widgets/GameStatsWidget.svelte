@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   /**
    * GameStatsWidget
    *
-   * Widget de ejemplo que muestra estadísticas de juegos.
-   * Demuestra cómo recibir props y usar componentes dinámicos.
+   * Widget de EJEMPLO para el registro de widgets (slot `dashboard:stats`):
+   * enseña cómo recibir props y usar componentes dinámicos. Las cifras son
+   * inventadas y fijas, y el widget lo dice en pantalla: no lo registra el
+   * panel por defecto (ver lib/registerDefaultWidgets.ts).
    */
   import { Gamepad2, TrendingUp, Users, Star } from "lucide-svelte";
 
@@ -12,13 +15,13 @@
     showChart?: boolean;
   }
 
-  const { title = "Game Statistics", showChart = true }: Props = $props();
+  const { title = t("common.gameStatisticsExample"), showChart = true }: Props = $props();
 
-  // Datos de ejemplo
+  // Datos inventados: el widget es una demostración
   const stats = [
-    { label: "Total Games", value: 156, icon: Gamepad2, color: "text-kitsuden-accent" },
-    { label: "Active Players", value: "12.5K", icon: Users, color: "text-kitsuden-green" },
-    { label: "Avg Rating", value: "4.8", icon: Star, color: "text-kitsuden-amber" },
+    { label: t("gameStatsWidget.totalGames"), value: 156, icon: Gamepad2, color: "text-kitsuden-accent" },
+    { label: t("gameStatsWidget.activePlayers"), value: "12.5K", icon: Users, color: "text-kitsuden-green" },
+    { label: t("gameStatsWidget.avgRating"), value: "4.8", icon: Star, color: "text-kitsuden-amber" },
   ];
 
   const recentGames = [
@@ -34,7 +37,7 @@
       <Gamepad2 class="w-4 h-4 text-kitsuden-accent" />
       {title}
     </h3>
-    <span class="badge-cyan text-[10px]">GAMES MODULE</span>
+    <span class="badge-cyan text-[10px]">{t("gameStatsWidget.sampleData")}</span>
   </div>
 
   <!-- Stats Grid -->
@@ -51,14 +54,14 @@
 
   <!-- Recent Games List -->
   <div class="space-y-2">
-    <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Popular Now</p>
+    <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("gameStatsWidget.popularNow")}</p>
     {#each recentGames as game}
       <div
         class="flex items-center justify-between p-2 hover:bg-kitsuden-bg rounded-lg transition-colors"
       >
         <span class="text-sm text-kitsuden-text">{game.name}</span>
         <div class="flex items-center gap-2">
-          <span class="text-xs text-kitsuden-subtle">{game.players.toLocaleString()} players</span>
+          <span class="text-xs text-kitsuden-subtle">{game.players.toLocaleString(localeFormato())} {t("gameStatsWidget.players")}</span>
           {#if game.trend === "up"}
             <TrendingUp class="w-3 h-3 text-kitsuden-green" />
           {:else}
@@ -72,7 +75,7 @@
   {#if showChart}
     <div class="pt-2 border-t border-kitsuden-border">
       <div class="flex items-center justify-between text-xs text-kitsuden-subtle">
-        <span>Weekly Growth</span>
+        <span>{t("gameStatsWidget.weeklyGrowth")}</span>
         <span class="text-kitsuden-green">+23.5%</span>
       </div>
       <div class="mt-2 h-8 flex items-end gap-1">

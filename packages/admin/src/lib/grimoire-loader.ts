@@ -1,3 +1,4 @@
+import { t as tr } from "$lib/i18n";
 /**
  * Grimoire Loader v2 — Zero Config Edition
  *
@@ -12,6 +13,8 @@
  */
 
 import type { Component } from "svelte";
+
+import { getUser } from "./auth.svelte";
 
 import type { AdminConfig } from "./types/admin";
 
@@ -126,6 +129,12 @@ export const GRIMOIRE_VIEW_REGISTRY: Record<string, () => Promise<{ default: Com
   editor: () => import("$lib/components/blog/BlogPostEditor.svelte"),
 };
 
+/** Hay sesión y no es admin (un editor): las rutas /api/admin/registry le dan 403. */
+function soloStaff(): boolean {
+  const u = getUser() as { role?: string } | null;
+  return !!u && u.role !== "admin";
+}
+
 // Cache for registry
 let registryCache: GrimoireRegistryResponse | null = null;
 let registryCacheTime = 0;
@@ -214,6 +223,10 @@ export interface SidebarItem {
  * Fetch admin registry from API (auto-discovered grimoires)
  */
 export async function fetchAdminRegistry(): Promise<GrimoireAdminConfig[]> {
+  // El registro es de admin (403 al editor): sin pedirlo, se usan las vistas
+  // propias del panel, que es lo que acababa haciendo igualmente.
+  if (soloStaff()) return [];
+
   // Check cache
   if (registryCache && Date.now() - registryCacheTime < REGISTRY_CACHE_TTL) {
     return registryCache.kons ?? [];
@@ -232,7 +245,7 @@ export async function fetchAdminRegistry(): Promise<GrimoireAdminConfig[]> {
     const data: GrimoireRegistryResponse = await res.json();
 
     if (!data.success) {
-      throw new Error(data.error || "Unknown error");
+      throw new Error(data.error || tr("grimoireLoader.errorDesconocido"));
     }
 
     registryCache = data;
@@ -256,7 +269,12 @@ export async function getGrimoireConfig(grimoireId: string): Promise<GrimoireAdm
     return fromRegistry;
   }
 
-  // Fallback to API fetch
+  // Si el listado llegó, es la fuente completa: un kon que no está en él no
+  // tiene configuración de admin (los del núcleo traen vista propia), y pedirlo
+  // por id solo producía un 404 en consola en cada visita a Datasets o Páginas.
+  if (registry.length > 0 || soloStaff()) return null;
+
+  // Fallback to API fetch (solo cuando el listado no se pudo cargar)
   try {
     const res = await fetch(`${API_URL}/api/admin/registry/${grimoireId}`, {
       credentials: "include",
@@ -509,7 +527,7 @@ export function generateExplorerConfig(
 
   return {
     name: grimoire.name,
-    singularName: grimoire.tables[0]?.label || "Record",
+    singularName: grimoire.tables[0]?.label || tr("dataExplorer.registro"),
     icon: grimoire.icon || "Database",
     views,
     /**
@@ -559,7 +577,7 @@ export async function generateDefaultConfig(grimoireId: string): Promise<AdminCo
 
       return {
         name: humanize(grimoireId),
-        singularName: "Record",
+        singularName: tr("dataExplorer.registro"),
         icon: getGrimoireIcon(grimoireId),
         views: tables.map((t: any) => ({
           id: t.name,
@@ -577,13 +595,13 @@ export async function generateDefaultConfig(grimoireId: string): Promise<AdminCo
   // Ultimate fallback
   return {
     name: humanize(grimoireId),
-    singularName: "Record",
+    singularName: tr("dataExplorer.registro"),
     icon: getGrimoireIcon(grimoireId),
     views: [
       {
         id: "default",
         type: "grid" as const,
-        title: "All Records",
+        title: tr("grimoireLoader.allRecords"),
         table: grimoireId,
       },
     ],

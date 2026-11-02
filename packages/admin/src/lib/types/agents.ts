@@ -36,6 +36,7 @@ export interface CreateAgentInput {
   model: string;
   config?: Record<string, unknown>;
   enabled?: boolean;
+  scopes?: string[];
 }
 
 export interface UpdateAgentInput {
@@ -148,4 +149,118 @@ export interface ChatInterfaceProps {
   loading?: boolean;
   agentName?: string;
   onSend: (message: string) => void;
+}
+
+// ============== Permisos, claves y cuotas (fase E) ==============
+
+export interface AccessOperation {
+  konId: string;
+  kon: string;
+  id: string;
+  /** `kon:<kon>:<op>` */
+  scope: string;
+  method: string;
+  path: string;
+  summary: string;
+  sensitive: boolean;
+  cost: number;
+  write: boolean;
+  public: boolean;
+}
+
+export interface AccessCatalog {
+  presets: { id: string; scopes: readonly string[] }[];
+  broad: { scope: string; operations: string[]; datasets: string[] }[];
+  kons: { konId: string; kon: string; operations: AccessOperation[] }[];
+  legacyKons: { konId: string; kon: string; mountPath: string }[];
+  datasets: { slug: string; name: string }[];
+  datasetActions: ("read" | "write" | "delete")[];
+}
+
+/** granted: un scope lo abre · denied: una denegación lo cierra · open: sin permiso · policy: lo decide la política · none */
+export type AccessState = "granted" | "denied" | "open" | "policy" | "none";
+
+export interface AgentAccess {
+  agentId: string;
+  scopes: string[];
+  grants: string[];
+  denies: string[];
+  broad: { scope: string; known: boolean }[];
+  operations: (AccessOperation & { state: AccessState; by: string | null })[];
+  datasets: ({ slug: string; name: string } & Record<
+    "read" | "write" | "delete",
+    { state: AccessState; by: string | null }
+  >)[];
+}
+
+export interface AgentApiKey {
+  id: string;
+  name: string | null;
+  prefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  revokedBy: string | null;
+  rotatedFrom: string | null;
+  status: "active" | "expiring" | "expired" | "revoked";
+}
+
+export interface AgentQuotaLimits {
+  requestsPerMinute: number | null;
+  writesPerDay: number | null;
+  budgetUnitsPerDay: number | null;
+}
+
+export interface AgentQuotas {
+  limits: AgentQuotaLimits;
+  usage: {
+    dia: string;
+    peticionesEsteMinuto: number;
+    escriturasHoy: number;
+    unidadesHoy: number;
+    almacen: "valkey" | "postgres" | "memoria";
+  };
+  /** Ahorro del formato auto frente a JSON compacto (null si la migración 0052 falta). */
+  formatSavings?: AgentFormatSavings | null;
+}
+
+export interface AgentFormatSavingsSummary {
+  responses: number;
+  compacted: number;
+  jsonBytes: number;
+  sentBytes: number;
+  savedBytes: number;
+  jsonTokensEst: number;
+  sentTokensEst: number;
+  savedTokensEst: number;
+  savedPercent: number;
+}
+
+export interface AgentFormatSavings {
+  day: string;
+  today: AgentFormatSavingsSummary;
+  period: AgentFormatSavingsSummary & { days: number };
+  daily: (AgentFormatSavingsSummary & { day: string })[];
+}
+
+export type UntrustedWrap = "none" | "delimiters" | "object";
+
+/** Ajustes MCP de un agente (routes/permisos-de-agentes.ts). */
+export interface AgentMcpSettings {
+  settings: { toolset: string | null; untrustedWrap: UntrustedWrap };
+  options: { toolsets: string[]; kons: string[]; untrustedWrap: UntrustedWrap[] };
+}
+
+/** Fase F: el firmante humano de un agente (routes/permisos-de-agentes.ts). */
+export interface AgentSponsor {
+  sponsor: {
+    userId: string;
+    valid: boolean;
+    reason: "not_found" | "not_staff" | null;
+    name: string | null;
+    email: string | null;
+    role: string | null;
+  } | null;
+  candidates: { id: string; name: string; email: string; role: string }[];
 }

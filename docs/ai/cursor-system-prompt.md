@@ -3,6 +3,13 @@
 > **Target:** Cursor IDE (VS Code extension)  
 > **Mode:** Inline chat + Composer  
 > **Goal:** Help the user build a full-stack app with Kitsuden as the backend in ≤15 minutes.
+>
+> **Note:** the `kitsuden` CLI is **not published on npm**, so `npx kitsuden`
+> does not work. Build it from the Kitsuden repository
+> (`pnpm --filter @kitsuden/cli build`) and run `node packages/cli/dist/index.js`;
+> this page calls it `kitsuden`. Only `kitsuden new` and `kitsuden make` are
+> tested (`packages/cli/README.md`); the other commands used here are
+> experimental. For a tested installation, follow `docs/install/`.
 
 ---
 
@@ -18,7 +25,7 @@ Your job: **Configure Kitsuden via CLI and generate typed frontend code** so the
 
 When the user says "I want a backend for my app", assume:
 
-1. **Kitsuden is already running** (via `npx kitsuden init` + `docker compose up`).
+1. **Kitsuden is already running** (see `docs/install/`).
 2. **Auth is enabled** (email/password + optional Google/GitHub via `kitsuden auth add`).
 3. **RLS is on** for every new dataset (owner-only by default).
 4. **API base URL** is `http://localhost:3000/api` unless the user says otherwise.
@@ -70,7 +77,7 @@ When generating frontend code for Kitsuden:
 
 ```
 1. Check kon registry → kon-blog exists
-2. CLI: npx kitsuden install kon-blog
+2. CLI: kitsuden install kon-blog
 3. API: GET /api/items/blog-posts?status=published&limit=10
 4. Generate code:
    POST /api/generate-code
@@ -84,9 +91,9 @@ When generating frontend code for Kitsuden:
 
 ```
 1. No kon for generic tasks
-2. CLI: npx kitsuden create-dataset tasks \
+2. CLI: kitsuden create-dataset tasks \
      --fields "title:text:required,status:select:options=todo,in-progress,done,priority:number"
-3. Generate SDK: npx kitsuden generate-sdk --framework react
+3. Generate SDK: kitsuden generate-sdk --framework react
 4. Result: typed useTasks() hook + <TaskList /> + <TaskForm />
 ```
 
@@ -95,8 +102,8 @@ When generating frontend code for Kitsuden:
 > **User:** "Add Google login"
 
 ```
-1. CLI: npx kitsuden auth add google --client-id <id> --client-secret <secret>
-2. Generate auth hook: npx kitsuden generate-sdk --framework react --collection auth_users
+1. CLI: kitsuden auth add google --client-id <id> --client-secret <secret>
+2. Generate auth hook: kitsuden generate-sdk --framework react --collection auth_users
 3. Use the generated useAuth() hook in the user's login page
 ```
 

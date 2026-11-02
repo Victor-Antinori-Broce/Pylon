@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeAll } from "bun:test";
 
-import { isDatabaseAvailable, generateTestId } from "./setup";
+import { isDatabaseAvailable, generateTestId, entrarComo } from "./setup";
 
 let dbAvailable = false;
 let appInstance: any = null;
@@ -16,11 +16,6 @@ function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   if (cookie) headers.set("Cookie", cookie);
   headers.set("Content-Type", "application/json");
   return new Request(`http://localhost:3000${path}`, { ...opts, headers });
-}
-
-function extractCookie(headers: Headers): string {
-  const setCookie = headers.get("set-cookie") || "";
-  return setCookie.split(";")[0];
 }
 
 describe("System HTTP", () => {
@@ -140,22 +135,17 @@ describe("System HTTP", () => {
     it("creates and signs in a user", async () => {
       if (!dbAvailable) return;
 
-      await appInstance!.request(
-        req("/api/auth/sign-up/email", {
-          method: "POST",
-          body: JSON.stringify({ email, password, name: "System User" }),
-        })
-      );
-      const res = await appInstance!.request(
-        req("/api/auth/sign-in/email", {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        })
-      );
-      cookie = extractCookie(res.headers);
+      // Cambiar el grimorio activo es de admin (middleware/matriz-de-autorizacion.ts):
+      // cambia el sitio entero. Antes bastaba con tener sesión.
+      ({ cookie } = await entrarComo(appInstance!, {
+        email,
+        password,
+        name: "System User",
+        role: "admin",
+      }));
     });
 
-    it("POST /api/system/grimoire-state → deactivates grimoire when authenticated", async () => {
+    it("POST /api/system/grimoire-state → deactivates grimoire as admin", async () => {
       if (!dbAvailable) return;
 
       const res = await appInstance!.request(

@@ -48,6 +48,7 @@ export {
 
 export type {
   PageBlock,
+  EditorialDeBloque,
   Game,
   BlogPost,
   DataSet,
@@ -161,6 +162,8 @@ export {
   checkReadAccess,
   checkWriteAccess,
   createRLSFilter,
+  publishedOrOwn,
+  publishedOrOwnQl,
 } from "./rls-builder";
 
 export type { RLSType, RLSRule, PolicyJson, RLSUser } from "./rls-builder";
@@ -251,17 +254,14 @@ export type { SujetoComentable, TipoDeSujeto } from "./comment-subjects";
 // Direcciones del sitio público: todo en ruta, juegos en /<juego>/ y su wiki en /<juego>/wiki/
 export {
   SEGMENTOS_RESERVADOS_DEL_SITIO,
+  leerSegmentosReservados,
   motivoDeSlugDeJuegoInvalido,
   motivoDeSlugDeWikiInvalido,
   slugDeJuego,
 } from "./sitio-publico";
 
 // Enlaces de wiki: la misma regla para indexar (servidor) y pintar (frontend)
-export {
-  slugDePaginaWiki,
-  extraerEnlacesWiki,
-  renderizarEnlacesWiki,
-} from "./wiki-enlaces";
+export { slugDePaginaWiki, extraerEnlacesWiki, renderizarEnlacesWiki } from "./wiki-enlaces";
 export type { EnlaceWiki } from "./wiki-enlaces";
 export { markdownSeguro } from "./render-blocks";
 export { renderizarPaginaWiki } from "./wiki-enlaces";
@@ -283,3 +283,201 @@ export {
   nivelesDeMeta,
 } from "./niveles-de-meta";
 export type { NivelDeMeta, ArquetipoGraduable } from "./niveles-de-meta";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VERSIONES DE CONTRATO — lo que publica GET /api/version (Inti y otros clientes)
+// ═══════════════════════════════════════════════════════════════════════════
+export { CONTRATOS, SDKS, VERSION_DE_KITSUDEN } from "./contratos";
+export type { NombreDeContrato, RespuestaDeVersion } from "./contratos";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ERRORES - Catálogo estable (RFC 9457) para la API, el MCP y los clientes
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  KITSUDEN_ERRORS,
+  DOCS_DE_ERRORES,
+  PROBLEM_JSON,
+  isKitsudenErrorCode,
+  errorDocsUrl,
+  errorCodeForStatus,
+  errorCodeFromLegacy,
+  buildProblem,
+  parseRetryAfter,
+} from "./errores";
+export type { ErrorCatalogEntry, KitsudenErrorCode, ProblemDetails } from "./errores";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SDK DE KONS — el contrato de una operación (docs/kons/README.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  VERSION_SDK_DE_KONS,
+  defineOperacion,
+  comprobarOperaciones,
+  esSensible,
+  esSoloLectura,
+  esIdempotente,
+  exclusionMcp,
+  erroresDeOperacion,
+  nombreCortoDeKon,
+  scopeFinoDeOperacion,
+  nombreDeHerramienta,
+  operationIdDe,
+  scopeCubre,
+  scopesQueConceden,
+  concedePorScopes,
+  costeDeOperacion,
+  identidadesDeOperacion,
+  denegacionDeOperacion,
+  porQueSeConcede,
+  esquemaFecha,
+  esquemaUuid,
+  ARGUMENTO_CUERPO_MCP,
+  ARGUMENTO_IDEMPOTENCIA_MCP,
+  parametrosDeRuta,
+  guiaCorta,
+  esRedireccion,
+  ESTADOS_DE_REDIRECCION,
+} from "./operaciones";
+export type {
+  GuiaDeOperacion,
+  MetodoDeOperacion,
+  AccesoDeOperacion,
+  PermisoDeOperacion,
+  SalidaDeOperacion,
+  EntradaDeOperacion,
+  McpDeOperacion,
+  EntradaValidada,
+  UsuarioDeOperacion,
+  ContextoDeOperacion,
+  OperacionDeKon,
+  ConcesionPorScope,
+  EstadoDeExito,
+  EstadoDeRedireccion,
+} from "./operaciones";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PERMISOS DE AGENTE — amplios + finos + denegaciones (docs/agents/permissions.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  PREFIJO_DENEGACION,
+  esDenegacion,
+  partirScopes,
+  patronCubre,
+  denegacionQueCubre,
+  concesionQueCubre,
+  concedeScope,
+  agenteActuaComoUsuario,
+  abreKonEntero,
+  SCOPE_ACTUAR_COMO_USUARIO,
+  motivoDeScopeInvalido,
+  normalizarScopes,
+  MAX_SCOPES_POR_AGENTE,
+  ACCIONES_DE_DATASET,
+  scopeDeDataset,
+  accesoADataset,
+  agenteEscribePorPolitica,
+  PRESETS_DE_AGENTE,
+  SCOPES_AMPLIOS_DEL_NUCLEO,
+} from "./permisos-de-agente";
+export type { AccionDeDataset, PresetDeAgente } from "./permisos-de-agente";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// APROBACIÓN HUMANA — propuestas de agentes (fase F, docs/agents/approvals.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  MODOS_DE_APROBACION,
+  esModoDeAprobacion,
+  RETENCIONES_DE_PROPUESTA,
+  esRetencionDePropuesta,
+  CONFIG_DE_APROBACIONES_POR_DEFECTO,
+  TTL_MIN_HORAS,
+  TTL_MAX_HORAS,
+  ESTADOS_DE_PROPUESTA,
+  esMetodoDeEscritura,
+  decidirAprobacion,
+  regexDePatron,
+  reglaLegadaCasa,
+  motivoDeReglaInvalida,
+  fusionarConfigDeAprobaciones,
+  leerConfigDeAprobaciones,
+  claveDeHerramientaMcp,
+  herramientaMcpSensiblePorDefecto,
+} from "./aprobaciones";
+export type {
+  ModoDeAprobacion,
+  RetencionDePropuesta,
+  ReglaLegadaDeAprobacion,
+  ConfigDeAprobaciones,
+  EstadoDePropuesta,
+  MotivoDePropuesta,
+} from "./aprobaciones";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FIRMANTE HUMANO DE UN AGENTE (fase F, docs/agents/approvals.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export { ROLES_DE_FIRMANTE, puedeFirmar, firmaDeAgente } from "./firmante";
+export type { FirmanteDeAgente, FirmaResuelta } from "./firmante";
+
+// Patrones de validación sin ReDoS (auditoría 2026-10-25)
+export {
+  patronSeguro,
+  probarPatron,
+  LONGITUD_MAXIMA_DE_PATRON,
+  LONGITUD_MAXIMA_A_PROBAR,
+} from "./patron-seguro";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROMOCIÓN DE CÓDIGO DE AGENTES (fase I, docs/agents/promotion.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  MODOS_DE_PROMOCION,
+  esModoDePromocion,
+  CONFIG_DE_PROMOCION_POR_DEFECTO,
+  LIMITES_DE_CONFIG_DE_PROMOCION,
+  fusionarConfigDePromocion,
+  leerConfigDePromocion,
+  ESTADOS_DE_VERSION,
+  LIMITES_DE_CODIGO_POR_DEFECTO,
+  capacidadesDe,
+  hostCubre,
+  diffDeCapacidades,
+  toqueDeCamino,
+  toqueDeScope,
+  nombreDeSecreto,
+  MOTIVOS_DE_RESPALDO,
+  decidirPromocion,
+  MAX_PRUEBAS_POR_BORRADOR,
+  MAX_BYTES_DE_CODIGO,
+} from "./promocion";
+export type {
+  ModoDePromocion,
+  ConfigDePromocion,
+  EstadoDeVersion,
+  CapacidadesDeCodigo,
+  DiffDeCapacidades,
+  ToqueSensible,
+  MotivoDeRespaldo,
+  ResumenDePruebas,
+  EntradaDeDecision,
+  DecisionDePromocion,
+  RespuestaSimulada,
+  CasoDePrueba,
+} from "./promocion";
+export { escanearCodigo, MAX_BYTES_ESCANEABLES } from "./escaneo-de-codigo";
+export type {
+  SeveridadDeHallazgo,
+  HallazgoDeEscaneo,
+  LlamadaDeApi,
+  InformeDeEscaneo,
+  OpcionesDeEscaneo,
+} from "./escaneo-de-codigo";
+
+// Fase H3: defineModelo (un modelo → tabla, migración, REST/MCP/OpenAPI, RLS, panel)
+export * from "./modelos";
+export * from "./modelos-sql";

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr, localeFormato } from "$lib/i18n";
   import {
     Users,
     Building2,
@@ -73,7 +74,7 @@
     pipelineStages = $state<Record<string, CrmPipelineStage[]>>({});
 
   function fmtCur(cents = 0, cur = "USD") {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(localeFormato(), {
       style: "currency",
       currency: cur,
       maximumFractionDigits: 0,
@@ -81,7 +82,7 @@
   }
   function fmtDate(d?: string) {
     return d
-      ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      ? new Date(d).toLocaleDateString(localeFormato(), { month: "short", day: "numeric", year: "numeric" })
       : "—";
   }
   function ago(d?: string) {
@@ -115,7 +116,7 @@
     try {
       stats = (await api.getCrmStats()).data as CRMStats;
     } catch (e: any) {
-      toast.error("Stats error: " + e.message);
+      toast.error(tr("crmDashboard.statsError") + e.message);
     } finally {
       statsLoading = false;
     }
@@ -125,7 +126,7 @@
     try {
       pipelines = (await api.getCrmPipelines()).data as CrmPipeline[];
     } catch (e: any) {
-      toast.error("Pipelines error: " + e.message);
+      toast.error(tr("crmDashboard.pipelinesError") + e.message);
     } finally {
       pipelinesLoading = false;
     }
@@ -156,7 +157,7 @@
       deals = data;
       dealsPag = { ...(res.pagination ?? dealsPag), total: res.pagination?.total ?? data.length };
     } catch (e: any) {
-      toast.error("Deals error: " + e.message);
+      toast.error(tr("crmDashboard.dealsError") + e.message);
     } finally {
       dealsLoading = false;
     }
@@ -176,7 +177,7 @@
         total: res.pagination?.total ?? contacts.length,
       };
     } catch (e: any) {
-      toast.error("Contacts error: " + e.message);
+      toast.error(tr("crmDashboard.contactsError") + e.message);
     } finally {
       contactsLoading = false;
     }
@@ -196,7 +197,7 @@
         total: res.pagination?.total ?? companies.length,
       };
     } catch (e: any) {
-      toast.error("Companies error: " + e.message);
+      toast.error(tr("crmDashboard.companiesError") + e.message);
     } finally {
       companiesLoading = false;
     }
@@ -211,7 +212,7 @@
       recentDeals = (d.data as CrmDeal[]) ?? [];
       recentContacts = (c.data as CrmContact[]) ?? [];
     } catch (e: any) {
-      toast.error("Overview error: " + e.message);
+      toast.error(tr("crmDashboard.overviewError") + e.message);
     } finally {
       overviewLoading = false;
     }
@@ -229,16 +230,16 @@
         };
         pipelineStages = { ...pipelineStages, [id]: d.stages ?? [] };
       } catch (e: any) {
-        toast.error("Stages error: " + e.message);
+        toast.error(tr("crmDashboard.stagesError") + e.message);
       }
     }
   }
 
   async function delDeal(id: string) {
-    if (!confirm("Delete this deal?")) return;
+    if (!confirm(tr("crmDashboard.deleteThisDeal"))) return;
     try {
       await api.deleteCrmDeal(id);
-      toast.success("Deal deleted");
+      toast.success(tr("crmDashboard.dealDeleted"));
       await loadDeals();
       await loadStats();
     } catch (e: any) {
@@ -246,18 +247,18 @@
     }
   }
   async function bulkDelDeals() {
-    if (!selDeals.size || !confirm(`Delete ${selDeals.size} deals?`)) return;
+    if (!selDeals.size || !confirm(tr("crmDashboard.deleteDeals", { size: selDeals.size }))) return;
     await Promise.all([...selDeals].map((id) => api.deleteCrmDeal(id)));
-    toast.success(`${selDeals.size} deals deleted`);
+    toast.success(tr("crmDashboard.dealsDeleted", { size: selDeals.size }));
     selDeals = new Set();
     await loadDeals();
     await loadStats();
   }
   async function delContact(id: string) {
-    if (!confirm("Delete this contact?")) return;
+    if (!confirm(tr("crmDashboard.deleteThisContact"))) return;
     try {
       await api.deleteCrmContact(id);
-      toast.success("Contact deleted");
+      toast.success(tr("crmDashboard.contactDeleted"));
       await loadContacts();
       await loadStats();
     } catch (e: any) {
@@ -265,18 +266,18 @@
     }
   }
   async function bulkDelContacts() {
-    if (!selContacts.size || !confirm(`Delete ${selContacts.size} contacts?`)) return;
+    if (!selContacts.size || !confirm(tr("crmDashboard.deleteContacts", { size: selContacts.size }))) return;
     await Promise.all([...selContacts].map((id) => api.deleteCrmContact(id)));
-    toast.success(`${selContacts.size} contacts deleted`);
+    toast.success(tr("crmDashboard.contactsDeleted", { size: selContacts.size }));
     selContacts = new Set();
     await loadContacts();
     await loadStats();
   }
   async function delCompany(id: string) {
-    if (!confirm("Delete this company?")) return;
+    if (!confirm(tr("crmDashboard.deleteThisCompany"))) return;
     try {
       await api.deleteCrmCompany(id);
-      toast.success("Company deleted");
+      toast.success(tr("crmDashboard.companyDeleted"));
       await loadCompanies();
       await loadStats();
     } catch (e: any) {
@@ -284,9 +285,9 @@
     }
   }
   async function bulkDelCompanies() {
-    if (!selCompanies.size || !confirm(`Delete ${selCompanies.size} companies?`)) return;
+    if (!selCompanies.size || !confirm(tr("crmDashboard.deleteCompanies", { size: selCompanies.size }))) return;
     await Promise.all([...selCompanies].map((id) => api.deleteCrmCompany(id)));
-    toast.success(`${selCompanies.size} companies deleted`);
+    toast.success(tr("crmDashboard.companiesDeleted", { size: selCompanies.size }));
     selCompanies = new Set();
     await loadCompanies();
     await loadStats();
@@ -319,7 +320,7 @@
     }
   }
   function pageLabel(p: { offset: number; limit: number; total: number }) {
-    return `Page ${Math.floor(p.offset / p.limit) + 1} of ${Math.max(1, Math.ceil(p.total / p.limit))}`;
+    return tr("crmDashboard.pageOf", { v: Math.floor(p.offset / p.limit) + 1, v2: Math.max(1, Math.ceil(p.total / p.limit)) });
   }
 
   function toggleAll(rows: any[], sel: Set<string>) {
@@ -359,16 +360,16 @@
         >
           <Briefcase class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        CRM Dashboard
+        {tr("crmDashboard.crmDashboard")}
       </h1>
       <p class="text-sm text-kitsuden-subtle mt-1">
-        Manage deals, contacts, companies and pipelines
+        {tr("crmDashboard.manageDealsContactsCompaniesAnd")}
       </p>
     </div>
     <button
       onclick={() => goto("/g/kon-crm/deals")}
       class="btn-primary inline-flex items-center gap-2 text-sm"
-      ><Plus class="w-4 h-4" /> Add Deal</button
+      ><Plus class="w-4 h-4" /> {tr("crmDashboard.addDeal")}</button
     >
   </div>
 
@@ -389,25 +390,25 @@
     {:else if stats}
       {@const cards = [
         {
-          label: "Contacts",
-          value: stats.contacts.toLocaleString(),
+          label: tr("crmDashboard.contacts"),
+          value: stats.contacts.toLocaleString(localeFormato()),
           icon: Users,
           cls: "bg-indigo-500/10 text-indigo-400",
         },
         {
-          label: "Companies",
-          value: stats.companies.toLocaleString(),
+          label: tr("crmDashboard.companies"),
+          value: stats.companies.toLocaleString(localeFormato()),
           icon: Building2,
           cls: "bg-emerald-500/10 text-emerald-400",
         },
         {
-          label: "Open Deals",
+          label: tr("crmDashboard.openDeals"),
           value: fmtCur(stats.deals.values.open),
           icon: Briefcase,
           cls: "bg-amber-500/10 text-amber-400",
         },
         {
-          label: "Pipeline Value",
+          label: tr("crmDashboard.pipelineValue"),
           value: fmtCur(stats.deals.values.total),
           icon: TrendingUp,
           cls: "bg-kitsuden-accent/10 text-kitsuden-accent",
@@ -453,10 +454,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
       <section class="card">
         <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
-          <h3 class="font-semibold text-kitsuden-text text-sm">Recent Deals</h3>
+          <h3 class="font-semibold text-kitsuden-text text-sm">{tr("crmDashboard.recentDeals")}</h3>
           <button
             onclick={() => (activeTab = "deals")}
-            class="text-xs text-kitsuden-accent hover:underline">View all</button
+            class="text-xs text-kitsuden-accent hover:underline">{tr("crmDashboard.viewAll")}</button
           >
         </div>
         <div class="divide-y divide-kitsuden-border">
@@ -468,13 +469,13 @@
               </div>
             {/each}
           {:else if !recentDeals.length}
-            <div class="p-8 text-center text-kitsuden-subtle text-sm">No deals yet</div>
+            <div class="p-8 text-center text-kitsuden-subtle text-sm">{tr("crmDashboard.noDealsYet")}</div>
           {:else}
             {#each recentDeals as d}
               <div class="p-3 flex justify-between hover:bg-kitsuden-bg/40 transition-colors">
                 <div class="min-w-0">
                   <p class="text-sm text-kitsuden-text truncate font-medium">{d.title}</p>
-                  <p class="text-xs text-kitsuden-subtle">{d.source || "No source"}</p>
+                  <p class="text-xs text-kitsuden-subtle">{d.source || tr("crmDashboard.noSource")}</p>
                 </div>
                 <div class="text-right flex-shrink-0 ml-3">
                   <p class="text-sm font-semibold text-kitsuden-text">
@@ -494,10 +495,10 @@
 
       <section class="card">
         <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
-          <h3 class="font-semibold text-kitsuden-text text-sm">Recent Contacts</h3>
+          <h3 class="font-semibold text-kitsuden-text text-sm">{tr("crmDashboard.recentContacts")}</h3>
           <button
             onclick={() => (activeTab = "contacts")}
-            class="text-xs text-kitsuden-accent hover:underline">View all</button
+            class="text-xs text-kitsuden-accent hover:underline">{tr("crmDashboard.viewAll")}</button
           >
         </div>
         <div class="divide-y divide-kitsuden-border">
@@ -509,7 +510,7 @@
               </div>
             {/each}
           {:else if !recentContacts.length}
-            <div class="p-8 text-center text-kitsuden-subtle text-sm">No contacts yet</div>
+            <div class="p-8 text-center text-kitsuden-subtle text-sm">{tr("crmDashboard.noContactsYet")}</div>
           {:else}
             {#each recentContacts as c}
               <div class="p-3 flex justify-between hover:bg-kitsuden-bg/40 transition-colors">
@@ -527,7 +528,7 @@
                     ] || cCols.lead}">{c.status}</span
                   >
                   {#if c.score}<p class="text-xs text-kitsuden-subtle mt-0.5">
-                      Score {c.score}
+                      {tr("crmDashboard.score", { score: c.score })}
                     </p>{/if}
                 </div>
               </div>
@@ -537,22 +538,22 @@
       </section>
 
       <section class="card p-4 lg:col-span-2">
-        <h3 class="font-semibold text-kitsuden-text text-sm mb-3">Quick Actions</h3>
+        <h3 class="font-semibold text-kitsuden-text text-sm mb-3">{tr("crmDashboard.quickActions")}</h3>
         <div class="flex flex-wrap gap-2">
           <button
             onclick={() => goto("/g/kon-crm/deals")}
             class="btn-primary inline-flex items-center gap-2 text-sm"
-            ><Plus class="w-4 h-4" /> Add Deal</button
+            ><Plus class="w-4 h-4" /> {tr("crmDashboard.addDeal")}</button
           >
           <button
             onclick={() => goto("/g/kon-crm/contacts")}
             class="btn-secondary inline-flex items-center gap-2 text-sm"
-            ><Plus class="w-4 h-4" /> Add Contact</button
+            ><Plus class="w-4 h-4" /> {tr("crmDashboard.addContact")}</button
           >
           <button
             onclick={() => goto("/g/kon-crm/companies")}
             class="btn-secondary inline-flex items-center gap-2 text-sm"
-            ><Plus class="w-4 h-4" /> Add Company</button
+            ><Plus class="w-4 h-4" /> {tr("crmDashboard.addCompany")}</button
           >
         </div>
       </section>
@@ -573,7 +574,7 @@
                 dealsPag.offset = 0;
                 loadDeals();
               }}
-              placeholder="Search deals..."
+              placeholder={tr("crmDashboard.searchDeals")}
               class="w-full pl-9 pr-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
           </div>
@@ -584,9 +585,9 @@
               loadDeals();
             }}
             class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
-            ><option value="">All statuses</option><option value="open">Open</option><option
-              value="won">Won</option
-            ><option value="lost">Lost</option><option value="paused">Paused</option></select
+            ><option value="">{tr("crmDashboard.allStatuses")}</option><option value="open">{tr("crmDashboard.open")}</option><option
+              value="won">{tr("crmDashboard.won")}</option
+            ><option value="lost">{tr("crmDashboard.lost")}</option><option value="paused">{tr("crmDashboard.paused")}</option></select
           >
           <select
             bind:value={dealsPipelineId}
@@ -595,7 +596,7 @@
               loadDeals();
             }}
             class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
-            ><option value="">All pipelines</option>{#each pipelines as p}<option value={p.id}
+            ><option value="">{tr("crmDashboard.allPipelines")}</option>{#each pipelines as p}<option value={p.id}
                 >{p.name}</option
               >{/each}</select
           >
@@ -603,7 +604,7 @@
         {#if selDeals.size}<button
             onclick={bulkDelDeals}
             class="btn-danger inline-flex items-center gap-2 text-sm"
-            ><Trash2 class="w-4 h-4" /> Delete ({selDeals.size})</button
+            ><Trash2 class="w-4 h-4" /> {tr("crmDashboard.delete", { size: selDeals.size })}</button
           >{/if}
       </div>
 
@@ -621,34 +622,34 @@
                       />{:else}<Square class="w-4 h-4" />{/if}</button
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Title</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.title")}</th>
                 <th
                   class="px-4 py-3 text-left font-medium text-kitsuden-subtle cursor-pointer select-none"
                   onclick={() => setDealSort("value")}
                   ><span class="flex items-center gap-1"
-                    >Value {#if dealsSortField === "value"}{#if dealsSortDir === "asc"}<ArrowUp
+                    >{tr("crmDashboard.value")} {#if dealsSortField === "value"}{#if dealsSortDir === "asc"}<ArrowUp
                           class="w-3 h-3"
                         />{:else}<ArrowDown class="w-3 h-3" />{/if}{:else}<ArrowUpDown
                         class="w-3 h-3"
                       />{/if}</span
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Status</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Probability</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.status")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.probability")}</th>
                 <th
                   class="px-4 py-3 text-left font-medium text-kitsuden-subtle cursor-pointer select-none"
                   onclick={() => setDealSort("expectedCloseDate")}
                   ><span class="flex items-center gap-1"
-                    >Expected Close {#if dealsSortField === "expectedCloseDate"}{#if dealsSortDir === "asc"}<ArrowUp
+                    >{tr("crmDashboard.expectedClose")} {#if dealsSortField === "expectedCloseDate"}{#if dealsSortDir === "asc"}<ArrowUp
                           class="w-3 h-3"
                         />{:else}<ArrowDown class="w-3 h-3" />{/if}{:else}<ArrowUpDown
                         class="w-3 h-3"
                       />{/if}</span
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Source</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Tags</th>
-                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">Actions</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.source")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.tags")}</th>
+                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
               </tr></thead
             >
             <tbody class="divide-y divide-kitsuden-border">
@@ -660,7 +661,7 @@
               {:else if !deals.length}<tr
                   ><td colspan={9} class="px-4 py-12 text-center text-kitsuden-subtle"
                     ><Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p class="text-sm">No deals found</p></td
+                    <p class="text-sm">{tr("crmDashboard.noDealsFound")}</p></td
                   ></tr
                 >
               {:else}{#each deals as d}<tr class="hover:bg-kitsuden-bg/30 transition-colors">
@@ -701,11 +702,11 @@
                         <button
                           onclick={() => goto(`/crm/deals/${d.id}`)}
                           class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
-                          title="Edit"><Edit2 class="w-3.5 h-3.5" /></button
+                          title={tr("common.edit")}><Edit2 class="w-3.5 h-3.5" /></button
                         ><button
                           onclick={() => delDeal(d.id)}
                           class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent-2 transition-colors"
-                          title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
+                          title={tr("common.delete")}><Trash2 class="w-3.5 h-3.5" /></button
                         >
                       </div></td
                     >
@@ -714,7 +715,7 @@
           </table>
         </div>
         <div class="px-4 py-3 border-t border-kitsuden-border flex items-center justify-between">
-          <p class="text-xs text-kitsuden-subtle">{dealsPag.total} deals total</p>
+          <p class="text-xs text-kitsuden-subtle">{dealsPag.total} {tr("crmDashboard.dealsTotal")}</p>
           <div class="flex items-center gap-2">
             <button
               onclick={() => pg("deals", -1)}
@@ -749,7 +750,7 @@
                 contactsPag.offset = 0;
                 loadContacts();
               }}
-              placeholder="Search contacts..."
+              placeholder={tr("crmDashboard.searchContacts")}
               class="w-full pl-9 pr-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
           </div>
@@ -760,16 +761,16 @@
               loadContacts();
             }}
             class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
-            ><option value="">All statuses</option><option value="lead">Lead</option><option
-              value="prospect">Prospect</option
-            ><option value="customer">Customer</option><option value="churned">Churned</option
-            ><option value="archived">Archived</option></select
+            ><option value="">{tr("crmDashboard.allStatuses")}</option><option value="lead">{tr("crmDashboard.lead")}</option><option
+              value="prospect">{tr("crmDashboard.prospect")}</option
+            ><option value="customer">{tr("crmDashboard.customer")}</option><option value="churned">{tr("crmDashboard.churned")}</option
+            ><option value="archived">{tr("common.archived")}</option></select
           >
         </div>
         {#if selContacts.size}<button
             onclick={bulkDelContacts}
             class="btn-danger inline-flex items-center gap-2 text-sm"
-            ><Trash2 class="w-4 h-4" /> Delete ({selContacts.size})</button
+            ><Trash2 class="w-4 h-4" /> {tr("crmDashboard.delete", { size: selContacts.size })}</button
           >{/if}
       </div>
       <div class="card overflow-hidden">
@@ -786,14 +787,14 @@
                       />{:else}<Square class="w-4 h-4" />{/if}</button
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Name</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Email</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Status</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Company</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Job Title</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Score</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Last Contacted</th>
-                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">Actions</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.name")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.email")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.status")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.company")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.jobTitle")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.score")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.lastContacted")}</th>
+                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
               </tr></thead
             >
             <tbody class="divide-y divide-kitsuden-border">
@@ -805,7 +806,7 @@
               {:else if !contacts.length}<tr
                   ><td colspan={9} class="px-4 py-12 text-center text-kitsuden-subtle"
                     ><Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p class="text-sm">No contacts found</p></td
+                    <p class="text-sm">{tr("crmDashboard.noContactsFound")}</p></td
                   ></tr
                 >
               {:else}{#each contacts as c}<tr class="hover:bg-kitsuden-bg/30 transition-colors">
@@ -838,11 +839,11 @@
                         <button
                           onclick={() => goto(`/crm/contacts/${c.id}`)}
                           class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
-                          title="Edit"><Edit2 class="w-3.5 h-3.5" /></button
+                          title={tr("common.edit")}><Edit2 class="w-3.5 h-3.5" /></button
                         ><button
                           onclick={() => delContact(c.id)}
                           class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent-2 transition-colors"
-                          title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
+                          title={tr("common.delete")}><Trash2 class="w-3.5 h-3.5" /></button
                         >
                       </div></td
                     >
@@ -851,7 +852,7 @@
           </table>
         </div>
         <div class="px-4 py-3 border-t border-kitsuden-border flex items-center justify-between">
-          <p class="text-xs text-kitsuden-subtle">{contactsPag.total} contacts total</p>
+          <p class="text-xs text-kitsuden-subtle">{contactsPag.total} {tr("crmDashboard.contactsTotal")}</p>
           <div class="flex items-center gap-2">
             <button
               onclick={() => pg("contacts", -1)}
@@ -886,7 +887,7 @@
                 companiesPag.offset = 0;
                 loadCompanies();
               }}
-              placeholder="Search companies..."
+              placeholder={tr("crmDashboard.searchCompanies")}
               class="w-full pl-9 pr-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
             />
           </div>
@@ -897,7 +898,7 @@
               loadCompanies();
             }}
             class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
-            ><option value="">All industries</option>{#each [...new Set(companies
+            ><option value="">{tr("crmDashboard.allIndustries")}</option>{#each [...new Set(companies
                   .map((c) => c.industry)
                   .filter(Boolean))] as i}<option value={i}>{i}</option>{/each}</select
           >
@@ -905,7 +906,7 @@
         {#if selCompanies.size}<button
             onclick={bulkDelCompanies}
             class="btn-danger inline-flex items-center gap-2 text-sm"
-            ><Trash2 class="w-4 h-4" /> Delete ({selCompanies.size})</button
+            ><Trash2 class="w-4 h-4" /> {tr("crmDashboard.delete", { size: selCompanies.size })}</button
           >{/if}
       </div>
       <div class="card overflow-hidden">
@@ -922,14 +923,14 @@
                       />{:else}<Square class="w-4 h-4" />{/if}</button
                   ></th
                 >
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Name</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Industry</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Domain</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Size</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">City</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Country</th>
-                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">Deals</th>
-                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">Actions</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("common.name")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.industry")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.domain")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.size")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.city")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.country")}</th>
+                <th class="px-4 py-3 text-left font-medium text-kitsuden-subtle">{tr("crmDashboard.deals")}</th>
+                <th class="px-4 py-3 text-right font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
               </tr></thead
             >
             <tbody class="divide-y divide-kitsuden-border">
@@ -941,7 +942,7 @@
               {:else if !companies.length}<tr
                   ><td colspan={9} class="px-4 py-12 text-center text-kitsuden-subtle"
                     ><Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p class="text-sm">No companies found</p></td
+                    <p class="text-sm">{tr("crmDashboard.noCompaniesFound")}</p></td
                   ></tr
                 >
               {:else}{#each companies as c}<tr class="hover:bg-kitsuden-bg/30 transition-colors">
@@ -966,11 +967,11 @@
                         <button
                           onclick={() => goto(`/crm/companies/${c.id}`)}
                           class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
-                          title="Edit"><Edit2 class="w-3.5 h-3.5" /></button
+                          title={tr("common.edit")}><Edit2 class="w-3.5 h-3.5" /></button
                         ><button
                           onclick={() => delCompany(c.id)}
                           class="p-1.5 rounded-lg hover:bg-kitsuden-bg text-kitsuden-subtle hover:text-kitsuden-accent-2 transition-colors"
-                          title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
+                          title={tr("common.delete")}><Trash2 class="w-3.5 h-3.5" /></button
                         >
                       </div></td
                     >
@@ -979,7 +980,7 @@
           </table>
         </div>
         <div class="px-4 py-3 border-t border-kitsuden-border flex items-center justify-between">
-          <p class="text-xs text-kitsuden-subtle">{companiesPag.total} companies total</p>
+          <p class="text-xs text-kitsuden-subtle">{companiesPag.total} {tr("crmDashboard.companiesTotal")}</p>
           <div class="flex items-center gap-2">
             <button
               onclick={() => pg("companies", -1)}
@@ -1012,7 +1013,7 @@
       {:else if !pipelines.length}
         <div class="card p-12 text-center text-kitsuden-subtle">
           <Inbox class="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p class="text-sm">No pipelines found</p>
+          <p class="text-sm">{tr("crmDashboard.noPipelinesFound")}</p>
         </div>
       {:else}
         <div class="space-y-3">
@@ -1032,14 +1033,14 @@
                   <div>
                     <p class="text-sm font-semibold text-kitsuden-text">{pl.name}</p>
                     <p class="text-xs text-kitsuden-subtle">
-                      {stages.length || "?"} stages • {pl.currency}
+                      {stages.length || "?"} {tr("crmDashboard.stages", { currency: pl.currency })}
                     </p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
                   {#if pl.isDefault}<span
                       class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-kitsuden-green/10 text-kitsuden-green border border-kitsuden-green/20"
-                      >Default</span
+                      >{tr("crmDashboard.default")}</span
                     >{/if}
                   {#if expandedPipelineId === pl.id}<ChevronUp
                       class="w-4 h-4 text-kitsuden-subtle"
@@ -1048,7 +1049,7 @@
               </button>
               {#if expandedPipelineId === pl.id}
                 <div class="border-t border-kitsuden-border px-5 py-4">
-                  {#if !stages.length}<p class="text-sm text-kitsuden-subtle">No stages loaded</p>
+                  {#if !stages.length}<p class="text-sm text-kitsuden-subtle">{tr("crmDashboard.noStagesLoaded")}</p>
                   {:else}
                     <div
                       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
@@ -1064,14 +1065,14 @@
                           <div
                             class="flex items-center justify-between text-xs text-kitsuden-subtle"
                           >
-                            <span>Probability</span><span class="text-kitsuden-text font-medium"
+                            <span>{tr("crmDashboard.probability")}</span><span class="text-kitsuden-text font-medium"
                               >{s.probability}%</span
                             >
                           </div>
                           {#if s.wipLimit}<div
                               class="flex items-center justify-between text-xs text-kitsuden-subtle mt-1"
                             >
-                              <span>WIP Limit</span><span class="text-kitsuden-text font-medium"
+                              <span>{tr("crmDashboard.wipLimit")}</span><span class="text-kitsuden-text font-medium"
                                 >{s.wipLimit}</span
                               >
                             </div>{/if}

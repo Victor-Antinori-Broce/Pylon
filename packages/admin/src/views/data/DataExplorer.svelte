@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Search, Filter, Megaphone, X } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -76,7 +77,7 @@
 
   function openPromoteModal(entry: DatasetEntry) {
     selectedEntry = entry;
-    titleTemplate = `Analysis: ${entry.title || entry.name || "Entry"}`;
+    titleTemplate = t("dataExplorer.analysis", { v: entry.title || entry.name || "Entry" });
     slugPrefix = currentDatasetId;
     autoPublish = false;
     promoteError = "";
@@ -119,15 +120,15 @@
       const data = await res.json();
 
       if (!res.ok) {
-        promoteError = data.error || "Failed to promote entry";
+        promoteError = data.error || t("dataExplorer.failedToPromoteEntry");
       } else {
-        promoteSuccess = `Post created successfully! <a href="/posts/${data.postId}" class="text-kitsuden-accent hover:underline">View post</a>`;
+        promoteSuccess = t("dataExplorer.postCreatedSuccessfullyAHref", { postId: data.postId });
         setTimeout(() => {
           closePromoteModal();
         }, 3000);
       }
     } catch (err: any) {
-      promoteError = err.message || "Network error";
+      promoteError = err.message || t("dataExplorer.networkError");
     } finally {
       promoteLoading = false;
     }
@@ -144,8 +145,8 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-kitsuden-text">Data Explorer</h2>
-      <p class="text-sm text-kitsuden-text-dim mt-0.5">Browse and query game data</p>
+      <h2 class="text-xl font-bold text-kitsuden-text">{t("dataDataExplorer.dataExplorer")}</h2>
+      <p class="text-sm text-kitsuden-text-dim mt-0.5">{t("dataDataExplorer.browseAndQueryGameData")}</p>
     </div>
   </div>
 
@@ -155,13 +156,13 @@
       <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
       <input
         type="text"
-        placeholder="Search games..."
+        placeholder={t("dataDataExplorer.searchGames")}
         bind:value={search}
         class="w-full pl-10 pr-4 py-2 bg-kitsuden-card border border-kitsuden-border rounded-lg text-sm focus:outline-none focus:border-kitsuden-accent"
       />
     </div>
     <button class="btn-secondary">
-      <Filter class="w-4 h-4" /> Filter
+      <Filter class="w-4 h-4" /> {t("common.filter")}
     </button>
   </div>
 
@@ -176,12 +177,12 @@
       <table class="w-full text-sm">
         <thead class="bg-kitsuden-surface border-b border-kitsuden-border">
           <tr>
-            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Title</th>
-            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Genre</th>
-            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Platform</th>
-            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">Rating</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">{t("common.title")}</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">{t("dataDataExplorer.genre")}</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">{t("common.platform")}</th>
+            <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim">{t("dataDataExplorer.rating")}</th>
             {#if blogEnabled}
-              <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim w-10">Actions</th>
+              <th class="text-left px-4 py-3 font-medium text-kitsuden-text-dim w-10">{t("common.actions")}</th>
             {/if}
           </tr>
         </thead>
@@ -212,7 +213,7 @@
                 <td class="px-4 py-3">
                   <button
                     class="p-1.5 rounded-lg hover:bg-kitsuden-accent/10 text-kitsuden-subtle hover:text-kitsuden-accent transition-colors"
-                    title="Promote to Content"
+                    title={t("dataDataExplorer.promoteToContent")}
                     onclick={() => openPromoteModal(game)}
                   >
                     <Megaphone class="w-4 h-4" />
@@ -240,8 +241,8 @@
             <Megaphone class="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h3 class="text-lg font-bold text-kitsuden-text">Promote to Content</h3>
-            <p class="text-xs text-kitsuden-text-dim">Convert dataset entry to blog post</p>
+            <h3 class="text-lg font-bold text-kitsuden-text">{t("dataDataExplorer.promoteToContent")}</h3>
+            <p class="text-xs text-kitsuden-text-dim">{t("dataDataExplorer.convertDatasetEntryToBlog")}</p>
           </div>
         </div>
         <button
@@ -256,34 +257,34 @@
       <div class="p-6 space-y-4">
         <!-- Source preview -->
         <div class="rounded-lg bg-kitsuden-surface/50 border border-kitsuden-border p-4">
-          <p class="text-xs text-kitsuden-subtle mb-2">Source Entry</p>
+          <p class="text-xs text-kitsuden-subtle mb-2">{t("dataDataExplorer.sourceEntry")}</p>
           <p class="text-sm font-medium text-kitsuden-text">
-            {selectedEntry.title || selectedEntry.name || "Untitled"}
+            {selectedEntry.title || selectedEntry.name || t("common.untitled")}
           </p>
-          <p class="text-xs text-kitsuden-text-dim mt-1">ID: {selectedEntry.id}</p>
+          <p class="text-xs text-kitsuden-text-dim mt-1">{t("dataDataExplorer.id")} {selectedEntry.id}</p>
         </div>
 
         <!-- Form -->
         <div class="space-y-4">
           <div>
             <label for="titletemplate" class="block text-sm font-medium text-kitsuden-text mb-1.5">
-              Title Template
+              {t("dataDataExplorer.titleTemplate")}
             </label>
             <input
               id="titletemplate"
               type="text"
               bind:value={titleTemplate}
-              placeholder="Analysis: $title"
+              placeholder={t("dataDataExplorer.analysisTitle")}
               class="w-full px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm focus:outline-none focus:border-kitsuden-accent"
             />
             <p class="text-xs text-kitsuden-subtle mt-1">
-              Use {"{field}"} for dynamic values (e.g., {"{title}"}, {"{genre}"})
+              {t("dataDataExplorer.useForDynamicValuesE", { v: "{field}", v2: "{title}", v3: "{genre}" })}
             </p>
           </div>
 
           <div>
             <label for="slugprefix" class="block text-sm font-medium text-kitsuden-text mb-1.5">
-              Slug Prefix
+              {t("dataDataExplorer.slugPrefix")}
             </label>
             <input
               id="slugprefix"
@@ -293,7 +294,7 @@
               class="w-full px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm focus:outline-none focus:border-kitsuden-accent"
             />
             <p class="text-xs text-kitsuden-subtle mt-1">
-              Result: /blog/{slugPrefix || "entry"}/entry-slug
+              {t("dataDataExplorer.resultBlog")}{slugPrefix || "entry"}{t("dataDataExplorer.entrySlug")}
             </p>
           </div>
 
@@ -303,7 +304,7 @@
               bind:checked={autoPublish}
               class="w-4 h-4 rounded border-kitsuden-border bg-kitsuden-surface text-kitsuden-accent focus:ring-kitsuden-accent"
             />
-            <span class="text-sm text-kitsuden-text">Auto-publish immediately</span>
+            <span class="text-sm text-kitsuden-text">{t("dataDataExplorer.autoPublishImmediately")}</span>
           </label>
         </div>
 
@@ -324,7 +325,7 @@
       <!-- Footer -->
       <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-kitsuden-border">
         <button class="btn-secondary" onclick={closePromoteModal} disabled={promoteLoading}>
-          Cancel
+          {t("common.cancel")}
         </button>
         <button
           class="btn-primary flex items-center gap-2"
@@ -335,10 +336,10 @@
             <div
               class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
             ></div>
-            Creating...
+            {t("common.creating")}
           {:else}
             <Megaphone class="w-4 h-4" />
-            Promote to Content
+            {t("dataDataExplorer.promoteToContent")}
           {/if}
         </button>
       </div>

@@ -1,0 +1,14 @@
+{
+  "name": "@kitsuden/kons",
+  "version": "0.9.0-beta",
+  "private": true,
+  "type": "module",
+  "description": "Installed kons (copies made by `kitsuden kon add` from the kitsuden-kons repo). This folder is the install target; it holds no kon in the Kitsuden repository.",
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "@kitsuden/shared": "workspace:*",
+    "@kitsuden/engine": "workspace:*"
+  }
+}

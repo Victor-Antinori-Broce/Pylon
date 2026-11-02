@@ -9,61 +9,64 @@ import { randomBytes } from "crypto";
 import { messageOf } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 
-import { auth } from "../lib/auth";
+import { enProduccion } from "../lib/entorno";
+import { insertCredentialUser } from "../lib/first-run";
 
 import { authUsers as user } from "./schema";
 
 import { db } from "./index";
 
-const ADMIN_EMAIL = "admin@kitsuden.gg";
+/**
+ * An address nobody can receive mail at by default (`example.com` is reserved):
+ * whoever controls the seeded address can reset this admin's password. A real
+ * install names its own, and production refuses to guess.
+ */
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL?.trim() || "admin@example.com";
 const ADMIN_PASSWORD = process.env.ADMIN_SEED_PASSWORD || randomBytes(16).toString("hex");
 const ADMIN_NAME = "Kitsuden Admin";
 
 async function seed() {
+  if (enProduccion() && !process.env.SEED_ADMIN_EMAIL?.trim()) {
+    console.error("  ✗ Set SEED_ADMIN_EMAIL: production does not seed a default admin address.");
+    process.exit(1);
+  }
   console.log("🌱 Seeding superadmin user...");
   let userId = "";
 
   // Check if admin already exists
   const existing = await db.select().from(user).where(eq(user.email, ADMIN_EMAIL)).limit(1);
 
-  if (existing.length) {
-    console.log(`  ⚠ Admin exists: ${existing[0].email}. Recreating to ensure password match...`);
-    // Delete validation (cascade set null in schema handles relations)
-    await db.delete(user).where(eq(user.id, existing[0].id));
-  }
-  // let userId = ""; // Removed duplicate
-  try {
-    const result = await auth.api.signUpEmail({
-      body: {
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD,
-        name: ADMIN_NAME,
-      },
-      headers: new Headers({ "Content-Type": "application/json" }),
-      asResponse: false,
-    });
+  if (existing[0]?.role === "admin") {
+    // Not recreated: this script used to delete whatever account had the address.
+    userId = existing[0].id;
+    console.log(`  ✓ Admin exists: ${existing[0].email}. Keeping it and its password.`);
+  } else if (existing.length) {
+    // Not promoted: with open sign-up, anyone can pre-register an address.
+    console.error(
+      `  ✗ ${ADMIN_EMAIL} already exists and is not an admin. Promote it from the panel, or set SEED_ADMIN_EMAIL.`
+    );
+    process.exit(1);
+  } else {
+    try {
+      await db.transaction(async (tx) => {
+        const created = await insertCredentialUser(tx, {
+          email: ADMIN_EMAIL,
+          password: ADMIN_PASSWORD,
+          name: ADMIN_NAME,
+        });
+        await tx.update(user).set({ role: "admin", emailVerified: true }).where(eq(user.id, created.id));
+        userId = created.id;
+      });
 
-    if (!result || !("user" in result) || !result.user?.id) {
-      console.error("  ✗ Failed to create admin user");
-      process.exit(1);
-    }
-    userId = result.user.id;
-
-    // Upgrade role to admin
-    await db.update(user).set({ role: "admin" }).where(eq(user.id, result.user.id));
-
-    console.log(`  ✓ Created admin: ${ADMIN_EMAIL}`);
-    console.log(`    Password: ${ADMIN_PASSWORD}`);
-    console.log(`    ⚠ IMPORTANT: Save this password or set ADMIN_SEED_PASSWORD env var.`);
-    console.log(`    Role: admin`);
-  } catch (err: unknown) {
-    // If it failed but user might exist in auth tables but not checked above?
-    // Retry finding user
-    const [u] = await db.select().from(user).where(eq(user.email, ADMIN_EMAIL));
-    if (u) {
-      userId = u.id;
-      console.log(`  ✓ Admin recovered: ${u.email}`);
-    } else {
+      console.log(`  ✓ Created admin: ${ADMIN_EMAIL}`);
+      // Solo si la generó este script: si vino de ADMIN_SEED_PASSWORD ya la
+      // tiene quien la puso, y no debe acabar en logs (auditoría 2026-10-25).
+      console.log(
+        `    Password: ${process.env.ADMIN_SEED_PASSWORD ? "(la de ADMIN_SEED_PASSWORD)" : ADMIN_PASSWORD}`
+      );
+      console.log(`    ⚠ IMPORTANT: Save this password or set ADMIN_SEED_PASSWORD env var.`);
+      console.log(`    Role: admin`);
+    } catch (err: unknown) {
       console.error("  ✗ Error creating admin:", messageOf(err) || err);
       process.exit(1);
     }
@@ -114,33 +117,33 @@ async function seed() {
   console.log("  ✓ Tags seeded");
 
   // 3. Games
+  // Juegos de ejemplo, ficticios a proposito: la semilla es del producto y no
+  // debe traer titulos reales ni textos promocionales de sus editores.
   const gameData = [
     {
-      title: "Elden Ring",
-      slug: "elden-ring",
+      title: "Example Quest",
+      slug: "example-quest",
       status: "published",
-      metacriticScore: 96,
-      developer: "FromSoftware",
+      metacriticScore: 90,
+      developer: "Example Studio",
       excerpt:
-        "THE NEW FANTASY ACTION RPG. Rise, Tarnished, and be guided by grace to brandish the power of the Elden Ring and become an Elden Lord in the Lands Between.",
+        "A sample action RPG used to show how games, tags and blog posts fit together in Kitsuden.",
     },
     {
-      title: "Baldur's Gate 3",
-      slug: "baldurs-gate-3",
+      title: "Sample Tactics",
+      slug: "sample-tactics",
       status: "published",
-      metacriticScore: 96,
-      developer: "Larian Studios",
-      excerpt:
-        "Gather your party and return to the Forgotten Grimoires in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power.",
+      metacriticScore: 85,
+      developer: "Sample Games",
+      excerpt: "A sample turn-based strategy game. Replace it with your own catalog.",
     },
     {
-      title: "Cyberpunk 2077",
-      slug: "cyberpunk-2077",
+      title: "Demo Racer",
+      slug: "demo-racer",
       status: "published",
-      metacriticScore: 86,
-      developer: "CD Projekt Red",
-      excerpt:
-        "Cyberpunk 2077 is an open-world, action-adventure RPG set in the megalopolis of Night City, where you play as a cyberpunk mercenary wrapped up in a do-or-die fight for survival.",
+      metacriticScore: 80,
+      developer: "Demo Works",
+      excerpt: "A sample racing game included only as seed data.",
     },
   ];
 

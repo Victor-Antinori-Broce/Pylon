@@ -1,0 +1,9 @@
+{
+  "id": "kitsuden-default",
+  "name": "Kitsuden Default",
+  "description": "Standard Cyberpunk Theme",
+  "version": "1.0.0",
+  "type": "theme",
+  "author": "KitsudenTeam",
+  "css_entry": "variables.css"
+}

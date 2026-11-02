@@ -20,6 +20,11 @@ import {
 } from "../services/schema-introspector";
 
 import { isDatabaseAvailable } from "./setup";
+import { konInstalado } from "../lib/kons-instalados";
+
+// kon-games es el ejemplo de estas pruebas: un kon INSTALABLE (kitsuden-kons).
+const conGames = Boolean(konInstalado("kon-games")?.ruta);
+const itConGames = conGames ? it : it.skip;
 
 let dbAvailable = false;
 
@@ -29,7 +34,7 @@ describe("Zero Config Integration", () => {
   });
 
   describe("🎛️ Admin Registry Flow", () => {
-    it("should discover kons from filesystem", async () => {
+    itConGames("should discover kons from filesystem", async () => {
       const registry = await buildAdminRegistry();
 
       expect(registry.length).toBeGreaterThan(0);
@@ -39,7 +44,7 @@ describe("Zero Config Integration", () => {
       expect(hasGames).toBe(true);
     });
 
-    it("should parse kon.json config correctly", async () => {
+    itConGames("should parse kon.json config correctly", async () => {
       const config = await getKonAdminConfig("kon-games");
 
       expect(config).toBeDefined();
@@ -131,7 +136,7 @@ describe("Zero Config Integration", () => {
   });
 
   describe("🔄 End-to-End Flow", () => {
-    it("complete flow: kon → introspection → relations", async () => {
+    itConGames("complete flow: kon → introspection → relations", async () => {
       if (!dbAvailable) return;
       // Step 1: Get kon from registry
       const kon = await getKonAdminConfig("kon-games");

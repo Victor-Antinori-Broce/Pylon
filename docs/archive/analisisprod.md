@@ -49,7 +49,7 @@
 // ✅ 1. NHI (Non-Human Identity) COMPLETO
 // apps/api/src/services/agent-auth.ts
 
-const token = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const token = "<YOUR_AGENT_KEY>";
 //       ↑↑↑↑↑↑↑  ↑↑↑↑↑↑  ↑↑↑↑↑↑↑↑
 //       prefijo   tipo    43 chars SHA-256
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr, localeFormato } from "$lib/i18n";
   /**
    * PromoteFromDataset.svelte — Production Ready
    *
@@ -165,7 +166,7 @@
     } catch (err: any) {
       if (err.name !== "AbortError") {
         console.error("Failed to load datasets:", err);
-        error = err.message || "Failed to load datasets. Please try again.";
+        error = err.message || tr("promoteFromDataset.failedToLoadDatasetsPlease");
       }
     } finally {
       loading = false;
@@ -194,7 +195,7 @@
     } catch (err: any) {
       if (err.name !== "AbortError") {
         console.error("Failed to load entries:", err);
-        error = err.message || "Failed to load entries. Please try again.";
+        error = err.message || tr("promoteFromDataset.failedToLoadEntriesPlease");
       }
     } finally {
       loading = false;
@@ -217,7 +218,7 @@
 
   function handleConfirm() {
     if (!selectedEntry || !selectedDataset) {
-      error = "Please select a dataset entry";
+      error = tr("promoteFromDataset.pleaseSelectADatasetEntry");
       return;
     }
 
@@ -227,7 +228,7 @@
       handleClose();
     } catch (err: any) {
       console.error("Failed to transform entry:", err);
-      error = err.message || "Failed to process entry data";
+      error = err.message || tr("promoteFromDataset.failedToProcessEntryData");
     }
   }
 
@@ -279,7 +280,7 @@
     const data = entry.data;
 
     if (!data || typeof data !== "object") {
-      throw new Error("Invalid entry data");
+      throw new Error(tr("promoteFromDataset.invalidEntryData"));
     }
 
     // Extract common fields with fallbacks
@@ -329,7 +330,7 @@
       }
     }
 
-    return `Post from ${dataset.name}`;
+    return tr("promoteFromDataset.postFrom", { name: dataset.name });
   }
 
   function extractDescription(data: Record<string, any>): string {
@@ -510,7 +511,7 @@
   function formatDate(dateString: string): string {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString(localeFormato(), {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -524,25 +525,25 @@
 <Modal
   open={isOpen}
   title={step === "datasets"
-    ? "Create Post from Dataset"
+    ? tr("promoteFromDataset.createPostFromDataset")
     : step === "entries"
-      ? `Select from ${selectedDataset?.name}`
-      : "Preview Content"}
+      ? tr("promoteFromDataset.selectFrom", { name: selectedDataset?.name })
+      : tr("promoteFromDataset.previewContent")}
   onClose={handleClose}
 >
   <div class="w-[700px] max-h-[80vh] flex flex-col">
     <!-- Navigation -->
     <div class="flex items-center gap-2 px-4 py-3 border-b border-kitsuden-border">
       {#if step !== "datasets"}
-        <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> ← Back </button>
+        <button onclick={goBack} class="btn-ghost btn-sm" disabled={loading}> {tr("promoteFromDataset.back")} </button>
       {/if}
 
       <div class="flex items-center gap-2 text-sm text-kitsuden-subtle">
-        <span class={step === "datasets" ? "text-kitsuden-accent font-medium" : ""}>Datasets</span>
+        <span class={step === "datasets" ? "text-kitsuden-accent font-medium" : ""}>{tr("common.datasets")}</span>
         <ArrowRight class="w-4 h-4" />
-        <span class={step === "entries" ? "text-kitsuden-accent font-medium" : ""}>Entries</span>
+        <span class={step === "entries" ? "text-kitsuden-accent font-medium" : ""}>{tr("promoteFromDataset.entries")}</span>
         <ArrowRight class="w-4 h-4" />
-        <span class={step === "preview" ? "text-kitsuden-accent font-medium" : ""}>Preview</span>
+        <span class={step === "preview" ? "text-kitsuden-accent font-medium" : ""}>{tr("common.preview")}</span>
       </div>
     </div>
 
@@ -554,7 +555,7 @@
           type="text"
           bind:value={searchQuery}
           onkeydown={handleKeyDown}
-          placeholder={step === "datasets" ? "Search datasets..." : "Search entries..."}
+          placeholder={step === "datasets" ? tr("promoteFromDataset.searchDatasets") : tr("promoteFromDataset.searchEntries")}
           class="input w-full pl-10"
           disabled={loading}
         />
@@ -573,14 +574,14 @@
       <div class="flex justify-between mt-2">
         <span class="text-xs text-kitsuden-subtle">
           {#if step === "datasets"}
-            {filteredDatasets.length} dataset{filteredDatasets.length !== 1 ? "s" : ""}
+            {tr("promoteFromDataset.dataset", { filteredDatasetsCount: filteredDatasets.length })}{filteredDatasets.length !== 1 ? "s" : ""}
           {:else if step === "entries"}
-            {entries.length} of {totalEntries} entries
+            {tr("promoteFromDataset.ofEntries", { entriesCount: entries.length, totalEntries })}
           {/if}
         </span>
         {#if step === "entries" && totalPages > 1}
           <span class="text-xs text-kitsuden-subtle">
-            Page {currentPage} of {totalPages}
+            {tr("promoteFromDataset.pageOf", { currentPage, totalPages })}
           </span>
         {/if}
       </div>
@@ -602,7 +603,7 @@
             class="text-xs underline mt-1 hover:no-underline flex items-center gap-1"
           >
             <RefreshCw class="w-3 h-3" />
-            Retry
+            {tr("promoteFromDataset.retry")}
           </button>
         </div>
       </div>
@@ -613,7 +614,7 @@
       {#if loading}
         <div class="flex flex-col items-center justify-center py-12">
           <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mb-3" />
-          <p class="text-kitsuden-subtle text-sm">Loading...</p>
+          <p class="text-kitsuden-subtle text-sm">{tr("common.loading")}</p>
         </div>
       {:else if step === "datasets"}
         <!-- Datasets List -->
@@ -639,10 +640,10 @@
                   {/if}
                   <div class="flex items-center gap-3 mt-2">
                     <span class="text-xs text-kitsuden-subtle/60">
-                      {dataset.entryCount || 0} entries
+                      {tr("promoteFromDataset.entries2", { v: dataset.entryCount || 0 })}
                     </span>
                     <span class="text-xs text-kitsuden-subtle/60">
-                      Updated {formatDate(dataset.updatedAt)}
+                      {tr("promoteFromDataset.updated", { v: formatDate(dataset.updatedAt) })}
                     </span>
                   </div>
                 </div>
@@ -657,7 +658,7 @@
             <div class="text-center py-12">
               <Database class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
               <p class="text-kitsuden-subtle">
-                {searchQuery ? "No datasets match your search" : "No datasets available"}
+                {searchQuery ? tr("promoteFromDataset.noDatasetsMatchYourSearch") : tr("promoteFromDataset.noDatasetsAvailable")}
               </p>
             </div>
           {/if}
@@ -708,7 +709,7 @@
             <div class="text-center py-12">
               <FileText class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
               <p class="text-kitsuden-subtle">
-                {searchQuery ? "No entries match your search" : "No entries available"}
+                {searchQuery ? tr("promoteFromDataset.noEntriesMatchYourSearch") : tr("promoteFromDataset.noEntriesAvailable")}
               </p>
             </div>
           {/if}
@@ -724,17 +725,17 @@
               disabled={!hasPrevPage || loading}
               class="btn-ghost btn-sm disabled:opacity-50"
             >
-              Previous
+              {tr("promoteFromDataset.previous")}
             </button>
             <span class="text-sm text-kitsuden-subtle px-3">
-              Page {currentPage} of {totalPages}
+              {tr("promoteFromDataset.pageOf", { currentPage, totalPages })}
             </span>
             <button
               onclick={() => goToPage(currentPage + 1)}
               disabled={!hasNextPage || loading}
               class="btn-ghost btn-sm disabled:opacity-50"
             >
-              Next
+              {tr("common.next")}
             </button>
           </div>
         {/if}
@@ -743,13 +744,13 @@
         <div class="space-y-4">
           <!-- Title -->
           <div>
-            <label class="label text-xs uppercase text-kitsuden-subtle">Title</label>
+            <label class="label text-xs uppercase text-kitsuden-subtle">{tr("common.title")}</label>
             <p class="text-lg font-medium text-kitsuden-text">{preview.title}</p>
           </div>
 
           <!-- Excerpt -->
           <div>
-            <label class="label text-xs uppercase text-kitsuden-subtle">Excerpt</label>
+            <label class="label text-xs uppercase text-kitsuden-subtle">{tr("promoteFromDataset.excerpt")}</label>
             <p class="text-sm text-kitsuden-text-dim line-clamp-3">{preview.excerpt}</p>
           </div>
 
@@ -758,7 +759,7 @@
             <div>
               <label class="label text-xs uppercase text-kitsuden-subtle flex items-center gap-1">
                 <Tag class="w-3 h-3" />
-                Tags ({preview.tags.length})
+                {tr("promoteFromDataset.tags", { tagsCount: preview.tags.length })}
               </label>
               <div class="flex flex-wrap gap-2 mt-1">
                 {#each preview.tags.slice(0, 10) as tag}
@@ -772,7 +773,7 @@
                   <span
                     class="px-2 py-1 rounded-full bg-kitsuden-border/50 text-kitsuden-subtle text-xs"
                   >
-                    +{preview.tags.length - 10} more
+                    {tr("common.more", { v: preview.tags.length - 10 })}
                   </span>
                 {/if}
               </div>
@@ -784,7 +785,7 @@
             <div>
               <label class="label text-xs uppercase text-kitsuden-subtle flex items-center gap-1">
                 <Image class="w-3 h-3" />
-                Featured Image
+                {tr("promoteFromDataset.featuredImage")}
               </label>
               <p class="text-xs text-kitsuden-accent font-mono mt-1">{preview.featuredImageId}</p>
             </div>
@@ -792,7 +793,7 @@
 
           <!-- Content Preview -->
           <div>
-            <label class="label text-xs uppercase text-kitsuden-subtle">Content Preview</label>
+            <label class="label text-xs uppercase text-kitsuden-subtle">{tr("common.contentPreview")}</label>
             <div class="mt-1 p-3 rounded-lg bg-kitsuden-bg border border-kitsuden-border">
               <pre
                 class="text-xs text-kitsuden-text-dim whitespace-pre-wrap line-clamp-10 font-mono">{preview.content.substring(
@@ -801,7 +802,7 @@
                 )}{preview.content.length > 500 ? "..." : ""}</pre>
             </div>
             <p class="text-xs text-kitsuden-subtle mt-1">
-              {preview.content.length} characters
+              {tr("promoteFromDataset.characters", { contentCount: preview.content.length })}
             </p>
           </div>
 
@@ -809,7 +810,7 @@
           <div class="p-3 rounded-lg bg-kitsuden-accent/5 border border-kitsuden-accent/20">
             <p class="text-xs text-kitsuden-accent flex items-center gap-1">
               <Check class="w-3 h-3" />
-              Source: {selectedDataset?.name} → {selectedEntry.id.substring(0, 8)}...
+              {tr("promoteFromDataset.source", { name: selectedDataset?.name, v: selectedEntry.id.substring(0, 8) })}
             </p>
           </div>
         </div>
@@ -818,15 +819,15 @@
 
     <!-- Footer Actions -->
     <div class="flex justify-end gap-2 p-4 border-t border-kitsuden-border">
-      <button onclick={handleClose} class="btn-ghost" disabled={loading}> Cancel </button>
+      <button onclick={handleClose} class="btn-ghost" disabled={loading}> {tr("common.cancel")} </button>
       {#if step === "preview"}
         <button onclick={handleConfirm} class="btn-primary gap-1.5" disabled={loading}>
           {#if loading}
             <Loader2 class="w-4 h-4 animate-spin" />
-            Processing...
+            {tr("promoteFromDataset.processing")}
           {:else}
             <Check class="w-4 h-4" />
-            Create Post
+            {tr("promoteFromDataset.createPost")}
           {/if}
         </button>
       {/if}

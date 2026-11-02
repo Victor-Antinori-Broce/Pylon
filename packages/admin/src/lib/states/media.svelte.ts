@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * ESTADO GLOBAL REACTIVO - Media Library (Svelte 5 Runes)
@@ -59,6 +60,16 @@ export interface UploadProgress {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
+
+/**
+ * Con almacenamiento local la API devuelve rutas como `/media/uploads/x.png`, que
+ * sirve ELLA. Si el panel vive en otro origen (VITE_API_URL), esa ruta relativa
+ * pedía el fichero al servidor del panel: 404 y miniatura rota. Se resuelve contra
+ * la API; las URL absolutas (S3, R2, CDN) no se tocan.
+ */
+export function urlDeMedio(url: string): string {
+  return url.startsWith("/") && !url.startsWith("//") && API_URL ? API_URL + url : url;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MediaStore - Estado Reactivo Global
@@ -141,7 +152,7 @@ export class MediaStore {
       const data = await response.json();
       this.files = data.docs || [];
     } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to fetch files";
+      this.error = err instanceof Error ? err.message : t("mediaStore.noSePudieronCargarArchivos");
       console.error("[MediaStore] fetchFiles error:", err);
     } finally {
       this.isLoading = false;
@@ -162,7 +173,7 @@ export class MediaStore {
       this.selectedFile = file;
       return file;
     } catch (err) {
-      this.error = err instanceof Error ? err.message : `Failed to fetch file ${id}`;
+      this.error = err instanceof Error ? err.message : t("mediaStore.noSePudoCargarArchivo", { id });
       return null;
     }
   }
@@ -210,11 +221,11 @@ export class MediaStore {
 
       return result.success;
     } catch (err) {
-      this.error = err instanceof Error ? err.message : "Upload failed";
+      this.error = err instanceof Error ? err.message : t("mediaStore.subidaFallida");
       this.uploadProgress = this.uploadProgress.map((p) => ({
         ...p,
         status: "error",
-        error: this.error || "Upload failed",
+        error: this.error || t("mediaStore.subidaFallida"),
       }));
       return false;
     } finally {
@@ -246,13 +257,13 @@ export class MediaStore {
       }
       return updated;
     } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to update file";
+      this.error = err instanceof Error ? err.message : t("mediaStore.noSePudoActualizar");
       return null;
     }
   }
 
   async deleteFile(id: string): Promise<boolean> {
-    if (!confirm("Are you sure you want to delete this file?")) return false;
+    if (!confirm(t("mediaStore.confirmarBorrado"))) return false;
 
     try {
       const response = await fetch(`${API_URL}/api/media/${id}`, {
@@ -270,7 +281,7 @@ export class MediaStore {
       }
       return true;
     } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to delete file";
+      this.error = err instanceof Error ? err.message : t("mediaStore.noSePudoEliminar");
       return false;
     }
   }
@@ -292,7 +303,7 @@ export class MediaStore {
       const data = await response.json();
       this.folders = data.docs || [];
     } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to fetch folders";
+      this.error = err instanceof Error ? err.message : t("mediaStore.noSePudieronCargarCarpetas");
     }
   }
 
@@ -319,7 +330,7 @@ export class MediaStore {
       this.folders = [...this.folders, newFolder];
       return newFolder;
     } catch (err) {
-      this.error = err instanceof Error ? err.message : "Failed to create folder";
+      this.error = err instanceof Error ? err.message : t("mediaStore.noSePudoCrearCarpeta");
       return null;
     }
   }
@@ -371,9 +382,9 @@ export class MediaStore {
 
   getFileUrl(file: MediaFile, size?: "small" | "medium" | "large"): string {
     if (size && file.thumbnails?.[size]) {
-      return file.thumbnails[size].url;
+      return urlDeMedio(file.thumbnails[size].url);
     }
-    return file.url || file.publicUrl || "";
+    return urlDeMedio(file.url || file.publicUrl || "");
   }
 
   getFileIcon(mimeType: string): string {

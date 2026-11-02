@@ -69,6 +69,7 @@
       // Kons que otros kons importan por nombre de paquete. Van a `index.ts`
       // porque los kons no se construyen a `dist`: se cargan desde fuente.
       "@kitsuden/engine": ["./packages/engine/index.ts"],
+      "@kitsuden/engine/zod": ["./packages/engine/zod.ts"],
       "@kitsuden/kon-cardsim": ["./packages/kons/kon-cardsim/index.ts"],
       "@kitsuden/kon-esports": ["./packages/kons/kon-esports/index.ts"]
     }

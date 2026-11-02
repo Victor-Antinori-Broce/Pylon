@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * DynamicForm.svelte — Runtime form generator from Dataset schema
    * Reads FieldDefinition[], generates validation, renders form
@@ -24,7 +25,7 @@
   const {
     fields,
     initialData = {},
-    submitLabel = "Save Entry",
+    submitLabel = t("dynamicForm.saveEntry"),
     onSubmit,
     onCancel,
   }: Props = $props();
@@ -111,10 +112,10 @@
       } else {
         // Se dice el motivo concreto que devolvió el servidor: «Failed to
         // upload» a secas no distingue un fichero de 20 MB de un disco lleno.
-        alert(errores.join(" · ") || "No se pudo subir la imagen");
+        alert(errores.join(" · ") || t("dynamicForm.noSePudoSubirLa"));
       }
     } catch (err: any) {
-      alert(err?.message || "No se pudo subir la imagen");
+      alert(err?.message || t("dynamicForm.noSePudoSubirLa"));
     } finally {
       uploadingStates[fieldKey] = false;
     }
@@ -146,13 +147,13 @@
         case "number": {
           const num = Number(val);
           if (isNaN(num)) {
-            errors[field.key] = "Must be a valid number";
+            errors[field.key] = t("dynamicForm.mustBeAValidNumber");
           } else {
             if (field.minValue !== undefined && num < field.minValue) {
-              errors[field.key] = `Minimum value is ${field.minValue}`;
+              errors[field.key] = t("dynamicForm.minimumValueIs", { minValue: field.minValue });
             }
             if (field.maxValue !== undefined && num > field.maxValue) {
-              errors[field.key] = `Maximum value is ${field.maxValue}`;
+              errors[field.key] = t("dynamicForm.maximumValueIs", { maxValue: field.maxValue });
             }
           }
           break;
@@ -162,15 +163,15 @@
         case "richtext": {
           const str = String(val);
           if (field.minLength && str.length < field.minLength) {
-            errors[field.key] = `Minimum ${field.minLength} characters`;
+            errors[field.key] = t("dynamicForm.minimumCharacters", { minLength: field.minLength });
           }
           if (field.maxLength && str.length > field.maxLength) {
-            errors[field.key] = `Maximum ${field.maxLength} characters`;
+            errors[field.key] = t("dynamicForm.maximumCharacters", { maxLength: field.maxLength });
           }
           if (field.validationRegex) {
             try {
               if (!new RegExp(field.validationRegex).test(str)) {
-                errors[field.key] = `Does not match pattern: ${field.validationRegex}`;
+                errors[field.key] = t("dynamicForm.doesNotMatchPattern", { validationRegex: field.validationRegex });
               }
             } catch {}
           }
@@ -179,7 +180,7 @@
 
         case "email": {
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val))) {
-            errors[field.key] = "Invalid email address";
+            errors[field.key] = t("dynamicForm.invalidEmailAddress");
           }
           break;
         }
@@ -188,7 +189,7 @@
           try {
             new URL(String(val));
           } catch {
-            errors[field.key] = "Invalid URL";
+            errors[field.key] = t("dynamicForm.invalidUrl");
           }
           break;
         }
@@ -198,7 +199,7 @@
             try {
               JSON.parse(val);
             } catch {
-              errors[field.key] = "Invalid JSON";
+              errors[field.key] = t("dynamicForm.invalidJson");
             }
           }
           break;
@@ -207,7 +208,7 @@
         case "select": {
           const validValues = (field.options || []).map((o) => o.value);
           if (!validValues.includes(String(val))) {
-            errors[field.key] = "Invalid selection";
+            errors[field.key] = t("dynamicForm.invalidSelection");
           }
           break;
         }
@@ -265,7 +266,7 @@
           value={formData[field.key] || ""}
           oninput={(e) => setField(field.key, e.currentTarget.value)}
           type="text"
-          placeholder={field.helpText || `Enter ${field.label.toLowerCase()}`}
+          placeholder={field.helpText || t("dynamicForm.enter", { v: field.label.toLowerCase() })}
           class="input {fieldErrors[field.key]
             ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
@@ -364,7 +365,7 @@
           value={formData[field.key] || ""}
           oninput={(e) => setField(field.key, e.currentTarget.value)}
           type="email"
-          placeholder={field.helpText || "email@example.com"}
+          placeholder={field.helpText || t("dynamicForm.emailExampleCom")}
           class="input {fieldErrors[field.key]
             ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
@@ -419,7 +420,7 @@
                       };
                       input.click();
                     }}
-                    title="Replace image"
+                    title={t("dynamicForm.replaceImage")}
                   >
                     <Upload class="w-4 h-4" />
                   </button>
@@ -427,7 +428,7 @@
                     type="button"
                     class="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
                     onclick={() => setField(field.key, null)}
-                    title="Remove image"
+                    title={t("dynamicForm.removeImage")}
                   >
                     <X class="w-4 h-4" />
                   </button>
@@ -441,7 +442,7 @@
             class="w-full h-40 rounded-xl border-2 border-dashed border-kitsuden-accent/30 bg-kitsuden-accent/5 flex flex-col items-center justify-center gap-3"
           >
             <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin" />
-            <span class="text-sm text-kitsuden-accent">Uploading...</span>
+            <span class="text-sm text-kitsuden-accent">{t("dynamicForm.uploading")}</span>
           </div>
         {:else}
           <!-- Upload Zone -->
@@ -468,8 +469,8 @@
               />
             </div>
             <div class="text-center">
-              <p class="text-sm text-kitsuden-text font-medium">Click to upload image</p>
-              <p class="text-xs text-kitsuden-subtle mt-1">PNG, JPG, GIF up to 10MB</p>
+              <p class="text-sm text-kitsuden-text font-medium">{t("dynamicForm.clickToUploadImage")}</p>
+              <p class="text-xs text-kitsuden-subtle mt-1">{t("dynamicForm.pngJpgGifUpTo")}</p>
             </div>
           </button>
 
@@ -486,7 +487,7 @@
             onclick={() => (campoEligiendo = field.key)}
           >
             <ImageIcon class="h-4 w-4" />
-            Elegir de la biblioteca
+            {t("dynamicForm.elegirDeLaBiblioteca")}
           </button>
         {/if}
 
@@ -507,7 +508,7 @@
             ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
         >
-          <option value="">— Select —</option>
+          <option value="">{t("common.select")}</option>
           {#each field.options || [] as opt}
             <option value={opt.value}>{opt.label}</option>
           {/each}
@@ -526,7 +527,7 @@
             : JSON.stringify(formData[field.key], null, 2)}
           oninput={(e) => setJsonField(field.key, e.currentTarget.value)}
           rows="4"
-          placeholder={'{ "key": "value" }'}
+          placeholder={"{ \"key\": \"value\" }"}
           class="textarea font-mono text-xs {fieldErrors[field.key]
             ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
@@ -543,7 +544,7 @@
           value={formData[field.key] || ""}
           oninput={(e) => setField(field.key, e.currentTarget.value)}
           rows="5"
-          placeholder={field.helpText || "Enter content (Markdown supported)"}
+          placeholder={field.helpText || t("dynamicForm.enterContentMarkdownSupported")}
           class="textarea {fieldErrors[field.key]
             ? 'border-kitsuden-accent-2-50 focus:ring-kitsuden-accent-2-30'
             : ''}"
@@ -583,12 +584,12 @@
     <div>
       {#if Object.keys(fieldErrors).length > 0}
         <p class="text-xs text-kitsuden-accent-2">
-          {Object.keys(fieldErrors).length} field(s) need attention
+          {t("dynamicForm.fieldSNeedAttention", { count: Object.keys(fieldErrors).length })}
         </p>
       {/if}
     </div>
     <div class="flex items-center gap-3">
-      <button type="button" onclick={onCancel} class="btn-ghost">Cancel</button>
+      <button type="button" onclick={onCancel} class="btn-ghost">{t("common.cancel")}</button>
       <button type="submit" disabled={submitting} class="btn-primary">
         {#if submitting}
           <Loader2 class="w-4 h-4 animate-spin" />
@@ -603,7 +604,7 @@
 
 <MediaPicker
   open={campoEligiendo !== null}
-  title="Elegir imagen"
+  title={t("dynamicForm.elegirImagen")}
   onSelect={(media) => {
     if (campoEligiendo) setField(campoEligiendo, media.url);
     campoEligiendo = null;

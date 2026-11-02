@@ -11,20 +11,21 @@
   - Testear cuál versión tiene mejor SEO
 -->
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { GitCompare } from "lucide-svelte";
 
   import SocialPreview from "./SocialPreview.svelte";
 
   // Datos de ejemplo para la comparación
   const variantA = {
-    title: "10 Estrategias SEO para 2024 | Mi Blog",
+    title: t("socialPreviewABExample.n10EstrategiasSeoPara2024"),
     metaDescription:
       "Descubre las mejores técnicas de SEO para este año. Guía completa con ejemplos prácticos.",
     canonicalUrl: "https://ejemplo.com/blog/seo-2024",
     openGraph: {
-      title: "🚀 10 Estrategias SEO que funcionan en 2024",
+      title: t("socialPreviewABExample.n10EstrategiasSeoQueFuncionan"),
       description:
-        "Descubre las tácticas SEO probadas que aumentaron el tráfico orgánico de 500+ empresas.",
+        t("socialPreviewABExample.descubreLasTacticasSeoProbadas"),
       url: "https://ejemplo.com/blog/seo-2024",
       image: {
         url: "https://ejemplo.com/images/seo-strategy-a.jpg",
@@ -36,8 +37,8 @@
     },
     twitterCard: {
       card: "summary_large_image",
-      title: "10 Estrategias SEO para 2024 🧵",
-      description: "Descubre las tácticas SEO probadas...",
+      title: t("socialPreviewABExample.n10EstrategiasSeoPara20242"),
+      description: t("socialPreviewABExample.descubreLasTacticasSeoProbadas2"),
       image: "https://ejemplo.com/images/seo-strategy-a.jpg",
     },
     whatsAppValidation: {
@@ -54,14 +55,14 @@
   };
 
   const variantB = {
-    title: "Guía SEO 2024: Cómo posicionar en Google | Mi Blog",
+    title: t("socialPreviewABExample.guiaSeo2024ComoPosicionar"),
     metaDescription:
       "Aprende a posicionar tu web en Google con nuestra guía SEO 2024. Estrategias actualizadas y efectivas.",
     canonicalUrl: "https://ejemplo.com/blog/seo-2024",
     openGraph: {
-      title: "Guía Completa SEO 2024: Domina Google",
+      title: t("socialPreviewABExample.guiaCompletaSeo2024Domina"),
       description:
-        "Todo lo que necesitas saber para posicionar tu web en Google este año. Casos reales.",
+        t("socialPreviewABExample.todoLoQueNecesitasSaber"),
       url: "https://ejemplo.com/blog/seo-2024",
       image: {
         url: "https://ejemplo.com/images/seo-guide-b.jpg",
@@ -73,8 +74,8 @@
     },
     twitterCard: {
       card: "summary_large_image",
-      title: "Guía SEO 2024: Domina Google 🚀",
-      description: "Todo lo que necesitas saber para posicionar...",
+      title: t("socialPreviewABExample.guiaSeo2024DominaGoogle"),
+      description: t("socialPreviewABExample.todoLoQueNecesitasSaber2"),
       image: "https://ejemplo.com/images/seo-guide-b.jpg",
     },
     whatsAppValidation: {
@@ -101,12 +102,11 @@
 <div class="ab-example">
   <div class="ab-header">
     <GitCompare size={24} />
-    <h2>Comparación A/B de Open Graph</h2>
+    <h2>{t("socialPreviewABExample.comparacionABDeOpen")}</h2>
   </div>
 
   <p class="ab-description">
-    Compara dos versiones diferentes de títulos, descripciones o imágenes para ver cuál funciona
-    mejor en redes sociales.
+    {t("socialPreviewABExample.comparaDosVersionesDiferentesDe")}
   </p>
 
   {#if showComparison}
@@ -122,12 +122,12 @@
   {/if}
 
   <div class="ab-notes">
-    <h3>💡 Cómo interpretar los resultados:</h3>
+    <h3>{t("socialPreviewABExample.comoInterpretarLosResultados")}</h3>
     <ul>
-      <li><strong>WhatsApp Issues:</strong> Muestra cuántos problemas tiene cada variante</li>
-      <li><strong>Validación:</strong> Verifica formato, tamaño y dimensiones de imagen</li>
-      <li><strong>Debug Panel:</strong> Muestra longitudes de título y descripción</li>
-      <li><strong>Ganador:</strong> La variante con menos issues de validación</li>
+      <li><strong>{t("socialPreviewABExample.whatsappIssues")}</strong> {t("socialPreviewABExample.muestraCuantosProblemasTieneCada")}</li>
+      <li><strong>{t("socialPreviewABExample.validacion")}</strong> {t("socialPreviewABExample.verificaFormatoTamanoYDimensiones")}</li>
+      <li><strong>{t("socialPreviewABExample.debugPanel")}</strong> {t("socialPreviewABExample.muestraLongitudesDeTituloY")}</li>
+      <li><strong>{t("socialPreviewABExample.ganador")}</strong> {t("socialPreviewABExample.laVarianteConMenosIssues")}</li>
     </ul>
   </div>
 </div>

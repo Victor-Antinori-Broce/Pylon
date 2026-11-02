@@ -25,6 +25,7 @@ import {
   debugQuery,
   BatchProcessor,
   BatchProcessorError,
+  resolveExecutor,
 } from "@kitsuden/engine";
 import { eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
@@ -35,8 +36,10 @@ import { z } from "zod";
 import { db, mergedSchema } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
 import { requireAuth } from "../middleware/auth";
+import { buildDrizzleWhere, publishedOrOwnQl, type PolicyJson, type RLSUser } from "../lib/rls-builder";
 import { checkDatasetReadAccess, checkDatasetWriteAccess } from "../middleware/permissions";
 import type { AppVariables } from "../types/hono";
+import { enProduccion } from "../lib/entorno";
 
 // Importar motores core del engine
 
@@ -66,7 +69,11 @@ const FieldFilterSchema = z
   .strict()
   .optional();
 
-/** Schema recursivo para where (soporta AND/OR/NOT) */
+/**
+ * Schema recursivo para where (soporta AND/OR/NOT). Cualquier otra clave es un
+ * campo y tiene que ser un filtro (`catchall`). Sin `.strict()`: en zod 4
+ * sustituye el catchall por `never` y rechazaría todos los campos.
+ */
 const WhereFilterSchema: z.ZodType<any> = z.lazy(() =>
   z
     .object({
@@ -75,7 +82,6 @@ const WhereFilterSchema: z.ZodType<any> = z.lazy(() =>
       NOT: z.lazy(() => WhereFilterSchema).optional(),
     })
     .catchall(FieldFilterSchema)
-    .strict()
 );
 
 /** Schema para query de dataset */
@@ -101,11 +107,11 @@ const DatasetQuerySchema = z
 const BatchOperationSchema = z
   .object({
     op: z.enum(["create", "update", "delete", "upsert"]),
-    table: z.string().min(1), // Cualquier tabla del mergedSchema (datasets o nativas)
-    data: z.record(z.any()).optional(),
+    table: z.string().min(1), // dataEntries or dataSets (see BATCH_TABLES)
+    data: z.record(z.string(), z.any()).optional(),
     id: z.string().optional(),
     alias: z.string().optional(),
-    where: z.record(z.any()).optional(),
+    where: z.record(z.string(), z.any()).optional(),
   })
   .strict();
 
@@ -179,7 +185,7 @@ function getTableByName(name: string): PgTable | undefined {
  * }
  */
 export async function queryDatasetHandler(c: Context) {
-  const datasetId = c.req.param("id");
+  const datasetId = c.req.param("id")!;
   const body = await c.req.json();
 
   try {
@@ -196,11 +202,31 @@ export async function queryDatasetHandler(c: Context) {
       return c.json({ error: "Forbidden: No read access to this dataset" }, 403);
     }
 
+    // 2b. Aislamiento por fila. El motor de consultas recibe un `where` de
+    // Kitsuden QL y no sabe aplicar las `rlsRules` de la política (que
+    // `/entries` sí aplica con `buildDatasetWhere`): con un dataset por dueño,
+    // CUALQUIER cuenta con lectura veía aquí las filas de todos los dueños.
+    // Mientras el traductor no las entienda, esos datasets solo los consulta
+    // admin por esta vía (auditoría 2026-10-15).
+    if (consultaSaltariaAislamiento(dataset.policyJson as PolicyJson | null, c.get("user"))) {
+      return c.json(
+        {
+          error:
+            "Este dataset aísla filas por usuario: consúltalo con GET /api/data-sets/:id/entries",
+        },
+        403
+      );
+    }
+
+    // Outside the team: the published or their own, whatever `where` asks for.
+    const user = c.get("user") as { id?: string; role?: string | null } | null | undefined;
+    const delEquipo = user?.role === "admin" || user?.role === "editor";
+
     // 3. Ejecutar query usando el motor Kitsuden QL
     const result = await parseKitsudenQuery(dataEntries, {
       ...body,
       where: {
-        ...body.where,
+        AND: delEquipo ? [body.where ?? {}] : [body.where ?? {}, publishedOrOwnQl(user?.id)],
         dataSetId: { eq: datasetId }, // Filtrar por dataset
       },
     } as any);
@@ -232,6 +258,22 @@ export async function queryDatasetHandler(c: Context) {
   }
 }
 
+/**
+ * ¿Saltaría esta consulta el aislamiento por fila del dataset?
+ *
+ * Sí cuando la política tiene `rlsRules` que, para este usuario, producen un
+ * filtro, y quien pregunta no es admin. Exportada para probarla sin base.
+ */
+export function consultaSaltariaAislamiento(
+  policy: PolicyJson | null,
+  user: { id?: string; role?: string | null } | null | undefined
+): boolean {
+  if (user?.role === "admin") return false;
+  const reglas = policy?.rlsRules;
+  if (!reglas || reglas.length === 0) return false;
+  return buildDrizzleWhere(reglas, (user ?? null) as RLSUser) !== undefined;
+}
+
 // (registrado en la cadena final)
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -243,7 +285,7 @@ export async function queryDatasetHandler(c: Context) {
  * Útil para queries administrativas o cross-dataset.
  */
 export async function queryTableHandler(c: Context) {
-  const tableName = c.req.param("tableName");
+  const tableName = c.req.param("tableName")!;
   const body = await c.req.json();
   const user = c.get("user");
 
@@ -301,7 +343,7 @@ export async function queryTableHandler(c: Context) {
  * Útil para que los clientes sepan qué pueden expandir.
  */
 export async function listRelationsHandler(c: Context) {
-  const datasetId = c.req.param("id");
+  const datasetId = c.req.param("id")!;
 
   // Las relaciones disponibles para dataEntries están definidas en el translator
   const availableRels = getAvailableRelations(dataEntries);
@@ -361,21 +403,62 @@ export async function listRelationsHandler(c: Context) {
  *   "results": [...]
  * }
  */
+/**
+ * The tables the batch processor writes. Only the dataset tables: this route had
+ * no deny-list, and with the global pool an `admin`-scope agent could rewrite
+ * `approval_settings`, `auth_accounts` or `agent_api_keys` (audit 2026-10-31).
+ * Exact names, on purpose: no case-insensitive lookup in the merged schema.
+ */
+const BATCH_TABLES: Readonly<Record<string, PgTable>> = { dataEntries, dataSets };
+
+export function batchTable(name: unknown): PgTable | undefined {
+  return typeof name === "string" && Object.hasOwn(BATCH_TABLES, name) ? BATCH_TABLES[name] : undefined;
+}
+
+/**
+ * ¿Puede esta identidad usar el procesador batch? Solo admin (o agente con
+ * scope `admin`). Antes dependía solo de la regla de prefijo de
+ * `RUTAS_SOLO_ADMIN`; ahora se autoriza aquí también, para que la ruta no quede
+ * abierta si esa regla se retira (2026-10-15).
+ */
+export function puedeUsarBatch(
+  user: { role?: string | null } | null | undefined,
+  agente: { scopes?: string[] } | null | undefined
+): boolean {
+  if (agente) return agente.scopes?.includes("admin") === true;
+  return user?.role === "admin";
+}
+
 export async function batchOperationsHandler(c: Context) {
+  if (!puedeUsarBatch(c.get("user"), c.get("agent"))) {
+    return c.json({ error: "Forbidden: Admin access required" }, 403);
+  }
   const body = await c.req.json();
+
+  const refused = body.operations.findIndex((op: { table?: unknown }) => !batchTable(op.table));
+  if (refused >= 0) {
+    return c.json(
+      {
+        success: false,
+        error: {
+          message: "Batch operations only write dataset tables: dataEntries and dataSets",
+          code: "TABLE_NOT_ALLOWED",
+          operationIndex: refused,
+        },
+      },
+      403
+    );
+  }
 
   try {
     // 1. Validar permisos para cada operación
-    // Extraer datasetIds de las operaciones (solo para tablas dataset)
+    // Extraer datasetIds de las operaciones
     const datasetIds = new Set<string>();
-    const nativeTables = new Set<string>();
     for (const op of body.operations) {
       if (op.table === "dataEntries" && op.data?.dataSetId) {
         datasetIds.add(op.data.dataSetId);
       } else if (op.table === "dataSets" && op.id) {
         datasetIds.add(op.id);
-      } else if (op.table !== "dataEntries" && op.table !== "dataSets") {
-        nativeTables.add(op.table);
       }
     }
 
@@ -392,23 +475,11 @@ export async function batchOperationsHandler(c: Context) {
       }
     }
 
-    // Para tablas nativas, el auth + RLS ya provee seguridad
-    // (el middleware requireAuth se aplicó arriba)
-    if (nativeTables.size > 0) {
-      // Opcional: verificar permisos granulares por kon aquí
-      // Por ahora, confiamos en RLS a nivel de base de datos
-    }
-
     // 2. Transformar operaciones al formato del BatchProcessor
     const batchOps = body.operations.map((op: any) => {
-      const table = getTableByName(op.table);
-      if (!table) {
-        throw new Error(`Table "${op.table}" not found`);
-      }
-
       return {
         op: op.op,
-        table,
+        table: batchTable(op.table)!,
         data: op.data,
         id: op.id,
         alias: op.alias,
@@ -416,8 +487,9 @@ export async function batchOperationsHandler(c: Context) {
       };
     });
 
-    // 3. Ejecutar batch usando el BatchProcessor
-    const batchProcessor = new BatchProcessor();
+    // 3. Ejecutar batch usando el BatchProcessor, on the request's RLS
+    // transaction (a savepoint of it), so that the policies see who is asking.
+    const batchProcessor = new BatchProcessor(resolveExecutor(db));
     const result = await batchProcessor.execute(batchOps);
 
     // 4. Retornar resultado
@@ -467,7 +539,13 @@ export async function batchOperationsHandler(c: Context) {
  * Útil para debugging y validación en el frontend.
  */
 export async function validateQueryHandler(c: Context) {
-  const tableName = c.req.param("tableName");
+  // Valida contra CUALQUIER tabla y, si no existe, devuelve la lista entera
+  // del esquema: con sesión de cualquiera era un índice de la base. Solo admin,
+  // como `POST /query/:tableName` (2026-10-15).
+  if (!puedeUsarBatch(c.get("user"), c.get("agent"))) {
+    return c.json({ error: "Forbidden: Admin access required" }, 403);
+  }
+  const tableName = c.req.param("tableName")!;
   const body = await c.req.json();
 
   const table = getTableByName(tableName);
@@ -498,12 +576,12 @@ export async function validateQueryHandler(c: Context) {
  * Solo disponible en modo desarrollo.
  */
 export async function debugQueryHandler(c: Context) {
-  const tableName = c.req.param("tableName");
+  const tableName = c.req.param("tableName")!;
   const body = await c.req.json();
   const user = c.get("user");
 
   // Solo admins en desarrollo
-  if (process.env.NODE_ENV === "production") {
+  if (enProduccion()) {
     return c.json({ error: "Debug endpoint not available in production" }, 403);
   }
 

@@ -1,8 +1,9 @@
 # ═══════════════════════════════════════════════════════════════════════════
 # Kitsuden — PostgreSQL para TESTS
 #
-# Servicio:
+# Servicios:
 #   - PostgreSQL 16 + pgvector (puerto configurable, por defecto 5434)
+#   - Valkey 7 (por defecto 6380, el de REDIS_URL en .env.test)
 #
 # USO:
 #   docker compose -f docker-compose.test.yml --env-file .env.test up -d
@@ -13,7 +14,15 @@
 # CONFIGURACIÓN:
 #   Las credenciales y el puerto se leen de .env.test (o usan los defaults
 #   de abajo para desarrollo local). NUNCA configures secrets reales aquí.
+#
+# AISLADA DE PROD (auditoría 2026-10-25): proyecto y red PROPIOS. Antes
+# compartía el proyecto de compose y la red `kitsuden_net` con los
+# contenedores `*_prod`, así que un `down --remove-orphans` lanzado con este
+# fichero se los llevaba por delante. Y solo escucha en 127.0.0.1: la
+# contraseña por defecto está en el repo.
 # ═══════════════════════════════════════════════════════════════════════════
+
+name: kitsuden-test
 
 services:
   kitsuden_test_db:
@@ -24,7 +33,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kitsuden_test_secure_change_me}
       POSTGRES_DB: ${POSTGRES_DB:-kitsuden_test}
     ports:
-      - "${POSTGRES_PORT:-5434}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
     volumes:
       - kitsuden_test_postgres_data:/var/lib/postgresql/data
       - ./docker/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql:ro
@@ -35,7 +44,24 @@ services:
       timeout: 3s
       retries: 10
     networks:
-      - kitsuden_net
+      - kitsuden_test_net
+
+  # Valkey para tests: `.env.test` apunta a redis://localhost:6380. Sin él, cada
+  # test de integración que toca la cola o el realtime se colgaba 5 s y fallaba
+  # (o había que correrlos sin REDIS_URL). Sin volumen: se vacía en cada arranque.
+  kitsuden_test_valkey:
+    image: valkey/valkey:7-alpine
+    container_name: kitsuden_test_valkey
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+    networks:
+      - kitsuden_test_net
 
 volumes:
   kitsuden_test_postgres_data:
@@ -43,6 +69,6 @@ volumes:
     driver: local
 
 networks:
-  kitsuden_net:
-    name: kitsuden_net
+  kitsuden_test_net:
+    name: kitsuden_test_net
     driver: bridge

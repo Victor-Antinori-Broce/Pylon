@@ -30,6 +30,8 @@ import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { installedKons } from "../db/schema";
 import { manifiestoEsDeTipo } from "../lib/grimoire-manifest";
+import { konsInstalados } from "../lib/kons-instalados";
+import { fichero } from "../lib/fichero";
 
 /** Kon/Grimoire manifest structure */
 export interface KitsudenManifest {
@@ -168,62 +170,22 @@ export async function scanInstalledKons(): Promise<KitsudenManifest[]> {
     // Table might not exist yet, continue with filesystem scan
   }
 
-  // Also scan node_modules for @kitsuden packages
-  for (const nmPath of nodeModulesPaths) {
-    // Check @kitsuden scope
-    const kitsudenScope = join(nmPath, "@kitsuden");
-    if (existsSync(kitsudenScope)) {
-      try {
-        const entries = await readdir(kitsudenScope, { withFileTypes: true });
-
-        for (const entry of entries) {
-          if (!entry.isDirectory()) continue;
-
-          // Check if it's a kon
-          if (entry.name.startsWith("kon-")) {
-            const konPath = join(kitsudenScope, entry.name);
-            const manifest = await readKonManifest(konPath);
-
-            if (manifest && !manifests.some((m) => m.id === manifest.id)) {
-              manifests.push({
-                ...manifest,
-                source: "npm",
-                installed: true,
-                enabled: true,
-                installPath: konPath,
-              });
-            }
-          }
-        }
-      } catch {
-        // Ignore errors
-      }
-    }
-
-    // Check for kon-* packages in root
-    try {
-      const entries = await readdir(nmPath, { withFileTypes: true });
-
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-
-        if (entry.name.startsWith("kon-")) {
-          const konPath = join(nmPath, entry.name);
-          const manifest = await readKonManifest(konPath);
-
-          if (manifest && !manifests.some((m) => m.id === manifest.id)) {
-            manifests.push({
-              ...manifest,
-              source: "npm",
-              installed: true,
-              enabled: true,
-              installPath: konPath,
-            });
-          }
-        }
-      }
-    } catch {
-      // Ignore errors
+  // Y los DECLARADOS en la instalación que viven en node_modules (paquetes
+  // publicados). Antes se recorría `node_modules/@kitsuden/kon-*` y
+  // `node_modules/kon-*`: cualquier paquete con ese nombre aparecía como kon
+  // instalado. Ahora solo lo que se instaló (`kitsuden kon add`, KITSUDEN_KONS).
+  void nodeModulesPaths;
+  for (const kon of konsInstalados()) {
+    if (kon.origen === "nucleo" || !kon.ruta || !/[\\/]node_modules[\\/]/.test(kon.ruta)) continue;
+    const manifest = await readKonManifest(kon.ruta);
+    if (manifest && !manifests.some((m) => m.id === manifest.id)) {
+      manifests.push({
+        ...manifest,
+        source: "npm",
+        installed: true,
+        enabled: true,
+        installPath: kon.ruta,
+      });
     }
   }
 
@@ -237,7 +199,7 @@ export async function scanInstalledKons(): Promise<KitsudenManifest[]> {
 async function readKonManifest(dirPath: string): Promise<KitsudenManifest | null> {
   // Try kon.json first
   const konJsonPath = join(dirPath, "kon.json");
-  const konFile = Bun.file(konJsonPath);
+  const konFile = fichero(konJsonPath);
 
   if (await konFile.exists()) {
     try {
@@ -253,7 +215,7 @@ async function readKonManifest(dirPath: string): Promise<KitsudenManifest | null
 
   // Try package.json with kitsuden field
   const packageJsonPath = join(dirPath, "package.json");
-  const packageFile = Bun.file(packageJsonPath);
+  const packageFile = fichero(packageJsonPath);
 
   if (await packageFile.exists()) {
     try {
@@ -311,24 +273,35 @@ export async function scanPackages(
   const manifests: KitsudenManifest[] = [];
 
   try {
-    // Check if directory exists
-    const dirExists = (await Bun.file(dirPath).exists()) || (await isDirectory(dirPath));
-    if (!dirExists) {
-      return [];
+    // Los KONS salen de la instalación (kitsuden.kons.json + KITSUDEN_KONS,
+    // ver lib/kons-instalados.ts), no de recorrer packages/kons: desde la fase C
+    // los kons viven en el repo kitsuden-kons y esa carpeta solo guarda las
+    // copias instaladas. Los grimoires siguen en packages/grimoires.
+    let carpetas: { nombre: string; ruta: string }[];
+    if (dirName === "kons") {
+      carpetas = konsInstalados()
+        .filter((k) => k.origen !== "nucleo" && k.ruta)
+        .map((k) => ({ nombre: k.id, ruta: k.ruta as string }));
+    } else {
+      const dirExists = (await fichero(dirPath).exists()) || (await isDirectory(dirPath));
+      if (!dirExists) {
+        return [];
+      }
+      const entries = await readdir(dirPath, { withFileTypes: true });
+      carpetas = entries
+        .filter((e) => e.isDirectory())
+        .map((e) => ({ nombre: e.name, ruta: join(dirPath, e.name) }));
     }
 
-    const entries = await readdir(dirPath, { withFileTypes: true });
-    const subdirs = entries.filter((e) => e.isDirectory());
-
-    for (const subdir of subdirs) {
+    for (const carpeta of carpetas) {
       // Try new manifest formats first, then legacy
       const manifestPaths = [
-        join(dirPath, subdir.name, dirName === "kons" ? "kon.json" : "grimoire.json"),
-        join(dirPath, subdir.name, "kitsuden.json"), // Legacy fallback
+        join(carpeta.ruta, dirName === "kons" ? "kon.json" : "grimoire.json"),
+        join(carpeta.ruta, "kitsuden.json"), // Legacy fallback
       ];
 
       for (const manifestPath of manifestPaths) {
-        const file = Bun.file(manifestPath);
+        const file = fichero(manifestPath);
 
         if (await file.exists()) {
           try {
@@ -352,7 +325,7 @@ export async function scanPackages(
               // Comprobar `init.sql` era el mismo error que arrastraba
               // `runKonMigrations`: ningún kon usa ese nombre, así que TODOS los
               // kons se anunciaban como «sin migraciones» aunque trajeran cuatro.
-              const migrationDir = join(dirPath, subdir.name, "migrations");
+              const migrationDir = join(carpeta.ruta, "migrations");
               let hasMigrations = false;
               try {
                 hasMigrations = (await readdir(migrationDir)).some((f) => f.endsWith(".sql"));
@@ -427,7 +400,7 @@ async function isDirectory(path: string): Promise<boolean> {
  *
  * Buscaba UN fichero llamado `migrations/init.sql`. Ningún kon del repo se
  * llama así: todos usan el prefijo numérico (`0000_initial.sql`,
- * `0001_members.sql`). `Bun.file(...).exists()` daba false, la función salía en
+ * `0001_members.sql`). `fichero(...).exists()` daba false, la función salía en
  * silencio, y quien la llamaba daba por instalado un kon sin ninguna tabla.
  *
  * La implementación vive en `lib/migraciones-kon.ts` y es la MISMA que usa el

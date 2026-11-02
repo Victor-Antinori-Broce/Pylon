@@ -1,3 +1,4 @@
+import { t as tr } from "$lib/i18n";
 /**
  * Theme Engine (Svelte 5 Runes)
  * Loads and applies active theme CSS variables
@@ -18,8 +19,8 @@ interface ThemeConfig {
 export const themes: ThemeConfig[] = [
   {
     id: "mocha",
-    name: "Mocha (Dark)",
-    description: "Deep elegant dark mode",
+    name: tr("theme.mocha"),
+    description: tr("theme.deepElegantDarkMode"),
     preview: "linear-gradient(135deg, #1e1e2e, #cba6f7)",
     cssVars: {
       "--kitsuden-primary": "137 180 250",
@@ -46,8 +47,8 @@ export const themes: ThemeConfig[] = [
   },
   {
     id: "latte",
-    name: "Latte (Light)",
-    description: "Warm soothing light mode",
+    name: tr("theme.latte"),
+    description: tr("theme.warmSoothingLightMode"),
     preview: "linear-gradient(135deg, #eff1f5, #8839ef)",
     cssVars: {
       "--kitsuden-primary": "30 102 245",

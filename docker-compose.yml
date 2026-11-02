@@ -51,7 +51,7 @@ services:
   # ═══════════════════════════════════════════════════════════════════════
   kitsuden_db:
     image: pgvector/pgvector:pg16
-    container_name: kitsuden_db_prod
+    container_name: ${KITSUDEN_INSTANCE:-kitsuden}_db_prod
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-kitsuden}
@@ -76,7 +76,7 @@ services:
   # ═══════════════════════════════════════════════════════════════════════
   kitsuden_state:
     image: valkey/valkey:7-alpine
-    container_name: kitsuden_state_prod
+    container_name: ${KITSUDEN_INSTANCE:-kitsuden}_state_prod
     restart: unless-stopped
     command: valkey-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
@@ -114,14 +114,21 @@ services:
     # Versión fija, como Postgres y Valkey: `latest` es justo lo que dejó a
     # MinIO congelado sin que nada avisara
     image: chrislusf/seaweedfs:4.47
-    container_name: kitsuden_seaweedfs_prod
+    container_name: ${KITSUDEN_INSTANCE:-kitsuden}_seaweedfs_prod
     restart: unless-stopped
     profiles: ["s3", "full", "dev"]
     entrypoint: ["/bin/sh", "/kitsuden/arranque.sh"]
     environment:
       # ⚠️ REQUIRED when using --profile s3/full/dev. Set in .env
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required when using s3/full/dev profile - set it in .env}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required when using s3/full/dev profile - set it in .env}
+      #
+      # `:-` y no `:?` A PROPÓSITO: compose interpola TODOS los servicios,
+      # también los de un perfil apagado, así que con `:?` un .env sin claves
+      # S3 (un VPS que guarda los medios en local) no podía ejecutar NINGÚN
+      # `docker compose`. La exigencia sigue en pie donde importa:
+      # docker/seaweedfs-arranque.sh aborta sin las dos claves (sin ellas
+      # SeaweedFS dejaría entrar a cualquiera).
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
       S3_BUCKET: ${S3_BUCKET:-kitsuden-media}
     ports:
       # S3_PORT / S3_CONSOLE_PORT; MINIO_PORT / MINIO_CONSOLE_PORT siguen
@@ -154,11 +161,26 @@ services:
   # ═══════════════════════════════════════════════════════════════════════
   kitsuden_api:
     image: ${KITSUDEN_API_IMAGE:-kitsuden/api:latest}
+    # Nunca se DESCARGA: `kitsuden/*` en Docker Hub no es nuestro (CI publica
+    # en otro sitio) y quien lo registre ejecutaría su imagen con las
+    # credenciales de la base. Se usa la local o se construye (auditoría
+    # 2026-10-25). Con una imagen publicada propia: `docker pull` antes.
+    pull_policy: never
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: api
-    container_name: kitsuden_api_prod
+      # Kons (repo kitsuden-kons): la imagen pública lleva SOLO el núcleo. Para
+      # meter kons, en un overlay propio:
+      #   build:
+      #     additional_contexts:
+      #       kons: ../kitsuden-kons          # checkout de kitsuden-kons
+      #     args:
+      #       KITSUDEN_KONS: "blog,wiki"      # ids, separados por comas
+      # Ver docs/kons/README.md («Docker»).
+      args:
+        KITSUDEN_KONS: ${KITSUDEN_KONS:-}
+    container_name: ${KITSUDEN_INSTANCE:-kitsuden}_api_prod
     restart: unless-stopped
     depends_on:
       kitsuden_db:
@@ -184,14 +206,18 @@ services:
       #
       # El rol se crea solo en el arranque, con los GRANT necesarios; ver
       # docker/start-with-check.sh.
-      - DATABASE_ADMIN_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
-      - DATABASE_URL=postgresql://${APP_DB_USER:-kitsuden_app}:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required - set it in .env}@kitsuden_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
+      - DATABASE_ADMIN_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@${KITSUDEN_INSTANCE:-kitsuden}_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
+      - DATABASE_URL=postgresql://${APP_DB_USER:-kitsuden_app}:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required - set it in .env}@${KITSUDEN_INSTANCE:-kitsuden}_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
+      # Rol limitado para crear tablas en caliente (activar un kon desde el panel,
+      # el Vault): sin él la API no tiene con qué, porque el arranque le retira la
+      # URL de admin. Vacío si no hay DDL_DB_PASSWORD. Ver lib/conexion-ddl.ts.
+      - DATABASE_DDL_URL=${DDL_DB_PASSWORD:+postgresql://${DDL_DB_USER:-kitsuden_ddl}:${DDL_DB_PASSWORD}@${KITSUDEN_INSTANCE:-kitsuden}_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}}
       # Valkey
-      - REDIS_URL=redis://kitsuden_state_prod:6379
+      - REDIS_URL=redis://${KITSUDEN_INSTANCE:-kitsuden}_state_prod:6379
       # Storage Configuration (configurable vía Media Library settings)
       - DEFAULT_STORAGE_PROVIDER=${DEFAULT_STORAGE_PROVIDER:-local}
       # SeaweedFS/S3 (usado si DEFAULT_STORAGE_PROVIDER=s3; `minio` sigue aceptándose)
-      - S3_ENDPOINT=http://kitsuden_seaweedfs_prod:8333
+      - S3_ENDPOINT=http://${KITSUDEN_INSTANCE:-kitsuden}_seaweedfs_prod:8333
       - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:9000}
       # ⚠️ REQUIRED only when DEFAULT_STORAGE_PROVIDER=minio or s3 (optional for local storage)
       # NOTA: el perfil s3/full/dev sí las exige (ver kitsuden_seaweedfs), aquí son opcionales
@@ -226,13 +252,17 @@ services:
       # las deriva de KITSUDEN_DOMAIN, y en modo público el arranque se NIEGA a
       # seguir si alguna sigue apuntando a localhost.
       - KITSUDEN_PUBLIC=${KITSUDEN_PUBLIC:-false}
+      - KITSUDEN_SIGNUP=${KITSUDEN_SIGNUP:-open}
+      - KITSUDEN_SANDBOX_ALLOW_INTERNAL_FETCH=${KITSUDEN_SANDBOX_ALLOW_INTERNAL_FETCH:-}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
       - ADMIN_URL=${ADMIN_URL:-http://localhost:3001}
+      # Issuer de OAuth para MCP. Vacío = BETTER_AUTH_URL (lib/oauth/config.ts).
+      - OAUTH_ISSUER_URL=${OAUTH_ISSUER_URL:-}
       - APP_URL=${APP_URL:-http://localhost:3001}
-      # Sitio publico (frontend). Las wikis viven en <wiki>.<su dominio>: kon-wiki
-      # genera esas direcciones a partir de esta URL.
+      # Sitio publico (frontend). Desde 2026-09-21 todo va en ruta
+      # (/<juego>/wiki/): ya no hay subdominios de wiki.
       - SITE_URL=${SITE_URL:-http://localhost:4321}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:3001}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001}
       # ── Correo ──
       #
       # Ninguna de estas llegaba al contenedor: el Mailer caía al driver `log`
@@ -254,14 +284,26 @@ services:
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # Features
-      - ENABLE_SWAGGER=true
-      - ENABLE_MCP=true
+      # Swagger apagado por defecto (auditoría 2026-10-25): publica el mapa
+      # entero de la API. Para verlo en local, `ENABLE_SWAGGER=true` en `.env`.
+      - ENABLE_SWAGGER=${ENABLE_SWAGGER:-false}
+      - ENABLE_MCP=${ENABLE_MCP:-true}
       # Rate limiting
       - RATE_LIMIT_ENABLED=true
       # Clave que comparte con el sitio público (Astro): con ella el cupo se
       # cuenta por visitante y no para todo el sitio a la vez. Vacía = sin efecto.
       # Ver apps/api/src/lib/rate-limiter.ts (visitanteDelSitio).
       - SITIO_API_CLAVE=${SITIO_API_CLAVE:-}
+      # Rutas de primer nivel de TU web que un juego no puede ocupar (además
+      # de las comunes de @kitsuden/shared), separadas por comas. Vacía = solo
+      # las comunes. Ver packages/shared/src/sitio-publico.ts.
+      - KITSUDEN_SEGMENTOS_RESERVADOS=${KITSUDEN_SEGMENTOS_RESERVADOS:-}
+      # Idempotency-Key en escrituras (docs/install/errors-and-retries.md).
+      # Vacías = valores por defecto del código (24 h, cerrado si no hay dónde guardar).
+      - IDEMPOTENCY_TTL_SECONDS=${IDEMPOTENCY_TTL_SECONDS:-}
+      - IDEMPOTENCY_LOCK_SECONDS=${IDEMPOTENCY_LOCK_SECONDS:-}
+      - IDEMPOTENCY_MAX_RESPONSE_BYTES=${IDEMPOTENCY_MAX_RESPONSE_BYTES:-}
+      - IDEMPOTENCY_FAIL_MODE=${IDEMPOTENCY_FAIL_MODE:-}
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-3000}:3000"
     networks:
@@ -307,13 +349,18 @@ services:
   # ═══════════════════════════════════════════════════════════════════════
   kitsuden_admin:
     image: ${KITSUDEN_ADMIN_IMAGE:-kitsuden/admin:latest}
+    # Nunca se DESCARGA: `kitsuden/*` en Docker Hub no es nuestro (CI publica
+    # en otro sitio) y quien lo registre ejecutaría su imagen con las
+    # credenciales de la base. Se usa la local o se construye (auditoría
+    # 2026-10-25). Con una imagen publicada propia: `docker pull` antes.
+    pull_policy: never
     build:
       context: .
       dockerfile: docker/Dockerfile.prod
       target: admin
       # No PUBLIC_API_URL needed - admin uses relative /api/* URLs
       # which nginx proxies to the API container internally
-    container_name: kitsuden_admin_prod
+    container_name: ${KITSUDEN_INSTANCE:-kitsuden}_admin_prod
     restart: unless-stopped
     depends_on:
       kitsuden_api:
@@ -342,20 +389,47 @@ services:
   # mismo disco que la base. Protege de un DROP TABLE o de una migracion rota,
   # no de perder el servidor. Sacar `kitsuden_backups_prod` a otro sitio
   # (S3, rclone, snapshot del proveedor) sigue siendo trabajo pendiente.
+  #
+  # MEDIOS (2026-10-12): antes solo se volcaba la base, y la base guarda las
+  # direcciones de las imagenes, no las imagenes. Ahora, tras cada volcado,
+  # docker/backup-medios.sh copia el volumen de medios (solo lectura) cada
+  # BACKUP_MEDIA_DIAS dias y conserva BACKUP_MEDIA_KEEP copias. Probado con el
+  # volumen real: 66.752 ficheros, 3,3 GB, ~6 min.
+  #
+  # RESTAURAR un volcado exige pg_restore 17 (el de ESTA imagen): el de la
+  # imagen de Postgres 16 dice «unsupported version (1.16) in file header».
+  # Ver docs/instalacion/copias.md.
   # ═══════════════════════════════════════════════════════════════════════
   kitsuden_backup:
     image: ${KITSUDEN_API_IMAGE:-kitsuden/api:latest}
-    container_name: kitsuden_backup_prod
+    # Nunca se DESCARGA: `kitsuden/*` en Docker Hub no es nuestro (CI publica
+    # en otro sitio) y quien lo registre ejecutaría su imagen con las
+    # credenciales de la base. Se usa la local o se construye (auditoría
+    # 2026-10-25). Con una imagen publicada propia: `docker pull` antes.
+    pull_policy: never
+    container_name: ${KITSUDEN_INSTANCE:-kitsuden}_backup_prod
+    # La imagen de la API corre como `bun` (uid 1000) desde 2026-10-18; la
+    # copia NO. `/backups` es un volumen que nace de root (la carpeta no existe
+    # en la imagen) y los medios restaurados con `docker cp` son de root: como
+    # `bun`, la copia no podría escribir ni, con permisos 600, leer. Aquí root
+    # no amplía nada que importe: no escucha en ninguna red y los medios van
+    # montados solo lectura.
+    user: "0:0"
     restart: unless-stopped
     depends_on:
       kitsuden_db:
         condition: service_healthy
     working_dir: /app/apps/api
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@kitsuden_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kitsuden}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@${KITSUDEN_INSTANCE:-kitsuden}_db_prod:5432/${POSTGRES_DB:-kitsuden_prod}
       - BACKUP_DIR=/backups
       - BACKUP_KEEP=${BACKUP_KEEP:-14}
       - BACKUP_INTERVAL_HOURS=${BACKUP_INTERVAL_HOURS:-24}
+      # Medios (volumen de la API): copia completa cada N días, se guardan K.
+      # Ver docker/backup-medios.sh. ≈3,5 GB cada una (2026-10).
+      - MEDIA_DIR=/medios
+      - BACKUP_MEDIA_DIAS=${BACKUP_MEDIA_DIAS:-7}
+      - BACKUP_MEDIA_KEEP=${BACKUP_MEDIA_KEEP:-2}
     entrypoint: ["sh", "-c"]
     # `$$` es un `$` para el shell: sin duplicarlo, compose intenta sustituir
     # las variables del bucle al leer el fichero y el bucle recibe cadenas vacias.
@@ -372,6 +446,9 @@ services:
         while true; do
           if bun run scripts/backup.ts; then
             date -u +%s > /backups/.ultimo-ok
+            # Los medios, después de la base y sin reintentar el volcado si
+            # fallan: el script decide si toca (cada BACKUP_MEDIA_DIAS días).
+            sh /kitsuden/backup-medios.sh || echo "COPIA DE MEDIOS FALLIDA $$(date -u +%FT%TZ)" >&2
             sleep "$$INTERVALO"
           else
             echo "BACKUP FALLIDO $$(date -u +%FT%TZ) - reintento en 5 min" >&2
@@ -384,7 +461,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "test -f /backups/.ultimo-ok && [ $$(( $$(date -u +%s) - $$(cat /backups/.ultimo-ok) )) -lt $$(( $${BACKUP_INTERVAL_HOURS:-24} * 7200 )) ]",
+          "test -f /backups/.ultimo-ok && [ $$(( $$(date -u +%s) - $$(cat /backups/.ultimo-ok) )) -lt $$(( $${BACKUP_INTERVAL_HOURS:-24} * 7200 )) ] && test -f /backups/.medios-ultimo-ok && [ $$(( $$(date -u +%s) - $$(cat /backups/.medios-ultimo-ok) )) -lt $$(( $${BACKUP_MEDIA_DIAS:-7} * 172800 )) ]",
         ]
       interval: 5m
       timeout: 10s
@@ -392,6 +469,11 @@ services:
       start_period: 15m
     volumes:
       - kitsuden_backups_prod:/backups
+      # Solo lectura: la copia nunca puede tocar los medios que copia
+      - kitsuden_uploads_prod:/medios:ro
+      # Montado y no dentro de la imagen: así vale con la imagen de la API que
+      # ya esté construida, sin reconstruirla (~10 min)
+      - ./docker/backup-medios.sh:/kitsuden/backup-medios.sh:ro
     networks:
       - kitsuden_net_prod
 
@@ -399,21 +481,29 @@ volumes:
   # Los ficheros subidos en modo local. SIN esto se guardan dentro del
   # contenedor y desaparecen al recrearlo: `docker compose up -d` tras un
   # cambio de imagen borraria toda la biblioteca de medios sin avisar.
+  #
+  # SIN `name:` (los demás lo llevan): Docker le antepone el nombre del
+  # proyecto, que es el de la carpeta. En el equipo del propietario la carpeta
+  # es `cms` y el volumen con los ≈3,5 GB es `cms_kitsuden_uploads_prod`; existe
+  # además un `kitsuden_uploads_prod` VACÍO de otra época. Ponerle aquí
+  # `name: kitsuden_uploads_prod` cambiaría la API al vacío y la web se quedaría
+  # sin imágenes. En el VPS: COMPOSE_PROJECT_NAME=cms en `.env` (ver
+  # docs/instalacion/servidor.md) para que el nombre sea el mismo en las dos máquinas.
   kitsuden_uploads_prod:
   kitsuden_postgres_prod:
-    name: kitsuden_postgres_prod
+    name: ${KITSUDEN_INSTANCE:-kitsuden}_postgres_prod
     driver: local
   kitsuden_seaweedfs_prod:
-    name: kitsuden_seaweedfs_prod
+    name: ${KITSUDEN_INSTANCE:-kitsuden}_seaweedfs_prod
     driver: local
   kitsuden_valkey_prod:
-    name: kitsuden_valkey_prod
+    name: ${KITSUDEN_INSTANCE:-kitsuden}_valkey_prod
     driver: local
   kitsuden_backups_prod:
-    name: kitsuden_backups_prod
+    name: ${KITSUDEN_INSTANCE:-kitsuden}_backups_prod
     driver: local
 
 networks:
   kitsuden_net_prod:
-    name: kitsuden_net_prod
+    name: ${KITSUDEN_INSTANCE:-kitsuden}_net_prod
     driver: bridge

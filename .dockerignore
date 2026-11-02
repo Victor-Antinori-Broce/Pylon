@@ -51,8 +51,6 @@ progress.txt
 kitsuden_progress.txt
 
 # Legacy / experimental folders
-Pylon
-pylon1
 _legacy*
 
 # Documentation / analysis markdown (not runtime)
@@ -130,3 +128,99 @@ playwright.config.js.map
 
 gamedata/
 apps/api/data/
+
+# ── Añadido 2026-10-12 (preparación del VPS) ────────────────────────────
+#
+# `.env` en CUALQUIER carpeta, no solo en la raíz: el patrón `.env` de arriba
+# solo casa con el de la raíz, y el `.env` del starter (direcciones de
+# desarrollo, datos del titular) entraba entero en el contexto y en la
+# compilación de la web. Los ejemplos sí entran.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Compilaciones locales de las webs (Dockerfile.web las rehace dentro)
+**/dist-*
+
+# Scripts sueltos y volcados de la raíz. Varios llevan la cadena de conexión
+# de la base de PRODUCCIÓN en claro (auditoría 2026-10-04) y otros, contenido
+# copiado de wikis ajenas: no deben llegar a ninguna imagen ni a su caché.
+/scratch
+/scratch-*
+/scratch_*
+/scrape_*
+/scraped_aniimo_data
+/check-db*.mjs
+/check_wikis.cjs
+/insert_weapon.cjs
+/test-hono-route.mjs
+/test-kon-mount.mjs
+/fix_a11y.py
+/mcp-agent.sql
+/update-scopes.sql
+/weapons_list.json
+/api.json
+/temp.html
+/tmp-logs*
+/x
+/.cl.json
+/coverage
+/*.md
+apps/api/coverage*.txt
+apps/api/cov*.txt
+apps/api/evals
+**/tmp-*.html
+
+# ── Añadido 2026-10-18 (separación producto público / sitios privados) ──
+#
+# La lista de arriba nombraba los scripts sueltos uno a uno y se escapaban los
+# nuevos: `test_db.cjs`, `count_weapons.cjs`, `check_batch.cjs` o
+# `verify_status.cjs` llevan la cadena de conexión de producción y entraban en
+# el contexto de `COPY . .`. Ningún Dockerfile usa un .mjs/.cjs de la raíz
+# salvo `start-all-webs.mjs` (Dockerfile.web), que se deja pasar.
+/*.mjs
+/*.cjs
+!/start-all-webs.mjs
+/*.html
+/*.txt
+/*.sql
+/pending_batch.json
+/tests.json
+/.claude
+/.kitsuden
+**/.cl.json
+
+# Informes, volcados y claves en cualquier carpeta
+**/coverage
+**/coverage*.txt
+**/test-results*
+**/check-output*.txt
+**/*.dump
+**/*.sql.gz
+**/*.pem
+**/*.key
+**/*.p12
+
+# Salidas de compilación sueltas y extractores .NET
+**/tmp_build_*
+**/obj
+**/bin/Debug
+**/bin/Release
+apps/api/scripts/tmp
+
+# Al final a propósito: `!**/.env.example` (arriba) vuelve a meter en el
+# contexto los `.env.example` que hay DENTRO de carpetas excluidas
+# (gamedata, worktrees de .claude). En .dockerignore gana la última regla.
+.claude/**
+gamedata/**
+apps/api/data/**
+**/__pycache__
+
+# Kons (fase C): la imagen instala los de KITSUDEN_KONS desde el contexto
+# adicional `kons` (docker/instalar-kons.mjs). Las COPIAS instaladas en el árbol
+# de trabajo y su lista no entran: la imagen no depende de lo que haya en la
+# carpeta de quien construye. packages/kons/package.json sí entra (es la raíz
+# de la carpeta de instalación y su marcador).
+packages/kons/kon-*
+kitsuden.kons.json

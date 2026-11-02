@@ -21,7 +21,7 @@ if ($prod) {
     Write-Host "`nLa pila de PRODUCCION esta en marcha ($($prod -join ', '))." -ForegroundColor Red
     Write-Host "Este script es para desarrollo: comparte puertos y base con ella." -ForegroundColor Red
     Write-Host "Paralo antes con 'docker compose down' (sin -v) o usa la pila de produccion:" -ForegroundColor Yellow
-    Write-Host "  API :3000, panel :3001; las webs con 'node start-all-webs.mjs' o 'node scripts/start-valhalla.mjs'" -ForegroundColor Yellow
+    Write-Host "  API :3000, panel :3001; la web de ejemplo con 'pnpm --filter @kitsuden/starter-basic dev' (:4321)" -ForegroundColor Yellow
     exit 1
 }
 

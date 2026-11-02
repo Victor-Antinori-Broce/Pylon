@@ -14,7 +14,7 @@ import type { Hono } from "hono";
 import type { AppVariables } from "../types/hono";
 
 import { observabilityRoutes } from "./observability";
-import { globalRateLimit, rateLimit, rateLimitRoutes } from "./rate-limiter";
+import { globalRateLimit, limitadorEncendido, rateLimitRoutes } from "./rate-limiter";
 import { searchRoutes } from "./search";
 
 /**
@@ -27,14 +27,23 @@ export function registerCriticalFeatures(app: Hono<{ Variables: AppVariables }>)
   // 1. RATE LIMITING - Global middleware
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  // Aplicar rate limiting global a todas las rutas API
-  app.use("/api/*", globalRateLimit());
+  // Aplicar rate limiting global a todas las rutas API. `RATE_LIMIT_ENABLED=false`
+  // lo apaga (de fábrica, encendido): se leía en config y nadie lo miraba, así
+  // que no había forma de quitarlo para un banco de pruebas como Schemathesis.
+  // Apagarlo quita TAMBIÉN los límites de login y alta (RATE_LIMIT_CONFIGS).
+  if (limitadorEncendido()) {
+    app.use("/api/*", globalRateLimit());
+  } else {
+    console.warn(
+      "  ⚠️  Rate Limiting: OFF (RATE_LIMIT_ENABLED=false) — sin límite de fuerza bruta en login"
+    );
+  }
 
-  // Rate limits específicos para endpoints críticos
-  app.use("/api/auth/login", rateLimit({ limit: 5, window: 300 }));
-  app.use("/api/auth/register", rateLimit({ limit: 3, window: 3600 }));
-  app.use("/api/mcp", rateLimit({ limit: 200, window: 60 }));
-  app.use("/api/search", rateLimit({ limit: 120, window: 60 }));
+  // Los límites específicos por ruta (login, alta, MCP, búsqueda…) los aplica
+  // `globalRateLimit` leyendo `RATE_LIMIT_CONFIGS`. Aquí había además un
+  // `rateLimit()` por ruta con la MISMA clave de Valkey: cada petición contaba
+  // dos veces (MCP y búsqueda iban a la mitad de su cupo), y los de login y
+  // alta apuntaban a caminos que better-auth no tiene.
 
   // Admin routes para gestionar rate limits
   app.route("/api/admin/rate-limits", rateLimitRoutes);

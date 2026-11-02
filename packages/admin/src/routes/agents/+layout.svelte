@@ -1,14 +1,15 @@
 <script lang="ts">
-  import { Bot, Activity, Key } from "lucide-svelte";
+  import { t } from "$lib/i18n";
+  import { Bot, Activity } from "lucide-svelte";
 
   import { cn } from "$lib/utils";
 
   import { page } from "$app/stores";
 
   const navItems = [
-    { href: "/agents", label: "Agentes", icon: Bot },
-    { href: "/agents/traces", label: "Traces", icon: Activity },
-    { href: "/agents/identities", label: "Identidades", icon: Key },
+    { href: "/agents", label: t("agentsLayout.agentes"), icon: Bot },
+    { href: "/agents/traces", label: t("common.traces"), icon: Activity },
+    // «Identidades» enlazaba a /agents/identities, una ruta que no existe (404).
   ];
 </script>
 
@@ -17,7 +18,7 @@
   <aside class="w-60 border-r border-zinc-800 bg-zinc-900/50">
     <div class="p-4">
       <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-        Centro de Control AI
+        {t("agentsLayout.centroDeControlAi")}
       </h2>
     </div>
 

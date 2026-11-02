@@ -5,13 +5,10 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { eq } from "drizzle-orm";
 
-import { db } from "../db";
-import { authUsers } from "../db/schema";
 import { app } from "../index";
 
-import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
+import { isDatabaseAvailable, clearTestData, generateTestId, entrarComo } from "./setup";
 
 let dbAvailable = false;
 
@@ -20,11 +17,6 @@ function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   if (cookie) headers.set("Cookie", cookie);
   headers.set("Content-Type", "application/json");
   return new Request(`http://localhost:3000${path}`, { ...opts, headers });
-}
-
-function extractCookie(headers: Headers): string {
-  const setCookie = headers.get("set-cookie") || "";
-  return setCookie.split(";")[0];
 }
 
 describe("RLS E2E", () => {
@@ -49,67 +41,42 @@ describe("RLS E2E", () => {
   let adminId = "";
   let datasetId = "";
   let entryAId = "";
+  let entryBId = "";
 
   describe("Setup", () => {
     it("creates user A and signs in", async () => {
       if (!dbAvailable) return;
 
-      await app.request(
-        req("/api/auth/sign-up/email", {
-          method: "POST",
-          body: JSON.stringify({ email: userAEmail, password, name: "RLS User A" }),
-        })
-      );
-      const res = await app.request(
-        req("/api/auth/sign-in/email", {
-          method: "POST",
-          body: JSON.stringify({ email: userAEmail, password }),
-        })
-      );
-      cookieA = extractCookie(res.headers);
-      const s = await app.request(req("/api/auth/get-session", {}, cookieA));
-      _userAId = ((await s.json()) as any).user.id;
+      // A es editora: crear un dataset (`POST /api/data-sets`) es de staff
+      // según la matriz de autorización. El aislamiento que se prueba es el de
+      // B, un usuario normal, frente a las filas de A.
+      ({ cookie: cookieA, userId: _userAId } = await entrarComo(app, {
+        email: userAEmail,
+        password,
+        name: "RLS User A",
+        role: "editor",
+      }));
     });
 
     it("creates user B and signs in", async () => {
       if (!dbAvailable) return;
 
-      await app.request(
-        req("/api/auth/sign-up/email", {
-          method: "POST",
-          body: JSON.stringify({ email: userBEmail, password, name: "RLS User B" }),
-        })
-      );
-      const res = await app.request(
-        req("/api/auth/sign-in/email", {
-          method: "POST",
-          body: JSON.stringify({ email: userBEmail, password }),
-        })
-      );
-      cookieB = extractCookie(res.headers);
-      const s = await app.request(req("/api/auth/get-session", {}, cookieB));
-      _userBId = ((await s.json()) as any).user.id;
+      ({ cookie: cookieB, userId: _userBId } = await entrarComo(app, {
+        email: userBEmail,
+        password,
+        name: "RLS User B",
+      }));
     });
 
     it("creates admin and signs in", async () => {
       if (!dbAvailable) return;
 
-      await app.request(
-        req("/api/auth/sign-up/email", {
-          method: "POST",
-          body: JSON.stringify({ email: adminEmail, password, name: "RLS Admin" }),
-        })
-      );
-      const res = await app.request(
-        req("/api/auth/sign-in/email", {
-          method: "POST",
-          body: JSON.stringify({ email: adminEmail, password }),
-        })
-      );
-      cookieAdmin = extractCookie(res.headers);
-      const s = await app.request(req("/api/auth/get-session", {}, cookieAdmin));
-      adminId = ((await s.json()) as any).user.id;
-      await db.update(authUsers).set({ role: "admin" }).where(eq(authUsers.id, adminId));
+      ({ cookie: cookieAdmin, userId: adminId } = await entrarComo(app, {
+        email: adminEmail,
+        password,
+        name: "RLS Admin",
+        role: "admin",
+      }));
     });
 
     it("user A creates a dataset", async () => {
@@ -130,6 +97,23 @@ describe("RLS E2E", () => {
         )
       );
       datasetId = ((await res.json()) as any).id;
+
+      // Closed by default: opening it to accounts is an admin's decision.
+      const abierto = await app.request(
+        req(
+          `/api/data-sets/${datasetId}`,
+          { method: "PATCH", body: JSON.stringify({
+          policyJson: {
+            readAccess: "authenticated",
+            writeAccess: "authenticated",
+            enableRLS: true,
+            rlsRules: [{ field: "ownerId", operator: "eq", value: "__USER_ID__" }],
+          },
+        }) },
+          cookieAdmin
+        )
+      );
+      expect(abierto.status).toBe(200);
     });
 
     it("user A inserts an entry", async () => {
@@ -173,7 +157,7 @@ describe("RLS E2E", () => {
       expect(body.docs.length).toBe(0);
     });
 
-    it("admin can see entries of both users", async () => {
+    it("user B can insert (and see) their own entry", async () => {
       if (!dbAvailable) return;
 
       // User B creates their own entry
@@ -194,6 +178,17 @@ describe("RLS E2E", () => {
       expect(resB.status).toBe(201);
       const entryB = ((await resB.json()) as any)[0];
       expect(entryB.id).toBeDefined();
+      entryBId = entryB.id;
+
+      const own = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieB));
+      const ownBody = (await own.json()) as any;
+      expect(ownBody.docs.map((e: any) => e.id)).toEqual([entryBId]);
+    });
+
+    // El admin ve las filas de todos (buildDatasetWhere no le aplica la regla
+    // de dueño), como la política de Postgres y realtime.
+    it("admin can see entries of both users", async () => {
+      if (!dbAvailable) throw new Error("sin base de datos: nada que comprobar");
 
       // Admin should see both entries
       const res = await app.request(req(`/api/data-sets/${datasetId}/entries`, {}, cookieAdmin));
@@ -202,7 +197,7 @@ describe("RLS E2E", () => {
       expect(Array.isArray(body.docs)).toBe(true);
       expect(body.docs.length).toBeGreaterThanOrEqual(2);
       expect(body.docs.some((e: any) => e.id === entryAId)).toBe(true);
-      expect(body.docs.some((e: any) => e.id === entryB.id)).toBe(true);
+      expect(body.docs.some((e: any) => e.id === entryBId)).toBe(true);
     });
   });
 

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+  import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import {
     Sword,
     Gamepad2,
@@ -6,6 +8,7 @@
     FileText,
     Settings,
     Database,
+    Workflow,
     PanelLeftClose,
     PanelLeftOpen,
     ImageIcon,
@@ -26,15 +29,20 @@
     Brain,
     Briefcase,
     Landmark,
+    RefreshCw,
+    ShieldCheck,
+    Plug,
   } from "lucide-svelte";
   import { onMount } from "svelte";
 
-  import { signOut, getUser } from "$lib/auth.svelte";
+  import { signOut, getUser, isAdmin, isStaff } from "$lib/auth.svelte";
   import CommandPalette from "$lib/components/CommandPalette.svelte";
   import KonIcon from "$lib/components/KonIcon.svelte";
+  import { aprobaciones } from "$lib/states/aprobaciones.svelte";
   import { moduleStore } from "$lib/states/modules.svelte";
 
   import GlobalSearch from "./GlobalSearch.svelte";
+  import UsuarioActual from "./UsuarioActual.svelte";
 
   import { page } from "$app/stores";
 
@@ -56,6 +64,8 @@
     moduleKey?: string; // If set, only show when this module is enabled
     order?: number; // Lower = higher in the list (0 = first after dashboard)
     category?: "core" | "optional" | "grimoire"; // For grouping
+    /** Fase F: también lo ve un editor (la API la abre al equipo). */
+    staff?: boolean;
   }
 
   // Navigation items organized by category and order
@@ -81,12 +91,12 @@
 
   const allNavItems: NavItem[] = [
     // ═══ DASHBOARD (Always first) ═══
-    { path: "/", label: "Dashboard", icon: BookOpen },
+    { path: "/", label: t("common.dashboard"), icon: BookOpen },
 
     // ═══ CORE KONS (Always shown first, can be toggled) ═══
     {
       path: "/g/kon-datasets",
-      label: "DataSets",
+      label: t("sidebarLayout.datasets"),
       icon: Database,
       moduleKey: "kon-datasets",
       order: 0,
@@ -94,7 +104,7 @@
     },
     {
       path: "/g/kon-media",
-      label: "Media Library",
+      label: t("sidebarLayout.mediaLibrary"),
       icon: ImageIcon,
       moduleKey: "kon-media",
       order: 1,
@@ -102,7 +112,7 @@
     },
     {
       path: "/g/kon-blocks",
-      label: "Page Builder",
+      label: t("sidebarLayout.pageBuilder"),
       icon: Blocks,
       moduleKey: "kon-blocks",
       order: 2,
@@ -110,7 +120,7 @@
     },
     {
       path: "/g/kon-blog",
-      label: "Blog Posts",
+      label: t("common.blogPosts"),
       icon: FileText,
       moduleKey: "kon-blog",
       order: 3,
@@ -120,7 +130,7 @@
     // ═══ OPTIONAL KONS (order: 10+) ═══
     {
       path: "/g/kon-academy-lms",
-      label: "Academy",
+      label: t("sidebarLayout.academy"),
       icon: GraduationCap,
       moduleKey: "kon-academy-lms",
       order: 10,
@@ -128,7 +138,7 @@
     },
     {
       path: "/g/kon-dms",
-      label: "Documents",
+      label: t("sidebarLayout.documents"),
       icon: FileStack,
       moduleKey: "kon-dms",
       order: 12,
@@ -136,7 +146,7 @@
     },
     {
       path: "/g/kon-booking",
-      label: "Booking",
+      label: t("sidebarLayout.booking"),
       icon: CalendarDays,
       moduleKey: "kon-booking",
       order: 13,
@@ -144,7 +154,7 @@
     },
     {
       path: "/g/kon-directory",
-      label: "Directory",
+      label: t("sidebarLayout.directory"),
       icon: Contact,
       moduleKey: "kon-directory",
       order: 14,
@@ -152,7 +162,7 @@
     },
     {
       path: "/g/kon-crm",
-      label: "Kitsuden CRM",
+      label: t("sidebarLayout.kitsudenCrm"),
       icon: Briefcase,
       moduleKey: "kon-crm",
       order: 15,
@@ -160,7 +170,7 @@
     },
     {
       path: "/g/kon-conta",
-      label: "Contabilidad",
+      label: t("sidebarLayout.contabilidad"),
       icon: Landmark,
       moduleKey: "kon-conta",
       order: 16,
@@ -170,7 +180,7 @@
     // ═══ GRIMOIRE KONS (Esports/Gaming) (order: 20+) ═══
     {
       path: "/g/kon-games",
-      label: "Games",
+      label: t("common.games"),
       icon: Gamepad2,
       moduleKey: "kon-games",
       order: 20,
@@ -178,7 +188,7 @@
     },
     {
       path: "/g/kon-streamers",
-      label: "Streamers",
+      label: t("common.streamers"),
       icon: Tv,
       moduleKey: "kon-streamers",
       order: 21,
@@ -186,7 +196,7 @@
     },
     {
       path: "/g/kon-esports",
-      label: "Esports",
+      label: t("sidebarLayout.esports"),
       icon: Trophy,
       moduleKey: "kon-esports",
       order: 22,
@@ -195,13 +205,21 @@
   ];
 
   const bottomNavItems: NavItem[] = [
-    { path: "/kons", label: "Kons", icon: Book },
-    { path: "/grimoires", label: "Grimoires", icon: Castle },
-    { path: "/actions", label: "Actions", icon: Zap },
-    { path: "/brain", label: "KITSUDEN Brain", icon: Brain },
-    { path: "/vault", label: "KITSUDEN Vault", icon: Archive },
-    { path: "/agents", label: "AI Agents", icon: Bot },
-    { path: "/settings", label: "Settings", icon: Settings },
+    { path: "/kons", label: t("sidebarLayout.kons"), icon: Book },
+    { path: "/grimoires", label: t("sidebarLayout.grimoires"), icon: Castle },
+    { path: "/actions", label: t("common.actions"), icon: Zap },
+    { path: "/brain", label: t("sidebarLayout.kitsudenBrain"), icon: Brain },
+    { path: "/vault", label: t("sidebarLayout.kitsudenVault"), icon: Archive },
+    { path: "/agents", label: t("sidebarLayout.aiAgents"), icon: Bot },
+    // Fase F: bandeja de aprobación humana (con el contador de pendientes)
+    { path: "/approvals", label: t("sidebarLayout.approvals"), icon: ShieldCheck, staff: true },
+    // OAuth para MCP: clientes conectados y su revocación (docs/agents/oauth.md)
+    { path: "/oauth/connections", label: t("sidebarLayout.oauthConnections"), icon: Plug, staff: true },
+    // Fase H3: vistas generadas de los modelos (defineModelo)
+    { path: "/models", label: t("sidebarLayout.models"), icon: Database, staff: true },
+    // La «caja de cristal» de las peticiones y la cola de Postgres (solo admin)
+    { path: "/traces", label: t("sidebarLayout.systemTraces"), icon: Workflow },
+    { path: "/settings", label: t("common.settings"), icon: Settings },
   ];
 
   // Keys already in the hardcoded nav (don't duplicate from filesystem scan)
@@ -253,6 +271,15 @@
       }))
   );
 
+  /**
+   * El editor no puede leer /api/modules (es de admin), así que no sabe qué kons
+   * hay activos. Ve lo que la API le deja tocar como «staff»: medios, páginas y
+   * blog (apps/api/src/middleware/auth-guard.ts). Sin esto su menú quedaba en
+   * «Dashboard» y una sección de sistema donde todo devolvía 403.
+   */
+  const CLAVES_DEL_EDITOR = new Set(["kon-media", "kon-blocks", "kon-blog"]);
+  const esAdmin = $derived(isAdmin());
+
   // Filter nav items based on enabled modules from shared store
   // Then sort by order to maintain consistent positioning
   const visibleNavItems = $derived(
@@ -260,7 +287,11 @@
       // Por kon, no por cadena: una entrada declarada como `blog` desaparecia
       // aunque lo encendido fuera `kon-blog`. Y un kon apagado —o uno que ya no
       // existe, que ni siquiera llega en `modules`— deja de tener enlace.
-      ...allNavItems.filter((item) => !item.moduleKey || moduleStore.konActivo(item.moduleKey)),
+      ...allNavItems.filter(
+        (item) =>
+          !item.moduleKey ||
+          (esAdmin ? moduleStore.konActivo(item.moduleKey) : CLAVES_DEL_EDITOR.has(item.moduleKey))
+      ),
       ...dynamicNavItems,
     ].sort((a, b) => {
       // Dashboard (no order) always comes first
@@ -275,11 +306,17 @@
   );
 
   const visibleBottomItems = $derived(
-    bottomNavItems.filter((item) => !item.moduleKey || moduleStore.konActivo(item.moduleKey))
+    esAdmin
+      ? bottomNavItems.filter((item) => !item.moduleKey || moduleStore.konActivo(item.moduleKey))
+      : isStaff()
+        ? bottomNavItems.filter((item) => item.staff)
+        : []
   );
 
-  function handleLogout() {
-    signOut();
+  async function handleLogout() {
+    // Esperar al cierre: sin `await`, la recarga salía antes que la petición y
+    // el panel volvía a pintarse con la sesión aún viva (y luego todo daba 401).
+    await signOut();
     // `/login` no es una ruta: el layout enseña el formulario cuando no hay
     // sesión. Enviar ahí daba un 404 al cerrar sesión.
     window.location.href = "/";
@@ -289,6 +326,9 @@
     if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
   }
+
+  // Fase F: el contador de propuestas pendientes, para quien puede decidirlas.
+  onMount(() => (isStaff() ? aprobaciones.vigilar() : undefined));
 
   onMount(async () => {
     const API = import.meta.env.VITE_API_URL ?? "";
@@ -302,7 +342,7 @@
     }
 
     // Fetch modules into shared store (if not already loaded)
-    if (moduleStore.modules.length === 0) {
+    if (moduleStore.modules.length === 0 && isAdmin()) {
       await moduleStore.fetchModules();
     }
   });
@@ -329,13 +369,14 @@
           <Sword class="w-4 h-4 text-kitsuden-accent" />
         </div>
         {#if !collapsed}
-          <span class="font-semibold text-sm tracking-tight whitespace-nowrap"> Kitsuden </span>
+          <span class="font-semibold text-sm tracking-tight whitespace-nowrap"> {t("common.kitsuden")} </span>
         {/if}
       </div>
     </div>
 
-    <!-- Nav -->
-    <nav class="flex-1 overflow-y-auto py-3 px-2">
+    <!-- Nav (con pluma de blur arriba y abajo: lo que hace scroll se desdibuja al salir) -->
+    <div class="relative flex-1 min-h-0">
+    <nav class="h-full overflow-y-auto py-3 px-2">
       <!-- Core navigation -->
       <div class="space-y-0.5">
         {#each visibleNavItems as item}
@@ -362,21 +403,57 @@
         {/each}
       </div>
 
+      <!--
+        Los módulos no llegaron ni tras los reintentos de `fetchModules`: el
+        menú está incompleto y hay que decirlo, con una salida que no sea
+        recargar la página entera.
+      -->
+      {#if esAdmin && moduleStore.error}
+        <div
+          class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-kitsuden-text {collapsed
+            ? 'p-1.5 flex justify-center'
+            : 'px-3 py-2'}"
+          role="alert"
+          data-testid="modulos-error"
+        >
+          {#if !collapsed}
+            <p class="mb-2">{t("sidebarLayout.modulosNoCargados")}</p>
+          {/if}
+          <button
+            class="inline-flex items-center gap-1.5 rounded-md border border-kitsuden-border px-2 py-1 text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-border/30 disabled:opacity-50"
+            onclick={() => moduleStore.fetchModules()}
+            disabled={moduleStore.loading}
+            title={collapsed ? t("sidebarLayout.modulosNoCargados") : undefined}
+            aria-label={collapsed ? t("sidebarLayout.reintentar") : undefined}
+          >
+            <RefreshCw class="w-3.5 h-3.5 {moduleStore.loading ? 'animate-spin' : ''}" />
+            {#if !collapsed}
+              {moduleStore.loading ? t("sidebarLayout.reintentando") : t("sidebarLayout.reintentar")}
+            {/if}
+          </button>
+        </div>
+      {/if}
+
       <!-- System nav -->
-      <div class="mt-5 mb-2 px-3" class:hidden={collapsed}>
+      <div class="mt-5 mb-2 px-3" class:hidden={collapsed || visibleBottomItems.length === 0}>
         <p class="text-[9px] font-semibold uppercase tracking-[0.15em] text-kitsuden-subtle">
-          System
+          {t("common.system")}
         </p>
       </div>
-      <div class="my-3 mx-3 h-px bg-kitsuden-border" class:hidden={!collapsed}></div>
+      <div
+        class="my-3 mx-3 h-px bg-kitsuden-border"
+        class:hidden={!collapsed || visibleBottomItems.length === 0}
+      ></div>
 
       <div class="space-y-0.5">
         {#each visibleBottomItems as item}
           {@const active = isActive(item.path)}
           {@const Icon = item.icon}
+          {@const pendientes = item.path === "/approvals" ? aprobaciones.pendientes : 0}
           <a
             href={item.path}
-            class="flex items-center gap-3 rounded-lg text-sm transition-all duration-150 {collapsed
+            data-testid={item.path === "/approvals" ? "nav-approvals" : undefined}
+            class="relative flex items-center gap-3 rounded-lg text-sm transition-all duration-150 {collapsed
               ? 'justify-center px-2 py-2.5'
               : 'px-3 py-2.5'} {active
               ? 'bg-kitsuden-accent/10 text-kitsuden-accent border border-kitsuden-accent/20'
@@ -391,10 +468,21 @@
             {#if !collapsed}
               <span class="whitespace-nowrap">{item.label}</span>
             {/if}
+            {#if pendientes > 0}
+              <span
+                class="{collapsed ? 'absolute top-1 right-1' : 'ml-auto'} min-w-[1.25rem] text-center text-[10px] leading-none px-1.5 py-1 rounded-full bg-amber-500/20 text-amber-300"
+                title={t("sidebarLayout.approvalsPending", { n: pendientes })}
+                aria-label={t("sidebarLayout.approvalsPending", { n: pendientes })}
+                data-testid="approvals-badge">{pendientes}</span
+              >
+            {/if}
           </a>
         {/each}
       </div>
     </nav>
+    <div class="pluma-nav pluma-nav--arriba" aria-hidden="true"></div>
+    <div class="pluma-nav pluma-nav--abajo" aria-hidden="true"></div>
+    </div>
 
     <!-- Collapse toggle -->
     <div class="border-t border-kitsuden-border shrink-0">
@@ -418,7 +506,7 @@
               <button
                 onclick={handleLogout}
                 class="p-1.5 rounded-lg text-kitsuden-text-dim hover:bg-kitsuden-accent-2/10 hover:text-kitsuden-accent-2 transition-colors"
-                title="Sign out"
+                title={t("sidebarLayout.signOut")}
               >
                 <LogOut class="w-3.5 h-3.5" />
               </button>
@@ -434,7 +522,7 @@
       >
         {#if !collapsed}
           <PanelLeftClose class="w-[18px] h-[18px] shrink-0" />
-          <span class="whitespace-nowrap">Collapse</span>
+          <span class="whitespace-nowrap">{t("sidebarLayout.collapse")}</span>
         {:else}
           <PanelLeftOpen class="w-[18px] h-[18px] shrink-0" />
         {/if}
@@ -446,10 +534,17 @@
   <main class="flex-1 overflow-y-auto bg-kitsuden-bg">
     <!-- Top bar -->
     <header
-      class="sticky top-0 z-30 flex items-center justify-between h-14 px-6 border-b border-kitsuden-border bg-kitsuden-bg/80 backdrop-blur-xl"
+      class="sticky top-0 z-30 flex items-center justify-between h-14 px-6 border-b border-kitsuden-border"
     >
+      <!--
+        Progressive blur (2026-10-30): el mismo patrón que la cabecera de las
+        webs — tres capas de backdrop-filter con máscaras escalonadas y tinte
+        del tema. Antes era un blur plano bg/80; ahora el desenfoque cae en
+        pluma hacia el borde inferior.
+      -->
+      <div class="blur-topbar" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="flex items-center gap-4 flex-1 min-w-0">
-        <h1 class="text-sm font-semibold text-kitsuden-text shrink-0">Admin</h1>
+        <h1 class="text-sm font-semibold text-kitsuden-text shrink-0">{t("sidebarLayout.panel")}</h1>
         <GlobalSearch
           navItems={visibleNavItems}
           bottomNavItems={visibleBottomItems}
@@ -457,6 +552,7 @@
         />
       </div>
       <div class="flex items-center gap-3 shrink-0 ml-4">
+        <LanguageSwitcher />
         <div
           class="flex items-center gap-2 text-xs {apiOnline
             ? 'text-kitsuden-green'
@@ -467,13 +563,11 @@
               ? 'bg-kitsuden-green animate-pulse'
               : 'bg-kitsuden-subtle'}"
           ></span>
-          {apiOnline ? "API Connected" : "API Offline"}
+          {apiOnline ? t("sidebarLayout.apiConnected") : t("sidebarLayout.apiOffline")}
         </div>
-        <div
-          class="w-8 h-8 rounded-full bg-kitsuden-accent/10 border border-kitsuden-accent/20 flex items-center justify-center text-xs font-bold text-kitsuden-accent"
-        >
-          A
-        </div>
+        {#if user}
+          <UsuarioActual {user} />
+        {/if}
       </div>
     </header>
 
@@ -498,7 +592,7 @@
         <button
           class="text-kitsuden-text-dim hover:text-kitsuden-text"
           onclick={() => (moduleStore.avisoDeReinicio = null)}
-          aria-label="Cerrar aviso"
+          aria-label={t("sidebarLayout.cerrarAviso")}
         >
           ×
         </button>
@@ -511,3 +605,70 @@
     </div>
   </main>
 </div>
+
+<style>
+  /* ── Progressive blur de la barra superior ─────────────────────────────── */
+  .blur-topbar {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgb(var(--kitsuden-bg) / 0.82),
+      rgb(var(--kitsuden-bg) / 0.6)
+    );
+  }
+  .blur-topbar span {
+    position: absolute;
+    inset: 0;
+  }
+  /* Más blur arriba, pluma hasta el borde inferior */
+  .blur-topbar span:nth-child(1) {
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 45%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 45%);
+  }
+  .blur-topbar span:nth-child(2) {
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 75%);
+  }
+  .blur-topbar span:nth-child(3) {
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    -webkit-mask-image: linear-gradient(180deg, #000 30%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 30%, transparent 100%);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .blur-topbar {
+      background: rgb(var(--kitsuden-bg) / 0.97);
+    }
+  }
+
+  /* ── Pluma de la sidebar: el menú se desdibuja al salir por los bordes ──── */
+  .pluma-nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 14px;
+    z-index: 10;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+  }
+  .pluma-nav--arriba {
+    top: 0;
+    background: linear-gradient(180deg, rgb(var(--kitsuden-card) / 0.85), transparent);
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent);
+    mask-image: linear-gradient(180deg, #000, transparent);
+  }
+  .pluma-nav--abajo {
+    bottom: 0;
+    background: linear-gradient(0deg, rgb(var(--kitsuden-card) / 0.85), transparent);
+    -webkit-mask-image: linear-gradient(0deg, #000, transparent);
+    mask-image: linear-gradient(0deg, #000, transparent);
+  }
+</style>

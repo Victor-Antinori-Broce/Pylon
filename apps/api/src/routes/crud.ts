@@ -1,9 +1,11 @@
-import { resolveExecutor, esUuid } from "@kitsuden/engine";
-import { and, eq } from "drizzle-orm";
+import { comoSistema, conSavepoint, resolveExecutor, esUuid } from "@kitsuden/engine";
+import { accesoADataset, agenteEscribePorPolitica, firmaDeAgente, publishedOrOwn } from "@kitsuden/shared";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 
 import { db } from "../db";
 import { olvidarAjustesDelSitio } from "../lib/ajustes-del-sitio";
+import { aplicarProcedenciaEnRest } from "../lib/procedencia";
 import { dataSets, dataEntries, siteSettings } from "../db/schema";
 import {
   addSchemaVersionToData,
@@ -17,7 +19,9 @@ import {
   type PolicyJson,
   type RLSUser,
 } from "../lib/rls-builder";
+import { resolveEntryStatus } from "../middleware/permissions";
 import { requireAuth } from "../middleware/auth";
+import { exigirStaff } from "../middleware/auth-guard";
 import type { AppVariables } from "../types/hono";
 
 import { invalidateGraphQLCache } from "./graphql";
@@ -34,18 +38,46 @@ export const dataSetsRoutes = new Hono<{ Variables: AppVariables }>();
  * nombre, su esquema y su política se leían sin sesión.
  */
 const usuarioDe = (c: { get: (k: "user") => unknown }) => (c.get("user") ?? null) as RLSUser | null;
-const legible = (dataset: { policyJson: unknown }, user: RLSUser | null) =>
-  checkReadAccess((dataset.policyJson ?? null) as PolicyJson | null, user);
+/**
+ * Fase E: los scopes POR DATASET del agente (`datasets:<slug>:read`, y las
+ * denegaciones `!datasets:<slug>:*`) deciden antes que la política; si no
+ * dicen nada, la política. Igual que en kon-datasets (`puedeVerDataset`).
+ */
+const scopesDe = (user: RLSUser | null) =>
+  (user as { scopes?: unknown } | null)?.scopes as string[] | undefined;
+const legible = (dataset: { policyJson: unknown; slug?: string | null }, user: RLSUser | null) => {
+  const acceso = accesoADataset(scopesDe(user), dataset.slug ?? null, "read");
+  if (acceso) return acceso === "concedido";
+  // The team reaches every dataset, as in kon-datasets: an editor must be able to
+  // use the dataset it just created, which is `admin`/`admin` by default.
+  if (esDelEquipo(user)) return true;
+  return checkReadAccess((dataset.policyJson ?? null) as PolicyJson | null, user);
+};
+const escribible = (dataset: { policyJson: unknown; slug?: string | null }, user: RLSUser | null) => {
+  const acceso = accesoADataset(scopesDe(user), dataset.slug ?? null, "write");
+  if (acceso) return acceso === "concedido";
+  // An agent key is not a session: `writeAccess: "authenticated"` does not let a
+  // read-only key write.
+  if (user?.role === "agent") {
+    return agenteEscribePorPolitica(scopesDe(user), (dataset.policyJson ?? null) as PolicyJson | null);
+  }
+  if (esDelEquipo(user)) return true;
+  return checkWriteAccess((dataset.policyJson ?? null) as PolicyJson | null, user);
+};
 
 dataSetsRoutes.get("/", async (c) => {
-  const limit = Math.min(Number(c.req.query("limit")) || 50, 200);
+  // 1000 y no 200: con más de 200 datasets, el sitio se quedaba sin los que van
+  // detrás por nombre («Ranking · …», `proximos-juegos`), y sin ningún error.
+  const limit = Math.min(Number(c.req.query("limit")) || 50, 1000);
+  const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
   const user = usuarioDe(c);
   // Se filtra DESPUÉS de leer: `limit` cuenta los visibles de la página, no
-  // los que hay detrás. Con 200 como máximo, no compensa traducir la política
-  // a SQL aquí.
-  const docs = (await db.select().from(dataSets).orderBy(dataSets.name).limit(limit)).filter(
-    (ds) => legible(ds, user)
-  );
+  // los que hay detrás. Con 1000 como máximo, no compensa traducir la política
+  // a SQL aquí. El id desempata: sin él, dos nombres iguales pueden saltarse
+  // o repetirse entre páginas.
+  const docs = (
+    await db.select().from(dataSets).orderBy(dataSets.name, dataSets.id).limit(limit).offset(offset)
+  ).filter((ds) => legible(ds, user));
   return c.json({ docs, totalDocs: docs.length });
 });
 
@@ -118,7 +150,7 @@ dataSetsRoutes.get("/:id/entries", async (c) => {
   const user = (c.get("user") ?? null) as RLSUser | null;
 
   const [dataset] = await db
-    .select({ policyJson: dataSets.policyJson })
+    .select({ policyJson: dataSets.policyJson, slug: dataSets.slug })
     .from(dataSets)
     .where(eq(dataSets.id, datasetId))
     .limit(1);
@@ -127,24 +159,59 @@ dataSetsRoutes.get("/:id/entries", async (c) => {
   if (!dataset) return c.json({ error: "DataSet not found" }, 404);
 
   const policy = dataset.policyJson as PolicyJson | null;
-  if (!checkReadAccess(policy, user)) {
+  if (!legible(dataset, user)) {
     return c.json({ error: "DataSet not found" }, 404);
   }
 
   const { where } = buildDatasetWhere(datasetId, policy?.rlsRules, user);
+  // Sin ser del equipo: publicadas o propias (auditoría 2026-10-25)
+  const visibles = esDelEquipo(user) ? where : and(where, publishedOrOwn(user?.id));
+
+  const ejecutor = resolveExecutor(db) as typeof db;
+
+  /**
+   * `?count=exact`: cuántas filas VE quien pregunta en total (no solo en esta
+   * página), con el MISMO filtro de visibilidad y sobre la misma transacción
+   * RLS que las filas. Va en `totalCount`; `totalDocs` sigue siendo el tamaño
+   * de la página, como siempre. Con `limit=0` no se leen filas: solo se cuenta.
+   *
+   * Para «En números» de las webs, que para saber cuántas fichas había leía
+   * TODAS las filas de cada dataset página a página (rendimiento, 2026-10-27).
+   */
+  const contar = c.req.query("count") === "exact";
+  const soloContar = contar && c.req.query("limit") === "0";
+
+  const totalCount = contar
+    ? Number(
+        (
+          await ejecutor
+            .select({ n: sql<number>`count(*)` })
+            .from(dataEntries)
+            .where(visibles)
+        )[0]?.n ?? 0
+      )
+    : undefined;
 
   // Ejecuta sobre el tx RLS del request-scope si existe; si no, la db global.
-  const docs = await (resolveExecutor(db) as typeof db)
-    .select()
-    .from(dataEntries)
-    .where(where)
-    // El id desempata: con dos filas del mismo `sortOrder`, el orden entre
-    // páginas no está definido y una fila podría repetirse o perderse
-    .orderBy(dataEntries.sortOrder, dataEntries.id)
-    .limit(limit)
-    .offset(offset);
+  const docs = soloContar
+    ? []
+    : await ejecutor
+        .select()
+        .from(dataEntries)
+        .where(visibles)
+        // El id desempata: con dos filas del mismo `sortOrder`, el orden entre
+        // páginas no está definido y una fila podría repetirse o perderse
+        .orderBy(dataEntries.sortOrder, dataEntries.id)
+        .limit(limit)
+        .offset(offset);
 
-  return c.json({ docs, totalDocs: docs.length, offset });
+  // Opcional (X-Kitsuden-Provenance: 1): quién escribió cada fila. Sin pedirlo, igual que siempre.
+  const filas = await aplicarProcedenciaEnRest(c, docs, ejecutor);
+  return c.json(
+    contar
+      ? { docs: filas, totalDocs: docs.length, offset, totalCount }
+      : { docs: filas, totalDocs: docs.length, offset }
+  );
 });
 
 /** Una entry. Mismas dos capas que el listado: política y `rlsRules`. */
@@ -155,7 +222,7 @@ dataSetsRoutes.get("/:id/entries/:entryId", async (c) => {
 
   const user = usuarioDe(c);
   const [dataset] = await db
-    .select({ policyJson: dataSets.policyJson })
+    .select({ policyJson: dataSets.policyJson, slug: dataSets.slug })
     .from(dataSets)
     .where(eq(dataSets.id, datasetId))
     .limit(1);
@@ -164,17 +231,36 @@ dataSetsRoutes.get("/:id/entries/:entryId", async (c) => {
   const policy = dataset.policyJson as PolicyJson | null;
   const { where } = buildDatasetWhere(datasetId, policy?.rlsRules, user);
 
-  const [entry] = await (resolveExecutor(db) as typeof db)
+  const ejecutor = resolveExecutor(db) as typeof db;
+  const [entry] = await ejecutor
     .select()
     .from(dataEntries)
-    .where(and(where, eq(dataEntries.id, entryId)))
+    .where(and(where, eq(dataEntries.id, entryId), esDelEquipo(user) ? undefined : publishedOrOwn(user?.id)))
     .limit(1);
 
-  return entry ? c.json(entry) : c.json({ error: "Not found" }, 404);
+  if (!entry) return c.json({ error: "Not found" }, 404);
+  const [conProcedencia] = await aplicarProcedenciaEnRest(c, [entry], ejecutor);
+  return c.json(conProcedencia);
 });
 
-dataSetsRoutes.post("/", requireAuth, async (c) => {
-  const body = await c.req.json();
+/**
+ * Crear un dataset es cosa del equipo (`admin`/`editor`).
+ *
+ * Antes bastaba `requireAuth`, y el alta es abierta: cualquier cuenta creaba
+ * datasets con la `policyJson` que quisiera, ocupaba slugs que el sitio usará
+ * después (`/api/data-sets/slug/<slug>`) y disparaba la creación de índices
+ * sobre `data_entries`. Auditoría 2026-10-15.
+ */
+dataSetsRoutes.post("/", exigirStaff, async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (!body || typeof body.name !== "string" || !body.name.trim()) {
+    return c.json({ error: "name es obligatorio" }, 400);
+  }
+  // La política decide quién ve qué (`readAccess: "public"` publica las
+  // filas): fijarla es solo de administración, como en el PATCH.
+  if (body.policyJson !== undefined && usuarioDe(c)?.role !== "admin") {
+    return c.json({ error: "Solo administración puede fijar la política de un dataset" }, 403);
+  }
   const schema = body.schema ?? body.fields ?? [];
   const [row] = await db
     .insert(dataSets)
@@ -185,11 +271,17 @@ dataSetsRoutes.post("/", requireAuth, async (c) => {
       icon: body.icon,
       schema,
       displayConfig: body.displayConfig,
+      // Closed by default, like `POST /api/datasets`: opening a dataset to every
+      // account is a decision, and sign-up may be open to anyone. The owner rule
+      // stays, so a dataset later opened with `writeAccess` is still per owner.
       policyJson: body.policyJson || {
-        readAccess: "authenticated",
-        writeAccess: "authenticated",
+        readAccess: "admin",
+        writeAccess: "admin",
         enableRLS: true,
-        rlsRules: [{ field: "ownerId", operator: "eq", value: "{{current_user_id}}" }],
+        // `__USER_ID__` es el marcador que entiende rls-builder. Antes ponía
+        // "{{current_user_id}}", que se comparaba LITERALMENTE: la regla de
+        // dueño no casaba nunca y nadie veía sus filas (2026-10-15).
+        rlsRules: [{ field: "ownerId", operator: "eq", value: DATASET_RLS_DUENO }],
       },
     })
     .returning();
@@ -262,7 +354,8 @@ dataSetsRoutes.patch("/:id", requireAuth, async (c) => {
 });
 
 /**
- * Decide de quién es una entry: del `ownerId` del payload, y si no, de la sesión.
+ * Decide de quién es una entry: de la sesión, salvo que quien escribe sea del
+ * equipo y el payload diga otro dueño.
  *
  * Está extraído en vez de escrito en línea porque es una regla de SEGURIDAD —
  * `owner_id` es la columna sobre la que se apoyan las políticas RLS— y lo que
@@ -271,17 +364,26 @@ dataSetsRoutes.patch("/:id", requireAuth, async (c) => {
  * esta línea sin cambiar lo que hace, el test se puso rojo; si alguien borrara
  * la asignación dejando el texto en un comentario, seguiría verde.
  *
- * NOTA para quien lea esto: que el payload PISE a la sesión es deliberado (lo
- * usan las importaciones que atribuyen filas a otro usuario), pero significa
- * que cualquier usuario autenticado puede crear entries a nombre de otro. Si no
- * es lo que se quiere, la restricción va aquí, en un solo sitio.
+ * Que el payload PISE a la sesión lo usan las importaciones que atribuyen
+ * filas a otro usuario — y eso es cosa del equipo. Antes valía para cualquier
+ * cuenta: un usuario recién registrado creaba entries A NOMBRE DE OTRO en un
+ * dataset con `rlsRules` por dueño, es decir, le metía filas en su espacio
+ * privado (auditoría 2026-10-15). Ahora, sin `puedeAtribuir`, el dueño es
+ * siempre quien escribe.
  */
 export function resolveEntryOwnerId(
   payload: Record<string, unknown>,
-  sessionUserId: string | undefined
+  sessionUserId: string | undefined,
+  puedeAtribuir = false
 ): string | null {
-  return (payload.ownerId ?? sessionUserId ?? null) as string | null;
+  if (puedeAtribuir && payload.ownerId != null) return payload.ownerId as string;
+  return sessionUserId ?? null;
 }
+
+/** El marcador de usuario que entiende `rls-builder` (ver `USER_ID_PLACEHOLDER`). */
+export const DATASET_RLS_DUENO = "__USER_ID__";
+
+const esDelEquipo = (user: RLSUser | null) => user?.role === "admin" || user?.role === "editor";
 
 dataSetsRoutes.post("/:id/entries", requireAuth, async (c) => {
   const id = c.req.param("id");
@@ -294,16 +396,21 @@ dataSetsRoutes.post("/:id/entries", requireAuth, async (c) => {
 
   const [dataset] = await db.select().from(dataSets).where(eq(dataSets.id, id)).limit(1);
   const user = usuarioDe(c);
-  if (!dataset || !legible(dataset, user)) return c.json({ error: "DataSet not found" }, 404);
+  if (!dataset || !(legible(dataset, user) || escribible(dataset, user))) {
+    return c.json({ error: "DataSet not found" }, 404);
+  }
 
   // La política tiene `writeAccess` y esta ruta no lo miraba: cualquier sesión
   // escribía en un dataset de solo administración.
-  if (!checkWriteAccess((dataset.policyJson ?? null) as PolicyJson | null, user)) {
+  if (!escribible(dataset, user)) {
     return c.json({ error: "No tienes permiso para escribir en este dataset" }, 403);
   }
 
   const schema = dataset.schema ?? [];
-  const validatedEntries = [];
+  const validatedEntries: {
+    original: { title?: string; thumbnailId?: string; sortOrder?: number; status?: string };
+    data: Record<string, unknown>;
+  }[] = [];
 
   for (const e of entries) {
     const payload = e.data ?? e;
@@ -321,12 +428,32 @@ dataSetsRoutes.post("/:id/entries", requireAuth, async (c) => {
     validatedEntries.push({ original: e, data: validation.data });
   }
 
-  const rows = await db
+  // Fase F: lo que crea un AGENTE lo firma su humano responsable (dueño);
+  // sin firmante, sin dueño como antes. Ver @kitsuden/shared firmante.ts.
+  const firmas = validatedEntries.map(({ data }) =>
+    user?.role === "agent"
+      ? firmaDeAgente(c.get("user") as never, (data as { ownerId?: string }).ownerId, "nadie")
+      : null
+  );
+  const rechazo = firmas.find((f) => f && !f.ok);
+  if (rechazo && !rechazo.ok) {
+    return c.json({ error: "Forbidden", message: rechazo.mensaje, code: rechazo.code }, 403);
+  }
+
+  // On the request's RLS transaction, so that the `data_entries_*` policies also
+  // decide. A human on the team attributes rows to others (`resolveEntryOwnerId`),
+  // which the owner policy would refuse: that was authorized above, in the app.
+  const ejecutor = resolveExecutor(db) as typeof db;
+  const insertar = () => ejecutor
     .insert(dataEntries)
     .values(
-      validatedEntries.map(({ original, data }) => {
+      validatedEntries.map(({ original, data }, i) => {
         const versioned = addSchemaVersionToData(schema, data);
-        const ownerId = resolveEntryOwnerId(versioned, c.get("user")?.id);
+        const firma = firmas[i];
+        const ownerId =
+          firma && firma.ok
+            ? firma.autor
+            : resolveEntryOwnerId(versioned, c.get("user")?.id, esDelEquipo(user));
         return {
           title:
             (versioned.title as string) ||
@@ -335,14 +462,31 @@ dataSetsRoutes.post("/:id/entries", requireAuth, async (c) => {
             "Untitled",
           dataSetId: id,
           data: { ...versioned, ownerId },
-          thumbnailId: original.thumbnailId,
-          sortOrder: original.sortOrder || 0,
-          status: original.status || "published",
+          // Estado, orden y miniatura solo los fija el equipo; para el resto el
+          // estado lo decide el flujo del dataset (`workflowJson.requireApproval`).
+          // Antes cualquier cuenta publicaba sin revisión (auditoría 2026-10-25).
+          thumbnailId: esDelEquipo(user) ? original.thumbnailId : undefined,
+          sortOrder: esDelEquipo(user) ? original.sortOrder || 0 : 0,
+          status: esDelEquipo(user)
+            ? original.status || "published"
+            : resolveEntryStatus(dataset.workflowJson as never),
           ownerId,
+          createdById: c.get("user")?.id ?? null,
         };
       })
     )
     .returning();
+  let rows: Awaited<ReturnType<typeof insertar>>;
+  try {
+    rows = await conSavepoint(() => (esDelEquipo(user) ? comoSistema(insertar) : insertar()));
+  } catch (error) {
+    // 42501: the database refused what the application let through.
+    if ((error as { code?: string; cause?: { code?: string } })?.code === "42501" ||
+        (error as { cause?: { code?: string } })?.cause?.code === "42501") {
+      return c.json({ error: "No tienes permiso para escribir en este dataset" }, 403);
+    }
+    throw error;
+  }
   await invalidateGraphQLCache();
   return c.json(rows, 201);
 });
@@ -360,8 +504,36 @@ export async function getSettingsHandler(c: any) {
 }
 settingsRoutes.get("/", getSettingsHandler);
 
+/**
+ * Lo que un PATCH de ajustes puede tocar. Antes era `.set({ ...body })`: con
+ * el cuerpo entero se reescribía también `id` o `updatedAt` (la ruta es solo
+ * admin, pero una lista blanca no depende de que la puerta siga ahí).
+ */
+export const AJUSTES_EDITABLES = [
+  "siteName",
+  "siteDescription",
+  "siteUrl",
+  "branding",
+  "mainNav",
+  "social",
+  "analytics",
+  "activeTheme",
+  "footerText",
+] as const;
+
+export function soloAjustesEditables(body: unknown): Record<string, unknown> {
+  const limpio: Record<string, unknown> = {};
+  if (!body || typeof body !== "object") return limpio;
+  for (const clave of AJUSTES_EDITABLES) {
+    if ((body as Record<string, unknown>)[clave] !== undefined) {
+      limpio[clave] = (body as Record<string, unknown>)[clave];
+    }
+  }
+  return limpio;
+}
+
 export async function patchSettingsHandler(c: any) {
-  const body = await c.req.json();
+  const body = soloAjustesEditables(await c.req.json());
   const existing = await db.select().from(siteSettings).limit(1);
   if (!existing.length) {
     const [row] = await db
@@ -410,7 +582,11 @@ settingsRoutes.get("/social-live", async (c) => {
     } else {
       const { getStreamStatusByLogin, isTwitchConfigured } = await import("../services/twitch");
       if (!isTwitchConfigured()) {
-        respuesta = { configurado: false, live: null, razon: "Faltan TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET" };
+        respuesta = {
+          configurado: false,
+          live: null,
+          razon: "Faltan TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET",
+        };
       } else {
         const estados = await getStreamStatusByLogin([login]);
         const directo = [...estados.values()][0] ?? null;

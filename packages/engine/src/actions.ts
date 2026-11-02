@@ -5,11 +5,11 @@
  *
  * Abstracción unificada para definir acciones que pueden ejecutarse vía:
  *   - HTTP (Hono routes)
- *   - Eventos asíncronos (BullMQ workers)
+ *   - Eventos asíncronos (la cola de Postgres del host)
  *   - Agentes LLM (MCP tools)
  *
  * Design Goals:
- *   1. Zero-leak abstraction: El desarrollador no ve BullMQ, Hono o MCP
+ *   1. Zero-leak abstraction: El desarrollador no ve la cola, Hono o MCP
  *   2. Type inference: El payload se infiere del trigger
  *   3. Unified context: Sin importar el trigger, la función run recibe el mismo ctx
  *
@@ -33,7 +33,7 @@
  * defineAction({
  *   trigger: "event:procesar_video",
  *   run: async ({ payload, db, queue }) => {
- *     // Ejecutado en BullMQ worker
+ *     // Ejecutado por el worker de la cola (Postgres)
  *     // payload: { videoId: string, quality: "1080p" }
  *   },
  * });
@@ -52,9 +52,9 @@
  */
 
 import type { KonContext } from "@kitsuden/shared";
-import type { Worker, Job, Queue } from "bullmq";
 import type { Hono, Context as HonoContext } from "hono";
 
+import { queue, type OpcionesDeDespacho, type TrabajoDeCola } from "./cola";
 import { messageOf } from "./errors";
 import { validate, ValidationSchema } from "./validator";
 
@@ -116,12 +116,18 @@ export interface ActionContext<TPayload = unknown> {
     error: (msg: string, meta?: Record<string, unknown>) => void;
     debug: (msg: string, meta?: Record<string, unknown>) => void;
   };
-  /** Queue dispatcher (for enqueueing new jobs) */
+  /**
+   * Queue dispatcher (la cola de Postgres: `queue.dispatch` del engine).
+   * Dentro de una petición va en su transacción: ROLLBACK = no se encola.
+   */
   queue: {
-    /** Add a job to a queue */
-    add: <T = any>(queueName: string, jobName: string, data: T) => Promise<Job<T> | null>;
-    /** Get queue instance */
-    get: (name: string) => Queue | undefined;
+    /** Add a job to a queue (lo consume la acción `event:{queueName}`) */
+    add: <T = any>(
+      queueName: string,
+      jobName: string,
+      data: T,
+      opciones?: OpcionesDeDespacho
+    ) => Promise<{ id: string }>;
   };
   /** Cache interface */
   cache: {
@@ -142,8 +148,8 @@ export interface ActionContext<TPayload = unknown> {
   };
   /** Event-specific context (only populated for event triggers) */
   event?: {
-    /** BullMQ job instance */
-    job: Job;
+    /** El trabajo de la cola (con su actor, releído al ejecutar) */
+    job: TrabajoDeCola;
     /** Job ID */
     jobId: string;
     /** Attempt number */
@@ -464,91 +470,51 @@ class HonoAdapter implements ActionAdapter {
 }
 
 /**
- * BullMQ Event Adapter
+ * Event Adapter: la cola de Postgres (kitsuden2.md, B1; antes BullMQ).
+ *
+ * `event:{nombre}` registra el manejador de la cola `{nombre}`; se encola con
+ * `ctx.queue.add("{nombre}", …)` o `queue.dispatch("{nombre}", …)`. Entrega
+ * al menos una vez: la acción debe ser idempotente. Un `run` que lanza se
+ * reintenta (espera exponencial) y, agotado, queda en la «dead letter».
  */
-class BullMQAdapter implements ActionAdapter {
-  private workers: Map<string, Worker> = new Map();
-  private queues: Map<string, Queue> = new Map();
-  private connection: any = null;
-  private isInitialized = false;
-
-  setConnection(connection: any) {
-    this.connection = connection;
-    this.isInitialized = true;
-  }
-
+class ColaAdapter implements ActionAdapter {
+  /** Siempre: los manejadores se guardan aunque el worker del host aún no corra. */
   isReady(): boolean {
-    return this.isInitialized && this.connection !== null;
+    return true;
   }
 
   register<TPayload, TResult>(
     trigger: ParsedTrigger,
     definition: ActionDefinition<TPayload, TResult>
   ): void {
-    if (!this.isReady()) {
-      console.warn(`  ⚠️  [Actions] BullMQ not ready, skipping event: ${trigger.path}`);
+    const concurrencia = definition.meta?.concurrency ?? 3;
+    try {
+      queue.handle(
+        trigger.path,
+        async (trabajo) => {
+          const ctx = buildActionContext({
+            payload: trabajo.payload,
+            // Sin contexto de kon: `ctx.db` fallará diciéndolo si la acción lo usa.
+            kon: null,
+            event: { job: trabajo, jobId: trabajo.id, attempt: trabajo.intento },
+          });
+          const result = await definition.run(ctx as ActionContext<TPayload>);
+          return normalizeResult(result);
+        },
+        { concurrencia }
+      );
+    } catch (err) {
+      console.warn(`  ⚠️  [Actions] Evento "${trigger.path}" no registrado: ${messageOf(err)}`);
       return;
     }
-
-    const queueName = `kitsuden:actions:${trigger.path}`;
-    const concurrency = definition.meta?.concurrency ?? 3;
-
-    // Create queue if not exists
-    if (!this.queues.has(queueName)) {
-      const { Queue } = require("bullmq");
-      const queue = new Queue(queueName, { connection: this.connection });
-      this.queues.set(queueName, queue);
-    }
-
-    // Create worker
-    const { Worker } = require("bullmq");
-    const worker = new Worker(
-      queueName,
-      async (job: Job<TPayload>) => {
-        const ctx = buildActionContext({
-          payload: job.data,
-          // Sin contexto de kon: `ctx.db` fallará diciéndolo si la acción lo usa.
-          kon: null,
-          event: {
-            job,
-            jobId: job.id ?? "unknown",
-            attempt: job.attemptsMade + 1,
-          },
-        });
-
-        const result = await definition.run(ctx as ActionContext<TPayload>);
-        return normalizeResult(result);
-      },
-      { connection: this.connection, concurrency }
-    );
-
-    worker.on("completed", (job: Job) => {
-      // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
-      console.log(`  ✅ [Action Worker] ${trigger.path}#${job.id} completed`);
-    });
-
-    worker.on("failed", (job: Job | undefined, err: Error) => {
-      console.error(`  ❌ [Action Worker] ${trigger.path}#${job?.id} failed: ${messageOf(err)}`);
-    });
-
-    this.workers.set(trigger.path, worker);
     // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
     console.log(
-      `  🔷 [Actions] Event worker "${trigger.path}" registered (concurrency: ${concurrency})`
+      `  🔷 [Actions] Event worker "${trigger.path}" registered (concurrency: ${concurrencia})`
     );
   }
 
   async shutdown(): Promise<void> {
-    for (const [name, worker] of Array.from(this.workers.entries())) {
-      await worker.close();
-      // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
-      console.log(`  🔌 [Actions] Worker "${name}" closed`);
-    }
-    for (const [name, queue] of Array.from(this.queues.entries())) {
-      await queue.close();
-      // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
-      console.log(`  🔌 [Actions] Queue "${name}" closed`);
-    }
+    // El worker es del host (apps/api/src/lib/queue.ts) y lo apaga él.
   }
 }
 
@@ -604,6 +570,21 @@ class MCPAdapter implements ActionAdapter {
         properties: {},
       },
       handler: async (args: TPayload, extra: any) => {
+        // Mismo control que `executeTool`: los scopes declarados se exigen
+        const faltan = scopesQueFaltan(definition.meta?.requiredScopes ?? [], extra?.scopes ?? []);
+        if (faltan.length > 0) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: agent lacks required scope(s) ${faltan.map((s) => `'${s}'`).join(", ")} to execute tool '${toolName}'`,
+              },
+            ],
+            isError: true,
+            code: "KITSUDEN_E_FORBIDDEN",
+          };
+        }
+
         // Generate traceId for agent tool execution (telemetry)
         const traceId = extra?.traceId || generateUUID();
 
@@ -627,7 +608,7 @@ class MCPAdapter implements ActionAdapter {
             {
               type: "text",
               text: normalized.success
-                ? JSON.stringify(normalized.data, null, 2)
+                ? JSON.stringify(normalized.data)
                 : `Error: ${normalized.error}`,
             },
           ],
@@ -659,6 +640,23 @@ class MCPAdapter implements ActionAdapter {
       throw new Error(`Tool not found: ${name}`);
     }
 
+    // `requiredScopes` estaba declarado pero nadie lo comprobaba: cualquier
+    // agente conectado ejecutaba cualquier acción-herramienta. Sin scopes en
+    // `extra` no hay nada que comparar, así que se niega (falla cerrado).
+    const faltan = scopesQueFaltan(definition.meta?.requiredScopes ?? [], extra?.scopes ?? []);
+    if (faltan.length > 0) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: agent lacks required scope(s) ${faltan.map((s) => `'${s}'`).join(", ")} to execute tool '${name}'`,
+          },
+        ],
+        isError: true,
+        code: "KITSUDEN_E_FORBIDDEN",
+      };
+    }
+
     // Generate traceId for agent tool execution (telemetry)
     const traceId = extra?.traceId || generateUUID();
 
@@ -682,13 +680,27 @@ class MCPAdapter implements ActionAdapter {
         {
           type: "text",
           text: normalized.success
-            ? JSON.stringify(normalized.data, null, 2)
+            ? JSON.stringify(normalized.data)
             : `Error: ${normalized.error}`,
         },
       ],
       isError: !normalized.success,
     };
   }
+}
+
+/**
+ * Scopes requeridos que los concedidos no cubren. Misma semántica que
+ * `hasScope` de la API (`admin`/`admin:*` lo cubren todo, `recurso:*` y
+ * `*:accion` como comodines); vive aquí porque el engine no importa de la app.
+ */
+export function scopesQueFaltan(requeridos: readonly string[], concedidos: readonly string[]): string[] {
+  if (concedidos.includes("admin") || concedidos.includes("admin:*")) return [];
+  const cubre = (concedido: string, requerido: string) =>
+    concedido === requerido ||
+    (concedido.endsWith(":*") && requerido.startsWith(concedido.slice(0, -1))) ||
+    (concedido.startsWith("*:") && requerido.endsWith(concedido.slice(1)));
+  return requeridos.filter((r) => !concedidos.some((c) => cubre(c, r)));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1004,14 +1016,8 @@ function buildActionContext<TPayload>(opts: ContextBuildOptions): ActionContext<
     kon: kon ?? ({} as KonContext),
     logger: kon?.logger ?? loggerDeConsola(),
     queue: {
-      add: async (_queueName, _jobName, _data) => {
-        // eslint-disable-next-line no-console -- log de arranque/registro: visible a propósito en boot (el logger del host no es accesible desde el engine sin crear un ciclo)
-        console.log(`[Queue] Adding job "${_jobName}" to "${_queueName}"`);
-        return null;
-      },
-      get: (_name: string) => {
-        return undefined;
-      },
+      add: (queueName, jobName, data, opciones) =>
+        queue.dispatch(queueName, jobName, data, opciones),
     },
     cache: kon?.cache ?? {
       get: async () => null,
@@ -1055,7 +1061,7 @@ function normalizeResult(result: ActionResult | unknown): ActionResult {
 class ActionRegistry {
   private actions: Map<string, ActionDefinition<unknown, unknown>> = new Map();
   private honoAdapter = new HonoAdapter();
-  private bullAdapter = new BullMQAdapter();
+  private colaAdapter = new ColaAdapter();
   private mcpAdapter = new MCPAdapter();
 
   /**
@@ -1081,7 +1087,7 @@ class ActionRegistry {
         this.honoAdapter.register(trigger, wrappedDefinition);
         break;
       case "event":
-        this.bullAdapter.register(trigger, wrappedDefinition);
+        this.colaAdapter.register(trigger, wrappedDefinition);
         break;
       case "agent":
         this.mcpAdapter.register(trigger, wrappedDefinition);
@@ -1116,13 +1122,6 @@ class ActionRegistry {
   }
 
   /**
-   * Initialize with BullMQ connection
-   */
-  useBullMQ(connection: any): void {
-    this.bullAdapter.setConnection(connection);
-  }
-
-  /**
    * Initialize with MCP server
    */
   useMCP(server: any): void {
@@ -1133,7 +1132,7 @@ class ActionRegistry {
    * Shutdown all adapters
    */
   async shutdown(): Promise<void> {
-    await this.bullAdapter.shutdown();
+    await this.colaAdapter.shutdown();
   }
 
   /**
@@ -1165,7 +1164,7 @@ const globalRegistry = new ActionRegistry();
  * The trigger string determines where the action is registered:
  *
  * - `http.{method}:{path}` → Registers HTTP endpoint in Hono
- * - `event:{queueName}` → Registers BullMQ worker
+ * - `event:{queueName}` → Registers a Postgres queue handler
  * - `event.cron:{expression}:{name}` → Registers scheduled job
  * - `agent.tool:{name}` → Registers MCP tool
  *
@@ -1208,22 +1207,19 @@ export function getAction(trigger: string): ActionDefinition | undefined {
  * ```typescript
  * import { Hono } from "hono";
  * import { initActions } from "@kitsuden/engine/actions";
- * import { valkeyConnection } from "./valkey";
  *
  * const app = new Hono();
  *
  * initActions({
  *   hono: app,
- *   bullmq: valkeyConnection,
  *   mcp: mcpServer, // optional
  * });
+ * // Los `event:` no necesitan nada: van a la cola de Postgres del host.
  * ```
  */
 export interface ActionsInitOptions {
   /** Hono app instance */
   hono?: Hono;
-  /** BullMQ connection options */
-  bullmq?: any;
   /** MCP server instance */
   mcp?: any;
 }
@@ -1231,9 +1227,6 @@ export interface ActionsInitOptions {
 export function initActions(options: ActionsInitOptions): void {
   if (options.hono) {
     globalRegistry.useHono(options.hono);
-  }
-  if (options.bullmq) {
-    globalRegistry.useBullMQ(options.bullmq);
   }
   if (options.mcp) {
     globalRegistry.useMCP(options.mcp);

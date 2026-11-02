@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { DatasetDefinition } from "@kitsuden/shared";
   import { ArrowLeft } from "lucide-svelte";
 
@@ -28,7 +29,7 @@
       // Navigate back to list on success
       goto("/datasets");
     } catch (err: any) {
-      error = err.message || "Failed to create dataset";
+      error = err.message || t("newPage.failedToCreateDataset");
       console.error(err);
     } finally {
       saving = false;
@@ -49,9 +50,9 @@
       <ArrowLeft class="w-5 h-5" />
     </button>
     <div>
-      <h1 class="text-2xl font-bold text-kitsuden-text">Create Dataset</h1>
+      <h1 class="text-2xl font-bold text-kitsuden-text">{t("common.createDataset")}</h1>
       <p class="text-sm text-kitsuden-text-dim mt-1">
-        Define the schema and fields for your new data collection API.
+        {t("newPage.defineTheSchemaAndFields")}
       </p>
     </div>
   </div>

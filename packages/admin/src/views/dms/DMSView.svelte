@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr, localeFormato } from "$lib/i18n";
   /**
    * DMSView - Document Management System (Django Admin Style)
    *
@@ -52,8 +53,15 @@
     Copy,
   } from "lucide-svelte";
   import { onMount, tick } from "svelte";
+  import DOMPurify from "dompurify";
 
   const API_URL = import.meta.env.VITE_API_URL ?? "";
+
+  // El render del DMS y los SVG de los diagramas vienen de contenido que
+  // escribe cualquier autor del documento: se limpian antes del `{@html}`.
+  const limpiarHtml = (html: string) => DOMPurify.sanitize(String(html ?? ""));
+  const limpiarSvg = (svg: string) =>
+    DOMPurify.sanitize(String(svg ?? ""), { USE_PROFILES: { svg: true, svgFilters: true } });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TYPES
@@ -164,41 +172,41 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   const documentTypes = [
-    { id: "manual", label: "Manual", icon: "📖", color: "#4F46E5" },
-    { id: "policy", label: "Policy", icon: "📋", color: "#DC2626" },
-    { id: "procedure", label: "Procedure", icon: "⚙️", color: "#059669" },
-    { id: "template", label: "Template", icon: "📄", color: "#7C3AED" },
-    { id: "guide", label: "Guide", icon: "🧭", color: "#EA580C" },
-    { id: "training", label: "Training", icon: "🎓", color: "#0891B2" },
-    { id: "report", label: "Report", icon: "📊", color: "#BE185D" },
-    { id: "other", label: "Other", icon: "📎", color: "#6B7280" },
+    { id: "manual", label: tr("dMSView.manual"), icon: "📖", color: "#4F46E5" },
+    { id: "policy", label: tr("dMSView.policy"), icon: "📋", color: "#DC2626" },
+    { id: "procedure", label: tr("dMSView.procedure"), icon: "⚙️", color: "#059669" },
+    { id: "template", label: tr("dMSView.template"), icon: "📄", color: "#7C3AED" },
+    { id: "guide", label: tr("dMSView.guide"), icon: "🧭", color: "#EA580C" },
+    { id: "training", label: tr("dMSView.training"), icon: "🎓", color: "#0891B2" },
+    { id: "report", label: tr("dMSView.report"), icon: "📊", color: "#BE185D" },
+    { id: "other", label: tr("dMSView.other"), icon: "📎", color: "#6B7280" },
   ];
 
   const workflowStatuses = [
-    { id: "draft", label: "Draft", color: "#6B7280", icon: Clock },
-    { id: "review_pending", label: "In Review", color: "#F59E0B", icon: ClipboardCheck },
-    { id: "approved", label: "Approved", color: "#10B981", icon: CheckCircle },
-    { id: "published", label: "Published", color: "#3B82F6", icon: CheckCircle },
-    { id: "archived", label: "Archived", color: "#8B5CF6", icon: Archive },
-    { id: "deprecated", label: "Deprecated", color: "#EF4444", icon: XCircle },
-    { id: "changes_requested", label: "Changes", color: "#F97316", icon: AlertCircle },
+    { id: "draft", label: tr("dMSView.draft"), color: "#6B7280", icon: Clock },
+    { id: "review_pending", label: tr("dMSView.inReview"), color: "#F59E0B", icon: ClipboardCheck },
+    { id: "approved", label: tr("dMSView.approved"), color: "#10B981", icon: CheckCircle },
+    { id: "published", label: tr("common.published"), color: "#3B82F6", icon: CheckCircle },
+    { id: "archived", label: tr("common.archived"), color: "#8B5CF6", icon: Archive },
+    { id: "deprecated", label: tr("dMSView.deprecated"), color: "#EF4444", icon: XCircle },
+    { id: "changes_requested", label: tr("dMSView.changes"), color: "#F97316", icon: AlertCircle },
   ];
 
   const visibilityOptions = [
-    { id: "public", label: "Public" },
-    { id: "internal", label: "Internal" },
-    { id: "restricted", label: "Restricted" },
-    { id: "confidential", label: "Confidential" },
+    { id: "public", label: tr("dMSView.public") },
+    { id: "internal", label: tr("dMSView.internal") },
+    { id: "restricted", label: tr("dMSView.restricted") },
+    { id: "confidential", label: tr("dMSView.confidential") },
   ];
 
   const sortableColumns = [
-    { key: "code", label: "Code" },
-    { key: "title", label: "Title" },
-    { key: "type", label: "Type" },
-    { key: "status", label: "Status" },
-    { key: "categoryName", label: "Category" },
-    { key: "currentVersionNumber", label: "Version" },
-    { key: "updatedAt", label: "Updated" },
+    { key: "code", label: tr("dMSView.code") },
+    { key: "title", label: tr("common.title") },
+    { key: "type", label: tr("common.type") },
+    { key: "status", label: tr("common.status") },
+    { key: "categoryName", label: tr("common.category") },
+    { key: "currentVersionNumber", label: tr("dMSView.version") },
+    { key: "updatedAt", label: tr("dMSView.updated") },
   ];
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -392,7 +400,7 @@
       totalPages = result.pagination?.totalPages || 1;
       totalDocs = result.pagination?.total || documents.length;
     } catch (e: any) {
-      showToast(e.message || "Failed to load documents", "error");
+      showToast(e.message || tr("dMSView.failedToLoadDocuments"), "error");
     } finally {
       loading = false;
     }
@@ -441,7 +449,7 @@
         loadRenderPreview(full.slug),
       ]);
     } catch (e: any) {
-      showToast(e.message || "Failed to load document", "error");
+      showToast(e.message || tr("dMSView.failedToLoadDocument"), "error");
     } finally {
       drawerLoading = false;
     }
@@ -530,7 +538,7 @@
     saving = true;
     try {
       const body = {
-        title: formDoc.title || "Untitled",
+        title: formDoc.title || tr("common.untitled"),
         description: formDoc.description,
         type: formDoc.type || "manual",
         status: formDoc.status || "draft",
@@ -555,14 +563,14 @@
         method: "POST",
         body: JSON.stringify(body),
       });
-      showToast("Document created", "success");
+      showToast(tr("dMSView.documentCreated"), "success");
       showCreateDocModal = false;
       formDoc = {};
       await loadDocuments();
       await loadStats();
       if (created?.id) openDrawer(created);
     } catch (e: any) {
-      showToast(e.message || "Failed to create document", "error");
+      showToast(e.message || tr("dMSView.failedToCreateDocument"), "error");
     } finally {
       saving = false;
     }
@@ -598,7 +606,7 @@
         method: "PATCH",
         body: JSON.stringify(body),
       });
-      showToast("Document saved", "success");
+      showToast(tr("dMSView.documentSaved"), "success");
       await loadDocuments();
       const updated = await apiFetch(
         `/api/dms/documents/${drawerDoc.id}?versions=true&relations=true`
@@ -606,7 +614,7 @@
       drawerDoc = updated;
       formDoc = { ...updated };
     } catch (e: any) {
-      showToast(e.message || "Failed to save document", "error");
+      showToast(e.message || tr("dMSView.failedToSaveDocument"), "error");
     } finally {
       saving = false;
     }
@@ -625,7 +633,7 @@
       await loadDocuments();
       await loadStats();
     } catch (e: any) {
-      showToast(e.message || "Failed to delete", "error");
+      showToast(e.message || tr("dMSView.failedToDelete"), "error");
     }
   }
 
@@ -634,11 +642,11 @@
       const cloned = await apiFetch(`/api/dms/documents/from-template/${templateId}`, {
         method: "POST",
       });
-      showToast("Document cloned from template", "success");
+      showToast(tr("dMSView.documentClonedFromTemplate"), "success");
       await loadDocuments();
       if (cloned?.id) openDrawer(cloned);
     } catch (e: any) {
-      showToast(e.message || "Failed to clone", "error");
+      showToast(e.message || tr("dMSView.failedToClone"), "error");
     }
   }
 
@@ -654,10 +662,10 @@
         method: "PATCH",
         body: JSON.stringify({ content: contentEditor, contentFormat }),
       });
-      showToast("Content saved", "success");
+      showToast(tr("dMSView.contentSaved"), "success");
       await loadRenderPreview(drawerDoc.slug);
     } catch (e: any) {
-      showToast(e.message || "Failed to save content", "error");
+      showToast(e.message || tr("dMSView.failedToSaveContent"), "error");
     } finally {
       saving = false;
     }
@@ -671,7 +679,7 @@
         method: "POST",
         body: JSON.stringify({ changeType: changeTypeInput, changelog: changelogInput }),
       });
-      showToast("New version created", "success");
+      showToast(tr("dMSView.newVersionCreated"), "success");
       showCreateVersionModal = false;
       changelogInput = "";
       changeTypeInput = "minor";
@@ -684,7 +692,7 @@
       contentEditor = updated.currentVersion?.content || "";
       await loadDiagrams(updated.currentVersion?.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to create version", "error");
+      showToast(e.message || tr("dMSView.failedToCreateVersion"), "error");
     } finally {
       saving = false;
     }
@@ -693,10 +701,10 @@
   async function submitForReview(versionId: string) {
     try {
       await apiFetch(`/api/dms/versions/${versionId}/submit`, { method: "POST" });
-      showToast("Submitted for review", "success");
+      showToast(tr("dMSView.submittedForReview"), "success");
       if (drawerDoc) await loadVersions(drawerDoc.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to submit", "error");
+      showToast(e.message || tr("dMSView.failedToSubmit"), "error");
     }
   }
 
@@ -706,18 +714,18 @@
         method: "POST",
         body: JSON.stringify({ decision, notes: reviewNotes }),
       });
-      showToast(decision === "approved" ? "Version approved" : "Changes requested", "success");
+      showToast(decision === "approved" ? tr("dMSView.versionApproved") : tr("dMSView.changesRequested"), "success");
       reviewNotes = "";
       if (drawerDoc) await loadVersions(drawerDoc.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to review", "error");
+      showToast(e.message || tr("dMSView.failedToReview"), "error");
     }
   }
 
   async function publishVersion(versionId: string) {
     try {
       await apiFetch(`/api/dms/versions/${versionId}/publish`, { method: "POST" });
-      showToast("Version published", "success");
+      showToast(tr("dMSView.versionPublished"), "success");
       if (drawerDoc) {
         await loadVersions(drawerDoc.id);
         const updated = await apiFetch(
@@ -727,7 +735,7 @@
         formDoc = { ...updated };
       }
     } catch (e: any) {
-      showToast(e.message || "Failed to publish", "error");
+      showToast(e.message || tr("dMSView.failedToPublish"), "error");
     }
   }
 
@@ -750,7 +758,7 @@
       replyToId = null;
       await loadComments(drawerDoc.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to post comment", "error");
+      showToast(e.message || tr("dMSView.failedToPostComment"), "error");
     }
   }
 
@@ -759,7 +767,7 @@
       await apiFetch(`/api/dms/comments/${commentId}/resolve`, { method: "POST" });
       if (drawerDoc) await loadComments(drawerDoc.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to resolve", "error");
+      showToast(e.message || tr("dMSView.failedToResolve"), "error");
     }
   }
 
@@ -768,7 +776,7 @@
       await apiFetch(`/api/dms/comments/${commentId}`, { method: "DELETE" });
       if (drawerDoc) await loadComments(drawerDoc.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to delete comment", "error");
+      showToast(e.message || tr("dMSView.failedToDeleteComment"), "error");
     }
   }
 
@@ -790,13 +798,13 @@
           renderedSvg: undefined,
         }),
       });
-      showToast("Diagram created", "success");
+      showToast(tr("dMSView.diagramCreated"), "success");
       showCreateDiagramModal = false;
       newDiagramName = "";
       newDiagramSource = "";
       await loadDiagrams(drawerDoc.currentVersion.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to create diagram", "error");
+      showToast(e.message || tr("dMSView.failedToCreateDiagram"), "error");
     } finally {
       saving = false;
     }
@@ -805,10 +813,10 @@
   async function deleteDiagram(diagramId: string) {
     try {
       await apiFetch(`/api/dms/diagrams/${diagramId}`, { method: "DELETE" });
-      showToast("Diagram deleted", "success");
+      showToast(tr("dMSView.diagramDeleted"), "success");
       if (drawerDoc) await loadDiagrams(drawerDoc.currentVersion?.id);
     } catch (e: any) {
-      showToast(e.message || "Failed to delete diagram", "error");
+      showToast(e.message || tr("dMSView.failedToDeleteDiagram"), "error");
     }
   }
 
@@ -827,7 +835,7 @@
     try {
       await apiFetch("/api/dms/notifications/read-all", { method: "POST" });
       notifications = notifications.map((n) => ({ ...n, read: true }));
-      showToast("All marked as read", "success");
+      showToast(tr("dMSView.allMarkedAsRead"), "success");
     } catch {}
   }
 
@@ -849,7 +857,7 @@
           parentId: newCategoryParentId || undefined,
         }),
       });
-      showToast("Category created", "success");
+      showToast(tr("dMSView.categoryCreated"), "success");
       showCreateCatModal = false;
       newCategoryName = "";
       newCategoryDescription = "";
@@ -858,7 +866,7 @@
       newCategoryParentId = "";
       await loadCategories();
     } catch (e: any) {
-      showToast(e.message || "Failed to create category", "error");
+      showToast(e.message || tr("dMSView.failedToCreateCategory"), "error");
     } finally {
       saving = false;
     }
@@ -995,7 +1003,7 @@
 
   function formatDate(date?: string) {
     if (!date) return "—";
-    return new Date(date).toLocaleDateString("es-ES", {
+    return new Date(date).toLocaleDateString(localeFormato(), {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -1004,7 +1012,7 @@
 
   function formatDateTime(date?: string) {
     if (!date) return "—";
-    return new Date(date).toLocaleString("es-ES", {
+    return new Date(date).toLocaleString(localeFormato(), {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -1091,9 +1099,9 @@
           <FileStack class="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 class="text-xl font-bold text-kitsuden-text">Document Management</h1>
+          <h1 class="text-xl font-bold text-kitsuden-text">{tr("dMSView.documentManagement")}</h1>
           <p class="text-sm text-kitsuden-subtle">
-            Versioned document storage with approval workflows
+            {tr("dMSView.versionedDocumentStorageWithApproval")}
           </p>
         </div>
       </div>
@@ -1101,17 +1109,17 @@
         {#if activeSection === "documents" || activeSection === "templates"}
           <button class="btn-secondary" onclick={() => (showCreateCatModal = true)}>
             <FolderTree class="w-4 h-4" />
-            Categories
+            {tr("dMSView.categories")}
           </button>
           <button class="btn-primary" onclick={openCreateDocumentModal}>
             <Plus class="w-4 h-4" />
-            New Document
+            {tr("dMSView.newDocument")}
           </button>
         {/if}
         {#if activeSection === "categories"}
           <button class="btn-primary" onclick={() => (showCreateCatModal = true)}>
             <Plus class="w-4 h-4" />
-            New Category
+            {tr("dMSView.newCategory")}
           </button>
         {/if}
       </div>
@@ -1157,7 +1165,7 @@
           </div>
           <div>
             <p class="text-lg font-bold text-kitsuden-text">{stats.documents?.total || 0}</p>
-            <p class="text-[11px] text-kitsuden-subtle">Total Documents</p>
+            <p class="text-[11px] text-kitsuden-subtle">{tr("dMSView.totalDocuments")}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1166,7 +1174,7 @@
           </div>
           <div>
             <p class="text-lg font-bold text-kitsuden-text">{stats.documents?.published || 0}</p>
-            <p class="text-[11px] text-kitsuden-subtle">Published</p>
+            <p class="text-[11px] text-kitsuden-subtle">{tr("common.published")}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1175,7 +1183,7 @@
           </div>
           <div>
             <p class="text-lg font-bold text-kitsuden-text">{stats.documents?.draft || 0}</p>
-            <p class="text-[11px] text-kitsuden-subtle">Drafts</p>
+            <p class="text-[11px] text-kitsuden-subtle">{tr("dMSView.drafts")}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1186,7 +1194,7 @@
             <p class="text-lg font-bold text-kitsuden-text">
               {stats.upcomingReviews?.length || 0}
             </p>
-            <p class="text-[11px] text-kitsuden-subtle">Up for Review</p>
+            <p class="text-[11px] text-kitsuden-subtle">{tr("dMSView.upForReview")}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1197,7 +1205,7 @@
             <p class="text-lg font-bold text-kitsuden-text">
               {stats.pendingApprovals || unreadCount || 0}
             </p>
-            <p class="text-[11px] text-kitsuden-subtle">Pending</p>
+            <p class="text-[11px] text-kitsuden-subtle">{tr("dMSView.pending")}</p>
           </div>
         </div>
       </div>
@@ -1214,7 +1222,7 @@
         <div class="p-4 border-b border-kitsuden-border">
           <h3 class="font-semibold text-kitsuden-text flex items-center gap-2 text-sm">
             <FolderTree class="w-4 h-4" />
-            Categories
+            {tr("dMSView.categories")}
           </h3>
         </div>
         <div class="flex-1 overflow-y-auto p-2">
@@ -1226,7 +1234,7 @@
             onclick={() => selectCategory(null)}
           >
             <FileText class="w-4 h-4" />
-            All Documents
+            {tr("dMSView.allDocuments")}
           </button>
           {#each categories as category}
             <div class="mt-1">
@@ -1293,7 +1301,7 @@
               />
               <input
                 type="text"
-                placeholder="Search documents..."
+                placeholder={tr("dMSView.searchDocuments")}
                 class="w-full pl-10 pr-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-text-dim focus:outline-none focus:border-kitsuden-accent/50"
                 bind:value={searchQuery}
                 oninput={() => {
@@ -1310,7 +1318,7 @@
                 loadDocuments();
               }}
             >
-              <option value="">All Status</option>
+              <option value="">{tr("dMSView.allStatus")}</option>
               {#each workflowStatuses as s}
                 <option value={s.id}>{s.label}</option>
               {/each}
@@ -1323,17 +1331,17 @@
                 loadDocuments();
               }}
             >
-              <option value="">All Types</option>
+              <option value="">{tr("dMSView.allTypes")}</option>
               {#each documentTypes as t}
                 <option value={t.id}>{t.label}</option>
               {/each}
             </select>
             {#if selectedIds.size > 0}
               <div class="flex items-center gap-2 ml-auto">
-                <span class="text-xs text-kitsuden-subtle">{selectedIds.size} selected</span>
+                <span class="text-xs text-kitsuden-subtle">{selectedIds.size} {tr("common.selected")}</span>
                 <button class="btn-danger btn-sm" onclick={promptBulkDelete}>
                   <Trash2 class="w-3.5 h-3.5" />
-                  Delete
+                  {tr("common.delete")}
                 </button>
               </div>
             {/if}
@@ -1355,11 +1363,11 @@
               >
                 <FileText class="w-8 h-8 text-kitsuden-text-dim" />
               </div>
-              <h3 class="text-lg font-semibold text-kitsuden-text mb-1">No documents found</h3>
+              <h3 class="text-lg font-semibold text-kitsuden-text mb-1">{tr("dMSView.noDocumentsFound")}</h3>
               <p class="text-sm text-kitsuden-subtle">
                 {selectedCategory
-                  ? "This category is empty"
-                  : "Get started by creating your first document"}
+                  ? tr("dMSView.thisCategoryIsEmpty")
+                  : tr("dMSView.getStartedByCreatingYour")}
               </p>
             </div>
           {:else}
@@ -1388,7 +1396,7 @@
                       </div>
                     </th>
                   {/each}
-                  <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
+                  <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1410,7 +1418,7 @@
                     <td class="px-4 py-3">
                       <div class="flex items-center gap-2">
                         {#if doc.requiresReview || isOverdue(doc.reviewDueDate)}
-                          <span title="Review overdue"
+                          <span title={tr("dMSView.reviewOverdue")}
                             ><AlertCircle class="w-3.5 h-3.5 text-red-500 shrink-0" /></span
                           >
                         {/if}
@@ -1447,7 +1455,7 @@
                       >
                         <button
                           class="p-1.5 hover:bg-kitsuden-card rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
-                          title="Edit"
+                          title={tr("common.edit")}
                           onclick={() => openDrawer(doc)}
                         >
                           <Edit2 class="w-3.5 h-3.5" />
@@ -1455,7 +1463,7 @@
                         {#if doc.isTemplate}
                           <button
                             class="p-1.5 hover:bg-kitsuden-card rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent"
-                            title="Clone"
+                            title={tr("dMSView.clone")}
                             onclick={() => cloneFromTemplate(doc.id)}
                           >
                             <Copy class="w-3.5 h-3.5" />
@@ -1463,7 +1471,7 @@
                         {/if}
                         <button
                           class="p-1.5 hover:bg-kitsuden-card rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
-                          title="Delete"
+                          title={tr("common.delete")}
                           onclick={() => {
                             deleteTargetIds = [doc.id];
                             showConfirmDeleteModal = true;
@@ -1486,7 +1494,7 @@
             class="p-3 border-t border-kitsuden-border bg-kitsuden-card shrink-0 flex items-center justify-between"
           >
             <span class="text-xs text-kitsuden-subtle">
-              {totalDocs} total · Page {currentPage} of {totalPages}
+              {tr("dMSView.totalPageOf", { totalDocs, currentPage, totalPages })}
             </span>
             <div class="flex items-center gap-2">
               <button
@@ -1538,14 +1546,14 @@
       {#if activeSection === "categories"}
         <div class="flex-1 overflow-auto p-6">
           <div class="max-w-4xl mx-auto">
-            <h2 class="text-lg font-semibold text-kitsuden-text mb-4">Category Tree</h2>
+            <h2 class="text-lg font-semibold text-kitsuden-text mb-4">{tr("dMSView.categoryTree")}</h2>
             {#if categories.length === 0}
               <div class="card p-12 text-center">
                 <FolderTree class="w-10 h-10 text-kitsuden-text-dim mx-auto mb-3" />
-                <p class="text-kitsuden-text-dim">No categories yet.</p>
+                <p class="text-kitsuden-text-dim">{tr("dMSView.noCategoriesYet")}</p>
                 <button class="btn-primary mt-4" onclick={() => (showCreateCatModal = true)}>
                   <Plus class="w-4 h-4" />
-                  Create Category
+                  {tr("dMSView.createCategory")}
                 </button>
               </div>
             {:else}
@@ -1558,7 +1566,7 @@
                         <div>
                           <h3 class="font-semibold text-kitsuden-text">{cat.name}</h3>
                           <p class="text-xs text-kitsuden-subtle">
-                            {cat.description || "No description"} · {cat.documentCount || 0} docs
+                            {cat.description || tr("dMSView.noDescription")} {tr("dMSView.docs", { v: cat.documentCount || 0 })}
                           </p>
                         </div>
                       </div>
@@ -1580,7 +1588,7 @@
                                   {child.name}
                                 </h4>
                                 <p class="text-xs text-kitsuden-subtle">
-                                  {child.description || ""} · {child.documentCount || 0} docs
+                                  {child.description || ""} {tr("dMSView.docs", { v: child.documentCount || 0 })}
                                 </p>
                               </div>
                             </div>
@@ -1604,18 +1612,18 @@
         <div class="flex-1 overflow-auto p-6">
           <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-kitsuden-text">Notification Inbox</h2>
+              <h2 class="text-lg font-semibold text-kitsuden-text">{tr("dMSView.notificationInbox")}</h2>
               {#if unreadCount > 0}
                 <button class="btn-secondary btn-sm" onclick={markAllRead}>
                   <CheckCheck class="w-3.5 h-3.5" />
-                  Mark all read
+                  {tr("dMSView.markAllRead")}
                 </button>
               {/if}
             </div>
             {#if notifications.length === 0}
               <div class="card p-12 text-center">
                 <Inbox class="w-10 h-10 text-kitsuden-text-dim mx-auto mb-3" />
-                <p class="text-kitsuden-text-dim">No notifications.</p>
+                <p class="text-kitsuden-text-dim">{tr("dMSView.noNotifications")}</p>
               </div>
             {:else}
               <div class="space-y-2">
@@ -1650,7 +1658,7 @@
                               updatedAt: "",
                             })}
                         >
-                          View document →
+                          {tr("dMSView.viewDocument")}
                         </button>
                       {/if}
                     </div>
@@ -1658,7 +1666,7 @@
                       <button
                         class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
                         onclick={() => markNotificationRead(n.id)}
-                        title="Mark read"
+                        title={tr("dMSView.markRead")}
                       >
                         <Check class="w-3.5 h-3.5" />
                       </button>
@@ -1676,7 +1684,7 @@
                       loadNotifications();
                     }}
                   >
-                    Prev
+                    {tr("dMSView.prev")}
                   </button>
                   <span class="text-xs text-kitsuden-subtle">{notifPage} / {notifTotalPages}</span>
                   <button
@@ -1687,7 +1695,7 @@
                       loadNotifications();
                     }}
                   >
-                    Next
+                    {tr("common.next")}
                   </button>
                 </div>
               {/if}
@@ -1704,7 +1712,7 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-kitsuden-subtle">Total Documents</p>
+                      <p class="text-sm text-kitsuden-subtle">{tr("dMSView.totalDocuments")}</p>
                       <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.total || 0}
                       </p>
@@ -1719,7 +1727,7 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-kitsuden-subtle">Published</p>
+                      <p class="text-sm text-kitsuden-subtle">{tr("common.published")}</p>
                       <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.published || 0}
                       </p>
@@ -1734,7 +1742,7 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-kitsuden-subtle">Drafts</p>
+                      <p class="text-sm text-kitsuden-subtle">{tr("dMSView.drafts")}</p>
                       <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.draft || 0}
                       </p>
@@ -1749,7 +1757,7 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-kitsuden-subtle">In Review</p>
+                      <p class="text-sm text-kitsuden-subtle">{tr("dMSView.inReview")}</p>
                       <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.review_pending || 0}
                       </p>
@@ -1764,7 +1772,7 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-kitsuden-subtle">Archived</p>
+                      <p class="text-sm text-kitsuden-subtle">{tr("common.archived")}</p>
                       <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.documents?.archived || 0}
                       </p>
@@ -1779,7 +1787,7 @@
                 <div class="card p-5">
                   <div class="flex items-center justify-between">
                     <div>
-                      <p class="text-sm text-kitsuden-subtle">Upcoming Reviews</p>
+                      <p class="text-sm text-kitsuden-subtle">{tr("dMSView.upcomingReviews")}</p>
                       <p class="text-3xl font-bold text-kitsuden-text mt-1">
                         {stats.upcomingReviews?.length || 0}
                       </p>
@@ -1796,7 +1804,7 @@
               <!-- Status Distribution Bar -->
               {#if stats.statusDistribution}
                 <div class="card p-5">
-                  <h3 class="font-semibold text-kitsuden-text mb-4">Status Distribution</h3>
+                  <h3 class="font-semibold text-kitsuden-text mb-4">{tr("dMSView.statusDistribution")}</h3>
                   <div class="space-y-3">
                     {#each Object.entries(stats.statusDistribution) as [status, count]}
                       {@const cfg = getStatusConfig(status)}
@@ -1850,17 +1858,17 @@
             {#if drawerDoc?.isTemplate}
               <span
                 class="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 text-[10px] font-medium"
-                >TEMPLATE</span
+                >{tr("dMSView.template2")}</span
               >
             {/if}
             {#if drawerDoc?.requiresReview || isOverdue(drawerDoc?.reviewDueDate)}
               <span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] font-medium"
-                >REVIEW OVERDUE</span
+                >{tr("dMSView.reviewOverdue2")}</span
               >
             {/if}
           </div>
           <h2 class="text-lg font-bold text-kitsuden-text truncate">
-            {drawerDoc?.title || "Document"}
+            {drawerDoc?.title || tr("dMSView.document")}
           </h2>
         </div>
         <div class="flex items-center gap-2 shrink-0">
@@ -1870,16 +1878,16 @@
               onclick={() => drawerDoc && cloneFromTemplate(drawerDoc.id)}
             >
               <Copy class="w-3.5 h-3.5" />
-              Clone
+              {tr("dMSView.clone")}
             </button>
           {/if}
           <button class="btn-secondary btn-sm" onclick={() => exportVersion("md")}>
             <Download class="w-3.5 h-3.5" />
-            MD
+            {tr("dMSView.md")}
           </button>
           <button class="btn-secondary btn-sm" onclick={() => exportVersion("html")}>
             <FileCode class="w-3.5 h-3.5" />
-            HTML
+            {tr("dMSView.html")}
           </button>
           <button
             class="btn-danger btn-sm"
@@ -1946,17 +1954,17 @@
             ></div>
           </div>
         {:else if !drawerDoc}
-          <div class="text-center text-kitsuden-subtle">No document selected</div>
+          <div class="text-center text-kitsuden-subtle">{tr("dMSView.noDocumentSelected")}</div>
         {:else if drawerTab === "metadata"}
           <!-- Metadata Tab -->
           <div class="max-w-2xl space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label for="title" class="block text-xs text-kitsuden-subtle mb-1">Title</label>
+                <label for="title" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.title")}</label>
                 <input id="title" class="kitsuden-input w-full" bind:value={formDoc.title} />
               </div>
               <div>
-                <label for="code" class="block text-xs text-kitsuden-subtle mb-1">Code</label>
+                <label for="code" class="block text-xs text-kitsuden-subtle mb-1">{tr("dMSView.code")}</label>
                 <input
                   id="code"
                   class="kitsuden-input w-full font-mono"
@@ -1964,11 +1972,11 @@
                 />
               </div>
               <div>
-                <label for="slug" class="block text-xs text-kitsuden-subtle mb-1">Slug</label>
+                <label for="slug" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.slug")}</label>
                 <input id="slug" class="kitsuden-input w-full" bind:value={formDoc.slug} />
               </div>
               <div>
-                <label for="type" class="block text-xs text-kitsuden-subtle mb-1">Type</label>
+                <label for="type" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.type")}</label>
                 <select id="type" class="kitsuden-input w-full" bind:value={formDoc.type}>
                   {#each documentTypes as t}
                     <option value={t.id}>{t.label}</option>
@@ -1976,7 +1984,7 @@
                 </select>
               </div>
               <div>
-                <label for="status" class="block text-xs text-kitsuden-subtle mb-1">Status</label>
+                <label for="status" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.status")}</label>
                 <select id="status" class="kitsuden-input w-full" bind:value={formDoc.status}>
                   {#each workflowStatuses as s}
                     <option value={s.id}>{s.label}</option>
@@ -1985,14 +1993,14 @@
               </div>
               <div>
                 <label for="categoryid" class="block text-xs text-kitsuden-subtle mb-1"
-                  >Category</label
+                  >{tr("common.category")}</label
                 >
                 <select
                   id="categoryid"
                   class="kitsuden-input w-full"
                   bind:value={formDoc.categoryId}
                 >
-                  <option value="">None</option>
+                  <option value="">{tr("dMSView.none")}</option>
                   {#each categories as c}
                     <option value={c.id}>{c.name}</option>
                     {#each c.children || [] as child}
@@ -2003,7 +2011,7 @@
               </div>
               <div>
                 <label for="visibility" class="block text-xs text-kitsuden-subtle mb-1"
-                  >Visibility</label
+                  >{tr("common.visibility")}</label
                 >
                 <select
                   id="visibility"
@@ -2017,7 +2025,7 @@
               </div>
               <div>
                 <label for="effectivedate" class="block text-xs text-kitsuden-subtle mb-1"
-                  >Effective Date</label
+                  >{tr("dMSView.effectiveDate")}</label
                 >
                 <input
                   id="effectivedate"
@@ -2028,7 +2036,7 @@
               </div>
               <div>
                 <label for="reviewduedate" class="block text-xs text-kitsuden-subtle mb-1"
-                  >Review Due Date</label
+                  >{tr("dMSView.reviewDueDate")}</label
                 >
                 <input
                   id="reviewduedate"
@@ -2041,7 +2049,7 @@
               </div>
               <div>
                 <label for="expirationdate" class="block text-xs text-kitsuden-subtle mb-1"
-                  >Expiration Date</label
+                  >{tr("dMSView.expirationDate")}</label
                 >
                 <input
                   id="expirationdate"
@@ -2058,13 +2066,13 @@
                   bind:checked={formDoc.requiresAcknowledgment}
                 />
                 <label for="reqAck" class="text-sm text-kitsuden-text"
-                  >Requires Acknowledgment</label
+                  >{tr("dMSView.requiresAcknowledgment")}</label
                 >
               </div>
             </div>
             <div>
               <label for="description" class="block text-xs text-kitsuden-subtle mb-1"
-                >Description</label
+                >{tr("common.description")}</label
               >
               <textarea
                 id="description"
@@ -2075,7 +2083,7 @@
             </div>
             <div>
               <label for="tags-comma-separated" class="block text-xs text-kitsuden-subtle mb-1"
-                >Tags (comma separated)</label
+                >{tr("dMSView.tagsCommaSeparated")}</label
               >
               <input
                 id="tags-comma-separated"
@@ -2092,7 +2100,7 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label for="title-2" class="block text-xs text-kitsuden-subtle mb-1"
-                  >Allowed User IDs (comma separated)</label
+                  >{tr("dMSView.allowedUserIdsCommaSeparated")}</label
                 >
                 <input
                   class="kitsuden-input w-full"
@@ -2109,7 +2117,7 @@
               </div>
               <div>
                 <label class="block text-xs text-kitsuden-subtle mb-1"
-                  >Allowed Role IDs (comma separated)</label
+                  >{tr("dMSView.allowedRoleIdsCommaSeparated")}</label
                 >
                 <input
                   class="kitsuden-input w-full"
@@ -2129,13 +2137,13 @@
               <button class="btn-primary" onclick={updateDocument} disabled={saving}>
                 {#if saving}
                   <Loader2 class="w-4 h-4 animate-spin" />
-                  Saving...
+                  {tr("common.saving")}
                 {:else}
                   <Save class="w-4 h-4" />
-                  Save Changes
+                  {tr("dMSView.saveChanges")}
                 {/if}
               </button>
-              <button class="btn-secondary" onclick={closeDrawer}>Close</button>
+              <button class="btn-secondary" onclick={closeDrawer}>{tr("dMSView.close")}</button>
             </div>
           </div>
         {:else if drawerTab === "content"}
@@ -2143,12 +2151,12 @@
           <div class="h-full flex flex-col gap-3">
             <div class="flex items-center gap-3 shrink-0">
               <select class="kitsuden-input w-32" bind:value={contentFormat}>
-                <option value="markdown">Markdown</option>
-                <option value="html">HTML</option>
+                <option value="markdown">{tr("common.markdown")}</option>
+                <option value="html">{tr("dMSView.html")}</option>
               </select>
               <button class="btn-secondary btn-sm" onclick={insertDiagramPlaceholder}>
                 <Layers class="w-3.5 h-3.5" />
-                Insert Diagram
+                {tr("dMSView.insertDiagram")}
               </button>
               <button
                 class="btn-secondary btn-sm"
@@ -2157,12 +2165,12 @@
                 }}
               >
                 <Link2 class="w-3.5 h-3.5" />
-                Wiki Link
+                {tr("dMSView.wikiLink")}
               </button>
               <div class="ml-auto flex items-center gap-2">
                 <button class="btn-primary btn-sm" onclick={saveVersionContent} disabled={saving}>
                   {#if saving}<Loader2 class="w-3.5 h-3.5 animate-spin" />{/if}
-                  Save Content
+                  {tr("dMSView.saveContent")}
                 </button>
               </div>
             </div>
@@ -2173,7 +2181,7 @@
                   class="flex-1 kitsuden-input font-mono text-xs resize-none"
                   bind:value={contentEditor}
                   oninput={onContentInput}
-                  placeholder="Write your content here..."
+                  placeholder={tr("dMSView.writeYourContentHere")}
                 ></textarea>
                 {#if showWikiDropdown && wikiSuggestions.length > 0}
                   <div
@@ -2196,15 +2204,15 @@
               >
                 <div class="text-xs text-kitsuden-subtle mb-2 flex items-center gap-1">
                   <Eye class="w-3 h-3" />
-                  Preview
+                  {tr("common.preview")}
                 </div>
                 {#if renderedHtml}
                   <div class="prose prose-invert prose-sm max-w-none">
-                    {@html renderedHtml}
+                    {@html limpiarHtml(renderedHtml)}
                   </div>
                 {:else}
                   <p class="text-sm text-kitsuden-subtle">
-                    Preview will appear here after saving or when render is available.
+                    {tr("dMSView.previewWillAppearHereAfter")}
                   </p>
                 {/if}
               </div>
@@ -2212,13 +2220,13 @@
             <div class="flex items-center gap-3 shrink-0 pt-2 border-t border-kitsuden-border">
               <input
                 class="kitsuden-input flex-1 text-sm"
-                placeholder="Changelog for this edit..."
+                placeholder={tr("dMSView.changelogForThisEdit")}
                 bind:value={changelogInput}
               />
               <select class="kitsuden-input w-28 text-sm" bind:value={changeTypeInput}>
-                <option value="major">Major</option>
-                <option value="minor">Minor</option>
-                <option value="patch">Patch</option>
+                <option value="major">{tr("dMSView.major")}</option>
+                <option value="minor">{tr("dMSView.minor")}</option>
+                <option value="patch">{tr("dMSView.patch")}</option>
               </select>
               <button
                 class="btn-primary btn-sm"
@@ -2226,7 +2234,7 @@
                 disabled={saving || !changelogInput.trim()}
               >
                 <GitCommit class="w-3.5 h-3.5" />
-                New Version
+                {tr("dMSView.newVersion")}
               </button>
             </div>
           </div>
@@ -2234,14 +2242,14 @@
           <!-- Versions Tab -->
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold text-kitsuden-text">Version History</h3>
+              <h3 class="font-semibold text-kitsuden-text">{tr("dMSView.versionHistory")}</h3>
               <button class="btn-primary btn-sm" onclick={() => (showCreateVersionModal = true)}>
                 <Plus class="w-3.5 h-3.5" />
-                Create Version
+                {tr("dMSView.createVersion")}
               </button>
             </div>
             {#if versions.length === 0}
-              <div class="card p-8 text-center text-kitsuden-subtle text-sm">No versions yet.</div>
+              <div class="card p-8 text-center text-kitsuden-subtle text-sm">{tr("dMSView.noVersionsYet")}</div>
             {:else}
               <div class="space-y-2">
                 {#each versions as v}
@@ -2268,10 +2276,10 @@
                         >
                       </div>
                       <p class="text-xs text-kitsuden-subtle mt-1">
-                        {v.changelog || "No changelog"}
+                        {v.changelog || tr("dMSView.noChangelog")}
                       </p>
                       <p class="text-xs text-kitsuden-text-dim">
-                        By {v.createdBy?.name || "Unknown"}
+                        {tr("dMSView.by")} {v.createdBy?.name || tr("dMSView.unknown")}
                       </p>
                       <div class="flex items-center gap-2 mt-2">
                         {#if v.status === "draft"}
@@ -2280,7 +2288,7 @@
                             onclick={() => submitForReview(v.id)}
                           >
                             <Send class="w-3 h-3" />
-                            Submit for Review
+                            {tr("dMSView.submitForReview")}
                           </button>
                         {:else if v.status === "review_pending"}
                           <button
@@ -2288,29 +2296,29 @@
                             onclick={() => reviewVersion(v.id, "approved")}
                           >
                             <Check class="w-3 h-3" />
-                            Approve
+                            {tr("dMSView.approve")}
                           </button>
                           <button
                             class="btn-danger btn-sm"
                             onclick={() => reviewVersion(v.id, "changes_requested")}
                           >
                             <XCircle class="w-3 h-3" />
-                            Request Changes
+                            {tr("dMSView.requestChanges")}
                           </button>
                           <input
                             class="kitsuden-input w-48 text-xs"
-                            placeholder="Review notes..."
+                            placeholder={tr("dMSView.reviewNotes")}
                             bind:value={reviewNotes}
                           />
                         {:else if v.status === "approved"}
                           <button class="btn-primary btn-sm" onclick={() => publishVersion(v.id)}>
                             <CheckCircle class="w-3 h-3" />
-                            Publish
+                            {tr("dMSView.publish")}
                           </button>
                         {:else if v.status === "published"}
                           <span class="text-xs text-blue-400 flex items-center gap-1">
                             <CheckCircle class="w-3 h-3" />
-                            Published
+                            {tr("common.published")}
                           </span>
                         {/if}
                       </div>
@@ -2323,7 +2331,7 @@
         {:else if drawerTab === "comments"}
           <!-- Comments Tab -->
           <div class="space-y-4">
-            <h3 class="font-semibold text-kitsuden-text">Comments</h3>
+            <h3 class="font-semibold text-kitsuden-text">{tr("dMSView.comments")}</h3>
             <div class="flex gap-3">
               <div
                 class="w-8 h-8 rounded-full bg-kitsuden-accent/20 flex items-center justify-center text-kitsuden-accent text-xs font-bold shrink-0"
@@ -2333,17 +2341,17 @@
               <div class="flex-1">
                 {#if replyToId}
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs text-kitsuden-accent">Replying to comment</span>
+                    <span class="text-xs text-kitsuden-accent">{tr("dMSView.replyingToComment")}</span>
                     <button
                       class="text-xs text-kitsuden-subtle hover:text-kitsuden-text"
-                      onclick={() => (replyToId = null)}>Cancel</button
+                      onclick={() => (replyToId = null)}>{tr("common.cancel")}</button
                     >
                   </div>
                 {/if}
                 <textarea
                   rows="2"
                   class="kitsuden-input w-full text-sm"
-                  placeholder="Add a comment..."
+                  placeholder={tr("dMSView.addAComment")}
                   bind:value={commentInput}
                 ></textarea>
                 <div class="flex justify-end mt-2">
@@ -2353,7 +2361,7 @@
                     disabled={!commentInput.trim()}
                   >
                     <Send class="w-3 h-3" />
-                    Post
+                    {tr("dMSView.post")}
                   </button>
                 </div>
               </div>
@@ -2370,7 +2378,7 @@
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-kitsuden-text"
-                          >{comment.createdBy?.name || "Unknown"}</span
+                          >{comment.createdBy?.name || tr("dMSView.unknown")}</span
                         >
                         <span class="text-xs text-kitsuden-subtle"
                           >{formatDateTime(comment.createdAt)}</span
@@ -2383,7 +2391,7 @@
                           onclick={() => (replyToId = comment.id)}
                         >
                           <Reply class="w-3 h-3" />
-                          Reply
+                          {tr("dMSView.reply")}
                         </button>
                         {#if !comment.resolved}
                           <button
@@ -2391,12 +2399,12 @@
                             onclick={() => resolveComment(comment.id)}
                           >
                             <Check class="w-3 h-3" />
-                            Resolve
+                            {tr("dMSView.resolve")}
                           </button>
                         {:else}
                           <span class="text-xs text-green-400 flex items-center gap-1">
                             <CheckCircle class="w-3 h-3" />
-                            Resolved
+                            {tr("dMSView.resolved")}
                           </span>
                         {/if}
                         <button
@@ -2404,7 +2412,7 @@
                           onclick={() => deleteComment(comment.id)}
                         >
                           <Trash2 class="w-3 h-3" />
-                          Delete
+                          {tr("common.delete")}
                         </button>
                       </div>
                       {#if comment.replies && comment.replies.length > 0}
@@ -2419,7 +2427,7 @@
                               <div class="flex-1">
                                 <div class="flex items-center gap-2">
                                   <span class="text-xs font-medium text-kitsuden-text"
-                                    >{reply.createdBy?.name || "Unknown"}</span
+                                    >{reply.createdBy?.name || tr("dMSView.unknown")}</span
                                   >
                                   <span class="text-[10px] text-kitsuden-subtle"
                                     >{formatDateTime(reply.createdAt)}</span
@@ -2436,7 +2444,7 @@
                 </div>
               {/each}
               {#if comments.length === 0}
-                <div class="text-center text-kitsuden-subtle text-sm py-8">No comments yet.</div>
+                <div class="text-center text-kitsuden-subtle text-sm py-8">{tr("dMSView.noCommentsYet")}</div>
               {/if}
             </div>
           </div>
@@ -2444,15 +2452,15 @@
           <!-- Diagrams Tab -->
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold text-kitsuden-text">Diagrams</h3>
+              <h3 class="font-semibold text-kitsuden-text">{tr("dMSView.diagrams")}</h3>
               <button class="btn-primary btn-sm" onclick={() => (showCreateDiagramModal = true)}>
                 <Plus class="w-3.5 h-3.5" />
-                Add Diagram
+                {tr("dMSView.addDiagram")}
               </button>
             </div>
             {#if diagrams.length === 0}
               <div class="card p-8 text-center text-kitsuden-subtle text-sm">
-                No diagrams for this version.
+                {tr("dMSView.noDiagramsForThisVersion")}
               </div>
             {:else}
               <div class="grid grid-cols-1 gap-3">
@@ -2469,7 +2477,7 @@
                     </div>
                     {#if d.renderedSvg}
                       <div class="bg-white rounded-lg p-2 overflow-auto">
-                        {@html d.renderedSvg}
+                        {@html limpiarSvg(d.renderedSvg)}
                       </div>
                     {:else if d.sourceXml}
                       <pre
@@ -2478,7 +2486,7 @@
                           500
                         )}{d.sourceXml.length > 500 ? "..." : ""}</pre>
                     {:else}
-                      <p class="text-xs text-kitsuden-subtle">No preview available</p>
+                      <p class="text-xs text-kitsuden-subtle">{tr("dMSView.noPreviewAvailable")}</p>
                     {/if}
                   </div>
                 {/each}
@@ -2488,9 +2496,9 @@
         {:else if drawerTab === "audit"}
           <!-- Audit Tab -->
           <div class="space-y-4">
-            <h3 class="font-semibold text-kitsuden-text">Audit Log</h3>
+            <h3 class="font-semibold text-kitsuden-text">{tr("dMSView.auditLog")}</h3>
             {#if auditEntries.length === 0}
-              <div class="card p-8 text-center text-kitsuden-subtle text-sm">No audit entries.</div>
+              <div class="card p-8 text-center text-kitsuden-subtle text-sm">{tr("dMSView.noAuditEntries")}</div>
             {:else}
               <div class="relative pl-4 border-l border-kitsuden-border space-y-4">
                 {#each auditEntries as entry}
@@ -2506,7 +2514,7 @@
                         >
                       </div>
                       <p class="text-xs text-kitsuden-subtle mt-1">
-                        By {entry.user?.name || "System"}
+                        {tr("dMSView.by")} {entry.user?.name || tr("common.system")}
                       </p>
                       {#if entry.details}
                         <pre
@@ -2525,11 +2533,11 @@
         {:else if drawerTab === "backlinks"}
           <!-- Backlinks Tab -->
           <div class="space-y-4">
-            <h3 class="font-semibold text-kitsuden-text">Backlinks</h3>
-            <p class="text-sm text-kitsuden-subtle">Documents that link to this document.</p>
+            <h3 class="font-semibold text-kitsuden-text">{tr("dMSView.backlinks")}</h3>
+            <p class="text-sm text-kitsuden-subtle">{tr("dMSView.documentsThatLinkToThis")}</p>
             {#if backlinks.length === 0}
               <div class="card p-8 text-center text-kitsuden-subtle text-sm">
-                No backlinks found.
+                {tr("dMSView.noBacklinksFound")}
               </div>
             {:else}
               <div class="space-y-2">
@@ -2582,7 +2590,7 @@
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
     >
       <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
-        <h3 class="text-lg font-semibold text-kitsuden-text">New Document</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text">{tr("dMSView.newDocument")}</h3>
         <button
           onclick={() => (showCreateDocModal = false)}
           class="p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-bg transition-all"
@@ -2593,18 +2601,18 @@
       <form onsubmit={createDocument} class="p-6 space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-kitsuden-subtle mb-1">Title *</label>
+            <label class="block text-xs text-kitsuden-subtle mb-1">{tr("dMSView.title")}</label>
             <input
               id="title-2"
               bind:value={formDoc.title}
               type="text"
-              placeholder="Document title"
+              placeholder={tr("dMSView.documentTitle")}
               class="kitsuden-input w-full"
               required
             />
           </div>
           <div>
-            <label for="type-2" class="block text-xs text-kitsuden-subtle mb-1">Type</label>
+            <label for="type-2" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.type")}</label>
             <select id="type-2" bind:value={formDoc.type} class="kitsuden-input w-full">
               {#each documentTypes as t}
                 <option value={t.id}>{t.label}</option>
@@ -2614,19 +2622,19 @@
         </div>
         <div>
           <label for="description-2" class="block text-xs text-kitsuden-subtle mb-1"
-            >Description</label
+            >{tr("common.description")}</label
           >
           <textarea
             id="description-2"
             bind:value={formDoc.description}
             rows="3"
-            placeholder="Short description"
+            placeholder={tr("dMSView.shortDescription")}
             class="kitsuden-input w-full"
           ></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="status-2" class="block text-xs text-kitsuden-subtle mb-1">Status</label>
+            <label for="status-2" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.status")}</label>
             <select id="status-2" bind:value={formDoc.status} class="kitsuden-input w-full">
               {#each workflowStatuses as s}
                 <option value={s.id}>{s.label}</option>
@@ -2635,10 +2643,10 @@
           </div>
           <div>
             <label for="categoryid-2" class="block text-xs text-kitsuden-subtle mb-1"
-              >Category</label
+              >{tr("common.category")}</label
             >
             <select id="categoryid-2" bind:value={formDoc.categoryId} class="kitsuden-input w-full">
-              <option value="">No category</option>
+              <option value="">{tr("dMSView.noCategory")}</option>
               {#each categories as cat}
                 <option value={cat.id}>{cat.name}</option>
                 {#each cat.children || [] as child}
@@ -2651,7 +2659,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="visibility-2" class="block text-xs text-kitsuden-subtle mb-1"
-              >Visibility</label
+              >{tr("common.visibility")}</label
             >
             <select id="visibility-2" bind:value={formDoc.visibility} class="kitsuden-input w-full">
               {#each visibilityOptions as v}
@@ -2661,12 +2669,12 @@
           </div>
           <div>
             <label for="tags-comma-separated-2" class="block text-xs text-kitsuden-subtle mb-1"
-              >Tags (comma separated)</label
+              >{tr("dMSView.tagsCommaSeparated")}</label
             >
             <input
               id="tags-comma-separated-2"
               type="text"
-              placeholder="policy, hr, 2025"
+              placeholder={tr("dMSView.policyHr2025")}
               class="kitsuden-input w-full"
               oninput={(e) => {
                 formDoc.tags = (e.target as HTMLInputElement).value
@@ -2679,17 +2687,17 @@
         </div>
         <div class="flex justify-end gap-3 pt-4 border-t border-kitsuden-border">
           <button type="button" onclick={() => (showCreateDocModal = false)} class="btn-secondary"
-            >Cancel</button
+            >{tr("common.cancel")}</button
           >
           <button type="submit" disabled={saving || !formDoc.title} class="btn-primary">
             {#if saving}
               <span
                 class="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"
               ></span>
-              Creating...
+              {tr("common.creating")}
             {:else}
               <Plus class="w-4 h-4" />
-              Create Document
+              {tr("dMSView.createDocument")}
             {/if}
           </button>
         </div>
@@ -2709,7 +2717,7 @@
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
     >
       <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
-        <h3 class="text-lg font-semibold text-kitsuden-text">New Category</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text">{tr("dMSView.newCategory")}</h3>
         <button
           onclick={() => (showCreateCatModal = false)}
           class="p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-text hover:bg-kitsuden-bg transition-all"
@@ -2719,32 +2727,32 @@
       </div>
       <form onsubmit={saveCategory} class="p-6 space-y-4">
         <div>
-          <label for="newcategoryname" class="block text-xs text-kitsuden-subtle mb-1">Name *</label
+          <label for="newcategoryname" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.name2")}</label
           >
           <input
             id="newcategoryname"
             bind:value={newCategoryName}
             type="text"
-            placeholder="Category name"
+            placeholder={tr("dMSView.categoryName")}
             class="kitsuden-input w-full"
             required
           />
         </div>
         <div>
           <label for="newcategorydescription" class="block text-xs text-kitsuden-subtle mb-1"
-            >Description</label
+            >{tr("common.description")}</label
           >
           <textarea
             id="newcategorydescription"
             bind:value={newCategoryDescription}
             rows="2"
-            placeholder="Short description"
+            placeholder={tr("dMSView.shortDescription")}
             class="kitsuden-input w-full"
           ></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="newcategoryicon" class="block text-xs text-kitsuden-subtle mb-1">Icon</label
+            <label for="newcategoryicon" class="block text-xs text-kitsuden-subtle mb-1">{tr("dMSView.icon")}</label
             >
             <input
               id="newcategoryicon"
@@ -2756,7 +2764,7 @@
           </div>
           <div>
             <label for="newcategorycolor" class="block text-xs text-kitsuden-subtle mb-1"
-              >Color</label
+              >{tr("dMSView.color")}</label
             >
             <input
               id="newcategorycolor"
@@ -2768,14 +2776,14 @@
         </div>
         <div>
           <label for="newcategoryparentid" class="block text-xs text-kitsuden-subtle mb-1"
-            >Parent Category</label
+            >{tr("dMSView.parentCategory")}</label
           >
           <select
             id="newcategoryparentid"
             bind:value={newCategoryParentId}
             class="kitsuden-input w-full"
           >
-            <option value="">None (root)</option>
+            <option value="">{tr("dMSView.noneRoot")}</option>
             {#each categories as cat}
               <option value={cat.id}>{cat.name}</option>
             {/each}
@@ -2783,17 +2791,17 @@
         </div>
         <div class="flex justify-end gap-3 pt-4 border-t border-kitsuden-border">
           <button type="button" onclick={() => (showCreateCatModal = false)} class="btn-secondary"
-            >Cancel</button
+            >{tr("common.cancel")}</button
           >
           <button type="submit" disabled={saving || !newCategoryName} class="btn-primary">
             {#if saving}
               <span
                 class="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"
               ></span>
-              Creating...
+              {tr("common.creating")}
             {:else}
               <Plus class="w-4 h-4" />
-              Create Category
+              {tr("dMSView.createCategory")}
             {/if}
           </button>
         </div>
@@ -2818,18 +2826,18 @@
         >
           <AlertCircle class="w-5 h-5 text-kitsuden-accent-2" />
         </div>
-        <h3 class="text-lg font-semibold text-kitsuden-text">Confirm Deletion</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text">{tr("dMSView.confirmDeletion")}</h3>
       </div>
       <p class="text-sm text-kitsuden-subtle mb-6">
-        Are you sure you want to delete {deleteTargetIds.length} document(s)? This action cannot be undone.
+        {tr("dMSView.areYouSureYouWant", { deleteTargetIdsCount: deleteTargetIds.length })}
       </p>
       <div class="flex justify-end gap-3">
         <button class="btn-secondary" onclick={() => (showConfirmDeleteModal = false)}
-          >Cancel</button
+          >{tr("common.cancel")}</button
         >
         <button class="btn-danger" onclick={() => deleteDocuments(deleteTargetIds)}>
           <Trash2 class="w-4 h-4" />
-          Delete
+          {tr("common.delete")}
         </button>
       </div>
     </div>
@@ -2846,33 +2854,33 @@
     <div
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6"
     >
-      <h3 class="text-lg font-semibold text-kitsuden-text mb-4">Create New Version</h3>
+      <h3 class="text-lg font-semibold text-kitsuden-text mb-4">{tr("dMSView.createNewVersion")}</h3>
       <div class="space-y-4">
         <div>
           <label for="changetypeinput" class="block text-xs text-kitsuden-subtle mb-1"
-            >Change Type</label
+            >{tr("dMSView.changeType")}</label
           >
           <select id="changetypeinput" class="kitsuden-input w-full" bind:value={changeTypeInput}>
-            <option value="major">Major</option>
-            <option value="minor">Minor</option>
-            <option value="patch">Patch</option>
+            <option value="major">{tr("dMSView.major")}</option>
+            <option value="minor">{tr("dMSView.minor")}</option>
+            <option value="patch">{tr("dMSView.patch")}</option>
           </select>
         </div>
         <div>
           <label for="changeloginput" class="block text-xs text-kitsuden-subtle mb-1"
-            >Changelog</label
+            >{tr("dMSView.changelog")}</label
           >
           <textarea
             id="changeloginput"
             rows="3"
             class="kitsuden-input w-full"
-            placeholder="Describe what changed..."
+            placeholder={tr("dMSView.describeWhatChanged")}
             bind:value={changelogInput}
           ></textarea>
         </div>
         <div class="flex justify-end gap-3 pt-2">
           <button class="btn-secondary" onclick={() => (showCreateVersionModal = false)}
-            >Cancel</button
+            >{tr("common.cancel")}</button
           >
           <button
             class="btn-primary"
@@ -2880,7 +2888,7 @@
             disabled={saving || !changelogInput.trim()}
           >
             {#if saving}<Loader2 class="w-4 h-4 animate-spin" />{/if}
-            Create Version
+            {tr("dMSView.createVersion")}
           </button>
         </div>
       </div>
@@ -2898,40 +2906,40 @@
     <div
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6"
     >
-      <h3 class="text-lg font-semibold text-kitsuden-text mb-4">Add Diagram</h3>
+      <h3 class="text-lg font-semibold text-kitsuden-text mb-4">{tr("dMSView.addDiagram")}</h3>
       <form onsubmit={createDiagram} class="space-y-4">
         <div>
-          <label for="newdiagramname" class="block text-xs text-kitsuden-subtle mb-1">Name</label>
+          <label for="newdiagramname" class="block text-xs text-kitsuden-subtle mb-1">{tr("common.name")}</label>
           <input
             id="newdiagramname"
             type="text"
             class="kitsuden-input w-full"
             bind:value={newDiagramName}
-            placeholder="Diagram name"
+            placeholder={tr("dMSView.diagramName")}
             required
           />
         </div>
         <div>
           <label for="newdiagramsource" class="block text-xs text-kitsuden-subtle mb-1"
-            >Source XML / JSON</label
+            >{tr("dMSView.sourceXmlJson")}</label
           >
           <textarea
             id="newdiagramsource"
             rows="6"
             class="kitsuden-input w-full font-mono text-xs"
             bind:value={newDiagramSource}
-            placeholder="Paste diagram source XML or JSON..."
+            placeholder={tr("dMSView.pasteDiagramSourceXmlOr")}
           ></textarea>
         </div>
         <div class="flex justify-end gap-3 pt-2">
           <button
             type="button"
             class="btn-secondary"
-            onclick={() => (showCreateDiagramModal = false)}>Cancel</button
+            onclick={() => (showCreateDiagramModal = false)}>{tr("common.cancel")}</button
           >
           <button type="submit" class="btn-primary" disabled={saving || !newDiagramName}>
             {#if saving}<Loader2 class="w-4 h-4 animate-spin" />{/if}
-            Add Diagram
+            {tr("dMSView.addDiagram")}
           </button>
         </div>
       </form>

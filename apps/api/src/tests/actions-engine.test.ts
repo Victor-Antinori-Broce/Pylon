@@ -11,7 +11,7 @@ import { db } from "../db";
 import { actions } from "../db/schema";
 import { app } from "../index";
 
-import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
+import { isDatabaseAvailable, clearTestData, generateTestId, entrarComo } from "./setup";
 
 let dbAvailable = false;
 
@@ -20,11 +20,6 @@ function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   if (cookie) headers.set("Cookie", cookie);
   headers.set("Content-Type", "application/json");
   return new Request(`http://localhost:3000${path}`, { ...opts, headers });
-}
-
-function extractCookie(headers: Headers): string {
-  const setCookie = headers.get("set-cookie") || "";
-  return setCookie.split(";")[0];
 }
 
 describe("Actions Engine HTTP", () => {
@@ -49,19 +44,14 @@ describe("Actions Engine HTTP", () => {
     it("creates and signs in a user", async () => {
       if (!dbAvailable) return;
 
-      await app.request(
-        req("/api/auth/sign-up/email", {
-          method: "POST",
-          body: JSON.stringify({ email, password, name: "Actions User" }),
-        })
-      );
-      const res = await app.request(
-        req("/api/auth/sign-in/email", {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        })
-      );
-      cookie = extractCookie(res.headers);
+      // /api/actions es solo de admin (middleware/matriz-de-autorizacion.ts):
+      // ejecuta código. Un usuario normal recibiría 403 en todo lo de abajo.
+      ({ cookie } = await entrarComo(app, {
+        email,
+        password,
+        name: "Actions User",
+        role: "admin",
+      }));
     });
   });
 
@@ -101,9 +91,12 @@ describe("Actions Engine HTTP", () => {
       const res = await app.request(req("/api/actions", {}, cookie));
       expect(res.status).toBe(200);
 
+      // El listado responde `{ docs, totalDocs }` (routes/actions.ts), como el
+      // resto de listados de la API; el test esperaba el array a pelo.
       const body = (await res.json()) as any;
-      expect(Array.isArray(body)).toBe(true);
-      expect(body.some((a: any) => a.id === actionId)).toBe(true);
+      expect(Array.isArray(body.docs)).toBe(true);
+      expect(body.totalDocs).toBe(body.docs.length);
+      expect(body.docs.some((a: any) => a.id === actionId)).toBe(true);
     });
 
     it("should get action by id", async () => {

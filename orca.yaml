@@ -1,0 +1,15 @@
+# Worktree setup for agent IDEs that read orca.yaml (works with Orca).
+# Each worktree gets its own Postgres database on the TEST server (port 5434)
+# and its own block of ports, so parallel agents never share data.
+# Details and safety rules: docs/agents/orca.md, scripts/orca/worktree.mjs.
+scripts:
+  setup: |
+    pnpm install --frozen-lockfile
+    node scripts/orca/worktree.mjs setup
+  archive: |
+    node scripts/orca/worktree.mjs archive
+setupAgentStartupPolicy: wait-for-setup
+defaultTabs:
+  - title: Agent
+  - title: Worktree
+    command: node scripts/orca/worktree.mjs status

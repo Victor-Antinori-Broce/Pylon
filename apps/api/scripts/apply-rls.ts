@@ -27,6 +27,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const SQL_FILES = [
   resolve(here, "../src/db/rls-policies.sql"),
   resolve(here, "../src/db/rls-owned-tables.sql"),
+  // Núcleo: secretos, credenciales, auditoría y auth_users (2026-10-15)
+  resolve(here, "../src/db/rls-solo-sistema.sql"),
 ];
 
 /**

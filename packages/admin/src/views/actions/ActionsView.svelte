@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * ActionsView.svelte — Unified UI for Workers + Webhooks (Phase 1 & 2)
    *
@@ -167,7 +168,7 @@
         type: "webhook_out",
         name: w.name,
         slug: w.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        description: `Webhook for ${w.event}`,
+        description: t("actionsView.webhookFor", { event: w.event }),
         trigger: "event",
         status: w.enabled ? "active" : "paused",
         triggerConfig: { eventName: w.event },
@@ -221,7 +222,7 @@
       await loadActions();
     } catch (err: any) {
       console.error("Failed to save action:", err);
-      alert(err.message || "Failed to create action");
+      alert(err.message || t("actionsView.failedToCreateAction"));
     } finally {
       saving = false;
     }
@@ -251,7 +252,7 @@
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error("Failed to create action");
+    if (!res.ok) throw new Error(t("actionsView.failedToCreateAction2"));
   }
 
   async function saveViaLegacyApi() {
@@ -272,7 +273,7 @@
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to create worker");
+      if (!res.ok) throw new Error(t("actionsView.failedToCreateWorker"));
     } else {
       const payload = {
         name: formName,
@@ -288,7 +289,7 @@
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to create webhook");
+      if (!res.ok) throw new Error(t("actionsView.failedToCreateWebhook"));
     }
   }
 
@@ -350,7 +351,7 @@
 
   function getTriggerLabel(action: Action): string {
     if (action.trigger === "cron" && action.triggerConfig?.cronExpression) {
-      return `Cron: ${action.triggerConfig.cronExpression}`;
+      return t("actionsView.cron", { cronExpression: action.triggerConfig.cronExpression });
     }
     if (action.trigger === "event" && action.triggerConfig?.eventName) {
       return `On ${action.triggerConfig.eventName}`;
@@ -414,12 +415,12 @@
         >
           <Zap class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Acciones
+        {t("common.acciones")}
       </h1>
       <p class="text-sm text-kitsuden-subtle mt-1">
-        Automatizaciones, webhooks y tareas programadas — todo en un solo lugar.
+        {t("actionsView.automatizacionesWebhooksYTareasProgramad")}
         {#if !useNewApi}
-          <span class="text-kitsuden-amber">(Legacy Mode)</span>
+          <span class="text-kitsuden-amber">{t("actionsView.legacyMode")}</span>
         {/if}
       </p>
     </div>
@@ -429,14 +430,14 @@
         class="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-amber-500/5 hover:border-amber-500/20 hover:text-amber-400 transition-all duration-200"
       >
         <Code class="w-4 h-4 group-hover:scale-110 transition-transform" />
-        Nuevo Worker
+        {t("actionsView.nuevoWorker")}
       </button>
       <button
         onclick={() => openCreateModal("webhook_out")}
         class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
       >
         <Webhook class="w-4 h-4 group-hover:rotate-12 transition-transform" />
-        Nuevo Webhook
+        {t("actionsView.nuevoWebhook")}
       </button>
     </div>
   </div>
@@ -450,7 +451,7 @@
         </div>
         <div>
           <p class="text-2xl font-bold text-kitsuden-text">{stats.total}</p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total Acciones</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("actionsView.totalAcciones")}</p>
         </div>
       </div>
     </div>
@@ -461,7 +462,7 @@
         </div>
         <div>
           <p class="text-2xl font-bold text-kitsuden-text">{stats.active}</p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Activos</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("actionsView.activos")}</p>
         </div>
       </div>
     </div>
@@ -472,7 +473,7 @@
         </div>
         <div>
           <p class="text-2xl font-bold text-kitsuden-text">{stats.code}</p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Workers</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("actionsView.workers")}</p>
         </div>
       </div>
     </div>
@@ -483,7 +484,7 @@
         </div>
         <div>
           <p class="text-2xl font-bold text-kitsuden-text">{stats.webhooks}</p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Webhooks</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("actionsView.webhooks")}</p>
         </div>
       </div>
     </div>
@@ -492,7 +493,7 @@
   <!-- Tabs -->
   <div class="border-b border-kitsuden-border">
     <div class="flex gap-1">
-      {#each [{ id: "all", label: "Todas las Acciones", icon: Zap }, { id: "code", label: "Workers", icon: Terminal }, { id: "webhook_out", label: "Webhooks", icon: Globe }] as tab}
+      {#each [{ id: "all", label: t("actionsView.todasLasAcciones"), icon: Zap }, { id: "code", label: t("actionsView.workers2"), icon: Terminal }, { id: "webhook_out", label: t("actionsView.webhooks2"), icon: Globe }] as tab}
         <button
           onclick={() => (activeTab = tab.id as any)}
           class="group px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 inline-flex items-center gap-2"
@@ -520,9 +521,9 @@
     {:else if filteredActions.length === 0}
       <div class="p-16 text-center">
         <Zap class="w-16 h-16 mx-auto text-kitsuden-accent/30 mb-4" />
-        <h3 class="text-lg font-medium text-kitsuden-text mb-2">No actions configured</h3>
+        <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("actionsView.noActionsConfigured")}</h3>
         <p class="text-sm text-kitsuden-subtle mb-4">
-          Create your first automation to get started.
+          {t("actionsView.createYourFirstAutomationTo")}
         </p>
         <div class="flex justify-center gap-3">
           <button
@@ -530,14 +531,14 @@
             class="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-amber-500/5 hover:border-amber-500/20 hover:text-amber-400 transition-all duration-200"
           >
             <Code class="w-4 h-4 group-hover:scale-110 transition-transform" />
-            Nuevo Worker
+            {t("actionsView.nuevoWorker")}
           </button>
           <button
             onclick={() => openCreateModal("webhook_out")}
             class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-kitsuden-accent to-kitsuden-accent text-black rounded-xl font-semibold shadow-lg shadow-kitsuden-accent/25 hover:shadow-kitsuden-accent/40 hover:scale-105 active:scale-95 transition-all duration-200"
           >
             <Webhook class="w-4 h-4 group-hover:rotate-12 transition-transform" />
-            Nuevo Webhook
+            {t("actionsView.nuevoWebhook")}
           </button>
         </div>
       </div>
@@ -546,19 +547,19 @@
         <thead class="bg-kitsuden-surface/50 border-b border-kitsuden-border">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
-              >Tipo</th
+              >{t("actionsView.tipo")}</th
             >
             <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
-              >Nombre</th
+              >{t("common.nombre")}</th
             >
             <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
-              >Trigger</th
+              >{t("actionsView.trigger")}</th
             >
             <th class="px-4 py-3 text-left text-xs font-medium text-kitsuden-subtle uppercase"
-              >Estado</th
+              >{t("common.estado")}</th
             >
             <th class="px-4 py-3 text-right text-xs font-medium text-kitsuden-subtle uppercase"
-              >Acciones</th
+              >{t("common.acciones")}</th
             >
           </tr>
         </thead>
@@ -607,7 +608,7 @@
                     ? 'border-kitsuden-green/30 bg-kitsuden-green/10 text-kitsuden-green'
                     : 'border-kitsuden-subtle/30 bg-kitsuden-subtle/10 text-kitsuden-subtle'}"
                 >
-                  {action.status === "active" ? "Activo" : "Pausado"}
+                  {action.status === "active" ? t("actionsView.activo") : t("actionsView.pausado")}
                 </span>
               </td>
               <td class="px-4 py-3 text-right">
@@ -617,7 +618,7 @@
                   {#if action.type === "code"}
                     <button
                       class="group/btn p-2 rounded-xl text-kitsuden-text-dim hover:text-kitsuden-accent hover:bg-kitsuden-accent/10 transition-all duration-200 hover:scale-110"
-                      title="Ejecutar ahora"
+                      title={t("actionsView.ejecutarAhora")}
                       onclick={() => runAction(action)}
                     >
                       <RotateCcw
@@ -630,7 +631,7 @@
                     'active'
                       ? 'text-emerald-400 hover:bg-emerald-500/10'
                       : 'text-amber-400 hover:bg-amber-500/10'}"
-                    title={action.status === "active" ? "Pausar" : "Reanudar"}
+                    title={action.status === "active" ? t("actionsView.pausar") : t("actionsView.reanudar")}
                     onclick={() => toggleAction(action)}
                   >
                     {#if action.status === "active"}
@@ -662,7 +663,7 @@
     >
       <div class="flex items-center justify-between p-6 border-b border-kitsuden-border">
         <h3 class="text-lg font-semibold text-kitsuden-text">
-          Nuevo {createType === "code" ? "Worker" : "Webhook"}
+          {t("actionsView.nuevo")} {createType === "code" ? t("actionsView.worker") : t("actionsView.webhook")}
         </h3>
         <button
           onclick={() => (showCreateModal = false)}
@@ -674,14 +675,14 @@
 
       <form onsubmit={saveAction} class="p-6 space-y-4">
         <div>
-          <label for="formname" class="block text-xs text-kitsuden-subtle mb-1">Nombre *</label>
+          <label for="formname" class="block text-xs text-kitsuden-subtle mb-1">{t("actionsView.nombre")}</label>
           <input
             id="formname"
             bind:value={formName}
             type="text"
             placeholder={createType === "code"
-              ? "ej. Resumen Diario de Emails"
-              : "ej. Notificar Slack"}
+              ? t("actionsView.ejResumenDiarioDeEmails")
+              : t("actionsView.ejNotificarSlack")}
             class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
             required
           />
@@ -689,39 +690,39 @@
 
         <div>
           <label for="formdescription" class="block text-xs text-kitsuden-subtle mb-1"
-            >Descripción</label
+            >{t("common.descripcion")}</label
           >
           <input
             id="formdescription"
             bind:value={formDescription}
             type="text"
-            placeholder="¿Qué hace esta acción?"
+            placeholder={t("actionsView.queHaceEstaAccion")}
             class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
           />
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="formtrigger" class="block text-xs text-kitsuden-subtle mb-1">Trigger</label>
+            <label for="formtrigger" class="block text-xs text-kitsuden-subtle mb-1">{t("actionsView.trigger")}</label>
             <select
               id="formtrigger"
               bind:value={formTrigger}
               class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
             >
               {#if createType === "code"}
-                <option value="cron">Programación Cron</option>
-                <option value="event">Evento del Sistema</option>
+                <option value="cron">{t("actionsView.programacionCron")}</option>
+                <option value="event">{t("actionsView.eventoDelSistema")}</option>
               {:else}
-                <option value="event">En Evento</option>
+                <option value="event">{t("actionsView.enEvento")}</option>
               {/if}
-              <option value="manual">Solo Manual</option>
+              <option value="manual">{t("actionsView.soloManual")}</option>
             </select>
           </div>
 
           {#if formTrigger === "cron"}
             <div>
               <label for="formcronexpression" class="block text-xs text-kitsuden-subtle mb-1"
-                >Expresión Cron</label
+                >{t("actionsView.expresionCron")}</label
               >
               <input
                 id="formcronexpression"
@@ -734,17 +735,17 @@
           {:else if formTrigger === "event"}
             <div>
               <label for="formeventname" class="block text-xs text-kitsuden-subtle mb-1"
-                >Nombre del Evento</label
+                >{t("actionsView.nombreDelEvento")}</label
               >
               <select
                 id="formeventname"
                 bind:value={formEventName}
                 class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
               >
-                <option value="entry.created">Entry Created</option>
-                <option value="entry.updated">Entry Updated</option>
-                <option value="entry.deleted">Entry Deleted</option>
-                <option value="post.published">Post Published</option>
+                <option value="entry.created">{t("actionsView.entryCreated")}</option>
+                <option value="entry.updated">{t("actionsView.entryUpdated")}</option>
+                <option value="entry.deleted">{t("actionsView.entryDeleted")}</option>
+                <option value="post.published">{t("actionsView.postPublished")}</option>
               </select>
             </div>
           {/if}
@@ -752,7 +753,7 @@
 
         {#if createType === "code"}
           <div>
-            <label for="formcode" class="block text-xs text-kitsuden-subtle mb-1">Código</label>
+            <label for="formcode" class="block text-xs text-kitsuden-subtle mb-1">{t("actionsView.codigo")}</label>
             <textarea
               id="formcode"
               bind:value={formCode}
@@ -763,7 +764,7 @@
         {:else}
           <div>
             <label for="formurl" class="block text-xs text-kitsuden-subtle mb-1"
-              >URL de Destino *</label
+              >{t("actionsView.urlDeDestino")}</label
             >
             <input
               id="formurl"
@@ -777,13 +778,13 @@
 
           <div>
             <label for="formheaders" class="block text-xs text-kitsuden-subtle mb-1"
-              >Headers (JSON)</label
+              >{t("actionsView.headersJson")}</label
             >
             <textarea
               id="formheaders"
               bind:value={formHeaders}
               rows="3"
-              placeholder={`{\"Authorization\": \"Bearer token\"}`}
+              placeholder={"{\"Authorization\": \"Bearer token\"}"}
               class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm font-mono focus:border-kitsuden-accent/50 focus:outline-none"
             ></textarea>
           </div>
@@ -795,7 +796,7 @@
             onclick={() => (showCreateModal = false)}
             class="px-5 py-2.5 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-bg transition-all duration-200"
           >
-            Cancelar
+            {t("common.cancelar")}
           </button>
           <button
             type="submit"
@@ -804,10 +805,10 @@
           >
             {#if saving}
               <Loader2 class="w-4 h-4 animate-spin" />
-              Creando...
+              {t("actionsView.creando")}
             {:else}
               <Plus class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-              Crear
+              {t("common.crear")}
             {/if}
           </button>
         </div>

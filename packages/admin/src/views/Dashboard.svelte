@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   /**
    * Dashboard.svelte - Professional Dashboard with Empty States
    *
@@ -25,6 +26,7 @@
   import { onMount } from "svelte";
   import type { ComponentType, SvelteComponent } from "svelte";
 
+  import { isAdmin } from "../lib/auth.svelte";
   import { componentRegistry } from "../lib/registry.svelte";
   import WidgetSlot from "../lib/WidgetSlot.svelte";
 
@@ -68,7 +70,7 @@
   const defaultStats: DefaultStat[] = [
     {
       key: "users",
-      label: "Usuarios",
+      label: t("dashboard.usuarios"),
       icon: Users,
       color: "cyan",
       /**
@@ -84,9 +86,9 @@
        * promete una pantalla y entrega otra cosa.
        */
     },
-    { key: "posts", label: "Posts", icon: FileText, color: "green", href: "/g/kon-blog" },
-    { key: "datasets", label: "Datasets", icon: Database, color: "amber", href: "/datasets" },
-    { key: "media", label: "Media", icon: Image, color: "purple", href: "/g/kon-media" },
+    { key: "posts", label: t("dashboard.posts"), icon: FileText, color: "green", href: "/g/kon-blog" },
+    { key: "datasets", label: t("common.datasets"), icon: Database, color: "amber", href: "/datasets" },
+    { key: "media", label: t("common.media"), icon: Image, color: "purple", href: "/g/kon-media" },
   ];
 
   onMount(async () => {
@@ -143,9 +145,12 @@
   async function loadRecentActivity() {
     loadingActivity = true;
     try {
+      // Registros de agentes y acciones son de admin: al editor solo le daban 403.
+      const admin = isAdmin();
+      const omitido = Promise.resolve(new Response(null, { status: 204 }));
       const [auditRes, actionsRes, datasetsRes] = await Promise.allSettled([
-        fetch(`${API_URL}/api/admin/agents/logs?limit=5`, { credentials: "include" }),
-        fetch(`${API_URL}/api/actions?limit=5`, { credentials: "include" }),
+        admin ? fetch(`${API_URL}/api/admin/agents/logs?limit=5`, { credentials: "include" }) : omitido,
+        admin ? fetch(`${API_URL}/api/actions?limit=5`, { credentials: "include" }) : omitido,
         fetch(`${API_URL}/api/datasets?limit=5&orderBy=createdAt&order=desc`, {
           credentials: "include",
         }),
@@ -153,14 +158,14 @@
 
       const activities: ActivityItem[] = [];
 
-      if (auditRes.status === "fulfilled" && auditRes.value.ok) {
+      if (auditRes.status === "fulfilled" && auditRes.value.status === 200) {
         const data = await auditRes.value.json();
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           activities.push(
             ...data.data.slice(0, 3).map((log: any) => ({
               icon: Activity,
               color: log.success ? "cyan" : "pink",
-              text: `Agent executed: ${log.action || "action"}`,
+              text: t("dashboard.agentExecuted", { v: log.action || "action" }),
               time: formatTimeAgo(log.createdAt),
               // `/agents/logs` NO es una ruta: encaja con `/agents/[id]` y abre la ficha
               // de un agente llamado "logs", que no existe. Resolvía en la sonda de
@@ -171,14 +176,14 @@
         }
       }
 
-      if (actionsRes.status === "fulfilled" && actionsRes.value.ok) {
+      if (actionsRes.status === "fulfilled" && actionsRes.value.status === 200) {
         const data = await actionsRes.value.json();
         if (Array.isArray(data.docs) && data.docs.length > 0) {
           activities.push(
             ...data.docs.slice(0, 3).map((action: any) => ({
               icon: Zap,
               color: action.status === "active" ? "green" : "subtle",
-              text: `Action ${action.status}: ${action.name}`,
+              text: t("dashboard.action", { status: action.status, name: action.name }),
               time: formatTimeAgo(action.createdAt),
               href: `/actions`,
             }))
@@ -193,7 +198,7 @@
             ...data.docs.slice(0, 3).map((ds: any) => ({
               icon: Database,
               color: "amber",
-              text: `Dataset created: ${ds.name}`,
+              text: t("dashboard.datasetCreated", { name: ds.name }),
               time: formatTimeAgo(ds.createdAt),
               href: `/datasets`,
             }))
@@ -218,12 +223,19 @@
 
   async function loadEnabledModules() {
     loadingModules = true;
+    if (!isAdmin()) {
+      // /api/modules es de admin; el editor no tiene nada que contar aquí.
+      loadingModules = false;
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/api/modules`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        const enabled =
-          data.modules?.filter((m: any) => m.enabled !== false)?.map((m: any) => m.id) || [];
+        // La API responde `docs` (como lee states/modules.svelte.ts); leer
+        // `modules` dejaba «Grimoires activos» en 0 siempre.
+        const lista: any[] = data.docs ?? data.modules ?? [];
+        const enabled = lista.filter((m) => m.enabled !== false).map((m) => m.key ?? m.id);
         enabledModules = enabled;
         componentRegistry.setEnabledModules(enabled);
       }
@@ -258,32 +270,32 @@
   // Quick actions configuration
   const quickActions = [
     {
-      label: "New Post",
+      label: t("common.newPost"),
       href: "/g/kon-blog",
       icon: PenTool,
       color: "green",
-      description: "Create a blog post",
+      description: t("dashboard.createABlogPost"),
     },
     {
-      label: "New Dataset",
+      label: t("dashboard.newDataset"),
       href: "/datasets/new",
       icon: Database,
       color: "amber",
-      description: "Create data collection",
+      description: t("dashboard.createDataCollection"),
     },
     {
-      label: "New Page",
+      label: t("dashboard.newPage"),
       href: "/g/kon-blocks",
       icon: Blocks,
       color: "pink",
-      description: "Build a page",
+      description: t("dashboard.buildAPage"),
     },
     {
-      label: "Upload Media",
+      label: t("dashboard.uploadMedia"),
       href: "/g/kon-media",
       icon: Image,
       color: "purple",
-      description: "Add files",
+      description: t("dashboard.addFiles"),
     },
   ];
 
@@ -291,40 +303,40 @@
   const coreGrimoires = [
     {
       id: "datasets",
-      label: "Datasets",
-      description: "Data collections",
+      label: t("common.datasets"),
+      description: t("dashboard.dataCollections"),
       icon: Database,
       color: "amber",
       href: "/datasets",
     },
     {
       id: "blog",
-      label: "Blog",
-      description: "Posts & articles",
+      label: t("dashboard.blog"),
+      description: t("dashboard.postsArticles"),
       icon: FileText,
       color: "green",
       href: "/g/kon-blog",
     },
     {
       id: "pages",
-      label: "Pages",
-      description: "Page builder",
+      label: t("dashboard.pages"),
+      description: t("dashboard.pageBuilder"),
       icon: Blocks,
       color: "pink",
       href: "/g/kon-blocks",
     },
     {
       id: "media",
-      label: "Media",
-      description: "File library",
+      label: t("common.media"),
+      description: t("dashboard.fileLibrary"),
       icon: Image,
       color: "purple",
       href: "/g/kon-media",
     },
     {
       id: "actions",
-      label: "Actions",
-      description: "Automations",
+      label: t("common.actions"),
+      description: t("dashboard.automations"),
       icon: Zap,
       color: "cyan",
       href: "/actions",
@@ -393,13 +405,13 @@
         >
           <LayoutDashboard class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Dashboard
+        {t("common.dashboard")}
       </h1>
-      <p class="text-sm text-kitsuden-subtle mt-1">Overview of your Kitsuden CMS instance</p>
+      <p class="text-sm text-kitsuden-subtle mt-1">{t("dashboard.overviewOfYourKitsudenCms")}</p>
     </div>
     <div class="flex items-center gap-2">
       <span class="text-xs text-kitsuden-subtle px-2 py-1 bg-kitsuden-surface rounded-full">
-        {new Date().toLocaleDateString("en-US", {
+        {new Date().toLocaleDateString(localeFormato(), {
           weekday: "long",
           month: "short",
           day: "numeric",
@@ -411,14 +423,14 @@
   <!-- Stats Grid - Always visible -->
   <section>
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-sm font-medium text-kitsuden-subtle uppercase tracking-wider">Overview</h2>
+      <h2 class="text-sm font-medium text-kitsuden-subtle uppercase tracking-wider">{t("dashboard.overview")}</h2>
       {#if !loadingStats}
         <button
           onclick={loadStats}
           class="text-xs text-kitsuden-accent hover:underline flex items-center gap-1 cursor-pointer"
         >
           <Clock class="w-3 h-3" />
-          Refresh
+          {t("dashboard.refresh")}
         </button>
       {/if}
     </div>
@@ -464,7 +476,7 @@
                   {stat.value}
                 </p>
                 {#if !stat.hasData}
-                  <p class="text-xs text-kitsuden-subtle/60 mt-1">No data</p>
+                  <p class="text-xs text-kitsuden-subtle/60 mt-1">{t("dashboard.noData")}</p>
                 {/if}
               </div>
               <div
@@ -490,14 +502,14 @@
         <div class="p-4 border-b border-kitsuden-border flex items-center justify-between">
           <h3 class="font-semibold text-kitsuden-text flex items-center gap-2">
             <Activity class="w-4 h-4 text-kitsuden-accent" />
-            Recent Activity
+            {t("dashboard.recentActivity")}
           </h3>
           {#if recentActivity.length > 0}
             <a
               href="/actions"
               class="text-xs text-kitsuden-accent hover:underline flex items-center gap-1"
             >
-              View all
+              {t("dashboard.viewAll")}
               <ChevronRight class="w-3 h-3" />
             </a>
           {/if}
@@ -552,9 +564,9 @@
               >
                 <Inbox class="w-8 h-8 text-kitsuden-subtle" />
               </div>
-              <h4 class="text-sm font-medium text-kitsuden-text mb-1">No recent activity</h4>
+              <h4 class="text-sm font-medium text-kitsuden-text mb-1">{t("dashboard.noRecentActivity")}</h4>
               <p class="text-xs text-kitsuden-subtle mb-4">
-                Start creating content to see activity here
+                {t("dashboard.startCreatingContentToSee")}
               </p>
               <div class="flex items-center justify-center gap-2">
                 <a
@@ -562,7 +574,7 @@
                   class="btn-primary text-xs inline-flex items-center gap-1"
                 >
                   <Plus class="w-3 h-3" />
-                  Create Post
+                  {t("dashboard.createPost")}
                 </a>
               </div>
             </div>
@@ -580,7 +592,7 @@
       <section class="card p-4">
         <h3 class="font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
           <Zap class="w-4 h-4 text-kitsuden-accent" />
-          Quick Actions
+          {t("dashboard.quickActions")}
         </h3>
         <div class="space-y-2">
           {#each quickActions as action}
@@ -615,7 +627,7 @@
       <section class="card p-4">
         <h3 class="font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
           <Layers class="w-4 h-4 text-kitsuden-accent" />
-          Core Grimoires
+          {t("dashboard.coreGrimoires")}
         </h3>
         <div class="space-y-1">
           {#each coreGrimoires as grimoire}
@@ -650,25 +662,25 @@
       <section class="card p-4">
         <h3 class="font-semibold text-kitsuden-text mb-3 flex items-center gap-2">
           <Sparkles class="w-4 h-4 text-kitsuden-accent" />
-          System Status
+          {t("dashboard.systemStatus")}
         </h3>
         <div class="space-y-2">
           <div class="flex items-center justify-between text-sm">
-            <span class="text-kitsuden-subtle">API Status</span>
+            <span class="text-kitsuden-subtle">{t("dashboard.apiStatus")}</span>
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span class="text-green-400 text-xs">Online</span>
+              <span class="text-green-400 text-xs">{t("dashboard.online")}</span>
             </span>
           </div>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-kitsuden-subtle">Database</span>
+            <span class="text-kitsuden-subtle">{t("dashboard.database")}</span>
             <span class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span class="text-green-400 text-xs">Connected</span>
+              <span class="text-green-400 text-xs">{t("dashboard.connected")}</span>
             </span>
           </div>
           <div class="flex items-center justify-between text-sm">
-            <span class="text-kitsuden-subtle">Active Grimoires</span>
+            <span class="text-kitsuden-subtle">{t("dashboard.activeGrimoires")}</span>
             <span class="text-kitsuden-text font-medium">
               {#if loadingModules}
                 <span class="animate-pulse">—</span>

@@ -2,7 +2,9 @@
  * Kitsuden — Worker de correo
  * ============================================================================
  *
- * Consume la cola `kitsuden-email` y delega en el Mailer del engine.
+ * Consume la cola `kitsuden-email` (Postgres, lib/queue.ts) y delega en el
+ * Mailer del engine. Entrega «al menos una vez»: si el proceso muere entre el
+ * envío y el cierre del trabajo, el correo puede salir dos veces.
  *
  * ANTES: este archivo tenía los templates HTML inline, la config SMTP y la
  * lógica de envío — 183 líneas que ningún kon podía extender.
@@ -25,10 +27,10 @@
 // camino que cierra el círculo entra por el índice del engine. Por eso la
 // excepción va en esta línea.
 // eslint-disable-next-line import/no-cycle -- la arista de vuelta es dinámica
-import { mail } from "@kitsuden/engine";
-import type { Job } from "bullmq";
+import { mail } from "../../../../packages/engine/src/mail";
 
-import { createWorker, type EmailJobData } from "../lib/queue";
+import { ErrorPermanente, queue, type TrabajoDeCola } from "../../../../packages/engine/src/cola";
+import { COLA_DE_CORREO } from "../lib/queue";
 
 /**
  * Payload de un job de correo. `to` es lo único obligatorio; el resto lo
@@ -40,21 +42,21 @@ interface MailJobData extends Record<string, unknown> {
   locale?: string;
 }
 
-async function processEmailJob(job: Job<EmailJobData | MailJobData>) {
-  const data = (job.data ?? {}) as MailJobData;
+export async function processEmailJob(job: TrabajoDeCola) {
+  const data = (job.payload ?? {}) as MailJobData;
 
   // El nombre del job identifica al Mailable.
-  if (mail.has(job.name)) {
-    const result = await mail.send(job.name, data, data.locale);
+  if (mail.has(job.nombre)) {
+    const result = await mail.send(job.nombre, data, data.locale);
 
     if (!result.ok) {
-      // Se relanza para que BullMQ aplique su política de reintentos: un fallo
-      // de red al enviar SÍ debe reintentarse.
-      throw new Error(result.error ?? `No se pudo enviar "${job.name}"`);
+      // Se relanza para que la cola aplique su política de reintentos: un
+      // fallo de red al enviar SÍ debe reintentarse.
+      throw new Error(result.error ?? `No se pudo enviar "${job.nombre}"`);
     }
 
     console.log(
-      `  📧 [${mail.driverName}] ${job.name} → ${result.message.to.join(", ")} (${result.messageId ?? "sin id"})`
+      `  📧 [${mail.driverName}] ${job.nombre} → ${result.message.to.join(", ")} (${result.messageId ?? "sin id"})`
     );
     return { sent: true, messageId: result.messageId };
   }
@@ -68,14 +70,12 @@ async function processEmailJob(job: Job<EmailJobData | MailJobData>) {
   };
 
   if (!to || !subject) {
-    console.warn(
-      `  ⚠️  Job de correo "${job.name}" sin Mailable registrado ni subject — descartado`
-    );
-    return { sent: false, reason: "unknown-mailable" };
+    // Reintentarlo no lo arregla: a la «dead letter», visible en el panel.
+    throw new ErrorPermanente(`Job de correo "${job.nombre}" sin Mailable registrado ni subject`);
   }
 
   // Se registra al vuelo un Mailable anónimo para reusar driver y logging.
-  const adHoc = `adhoc:${job.name}`;
+  const adHoc = `adhoc:${job.nombre}`;
   if (!mail.has(adHoc)) {
     mail.register({
       name: adHoc,
@@ -100,5 +100,5 @@ export function registerEmailWorker() {
     );
   }
 
-  return createWorker("kitsuden-email", processEmailJob, { concurrency: 2 });
+  queue.handle(COLA_DE_CORREO, processEmailJob, { concurrencia: 2 });
 }

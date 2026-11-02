@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * RelationshipField.svelte — Combobox / MultiSelect for relation fields
    * Fetches related records from API, supports 1:1, 1:N, M:N
@@ -38,7 +39,7 @@
     relationType,
     displayField = "title",
     label = "",
-    placeholder = "Select...",
+    placeholder = t("relationshipField.select"),
     helpText = "",
     required = false,
     error = "",
@@ -230,7 +231,7 @@
                 bind:this={searchInputRef}
                 bind:value={searchQuery}
                 type="text"
-                placeholder="Search..."
+                placeholder={t("common.search")}
                 class="input pl-8 py-1.5 text-xs bg-kitsuden-bg"
               />
             </div>
@@ -243,7 +244,7 @@
                 ></div>
               </div>
             {:else if filteredItems.length === 0}
-              <div class="py-4 text-center text-xs text-kitsuden-subtle">No results found</div>
+              <div class="py-4 text-center text-xs text-kitsuden-subtle">{t("relationshipField.noResultsFound")}</div>
             {:else}
               {#if value}
                 <button
@@ -251,7 +252,7 @@
                   onclick={() => selectSingle(null)}
                   class="flex items-center gap-3 w-full px-3 py-2 text-left text-xs text-kitsuden-subtle hover:bg-kitsuden-border/30 transition-colors border-b border-kitsuden-border/30"
                 >
-                  <X class="w-3 h-3" /> Clear selection
+                  <X class="w-3 h-3" /> {t("relationshipField.clearSelection")}
                 </button>
               {/if}
               {#each filteredItems as item}
@@ -334,7 +335,7 @@
                 ></div>
               </div>
             {:else if filteredItems.length === 0}
-              <div class="py-4 text-center text-xs text-kitsuden-subtle">No results found</div>
+              <div class="py-4 text-center text-xs text-kitsuden-subtle">{t("relationshipField.noResultsFound")}</div>
             {:else}
               {#each filteredItems as item}
                 <button

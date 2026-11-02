@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 /**
  * Register Default Widgets
  *
@@ -19,7 +20,7 @@ void {
   component: null, // (await import("../components/widgets/GameStatsWidget.svelte")).default,
   order: 10,
   module: "games",
-  props: { title: "Game Statistics", showChart: true },
+  props: { title: t("common.gameStatisticsExample"), showChart: true },
 };
 
 void {
@@ -50,7 +51,9 @@ export async function registerDefaultWidgets() {
  */
 export async function registerWidgetsFromAPI() {
   try {
-    const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+    // `??`, no `||`: en producción VITE_API_URL es "" (rutas relativas tras
+    // nginx) y `||` lo convertía en localhost:3001 dentro del bundle.
+    const API = import.meta.env.VITE_API_URL ?? "";
     const res = await fetch(`${API}/api/admin/widgets`, {
       credentials: "include",
     });

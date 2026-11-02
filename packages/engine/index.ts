@@ -11,9 +11,9 @@
  *   - Database (Drizzle ORM + Schema Merger)
  *   - Security (RLS Builder + Auth Guard + Permissions)
  *   - Worker Sandbox (Bun-based sandboxed function execution)
- *   - Real-time (WebSocket + Valkey Pub/Sub)
- *   - Queue (BullMQ + Valkey)
- *   - Cache (Valkey-backed query cache)
+ *   - Real-time (WebSocket + Pub/Sub: Valkey o, sin él, Postgres LISTEN/NOTIFY)
+ *   - Queue (Postgres: transactional outbox + SKIP LOCKED)
+ *   - Cache (Valkey o memoria del proceso)
  *   - Storage (S3/MinIO file layer)
  *   - Image Optimization (WebP pipeline)
  *   - TOON (AI token optimizer middleware)
@@ -67,7 +67,18 @@ export { executeSandbox } from "../../apps/api/src/lib/worker-sandbox";
 // ── Real-time ──
 export { realtimeManager } from "../../apps/api/src/lib/realtime";
 
-// ── Queue ──
+// ── Zod: la versión única del monorepo (kitsuden2.md C1; pura en "@kitsuden/engine/zod") ──
+export { z } from "./zod";
+
+// ── Queue (Postgres, transactional outbox: kitsuden2.md B1) ──
+export { queue, ErrorPermanente } from "./src/cola";
+export type {
+  ActorDeTrabajo,
+  ManejadorDeCola,
+  OpcionesDeDespacho,
+  OpcionesDeManejador,
+  TrabajoDeCola,
+} from "./src/cola";
 export { emailQueue, setupWorkers } from "../../apps/api/src/lib/queue";
 
 // ── Cache ──
@@ -76,7 +87,7 @@ export { cachedQuery, invalidateCache } from "../../apps/api/src/lib/cache";
 // ── Valkey Connection ──
 export {
   VALKEY_URL,
-  valkeyConnection,
+  valkeyConfigurado,
   getValkeyClient,
   isValkeyAvailable,
   getPublisher,
@@ -296,10 +307,44 @@ export {
   lint,
   digest,
   generateBrainSchemaDoc,
+  // Memoria de agentes con dueño, afirmaciones con evidencia, importador de graphify (2026-10-28)
+  resolveEmbeddingProvider,
+  createLexicalEmbeddingProvider,
+  createHttpEmbeddingProvider,
+  LEXICAL_EMBEDDING_KIND,
+  actorFromUser,
+  actorLabel,
+  writeMemoryNote,
+  getVisibleNote,
+  toMemoryNote,
+  listMemoryNotes,
+  searchMemoryNotes,
+  deleteMemoryNote,
+  listNoteConnections,
+  connectNotes,
+  addClaim,
+  listClaims,
+  lintClaims,
+  reverifyClaim,
+  checkClaim,
+  rangeProblem,
+  exportOkf,
+  parseGraphify,
+  importGraphify,
+  SUPPORTED_GRAPHIFY_SCHEMA_VERSIONS,
+  CONNECTION_ORIGINS,
 } from "./src/brain";
 // ── Cross-cutting: errores, autorización (policies/gates), validación ──
 // Viven en el engine para que app y kons (plugins) compartan las mismas capas.
-export { AppError, ErrorCode, messageOf, toErrorEnvelope, respondError } from "./src/errors";
+export {
+  AppError,
+  ErrorCode,
+  errorDeEntradaDePostgres,
+  messageOf,
+  sqlstateDe,
+  toErrorEnvelope,
+  respondError,
+} from "./src/errors";
 export type { ErrorCodeValue, ErrorEnvelope } from "./src/errors";
 
 // Condiciones de base de datos que comprueban en vez de castear.
@@ -318,11 +363,57 @@ export {
   requirePolicy,
 } from "./src/authz";
 export type { AuthzUser, PolicyRule, GateRule } from "./src/authz";
+// Agentes en las políticas y la RLS de los kons (arreglos de la fase D)
+export {
+  actorEfectivo,
+  agentePuede,
+  agentePuedeEnKon,
+  esAdminEfectivo,
+  esAgente,
+  esStaffEfectivo,
+} from "./src/actor-efectivo";
+export type { ActorEfectivo, QuienPregunta } from "./src/actor-efectivo";
 export { validateRequest, validated, parseOrThrow, esUuid } from "./src/validation";
 export type { ValidationTarget } from "./src/validation";
 export { buscarCamposDesconocidos, claveParecida } from "./src/validation";
 export type { CampoDesconocido } from "./src/validation";
 export { ROUTE_META, withRouteMeta, describeRoute, readRouteMeta } from "./src/route-meta";
+// SDK de kons: declarar operaciones una vez → REST + OpenAPI + MCP (docs/kons/README.md)
+export {
+  defineKonSdk,
+  routerDeOperaciones,
+  operacionesDe,
+  concedeOperacion,
+  ctxInerte,
+  registrarOperacionesMontadas,
+  operacionesMontadas,
+  versionDeOperacionesMontadas,
+  olvidarOperacionesMontadas,
+  operacionDeRuta,
+} from "./src/operaciones";
+export type {
+  DefinicionDeKonSdk,
+  KonDeOperacionesMontado,
+  OperacionDeRuta,
+  OperacionCualquiera,
+} from "./src/operaciones";
+export {
+  VERSION_SDK_DE_KONS,
+  defineOperacion,
+  esquemaFecha,
+  esquemaUuid,
+  scopeFinoDeOperacion,
+  nombreDeHerramienta,
+  scopesQueConceden,
+  concedePorScopes,
+} from "@kitsuden/shared";
+export type {
+  OperacionDeKon,
+  ContextoDeOperacion,
+  EntradaValidada,
+  PermisoDeOperacion,
+  SalidaDeOperacion,
+} from "@kitsuden/shared";
 export type { RouteMeta, RouteValidationMeta } from "./src/route-meta";
 
 // ── Synced State (estado en vivo servidor↔panel↔gráfico, estilo replicant) ──
@@ -356,6 +447,26 @@ export {
   resolveExecutor,
 } from "./src/request-scope";
 export type { RequestScope } from "./src/request-scope";
+
+// ── RLS por petición: una transacción con quién pregunta (núcleo y kons) ──
+export {
+  comoSistema,
+  conSavepoint,
+  conTransaccionesPerezosas,
+  contextoRlsDe,
+  dbDeLaPeticion,
+  enTransaccionRls,
+  fijarContextoRls,
+  intentarSql,
+  segundoPlano,
+  transaccionRls,
+} from "./src/rls-peticion";
+export type {
+  ConexionTransaccional,
+  ConfirmacionPerdida,
+  OpcionesTransaccionRls,
+  UsuarioRls,
+} from "./src/rls-peticion";
 
 // ── ORM sugar: repositorio chainable sobre Drizzle (respeta RLS) ──
 export { repo, esSintaxisDeEntradaInvalida } from "./src/repository";
@@ -409,6 +520,20 @@ export type {
   LintReport,
   DigestResult,
   BrainSchemaOptions,
+  EmbeddingInfo,
+  PluggableEmbeddingProvider,
+  BrainActor,
+  BrainVisibility,
+  MemoryNote,
+  MemoryConnection,
+  MemoryClaim,
+  ClaimRange,
+  ClaimCheck,
+  ClaimsLint,
+  ConnectionOrigin,
+  OkfFile,
+  ParsedGraphify,
+  GraphifyImportReport,
 } from "./src/brain";
 
 // ── Code Graph (Graphify + Serena + Sourcegraph como funciones del sistema) ──
@@ -578,3 +703,16 @@ export type { EntityRef, LinkRow, LinkOptions, NeighborQuery } from "./src/links
 // Sin esto, cada manejador acaba con `(c as any).get("user")`.
 export type { KonUser, KonVariables, KonEnv, KonRouteContext } from "./src/http";
 export { requireUser } from "./src/http";
+
+// ── Fase H3: defineModelo — un modelo → tabla, operaciones (REST/OpenAPI/MCP), RLS, panel ──
+// El contrato (y el SQL de las migraciones) vive en @kitsuden/shared; ver docs/agents/models.md.
+export {
+  tablaDeModelo,
+  operacionesDeModelo,
+  defineKonDeModelos,
+  registrarPoliticaDeModelo,
+  registrarPoliticasDeModelos,
+  modeloDeOperacion,
+  modelosMontados,
+} from "./src/modelos";
+export type { DefinicionDeKonDeModelos, ModeloMontado, TablaDeModelo } from "./src/modelos";

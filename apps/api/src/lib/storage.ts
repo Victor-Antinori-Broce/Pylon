@@ -12,6 +12,7 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -57,6 +58,14 @@ export function getS3Client(): S3Client {
         secretAccessKey: process.env.S3_SECRET_KEY || "",
       },
       forcePathStyle: true,
+      // Acotado. Sin esto el SDK espera sin límite (y reintenta 3 veces), y
+      // `ctx.storage` se usa desde rutas que van en una transacción de
+      // Postgres ya abierta (subir la versión de un documento, borrar un
+      // medio): el rol de la aplicación la corta a los 60 s de espera.
+      // `requestTimeout` es de inactividad del socket, no de duración: una
+      // subida grande que avanza no se corta. Peor caso: 2 × (5 + 15) s.
+      requestHandler: { connectionTimeout: 5_000, requestTimeout: 15_000 },
+      maxAttempts: 2,
     });
   }
   return _s3;
@@ -184,6 +193,37 @@ export async function getFile(s3Key: string): Promise<ReadableStream | null> {
   } catch {
     return null;
   }
+}
+
+/** El objeto entero en memoria, o `null` si no existe. */
+export async function getFileBuffer(s3Key: string): Promise<Buffer | null> {
+  assertS3Enabled("getFileBuffer");
+  const client = getS3Client();
+  try {
+    const response = await client.send(new GetObjectCommand({ Bucket: BUCKET, Key: s3Key }));
+    if (!response.Body) return null;
+    return Buffer.from(await response.Body.transformToByteArray());
+  } catch (err) {
+    const nombre = (err as { name?: string }).name;
+    if (nombre === "NoSuchKey" || nombre === "NotFound") return null;
+    throw err;
+  }
+}
+
+/** Claves de todos los objetos bajo `prefix` (pagina hasta el final). */
+export async function listKeys(prefix: string): Promise<string[]> {
+  assertS3Enabled("listKeys");
+  const client = getS3Client();
+  const claves: string[] = [];
+  let token: string | undefined;
+  do {
+    const r = await client.send(
+      new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix, ContinuationToken: token })
+    );
+    for (const o of r.Contents ?? []) if (o.Key) claves.push(o.Key);
+    token = r.IsTruncated ? r.NextContinuationToken : undefined;
+  } while (token);
+  return claves;
 }
 
 // ── Signed URLs ────────────────────────────────────────────────

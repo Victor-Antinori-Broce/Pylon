@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Plus, RefreshCw } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -174,11 +175,11 @@
   <div class="border-t border-kitsuden-border pt-4">
     <h3 class="text-sm font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
       <span class="w-1.5 h-1.5 rounded-full bg-kitsuden-accent"></span>
-      Relaciones
+      {t("inlineRelationPanel.relaciones")}
     </h3>
 
     {#if inlineRelations.length === 0}
-      <p class="text-xs text-kitsuden-subtle">No se detectaron relaciones inline.</p>
+      <p class="text-xs text-kitsuden-subtle">{t("inlineRelationPanel.noSeDetectaronRelacionesInline")}</p>
     {/if}
 
     {#each inlineRelations as rel}
@@ -199,7 +200,7 @@
           <div class="flex items-center gap-1">
             <button
               class="p-1.5 rounded-md hover:bg-kitsuden-border/30 text-kitsuden-text-dim transition-colors"
-              title="Actualizar"
+              title={t("inlineRelationPanel.actualizar")}
               onclick={() => loadRelation(rel)}
             >
               <RefreshCw class="w-3.5 h-3.5" />
@@ -209,7 +210,7 @@
               onclick={() => createRelatedRecord(rel)}
             >
               <Plus class="w-3 h-3" />
-              Agregar
+              {t("inlineRelationPanel.agregar")}
             </button>
           </div>
         </div>
@@ -222,7 +223,7 @@
           </div>
         {:else if data.length === 0}
           <div class="p-4 text-center">
-            <p class="text-xs text-kitsuden-subtle">Sin registros relacionados</p>
+            <p class="text-xs text-kitsuden-subtle">{t("inlineRelationPanel.sinRegistrosRelacionados")}</p>
           </div>
         {:else}
           <div class="overflow-x-auto">

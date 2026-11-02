@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Save, Plus, X, CheckCircle, ArrowLeft } from "lucide-svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -64,7 +65,7 @@
       }
     } catch (e: any) {
       error = e.message;
-      toast.error("Failed to load: " + e.message);
+      toast.error(t("journalForm.failedToLoad") + e.message);
     } finally {
       loading = false;
     }
@@ -99,7 +100,7 @@
         const res = await api.createContaJournal(payload);
         journalId = res.data.id;
       }
-      toast.success("Journal saved");
+      toast.success(t("journalForm.journalSaved"));
       onSave();
     } catch (e: any) {
       toast.error(e.message);
@@ -110,7 +111,7 @@
 
   async function post() {
     if (!isBalanced) {
-      toast.error("Journal is not balanced");
+      toast.error(t("journalForm.journalIsNotBalanced"));
       return;
     }
     saving = true;
@@ -123,7 +124,7 @@
         await api.updateContaJournal(journalId, payload);
         await api.postContaJournal(journalId);
       }
-      toast.success("Journal posted");
+      toast.success(t("journalForm.journalPosted"));
       onSave();
     } catch (e: any) {
       toast.error(e.message);
@@ -137,15 +138,15 @@
 
 <div class="space-y-6">
   <div class="flex items-center justify-between">
-    <Button variant="ghost" onclick={onBack}><ArrowLeft class="w-4 h-4 mr-2" /> Back</Button>
+    <Button variant="ghost" onclick={onBack}><ArrowLeft class="w-4 h-4 mr-2" /> {t("common.back")}</Button>
     <div class="flex items-center gap-2">
       {#if isBalanced}
-        <Badge variant="success">Balanced</Badge>
+        <Badge variant="success">{t("journalForm.balanced")}</Badge>
       {:else}
-        <Badge variant="error">Unbalanced</Badge>
+        <Badge variant="error">{t("journalForm.unbalanced")}</Badge>
       {/if}
       <span class="text-sm text-zinc-400"
-        >Debe: {totalDebit.toFixed(2)} | Haber: {totalCredit.toFixed(2)}</span
+        >{t("journalForm.debeHaber", { v: totalDebit.toFixed(2) })} {totalCredit.toFixed(2)}</span
       >
     </div>
   </div>
@@ -156,36 +157,36 @@
     </div>
   {:else}
     <div class="grid gap-4 md:grid-cols-3">
-      <div><Label>Date</Label><Input type="date" bind:value={journal.date} /></div>
+      <div><Label>{t("common.date")}</Label><Input type="date" bind:value={journal.date} /></div>
       <div>
-        <Label>Reference</Label><Input
+        <Label>{t("journalForm.reference")}</Label><Input
           bind:value={journal.reference}
-          placeholder="INV-001, CASE-123..."
+          placeholder={t("journalForm.inv001Case123")}
         />
       </div>
       <div>
-        <Label>Type</Label>
+        <Label>{t("common.type")}</Label>
         <select
           bind:value={journal.journalType}
           class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
         >
-          <option value="standard">Standard</option>
-          <option value="trust_deposit">Trust Deposit</option>
-          <option value="trust_withdrawal">Trust Withdrawal</option>
-          <option value="disbursement">Disbursement</option>
+          <option value="standard">{t("journalForm.standard")}</option>
+          <option value="trust_deposit">{t("journalForm.trustDeposit")}</option>
+          <option value="trust_withdrawal">{t("journalForm.trustWithdrawal")}</option>
+          <option value="disbursement">{t("journalForm.disbursement")}</option>
         </select>
       </div>
     </div>
 
-    <div><Label>Description</Label><Textarea bind:value={journal.description} rows={2} /></div>
+    <div><Label>{t("common.description")}</Label><Textarea bind:value={journal.description} rows={2} /></div>
 
     <div>
-      <Label>Counterparty</Label>
+      <Label>{t("journalForm.counterparty")}</Label>
       <select
         bind:value={journal.counterpartyId}
         class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm"
       >
-        <option value="">— None —</option>
+        <option value="">{t("journalForm.none")}</option>
         {#each counterparties as cp}
           <option value={cp.id}>{cp.name} ({cp.type})</option>
         {/each}
@@ -194,9 +195,9 @@
 
     <div class="space-y-2">
       <div class="flex items-center justify-between">
-        <Label>Ledger Lines</Label>
+        <Label>{t("journalForm.ledgerLines")}</Label>
         <Button variant="outline" size="sm" onclick={addLine}
-          ><Plus class="w-4 h-4 mr-1" /> Add Line</Button
+          ><Plus class="w-4 h-4 mr-1" /> {t("journalForm.addLine")}</Button
         >
       </div>
 
@@ -204,11 +205,11 @@
         <table class="w-full text-sm">
           <thead class="bg-zinc-900/80 text-zinc-400 text-left">
             <tr>
-              <th class="px-3 py-2 font-medium">Account</th>
-              <th class="px-3 py-2 font-medium">Description</th>
-              <th class="px-3 py-2 font-medium text-right">Debit</th>
-              <th class="px-3 py-2 font-medium text-right">Credit</th>
-              <th class="px-3 py-2 font-medium">Currency</th>
+              <th class="px-3 py-2 font-medium">{t("journalForm.account")}</th>
+              <th class="px-3 py-2 font-medium">{t("common.description")}</th>
+              <th class="px-3 py-2 font-medium text-right">{t("journalForm.debit")}</th>
+              <th class="px-3 py-2 font-medium text-right">{t("journalForm.credit")}</th>
+              <th class="px-3 py-2 font-medium">{t("common.currency")}</th>
               <th class="px-3 py-2 font-medium w-10"></th>
             </tr>
           </thead>
@@ -220,7 +221,7 @@
                     bind:value={line.accountId}
                     class="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-sm"
                   >
-                    <option value="">— Select —</option>
+                    <option value="">{t("common.select")}</option>
                     {#each accounts as a}
                       <option value={a.id}>{a.code} - {a.name}</option>
                     {/each}
@@ -266,13 +267,13 @@
     </div>
 
     <div class="flex items-center justify-between pt-4 border-t border-zinc-800">
-      <Button variant="outline" onclick={onBack} disabled={saving}>Cancel</Button>
+      <Button variant="outline" onclick={onBack} disabled={saving}>{t("common.cancel")}</Button>
       <div class="flex items-center gap-2">
         <Button variant="secondary" onclick={saveDraft} loading={saving}
-          ><Save class="w-4 h-4 mr-2" /> Save Draft</Button
+          ><Save class="w-4 h-4 mr-2" /> {t("journalForm.saveDraft")}</Button
         >
         <Button onclick={post} loading={saving} disabled={!isBalanced}
-          ><CheckCircle class="w-4 h-4 mr-2" /> Post</Button
+          ><CheckCircle class="w-4 h-4 mr-2" /> {t("journalForm.post")}</Button
         >
       </div>
     </div>

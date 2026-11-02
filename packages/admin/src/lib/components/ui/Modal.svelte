@@ -66,7 +66,11 @@
     transition:fade={{ duration: 150 }}
   >
     <!-- Modal -->
+    <!-- role="dialog": lectores de pantalla y pruebas lo reconocen como diálogo (fase E). -->
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || undefined}
       class={cn(
         "w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl",
         sizeClasses[size]

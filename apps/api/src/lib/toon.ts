@@ -1,101 +1,94 @@
 /**
- * Kitsuden — TOON Encoder & Middleware
+ * Kitsuden — negociación de formato de respuesta en /api/* (TOON, TRON, auto)
  *
- * TOON (Token-Optimized Object Notation) is a compact, line-based format
- * designed for AI/LLM consumers that minimizes token usage vs JSON.
+ * Por defecto la API responde JSON, como siempre. Un cliente puede pedir otro
+ * formato con la misma información:
  *
- * Format:
- *   ~type:course
- *   id:abc-123
- *   title:Intro to TypeScript
- *   topics[0].id:t1
- *   topics[0].title:Variables
- *   ---
+ *   Accept: application/vnd.kitsuden.auto  o  ?format=auto  → el más corto
+ *           de JSON compacto / TOON / TRON para ESTA respuesta, comprobado
+ *   Accept: application/vnd.toon           o  ?format=toon  → TOON
+ *   Accept: application/vnd.tron           o  ?format=tron  → TRON
+ *   Accept: application/json                               → JSON, siempre
+ *           (aunque la URL lleve ?format=: el panel, Inti y las webs piden así)
  *
- * Content negotiation:
- *   Accept: application/vnd.toon  →  TOON response
- *   Accept: application/json      →  standard JSON (default)
- *   ?format=toon (query param)    →  TOON response
+ * La respuesta dice en qué formato va con `Content-Type` y con la cabecera
+ * `X-Kitsuden-Format: json|toon|tron`. Si el formato pedido no puede
+ * representar los datos sin pérdida, se responde JSON y la cabecera lo dice.
+ * Las reglas y la medición están en lib/formatos.ts y docs/agents/benchmarks.md.
+ *
+ * Los errores no se tocan: salen en application/problem+json (RFC 9457) para
+ * todos los clientes (middleware/problemas-http.ts).
  */
 
 import { type MiddlewareHandler } from "hono";
 
+import { CABECERA_FORMATO, codificarRespuesta, formatoPedido, MIME } from "./formatos";
+import { avisarAhorro, medirFormatoSincrono } from "./medida-de-formato";
 import { encodeToon } from "./toon-tabular";
 
-// ── TOON MIME type ─────────────────────────────────────────────
-export const TOON_MIME = "application/vnd.toon";
+// ── MIME types ─────────────────────────────────────────────────
+export const TOON_MIME = MIME.toon;
+export const TRON_MIME = MIME.tron;
+export const AUTO_MIME = MIME.auto;
 
 // Re-export the canonical codec for consumers (SDK, tests).
-export { encodeToon, decodeToon } from "./toon-tabular";
-
-// ── Encoder ────────────────────────────────────────────────────
+export { encodeToon, decodeToon, ToonDecodeError } from "./toon-tabular";
 
 /**
- * Encode any JS value into TOON (Token-Oriented Object Notation), tabular form.
- *
- * Delegates to the canonical `encodeToon` (lib/toon-tabular.ts), which declares
- * object-array keys once and emits CSV rows — the token-saving shape. This
- * wrapper only unwraps the common `{ data: ... }` API envelope first so that a
- * list response encodes as a clean tabular block instead of a single-key object.
+ * @deprecated Usa `encodeToon`. Antes desenvolvía `{ data }` y tiraba las
+ * claves hermanas (`view`, `profile`…): ya no desenvuelve nada.
  */
 export function encodeTOON(data: unknown): string {
-  if (data === null || data === undefined) return "";
-
-  // Unwrap common API envelope: { data: [...] } or { data: {...} }
-  const payload =
-    typeof data === "object" && data !== null && "data" in data && Object.keys(data).length <= 3
-      ? (data as Record<string, unknown>).data
-      : data;
-
-  return encodeToon(payload);
+  return encodeToon(data);
 }
 
-// ── Hono Middleware ────────────────────────────────────────────
+/** Clave de la caché por forma: método + ruta con los ids cambiados por `:`. */
+function claveDeRuta(metodo: string, ruta: string): string {
+  return `${metodo} ${ruta.replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}|\/\d+(?=\/|$)/gi, "/:")}`;
+}
 
 /**
- * Content-negotiation middleware for TOON.
- * Intercepts responses and transforms JSON → TOON when the client
- * sends `Accept: application/vnd.toon` or `?format=toon`.
- *
- * Standard clients (Vue/Astro) are unaffected — they receive JSON
- * as usual.
+ * Middleware de negociación de formato. Las peticiones que no piden nada
+ * pasan sin tocarse (ni un byte de diferencia para los clientes JSON).
  */
 export function toonMiddleware(): MiddlewareHandler {
   return async (c, next) => {
-    // Check if client wants TOON
-    const acceptHeader = c.req.header("accept") || "";
-    const formatParam = c.req.query("format");
-    const wantsToon = acceptHeader.includes(TOON_MIME) || formatParam === "toon";
+    const pedido = formatoPedido(c.req.header("accept"), c.req.query("format"));
+    if (!pedido) return next();
 
-    if (!wantsToon) {
-      // Standard request — pass through unchanged
-      return next();
-    }
-
-    // Execute the handler normally
     await next();
 
-    // Only transform JSON responses
+    if (c.res.status >= 400 || c.res.status === 204) return;
     const contentType = c.res.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) return;
 
+    let datos: unknown;
     try {
-      // Clone and read the original JSON body
-      const original = await c.res.json();
-
-      // Encode as TOON
-      const toonBody = encodeTOON(original);
-
-      // Replace the response
-      c.res = new Response(toonBody, {
-        status: c.res.status,
-        headers: {
-          "Content-Type": TOON_MIME,
-          "X-Kitsuden-Format": "toon",
-        },
-      });
+      datos = JSON.parse(await c.res.clone().text());
     } catch {
-      // If JSON parsing fails, leave the response unchanged
+      return; // no es JSON de verdad: se deja como estaba
     }
+
+    const { valor: salida, medida } = medirFormatoSincrono(() =>
+      codificarRespuesta(datos, pedido.pedido, {
+        candidatos: pedido.candidatos,
+        clave: claveDeRuta(c.req.method, c.req.path),
+      })
+    );
+    // Lo que ahorró a un AGENTE (panel → cuotas); a nadie más se le cuenta.
+    avisarAhorro((c.get as (k: string) => { agentId?: string } | undefined)("agent")?.agentId, "rest", medida);
+
+    // Hono copia al Response nuevo las cabeceras del anterior (CORS, caché…)
+    // salvo Content-Type; las que describen el cuerpo viejo se quitan.
+    c.res = new Response(salida.texto, {
+      status: c.res.status,
+      headers: {
+        "Content-Type": MIME[salida.formato],
+        [CABECERA_FORMATO]: salida.formato,
+      },
+    });
+    c.res.headers.delete("content-length");
+    c.res.headers.delete("etag");
+    c.res.headers.append("Vary", "Accept");
   };
 }

@@ -1,0 +1,5 @@
+-- VekDocs Grimoire — seed
+-- No requiere datos semilla: la tabla ocr_documents (kon-ocr) se puebla
+-- automáticamente al pasar jobs por /api/ocr/gateway/jobs/extract.
+-- El estado del pipeline OCR vive en el Postgres de konusagi y el
+-- template store del motor vive en vekocr (SQLite propio).

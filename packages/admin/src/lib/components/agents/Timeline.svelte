@@ -4,6 +4,7 @@
   Diferencia: Pensamiento, Llamada a Tool, Respuesta de Tool
 -->
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import {
     Brain,
     Wrench,
@@ -69,59 +70,59 @@
   function formatTokens(inTokens?: number, outTokens?: number): string {
     const total = (inTokens || 0) + (outTokens || 0);
     if (total === 0) return "";
-    return `${total.toLocaleString()} tokens`;
+    return `${total.toLocaleString(localeFormato())} tokens`;
   }
 
   const stepConfig: Record<Step["stepType"], { icon: any; color: string; label: string }> = {
     llm_call: {
       icon: MessageSquare,
       color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-      label: "LLM Call",
+      label: t("timeline.llmCall"),
     },
     tool_call: {
       icon: Wrench,
       color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-      label: "Tool Call",
+      label: t("timeline.toolCall"),
     },
     tool_result: {
       icon: Wrench,
       color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-      label: "Tool Result",
+      label: t("timeline.toolResult"),
     },
     thinking: {
       icon: Brain,
       color: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-      label: "Thinking",
+      label: t("timeline.thinking"),
     },
     retrieval: {
       icon: Brain,
       color: "text-kitsuden-accent bg-kitsuden-accent/10 border-kitsuden-accent/20",
-      label: "Retrieval",
+      label: t("timeline.retrieval"),
     },
     memory_read: {
       icon: Brain,
       color: "text-pink-400 bg-pink-500/10 border-pink-500/20",
-      label: "Memory Read",
+      label: t("timeline.memoryRead"),
     },
     memory_write: {
       icon: Brain,
       color: "text-rose-400 bg-rose-500/10 border-rose-500/20",
-      label: "Memory Write",
+      label: t("timeline.memoryWrite"),
     },
     user_input: {
       icon: MessageSquare,
       color: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20",
-      label: "User Input",
+      label: t("timeline.userInput"),
     },
     system: {
       icon: Brain,
       color: "text-slate-400 bg-slate-500/10 border-slate-500/20",
-      label: "System",
+      label: t("common.system"),
     },
     error: {
       icon: AlertCircle,
       color: "text-red-400 bg-red-500/10 border-red-500/20",
-      label: "Error",
+      label: t("common.error"),
     },
   };
 </script>
@@ -164,7 +165,7 @@
               {/if}
             </div>
             <div class="flex items-center gap-3 mt-0.5 text-xs text-zinc-500">
-              <span>Step {step.stepOrder + 1}</span>
+              <span>{t("timeline.step")} {step.stepOrder + 1}</span>
               {#if step.durationMs}
                 <span>• {formatDuration(step.durationMs)}</span>
               {/if}
@@ -190,14 +191,14 @@
               <!-- Content/Reasoning -->
               {#if step.content}
                 <div>
-                  <span class="text-xs font-medium text-zinc-500 uppercase">Content</span>
+                  <span class="text-xs font-medium text-zinc-500 uppercase">{t("common.content")}</span>
                   <p class="mt-1 text-sm text-zinc-300 whitespace-pre-wrap">{step.content}</p>
                 </div>
               {/if}
 
               {#if step.reasoning}
                 <div>
-                  <span class="text-xs font-medium text-zinc-500 uppercase">Reasoning</span>
+                  <span class="text-xs font-medium text-zinc-500 uppercase">{t("timeline.reasoning")}</span>
                   <p class="mt-1 text-sm text-zinc-300 whitespace-pre-wrap">{step.reasoning}</p>
                 </div>
               {/if}
@@ -205,7 +206,7 @@
               <!-- Tool Input -->
               {#if step.toolInput}
                 <div>
-                  <span class="text-xs font-medium text-zinc-500 uppercase">Tool Input</span>
+                  <span class="text-xs font-medium text-zinc-500 uppercase">{t("timeline.toolInput")}</span>
                   <pre
                     class="mt-1 p-2 bg-zinc-950 rounded-lg text-xs text-zinc-300 overflow-x-auto">{JSON.stringify(
                       step.toolInput,
@@ -218,7 +219,7 @@
               <!-- Tool Output -->
               {#if step.toolOutput}
                 <div>
-                  <span class="text-xs font-medium text-zinc-500 uppercase">Tool Output</span>
+                  <span class="text-xs font-medium text-zinc-500 uppercase">{t("timeline.toolOutput")}</span>
                   <pre
                     class="mt-1 p-2 bg-zinc-950 rounded-lg text-xs text-zinc-300 overflow-x-auto">{JSON.stringify(
                       step.toolOutput,
@@ -231,7 +232,7 @@
               <!-- Error -->
               {#if step.errorMessage}
                 <div>
-                  <span class="text-xs font-medium text-red-500 uppercase">Error</span>
+                  <span class="text-xs font-medium text-red-500 uppercase">{t("common.error")}</span>
                   <p class="mt-1 text-sm text-red-400">{step.errorMessage}</p>
                 </div>
               {/if}

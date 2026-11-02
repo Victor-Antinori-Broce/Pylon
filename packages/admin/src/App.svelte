@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
 
   import GameStatsWidget from "./components/widgets/GameStatsWidget.svelte";
@@ -25,7 +26,7 @@
       component: GameStatsWidget,
       order: 5,
       module: "games",
-      props: { title: "Game Statistics", showChart: true },
+      props: { title: t("common.gameStatisticsExample"), showChart: true },
     });
 
     componentRegistry.registerWidget({

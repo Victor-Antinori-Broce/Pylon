@@ -145,7 +145,12 @@ export function buildDatasetWhere(
   user: RLSUser,
   dataColumn: string = "data"
 ): { where: SQL | undefined; hasRLS: boolean } {
-  const rlsCondition = buildDrizzleWhere(rules, user);
+  // El admin ve todas las filas, como en el resto del sistema (la política de
+  // Postgres `data_entries_owner_isolation`, `filterForClient` de realtime y
+  // `consultaSaltariaAislamiento`). Antes la regla de dueño se le aplicaba
+  // también y recibía 0 filas de un dataset por dueño. SOLO `admin`: ningún
+  // otro rol se salta las `rlsRules` aquí.
+  const rlsCondition = user?.role === "admin" ? undefined : buildDrizzleWhere(rules, user);
 
   // Filtro por datasetId (siempre requerido)
   const datasetFilter = sql`${sql.raw("data_set_id")} = ${datasetId}`;
@@ -161,6 +166,29 @@ export function buildDatasetWhere(
     where: datasetFilter,
     hasRLS: false,
   };
+}
+
+/**
+ * The entries of a dataset that someone outside the team may see: the published
+ * ones and their own (they own them or created them; an agent's rows are owned
+ * by its sponsor, and `created_by_id` is the agent). No id: only the published.
+ *
+ * THE one place for this rule: every path that reads entries for a non-staff
+ * caller goes through it. `alias` qualifies the columns in a query with a join.
+ */
+export function publishedOrOwn(userId: string | null | undefined, alias?: string): SQL {
+  const col = (name: string) => sql.raw(alias ? `${alias}.${name}` : name);
+  return userId
+    ? sql`(${col("status")} = 'published' OR ${col("owner_id")} = ${userId} OR ${col("created_by_id")} = ${userId})`
+    : sql`${col("status")} = 'published'`;
+}
+
+/** `publishedOrOwn` as a Kitsuden QL filter, for what goes through the query translator. */
+export function publishedOrOwnQl(userId: string | null | undefined): Record<string, unknown> {
+  const published = { status: { eq: "published" } };
+  return userId
+    ? { OR: [published, { ownerId: { eq: userId } }, { createdById: { eq: userId } }] }
+    : published;
 }
 
 /**

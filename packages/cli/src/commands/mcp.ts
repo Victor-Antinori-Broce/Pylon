@@ -1,5 +1,7 @@
-import { execSync } from "child_process";
+import { execFileSync, execSync, spawn } from "child_process";
+import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import chalk from "chalk";
 import fs from "fs-extra";
@@ -10,11 +12,26 @@ interface McpOptions {
   apiUrl?: string;
   token?: string;
   ide?: string;
+  stdio?: boolean;
+  agentEnvFile?: string;
 }
 
 export async function mcpCommand(options: McpOptions) {
   const PORT = options.port || "3002";
   const API_URL = options.apiUrl || "http://localhost:3000";
+
+  // --stdio: el cliente MCP lanza este proceso; stdout es suyo, nada de spinner.
+  // Orden: --agent-env-file, luego el entorno, luego --api-url. El entorno gana a
+  // --api-url porque esta siempre trae valor (el por defecto), y pisarla
+  // mandaría al agente a localhost:3000 sin pedirlo.
+  if (options.stdio) {
+    const delFichero = options.agentEnvFile ? readAgentEnvFile(options.agentEnvFile) : {};
+    runStdio(
+      delFichero.KITSUDEN_API_URL ?? process.env.KITSUDEN_API_URL ?? API_URL,
+      delFichero.KITSUDEN_API_TOKEN
+    );
+    return;
+  }
 
   // If --ide flag is set, just generate IDE config and exit
   if (options.ide) {
@@ -83,6 +100,117 @@ export async function mcpCommand(options: McpOptions) {
     console.error(error);
     process.exit(1);
   }
+}
+
+/**
+ * Dónde está el servidor: `KITSUDEN_MCP_ENTRY`, o `packages/mcp-server` buscando
+ * hacia arriba desde el directorio actual (el monorepo), o junto a este CLI.
+ */
+function findStandaloneEntry(): string | null {
+  if (process.env.KITSUDEN_MCP_ENTRY) return process.env.KITSUDEN_MCP_ENTRY;
+  const candidates: string[] = [];
+  for (let dir = process.cwd(); ; dir = path.dirname(dir)) {
+    candidates.push(path.join(dir, "packages", "mcp-server"));
+    if (path.dirname(dir) === dir) break;
+  }
+  // dist/commands/mcp.js → packages/cli → packages/mcp-server
+  candidates.push(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "mcp-server")
+  );
+  for (const pkg of candidates) {
+    for (const entry of ["dist/standalone.js", "src/standalone.ts"]) {
+      const file = path.join(pkg, entry);
+      if (fs.existsSync(file)) return file;
+    }
+  }
+  return null;
+}
+
+const VARIABLES_DEL_FICHERO = ["KITSUDEN_API_URL", "KITSUDEN_API_TOKEN"] as const;
+
+/**
+ * `--agent-env-file`: para clientes MCP que no expanden `${VAR}` y que, como el SDK
+ * de referencia, solo pasan al servidor PATH, HOME y poco más (Antigravity).
+ * El token vive en un fichero que ningún repositorio vaya a subir: dentro de
+ * uno sin ignorar, un `git add .` lo publicaría (hay máquinas donde la propia
+ * carpeta personal es un repositorio con remoto). Dentro de uno se acepta solo
+ * si ese repositorio lo ignora. `~` se expande aquí porque en un JSON nadie lo
+ * hace. No se llama `--env-file` porque Node 22 y Bun tienen una opción con ese
+ * nombre y Node la leía aunque fuera detrás del script.
+ */
+function readAgentEnvFile(
+  ruta: string
+): Partial<Record<(typeof VARIABLES_DEL_FICHERO)[number], string>> {
+  const fichero = path.resolve(ruta.replace(/^~(?=$|[\\/])/, os.homedir()));
+  const fallar = (motivo: string): never => {
+    console.error(`--agent-env-file ${fichero}: ${motivo}`);
+    process.exit(1);
+  };
+  if (!fs.existsSync(fichero)) fallar("does not exist");
+  // null cuando git sale con error (fuera de un repositorio, o no ignorado)
+  const git = (...args: string[]): string | null => {
+    try {
+      return execFileSync("git", ["-C", path.dirname(fichero), ...args], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+    } catch {
+      return null;
+    }
+  };
+  if (
+    git("rev-parse", "--is-inside-work-tree") === "true" &&
+    git("check-ignore", "-q", "--", fichero) === null
+  ) {
+    fallar(
+      `is inside the git repository ${git("rev-parse", "--show-toplevel")} and not ignored there; ` +
+        "move it out of every repository, or ignore it in that one"
+    );
+  }
+  const vars: Partial<Record<(typeof VARIABLES_DEL_FICHERO)[number], string>> = {};
+  for (const linea of fs.readFileSync(fichero, "utf8").split(/\r?\n/)) {
+    const m = linea.match(/^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+    if (!m) continue;
+    const [, nombre, valor] = m;
+    if ((VARIABLES_DEL_FICHERO as readonly string[]).includes(nombre)) {
+      vars[nombre as (typeof VARIABLES_DEL_FICHERO)[number]] = valor.replace(
+        /^(['"])(.*)\1$/,
+        "$2"
+      );
+    } else {
+      console.error(
+        `--agent-env-file: ignoring ${nombre} (only ${VARIABLES_DEL_FICHERO.join(", ")})`
+      );
+    }
+  }
+  return vars;
+}
+
+/**
+ * El token llega por el entorno (`KITSUDEN_API_TOKEN`) o por `--agent-env-file`:
+ * en `.mcp.json` se escribe `${KITSUDEN_API_TOKEN}` y cada agente trae el
+ * suyo. Un `--token` acabaría escrito en un fichero de configuración.
+ */
+function runStdio(apiUrl: string, token?: string) {
+  const entry = findStandaloneEntry();
+  if (!entry) {
+    console.error(
+      "Kitsuden MCP server not found. Run inside the Kitsuden monorepo, or set KITSUDEN_MCP_ENTRY " +
+        "to packages/mcp-server/dist/standalone.js."
+    );
+    process.exit(1);
+  }
+  const env = {
+    ...process.env,
+    KITSUDEN_API_URL: apiUrl,
+    ...(token ? { KITSUDEN_API_TOKEN: token } : {}),
+  };
+  const child = spawn("bun", ["run", entry, "--stdio"], { stdio: "inherit", env });
+  child.on("error", (error) => {
+    console.error(`Could not start bun (${error.message}). The MCP server runs on Bun.`);
+    process.exit(1);
+  });
+  child.on("exit", (code) => process.exit(code ?? 1));
 }
 
 function printConnectionInfo(port: string, _apiUrl: string) {

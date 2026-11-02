@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * KpiCreator - Creador completo de KPIs/Campos Calculados
    *
@@ -63,63 +64,63 @@
   }> = [
     {
       id: "formula",
-      label: "Formula",
-      description: "Mathematical expression using fields",
+      label: t("kpiCreator.formula"),
+      description: t("kpiCreator.mathematicalExpressionUsingFields"),
       icon: Calculator,
     },
-    { id: "count", label: "Count", description: "Count related records", icon: Hash },
-    { id: "sum", label: "Sum", description: "Sum values from related records", icon: TrendingUp },
-    { id: "average", label: "Average", description: "Calculate average", icon: TrendingUp },
-    { id: "concat", label: "Concatenate", description: "Join text fields", icon: Text },
+    { id: "count", label: t("kpiCreator.count"), description: t("kpiCreator.countRelatedRecords"), icon: Hash },
+    { id: "sum", label: t("kpiCreator.sum"), description: t("kpiCreator.sumValuesFromRelatedRecords"), icon: TrendingUp },
+    { id: "average", label: t("kpiCreator.average"), description: t("kpiCreator.calculateAverage"), icon: TrendingUp },
+    { id: "concat", label: t("kpiCreator.concatenate"), description: t("kpiCreator.joinTextFields"), icon: Text },
     {
       id: "date_diff",
-      label: "Date Difference",
-      description: "Days/hours between dates",
+      label: t("kpiCreator.dateDifference"),
+      description: t("kpiCreator.daysHoursBetweenDates"),
       icon: Calendar,
     },
-    { id: "conditional", label: "Conditional", description: "IF/THEN/ELSE logic", icon: Filter },
+    { id: "conditional", label: t("kpiCreator.conditional"), description: t("kpiCreator.ifThenElseLogic"), icon: Filter },
   ];
 
   const formatTypes = [
-    { id: "text", label: "Text" },
-    { id: "number", label: "Number" },
-    { id: "currency", label: "Currency" },
-    { id: "percentage", label: "Percentage" },
-    { id: "duration", label: "Duration" },
-    { id: "badge", label: "Status Badge" },
+    { id: "text", label: t("kpiCreator.text") },
+    { id: "number", label: t("kpiCreator.number") },
+    { id: "currency", label: t("common.currency") },
+    { id: "percentage", label: t("kpiCreator.percentage") },
+    { id: "duration", label: t("kpiCreator.duration") },
+    { id: "badge", label: t("kpiCreator.statusBadge") },
   ];
 
   function validateStep(): boolean {
     errors = {};
 
     if (step === 1) {
-      if (!field.label?.trim()) errors.label = "Label is required";
-      if (!field.name?.trim()) errors.name = "Name is required";
-      if (!field.type) errors.type = "Type is required";
+      if (!field.label?.trim()) errors.label = t("kpiCreator.labelIsRequired");
+      if (!field.name?.trim()) errors.name = t("kpiCreator.nameIsRequired");
+      if (!field.type) errors.type = t("kpiCreator.typeIsRequired");
     }
 
     if (step === 2) {
       switch (field.type) {
         case "formula":
-          if (!field.config?.expression) errors.expression = "Formula is required";
+          if (!field.config?.expression) errors.expression = t("kpiCreator.formulaIsRequired");
           break;
         case "count":
         case "sum":
         case "average":
-          if (!field.config?.sourceTable) errors.sourceTable = "Source table is required";
+          if (!field.config?.sourceTable) errors.sourceTable = t("kpiCreator.sourceTableIsRequired");
           if (field.type !== "count" && !field.config?.sourceField) {
-            errors.sourceField = "Field to aggregate is required";
+            errors.sourceField = t("kpiCreator.fieldToAggregateIsRequired");
           }
           break;
         case "concat":
-          if (!field.config?.fields?.length) errors.fields = "At least one field is required";
+          if (!field.config?.fields?.length) errors.fields = t("kpiCreator.atLeastOneFieldIs");
           break;
         case "date_diff":
-          if (!field.config?.startField) errors.startField = "Start date field is required";
-          if (!field.config?.endField) errors.endField = "End date field is required";
+          if (!field.config?.startField) errors.startField = t("kpiCreator.startDateFieldIsRequired");
+          if (!field.config?.endField) errors.endField = t("kpiCreator.endDateFieldIsRequired");
           break;
         case "conditional":
-          if (!field.config?.condition?.field) errors.condition = "Condition is required";
+          if (!field.config?.condition?.field) errors.condition = t("kpiCreator.conditionIsRequired");
           break;
       }
     }
@@ -191,9 +192,9 @@
     <div>
       <h2 class="text-lg font-bold text-kitsuden-text flex items-center gap-2">
         <Calculator class="w-5 h-5 text-kitsuden-accent" />
-        {value?.id ? "Edit" : "Create"} Calculated Field
+        {value?.id ? t("common.edit") : t("common.create")} {t("kpiCreator.calculatedField")}
       </h2>
-      <p class="text-sm text-kitsuden-subtle">Step {step} of 3</p>
+      <p class="text-sm text-kitsuden-subtle">{t("kpiCreator.stepOf3", { step })}</p>
     </div>
     <button
       class="p-2 rounded-lg hover:bg-kitsuden-surface text-kitsuden-subtle"
@@ -215,13 +216,13 @@
       <div class="space-y-6">
         <div>
           <label for="label" class="block text-sm font-medium text-kitsuden-text mb-2">
-            Field Label <span class="text-kitsuden-accent-2">*</span>
+            {t("kpiCreator.fieldLabel")} <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
             id="label"
             type="text"
             bind:value={field.label}
-            placeholder="e.g., Total Revenue"
+            placeholder={t("kpiCreator.eGTotalRevenue")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
           />
           {#if errors.label}
@@ -231,17 +232,17 @@
 
         <div>
           <label for="name" class="block text-sm font-medium text-kitsuden-text mb-2">
-            Field Name <span class="text-kitsuden-accent-2">*</span>
+            {t("kpiCreator.fieldName")} <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
             id="name"
             type="text"
             bind:value={field.name}
-            placeholder="e.g., total_revenue"
+            placeholder={t("kpiCreator.eGTotalRevenue2")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent font-mono"
           />
           <p class="mt-1 text-xs text-kitsuden-subtle">
-            Used in API and formulas. Auto-generated from label.
+            {t("kpiCreator.usedInApiAndFormulas")}
           </p>
           {#if errors.name}
             <p class="mt-1 text-sm text-kitsuden-accent-2">{errors.name}</p>
@@ -250,7 +251,7 @@
 
         <div>
           <label class="block text-sm font-medium text-kitsuden-text mb-3">
-            Calculation Type <span class="text-kitsuden-accent-2">*</span>
+            {t("kpiCreator.calculationType")} <span class="text-kitsuden-accent-2">*</span>
           </label>
           <div class="grid grid-cols-2 gap-3">
             {#each fieldTypes as type}
@@ -285,8 +286,8 @@
             class="w-5 h-5 rounded border-kitsuden-border bg-kitsuden-bg text-kitsuden-accent"
           />
           <div>
-            <p class="font-medium text-kitsuden-text">Mark as KPI</p>
-            <p class="text-xs text-kitsuden-subtle">Show in dashboards and enable targets</p>
+            <p class="font-medium text-kitsuden-text">{t("kpiCreator.markAsKpi")}</p>
+            <p class="text-xs text-kitsuden-subtle">{t("kpiCreator.showInDashboardsAndEnable")}</p>
           </div>
         </label>
       </div>
@@ -295,7 +296,7 @@
       <div class="space-y-6">
         {#if field.type === "formula"}
           <div>
-            <label class="block text-sm font-medium text-kitsuden-text mb-3"> Formula </label>
+            <label class="block text-sm font-medium text-kitsuden-text mb-3"> {t("kpiCreator.formula")} </label>
             <FormulaBuilder
               {availableFields}
               value={field.config?.expression}
@@ -309,14 +310,14 @@
           <div class="space-y-4">
             <div>
               <label for="sourcetable" class="block text-sm font-medium text-kitsuden-text mb-2">
-                Source Table
+                {t("kpiCreator.sourceTable")}
               </label>
               <select
                 id="sourcetable"
                 bind:value={field.config.sourceTable}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
               >
-                <option value="">Select table...</option>
+                <option value="">{t("kpiCreator.selectTable")}</option>
                 {#each availableTables as table}
                   <option value={table.name}>{table.label}</option>
                 {/each}
@@ -329,14 +330,14 @@
             {#if field.type !== "count"}
               <div>
                 <label for="sourcefield" class="block text-sm font-medium text-kitsuden-text mb-2">
-                  Field to {field.type}
+                  {t("kpiCreator.fieldTo", { type: field.type })}
                 </label>
                 <select
                   id="sourcefield"
                   bind:value={field.config.sourceField}
                   class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
                 >
-                  <option value="">Select field...</option>
+                  <option value="">{t("kpiCreator.selectField")}</option>
                   {#each availableFields.filter((f) => f.type === "number") as field}
                     <option value={field.name}>{field.label}</option>
                   {/each}
@@ -350,7 +351,7 @@
         {:else if field.type === "concat"}
           <div>
             <label class="block text-sm font-medium text-kitsuden-text mb-2">
-              Fields to Concatenate
+              {t("kpiCreator.fieldsToConcatenate")}
             </label>
             <div class="space-y-2">
               {#each field.config?.fields || [] as selectedField, index}
@@ -364,7 +365,7 @@
                     }}
                     class="flex-1 px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                   >
-                    <option value="">Select field...</option>
+                    <option value="">{t("kpiCreator.selectField")}</option>
                     {#each availableFields.filter((f) => f.type === "text") as f}
                       <option value={f.name}>{f.label}</option>
                     {/each}
@@ -391,19 +392,19 @@
                   };
                 }}
               >
-                <Plus class="w-4 h-4" /> Add Field
+                <Plus class="w-4 h-4" /> {t("kpiCreator.addField")}
               </button>
             </div>
 
             <div class="mt-4">
               <label for="separator" class="block text-sm font-medium text-kitsuden-text mb-2">
-                Separator
+                {t("kpiCreator.separator")}
               </label>
               <input
                 id="separator"
                 type="text"
                 bind:value={field.config.separator}
-                placeholder="e.g., ' - ' or ' '"
+                placeholder={t("kpiCreator.eGOr")}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
             </div>
@@ -412,14 +413,14 @@
           <div class="space-y-4">
             <div>
               <label for="startfield" class="block text-sm font-medium text-kitsuden-text mb-2">
-                Start Date Field
+                {t("kpiCreator.startDateField")}
               </label>
               <select
                 id="startfield"
                 bind:value={field.config.startField}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               >
-                <option value="">Select field...</option>
+                <option value="">{t("kpiCreator.selectField")}</option>
                 {#each availableFields.filter((f) => f.type === "date") as f}
                   <option value={f.name}>{f.label}</option>
                 {/each}
@@ -428,14 +429,14 @@
 
             <div>
               <label for="endfield" class="block text-sm font-medium text-kitsuden-text mb-2">
-                End Date Field
+                {t("kpiCreator.endDateField")}
               </label>
               <select
                 id="endfield"
                 bind:value={field.config.endField}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               >
-                <option value="">Now (current time)</option>
+                <option value="">{t("kpiCreator.nowCurrentTime")}</option>
                 {#each availableFields.filter((f) => f.type === "date") as f}
                   <option value={f.name}>{f.label}</option>
                 {/each}
@@ -444,29 +445,29 @@
 
             <div>
               <label for="unit" class="block text-sm font-medium text-kitsuden-text mb-2">
-                Output Unit
+                {t("kpiCreator.outputUnit")}
               </label>
               <select
                 id="unit"
                 bind:value={field.config.unit}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               >
-                <option value="days">Days</option>
-                <option value="hours">Hours</option>
-                <option value="minutes">Minutes</option>
-                <option value="seconds">Seconds</option>
+                <option value="days">{t("kpiCreator.days")}</option>
+                <option value="hours">{t("kpiCreator.hours")}</option>
+                <option value="minutes">{t("kpiCreator.minutes")}</option>
+                <option value="seconds">{t("kpiCreator.seconds")}</option>
               </select>
             </div>
           </div>
         {:else if field.type === "conditional"}
           <div class="space-y-4">
-            <p class="text-sm text-kitsuden-subtle">IF condition THEN value ELSE value</p>
+            <p class="text-sm text-kitsuden-subtle">{t("kpiCreator.ifConditionThenValueElse")}</p>
 
             <div
               class="p-4 rounded-lg bg-kitsuden-surface/50 border border-kitsuden-border space-y-4"
             >
               <div class="flex items-center gap-2 text-kitsuden-accent font-medium">
-                <span>IF</span>
+                <span>{t("kpiCreator.if")}</span>
               </div>
 
               <div class="grid grid-cols-3 gap-2">
@@ -474,7 +475,7 @@
                   bind:value={field.config.condition.field}
                   class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                 >
-                  <option value="">Select field...</option>
+                  <option value="">{t("kpiCreator.selectField")}</option>
                   {#each availableFields as f}
                     <option value={f.name}>{f.label}</option>
                   {/each}
@@ -484,45 +485,45 @@
                   bind:value={field.config.condition.operator}
                   class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                 >
-                  <option value="eq">equals</option>
-                  <option value="neq">not equals</option>
-                  <option value="gt">greater than</option>
-                  <option value="gte">greater or equal</option>
-                  <option value="lt">less than</option>
-                  <option value="lte">less or equal</option>
-                  <option value="contains">contains</option>
-                  <option value="empty">is empty</option>
+                  <option value="eq">{t("kpiCreator.equals")}</option>
+                  <option value="neq">{t("kpiCreator.notEquals")}</option>
+                  <option value="gt">{t("kpiCreator.greaterThan")}</option>
+                  <option value="gte">{t("kpiCreator.greaterOrEqual")}</option>
+                  <option value="lt">{t("kpiCreator.lessThan")}</option>
+                  <option value="lte">{t("kpiCreator.lessOrEqual")}</option>
+                  <option value="contains">{t("kpiCreator.contains")}</option>
+                  <option value="empty">{t("kpiCreator.isEmpty")}</option>
                 </select>
 
                 {#if field.config.condition.operator !== "empty"}
                   <input
                     type="text"
                     bind:value={field.config.condition.value}
-                    placeholder="Value"
+                    placeholder={t("kpiCreator.value")}
                     class="px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
                   />
                 {/if}
               </div>
 
               <div class="flex items-center gap-2 text-kitsuden-green font-medium">
-                <span>THEN</span>
+                <span>{t("kpiCreator.then")}</span>
               </div>
 
               <input
                 type="text"
                 bind:value={field.config.trueValue}
-                placeholder="Value if true"
+                placeholder={t("kpiCreator.valueIfTrue")}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
 
               <div class="flex items-center gap-2 text-kitsuden-accent-2 font-medium">
-                <span>ELSE</span>
+                <span>{t("kpiCreator.else")}</span>
               </div>
 
               <input
                 type="text"
                 bind:value={field.config.falseValue}
-                placeholder="Value if false"
+                placeholder={t("kpiCreator.valueIfFalse")}
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
             </div>
@@ -533,7 +534,7 @@
       <!-- Step 3: Format & KPI Settings -->
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium text-kitsuden-text mb-3"> Output Format </label>
+          <label class="block text-sm font-medium text-kitsuden-text mb-3"> {t("kpiCreator.outputFormat")} </label>
           <div class="grid grid-cols-3 gap-2">
             {#each formatTypes as fmt}
               <button
@@ -552,17 +553,17 @@
         {#if field.format?.type === "currency"}
           <div>
             <label for="currency" class="block text-sm font-medium text-kitsuden-text mb-2">
-              Currency
+              {t("common.currency")}
             </label>
             <select
               id="currency"
               bind:value={field.format.currency}
               class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
             >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="MXN">MXN ($)</option>
+              <option value="USD">{t("kpiCreator.usd")}</option>
+              <option value="EUR">{t("kpiCreator.eur")}</option>
+              <option value="GBP">{t("kpiCreator.gbp")}</option>
+              <option value="MXN">{t("kpiCreator.mxn")}</option>
             </select>
           </div>
         {/if}
@@ -570,7 +571,7 @@
         {#if field.format?.type === "number" || field.format?.type === "currency" || field.format?.type === "percentage"}
           <div>
             <label for="decimals" class="block text-sm font-medium text-kitsuden-text mb-2">
-              Decimal Places
+              {t("kpiCreator.decimalPlaces")}
             </label>
             <input
               id="decimals"
@@ -586,7 +587,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="prefix" class="block text-sm font-medium text-kitsuden-text mb-2">
-              Prefix
+              {t("kpiCreator.prefix")}
             </label>
             <input
               id="prefix"
@@ -598,7 +599,7 @@
           </div>
           <div>
             <label for="suffix" class="block text-sm font-medium text-kitsuden-text mb-2">
-              Suffix
+              {t("kpiCreator.suffix")}
             </label>
             <input
               id="suffix"
@@ -616,12 +617,12 @@
           >
             <h4 class="font-medium text-kitsuden-text flex items-center gap-2">
               <Target class="w-4 h-4 text-kitsuden-accent" />
-              KPI Targets
+              {t("kpiCreator.kpiTargets")}
             </h4>
 
             <div>
               <label for="target" class="block text-sm font-medium text-kitsuden-text mb-2">
-                Target Value
+                {t("kpiCreator.targetValue")}
               </label>
               <input
                 id="target"
@@ -638,7 +639,7 @@
                 class="block text-sm font-medium text-kitsuden-text mb-2 flex items-center gap-2"
               >
                 <AlertTriangle class="w-4 h-4 text-amber-400" />
-                Warning Threshold
+                {t("kpiCreator.warningThreshold")}
               </label>
               <input
                 id="warningthreshold"
@@ -648,7 +649,7 @@
                 class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text"
               />
               <p class="mt-1 text-xs text-kitsuden-subtle">
-                Value at which to show warning indicator
+                {t("kpiCreator.valueAtWhichToShow")}
               </p>
             </div>
           </div>
@@ -656,23 +657,23 @@
 
         <!-- Summary -->
         <div class="p-4 rounded-lg bg-kitsuden-accent/5 border border-kitsuden-accent/20">
-          <h4 class="font-medium text-kitsuden-text mb-2">Summary</h4>
+          <h4 class="font-medium text-kitsuden-text mb-2">{t("kpiCreator.summary")}</h4>
           <div class="space-y-1 text-sm">
             <p class="text-kitsuden-subtle">
-              <span class="text-kitsuden-text">Name:</span>
+              <span class="text-kitsuden-text">{t("kpiCreator.name")}</span>
               {field.name}
             </p>
             <p class="text-kitsuden-subtle">
-              <span class="text-kitsuden-text">Type:</span>
+              <span class="text-kitsuden-text">{t("kpiCreator.type")}</span>
               {field.type}
             </p>
             <p class="text-kitsuden-subtle">
-              <span class="text-kitsuden-text">Format:</span>
+              <span class="text-kitsuden-text">{t("kpiCreator.format")}</span>
               {field.format?.type}
             </p>
             {#if field.dependsOn?.length}
               <p class="text-kitsuden-subtle">
-                <span class="text-kitsuden-text">Depends on:</span>
+                <span class="text-kitsuden-text">{t("kpiCreator.dependsOn")}</span>
                 {field.dependsOn.join(", ")}
               </p>
             {/if}
@@ -688,23 +689,23 @@
       class="px-4 py-2 text-kitsuden-subtle hover:text-kitsuden-text transition-colors"
       onclick={onCancel}
     >
-      Cancel
+      {t("common.cancel")}
     </button>
 
     <div class="flex items-center gap-2">
       {#if step > 1}
-        <button class="px-4 py-2 btn-secondary" onclick={prevStep}> Back </button>
+        <button class="px-4 py-2 btn-secondary" onclick={prevStep}> {t("common.back")} </button>
       {/if}
 
       {#if step < 3}
         <button class="px-4 py-2 btn-primary flex items-center gap-2" onclick={nextStep}>
-          Next
+          {t("common.next")}
           <ChevronRight class="w-4 h-4" />
         </button>
       {:else}
         <button class="px-4 py-2 btn-primary flex items-center gap-2" onclick={handleSave}>
           <Check class="w-4 h-4" />
-          Save Field
+          {t("kpiCreator.saveField")}
         </button>
       {/if}
     </div>

@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { localeFormato } from "$lib/i18n";
   import type { FieldComponentProps } from "$lib/data-explorer/fieldRegistry";
 
   const { value, config, mode, onChange }: FieldComponentProps = $props();
 
   const displayValue = $derived(
-    value !== null && value !== undefined ? Number(value).toLocaleString() : "—"
+    value !== null && value !== undefined ? Number(value).toLocaleString(localeFormato()) : "—"
   );
 </script>
 

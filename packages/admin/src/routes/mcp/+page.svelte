@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
 
   import { goto } from "$app/navigation";
@@ -10,5 +11,5 @@
 </script>
 
 <div class="flex items-center justify-center h-64">
-  <div class="animate-pulse text-kitsuden-subtle">Redirecting to MCP Settings...</div>
+  <div class="animate-pulse text-kitsuden-subtle">{t("mcpPage.redirectingToMcpSettings")}</div>
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   /**
    * Media.svelte
    *
@@ -31,46 +32,47 @@
   import { onMount } from "svelte";
   import { slide, fade } from "svelte/transition";
 
+  import { isAdmin } from "$lib/auth.svelte";
   import { grimoireConfigStore } from "$lib/states/grimoire-config.svelte";
   import { mediaStore } from "$lib/states/media.svelte";
   // Inline storage providers config (avoiding import from unbuilt package)
   const storageProviders = [
     {
       id: "minio",
-      label: "MinIO (Self-hosted S3)",
-      description: "Self-hosted S3-compatible storage. Good for local development.",
+      label: t("media.minioSelfHostedS3"),
+      description: t("media.selfHostedS3CompatibleStorage"),
       icon: "Server",
       fields: [
         {
           key: "endpoint",
-          label: "Endpoint URL",
+          label: t("media.endpointUrl"),
           type: "url",
           placeholder: "http://localhost:9000",
         },
-        { key: "bucket", label: "Bucket Name", type: "text", placeholder: "kitsuden-media" },
-        { key: "accessKey", label: "Access Key", type: "text", placeholder: "minioadmin" },
-        { key: "secretKey", label: "Secret Key", type: "password", placeholder: "••••••••" },
+        { key: "bucket", label: t("media.bucketName"), type: "text", placeholder: "kitsuden-media" },
+        { key: "accessKey", label: t("media.accessKey"), type: "text", placeholder: "minioadmin" },
+        { key: "secretKey", label: t("media.secretKey"), type: "password", placeholder: "••••••••" },
         {
           key: "publicUrl",
-          label: "Public URL (optional)",
+          label: t("media.publicUrlOptional"),
           type: "url",
           placeholder: "http://localhost:9000/kitsuden-media",
         },
-        { key: "useSSL", label: "Use SSL", type: "checkbox" },
+        { key: "useSSL", label: t("media.useSsl"), type: "checkbox" },
       ],
     },
     {
       id: "s3",
-      label: "AWS S3",
-      description: "Amazon Web Services S3. Enterprise-grade cloud storage.",
+      label: t("media.awsS3"),
+      description: t("media.amazonWebServicesS3Enterprise"),
       icon: "Cloud",
       fields: [
-        { key: "region", label: "Region", type: "text", placeholder: "us-east-1" },
-        { key: "bucket", label: "Bucket Name", type: "text", placeholder: "my-bucket" },
-        { key: "accessKeyId", label: "Access Key ID", type: "text", placeholder: "AKIA..." },
+        { key: "region", label: t("media.region"), type: "text", placeholder: "us-east-1" },
+        { key: "bucket", label: t("media.bucketName"), type: "text", placeholder: "my-bucket" },
+        { key: "accessKeyId", label: t("media.accessKeyId"), type: "text", placeholder: t("media.akia") },
         {
           key: "secretAccessKey",
-          label: "Secret Access Key",
+          label: t("media.secretAccessKey"),
           type: "password",
           placeholder: "••••••••",
         },
@@ -78,14 +80,14 @@
     },
     {
       id: "local",
-      label: "Local Storage",
-      description: "Store files locally on the server. Simple but not scalable.",
+      label: t("media.localStorage"),
+      description: t("media.storeFilesLocallyOnThe"),
       icon: "HardDrive",
       fields: [
-        { key: "basePath", label: "Base Path", type: "text", placeholder: "/data/media" },
+        { key: "basePath", label: t("media.basePath"), type: "text", placeholder: "/data/media" },
         {
           key: "publicUrl",
-          label: "Public URL",
+          label: t("media.publicUrl"),
           type: "url",
           placeholder: "http://localhost:3001/media",
         },
@@ -106,12 +108,15 @@
   let isTesting = $state(false);
 
   const GRIMOIRE_ID = "grimoire-media";
+  const puedeConfigurar = isAdmin();
 
   // ─── Cargar al montar ───
   onMount(() => {
     mediaStore.fetchFiles();
     mediaStore.fetchFolders();
-    loadConfig();
+    // La configuración de almacenamiento es de admin (GET /api/media/config da
+    // 403 al editor); el editor sube y gestiona archivos, no el proveedor.
+    if (puedeConfigurar) loadConfig();
   });
 
   async function loadConfig() {
@@ -190,7 +195,7 @@
   }
 
   function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString(localeFormato());
   }
 
   // Get current provider fields
@@ -207,9 +212,9 @@
         >
           <Image class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Media Library
+        {t("media.mediaLibrary")}
       </h1>
-      <p class="text-sm text-kitsuden-subtle mt-1">Manage your images, videos, and documents.</p>
+      <p class="text-sm text-kitsuden-subtle mt-1">{t("media.manageYourImagesVideosAnd")}</p>
     </div>
   </div>
 
@@ -226,7 +231,7 @@
         onclick={() => (activeTab = "library")}
       >
         <Image class="w-4 h-4" />
-        Library
+        {t("media.library")}
       </button>
       <button
         class="px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2"
@@ -238,7 +243,7 @@
         onclick={() => (activeTab = "folders")}
       >
         <Folder class="w-4 h-4" />
-        Folders
+        {t("media.folders")}
       </button>
       <button
         class="px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2"
@@ -250,8 +255,9 @@
         onclick={() => (activeTab = "upload")}
       >
         <Upload class="w-4 h-4" />
-        Upload
+        {t("media.upload")}
       </button>
+      {#if puedeConfigurar}
       <button
         class="px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2"
         class:border-kitsuden-accent={activeTab === "settings"}
@@ -262,8 +268,9 @@
         onclick={() => (activeTab = "settings")}
       >
         <Settings class="w-4 h-4" />
-        Settings
+        {t("common.settings")}
       </button>
+      {/if}
     </div>
   </div>
 
@@ -279,16 +286,16 @@
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
             <input
               type="text"
-              placeholder="Search files..."
+              placeholder={t("media.searchFiles")}
               class="input pl-10 w-full"
               bind:value={mediaStore.searchQuery}
             />
           </div>
           <select class="input w-32" bind:value={mediaStore.filterType}>
-            <option value="">All Types</option>
-            <option value="image">Images</option>
-            <option value="video">Videos</option>
-            <option value="application">Documents</option>
+            <option value="">{t("media.allTypes")}</option>
+            <option value="image">{t("media.images")}</option>
+            <option value="video">{t("media.videos")}</option>
+            <option value="application">{t("media.documents")}</option>
           </select>
         </div>
         <div class="flex items-center gap-2">
@@ -319,20 +326,20 @@
           class="text-kitsuden-accent hover:underline"
           onclick={() => mediaStore.selectFolder(null)}
         >
-          Root
+          {t("media.root")}
         </button>
         {#if mediaStore.selectedFolder}
           <span class="text-kitsuden-subtle">/</span>
           <span class="text-kitsuden-text">{mediaStore.selectedFolder.name}</span>
         {/if}
-        <span class="text-kitsuden-subtle ml-auto">{mediaStore.filteredFiles.length} files</span>
+        <span class="text-kitsuden-subtle ml-auto">{mediaStore.filteredFiles.length} {t("media.files")}</span>
       </div>
 
       <!-- Loading / Empty / Grid / List -->
       {#if mediaStore.isLoading && mediaStore.files.length === 0}
         <div class="card p-12 text-center">
           <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mx-auto mb-4" />
-          <p class="text-kitsuden-subtle">Loading files...</p>
+          <p class="text-kitsuden-subtle">{t("media.loadingFiles")}</p>
         </div>
       {:else if mediaStore.filteredFiles.length === 0}
         <div
@@ -340,23 +347,23 @@
           ondrop={handleDrop}
           ondragover={handleDragOver}
           role="region"
-          aria-label="Drop files here"
+          aria-label={t("media.dropFilesHere")}
         >
           <div
             class="w-16 h-16 mx-auto mb-4 rounded-full bg-kitsuden-accent/10 flex items-center justify-center"
           >
             <Image class="w-8 h-8 text-kitsuden-accent/50" />
           </div>
-          <h3 class="text-lg font-medium text-kitsuden-text mb-2">No Files Yet</h3>
+          <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("media.noFilesYet")}</h3>
           <p class="text-sm text-kitsuden-subtle max-w-md mx-auto mb-6">
-            Upload your first file or drag and drop files here.
+            {t("media.uploadYourFirstFileOr")}
           </p>
           <button
             class="btn-primary inline-flex items-center gap-2"
             onclick={() => (activeTab = "upload")}
           >
             <Upload class="w-4 h-4" />
-            Upload Files
+            {t("media.uploadFiles")}
           </button>
         </div>
       {:else if mediaStore.viewMode === "grid"}
@@ -390,18 +397,18 @@
               >
                 <button
                   class="p-1.5 rounded-lg bg-kitsuden-card/90 hover:bg-kitsuden-card text-kitsuden-text-dim hover:text-kitsuden-accent transition-colors"
-                  title="Copy URL"
+                  title={t("media.copyUrl")}
                   onclick={() => handleCopyUrl(file.url || file.publicUrl || "", file.id)}
                 >
                   {#if copiedId === file.id}
                     <Check class="w-3.5 h-3.5 text-green-500" />
                   {:else}
-                    <span class="text-xs">Copy</span>
+                    <span class="text-xs">{t("media.copy")}</span>
                   {/if}
                 </button>
                 <button
                   class="p-1.5 rounded-lg bg-kitsuden-card/90 hover:bg-kitsuden-card text-kitsuden-text-dim hover:text-kitsuden-accent-2 transition-colors"
-                  title="Delete"
+                  title={t("common.delete")}
                   onclick={() => handleDeleteFile(file.id)}
                 >
                   <Trash2 class="w-3.5 h-3.5" />
@@ -417,19 +424,19 @@
               <tr class="border-b border-kitsuden-border bg-kitsuden-surface/50">
                 <th
                   class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-                  >File</th
+                  >{t("media.file")}</th
                 >
                 <th
                   class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-                  >Type</th
+                  >{t("common.type")}</th
                 >
                 <th
                   class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-                  >Size</th
+                  >{t("media.size")}</th
                 >
                 <th
                   class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle text-right"
-                  >Actions</th
+                  >{t("common.actions")}</th
                 >
               </tr>
             </thead>
@@ -476,7 +483,7 @@
                       >
                         {#if copiedId === file.id}<Check
                             class="w-4 h-4 text-green-500"
-                          />{:else}<span class="text-xs">Copy</span>{/if}
+                          />{:else}<span class="text-xs">{t("media.copy")}</span>{/if}
                       </button>
                       <button
                         class="p-1.5 rounded-lg hover:bg-kitsuden-accent-2/10 text-kitsuden-text-dim hover:text-kitsuden-accent-2"
@@ -505,15 +512,15 @@
           onclick={() => (showNewFolderDialog = true)}
         >
           <Plus class="w-4 h-4" />
-          New Folder
+          {t("media.newFolder")}
         </button>
       </div>
 
       {#if mediaStore.folders.length === 0}
         <div class="card p-12 text-center">
           <Folder class="w-12 h-12 text-kitsuden-subtle mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-kitsuden-text mb-2">No Folders</h3>
-          <p class="text-sm text-kitsuden-subtle">Create folders to organize your media files.</p>
+          <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("media.noFolders")}</h3>
+          <p class="text-sm text-kitsuden-subtle">{t("media.createFoldersToOrganizeYour")}</p>
         </div>
       {:else}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -546,13 +553,13 @@
         ondrop={handleDrop}
         ondragover={handleDragOver}
         role="region"
-        aria-label="Drop files here"
+        aria-label={t("media.dropFilesHere")}
       >
         <Upload class="w-16 h-16 text-kitsuden-accent mx-auto mb-6" />
-        <h3 class="text-xl font-semibold text-kitsuden-text mb-2">Upload Files</h3>
-        <p class="text-kitsuden-subtle mb-2">Drag and drop files here, or click to browse</p>
+        <h3 class="text-xl font-semibold text-kitsuden-text mb-2">{t("media.uploadFiles")}</h3>
+        <p class="text-kitsuden-subtle mb-2">{t("media.dragAndDropFilesHere")}</p>
         <p class="text-xs text-kitsuden-text-dim mb-6">
-          Supports: Images, Videos, PDFs • Max size: {config.features.maxFileSize}MB
+          {t("media.supportsImagesVideosPdfsMax", { maxFileSize: config.features.maxFileSize })}
         </p>
         <input
           bind:this={fileInput}
@@ -567,14 +574,14 @@
           onclick={() => fileInput?.click()}
         >
           <Plus class="w-4 h-4" />
-          Select Files
+          {t("media.selectFiles")}
         </button>
       </div>
 
       <!-- Upload Progress -->
       {#if mediaStore.uploadProgress.length > 0}
         <div class="card p-4 mt-4 space-y-3">
-          <h4 class="text-sm font-medium text-kitsuden-text">Uploading...</h4>
+          <h4 class="text-sm font-medium text-kitsuden-text">{t("media.uploading")}</h4>
           {#each mediaStore.uploadProgress as progress}
             <div class="flex items-center gap-3">
               <span class="text-sm text-kitsuden-subtle truncate flex-1">{progress.filename}</span>
@@ -599,7 +606,7 @@
       <div class="card p-6">
         <h3 class="text-lg font-semibold text-kitsuden-text mb-4 flex items-center gap-2">
           <Server class="w-5 h-5 text-kitsuden-accent" />
-          Storage Provider
+          {t("media.storageProvider")}
         </h3>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -634,7 +641,7 @@
         {#if currentProvider}
           <div class="space-y-4 border-t border-kitsuden-border pt-6">
             <h4 class="text-sm font-medium text-kitsuden-text">
-              {currentProvider.label} Configuration
+              {t("media.configuration", { label: currentProvider.label })}
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {#each currentProvider.fields as field}
@@ -680,10 +687,10 @@
           >
             {#if isTesting}
               <RefreshCw class="w-4 h-4 animate-spin" />
-              Testing...
+              {t("media.testing")}
             {:else}
               <RefreshCw class="w-4 h-4" />
-              Test Connection
+              {t("media.testConnection")}
             {/if}
           </button>
 
@@ -706,12 +713,12 @@
 
       <!-- Features -->
       <div class="card p-6">
-        <h3 class="text-lg font-semibold text-kitsuden-text mb-4">Features</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text mb-4">{t("media.features")}</h3>
         <div class="space-y-4">
           <div class="flex items-center justify-between p-3 bg-kitsuden-surface/50 rounded-lg">
             <div>
-              <p class="font-medium text-kitsuden-text">Thumbnails</p>
-              <p class="text-xs text-kitsuden-subtle">Generate thumbnails for uploaded images</p>
+              <p class="font-medium text-kitsuden-text">{t("media.thumbnails")}</p>
+              <p class="text-xs text-kitsuden-subtle">{t("media.generateThumbnailsForUploadedImages")}</p>
             </div>
             <input
               type="checkbox"
@@ -722,8 +729,8 @@
 
           <div class="flex items-center justify-between p-3 bg-kitsuden-surface/50 rounded-lg">
             <div>
-              <p class="font-medium text-kitsuden-text">Image Optimization</p>
-              <p class="text-xs text-kitsuden-subtle">Auto-convert images to WebP format</p>
+              <p class="font-medium text-kitsuden-text">{t("media.imageOptimization")}</p>
+              <p class="text-xs text-kitsuden-subtle">{t("media.autoConvertImagesToWebp")}</p>
             </div>
             <input
               type="checkbox"
@@ -734,9 +741,9 @@
 
           <div class="flex items-center justify-between p-3 bg-kitsuden-surface/50 rounded-lg">
             <div>
-              <p class="font-medium text-kitsuden-text">Signed URLs</p>
+              <p class="font-medium text-kitsuden-text">{t("media.signedUrls")}</p>
               <p class="text-xs text-kitsuden-subtle">
-                Use temporary signed URLs for private files
+                {t("media.useTemporarySignedUrlsFor")}
               </p>
             </div>
             <input
@@ -749,7 +756,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="maxfilesize" class="block text-sm text-kitsuden-subtle mb-1"
-                >Max File Size (MB)</label
+                >{t("media.maxFileSizeMb")}</label
               >
               <input
                 id="maxfilesize"
@@ -774,7 +781,7 @@
         {:else if grimoireConfigStore.getConfigSaveSuccess(GRIMOIRE_ID)}
           <div class="text-sm text-green-500 flex items-center gap-2">
             <Check class="w-4 h-4" />
-            Settings saved successfully
+            {t("media.settingsSavedSuccessfully")}
           </div>
         {:else}
           <div></div>
@@ -787,10 +794,10 @@
         >
           {#if grimoireConfigStore.isConfigSaving(GRIMOIRE_ID)}
             <Loader2 class="w-4 h-4 animate-spin" />
-            Saving...
+            {t("common.saving")}
           {:else}
             <Save class="w-4 h-4" />
-            Save Settings
+            {t("media.saveSettings")}
           {/if}
         </button>
       </div>
@@ -806,7 +813,7 @@
   >
     <div class="card p-6 w-full max-w-md mx-4" transition:slide>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-kitsuden-text">New Folder</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text">{t("media.newFolder")}</h3>
         <button
           class="text-kitsuden-subtle hover:text-kitsuden-text"
           onclick={() => (showNewFolderDialog = false)}
@@ -816,15 +823,15 @@
       </div>
       <input
         type="text"
-        placeholder="Folder name"
+        placeholder={t("media.folderName")}
         class="input w-full mb-4"
         bind:value={newFolderName}
         onkeydown={(e) => e.key === "Enter" && handleCreateFolder()}
       />
       <div class="flex justify-end gap-2">
-        <button class="btn-secondary" onclick={() => (showNewFolderDialog = false)}>Cancel</button>
+        <button class="btn-secondary" onclick={() => (showNewFolderDialog = false)}>{t("common.cancel")}</button>
         <button class="btn-primary" onclick={handleCreateFolder} disabled={!newFolderName.trim()}>
-          Create
+          {t("common.create")}
         </button>
       </div>
     </div>

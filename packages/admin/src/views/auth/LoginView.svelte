@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+  import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import {
     signIn,
     signOut,
@@ -9,7 +11,7 @@
     getLoading,
     getError,
     isLoggedIn,
-    isAdmin,
+    isStaff,
     requestPasswordReset,
     resetPassword,
     resendVerification,
@@ -61,7 +63,7 @@
       modo = "nueva";
     }
     if (params.get("error") === "INVALID_TOKEN") {
-      localError = "El enlace ha caducado o ya se usó. Pide uno nuevo.";
+      localError = t("loginView.elEnlaceHaCaducadoO");
       modo = "olvido";
     }
   });
@@ -112,10 +114,10 @@
       // Fetch the full session to get the complete user object with role.
       await checkSession();
 
-      // Check if the user has admin role
-      if (!isAdmin()) {
-        console.warn("[login] User is NOT admin, signing out. Role:", signInResult?.user?.role);
-        localError = "Access denied \u2014 admin role required";
+      // Solo entra el staff (admin o editor)
+      if (!isStaff()) {
+        console.warn("[login] User is not staff, signing out. Role:", signInResult?.user?.role);
+        localError = t("loginView.accessDeniedAdminRoleRequired");
         await signOut();
         return;
       }
@@ -128,7 +130,7 @@
       // un «Email not verified» en inglés sin ninguna salida.
       if ((err as { code?: string })?.code === "EMAIL_NOT_VERIFIED") {
         pendienteDeVerificar = true;
-        localError = "Tienes que confirmar tu email antes de entrar. Revisa tu correo.";
+        localError = t("loginView.tienesQueConfirmarTuEmail");
       }
     }
   }
@@ -139,7 +141,7 @@
     try {
       await resendVerification(email);
       localError = null;
-      aviso = "Te hemos enviado otro enlace de confirmación.";
+      aviso = t("loginView.teHemosEnviadoOtroEnlace");
     } catch (err) {
       localError = (err as Error).message;
     } finally {
@@ -157,7 +159,7 @@
       // El mismo mensaje exista o no la cuenta: distinguirlo permitiría
       // averiguar qué emails están registrados probando direcciones.
       aviso =
-        "Si existe una cuenta con ese email, te llegará un enlace para restablecer la contraseña.";
+        t("loginView.siExisteUnaCuentaCon");
     } catch (err) {
       localError = (err as Error).message;
     } finally {
@@ -169,15 +171,15 @@
     e.preventDefault();
     localError = null;
     if (nuevaPassword.length < 8) {
-      localError = "La contraseña necesita al menos 8 caracteres.";
+      localError = t("loginView.laContrasenaNecesitaAlMenos");
       return;
     }
     if (nuevaPassword !== repetirPassword) {
-      localError = "Las dos contraseñas no coinciden.";
+      localError = t("loginView.lasDosContrasenasNoCoinciden");
       return;
     }
     if (!resetToken) {
-      localError = "Falta el enlace de restablecimiento. Pide uno nuevo.";
+      localError = t("loginView.faltaElEnlaceDeRestablecimiento");
       modo = "olvido";
       return;
     }
@@ -191,7 +193,7 @@
       nuevaPassword = "";
       repetirPassword = "";
       modo = "entrar";
-      aviso = "Contraseña cambiada. Entra con la nueva.";
+      aviso = t("loginView.contrasenaCambiadaEntraConLa");
     } catch (err) {
       localError = (err as Error).message;
     } finally {
@@ -212,6 +214,7 @@
   Cyberpunk glassmorphism aesthetic, centered card.
 -->
 <div class="login-bg">
+  <div class="selector-idioma"><LanguageSwitcher /></div>
   <!-- Animated grid background -->
   <div class="grid-overlay"></div>
 
@@ -232,8 +235,8 @@
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
         </svg>
       </div>
-      <h1 class="brand-name">Kitsuden</h1>
-      <p class="brand-sub">Admin Console</p>
+      <h1 class="brand-name">{t("common.kitsuden")}</h1>
+      <p class="brand-sub">{t("loginView.adminConsole")}</p>
     </div>
 
     <!-- Error -->
@@ -266,19 +269,19 @@
     {#if modo === "entrar"}
       <form onsubmit={handleLogin} class="login-form">
         <div class="field">
-          <label class="field-label" for="email">Email</label>
+          <label class="field-label" for="email">{t("common.email")}</label>
           <input
             bind:value={email}
             type="email"
             id="email"
-            placeholder="admin@kitsuden.gg"
+            placeholder={t("loginView.adminKitsudenGg")}
             class="field-input"
             autocomplete="email"
             required
           />
         </div>
         <div class="field">
-          <label class="field-label" for="password">Password</label>
+          <label class="field-label" for="password">{t("common.password")}</label>
           <input
             bind:value={password}
             type="password"
@@ -293,7 +296,7 @@
           {#if loading}
             <span class="spinner"></span>
           {:else}
-            <span>Sign In</span>
+            <span>{t("loginView.signIn")}</span>
           {/if}
         </button>
       </form>
@@ -305,21 +308,21 @@
           disabled={enviando || !email}
           onclick={handleReenviar}
         >
-          Reenviar el correo de confirmación
+          {t("loginView.reenviarElCorreoDeConfirmacion")}
         </button>
       {/if}
       <button type="button" class="link-btn" onclick={() => cambiarModo("olvido")}>
-        ¿Olvidaste tu contraseña?
+        {t("loginView.olvidasteTuContrasena")}
       </button>
     {:else if modo === "olvido"}
       <form onsubmit={handleOlvido} class="login-form">
         <div class="field">
-          <label class="field-label" for="email-olvido">Email</label>
+          <label class="field-label" for="email-olvido">{t("common.email")}</label>
           <input
             bind:value={email}
             type="email"
             id="email-olvido"
-            placeholder="admin@kitsuden.gg"
+            placeholder={t("loginView.adminKitsudenGg")}
             class="field-input"
             autocomplete="email"
             required
@@ -329,17 +332,17 @@
           {#if enviando}
             <span class="spinner"></span>
           {:else}
-            <span>Enviar enlace</span>
+            <span>{t("loginView.enviarEnlace")}</span>
           {/if}
         </button>
       </form>
       <button type="button" class="link-btn" onclick={() => cambiarModo("entrar")}>
-        Volver a entrar
+        {t("loginView.volverAEntrar")}
       </button>
     {:else}
       <form onsubmit={handleNueva} class="login-form">
         <div class="field">
-          <label class="field-label" for="nueva-password">Contraseña nueva</label>
+          <label class="field-label" for="nueva-password">{t("loginView.contrasenaNueva")}</label>
           <input
             bind:value={nuevaPassword}
             type="password"
@@ -351,7 +354,7 @@
           />
         </div>
         <div class="field">
-          <label class="field-label" for="repetir-password">Repítela</label>
+          <label class="field-label" for="repetir-password">{t("loginView.repitela")}</label>
           <input
             bind:value={repetirPassword}
             type="password"
@@ -366,7 +369,7 @@
           {#if enviando}
             <span class="spinner"></span>
           {:else}
-            <span>Guardar contraseña</span>
+            <span>{t("loginView.guardarContrasena")}</span>
           {/if}
         </button>
       </form>
@@ -394,20 +397,27 @@
                 <path d={PROVIDER_STYLE[provider.id].icon} />
               </svg>
             {/if}
-            <span>Continuar con {provider.label}</span>
+            <span>{t("loginView.continuarCon")} {provider.label}</span>
           </button>
         {/each}
       </div>
       <!-- Entrar por aquí crea la cuenta si no existe, pero esta consola exige
            rol admin: sin él, checkSession la echa igual que a una contraseña. -->
-      <p class="social-note">La consola sigue exigiendo rol de administrador.</p>
+      <p class="social-note">{t("loginView.laConsolaSigueExigiendoRol")}</p>
     {/if}
 
-    <p class="login-hint">Built with Better-Auth 🔐</p>
+    <p class="login-hint">{t("loginView.builtWithBetterAuth")}</p>
   </div>
 </div>
 
 <style>
+  .selector-idioma {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+  }
+
   /* ── Background ── */
   .login-bg {
     position: fixed;

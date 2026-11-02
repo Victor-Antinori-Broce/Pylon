@@ -28,20 +28,25 @@ describe("Row Level Security", () => {
       const userId = `test-user-${Date.now()}`;
       const userRole = "admin";
 
-      // Set RLS context
-      await db.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
-      await db.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, true)`);
+      // `set_config(..., true)` vale solo dentro de la transacción en curso.
+      // Con `db.execute` suelto cada sentencia es su propia transacción (y en
+      // un pool, a veces otra conexión): el valor ya no existía al leerlo. Con
+      // pg-mem esto nunca se ejecutó. Además la columna se llama
+      // `current_setting`, no `set_config`.
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
+        await tx.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, true)`);
 
-      // Get RLS context
-      const userIdResult = await db.execute<{ set_config: string }>(
-        sql`SELECT current_setting('app.current_user_id', true)`
-      );
-      const roleResult = await db.execute<{ set_config: string }>(
-        sql`SELECT current_setting('app.current_user_role', true)`
-      );
+        const userIdResult = await tx.execute<{ current_setting: string }>(
+          sql`SELECT current_setting('app.current_user_id', true)`
+        );
+        const roleResult = await tx.execute<{ current_setting: string }>(
+          sql`SELECT current_setting('app.current_user_role', true)`
+        );
 
-      expect(userIdResult.rows?.[0]?.set_config).toBe(userId);
-      expect(roleResult.rows?.[0]?.set_config).toBe(userRole);
+        expect(userIdResult.rows?.[0]?.current_setting).toBe(userId);
+        expect(roleResult.rows?.[0]?.current_setting).toBe(userRole);
+      });
     });
 
     it("should handle missing RLS context gracefully", async () => {
@@ -124,15 +129,18 @@ describe("Row Level Security", () => {
       // SQL injection attempt
       const maliciousUserId = "user'; DROP TABLE users; --";
 
-      // Should handle safely via parameterized query
-      await db.execute(sql`SELECT set_config('app.current_user_id', ${maliciousUserId}, true)`);
+      // Should handle safely via parameterized query (en una transacción: ver
+      // «should set and get RLS context variables»)
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT set_config('app.current_user_id', ${maliciousUserId}, true)`);
 
-      const result = await db.execute<{ current_setting: string }>(
-        sql`SELECT current_setting('app.current_user_id', true)`
-      );
+        const result = await tx.execute<{ current_setting: string }>(
+          sql`SELECT current_setting('app.current_user_id', true)`
+        );
 
-      // Should store value as-is (parameterized query prevents injection)
-      expect(result.rows?.[0]?.current_setting).toBe(maliciousUserId);
+        // Should store value as-is (parameterized query prevents injection)
+        expect(result.rows?.[0]?.current_setting).toBe(maliciousUserId);
+      });
     });
 
     it("should handle long user IDs", async () => {
@@ -140,14 +148,15 @@ describe("Row Level Security", () => {
 
       const longUserId = "user-" + "x".repeat(500);
 
-      await db.execute(sql`SELECT set_config('app.current_user_id', ${longUserId}, true)`);
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT set_config('app.current_user_id', ${longUserId}, true)`);
 
-      const result = await db.execute<{ current_setting: string }>(
-        sql`SELECT current_setting('app.current_user_id', true)`
-      );
+        const result = await tx.execute<{ current_setting: string }>(
+          sql`SELECT current_setting('app.current_user_id', true)`
+        );
 
-      expect(result.rows?.[0]?.current_setting).toBeDefined();
-      expect(result.rows?.[0]?.current_setting.length).toBeGreaterThan(0);
+        expect(result.rows?.[0]?.current_setting).toBe(longUserId);
+      });
     });
   });
 
@@ -158,13 +167,15 @@ describe("Row Level Security", () => {
       const validRoles = ["admin", "editor", "user"];
 
       for (const role of validRoles) {
-        await db.execute(sql`SELECT set_config('app.current_user_role', ${role}, true)`);
+        await db.transaction(async (tx) => {
+          await tx.execute(sql`SELECT set_config('app.current_user_role', ${role}, true)`);
 
-        const result = await db.execute<{ current_setting: string }>(
-          sql`SELECT current_setting('app.current_user_role', true)`
-        );
+          const result = await tx.execute<{ current_setting: string }>(
+            sql`SELECT current_setting('app.current_user_role', true)`
+          );
 
-        expect(result.rows?.[0]?.current_setting).toBe(role);
+          expect(result.rows?.[0]?.current_setting).toBe(role);
+        });
       }
     });
 

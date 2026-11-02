@@ -53,7 +53,7 @@ def my_view(request):
 // apps/api/src/services/agent-auth.ts
 
 // 1. Token format: kitsuden_agent_{tipo}_{hash}
-const agentToken = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const agentToken = "<YOUR_AGENT_KEY>";
 
 // 2. Validación con hash SHA-256
 const authResult = await authenticateAgent(token, {

@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 /**
  * Shared Module State (Svelte 5 Runes)
  *
@@ -24,6 +25,8 @@ export interface ModuleInfo {
   dependsOn?: string[];
   enabledByGrimoire?: boolean;
   sidebarBadge?: string;
+  /** Madurez declarada en el kon.json. */
+  madurez?: "estable" | "beta" | "experimental";
 }
 
 export interface UninstalledKon {
@@ -100,26 +103,67 @@ class ModuleStore {
   }
 
   /**
-   * Fetch all modules from the API.
+   * Cada llamada a `fetchModules` lleva un número. Si mientras una espera para
+   * reintentar llega otra (el botón «Reintentar», o Kons recargando tras
+   * activar algo), la vieja deja de escribir: si no, su error tardío pisaría la
+   * lista buena que acaba de traer la nueva.
    */
-  async fetchModules() {
+  #peticion = 0;
+
+  /**
+   * Trae los módulos de la API, reintentando los fallos pasajeros.
+   *
+   * Antes era un único intento: si `/api/modules` fallaba al arrancar (la API
+   * reiniciándose tras activar un kon, un corte de red) el menú se quedaba en
+   * «Dashboard» hasta recargar la página entera, sin decir por qué.
+   *
+   * Se reintenta lo que puede arreglarse solo —error de red, 5xx, 408, 429—
+   * con espera creciente (`espera`, `2·espera`, …) y hasta `intentos` veces en
+   * total. Un 401/403 no se reintenta: la sesión no va a cambiar esperando.
+   * Si al final sigue fallando, `error` queda puesto y la barra lateral ofrece
+   * un botón para volver a probar.
+   */
+  async fetchModules({ intentos = 3, espera = 500 }: { intentos?: number; espera?: number } = {}) {
+    const estaPeticion = ++this.#peticion;
+    const vigente = () => estaPeticion === this.#peticion;
+
+    // `error` NO se limpia aquí: si se está reintentando tras un fallo, el aviso
+    // sigue a la vista (con «Reintentando…») en vez de desaparecer y volver.
+    // Se borra solo cuando la lista llega.
     this.loading = true;
-    this.error = null;
     try {
-      const res = await fetch(`${API_URL}/api/modules`, { credentials: "include" });
-      if (res.ok) {
-        const data: ModulesResponse = await res.json();
-        this.activeGrimoire = data.activeGrimoire || null;
-        this.modules = data.docs || [];
-        this.uninstalled = data.categories?.uninstalled?.modules || [];
-      } else {
-        this.error = "Failed to fetch modules";
+      for (let intento = 1; intento <= Math.max(1, intentos); intento++) {
+        let pasajero = false;
+        let fallo: string;
+        try {
+          const res = await fetch(`${API_URL}/api/modules`, { credentials: "include" });
+          if (!vigente()) return;
+          if (res.ok) {
+            const data: ModulesResponse = await res.json();
+            if (!vigente()) return;
+            this.activeGrimoire = data.activeGrimoire || null;
+            this.modules = data.docs || [];
+            this.uninstalled = data.categories?.uninstalled?.modules || [];
+            this.error = null;
+            return;
+          }
+          pasajero = res.status >= 500 || res.status === 408 || res.status === 429;
+          fallo = t("modulesStore.noSePudieronCargar");
+        } catch {
+          if (!vigente()) return;
+          pasajero = true;
+          fallo = t("modulesStore.errorDeRed");
+        }
+
+        if (!pasajero || intento >= intentos) {
+          this.error = fallo;
+          return;
+        }
+        await new Promise((r) => setTimeout(r, espera * 2 ** (intento - 1)));
+        if (!vigente()) return;
       }
-    } catch (e) {
-      this.error = "Network error";
-      // Fallback: show all nav items
     } finally {
-      this.loading = false;
+      if (vigente()) this.loading = false;
     }
   }
 
@@ -170,7 +214,7 @@ class ModuleStore {
          */
         if (datos.requiresRestart) {
           this.avisoDeReinicio =
-            datos.restartReason ?? "Reinicia la API para completar la activación.";
+            datos.restartReason ?? t("modulesStore.reiniciaLaApi");
         }
         return true;
       } else {
@@ -185,16 +229,16 @@ class ModuleStore {
          * viene en `hint`. Sin ella hay que ir a los logs del contenedor para
          * enterarse de algo que la API ya sabía.
          */
-        const partes = [err.message || err.error || "Failed to toggle kon"];
+        const partes = [err.message || err.error || t("modulesStore.noSePudoCambiar")];
         if (Array.isArray(err.missingTables) && err.missingTables.length > 0) {
-          partes.push(`Tablas que faltan: ${err.missingTables.join(", ")}`);
+          partes.push(t("modulesStore.tablasQueFaltan", { tablas: err.missingTables.join(", ") }));
         }
         if (err.hint) partes.push(err.hint);
         alert(partes.join("\n\n"));
         return false;
       }
     } catch {
-      alert("Network error toggling kon");
+      alert(t("modulesStore.errorDeRedAlCambiar"));
       return false;
     }
   }
@@ -225,11 +269,11 @@ class ModuleStore {
         };
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || err.message || "Failed to uninstall kon");
+        alert(err.error || err.message || t("modulesStore.noSePudoDesinstalar"));
         return { success: false };
       }
     } catch {
-      alert("Network error uninstalling kon");
+      alert(t("modulesStore.errorDeRedAlDesinstalar"));
       return { success: false };
     }
   }
@@ -257,11 +301,11 @@ class ModuleStore {
         };
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || err.message || "Failed to recover kon");
+        alert(err.error || err.message || t("modulesStore.noSePudoRecuperar"));
         return { success: false };
       }
     } catch {
-      alert("Network error recovering kon");
+      alert(t("modulesStore.errorDeRedAlRecuperar"));
       return { success: false };
     }
   }
@@ -295,11 +339,11 @@ class ModuleStore {
         };
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || err.message || "Failed to delete kon");
+        alert(err.error || err.message || t("modulesStore.noSePudoEliminar"));
         return { success: false };
       }
     } catch {
-      alert("Network error deleting kon");
+      alert(t("modulesStore.errorDeRedAlEliminar"));
       return { success: false };
     }
   }

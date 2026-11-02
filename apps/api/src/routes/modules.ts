@@ -38,6 +38,8 @@ import { buscarPorClaveDeKon, claveCanonica, fusionarPorKon } from "../lib/clave
 import { leerManifiestoGrimoire } from "../lib/grimoire-manifest";
 import { getInformeDeCarga } from "../lib/module-loader";
 import { scanPackages } from "../services/scanner";
+import { rutaDeKon } from "../lib/kons-instalados";
+import { fichero } from "../lib/fichero";
 
 /**
  * Check if a kon has data in the database
@@ -112,6 +114,23 @@ async function instalarEsquemaDeKon(
 ): Promise<{ estado: 409 | 500; cuerpo: Record<string, unknown> } | null> {
   const kons = await scanPackages("kons");
   const manifiesto = kons.find((k) => k.id === key || k.id === `kon-${key}`);
+
+  // El kon no está en esta instalación (la imagen pública lleva solo el núcleo).
+  // Sin esto, el interruptor del panel respondía 500 «las migraciones fallaron»,
+  // que manda a buscar un error de SQL que no existe.
+  if (!manifiesto && !rutaDeKon(key)) {
+    return {
+      estado: 409,
+      cuerpo: {
+        error: "Kon no instalado",
+        message: `'${key}' no está instalado en esta instancia, así que no se puede activar.`,
+        key,
+        hint:
+          `Con Docker: añádelo a KITSUDEN_KONS y reconstruye la imagen. ` +
+          `En local: kitsuden kon add ${key.replace(/^kon-/, "")}. Ver docs/kons/installing.md.`,
+      },
+    };
+  }
 
   // Las tablas declaradas se comprueban DESPUÉS de migrar: son la promesa
   // explícita del kon, y es lo que separa «migró» de «funciona».
@@ -214,13 +233,14 @@ async function checkKonData(konKey: string): Promise<{
   totalRows: number;
 }> {
   // Get tables from kon.json
-  const konsDir = join(getWorkspaceRoot(), "packages", "kons");
-  const konJsonPath = join(konsDir, konKey, "kon.json");
+  // La carpeta del kon INSTALADO (puede no estar en packages/kons).
+  const konDir = rutaDeKon(konKey) ?? join(getWorkspaceRoot(), "packages", "kons", konKey);
+  const konJsonPath = join(konDir, "kon.json");
 
   let tablesToCheck: string[] = [];
 
   try {
-    const file = Bun.file(konJsonPath);
+    const file = fichero(konJsonPath);
     if (await file.exists()) {
       const manifest = await file.json();
       if (manifest.tables && Array.isArray(manifest.tables)) {
@@ -458,6 +478,32 @@ function defaultEnabled(category: string): boolean {
   return false; // optional defaults to off
 }
 
+/** id canónico del kon → madurez declarada en su kon.json (kons y core). */
+async function leerMadurezDeKons(): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>();
+  for (const m of await scanPackages("kons")) {
+    const valor = (m as unknown as { madurez?: string }).madurez;
+    if (m.id && valor) mapa.set(claveCanonica(m.id), valor);
+  }
+  const dirCore = join(getPackagesRoot(), "core");
+  try {
+    for (const e of await readdir(dirCore, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue;
+      const ruta = join(dirCore, e.name, "kon.json");
+      if (!existsSync(ruta)) continue;
+      try {
+        const json = JSON.parse(await fichero(ruta).text()) as { id?: string; madurez?: string };
+        if (json.id && json.madurez) mapa.set(claveCanonica(json.id), json.madurez);
+      } catch {
+        // manifiesto ilegible: sin insignia
+      }
+    }
+  } catch {
+    // sin packages/core
+  }
+  return mapa;
+}
+
 // Helper: get active theme/grimoire
 async function getActiveTheme(): Promise<string | null> {
   try {
@@ -679,12 +725,21 @@ modulesRoutes.get("/", async (c) => {
       filesystemModules.length,
   };
 
+  // Madurez declarada en cada kon.json («estable» | «beta» | «experimental»).
+  // El panel la pinta como insignia junto al interruptor: activar un kon
+  // experimental tiene que ser una decisión a sabiendas.
+  const madurez = await leerMadurezDeKons();
+  for (const m of response.docs as Array<Record<string, unknown>>) {
+    const valor = madurez.get(claveCanonica(String(m.key)));
+    if (valor) m.madurez = valor;
+  }
+
   return c.json(response);
 });
 
 // ── GET /:key — Get a single module by key ──
 export async function getModuleHandler(c: any) {
-  const key = c.req.param("key");
+  const key = c.req.param("key")!;
   const activeTheme = await getActiveTheme();
   const [stored] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
   const registryDef = CORE_MODULES.find((m) => m.key === key);
@@ -737,7 +792,7 @@ modulesRoutes.get("/:key", getModuleHandler);
 
 // ── GET /:key/check — Can this module be disabled? ──
 export async function checkModuleHandler(c: any) {
-  const key = c.req.param("key");
+  const key = c.req.param("key")!;
 
   // Check if this is a grimoire kon - grimoire kons CAN be toggled individually now
   // but we show a warning that it's part of a grimoire
@@ -779,7 +834,7 @@ export async function checkModuleHandler(c: any) {
 modulesRoutes.get("/:key/check", checkModuleHandler);
 
 export async function updateModuleHandler(c: Context) {
-  const key = c.req.param("key");
+  const key = c.req.param("key")!;
   const body = await c.req.json();
 
   const registryDef = CORE_MODULES.find((m) => m.key === key);
@@ -933,7 +988,7 @@ modulesRoutes.patch("/:key", updateModuleHandler);
 
 // ── POST /:key/uninstall — Uninstall kon but preserve data ──
 modulesRoutes.post("/:key/uninstall", async (c) => {
-  const key = c.req.param("key");
+  const key = c.req.param("key")!;
 
   // Check if module exists in DB
   const [existing] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
@@ -1002,7 +1057,7 @@ modulesRoutes.post("/:key/uninstall", async (c) => {
 
 // ── POST /:key/recover — Recover/Reinstall an uninstalled kon ──
 modulesRoutes.post("/:key/recover", async (c) => {
-  const key = c.req.param("key");
+  const key = c.req.param("key")!;
 
   // Check if already installed
   const [existing] = await db.select().from(modules).where(eq(modules.key, key)).limit(1);
@@ -1073,7 +1128,7 @@ modulesRoutes.post("/:key/recover", async (c) => {
 
 // ── DELETE /:key — Permanently delete kon and its data ──
 modulesRoutes.delete("/:key", async (c) => {
-  const key = c.req.param("key");
+  const key = c.req.param("key")!;
   const purge = c.req.query("purge") === "true";
   const force = c.req.query("force") === "true";
 

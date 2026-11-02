@@ -1,0 +1,181 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Kitsuden — overlay de PRODUCCIÓN (VPS) con TLS
+#
+#   docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
+#
+# Con `-f` explícitos, docker-compose.override.yml NO se mezcla (es solo de
+# desarrollo: enciende SeaweedFS, que en el VPS no hace falta porque los medios
+# van en el volumen local de la API).
+#
+# Guía completa: docs/instalacion/servidor.md. Requiere en .env:
+#   SITE_DOMAIN=ejemplo.com        la web pública (el starter neutro)
+#   KITSUDEN_DOMAIN=panel.ejemplo.com   el panel y la API que ve el navegador
+#                                  (por defecto panel.${SITE_DOMAIN})
+#   ACME_EMAIL=...                 avisos de caducidad de Let's Encrypt
+#   SITIO_API_CLAVE=...            la clave que comparten web y API
+#   + un transporte de correo (RESEND_API_KEY o SMTP_*) y MAIL_FROM real
+#
+# QUÉ CAMBIA RESPECTO AL COMPOSE BASE
+#
+#   · Caddy escucha en 80/443 y termina TLS. Es lo ÚNICO publicado hacia
+#     fuera: API, panel, web, Postgres y Valkey siguen en 127.0.0.1 (o sin
+#     puerto). Ojo: Docker se salta ufw para los puertos publicados, así que
+#     «127.0.0.1» es lo que de verdad los protege, no el cortafuegos.
+#   · Las URLs públicas dejan de ser localhost: salen de SITE_DOMAIN y
+#     KITSUDEN_DOMAIN, y KITSUDEN_PUBLIC=true hace que la API se NIEGUE a
+#     arrancar si queda alguna en localhost o si el correo iría a la consola.
+#   · La web pública entra en Docker: kitsuden_web, el starter neutro
+#     (packages/starters/kitsuden-starter-basic, docker/Dockerfile.web).
+#     Para servir OTRA web, un overlay más que redefina kitsuden_web (y, si
+#     hace falta, el Caddyfile): `-f docker-compose.<tuyo>.yml` al final.
+#   · Registros con rotación, límites de memoria y zona horaria en todo.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Registros: sin esto, json-file crece sin límite hasta llenar el disco (la API
+# escribe una línea por petición). 5 × 10 MB por contenedor.
+x-registro: &registro
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  kitsuden_proxy:
+    # Versión fija, como Postgres y Valkey (`2-alpine` cambia solo)
+    image: caddy:2.10-alpine
+    container_name: kitsuden_proxy_prod
+    restart: unless-stopped
+    depends_on:
+      kitsuden_admin:
+        condition: service_started
+      kitsuden_web:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?SITE_DOMAIN is required - the public site, e.g. example.com}
+      KITSUDEN_DOMAIN: ${KITSUDEN_DOMAIN:-panel.${SITE_DOMAIN}}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required for Let's Encrypt - set it in .env}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Los certificados. Sin volumen se piden de nuevo en cada recreación, y
+      # Let's Encrypt limita cuántos se emiten por dominio a la semana.
+      - kitsuden_caddy_data:/data
+      - kitsuden_caddy_config:/config
+    healthcheck:
+      # La API de administración de Caddy, solo dentro del contenedor
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 256m
+    logging: *registro
+    networks:
+      kitsuden_net_prod:
+        # La web habla con la API por la red interna (API_URL_INTERNA), pero si
+        # algo del servidor pide la dirección PÚBLICA del panel, que llegue a
+        # Caddy por dentro en vez de salir a internet y volver.
+        aliases:
+          - ${KITSUDEN_DOMAIN:-panel.${SITE_DOMAIN}}
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # La web pública: el starter neutro — docker/Dockerfile.web
+  #
+  # SITE_URL se GRABA al compilar (URLs canónicas, Open Graph, sitemap):
+  # cambiar SITE_DOMAIN exige `docker compose ... build kitsuden_web`. La
+  # dirección de la API y la clave del sitio se leen al ARRANCAR.
+  # ═══════════════════════════════════════════════════════════════════════
+  kitsuden_web:
+    image: ${KITSUDEN_WEB_IMAGE:-kitsuden/web:latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      target: web
+      args:
+        SITE_URL: https://${SITE_DOMAIN:?SITE_DOMAIN is required}
+        SITE_NAME: ${SITE_NAME:-Kitsuden}
+        SITE_LOCALE: ${SITE_LOCALE:-en}
+    pull_policy: build
+    container_name: kitsuden_web_prod
+    restart: unless-stopped
+    depends_on:
+      kitsuden_api:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - TZ=${TZ:-UTC}
+      # Por la red interna, sin pasar por Caddy
+      - KITSUDEN_API_URL=http://kitsuden_api_prod:3000
+      # La clave que comparten web y API: el límite de la API se cuenta por
+      # visitante y no para todos a la vez
+      - KITSUDEN_SITE_KEY=${SITIO_API_CLAVE:?SITIO_API_CLAVE is required - shared by site and API (rate limit per visitor)}
+      # Detrás de Caddy: la IP del visitante sale de X-Forwarded-For
+      - KITSUDEN_TRUST_PROXY=true
+    # Sin `ports`: solo Caddy llega a la web. Para mirarla desde el propio
+    # servidor: `curl -H 'Host: ejemplo.com' http://127.0.0.1` o un túnel SSH.
+    mem_limit: 512m
+    logging: *registro
+    networks:
+      - kitsuden_net_prod
+
+  kitsuden_api:
+    # Construir SIEMPRE aquí, nunca descargar. `kitsuden/api:latest` es un
+    # nombre de Docker Hub: sin esto, un `up -d` sin `--build` en una máquina
+    # limpia baja la imagen PUBLICADA con ese nombre (de quien sea dueño de
+    # ese espacio), no el código de este repo.
+    pull_policy: build
+    # Sin root (uid de `bun` en la imagen). El volumen de medios tiene que ser
+    # suyo: uno nuevo lo es solo (Dockerfile.prod prepara /app/data); uno
+    # restaurado o llenado con `docker cp`, NO — ver docs/instalacion/servidor.md
+    # (`chown -R 1000:1000`). Sin ese paso las subidas del panel fallan.
+    user: "1000:1000"
+    environment:
+      - KITSUDEN_PUBLIC=true
+      - BETTER_AUTH_URL=https://${KITSUDEN_DOMAIN:-panel.${SITE_DOMAIN:?SITE_DOMAIN is required}}
+      - ADMIN_URL=https://${KITSUDEN_DOMAIN:-panel.${SITE_DOMAIN}}
+      # La «web principal» para la comprobación de arranque (config-publica.ts)
+      - APP_URL=https://${SITE_DOMAIN:?SITE_DOMAIN is required}
+      - SITE_URL=https://${SITE_DOMAIN}
+      # El navegador llama a la API desde la web (sesión, comentarios) y desde
+      # el panel. www redirige a la raíz en Caddy, así que no hace falta.
+      - ALLOWED_ORIGINS=https://${SITE_DOMAIN},https://${KITSUDEN_DOMAIN:-panel.${SITE_DOMAIN}}
+      # La documentación interactiva de la API, apagada en público salvo que
+      # se pida (en el base está fija a true)
+      - ENABLE_SWAGGER=${ENABLE_SWAGGER:-false}
+      # Sin TZ a propósito: la API, la base y las copias trabajan en UTC (como
+      # hoy en local); las fechas que ve el visitante las pinta la web, que sí
+      # lleva TZ.
+    mem_limit: 1536m
+    logging: *registro
+
+  kitsuden_admin:
+    pull_policy: build
+    mem_limit: 128m
+    logging: *registro
+
+  kitsuden_db:
+    # Postgres usa la memoria que le dejen para caché: el límite evita que una
+    # consulta grande deje sin memoria a la API en un VPS de 8 GB.
+    mem_limit: 2g
+    shm_size: 256m
+    logging: *registro
+
+  kitsuden_state:
+    # maxmemory 256mb (base) + AOF y margen
+    mem_limit: 384m
+    logging: *registro
+
+  kitsuden_backup:
+    # Misma imagen que la API, la que se acaba de construir: nunca de Docker Hub
+    pull_policy: never
+    # pg_dump + tar de los medios
+    mem_limit: 512m
+    logging: *registro
+
+volumes:
+  kitsuden_caddy_data:
+    name: kitsuden_caddy_data
+  kitsuden_caddy_config:
+    name: kitsuden_caddy_config

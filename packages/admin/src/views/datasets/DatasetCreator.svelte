@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   /**
    * DatasetCreator - Creador de Datasets con soporte para campos calculados
    *
@@ -31,17 +32,17 @@
 
   // Tipos de campo nativos
   const nativeFieldTypes = [
-    { id: "text", label: "Text", description: "Short text input" },
-    { id: "textarea", label: "Long Text", description: "Multi-line text" },
-    { id: "number", label: "Number", description: "Numeric value" },
-    { id: "boolean", label: "Boolean", description: "Yes/No toggle" },
-    { id: "date", label: "Date", description: "Date picker" },
-    { id: "datetime", label: "Date & Time", description: "Timestamp" },
-    { id: "select", label: "Select", description: "Dropdown options" },
-    { id: "multiselect", label: "Multi Select", description: "Multiple choices" },
-    { id: "relation", label: "Relation", description: "Link to another table" },
-    { id: "media", label: "Media", description: "Images or files" },
-    { id: "kpi", label: "KPI", description: "Calculated metric" },
+    { id: "text", label: tr("datasetCreator.text"), description: tr("datasetCreator.shortTextInput") },
+    { id: "textarea", label: tr("datasetCreator.longText"), description: tr("datasetCreator.multiLineText") },
+    { id: "number", label: tr("datasetCreator.number"), description: tr("datasetCreator.numericValue") },
+    { id: "boolean", label: tr("datasetCreator.boolean"), description: tr("datasetCreator.yesNoToggle") },
+    { id: "date", label: tr("common.date"), description: tr("datasetCreator.datePicker") },
+    { id: "datetime", label: tr("datasetCreator.dateTime"), description: tr("datasetCreator.timestamp") },
+    { id: "select", label: tr("datasetCreator.select"), description: tr("datasetCreator.dropdownOptions") },
+    { id: "multiselect", label: tr("datasetCreator.multiSelect"), description: tr("datasetCreator.multipleChoices") },
+    { id: "relation", label: tr("datasetCreator.relation"), description: tr("datasetCreator.linkToAnotherTable") },
+    { id: "media", label: tr("common.media"), description: tr("datasetCreator.imagesOrFiles") },
+    { id: "kpi", label: "KPI", description: tr("datasetCreator.calculatedMetric") },
   ];
 
   // Estado
@@ -65,10 +66,10 @@
   let previewFormula = $state("");
 
   const steps = [
-    { id: 1, label: "Basic Info", icon: Settings },
-    { id: 2, label: "Fields", icon: Table2 },
-    { id: 3, label: "Calculated Fields", icon: Calculator },
-    { id: 4, label: "Review", icon: Save },
+    { id: 1, label: tr("datasetCreator.basicInfo"), icon: Settings },
+    { id: 2, label: tr("common.fields"), icon: Table2 },
+    { id: 3, label: tr("datasetCreator.calculatedFields"), icon: Calculator },
+    { id: 4, label: tr("datasetCreator.review"), icon: Save },
   ];
 
   function addField(type: string) {
@@ -78,7 +79,7 @@
       {
         id,
         name: ``,
-        label: `New ${type}`,
+        label: tr("datasetCreator.new", { type }),
         type,
         config: {},
       },
@@ -145,7 +146,7 @@
     if (result) {
       goto("/datasets");
     } else {
-      alert(`Failed to create dataset: ${datasetStore.error}`);
+      alert(tr("datasetCreator.failedToCreateDataset", { error: datasetStore.error }));
     }
   }
 
@@ -174,17 +175,17 @@
     <div>
       <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-3">
         <Plus class="w-6 h-6 text-kitsuden-accent" />
-        Create Dataset
+        {tr("common.createDataset")}
       </h1>
-      <p class="text-kitsuden-subtle mt-1">Define your data structure with fields and KPIs</p>
+      <p class="text-kitsuden-subtle mt-1">{tr("datasetCreator.defineYourDataStructureWith")}</p>
     </div>
     <div class="flex items-center gap-2">
       {#if step > 1}
-        <button class="btn-secondary" onclick={() => step--}> Back </button>
+        <button class="btn-secondary" onclick={() => step--}> {tr("common.back")} </button>
       {/if}
       {#if step < 4}
         <button class="btn-primary flex items-center gap-2" onclick={() => step++}>
-          Next
+          {tr("common.next")}
           <ChevronRight class="w-4 h-4" />
         </button>
       {:else}
@@ -195,10 +196,10 @@
         >
           {#if datasetStore.isLoading}
             <Loader2 class="w-4 h-4 animate-spin" />
-            Creating...
+            {tr("common.creating")}
           {:else}
             <Save class="w-4 h-4" />
-            Create Dataset
+            {tr("common.createDataset")}
           {/if}
         </button>
       {/if}
@@ -231,7 +232,7 @@
     <div
       class="bg-kitsuden-accent-2/10 border border-kitsuden-accent-2/30 text-kitsuden-accent-2 px-4 py-3 rounded-lg mb-4"
     >
-      <p class="font-medium">Error</p>
+      <p class="font-medium">{tr("common.error")}</p>
       <p class="text-sm">{datasetStore.error}</p>
     </div>
   {/if}
@@ -243,41 +244,41 @@
       <div class="space-y-6 max-w-xl">
         <div>
           <label for="datasetlabel" class="block text-sm font-medium text-kitsuden-text mb-2">
-            Dataset Label <span class="text-kitsuden-accent-2">*</span>
+            {tr("datasetCreator.datasetLabel")} <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
             id="datasetlabel"
             type="text"
             bind:value={datasetLabel}
-            placeholder="e.g., Sales Orders"
+            placeholder={tr("datasetCreator.eGSalesOrders")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
           />
         </div>
 
         <div>
           <label for="datasetname" class="block text-sm font-medium text-kitsuden-text mb-2">
-            Dataset Name <span class="text-kitsuden-accent-2">*</span>
+            {tr("datasetCreator.datasetName")} <span class="text-kitsuden-accent-2">*</span>
           </label>
           <input
             id="datasetname"
             type="text"
             bind:value={datasetName}
-            placeholder="e.g., sales_orders"
+            placeholder={tr("datasetCreator.eGSalesOrders2")}
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text font-mono focus:outline-none focus:border-kitsuden-accent"
           />
           <p class="mt-1 text-xs text-kitsuden-subtle">
-            Used in API endpoints. Auto-generated from label.
+            {tr("datasetCreator.usedInApiEndpointsAuto")}
           </p>
         </div>
 
         <div>
           <label for="description" class="block text-sm font-medium text-kitsuden-text mb-2">
-            Description
+            {tr("common.description")}
           </label>
           <textarea
             id="description"
             bind:value={description}
-            placeholder="What data does this dataset contain?"
+            placeholder={tr("datasetCreator.whatDataDoesThisDataset")}
             rows="3"
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
           ></textarea>
@@ -288,26 +289,26 @@
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <h3 class="font-medium text-kitsuden-text">
-            Native Fields ({fields.length})
+            {tr("datasetCreator.nativeFields", { fieldsCount: fields.length })}
           </h3>
           <button
             class="btn-secondary flex items-center gap-2"
             onclick={() => (showAddField = true)}
           >
             <Plus class="w-4 h-4" />
-            Add Field
+            {tr("datasetCreator.addField")}
           </button>
         </div>
 
         {#if fields.length === 0}
           <div class="text-center py-12 border-2 border-dashed border-kitsuden-border rounded-xl">
             <Table2 class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
-            <p class="text-kitsuden-text-dim">No fields yet</p>
+            <p class="text-kitsuden-text-dim">{tr("datasetCreator.noFieldsYet")}</p>
             <button
               class="text-kitsuden-accent hover:underline mt-2"
               onclick={() => (showAddField = true)}
             >
-              Add your first field
+              {tr("datasetCreator.addYourFirstField")}
             </button>
           </div>
         {:else}
@@ -322,7 +323,7 @@
                       <input
                         type="text"
                         bind:value={field.label}
-                        placeholder="Field Label"
+                        placeholder={tr("datasetCreator.fieldLabel")}
                         class="flex-1 px-3 py-1.5 bg-kitsuden-bg border border-kitsuden-border rounded text-sm"
                         onblur={() => {
                           if (!field.name) {
@@ -390,10 +391,10 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="font-medium text-kitsuden-text">
-              Calculated Fields & KPIs ({calculatedFields.length})
+              {tr("datasetCreator.calculatedFieldsKpis", { calculatedFieldsCount: calculatedFields.length })}
             </h3>
             <p class="text-sm text-kitsuden-subtle">
-              Create metrics and formulas based on your fields
+              {tr("datasetCreator.createMetricsAndFormulasBased")}
             </p>
           </div>
           <button
@@ -401,16 +402,16 @@
             onclick={() => (showAddCalculated = true)}
           >
             <Calculator class="w-4 h-4" />
-            Add Calculated Field
+            {tr("datasetCreator.addCalculatedField")}
           </button>
         </div>
 
         {#if calculatedFields.length === 0}
           <div class="text-center py-12 border-2 border-dashed border-kitsuden-border rounded-xl">
             <Calculator class="w-12 h-12 text-kitsuden-subtle mx-auto mb-3" />
-            <p class="text-kitsuden-text-dim">No calculated fields yet</p>
+            <p class="text-kitsuden-text-dim">{tr("datasetCreator.noCalculatedFieldsYet")}</p>
             <p class="text-sm text-kitsuden-subtle mt-1">
-              Create KPIs like totals, averages, or custom formulas
+              {tr("datasetCreator.createKpisLikeTotalsAverages")}
             </p>
           </div>
         {:else}
@@ -429,7 +430,7 @@
                     <span class="font-medium text-kitsuden-text">{cf.label}</span>
                     {#if cf.isKpi}
                       <span class="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded"
-                        >KPI</span
+                        >{tr("datasetCreator.kpi")}</span
                       >
                     {/if}
                   </div>
@@ -461,7 +462,7 @@
           <div class="mt-8 p-4 bg-kitsuden-surface/30 rounded-xl border border-kitsuden-border">
             <h4 class="font-medium text-kitsuden-text mb-4 flex items-center gap-2">
               <Calculator class="w-4 h-4 text-kitsuden-accent" />
-              Quick Formula Preview
+              {tr("datasetCreator.quickFormulaPreview")}
             </h4>
             <FormulaBuilder
               availableFields={availableFormulaFields}
@@ -474,18 +475,18 @@
     {:else if step === 4}
       <!-- Step 4: Review -->
       <div class="space-y-6">
-        <h3 class="font-medium text-kitsuden-text">Review Dataset Configuration</h3>
+        <h3 class="font-medium text-kitsuden-text">{tr("datasetCreator.reviewDatasetConfiguration")}</h3>
 
         <div class="space-y-4">
           <div class="p-4 bg-kitsuden-surface/50 rounded-lg">
-            <h4 class="text-sm font-medium text-kitsuden-text mb-2">Basic Info</h4>
+            <h4 class="text-sm font-medium text-kitsuden-text mb-2">{tr("datasetCreator.basicInfo")}</h4>
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span class="text-kitsuden-subtle">Label:</span>
+                <span class="text-kitsuden-subtle">{tr("datasetCreator.label")}</span>
                 <span class="text-kitsuden-text ml-2">{datasetLabel}</span>
               </div>
               <div>
-                <span class="text-kitsuden-subtle">Name:</span>
+                <span class="text-kitsuden-subtle">{tr("datasetCreator.name")}</span>
                 <code class="text-kitsuden-accent ml-2">{datasetName}</code>
               </div>
             </div>
@@ -493,7 +494,7 @@
 
           <div class="p-4 bg-kitsuden-surface/50 rounded-lg">
             <h4 class="text-sm font-medium text-kitsuden-text mb-2">
-              Native Fields ({fields.length})
+              {tr("datasetCreator.nativeFields", { fieldsCount: fields.length })}
             </h4>
             <div class="flex flex-wrap gap-2">
               {#each fields as field}
@@ -507,7 +508,7 @@
 
           <div class="p-4 bg-kitsuden-surface/50 rounded-lg">
             <h4 class="text-sm font-medium text-kitsuden-text mb-2">
-              Calculated Fields ({calculatedFields.length})
+              {tr("datasetCreator.calculatedFields2", { calculatedFieldsCount: calculatedFields.length })}
             </h4>
             <div class="flex flex-wrap gap-2">
               {#each calculatedFields as cf}
@@ -532,7 +533,7 @@
 {#if showAddField}
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div class="bg-kitsuden-card border border-kitsuden-border rounded-xl w-full max-w-lg p-6">
-      <h3 class="text-lg font-bold text-kitsuden-text mb-4">Add Field</h3>
+      <h3 class="text-lg font-bold text-kitsuden-text mb-4">{tr("datasetCreator.addField")}</h3>
       <div class="grid grid-cols-2 gap-3">
         {#each nativeFieldTypes as type}
           <button
@@ -545,7 +546,7 @@
         {/each}
       </div>
       <button class="mt-4 w-full py-2 btn-secondary" onclick={() => (showAddField = false)}>
-        Cancel
+        {tr("common.cancel")}
       </button>
     </div>
   </div>

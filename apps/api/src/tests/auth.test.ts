@@ -198,7 +198,8 @@ describe("Auth Module", () => {
         .where(eq(agentApiKeys.id, keyRecord.id))
         .limit(1);
 
-      expect(afterRevoke).toBeUndefined();
+      // Fase E: revocar MARCA la clave (la fila queda para auditar).
+      expect(afterRevoke?.revokedAt).toBeInstanceOf(Date);
     });
 
     it("should fail authentication after revocation", async () => {
@@ -207,7 +208,7 @@ describe("Auth Module", () => {
       const authResult = await authenticateAgent(plainApiKey);
 
       expect(authResult.success).toBe(false);
-      expect(authResult.code).toBe("INVALID_KEY");
+      expect(authResult.code).toBe("KEY_REVOKED");
     });
 
     afterAll(async () => {

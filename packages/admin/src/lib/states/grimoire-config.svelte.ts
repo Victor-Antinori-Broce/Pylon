@@ -1,3 +1,4 @@
+import { t } from "$lib/i18n";
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * GRIMOIRE CONFIG STORE - Svelte 5 Runes
@@ -8,6 +9,17 @@
  */
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
+
+/**
+ * Dónde vive la configuración de cada grimoire. La de medios está en
+ * `/api/media/config` (packages/core/media/media.routes.ts); `/api/grimoires/:id/config`
+ * no existe en la API, así que la pestaña «Ajustes» de Medios cargaba siempre los
+ * valores por defecto y GUARDAR fallaba con 404.
+ */
+function rutaDeConfig(grimoireId: string): string {
+  if (grimoireId === "grimoire-media" || grimoireId === "kon-media") return `${API_URL}/api/media/config`;
+  return `${API_URL}/api/grimoires/${grimoireId}/config`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tipos de Configuración
@@ -98,7 +110,7 @@ export class GrimoireConfigStore {
     this.errors[grimoireId] = null;
 
     try {
-      const response = await fetch(`${API_URL}/api/grimoires/${grimoireId}/config`, {
+      const response = await fetch(`${rutaDeConfig(grimoireId)}`, {
         credentials: "include",
       });
 
@@ -116,7 +128,7 @@ export class GrimoireConfigStore {
       this.configs[grimoireId] = data.config;
       return data.config;
     } catch (err) {
-      this.errors[grimoireId] = err instanceof Error ? err.message : "Failed to load config";
+      this.errors[grimoireId] = err instanceof Error ? err.message : t("grimoireConfig.noSePudoCargar");
       console.error(`[GrimoireConfigStore] loadConfig(${grimoireId}) error:`, err);
       return null;
     } finally {
@@ -133,7 +145,7 @@ export class GrimoireConfigStore {
     this.saveSuccess[grimoireId] = false;
 
     try {
-      const response = await fetch(`${API_URL}/api/grimoires/${grimoireId}/config`, {
+      const response = await fetch(`${rutaDeConfig(grimoireId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -155,7 +167,7 @@ export class GrimoireConfigStore {
 
       return true;
     } catch (err) {
-      this.errors[grimoireId] = err instanceof Error ? err.message : "Failed to save config";
+      this.errors[grimoireId] = err instanceof Error ? err.message : t("grimoireConfig.noSePudoGuardar");
       console.error(`[GrimoireConfigStore] saveConfig(${grimoireId}) error:`, err);
       return false;
     } finally {
@@ -171,7 +183,7 @@ export class GrimoireConfigStore {
     storageConfig: StorageConfig
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(`${API_URL}/api/grimoires/${grimoireId}/config/test-storage`, {
+      const response = await fetch(`${rutaDeConfig(grimoireId)}/test-storage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -181,12 +193,12 @@ export class GrimoireConfigStore {
       const data = await response.json();
       return {
         success: response.ok && data.success,
-        message: data.message || data.error || "Unknown result",
+        message: data.message || data.error || t("grimoireConfig.resultadoDesconocido"),
       };
     } catch (err) {
       return {
         success: false,
-        message: err instanceof Error ? err.message : "Connection test failed",
+        message: err instanceof Error ? err.message : t("grimoireConfig.pruebaDeConexionFallida"),
       };
     }
   }
@@ -261,9 +273,9 @@ export class GrimoireConfigStore {
 
   getStorageProviderLabel(provider: StorageProvider): string {
     const labels: Record<StorageProvider, string> = {
-      minio: "MinIO (Self-hosted S3)",
+      minio: t("grimoireConfig.minio"),
       s3: "AWS S3",
-      local: "Local Filesystem",
+      local: t("grimoireConfig.local"),
       r2: "Cloudflare R2",
     };
     return labels[provider] || provider;
@@ -272,10 +284,10 @@ export class GrimoireConfigStore {
   getStorageProviderDescription(provider: StorageProvider): string {
     const descriptions: Record<StorageProvider, string> = {
       minio:
-        "Self-hosted S3-compatible storage. Good for local development and on-premise deployments.",
-      s3: "Amazon Web Services S3. Enterprise-grade cloud storage.",
-      local: "Store files on local filesystem. Simple but not scalable. Good for development.",
-      r2: "Cloudflare R2. S3-compatible with zero egress fees.",
+        t("grimoireConfig.minioDescripcion"),
+      s3: t("grimoireConfig.s3Descripcion"),
+      local: t("grimoireConfig.localDescripcion"),
+      r2: t("grimoireConfig.r2Descripcion"),
     };
     return descriptions[provider] || "";
   }

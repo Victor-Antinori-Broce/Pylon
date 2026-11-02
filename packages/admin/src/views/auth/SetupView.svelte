@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { checkInit, checkSession } from "../../lib/auth.svelte";
+  import { t } from "$lib/i18n";
+  import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
+  import { checkInit, checkSession, needsSetupToken } from "../../lib/auth.svelte";
 
   let name = $state("");
   let email = $state("");
   let password = $state("");
   let passwordConfirm = $state("");
+  let setupToken = $state("");
   let showPassword = $state(false);
   let error = $state<string | null>(null);
   let loading = $state(false);
@@ -29,7 +32,8 @@
       name.trim().length > 0 &&
       email.trim().length > 0 &&
       passwordLongEnough &&
-      passwordsMatch
+      passwordsMatch &&
+      (!needsSetupToken() || setupToken.trim().length > 0)
   );
 
   async function handleSetup(e: Event) {
@@ -37,11 +41,11 @@
 
     // No basta con deshabilitar el botón: el formulario también se envía con Enter.
     if (!passwordLongEnough) {
-      error = `La contraseña maestra necesita al menos ${MIN_PASSWORD} caracteres.`;
+      error = t("setupView.laContrasenaMaestraNecesitaAl", { MIN_PASSWORD });
       return;
     }
     if (!passwordsMatch) {
-      error = "Las dos contraseñas no coinciden.";
+      error = t("setupView.lasDosContrasenasNoCoinciden");
       return;
     }
 
@@ -54,13 +58,13 @@
         headers: { "Content-Type": "application/json" },
         // Hace falta para guardar la cookie de sesión que devuelve el backend.
         credentials: "include",
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, ...(needsSetupToken() ? { setupToken: setupToken.trim() } : {}) }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "No se pudo inicializar la instalación.");
+        throw new Error(data.error || t("setupView.noSePudoInicializarLa"));
       }
 
       // El endpoint de setup crea el usuario pero no abre sesión, así que se
@@ -71,7 +75,7 @@
       await checkInit();
       await checkSession();
     } catch (err: any) {
-      error = err.message || "Ha ocurrido un error inesperado.";
+      error = err.message || t("setupView.haOcurridoUnErrorInesperado");
     } finally {
       loading = false;
     }
@@ -79,6 +83,7 @@
 </script>
 
 <div class="auth-bg">
+  <div class="selector-idioma"><LanguageSwitcher /></div>
   <div class="grid-overlay"></div>
   <div class="glow glow-violet"></div>
   <div class="glow glow-crimson"></div>
@@ -108,8 +113,8 @@
           <path d="M16 22 L14.5 24 M16 22 L17.5 24" />
         </svg>
       </div>
-      <h1 class="brand-name">Kitsuden</h1>
-      <p class="brand-sub">Crear administrador maestro</p>
+      <h1 class="brand-name">{t("common.kitsuden")}</h1>
+      <p class="brand-sub">{t("setupView.crearAdministradorMaestro")}</p>
     </div>
 
     {#if error}
@@ -132,39 +137,55 @@
     {/if}
 
     <form onsubmit={handleSetup} class="auth-form">
+      {#if needsSetupToken()}
+        <div class="field">
+          <label class="field-label" for="setup-token">{t("setupView.setupToken")}</label>
+          <input
+            bind:value={setupToken}
+            type="text"
+            id="setup-token"
+            class="field-input"
+            autocomplete="off"
+            spellcheck="false"
+            required
+          />
+          <p class="field-note">{t("setupView.setupTokenHint")}</p>
+        </div>
+      {/if}
+
       <div class="field">
-        <label class="field-label" for="name">Nombre visible</label>
+        <label class="field-label" for="name">{t("setupView.nombreVisible")}</label>
         <input
           bind:value={name}
           type="text"
           id="name"
-          placeholder="Administrador"
+          placeholder={t("setupView.administrador")}
           class="field-input"
           required
         />
       </div>
 
       <div class="field">
-        <label class="field-label" for="email">Correo del administrador</label>
+        <label class="field-label" for="email">{t("setupView.correoDelAdministrador")}</label>
         <input
           bind:value={email}
           type="email"
           id="email"
-          placeholder="admin@kitsuden.gg"
+          placeholder={t("setupView.adminKitsudenGg")}
           class="field-input"
           required
         />
       </div>
 
       <div class="field">
-        <label class="field-label" for="password">Contraseña maestra</label>
+        <label class="field-label" for="password">{t("setupView.contrasenaMaestra")}</label>
         <div class="input-wrap">
           <!-- El tipo cambia en caliente; el valor sigue en el mismo binding. -->
           <input
             bind:value={password}
             type={showPassword ? "text" : "password"}
             id="password"
-            placeholder="Mínimo {MIN_PASSWORD} caracteres"
+            placeholder={t("setupView.minimoCaracteres", { MIN_PASSWORD })}
             class="field-input has-affix"
             minlength={MIN_PASSWORD}
             autocomplete="new-password"
@@ -174,9 +195,9 @@
             type="button"
             class="affix-btn"
             onclick={() => (showPassword = !showPassword)}
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-label={showPassword ? t("setupView.ocultarContrasena") : t("setupView.mostrarContrasena")}
             aria-pressed={showPassword}
-            title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            title={showPassword ? t("setupView.ocultarContrasena") : t("setupView.mostrarContrasena")}
           >
             {#if showPassword}
               <svg
@@ -214,26 +235,26 @@
           </button>
         </div>
         {#if password.length > 0 && !passwordLongEnough}
-          <p class="field-note warn">Faltan {MIN_PASSWORD - password.length} caracteres.</p>
+          <p class="field-note warn">{t("setupView.faltanCaracteres", { passwordCount: MIN_PASSWORD - password.length })}</p>
         {/if}
       </div>
 
       <div class="field">
-        <label class="field-label" for="password-confirm">Repite la contraseña</label>
+        <label class="field-label" for="password-confirm">{t("setupView.repiteLaContrasena")}</label>
         <input
           bind:value={passwordConfirm}
           type={showPassword ? "text" : "password"}
           id="password-confirm"
-          placeholder="La misma, otra vez"
+          placeholder={t("setupView.laMismaOtraVez")}
           class="field-input"
           class:mismatch={passwordConfirm.length > 0 && !passwordsMatch}
           autocomplete="new-password"
           required
         />
         {#if passwordConfirm.length > 0 && !passwordsMatch}
-          <p class="field-note warn">No coinciden.</p>
+          <p class="field-note warn">{t("setupView.noCoinciden")}</p>
         {:else if passwordsMatch}
-          <p class="field-note ok">Coinciden.</p>
+          <p class="field-note ok">{t("setupView.coinciden")}</p>
         {/if}
       </div>
 
@@ -241,19 +262,25 @@
         {#if loading}
           <span class="spinner"></span>
         {:else}
-          <span>Inicializar Kitsuden</span>
+          <span>{t("setupView.inicializarKitsuden")}</span>
         {/if}
       </button>
     </form>
 
     <p class="auth-hint">
-      Esta cuenta es la única con acceso total, y todavía no hay forma de recuperarla. Guárdala
-      antes de continuar.
+      {t("setupView.estaCuentaEsLaUnica")}
     </p>
   </div>
 </div>
 
 <style>
+  .selector-idioma {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+  }
+
   /**
    * Paleta: violeta y carmesí sobre negro azulado.
    *

@@ -1,0 +1,9 @@
+{
+  "id": "kitsuden-gremius",
+  "name": "Gremius",
+  "description": "Tema gaming: cian y magenta sobre fondo oscuro.",
+  "version": "1.0.0",
+  "type": "theme",
+  "author": "KitsudenTeam",
+  "css_entry": "variables.css"
+}

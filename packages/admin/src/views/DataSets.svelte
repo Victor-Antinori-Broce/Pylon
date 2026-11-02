@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * DataSets.svelte
    *
@@ -34,7 +35,7 @@
   }
 
   async function handleDeleteDataset(id: string, name: string) {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+    if (!confirm(t("dataSets.areYouSureYouWant", { name }))) return;
     await datasetStore.deleteDataset(id);
   }
 </script>
@@ -49,13 +50,13 @@
         >
           <Zap class="w-5 h-5 text-kitsuden-accent" />
         </div>
-        Data Sets
+        {t("dataSets.dataSets")}
       </h1>
-      <p class="text-sm text-kitsuden-subtle mt-1">Manage your data collections and schemas.</p>
+      <p class="text-sm text-kitsuden-subtle mt-1">{t("dataSets.manageYourDataCollectionsAnd")}</p>
     </div>
     <a href="/datasets/new" class="btn-primary inline-flex items-center gap-2">
       <Plus class="w-4 h-4" />
-      New Data Set
+      {t("dataSets.newDataSet")}
     </a>
   </div>
 
@@ -81,7 +82,7 @@
   {#if datasetStore.isLoading && datasetStore.datasets.length === 0}
     <div class="card p-12 text-center">
       <Loader2 class="w-8 h-8 text-kitsuden-accent animate-spin mx-auto mb-4" />
-      <p class="text-kitsuden-subtle">Loading datasets...</p>
+      <p class="text-kitsuden-subtle">{t("dataSets.loadingDatasets")}</p>
     </div>
     <!-- Empty State -->
   {:else if datasetStore.datasets.length === 0}
@@ -91,13 +92,13 @@
       >
         <Zap class="w-8 h-8 text-kitsuden-accent/50" />
       </div>
-      <h3 class="text-lg font-medium text-kitsuden-text mb-2">No Data Sets Yet</h3>
+      <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("dataSets.noDataSetsYet")}</h3>
       <p class="text-sm text-kitsuden-subtle max-w-md mx-auto mb-6">
-        Create your first dataset to start collecting and managing data.
+        {t("dataSets.createYourFirstDatasetTo")}
       </p>
       <a href="/datasets/new" class="btn-primary inline-flex items-center gap-2">
         <Plus class="w-4 h-4" />
-        Create First Data Set
+        {t("dataSets.createFirstDataSet")}
       </a>
     </div>
     <!-- Data Table -->
@@ -108,23 +109,23 @@
           <tr class="border-b border-kitsuden-border bg-kitsuden-surface/50">
             <th
               class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-              >Name</th
+              >{t("common.name")}</th
             >
             <th
               class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-              >Slug</th
+              >{t("common.slug")}</th
             >
             <th
               class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-              >Fields</th
+              >{t("common.fields")}</th
             >
             <th
               class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-              >Description</th
+              >{t("common.description")}</th
             >
             <th
               class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle text-right"
-              >Actions</th
+              >{t("common.actions")}</th
             >
           </tr>
         </thead>
@@ -148,7 +149,7 @@
                 >
               </td>
               <td class="px-4 py-3 text-sm text-kitsuden-text-dim">
-                {dataset.fields?.length || 0} field{(dataset.fields?.length || 0) !== 1 ? "s" : ""}
+                {t("dataSets.field", { v: dataset.fields?.length || 0 })}{(dataset.fields?.length || 0) !== 1 ? "s" : ""}
               </td>
               <td class="px-4 py-3 text-sm text-kitsuden-text-dim truncate max-w-[200px]">
                 {dataset.description || "—"}
@@ -159,7 +160,7 @@
                 >
                   <button
                     class="p-1.5 rounded-lg hover:bg-kitsuden-accent/10 text-kitsuden-text-dim hover:text-kitsuden-accent transition-colors"
-                    title="Edit schema"
+                    title={t("dataSets.editSchema")}
                     onclick={(e) => {
                       e.stopPropagation();
                       handleEditDataset(dataset.id);
@@ -169,7 +170,7 @@
                   </button>
                   <button
                     class="p-1.5 rounded-lg hover:bg-kitsuden-accent-2/10 text-kitsuden-text-dim hover:text-kitsuden-accent-2 transition-colors"
-                    title="Delete"
+                    title={t("common.delete")}
                     onclick={(e) => {
                       e.stopPropagation();
                       handleDeleteDataset(dataset.id, dataset.name);

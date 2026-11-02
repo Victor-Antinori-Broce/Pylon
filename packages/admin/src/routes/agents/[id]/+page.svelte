@@ -1,7 +1,15 @@
 <script lang="ts">
-  import { ArrowLeft, Save, Bot, Play, Trash2 } from "lucide-svelte";
+  import { t } from "$lib/i18n";
+  import { ArrowLeft, Save, Bot, Play, Trash2, ShieldCheck, KeyRound, Gauge, UserCheck, PenLine } from "lucide-svelte";
   import { onMount } from "svelte";
 
+  import AgentApproval from "$lib/components/agents/AgentApproval.svelte";
+  import AgentPromotion from "$lib/components/agents/AgentPromotion.svelte";
+  import AgentKeys from "$lib/components/agents/AgentKeys.svelte";
+  import AgentPermissions from "$lib/components/agents/AgentPermissions.svelte";
+  import AgentQuotas from "$lib/components/agents/AgentQuotas.svelte";
+  import AgentMcpSettings from "$lib/components/agents/AgentMcpSettings.svelte";
+  import AgentSponsor from "$lib/components/agents/AgentSponsor.svelte";
   import ChatInterface from "$lib/components/agents/ChatInterface.svelte";
   import Timeline from "$lib/components/agents/Timeline.svelte";
   import Button from "$lib/components/ui/Button.svelte";
@@ -23,7 +31,14 @@
   let loading = $state(true);
   let saving = $state(false);
   let error = $state<string | null>(null);
-  let activeTab = $state<"settings" | "playground" | "traces">("playground");
+  // `?tab=settings` abre directamente la configuración (botón «Configurar» del listado).
+  // Fase E: también `?tab=access`, `?tab=keys` y `?tab=quotas`; fase F, `?tab=approval` y `?tab=sponsor`.
+  type Pestana = "settings" | "playground" | "traces" | "access" | "keys" | "quotas" | "approval" | "sponsor";
+  const PESTANAS: Pestana[] = ["playground", "settings", "access", "keys", "quotas", "sponsor", "approval", "traces"];
+  const pestanaInicial = $page.url.searchParams.get("tab") as Pestana | null;
+  let activeTab = $state<Pestana>(
+    pestanaInicial && PESTANAS.includes(pestanaInicial) ? pestanaInicial : "playground"
+  );
 
   // Playground state
   let messages = $state<
@@ -62,7 +77,7 @@
       agent = await getAgent(agentId);
       formData = { ...agent };
     } catch (e) {
-      error = e instanceof Error ? e.message : "Error cargando agente";
+      error = e instanceof Error ? e.message : t("idPage.errorCargandoAgente");
     } finally {
       loading = false;
     }
@@ -74,7 +89,7 @@
       await updateAgent(agentId, formData);
       await loadAgent();
     } catch (e) {
-      error = e instanceof Error ? e.message : "Error guardando cambios";
+      error = e instanceof Error ? e.message : t("idPage.errorGuardandoCambios");
     } finally {
       saving = false;
     }
@@ -152,7 +167,7 @@
         {
           id: crypto.randomUUID(),
           role: "system",
-          content: `Error: ${e instanceof Error ? e.message : "Unknown error"}`,
+          content: t("idPage.error", { v: e instanceof Error ? e.message : t("idPage.unknownError") }),
           timestamp: new Date(),
         },
       ];
@@ -186,7 +201,7 @@
     <div class="flex-1"></div>
 
     <!-- Tabs -->
-    <div class="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg">
+    <div class="flex flex-wrap items-center gap-1 bg-zinc-900 p-1 rounded-lg">
       <button
         class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'playground'
           ? 'bg-zinc-800 text-zinc-100'
@@ -194,7 +209,7 @@
         onclick={() => (activeTab = "playground")}
       >
         <Play size={14} class="inline mr-1.5" />
-        Playground
+        {t("idPage.playground")}
       </button>
       <button
         class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'settings'
@@ -202,7 +217,52 @@
           : 'text-zinc-500 hover:text-zinc-300'}"
         onclick={() => (activeTab = "settings")}
       >
-        Configuración
+        {t("idPage.configuracion")}
+      </button>
+      <button
+        class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'access'
+          ? 'bg-zinc-800 text-zinc-100'
+          : 'text-zinc-500 hover:text-zinc-300'}"
+        onclick={() => (activeTab = "access")}
+      >
+        <ShieldCheck size={14} class="inline mr-1.5" />
+        {t("agentAccess.tab")}
+      </button>
+      <button
+        class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'keys'
+          ? 'bg-zinc-800 text-zinc-100'
+          : 'text-zinc-500 hover:text-zinc-300'}"
+        onclick={() => (activeTab = "keys")}
+      >
+        <KeyRound size={14} class="inline mr-1.5" />
+        {t("agentKeys.tab")}
+      </button>
+      <button
+        class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'quotas'
+          ? 'bg-zinc-800 text-zinc-100'
+          : 'text-zinc-500 hover:text-zinc-300'}"
+        onclick={() => (activeTab = "quotas")}
+      >
+        <Gauge size={14} class="inline mr-1.5" />
+        {t("agentQuotas.tab")}
+      </button>
+      <button
+        class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'sponsor'
+          ? 'bg-zinc-800 text-zinc-100'
+          : 'text-zinc-500 hover:text-zinc-300'}"
+        onclick={() => (activeTab = "sponsor")}
+      >
+        <PenLine size={14} class="inline mr-1.5" />
+        {t("agentSponsor.tab")}
+      </button>
+      <button
+        class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'approval'
+          ? 'bg-zinc-800 text-zinc-100'
+          : 'text-zinc-500 hover:text-zinc-300'}"
+        onclick={() => (activeTab = "approval")}
+      >
+        <UserCheck size={14} class="inline mr-1.5" />
+        {t("agentApproval.tab")}
       </button>
       <button
         class="px-3 py-1.5 text-sm rounded-md transition-colors {activeTab === 'traces'
@@ -210,7 +270,7 @@
           : 'text-zinc-500 hover:text-zinc-300'}"
         onclick={() => (activeTab = "traces")}
       >
-        Traces
+        {t("common.traces")}
       </button>
     </div>
   </div>
@@ -238,7 +298,7 @@
         <div class="p-6 max-w-2xl">
           <Card class="p-6 space-y-6">
             <div>
-              <label for="name" class="block text-sm font-medium text-zinc-300 mb-1.5">Nombre</label
+              <label for="name" class="block text-sm font-medium text-zinc-300 mb-1.5">{t("common.nombre")}</label
               >
               <input
                 id="name"
@@ -250,7 +310,7 @@
 
             <div>
               <label for="description" class="block text-sm font-medium text-zinc-300 mb-1.5"
-                >Descripción</label
+                >{t("common.descripcion")}</label
               >
               <textarea
                 id="description"
@@ -262,32 +322,54 @@
 
             <div>
               <label for="model" class="block text-sm font-medium text-zinc-300 mb-1.5"
-                >Modelo</label
+                >{t("common.modelo")}</label
               >
               <select
                 id="model"
                 bind:value={formData.model}
                 class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               >
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                <option value="claude-3-opus">Claude 3 Opus</option>
-                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                <option value="gpt-4">{t("idPage.gpt4")}</option>
+                <option value="gpt-4-turbo">{t("idPage.gpt4Turbo")}</option>
+                <option value="gpt-3.5-turbo">{t("idPage.gpt35Turbo")}</option>
+                <option value="claude-3-opus">{t("idPage.claude3Opus")}</option>
+                <option value="claude-3-sonnet">{t("idPage.claude3Sonnet")}</option>
               </select>
             </div>
 
             <div class="flex items-center justify-between pt-4 border-t border-zinc-800">
               <Button variant="secondary" class="text-red-400 hover:text-red-300">
                 <Trash2 size={16} class="mr-2" />
-                Eliminar
+                {t("common.eliminar")}
               </Button>
               <Button variant="primary" loading={saving} onclick={handleSave}>
                 <Save size={16} class="mr-2" />
-                Guardar Cambios
+                {t("idPage.guardarCambios")}
               </Button>
             </div>
           </Card>
+        </div>
+      {:else if activeTab === "access"}
+        <div class="h-full overflow-y-auto p-6 max-w-6xl">
+          <AgentPermissions {agentId} />
+        </div>
+      {:else if activeTab === "keys"}
+        <div class="h-full overflow-y-auto p-6 max-w-6xl">
+          <AgentKeys {agentId} />
+        </div>
+      {:else if activeTab === "quotas"}
+        <div class="h-full overflow-y-auto p-6 max-w-4xl space-y-8">
+          <AgentQuotas {agentId} />
+          <AgentMcpSettings {agentId} />
+        </div>
+      {:else if activeTab === "sponsor"}
+        <div class="h-full overflow-y-auto p-6 max-w-3xl">
+          <AgentSponsor {agentId} />
+        </div>
+      {:else if activeTab === "approval"}
+        <div class="h-full overflow-y-auto p-6 max-w-3xl space-y-8">
+          <AgentApproval {agentId} />
+          <AgentPromotion {agentId} />
         </div>
       {:else if activeTab === "traces"}
         <div class="p-6 space-y-6">
@@ -296,7 +378,7 @@
               <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
             </div>
           {:else if traceSteps.length === 0}
-            <div class="text-center text-zinc-500 py-12">No hay traces disponibles</div>
+            <div class="text-center text-zinc-500 py-12">{t("idPage.noHayTracesDisponibles")}</div>
           {:else}
             <Timeline steps={traceSteps} />
           {/if}

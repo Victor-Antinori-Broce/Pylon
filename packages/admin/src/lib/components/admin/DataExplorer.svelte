@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr, localeFormato } from "$lib/i18n";
   import {
     Search,
     Filter,
@@ -537,7 +538,7 @@
                 .replace(/^grimoire-/, "")
                 .replace(/_/g, " ")
                 .replace(/^\w/, (c) => c.toUpperCase()),
-              singularName: "Record",
+              singularName: tr("dataExplorer.registro"),
               views: discoveredViews,
               apiEndpoint: `/api/explorer/${result.tables[0].name}`,
             };
@@ -992,7 +993,7 @@
      * vacías.
      */
     if (data.length === 0) {
-      toast.info("No hay nada que exportar: esta vista no tiene filas.");
+      toast.info(tr("dataExplorer.noHayNadaQueExportar"));
       return;
     }
     const headers = Object.keys(data[0]);
@@ -1061,7 +1062,7 @@
      * no hay nada que dar de alta desde aquí.
      */
     if (!tablaActiva) {
-      toast.error("Esta vista no tiene una tabla asociada, así que no hay nada que crear.");
+      toast.error(tr("dataExplorer.estaVistaNoTieneUna"));
       return;
     }
 
@@ -1213,7 +1214,7 @@
   function formatValue(value: any): string {
     if (value === null || value === undefined) return "-";
     if (typeof value === "boolean") return value ? "✓" : "✗";
-    if (value instanceof Date) return value.toLocaleDateString();
+    if (value instanceof Date) return value.toLocaleDateString(localeFormato());
     if (typeof value === "object") return JSON.stringify(value).slice(0, 50) + "...";
     return String(value);
   }
@@ -1300,7 +1301,7 @@
           {config?.name || activeView?.title || grimoireId}
         </h1>
         <p class="text-sm text-kitsuden-text-dim">
-          {totalCount.toLocaleString()} records
+          {tr("dataExplorer.records", { v: totalCount.toLocaleString(localeFormato()) })}
         </p>
       </div>
 
@@ -1308,19 +1309,19 @@
         <button
           class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/5 hover:border-kitsuden-accent/20 hover:text-kitsuden-accent transition-all duration-200"
           onclick={() => loadData()}
-          title="Actualizar"
+          title={tr("dataExplorer.actualizar")}
         >
           <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-          <span class="hidden sm:inline">Actualizar</span>
+          <span class="hidden sm:inline">{tr("dataExplorer.actualizar")}</span>
         </button>
 
         <button
           class="group inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-emerald-500/5 hover:border-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
           onclick={handleExportCsv}
-          title="Exportar como CSV"
+          title={tr("dataExplorer.exportarComoCsv")}
         >
           <Download class="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-          <span class="hidden sm:inline">Exportar</span>
+          <span class="hidden sm:inline">{tr("dataExplorer.exportar")}</span>
         </button>
 
         <button
@@ -1328,7 +1329,7 @@
           onclick={openCreateModal}
         >
           <Plus class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          <span>Agregar{etiquetaDeAlta ? ` ${etiquetaDeAlta}` : ""}</span>
+          <span>{tr("dataExplorer.agregar")}{etiquetaDeAlta ? ` ${etiquetaDeAlta}` : ""}</span>
         </button>
       </div>
     </div>
@@ -1359,7 +1360,7 @@
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-text-dim" />
         <input
           type="text"
-          placeholder="Buscar en todos los campos..."
+          placeholder={tr("dataExplorer.buscarEnTodosLosCampos")}
           class="input pl-10 w-full"
           value={searchQuery}
           oninput={handleSearch}
@@ -1373,7 +1374,7 @@
         onclick={() => (showFilters = !showFilters)}
       >
         <Filter class="w-4 h-4 group-hover:scale-110 transition-transform" />
-        <span class="hidden sm:inline">Filtros</span>
+        <span class="hidden sm:inline">{tr("dataExplorer.filtros")}</span>
         {#if activeFilterCount > 0}
           <span
             class="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-kitsuden-accent text-white"
@@ -1390,10 +1391,10 @@
             ? 'bg-kitsuden-accent/10 text-kitsuden-accent border-kitsuden-accent/30'
             : ''}"
           onclick={() => (showColumnMenu = !showColumnMenu)}
-          title="Mostrar/ocultar columnas"
+          title={tr("dataExplorer.mostrarOcultarColumnas")}
         >
           <Columns3 class="w-4 h-4 group-hover:scale-110 transition-transform" />
-          <span class="hidden sm:inline">Columnas</span>
+          <span class="hidden sm:inline">{tr("dataExplorer.columnas")}</span>
           {#if hiddenColumns.size > 0}
             <span
               class="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white"
@@ -1412,12 +1413,12 @@
           >
             <div class="flex items-center justify-between px-2 py-1 mb-1">
               <p class="text-xs font-semibold text-kitsuden-subtle uppercase tracking-wider">
-                Columns
+                {tr("dataExplorer.columns")}
               </p>
               {#if hiddenColumns.size > 0}
                 <button
                   class="text-[10px] text-kitsuden-accent hover:underline"
-                  onclick={showAllColumns}>Show all</button
+                  onclick={showAllColumns}>{tr("dataExplorer.showAll")}</button
                 >
               {/if}
             </div>
@@ -1448,13 +1449,13 @@
       {#if sortStack.length > 0}
         <div class="flex items-center gap-1 text-xs text-kitsuden-subtle">
           <ArrowUpDown class="w-3.5 h-3.5" />
-          {sortStack.length} sort{sortStack.length > 1 ? "s" : ""}
+          {tr("dataExplorer.sort", { sortStackCount: sortStack.length })}{sortStack.length > 1 ? "s" : ""}
           <button
             class="text-kitsuden-accent hover:underline ml-1"
             onclick={() => {
               sortStack = [];
               loadData();
-            }}>clear</button
+            }}>{tr("dataExplorer.clear")}</button
           >
         </div>
       {/if}
@@ -1464,10 +1465,10 @@
     {#if showFilters}
       <div class="p-4 bg-kitsuden-card border border-kitsuden-border rounded-lg space-y-3">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-kitsuden-text">Filters</h3>
+          <h3 class="text-sm font-semibold text-kitsuden-text">{tr("dataExplorer.filters")}</h3>
           {#if activeFilterCount > 0}
             <button class="text-xs text-kitsuden-accent hover:underline" onclick={clearAllFilters}>
-              Clear all ({activeFilterCount})
+              {tr("dataExplorer.clearAll", { activeFilterCount })}
             </button>
           {/if}
         </div>
@@ -1499,9 +1500,9 @@
                     applyFilter(col.name, v === "" ? null : v === "true");
                   }}
                 >
-                  <option value="">All</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="">{tr("dataExplorer.all")}</option>
+                  <option value="true">{tr("common.yes")}</option>
+                  <option value="false">{tr("common.no")}</option>
                 </select>
               {:else if filterType === "relation"}
                 <select
@@ -1511,7 +1512,7 @@
                   onchange={(e) =>
                     applyFilter(col.name, (e.target as HTMLSelectElement).value || null)}
                 >
-                  <option value="">All</option>
+                  <option value="">{tr("dataExplorer.all")}</option>
                   {#if filterRelationOptions[col.name]}
                     {#each filterRelationOptions[col.name] as opt}
                       <option value={opt.value}>{opt.label}</option>
@@ -1523,7 +1524,7 @@
                   id="filter-{col.name}"
                   type="number"
                   class="input w-full text-sm"
-                  placeholder="Filtrar..."
+                  placeholder={tr("dataExplorer.filtrar")}
                   value={activeFilters[col.name] ?? ""}
                   onchange={(e) =>
                     applyFilter(col.name, (e.target as HTMLInputElement).value || null)}
@@ -1542,7 +1543,7 @@
                   id="filter-{col.name}"
                   type="text"
                   class="input w-full text-sm"
-                  placeholder="Filtrar..."
+                  placeholder={tr("dataExplorer.filtrar")}
                   value={activeFilters[col.name] ?? ""}
                   oninput={(e) =>
                     applyFilter(col.name, (e.target as HTMLInputElement).value || null)}
@@ -1563,7 +1564,7 @@
           <span
             class="px-2.5 py-1 text-sm font-medium rounded-full bg-kitsuden-accent/10 text-kitsuden-accent border border-kitsuden-accent/20"
           >
-            {selectedRows.size} selected
+            {tr("dataExplorer.selected", { size: selectedRows.size })}
           </span>
           {#if selectedRows.size < data.length}
             <button
@@ -1572,14 +1573,14 @@
                 selectedRows = new Set(data.map((row) => row.id));
               }}
             >
-              Select all {data.length}
+              {tr("dataExplorer.selectAll", { dataCount: data.length })}
             </button>
           {:else}
             <button
               class="text-xs text-kitsuden-text-dim hover:text-kitsuden-accent transition-colors"
               onclick={deselectAll}
             >
-              Deselect all
+              {tr("dataExplorer.deselectAll")}
             </button>
           {/if}
         </div>
@@ -1590,19 +1591,19 @@
               class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-400 transition-all duration-200 disabled:opacity-50"
               onclick={handleBulkPublish}
               disabled={bulkActionLoading}
-              title="Publish selected"
+              title={tr("dataExplorer.publishSelected")}
             >
               <Eye class="w-3.5 h-3.5" />
-              Publish
+              {tr("dataExplorer.publish")}
             </button>
             <button
               class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-400 transition-all duration-200 disabled:opacity-50"
               onclick={handleBulkUnpublish}
               disabled={bulkActionLoading}
-              title="Unpublish selected"
+              title={tr("dataExplorer.unpublishSelected")}
             >
               <EyeOff class="w-3.5 h-3.5" />
-              Unpublish
+              {tr("dataExplorer.unpublish")}
             </button>
           {/if}
 
@@ -1610,10 +1611,10 @@
             class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/10 hover:border-kitsuden-accent/30 hover:text-kitsuden-accent transition-all duration-200 disabled:opacity-50"
             onclick={handleBulkDuplicate}
             disabled={bulkActionLoading}
-            title="Duplicate selected"
+            title={tr("dataExplorer.duplicateSelected")}
           >
             <Copy class="w-3.5 h-3.5" />
-            Duplicate
+            {tr("dataExplorer.duplicate")}
           </button>
 
           <div class="w-px h-6 bg-kitsuden-border mx-1"></div>
@@ -1622,10 +1623,10 @@
             class="group inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-red-500/10 to-red-600/10 text-red-400 border border-red-500/20 hover:from-red-500/20 hover:to-red-600/20 hover:border-red-500/30 transition-all duration-200 disabled:opacity-50"
             onclick={confirmBulkDelete}
             disabled={bulkActionLoading}
-            title="Delete selected"
+            title={tr("dataExplorer.deleteSelected")}
           >
             <Trash2 class="w-3.5 h-3.5 group-hover:animate-pulse" />
-            Delete
+            {tr("common.delete")}
           </button>
         </div>
       </div>
@@ -1655,7 +1656,7 @@
                       ? 'text-kitsuden-accent'
                       : 'text-kitsuden-subtle hover:text-kitsuden-accent'}"
                     onclick={(e) => handleSortClick(column.name, e)}
-                    title="Clic para ordenar, Shift+clic para ordenar múltiple"
+                    title={tr("dataExplorer.clicParaOrdenarShiftClic")}
                   >
                     {#if isRelationColumn(column.name)}
                       {column.name
@@ -1688,7 +1689,7 @@
               {/each}
               <th
                 class="p-3 text-right text-xs font-semibold uppercase tracking-wider text-kitsuden-subtle"
-                >Acciones</th
+                >{tr("common.acciones")}</th
               >
             </tr>
           </thead>
@@ -1712,7 +1713,7 @@
                     >
                       <FileJson class="w-6 h-6 text-kitsuden-subtle" />
                     </div>
-                    <p class="text-kitsuden-text-dim">No se encontraron registros</p>
+                    <p class="text-kitsuden-text-dim">{tr("dataExplorer.noSeEncontraronRegistros")}</p>
                     {#if searchQuery || activeFilterCount > 0}
                       <button
                         class="text-xs px-3 py-1.5 rounded-lg bg-kitsuden-accent/10 text-kitsuden-accent hover:bg-kitsuden-accent/20 transition-colors"
@@ -1721,7 +1722,7 @@
                           clearAllFilters();
                         }}
                       >
-                        Limpiar búsqueda y filtros
+                        {tr("dataExplorer.limpiarBusquedaYFiltros")}
                       </button>
                     {/if}
                   </div>
@@ -1750,13 +1751,13 @@
                           <span
                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           >
-                            <Check class="w-3 h-3" /> Sí
+                            <Check class="w-3 h-3" /> {tr("dataExplorer.si")}
                           </span>
                         {:else if value === false}
                           <span
                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20"
                           >
-                            <X class="w-3 h-3" /> No
+                            <X class="w-3 h-3" /> {tr("common.no")}
                           </span>
                         {:else}
                           <span class="text-kitsuden-subtle">-</span>
@@ -1870,7 +1871,7 @@
                       {:else if colType === "number"}
                         <span class="text-kitsuden-text tabular-nums">
                           {value !== null && value !== undefined
-                            ? Number(value).toLocaleString()
+                            ? Number(value).toLocaleString(localeFormato())
                             : "-"}
                         </span>
 
@@ -1899,19 +1900,19 @@
                       {/each}
                       <button
                         class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-kitsuden-accent/10 hover:border-kitsuden-accent/30 hover:text-kitsuden-accent transition-all duration-200"
-                        title="Editar"
+                        title={tr("dataExplorer.editar")}
                         onclick={() => openEditModal(row)}
                       >
                         <Edit class="w-3.5 h-3.5" />
-                        <span class="text-xs font-medium">Editar</span>
+                        <span class="text-xs font-medium">{tr("dataExplorer.editar")}</span>
                       </button>
                       <button
                         class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-kitsuden-surface border border-kitsuden-border text-kitsuden-text hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-200"
-                        title="Eliminar"
+                        title={tr("common.eliminar")}
                         onclick={() => confirmDelete(row)}
                       >
                         <Trash2 class="w-3.5 h-3.5" />
-                        <span class="text-xs font-medium">Eliminar</span>
+                        <span class="text-xs font-medium">{tr("common.eliminar")}</span>
                       </button>
                     </div>
                   </td>
@@ -1926,12 +1927,12 @@
       <div class="flex items-center justify-between p-3 border-t border-kitsuden-border">
         <div class="text-sm text-kitsuden-text-dim">
           {#if totalCount > 0}
-            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(
+            {tr("dataExplorer.showingToOf", { v: (currentPage - 1) * pageSize + 1, v2: Math.min(
               currentPage * pageSize,
               totalCount
-            )} of {totalCount}
+            ), totalCount })}
           {:else}
-            No records
+            {tr("dataExplorer.noRecords")}
           {/if}
         </div>
 
@@ -1944,10 +1945,10 @@
               loadData();
             }}
           >
-            <option value={10}>10 por página</option>
-            <option value={25}>25 por página</option>
-            <option value={50}>50 por página</option>
-            <option value={100}>100 por página</option>
+            <option value={10}>{tr("dataExplorer.n10PorPagina")}</option>
+            <option value={25}>{tr("dataExplorer.n25PorPagina")}</option>
+            <option value={50}>{tr("dataExplorer.n50PorPagina")}</option>
+            <option value={100}>{tr("dataExplorer.n100PorPagina")}</option>
           </select>
 
           <div
@@ -1960,7 +1961,7 @@
                 currentPage = 1;
                 loadData();
               }}
-              title="Primera página"
+              title={tr("dataExplorer.primeraPagina")}
             >
               <ChevronsLeft class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             </button>
@@ -1971,7 +1972,7 @@
                 currentPage--;
                 loadData();
               }}
-              title="Página anterior"
+              title={tr("dataExplorer.paginaAnterior")}
             >
               <ChevronLeft class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             </button>
@@ -1989,7 +1990,7 @@
                 currentPage++;
                 loadData();
               }}
-              title="Página siguiente"
+              title={tr("dataExplorer.paginaSiguiente")}
             >
               <ChevronRight class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
@@ -2000,7 +2001,7 @@
                 currentPage = totalPages;
                 loadData();
               }}
-              title="Última página"
+              title={tr("dataExplorer.ultimaPagina")}
             >
               <ChevronsRight class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
@@ -2052,8 +2053,8 @@
           <Trash2 class="w-6 h-6 text-red-400" />
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-kitsuden-text">¿Eliminar registro?</h3>
-          <p class="text-sm text-kitsuden-text-dim">Esta acción no se puede deshacer.</p>
+          <h3 class="text-lg font-semibold text-kitsuden-text">{tr("dataExplorer.eliminarRegistro")}</h3>
+          <p class="text-sm text-kitsuden-text-dim">{tr("dataExplorer.estaAccionNoSePuede")}</p>
         </div>
       </div>
       <div class="flex items-center justify-end gap-3">
@@ -2064,7 +2065,7 @@
             deleteTarget = null;
           }}
         >
-          Cancelar
+          {tr("common.cancelar")}
         </button>
         <button
           class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100"
@@ -2072,7 +2073,7 @@
           onclick={() => handleDelete(deleteTarget)}
         >
           <Trash2 class="w-4 h-4 group-hover:animate-bounce" />
-          {deleting ? "Eliminando..." : "Eliminar"}
+          {deleting ? tr("dataExplorer.eliminando") : tr("common.eliminar")}
         </button>
       </div>
     </div>
@@ -2099,9 +2100,9 @@
         </div>
         <div>
           <h3 class="text-lg font-semibold text-kitsuden-text">
-            Delete {selectedRows.size} records?
+            {tr("dataExplorer.deleteRecords", { size: selectedRows.size })}
           </h3>
-          <p class="text-sm text-kitsuden-text-dim">This action cannot be undone.</p>
+          <p class="text-sm text-kitsuden-text-dim">{tr("dataExplorer.thisActionCannotBeUndone")}</p>
         </div>
       </div>
       <div class="flex items-center justify-end gap-3">
@@ -2111,7 +2112,7 @@
             showBulkDeleteConfirm = false;
           }}
         >
-          Cancel
+          {tr("common.cancel")}
         </button>
         <button
           class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100"
@@ -2119,7 +2120,7 @@
           onclick={executeBulkDelete}
         >
           <Trash2 class="w-4 h-4 group-hover:animate-bounce" />
-          {bulkActionLoading ? "Deleting..." : "Delete"}
+          {bulkActionLoading ? tr("dataExplorer.deleting") : tr("common.delete")}
         </button>
       </div>
     </div>

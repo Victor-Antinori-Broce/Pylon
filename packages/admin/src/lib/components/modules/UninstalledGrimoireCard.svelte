@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Archive, Database, Trash2, RotateCcw } from "lucide-svelte";
 
   import type { UninstalledKon } from "$lib/states/modules.svelte";
@@ -40,14 +41,14 @@
         <span
           class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-kitsuden-subtle/20 text-kitsuden-subtle border border-kitsuden-border/50 flex items-center gap-1"
         >
-          <Archive class="w-2.5 h-2.5" /> UNINSTALLED
+          <Archive class="w-2.5 h-2.5" /> {t("uninstalledGrimoireCard.uninstalled")}
         </span>
       </div>
 
       {#if kon.hasPreservedData}
         <div class="mt-2 flex items-center gap-1.5 text-xs text-kitsuden-accent/80">
           <Database class="w-3.5 h-3.5" />
-          <span>Data preserved: {formatNumber(kon.dataSummary.totalRows)} rows</span>
+          <span>{t("uninstalledGrimoireCard.dataPreservedRows", { v: formatNumber(kon.dataSummary.totalRows) })}</span>
         </div>
 
         {#if kon.dataSummary.tables.length > 0}
@@ -63,13 +64,13 @@
               <span
                 class="text-[10px] px-1.5 py-0.5 rounded bg-kitsuden-bg border border-kitsuden-border/50 text-kitsuden-subtle"
               >
-                +{kon.dataSummary.tables.length - 3} more
+                {t("common.more", { v: kon.dataSummary.tables.length - 3 })}
               </span>
             {/if}
           </div>
         {/if}
       {:else}
-        <p class="text-xs text-kitsuden-subtle mt-1">No data preserved</p>
+        <p class="text-xs text-kitsuden-subtle mt-1">{t("uninstalledGrimoireCard.noDataPreserved")}</p>
       {/if}
     </div>
   </div>
@@ -84,10 +85,10 @@
       >
         {#if recovering}
           <RotateCcw class="w-3.5 h-3.5 animate-spin" />
-          Recovering...
+          {t("uninstalledGrimoireCard.recovering")}
         {:else}
           <RotateCcw class="w-3.5 h-3.5" />
-          Recover
+          {t("uninstalledGrimoireCard.recover")}
         {/if}
       </button>
     {/if}
@@ -97,7 +98,7 @@
         onclick={onDelete}
         disabled={deleting}
         class="flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors bg-kitsuden-accent-2/10 text-kitsuden-accent-2 hover:bg-kitsuden-accent-2/20 border border-kitsuden-accent-2/20 disabled:opacity-50"
-        title="Permanently delete data"
+        title={t("uninstalledGrimoireCard.permanentlyDeleteData")}
       >
         {#if deleting}
           <Trash2 class="w-3.5 h-3.5 animate-pulse" />

@@ -9,6 +9,26 @@ export interface PageBlock {
   type: string;
   data: Record<string, any>;
   order: number;
+  /**
+   * Capa editorial (bloques de juego): lo que el equipo edita a mano, p. ej.
+   * con Inti. `data` es de los cargadores y se regenera en cada recarga; esto
+   * no, y las recargas lo conservan por `id`. Ver `EditorialDeBloque`.
+   */
+  editorial?: EditorialDeBloque;
+}
+
+/**
+ * Lo que se edita de un bloque sin tocar su `data`.
+ *
+ * Quien pinta usa `editorial.titulo ?? data.titulo`,
+ * `editorial.descripcion ?? data.descripcion`, salta los `oculto === true` y
+ * ordena por `editorial.orden ?? order`. Sin `editorial`, todo igual que antes.
+ */
+export interface EditorialDeBloque {
+  titulo?: string;
+  descripcion?: string;
+  oculto?: boolean;
+  orden?: number;
 }
 
 // ─── Media ────────────────────────────────────────────────────

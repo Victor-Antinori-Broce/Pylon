@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   import CustomViewHost from "./CustomViewHost.svelte";
   /**
    * GrimoirePage.svelte — Hybrid Rendering Edition
@@ -179,7 +180,7 @@
       }
     } catch (err) {
       console.error(`[GrimoirePage] Failed to load grimoire "${grimoireId}":`, err);
-      error = err instanceof Error ? err.message : "Failed to load grimoire";
+      error = err instanceof Error ? err.message : tr("grimoirePage.failedToLoadGrimoire");
     } finally {
       loading = false;
     }
@@ -259,10 +260,9 @@
   <div class="card p-12 text-center">
     <h2 class="mb-2 text-lg font-semibold">{grimoireConfig?.name ?? grimoireId}</h2>
     <p class="mx-auto mb-6 max-w-md text-sm text-kitsuden-subtle">
-      Este kon no está activado, así que sus tablas todavía no existen. Actívalo y podrás usar sus
-      pantallas.
+      {tr("grimoirePage.esteKonNoEstaActivado")}
     </p>
-    <a href="/kons" class="btn-primary inline-flex items-center gap-2">Ir a Kons</a>
+    <a href="/kons" class="btn-primary inline-flex items-center gap-2">{tr("grimoirePage.irAKons")}</a>
   </div>
 {:else if loading}
   <div class="flex items-center justify-center h-96">
@@ -270,14 +270,14 @@
       <div
         class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
       ></div>
-      <p class="text-kitsuden-subtle text-sm">Loading {grimoireId}...</p>
+      <p class="text-kitsuden-subtle text-sm">{tr("grimoirePage.loading", { grimoireId })}</p>
     </div>
   </div>
 {:else if error && !grimoireConfig && !LegacyView}
   <div class="flex items-center justify-center h-96">
     <div class="text-center">
       <div class="text-4xl mb-4">⚠️</div>
-      <h3 class="text-lg font-semibold text-kitsuden-text mb-2">Failed to Load</h3>
+      <h3 class="text-lg font-semibold text-kitsuden-text mb-2">{tr("grimoirePage.failedToLoad")}</h3>
       <p class="text-sm text-kitsuden-subtle">{error}</p>
     </div>
   </div>
@@ -304,7 +304,7 @@
               class:hover:text-kitsuden-text={!isActive}
               disabled={view.type === "custom" && !isCustomReady}
               title={view.type === "custom" && !isCustomReady
-                ? "Custom view not yet implemented"
+                ? tr("grimoirePage.customViewNotYetImplemented")
                 : undefined}
             >
               {#if view.type === "custom"}
@@ -349,7 +349,7 @@
         {:else}
           <div class="card p-12 text-center">
             <p class="text-kitsuden-subtle">
-              Custom view "{activeViewId}" is not yet implemented.
+              {tr("grimoirePage.customViewIsNotYet", { activeViewId })}
             </p>
           </div>
         {/if}
@@ -365,7 +365,7 @@
         {:else}
           <div class="card p-12 text-center">
             <p class="text-kitsuden-subtle">
-              No explorer configuration for view "{activeViewId}".
+              {tr("grimoirePage.noExplorerConfigurationForView", { activeViewId })}
             </p>
           </div>
         {/if}
@@ -385,8 +385,7 @@
   <div class="card p-12 text-center">
     <h2 class="mb-2 text-lg font-semibold">{grimoireConfig.name}</h2>
     <p class="mx-auto max-w-md text-sm text-kitsuden-subtle">
-      Este kon no guarda datos propios: amplia el comportamiento de otros. No hay nada que listar ni
-      crear aqui.
+      {tr("grimoirePage.esteKonNoGuardaDatos")}
     </p>
   </div>
 {:else}
@@ -402,8 +401,8 @@
     <div class="flex items-center justify-center h-96">
       <div class="text-center">
         <div class="text-4xl mb-4">📭</div>
-        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">No Configuration</h3>
-        <p class="text-sm text-kitsuden-subtle">This grimoire has no admin configuration.</p>
+        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">{tr("grimoirePage.noConfiguration")}</h3>
+        <p class="text-sm text-kitsuden-subtle">{tr("grimoirePage.thisGrimoireHasNoAdmin")}</p>
       </div>
     </div>
   {/await}

@@ -1,170 +1,124 @@
-# Arquitectura de Kitsuden
+# Kitsuden architecture
 
-## Propósito a Vista de Pájaro (El "Por qué" y el "Cómo")
+The high-level decisions: how the code is organised, how a request flows, and
+why dynamic data is stored the way it is. The install side is in
+[docs/install/](docs/install/README.md); the engine / core / kons split is in
+[CORE.md](CORE.md).
 
-Este documento explica las decisiones de arquitectura de alto nivel del proyecto, cómo organizamos el código y por qué se toman ciertas decisiones técnicas relativas al manejo de datos dinámicos.
+## Folders — three levels
 
-## Estructura de Carpetas — La Jerarquía de 3 Niveles
+Kitsuden separates **framework batteries** (what every app wants) from
+**domain modules** (the apps you build on top). See [CORE.md](CORE.md) for
+the full map and the classification rule.
 
-Kitsuden separa **baterías del framework** (lo que toda app querría) de **módulos
-de dominio** (las apps que construyes encima). Ver [CORE.md](CORE.md) para el
-mapa completo y la regla de clasificación.
+- **`apps/api/` (host):** the runtime. API on Bun + Hono, middleware,
+  security, auth, routing, the module loader that mounts kons, migrations, and
+  host services coupled to the runtime (Vault, Secrets, auto GraphQL).
+- **`packages/engine/` (level 1 — engine):** pure framework primitives,
+  imported by `apps/api` and by the kons through `@kitsuden/engine`: authz,
+  validation, errors, `repo()`, request scope, interceptors, mail, brain, code
+  graph, system map, actions.
+- **`packages/core/` (level 2 — core batteries):** `datasets`, `media`,
+  `blocks` (page builder), `vector-search`, `content-publishing`. Loaded by the
+  module loader like a kon, but they live here to say they are
+  infrastructure, not domain.
+- **`packages/kons/` (level 3 — domain kons):** the business modules (CRM,
+  booking, LMS, payments, blog, wiki, games…). Each is an independent unit;
+  `kon-games` is an app on Kitsuden, not a framework battery.
+- **`packages/grimoires/` (bundles):** sets of kons plus the visual theme; a
+  grimoire declares which kons it enables in its `grimoire.json`.
+- **`packages/admin/` (admin UI):** the SvelteKit (Svelte 5) admin panel,
+  built statically and served by nginx in Docker.
+- **`packages/mcp-server/`:** a standalone Model Context Protocol server (the
+  API also has its own MCP endpoint, below).
+- **`packages/shared/`:** Zod schemas, TypeScript types, the API contracts
+  (`contratos.ts`) and utilities shared by every package.
+- **`packages/starters/kitsuden-starter-basic/`:** the neutral public website
+  (Astro), a separate consumer of the API.
 
-- **`apps/api/` (Host):**
-  El runtime. API sobre Bun + Hono, middlewares, seguridad, auth, enrutamiento,
-  y servicios del host acoplados al runtime (Vault, Secrets, GraphQL auto).
+## Data flow
 
-- **`packages/engine/` (Nivel 1 — Engine):**
-  Primitivos puros del framework, importables por `apps/api` Y por los kons vía
-  `@kitsuden/engine`: authz, validation, errors, `repo()`, request-scope,
-  interceptors, brain, code-graph, system-map, actions.
-
-- **`packages/core/` (Nivel 2 — Kitsuden Core, las baterías):**
-  Capacidades que toda app querría, como paquetes propios: `datasets`
-  (`@kitsuden/datasets`), `media` (`@kitsuden/media`), `blocks` (`@kitsuden/blocks`),
-  `vector-search`, `content-publishing`. Se cargan por el module-loader igual
-  que un kon pero viven aquí para declarar que son infraestructura, no dominio.
-
-- **`packages/kons/` (Nivel 3 — Kons de dominio):**
-  Los módulos de negocio: games, esports, streamers, crm, agile, booking,
-  directory, dms, conta, blog, academy-lms, ocr. Cada uno es una unidad
-  funcional independiente. Un `kon-games` es una app sobre Kitsuden, no una
-  batería del framework.
-
-- **`packages/grimoires/` (Bundles):**
-  Ecosistemas que agrupan kons y definen la experiencia visual. Un grimoire
-  declara qué kons están activos mediante su `grimoire.json`.
-
-- **`packages/admin/` (Admin UI):**
-  Panel de administración construido con Svelte 5.
-
-- **`packages/grimoires/` (Reinos/Ecosistemas):**
-  Esta ubicación alberga los reinos — ecosistemas de negocio que agrupan kons y definen la experiencia visual. Un reino declara qué kons están activos mediante su `grimoire.json`. Anteriormente se llamaban "themes".
-
-- **`packages/mcp-server/` (MCP Server):**
-  Implementación del Model Context Protocol para permitir que agentes de IA (Claude, Cursor, etc.) interactúen con Kitsuden. Expone resources y tools vía SSE.
-
-- **`packages/shared/` (Shared):**
-  Esquemas Zod, tipos TypeScript, y utilidades compartidas entre todos los paquetes.
-
-## El Flujo de Datos (Data Flow)
-
-El ciclo vital de la información dentro del entorno de Kitsuden funciona en un esquema de tres fases:
-
-1. **Entrada por Hono:**
-   Cualquier petición (HTTP, inserción o lectura de contenido) toca primero nuestros endpoints expuestos mediante **Hono**. Aquí ocurren procesos como validación de cabeceras, manejo de tokens y control de rate limiting.
-2. **Intercepción por el AppRegistry:**
-   El controlador no procesa la lógica pesada por sí mismo, sino que delega la definición al `AppRegistry` (el registro dinámico de kons y esquemas del sistema de base de datos). El registro identifica rápidamente las definiciones de esquemas, los campos requeridos, relaciones dinámicas y validaciones pertinentes a ese módulo Vertical en específico.
-3. **Persistencia en JSONB (`data_entries`):**
-   Una vez que el manejador consolida y valida los datos, en vez de insertarlos en una tabla estricta fuertemente tipada de su entidad, el payload termina guardándose serializado dinámicamente en una columna de formato JSONB dentro de la tabla global de contenido dinámico `data_entries`.
+1. **Entry through Hono.** Every request (reading or writing content) first
+   hits the Hono routes: headers, sessions or agent keys, Origin checks on
+   cookie-authenticated writes, rate limits.
+2. **Kon and schema registry.** A route does not hold the domain logic: the
+   registry of kons and schemas knows which definitions, fields, relations and
+   validations apply to that module.
+3. **Persistence.** Core and kon tables are ordinary typed tables with their
+   own migrations. Dynamic collections (datasets) store their payload as JSONB
+   in the shared `data_entries` table (see ADR-001). Requests that touch
+   per-user data run inside a transaction with the user's row-level-security
+   context set.
 
 ## Model Context Protocol (MCP)
 
-Kitsuden expone un servidor MCP en `/api/mcp` que permite la integración con agentes de IA:
+The API exposes an MCP server at `/api/mcp` (when `ENABLE_MCP=true`, the
+default in `docker-compose.yml`) so AI agents can use Kitsuden:
 
-### Protocolo
+- protocol version `2024-11-05`, JSON-RPC 2.0;
+- `GET /api/mcp` for the event stream (SSE), `POST /api/mcp` for JSON-RPC
+  messages;
+- tools defined in `apps/api/src/services/mcp-tools.ts`, for example
+  `kitsuden_list_datasets`, `kitsuden_query_dataset`, `kitsuden_insert_record`
+  and `kitsuden_dispatch_worker` (queue a job);
+- resources such as `kitsuden://datasets` and `kitsuden://kons`.
 
-- **Versión**: 2024-11-05
-- **Transporte**: SSE (Server-Sent Events)
-- **Formato**: JSON-RPC 2.0
+Agents authenticate with scoped agent keys (`kitsuden_agent_*`) and go
+through the same policies and RLS as any other request.
 
-### Endpoints
+## Architecture decision records
 
-```
-GET  /api/mcp       # Conexión SSE para recibir eventos
-POST /api/mcp       # Envío de mensajes JSON-RPC
-```
+### ADR-001: dynamic models in JSONB (`data_entries`)
 
-### Tools Disponibles
+> **Dynamic collections are stored as JSONB in `data_entries` instead of
+> creating SQL tables on the fly, to avoid migration bottlenecks.**
 
-| Tool                       | Descripción                            |
-| -------------------------- | -------------------------------------- |
-| `kitsuden_query_dataset`   | Query registros con filtros opcionales |
-| `kitsuden_insert_record`   | Insertar nuevo registro en dataset     |
-| `kitsuden_dispatch_worker` | Encolar trabajo en BullMQ              |
+Letting users change a collection's schema without `ALTER TABLE` avoids
+exclusive locks in production and DDL overhead for every collection. When a
+collection needs native types and indexes, Vault (opt-in,
+`KITSUDEN_VAULT_ENABLED=true`) creates real tables with RLS instead.
 
-### Resources Disponibles
+### ADR-002: native PostgreSQL row-level security
 
-| Resource | URI                   |
-| -------- | --------------------- |
-| Datasets | `kitsuden://datasets` |
-| Kons     | `kitsuden://kons`     |
+> **Isolation is enforced in the database, so it holds even when application
+> code or an AI-generated query is wrong.**
 
-## Decisiones Clave (ADR - Architecture Decision Records)
+The user context is set per transaction (`set_config('app.current_user_id',
+…)`) and the RLS policies filter rows. RLS only binds when the API connects
+with a **non-superuser** role: in Docker the API serves as `APP_DB_USER`, and
+the startup script refuses to continue if the isolated tables are not
+isolated (`verify-rls.ts`). See
+[apps/api/docs/RLS_SETUP_GUIDE.md](apps/api/docs/RLS_SETUP_GUIDE.md).
 
-### ADR-001: Persistencia de Modelos Dinámicos
+### ADR-003: MCP for AI agents
 
-> **Decidimos usar JSONB en data_entries en lugar de crear tablas SQL al vuelo para evitar cuellos de botella en migraciones multi-tenant.**
+> **CMS features are exposed through MCP instead of ad-hoc APIs per agent.**
 
-Mantener un ecosistema dinámico (esencial en un CMS) donde los usuarios pueden cambiar el esquema de los conjuntos de datos sin interactuar activamente con alteraciones `ALTER TABLE` nos permite escalar mucho más rápido, evita bloqueos exclusivos de la base de datos en producción y agiliza las migraciones sin tener una sobrecarga de DDL para cada "Vertical".
+Any compatible client (Claude, Cursor…) can connect without a specific
+integration, and the MCP handler reuses the API's code and its security
+(policies, scopes, RLS).
 
-### ADR-002: Row-Level Security Nativo de PostgreSQL
-
-> **Implementamos RLS a nivel de base de datos para garantizar aislamiento de datos incluso ante errores de la aplicación o queries generadas por IA.**
-
-Usando `set_config('app.current_user_id', ...)` inyectamos el contexto de usuario en cada transacción, permitiendo que las políticas RLS de PostgreSQL filtren automáticamente los registros. Esto protege contra fugas de datos incluso si la lógica de la aplicación o un agente MCP generan queries incorrectos.
-
-### ADR-003: Model Context Protocol para Agentes de IA
-
-> **Exponemos funcionalidades del CMS vía MCP en lugar de APIs ad-hoc para cada agente.**
-
-El protocolo estándar MCP permite que cualquier agente compatible (Claude Desktop, Cursor, etc.) se conecte a Kitsuden sin integraciones específicas. El servidor MCP reutiliza el mismo código de la API y respeta las mismas políticas de seguridad (RLS, auth).
-
----
-
-## Diagrama de Arquitectura de Alto Nivel
+## High-level diagram
 
 ```mermaid
 flowchart TD
-    Client((Cliente / UI)) -->|HTTP Request| Hono[Hono API Gateway
- apps/api/]
-    AI[AI Agent<br/>Claude/Cursor] -->|MCP/SSE| Hono
+    Client((Client / UI)) -->|HTTP| Hono[Hono API<br/>apps/api]
+    Site((Public website<br/>starter)) -->|HTTP| Hono
+    AI[AI agent] -->|MCP| Hono
 
-    subgraph Backend Core
-        Hono --> Mid[Middlewares
- Auth / RLS]
-        Mid --> Reg{AppRegistry}
-        Hono --> MCP[MCP Handler<br/>/api/mcp]
+    subgraph Backend
+        Hono --> Mid[Middleware<br/>auth / origin / rate limit]
+        Mid --> Reg{Kon and schema registry}
+        Hono --> MCP[MCP handler<br/>/api/mcp]
     end
 
-    subgraph Ecosistema Modular
-        Reg <-.->|Consulta
- Definiciones / Esquemas| Vert[packages/kons/<br/>Módulos Verticales]
+    subgraph Modules
+        Reg <-.-> Kons[packages/core + packages/kons]
     end
 
-    subgraph Base de Datos PostgreSQL
-        Reg -->|Serializa a JSONB| DB[(Tabla unificada
- data_entries)]
+    subgraph PostgreSQL
+        Reg -->|typed tables + RLS| DB[(core and kon tables)]
+        Reg -->|datasets as JSONB| DE[(data_entries)]
         MCP -->|RLS| DB
     end
-
-    %% Estilos de los nodos
-    style Client fill:#2a2a35,stroke:#00e5ff,stroke-width:2px,color:#fff
-    style AI fill:#2a2a35,stroke:#ff9500,stroke-width:2px,color:#fff
-    style Hono fill:#18181b,stroke:#00e5ff,color:#fff
-    style MCP fill:#18181b,stroke:#ff9500,color:#fff
-    style Reg fill:#18181b,stroke:#b388ff,color:#fff
-    style DB fill:#18181b,stroke:#ff2a6d,color:#fff
-    style Vert fill:#18181b,stroke:#00e676,color:#fff
-```
-
----
-
-## Diagrama de Base de Datos (Entity-Relationship)
-
-Dado que la arquitectura vertical no crea tablas SQL estáticas por cada colección, los datos del "Core" viven unificados y relacionados de forma flexible. Aquí visualizamos cómo `content_metadata` (nuestra estructura base para la Épica 2) se vincula y enriquece a la data dinámica genérica almacenada en `data_entries`:
-
-```mermaid
-erDiagram
-    TENANT ||--o{ DATA_ENTRIES : owns
-    DATA_ENTRIES ||--|| CONTENT_METADATA : promoted_to
-    DATA_ENTRIES {
-        string datasetSlug "ej: 'games' (define a qué App pertenece)"
-        jsonb data "Los datos reales del esquema"
-    }
-    CONTENT_METADATA {
-        string slug "URL amigable"
-        boolean isPublished
-        jsonb seo "Meta tags"
-    }
 ```

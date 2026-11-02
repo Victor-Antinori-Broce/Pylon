@@ -16,6 +16,7 @@ import { kitsudenFunctions } from "../db/schema";
 
 import { dispatchEvent, executeActionById } from "./actions";
 import { events } from "./events";
+import type { EjecutorDeAccion } from "./sandbox/identidad";
 import type { SandboxResult } from "./worker-sandbox";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -98,7 +99,8 @@ export async function executeFunction(
  */
 export async function executeManually(
   functionId: string,
-  customPayload?: Record<string, unknown>
+  customPayload?: Record<string, unknown>,
+  ejecutor?: EjecutorDeAccion
 ): Promise<SandboxResult> {
   console.warn("[DEPRECATED] executeManually called, migrate to ActionEngine");
 
@@ -116,6 +118,7 @@ export async function executeManually(
 
   const result = await executeActionById(actionId, {
     trigger: "manual",
+    ejecutor,
     event: customPayload
       ? {
           name: "manual",

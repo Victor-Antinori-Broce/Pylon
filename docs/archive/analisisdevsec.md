@@ -39,7 +39,7 @@ PROMEDIO: 80% - Seguro por default, RBAC implementado, telemetry completo
 // ✅ TOKEN NHI CON HASH SHA-256
 // apps/api/src/services/agent-auth.ts
 
-const token = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const token = "<YOUR_AGENT_KEY>";
 //       ↑↑↑↑↑↑↑  ↑↑↑↑↑↑  ↑↑↑↑↑↑↑↑
 //       prefijo   tipo    43 chars de entropy
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Save, Check, AlertCircle, ChevronDown } from "lucide-svelte";
 
   import { autosaveStore } from "$lib/states/autosave.svelte";
@@ -41,13 +42,13 @@
     -->
     {#if autosaveStore.status === "saving"}
       <Save class="w-3.5 h-3.5 animate-pulse" />
-      <span>Guardando borrador…</span>
+      <span>{t("autoSaveIndicator.guardandoBorrador")}</span>
     {:else if autosaveStore.status === "unsaved"}
       <AlertCircle class="w-3.5 h-3.5" />
-      <span>Borrador sin guardar</span>
+      <span>{t("autoSaveIndicator.borradorSinGuardar")}</span>
     {:else}
       <Check class="w-3.5 h-3.5" />
-      <span>Borrador guardado</span>
+      <span>{t("autoSaveIndicator.borradorGuardado")}</span>
     {/if}
     <ChevronDown class="w-3 h-3 ml-0.5 transition-transform {showDropdown ? 'rotate-180' : ''}" />
   </button>

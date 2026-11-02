@@ -12,6 +12,7 @@
  * Playground: GET /api/graphql (returns GraphiQL HTML)
  */
 
+import { TABLAS_SOLO_POR_SU_RUTA } from "../lib/codigo-de-acciones";
 import { resolveExecutor, messageOf } from "@kitsuden/engine";
 import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
 import {
@@ -38,6 +39,7 @@ import { buildMergedSchema } from "../lib/schema-merger";
 import { getValkeyClient } from "../lib/valkey";
 import { protectRoute, requireAdmin } from "../middleware/auth-guard";
 import { withTransactionalRLS } from "../middleware/transactional-rls";
+import { enProduccion } from "../lib/entorno";
 
 export const graphqlRoutes = new Hono();
 
@@ -343,6 +345,8 @@ async function buildNativeTableMutations(
     if (!hasIdColumn) continue;
 
     const tableName = table[Symbol.for("drizzle:Name")];
+    // Fase I (decisión 2): sin mutaciones para las tablas con ruta propia.
+    if (TABLAS_SOLO_POR_SU_RUTA.has(tableName)) continue;
     const typeName = toPascalCase(exportKey);
 
     mutations[`create${typeName}`] = {
@@ -935,7 +939,7 @@ graphqlRoutes.post("/", protectRoute, withTransactionalRLS(), async (c) => {
 graphqlRoutes.get(
   "/",
   async (c, next) => {
-    if (process.env.NODE_ENV === "production") return protectRoute(c, next);
+    if (enProduccion()) return protectRoute(c, next);
     return next();
   },
   (c) => {

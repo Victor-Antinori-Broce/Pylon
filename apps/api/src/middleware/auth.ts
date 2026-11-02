@@ -17,6 +17,8 @@ import { withRouteMeta } from "@kitsuden/engine/src/route-meta";
 import { createMiddleware } from "hono/factory";
 
 import { auth } from "../lib/auth";
+
+import { agentePuedeActuarComoUsuario, MENSAJE_AGENTE_SIN_CUENTA } from "./agente-como-usuario";
 // @ts-ignore - Type import used for JSDoc/context typing
 
 /**
@@ -40,6 +42,10 @@ export const requireAuth = withRouteMeta(
     const agente = (c as unknown as { get(clave: string): unknown }).get("agent");
     const usuario = (c as unknown as { get(clave: string): unknown }).get("user");
     if (agente && usuario) {
+      // No cualquier clave: ver middleware/agente-como-usuario.ts
+      if (!agentePuedeActuarComoUsuario(c)) {
+        return c.json({ error: MENSAJE_AGENTE_SIN_CUENTA }, 403);
+      }
       await next();
       return;
     }

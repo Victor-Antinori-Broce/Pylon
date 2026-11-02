@@ -148,7 +148,7 @@ export const kon = defineKon({
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify(context, null, 2),
+              text: JSON.stringify(context),
             },
           ],
         };
@@ -236,7 +236,7 @@ export const kon = defineKon({
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify(schemaInfo, null, 2),
+              text: JSON.stringify(schemaInfo),
             },
           ],
         };
@@ -245,7 +245,7 @@ export const kon = defineKon({
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify({ error: error.message }, null, 2),
+              text: JSON.stringify({ error: error.message }),
             },
           ],
         };
@@ -309,7 +309,7 @@ export const kon = defineKon({
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify(capabilities, null, 2),
+              text: JSON.stringify(capabilities),
             },
           ],
         };
@@ -318,7 +318,7 @@ export const kon = defineKon({
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify({ error: error.message }, null, 2),
+              text: JSON.stringify({ error: error.message }),
             },
           ],
         };
@@ -386,7 +386,7 @@ export const kon = defineKon({
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify({ error: error.message }, null, 2),
+              text: JSON.stringify({ error: error.message }),
             },
           ],
         };

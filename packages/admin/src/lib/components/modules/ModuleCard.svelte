@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import KonIcon from "$lib/components/KonIcon.svelte";
   import { CheckCircle, PowerOff, Loader2, Lock, Sparkles } from "lucide-svelte";
   import { slide } from "svelte/transition";
@@ -76,14 +77,14 @@
             class="text-[9px] font-bold px-1.5 py-0.5 rounded-full {module.enabled
               ? 'bg-kitsuden-accent/10 text-kitsuden-accent border border-kitsuden-accent/20'
               : 'bg-kitsuden-border/50 text-kitsuden-subtle border border-kitsuden-border'}"
-            >CORE</span
+            >{t("moduleCard.core")}</span
           >
         {/if}
         {#if isThemeModule}
           <span
             class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-kitsuden-accent-2/10 text-kitsuden-accent-2 border border-kitsuden-accent-2/20 flex items-center gap-1"
           >
-            <Sparkles class="w-2.5 h-2.5" /> THEME
+            <Sparkles class="w-2.5 h-2.5" /> {t("moduleCard.theme")}
           </span>
         {/if}
         {#if module.version}
@@ -100,7 +101,7 @@
 
       {#if module.dependsOn?.length}
         <div class="mt-2 flex items-center gap-1 flex-wrap">
-          <span class="text-[10px] text-kitsuden-subtle">Requiere:</span>
+          <span class="text-[10px] text-kitsuden-subtle">{t("moduleCard.requiere")}</span>
           {#each module.dependsOn as dep}
             <span
               class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-kitsuden-bg border border-kitsuden-border {isDepEnabled(
@@ -118,7 +119,7 @@
       {#if isThemeModule}
         <button
           class="w-11 h-6 rounded-full bg-kitsuden-accent-2/20 flex items-center justify-center cursor-not-allowed"
-          title="Controlled by theme activation"
+          title={t("moduleCard.controlledByThemeActivation")}
           onclick={onToggle}
         >
           <Lock class="w-3 h-3 text-kitsuden-accent-2" />
@@ -132,7 +133,7 @@
             : 'bg-kitsuden-border'} {toggling || checking
             ? 'opacity-50 cursor-wait'
             : 'cursor-pointer'}"
-          title={module.enabled ? "Click to disable" : "Click to enable"}
+          title={module.enabled ? t("moduleCard.clickToDisable") : t("moduleCard.clickToEnable")}
         >
           {#if checking}
             <span class="absolute inset-0 flex items-center justify-center"
@@ -156,10 +157,10 @@
       class="mt-3 pt-3 border-t border-kitsuden-border/50 flex items-center justify-between"
     >
       <span class="flex items-center gap-1.5 text-xs text-kitsuden-green"
-        ><CheckCircle class="w-3.5 h-3.5" /> Activo</span
+        ><CheckCircle class="w-3.5 h-3.5" /> {t("moduleCard.activo")}</span
       >
       {#if module.tables?.length}<span class="text-[10px] text-kitsuden-subtle font-mono"
-          >{module.tables.length} tabla{module.tables.length !== 1 ? "s" : ""}</span
+          >{module.tables.length} {t("moduleCard.tabla")}{module.tables.length !== 1 ? "s" : ""}</span
         >{/if}
     </div>
   {/if}
@@ -170,7 +171,7 @@
       class="mt-3 pt-3 border-t border-kitsuden-accent-2/20 flex items-center justify-between"
     >
       <span class="flex items-center gap-1.5 text-xs text-kitsuden-accent-2"
-        ><Sparkles class="w-3.5 h-3.5" /> Enabled by Theme</span
+        ><Sparkles class="w-3.5 h-3.5" /> {t("moduleCard.enabledByTheme")}</span
       >
       {#if module.themeId}<span class="text-[10px] text-kitsuden-subtle font-mono"
           >{module.themeId}</span
@@ -183,7 +184,7 @@
       transition:slide={{ duration: 200 }}
       class="mt-3 pt-3 border-t border-kitsuden-border/50 flex items-center gap-1.5 text-xs text-kitsuden-subtle"
     >
-      <PowerOff class="w-3.5 h-3.5" /> Desactivado — datos ocultos, no eliminados
+      <PowerOff class="w-3.5 h-3.5" /> {t("moduleCard.desactivadoDatosOcultosNoEliminados")}
     </div>
   {/if}
 </div>

@@ -16,6 +16,11 @@ on:
           - shared
           - all
 
+# Solo lectura para el GITHUB_TOKEN (auditoría 2026-10-25): la publicación en
+# npm va con NPM_TOKEN, no con el token de GitHub.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: "20"
   NPM_REGISTRY: "https://registry.npmjs.org"

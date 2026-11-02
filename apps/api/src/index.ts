@@ -3,8 +3,8 @@
  *
  * Runtime: Bun + Hono
  * Auth: Better-Auth (cookie sessions)
- * Queue: BullMQ + DragonflyDB
- * Real-time: WebSocket + Valkey Pub/Sub
+ * Queue: Postgres (transactional outbox + SKIP LOCKED; lib/queue.ts)
+ * Real-time: WebSocket + Pub/Sub (Valkey opcional; sin él, LISTEN/NOTIFY)
  * Actions: Unified Workers + Webhooks + Agents engine
  *
  * 3-Tier Architecture:
@@ -38,7 +38,14 @@ import { timing } from "hono/timing";
 import { staticConfig as kitsudenConfig } from "../kitsuden.config";
 
 import { db } from "./db";
-import { BASE_URL_LOCAL, cacheDeMedio, comprobarAlmacen, rutaLocalDe, usaS3 } from "./lib/almacen";
+import {
+  BASE_URL_LOCAL,
+  CSP_DE_MEDIOS,
+  cacheDeMedio,
+  comprobarAlmacen,
+  rutaLocalDe,
+  usaS3,
+} from "./lib/almacen";
 import { verificarConexionRls } from "./lib/rls-connection-guard";
 import {
   authUsers as user,
@@ -57,15 +64,32 @@ import { initCronScheduler } from "./lib/cron-scheduler";
 import { toErrorEnvelope } from "./lib/errors";
 import { initFunctionDispatcher } from "./lib/function-dispatcher";
 import { logger } from "./lib/logger";
-import { loadModules, createKonContext } from "./lib/module-loader";
-import { setupWorkers, emailQueue } from "./lib/queue";
+import { hostDeEscucha } from "./lib/host-de-escucha";
+import { poolAgotadoA503 } from "./lib/pool-agotado";
+import { konDisponible } from "./lib/kons-diferidos";
+import { loadModules, createKonContext, getInformeDeCarga, montarRlsDeKon } from "./lib/module-loader";
+import { registrarOperacionesMontadas } from "../../../packages/engine/src/operaciones";
+import { setupWorkers, emailQueue, estadoDeLaCola, shutdownQueues } from "./lib/queue";
+import { colaRoutes } from "./routes/cola";
+import { arrancarTrazas, pararTrazas, trazasDePeticion } from "./lib/trazas";
+import { trazasRoutes } from "./routes/trazas";
+import { avisosDeAgentesRoutes } from "./routes/avisos-de-agentes";
+import { cuerpoDeFichero, fichero } from "./lib/fichero";
+import { configurarEmbeddingsDeModelos } from "./lib/embeddings-de-modelos";
 import { realtimeManager, type WSClientData } from "./lib/realtime";
 import { wireRealtimeAuthorization, bridgeEventsToRealtime } from "./lib/realtime-wiring";
 import { toonMiddleware } from "./lib/toon";
+import { lineaDeAccesoSinSecretos } from "./lib/ruta-para-log";
 import { toonProtocolMiddleware } from "./lib/toon-protocol";
-import { valkeyConnection } from "./lib/valkey";
+import { closeValkey, valkeyConfigurado } from "./lib/valkey";
 import { registerSystemMails } from "./mail/system-mails";
 import { requestContextMiddleware, accessLogAndMetrics } from "./middleware/telemetry";
+import { erroresSinDetalle } from "./middleware/errores-sin-detalle";
+// ── A1: errores problem+json e Idempotency-Key (bloque propio) ──
+import { almacenesPorDefecto } from "./lib/idempotencia-almacenes";
+import { idempotencia } from "./middleware/idempotencia";
+import { problemasHttp } from "./middleware/problemas-http";
+import { limiteDeCuerpo } from "./lib/limite-de-cuerpo";
 
 // ── Feature Flags ──
 
@@ -76,8 +100,25 @@ import { requestContextMiddleware, accessLogAndMetrics } from "./middleware/tele
 // ── Engine Routes (Nivel 1) — Always-on infrastructure ──
 import { withTransactionalRLS } from "./middleware/transactional-rls";
 import type { PgTable } from "drizzle-orm/pg-core";
-import { protectRoute } from "./middleware/auth-guard";
+import { ipDelCliente } from "./lib/ip-del-cliente";
+import {
+  exigirAdmin,
+  exigirStaff,
+  puertaDeAdmin,
+  denegacionesDeAgente,
+  RUTAS_SOLO_ADMIN,
+  RUTAS_SOLO_ADMIN_TEMPRANAS,
+} from "./middleware/auth-guard";
 import { enrichUserContext } from "./middleware/user-context";
+import { exigirOrigenEnEscrituras } from "./middleware/origen-de-escritura";
+import {
+  adminExists,
+  announceSetupTokenAtBoot,
+  createFirstAdmin,
+  ensureSetupToken,
+  setupTokenRequired,
+  signUpRefused,
+} from "./lib/first-run";
 import { actionsRoutes } from "./routes/actions";
 import { adminRegistryRoutes } from "./routes/admin-registry";
 import agentMemoryRoutes from "./routes/agent-memory";
@@ -89,6 +130,12 @@ import { rutasDeKons, sugerirRutas } from "./lib/rutas-de-kons";
 import agentRoutes from "./routes/agents";
 import { apiKeysRoutes } from "./routes/api-keys";
 import { brainRoutes } from "./routes/brain";
+import {
+  brainMemoriaRoutes,
+  operacionesDeMemoria,
+  KON_DE_MEMORIA,
+  RUTA_DE_MEMORIA,
+} from "./routes/brain-memoria";
 import { codeGraphRoutes } from "./routes/code-graph";
 import { codegenRoutes } from "./routes/codegen";
 import { settingsRoutes, syncRoutes, dataSetsRoutes as dataSetsLiteRoutes } from "./routes/crud";
@@ -106,11 +153,16 @@ import { initAgentTelemetry } from "./services/agent-telemetry";
 import { loadSecretsIntoEnv } from "./services/secrets";
 import { inlineRelationsRoutes } from "./routes/inline-relations";
 import { mcpRoutes } from "./routes/mcp";
+import { arrancarBarridoDeOAuth } from "./lib/oauth/servicio";
+import { corsDeOAuth, desafioDeMcp, oauthRoutes } from "./routes/oauth";
+import { oauthPanelRoutes } from "./routes/oauth-panel";
 import { modulesRoutes } from "./routes/modules";
 import konAssetsRoutes from "./routes/kon-assets";
 import { schemaIntrospectionRoutes } from "./routes/schema-introspection";
 import { sistemaAdminRoutes } from "./routes/sistema-admin";
 import { systemRoutes } from "./routes/system";
+import { fijarDisponibilidadDeKons, versionRoutes } from "./routes/version";
+import { activarPerfilDeMiddleware } from "./lib/perfil-middleware";
 
 // ── Module Loader ──
 
@@ -128,9 +180,21 @@ const app = new Hono<{
   };
 }>();
 
+// Solo para medir (scripts/bench): con KITSUDEN_PERFIL_MIDDLEWARE=<fichero>
+// cada `app.use` se envuelve para anotar su tiempo propio. Apagado = nada.
+activarPerfilDeMiddleware(app);
+
 // ══════════════════════════════════════════════
 // ⚙️ GLOBAL MIDDLEWARE
 // ══════════════════════════════════════════════
+
+// OAuth para MCP (docs/agents/oauth.md): los endpoints PÚBLICOS de OAuth
+// (metadatos, registro, token, revocación) con CORS abierto y sin cookies, y
+// `WWW-Authenticate` en los 401/403 de /api/mcp. Antes del CORS global y de la
+// autenticación, para envolver sus respuestas.
+app.use("*", corsDeOAuth());
+app.use("/api/mcp", desafioDeMcp());
+app.use("/api/mcp/*", desafioDeMcp());
 
 // CORS — MUST be first middleware to handle OPTIONS preflight
 // before rate limiter or any other middleware can reject the request
@@ -164,6 +228,21 @@ void urlPublicaDelSitio()
 // Trace context (W3C) + requestId — debe ir ANTES de todo para que el
 // AsyncLocalStorage esté disponible en el resto del pipeline (logs, métricas).
 app.use("*", requestContextMiddleware());
+// ── A1: todos los errores de /api/* en application/problem+json (RFC 9457) ──
+// Por FUERA del pool agotado y de erroresSinDetalle: les da forma a sus
+// respuestas sin cambiar qué se enseña. Ver middleware/problemas-http.ts.
+app.use("*", problemasHttp());
+// Pool de Postgres agotado → 503 + Retry-After (aunque un kon lo capture y
+// responda 500 por su cuenta). Por fuera de erroresSinDetalle y de onError.
+app.use("*", poolAgotadoA503());
+
+// En producción, los 5xx no enseñan su detalle interno (SQL, rutas, pila) a
+// quien no es admin. Ver middleware/errores-sin-detalle.ts.
+app.use("*", erroresSinDetalle(enProduccion));
+
+// Cuerpo de petición acotado (10 MB; las subidas de ficheros llevan el suyo).
+// Ver lib/limite-de-cuerpo.ts.
+app.use("/api/*", limiteDeCuerpo());
 
 // ═══════════════════════════════════════════════
 // CRITICAL FEATURES - Rate limiting, search & observability
@@ -172,6 +251,29 @@ app.use("*", requestContextMiddleware());
 // before public routes so the global /api/* rate limiter runs before the
 // auth/session middleware and protects all API routes registered later.
 // ═══════════════════════════════════════════════
+// CSRF: una escritura autenticada con la cookie tiene que venir de un origen
+// nuestro (ALLOWED_ORIGINS + los de better-auth) o del mismo host. Ver
+// middleware/origen-de-escritura.ts. Before everything that answers without
+// calling `next()` (`/api/system`, `/api/sistema`, `/api/search`, the rate-limit
+// admin): there is no session yet at this point, so it looks at the cookie itself.
+const origenesDeEscritura = [
+  ...new Set([
+    ...corsConfig.origins,
+    ...((auth.options as { trustedOrigins?: unknown }).trustedOrigins instanceof Array
+      ? (auth.options as { trustedOrigins: string[] }).trustedOrigins
+      : []),
+  ]),
+];
+app.use(
+  "*",
+  exigirOrigenEnEscrituras(() => origenesDeEscritura)
+);
+
+// Rutas del panel que se montan ANTES del middleware global de sesión
+// (observabilidad en `/admin/*`, límites, índice de búsqueda, `/api/system`):
+// solo admin. Ver RUTAS_SOLO_ADMIN_TEMPRANAS en middleware/auth-guard.ts.
+app.use("*", puertaDeAdmin(RUTAS_SOLO_ADMIN_TEMPRANAS));
+
 registerCriticalFeatures(app);
 
 // ═══════════════════════════════════════════════
@@ -180,11 +282,22 @@ registerCriticalFeatures(app);
 // estructurado ya correlado con trace_id/span_id. Ver middleware/telemetry.ts.
 // ═══════════════════════════════════════════════
 app.use("*", accessLogAndMetrics());
+// La «caja de cristal» (kitsuden2.md C7): una traza por petición en Postgres,
+// en lotes y con las lecturas muestreadas. Ver lib/trazas.ts.
+app.use("*", trazasDePeticion());
+arrancarTrazas();
 
 // ═══════════════════════════════════════════════
 // CORS DINÁMICO - Configurable via env
 // ═══════════════════════════════════════════════
-app.use("*", honoLogger());
+// Sin tokens en el log: `GET /api/auth/reset-password/<token>` lleva el
+// secreto en el camino (ver lib/ruta-para-log.ts).
+app.use(
+  "*",
+  honoLogger((linea: string, ...resto: string[]) =>
+    console.log(lineaDeAccesoSinSecretos(linea), ...resto)
+  )
+);
 app.use("*", timing());
 /**
  * Las cabeceras de seguridad, con UNA excepción: `/media`.
@@ -221,80 +334,42 @@ app.use("/api/*", toonProtocolMiddleware());
 
 app.get("/api/system/init-check", async (c) => {
   try {
-    const [result] = await db.select({ value: count() }).from(user);
-    const userCount = result?.value || 0;
-    return c.json({ initialized: userCount > 0 });
+    const initialized = await adminExists();
+    // A token can go missing while the API is up (the last admin was deleted).
+    if (!initialized && setupTokenRequired()) ensureSetupToken();
+    return c.json({ initialized, setupTokenRequired: !initialized && setupTokenRequired() });
   } catch (error: unknown) {
     // El detalle va al log, no al cuerpo: esta ruta es PÚBLICA y previa a la
     // autenticación, y el mensaje de un fallo de Drizzle lleva el SQL entero
     // con nombres de tabla y columnas.
     logger.error({ err: error }, "[init-check] fallo comprobando usuarios");
-    return c.json({ initialized: true });
+    return c.json({ initialized: true, setupTokenRequired: false });
   }
 });
 
 app.post("/api/system/setup", async (c) => {
   try {
-    const [result] = await db.select({ value: count() }).from(user);
-    if ((result?.value || 0) > 0) {
-      return c.json({ error: "System already initialized" }, 403);
-    }
-
-    const body = await c.req.json();
-    const { name, email, password } = body;
-
-    if (!name || !email || !password) {
-      return c.json({ error: "Missing required fields" }, 400);
-    }
-
-    // `c.req.raw.headers`, NO `c.req.header()`.
-    //
-    // El primero es el objeto `Headers` de la petición; el segundo devuelve un
-    // objeto plano de Hono. better-auth espera `Headers` y llama a sus métodos
-    // por dentro, así que con el objeto plano rompía con
-    //
-    //     undefined is not an object (evaluating 'result.headers')
-    //
-    // y lo hacía DESPUÉS de haber escrito en la base: usuario, credencial y
-    // sesión creados, y aun así 500. El alta parecía fallar entera cuando en
-    // realidad solo faltaba devolver la respuesta.
-    //
-    // Todas las demás llamadas a `auth.api.*` de este repo ya usaban
-    // `c.req.raw.headers`; esta era la única distinta.
-    const authRes = await auth.api.signUpEmail({
-      body: { email, password, name },
-      headers: c.req.raw.headers,
-      asResponse: false,
-    });
-
-    if (!authRes || !("user" in authRes)) throw new Error("Failed to create user");
+    const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
 
     /**
      * Admin Y verificado.
      *
-     * Con la verificación de email obligatoria, el alta de better-auth crea el
-     * usuario sin verificar y SetupView hace `signIn` justo después: sin marcar
-     * aquí `emailVerified`, quien instala la plataforma se quedaría fuera de su
-     * propia instancia en el primer segundo, esperando un correo que en una
-     * instalación recién hecha aún no hay forma de enviar.
+     * Con la verificación de email obligatoria, SetupView hace `signIn` justo
+     * después: sin marcar aquí `emailVerified`, quien instala la plataforma se
+     * quedaría fuera de su propia instancia en el primer segundo, esperando un
+     * correo que en una instalación recién hecha aún no hay forma de enviar.
      *
-     * Marcarlo no amplía nada: esta ruta solo funciona con CERO usuarios, así
-     * que quien llega aquí es, por definición, quien está montando la
-     * instalación.
+     * Marcarlo no amplía nada: quien llega aquí tiene el token del log y no hay
+     * ningún administrador, así que es quien está montando la instalación.
      */
-    const updateResult = await db
-      .update(user)
-      .set({ role: "admin", emailVerified: true })
-      .where(eq(user.id, authRes.user.id))
-      .returning();
-    if (updateResult.length === 0) {
-      // ID didn't match — Better-Auth may use a different ID format
-      console.warn(`[setup] Role update by ID failed for ${authRes.user.id}, trying by email...`);
-      await db
+    const outcome = await createFirstAdmin(body, async (tx, userId) => {
+      await tx
         .update(user)
         .set({ role: "admin", emailVerified: true })
-        .where(eq(user.email, email));
-    }
+        .where(eq(user.id, userId));
+    });
+    if (!outcome.ok) return c.json({ error: outcome.error, code: outcome.code }, outcome.status);
+    const { name, email } = outcome.user;
     console.log(`[setup] User ${email} promoted to admin`);
 
     const [settings] = await db.select().from(siteSettings).limit(1);
@@ -306,7 +381,7 @@ app.post("/api/system/setup", async (c) => {
       await emailQueue.add("system.welcome", { to: email, name } as any);
     } catch {}
 
-    return c.json({ success: true, user: authRes.user });
+    return c.json({ success: true, user: outcome.user });
   } catch (e: unknown) {
     // Igual que init-check: pública y sin auth. Devolvía `e.message`, que en un
     // fallo de consulta es el SQL completo MÁS los parámetros — es decir, el
@@ -325,6 +400,8 @@ app.route("/api/system", systemRoutes);
 // pertenecen a ningun kon y no tenian pantalla en ninguna parte.
 //
 // Todo exige rol `admin`. Ver `routes/sistema-admin.ts`.
+app.use("/api/sistema", exigirAdmin);
+app.use("/api/sistema/*", exigirAdmin);
 app.route("/api/sistema", sistemaAdminRoutes);
 
 // ══════════════════════════════════════════════
@@ -333,12 +410,54 @@ app.route("/api/sistema", sistemaAdminRoutes);
 
 import { createHash } from "crypto";
 
-import { authenticateAgent, isAgentApiKey } from "./services/agent-auth";
+import { enProduccion } from "./lib/entorno";
+
+/** Retirada de las claves `kitsuden_sk_*` (anunciada en la cabecera `Sunset`). */
+const FIN_CLAVES_LEGACY = Date.UTC(2026, 7, 1);
+
+import {
+  arrancarBarridoDePropuestas,
+  ejecucionInternaDe,
+  ejecucionYaCobrada,
+  fijarAppDeAprobaciones,
+  puertaDeAprobacion,
+  usuarioDeAgente,
+} from "./lib/aprobaciones";
+import { cuotasDeAgente } from "./lib/cuotas-de-agente";
+import { aprobacionesRoutes, propuestasRoutes } from "./routes/aprobaciones";
+import { modelosRoutes, RUTA_DE_MODELOS } from "./routes/modelos";
+import { arrancarBarridoDeVigilancias } from "./lib/promocion";
+import {
+  KON_DE_PROMOCION,
+  RUTA_DE_PROMOCION,
+  RUTA_DE_PROMOCION_ADMIN,
+  operacionesDePromocion,
+  promocionAdminRoutes,
+  promocionRoutes,
+} from "./routes/promocion";
+import { permisosDeAgentesRoutes } from "./routes/permisos-de-agentes";
+import {
+  authenticateAgent,
+  esCredencialDeAgente,
+  recordarAutenticacionDeLaPeticion,
+} from "./services/agent-auth";
 import type { AgentAuthContext } from "./services/agent-auth";
 
 // Extend Hono context types - agent is now defined in app Variables type above
 
 app.use("*", async (c, next) => {
+  // Fase F: una propuesta APROBADA se ejecuta volviendo a entrar en la app con
+  // la identidad del agente puesta por el propio proceso en el `env` (no hay
+  // clave en claro que reenviar). Desde la red no se puede fabricar: Bun solo
+  // pasa `{ ip }`. Ver lib/aprobaciones.ts.
+  const interna = ejecucionInternaDe(c);
+  if (interna) {
+    c.set("agent", interna.agente);
+    c.set("user", usuarioDeAgente(interna.agente) as never);
+    c.set("session", null);
+    return next();
+  }
+
   // Skip session extraction for Better-Auth endpoints to avoid conflicts
   if (c.req.path.startsWith("/api/auth/")) {
     return next();
@@ -347,17 +466,23 @@ app.use("*", async (c, next) => {
   const authHeader = c.req.header("Authorization");
 
   // 1. AGENT AUTH (NHI - Non-Human Identity) - NEW SYSTEM
-  // Format: Bearer kitsuden_agent_xxxxx (acepta el legacy grm_agent_* hasta el
-  // sunset 2026-08-01; ver ACCEPTED_API_KEY_PREFIXES en services/agent-auth).
-  if (authHeader?.startsWith("Bearer ") && isAgentApiKey(authHeader.slice(7).trim())) {
+  // Format: Bearer kitsuden_agent_xxxxx (el legacy grm_agent_* ya no: ver
+  // ACCEPTED_API_KEY_PREFIXES en services/agent-auth).
+  // OAuth para MCP (0055): también `kitsuden_oat_*`, que solo vale en /api/mcp.
+  if (authHeader?.startsWith("Bearer ") && esCredencialDeAgente(authHeader.slice(7).trim())) {
     const rawToken = authHeader.replace("Bearer ", "").trim();
 
     const result = await authenticateAgent(rawToken, {
-      ipAddress: c.req.header("x-forwarded-for") || undefined,
+      // La IP de verdad, no la cabecera cruda (falseable): auditoría 2026-10-25
+      ipAddress: ipDelCliente(c),
       userAgent: c.req.header("user-agent") || undefined,
+      // La audiencia de un token OAuth (RFC 8707): se comprueba contra el camino
+      ruta: c.req.path,
     });
 
     if (result.success && result.context) {
+      // `/api/mcp` lo reutiliza en vez de autenticar otra vez (ver agent-auth)
+      recordarAutenticacionDeLaPeticion(c.req.raw, rawToken, result);
       // Set agent context
       c.set("agent", result.context);
 
@@ -369,6 +494,8 @@ app.use("*", async (c, next) => {
         image: null,
         role: "agent", // Not admin - granular permissions via scopes
         scopes: result.context.scopes,
+        // Fase F: quién firma lo que crea (ver @kitsuden/shared firmante.ts)
+        sponsor: result.context.sponsor ?? null,
       } as any);
       c.set("session", null);
 
@@ -378,6 +505,14 @@ app.use("*", async (c, next) => {
 
       return next();
     } else {
+      // No se pudo COMPROBAR la clave (la base no contestó: pool agotado,
+      // Postgres caído): sigue sin entrar, pero es un 503 que se reintenta, no
+      // un 401 que le dice al agente que su clave no vale (medido con 200
+      // conexiones, 2026-10-27).
+      if (result.code === "AUTH_ERROR") {
+        c.header("Retry-After", "5");
+        return c.json({ error: "Authentication is temporarily unavailable", code: result.code }, 503);
+      }
       return c.json(
         {
           error: result.error || "Agent authentication failed",
@@ -391,6 +526,17 @@ app.use("*", async (c, next) => {
   // 2. LEGACY Machine Auth (API Keys) - DEPRECATED
   // Migration: Use Agent NHI tokens (kitsuden_agent_*) instead.
   // Sunset date: 2026-08-01 — kitsuden_sk_* keys will stop working after this date.
+  // La fecha de retirada ya pasó y el código seguía aceptándolas — como ADMIN
+  // sintético. Ahora se cumple: 401 con el motivo.
+  if (authHeader?.startsWith("Bearer kitsuden_sk_") && Date.now() >= FIN_CLAVES_LEGACY) {
+    return c.json(
+      {
+        error: "Legacy API keys (kitsuden_sk_*) were retired on 2026-08-01",
+        code: "LEGACY_KEY_RETIRED",
+      },
+      401
+    );
+  }
   if (authHeader?.startsWith("Bearer kitsuden_sk_")) {
     const rawToken = authHeader.replace("Bearer ", "").trim();
     const keyHash = createHash("sha256").update(rawToken).digest("hex");
@@ -431,7 +577,14 @@ app.use("*", async (c, next) => {
   }
 
   // 3. Human Auth (Better-Auth Cookies)
-  const s = await auth.api.getSession({ headers: c.req.raw.headers });
+  let s = await auth.api.getSession({ headers: c.req.raw.headers });
+  // The session cookie caches the role for 5 minutes: a demoted admin kept what
+  // its role opens on every route that trusts `user` (`/api/runs`, `/api/graph`,
+  // the lite datasets). A privileged role is always read from the database.
+  const rolDeLaCookie = (s?.user as { role?: string } | undefined)?.role;
+  if (rolDeLaCookie === "admin" || rolDeLaCookie === "editor") {
+    s = await auth.api.getSession({ headers: c.req.raw.headers, query: { disableCookieCache: true } });
+  }
   c.set("user", s?.user || null);
   c.set("session", s?.session || null);
   await next();
@@ -440,6 +593,51 @@ app.use("*", async (c, next) => {
 // Enrich user context with ACL fields (roles, department)
 // Must run after auth middleware so that `user` is already populated
 app.use("*", enrichUserContext);
+
+// Superficie del panel (items, módulos, funciones, acciones, explorador,
+// GraphQL…): solo admin. Antes bastaba cualquier cuenta —o ninguna—, y el alta
+// es abierta. Ver RUTAS_SOLO_ADMIN en middleware/auth-guard.ts.
+// Fase E: cuotas por agente (minuto, escrituras y presupuesto del día; 429
+// problem+json) y sus denegaciones `!patrón`, ANTES de las puertas. Ver
+// lib/cuotas-de-agente.ts y docs/agents/permissions.md.
+// Lo que ejecuta una propuesta aprobada ya pagó su cuota al proponerse.
+const cuotas = cuotasDeAgente();
+// (Las llamadas del sandbox de acciones SÍ pagan: ver ejecucionYaCobrada.)
+app.use("*", (c, next) => (ejecucionYaCobrada(c) ? next() : cuotas(c, next)));
+app.use("*", denegacionesDeAgente);
+app.use("*", puertaDeAdmin(RUTAS_SOLO_ADMIN));
+
+// ── A1: Idempotency-Key en escrituras (POST/PUT/PATCH/DELETE de /api/*) ──
+// Tras la autenticación (la clave es por actor) y las puertas; antes de las
+// rutas y los kons. Valkey → tabla de respaldo → 503 (fail-closed). Ver
+// middleware/idempotencia.ts.
+app.use(
+  "/api/*",
+  idempotencia({
+    almacenes: almacenesPorDefecto,
+    avisar: (mensaje, datos) => logger.warn(datos, mensaje),
+  })
+);
+
+// ── Fase F: aprobación humana ──
+// Tras la idempotencia (un reintento con la misma clave recibe la MISMA
+// propuesta, el 202 guardado) y antes de las rutas: la petición de un agente
+// que necesita aprobación no se ejecuta; queda como propuesta (202). Con todo
+// apagado (lo de fábrica) no consulta nada. Ver lib/aprobaciones.ts y
+// docs/agents/approvals.md.
+app.use("/api/*", puertaDeAprobacion());
+
+// Without an administrator, an account created here would only lock the owner
+// out of `/api/system/setup` or be taken for it. See lib/first-run.ts.
+app.use("/api/auth/sign-up/*", async (c, next) => {
+  if (await signUpRefused()) {
+    return c.json(
+      { error: "Create the first administrator before anyone signs up", code: "SETUP_REQUIRED" },
+      403
+    );
+  }
+  return next();
+});
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
@@ -456,12 +654,16 @@ if (!usaS3) {
     try {
       // `rutaLocalDe` rechaza cualquier clave que se salga del directorio: sin
       // eso, `/uploads/../../etc/passwd` seria una ruta valida para `join`.
-      const fichero = Bun.file(rutaLocalDe(clave));
-      if (!(await fichero.exists())) return c.notFound();
-      return new Response(fichero, {
+      const ruta = rutaLocalDe(clave);
+      const medio = fichero(ruta);
+      if (!(await medio.exists())) return c.notFound();
+      // Bajo Bun, el BunFile (tipo y envío sin copia); bajo Node, un stream (G4).
+      const { cuerpo, tipo } = cuerpoDeFichero(ruta);
+      return new Response(cuerpo, {
         headers: {
+          ...(tipo ? { "Content-Type": tipo } : {}),
           "Cache-Control": cacheDeMedio(clave),
-          "Last-Modified": new Date(fichero.lastModified).toUTCString(),
+          "Last-Modified": new Date(medio.lastModified).toUTCString(),
           /**
            * Que se puedan LEER, no solo pintar.
            *
@@ -478,6 +680,16 @@ if (!usaS3) {
            * `cross-origin` ya permitia.
            */
           "Access-Control-Allow-Origin": "*",
+          /**
+           * Un fichero de `/media` nunca ejecuta nada en el origen de la API.
+           *
+           * Se sirven con el tipo de su extensión: un `.svg` o un `.html`
+           * subido desde el panel (o desde cualquier kon que guarde ficheros)
+           * abierto directamente sería JavaScript corriendo en el MISMO origen
+           * que las cookies de sesión de la API. `sandbox` lo neutraliza sin
+           * afectar a `<img>`/`<video>` en las webs, que no leen esta cabecera.
+           */
+          "Content-Security-Policy": CSP_DE_MEDIOS,
         },
       });
     } catch {
@@ -506,7 +718,8 @@ if (!usaS3) {
  * Se agrupan aqui, sobre las tablas del nucleo, en vez de repartirlas por cada
  * kon: son las cifras de la portada del admin, no del dominio de nadie.
  *
- * Requieren sesion porque revelan el tamano de la instalacion.
+ * Solo el equipo (`admin`/`editor`): revelan el tamano de la instalacion, y
+ * «tener sesion» no es «ser del equipo» con el alta abierta (2026-10-15).
  */
 // `PgTable` y no un tipo condicional con `any`: lo unico que necesita `count()`
 // es una tabla, y decirlo directamente es mas corto Y mas preciso. La version
@@ -529,15 +742,15 @@ const contar = async (tabla: PgTable) => {
  * nombres es de better-auth, y una version suya que anadiera `users/count`
  * chocaria en silencio. Contar usuarios no es una operacion de autenticacion.
  */
-app.get("/api/users/count", protectRoute, async (c) => c.json({ count: await contar(user) }));
+app.get("/api/users/count", exigirStaff, async (c) => c.json({ count: await contar(user) }));
 
-app.get("/api/media/count", protectRoute, async (c) => c.json({ count: await contar(mediaTable) }));
+app.get("/api/media/count", exigirStaff, async (c) => c.json({ count: await contar(mediaTable) }));
 
-app.get("/api/datasets/count", protectRoute, async (c) =>
+app.get("/api/datasets/count", exigirStaff, async (c) =>
   c.json({ count: await contar(dataSetsTable) })
 );
 
-app.get("/api/blog/posts/count", protectRoute, async (c) => {
+app.get("/api/blog/posts/count", exigirStaff, async (c) => {
   // El blog es un kon: puede no estar instalado. Un panel de inicio no puede
   // fallar porque falte un kon opcional, asi que se devuelve 0.
   try {
@@ -551,6 +764,32 @@ app.get("/api/blog/posts/count", protectRoute, async (c) => {
   }
 });
 
+/**
+ * El motivo de un fallo en las comprobaciones de salud, que son PÚBLICAS.
+ *
+ * En producción solo «unavailable» (el detalle va al log): el mensaje de un
+ * fallo de conexión trae host, usuario de la base o la consulta entera.
+ */
+function detalleDeSalud(err: unknown): string {
+  if (!enProduccion()) return messageOf(err);
+  logger.warn({ err }, "[health] comprobación fallida");
+  return "unavailable";
+}
+
+/**
+ * The storage check writes and deletes an object: the route is public, so
+ * anonymous traffic must not drive storage writes. At most one per minute.
+ */
+let almacenComprobado: { hasta: number; estado: Awaited<ReturnType<typeof comprobarAlmacen>> } | null = null;
+
+async function comprobarAlmacenConMemoria() {
+  if (almacenComprobado && almacenComprobado.hasta > Date.now()) return almacenComprobado.estado;
+  const estado = await comprobarAlmacen();
+  almacenComprobado = { hasta: Date.now() + 60_000, estado };
+  return estado;
+}
+
+app.route("/api/version", versionRoutes);
 app.get("/api/health", async (c) => {
   const checks: Record<string, { status: string; details?: unknown; error?: string }> = {};
   let overallStatus = "ok";
@@ -564,20 +803,23 @@ app.get("/api/health", async (c) => {
       details: { responseTime: `${Date.now() - start}ms` },
     };
   } catch (err: unknown) {
-    checks.database = { status: "error", error: messageOf(err) };
+    checks.database = { status: "error", error: detalleDeSalud(err) };
     overallStatus = "degraded";
   }
 
-  // Queue check
+  // Queue check (Postgres): pendientes, en curso y muertos de todas las colas.
   try {
-    const waiting = await emailQueue.getWaitingCount();
-    const active = await emailQueue.getActiveCount();
+    const cola = await estadoDeLaCola();
+    const waiting = cola.totales.pending ?? 0;
+    const active = cola.totales.running ?? 0;
+    const dead = cola.totales.dead ?? 0;
     checks.queue = {
-      status: "ok",
-      details: { waiting, active },
+      // Un trabajo muerto no tumba la API, pero alguien debe mirarlo.
+      status: dead > 0 ? "warning" : "ok",
+      details: { worker: cola.worker, listen: cola.escucha, waiting, active, dead },
     };
   } catch (err: unknown) {
-    checks.queue = { status: "error", error: messageOf(err) };
+    checks.queue = { status: "error", error: detalleDeSalud(err) };
     overallStatus = "degraded";
   }
 
@@ -586,7 +828,7 @@ app.get("/api/health", async (c) => {
     const rtStats = realtimeManager.getStats();
     checks.realtime = { status: "ok", details: rtStats };
   } catch (err: unknown) {
-    checks.realtime = { status: "error", error: messageOf(err) };
+    checks.realtime = { status: "error", error: detalleDeSalud(err) };
   }
 
   // Memory usage
@@ -596,14 +838,14 @@ app.get("/api/health", async (c) => {
   // escribe y borra un objeto de prueba, porque que el destino exista no dice
   // si se puede escribir en el.
   try {
-    const almacen = await comprobarAlmacen();
+    const almacen = await comprobarAlmacenConMemoria();
     checks.storage = {
       status: almacen.ok ? "ok" : "error",
       details: { proveedor: almacen.proveedor, detalle: almacen.detalle },
     };
     if (!almacen.ok) overallStatus = "degraded";
   } catch (err) {
-    checks.storage = { status: "error", error: messageOf(err) };
+    checks.storage = { status: "error", error: detalleDeSalud(err) };
     overallStatus = "degraded";
   }
 
@@ -620,14 +862,27 @@ app.get("/api/health", async (c) => {
   const uptime = process.uptime();
 
   c.status(overallStatus === "ok" ? 200 : 503);
+  // In production, whoever is not an admin gets the verdict and nothing else:
+  // storage paths, queue counts and memory are not for anonymous callers.
+  const quien = c.get("user") as { role?: string } | null | undefined;
+  const agente = c.get("agent") as { scopes?: string[] } | undefined;
+  const conDetalle = !enProduccion() || quien?.role === "admin" || agente?.scopes?.includes("admin") === true;
   return c.json({
     status: overallStatus,
     service: "kitsuden-api",
     version: "0.9.0-beta",
-    environment: config.NODE_ENV,
     timestamp: new Date().toISOString(),
-    uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
-    checks,
+    ...(conDetalle
+      ? {
+          environment: config.NODE_ENV,
+          uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
+          checks,
+        }
+      : {
+          checks: Object.fromEntries(
+            Object.entries(checks).map(([nombre, chequeo]) => [nombre, { status: chequeo.status }])
+          ),
+        }),
   });
 });
 
@@ -649,7 +904,7 @@ app.get("/api/health/pgvector", async (c) => {
     return c.json(
       {
         pgvector: false,
-        error: messageOf(err),
+        error: detalleDeSalud(err),
         message: "Could not check pgvector status. Database connection failed.",
       },
       500
@@ -675,7 +930,7 @@ app.get("/api/health/pgtrgm", async (c) => {
     return c.json(
       {
         pgtrgm: false,
-        error: messageOf(err),
+        error: detalleDeSalud(err),
         message: "Could not check pg_trgm status. Database connection failed.",
       },
       500
@@ -700,12 +955,11 @@ if (features.headless) {
   console.log("  👻 Headless Mode → Admin routes disabled");
 }
 
-app.use("/api/admin/*", async (c, next) => {
-  const u = c.get("user");
-  if (!u) return c.json({ error: "Unauthorized" }, 401);
-  if ((u as any).role !== "admin") return c.json({ error: "Forbidden" }, 403);
-  await next();
-});
+// `exigirAdmin` relee el rol de la base (sin la caché de 5 min de la cookie):
+// un admin degradado o con sesiones revocadas seguía siendo admin aquí hasta
+// 5 minutos y podía crearse una clave de agente `admin` permanente
+// (auditoría 2026-10-25). Lo mismo para /api/sistema y /api/keys.
+app.use("/api/admin/*", exigirAdmin);
 
 // ══════════════════════════════════════════════
 // ⚡ CORE LAYER — Nivel 1: Infraestructura Apagable
@@ -725,6 +979,7 @@ app.use("/api/datasets/:id/entries", withTransactionalRLS());
 app.use("/api/datasets/:slug/entries", withTransactionalRLS());
 app.use("/api/data-sets/:id/entries", withTransactionalRLS());
 app.use("/api/data-sets/:slug/entries", withTransactionalRLS());
+app.use("/api/datasets/batch", withTransactionalRLS());
 // Note: explorerRoutes are now provided by kon-datasets
 // Only mount lite routes directly (as fallback if kon isn't loaded yet)
 app.route("/api/data-sets", dataSetsLiteRoutes);
@@ -773,7 +1028,13 @@ app.use("/api/graph/*", withTransactionalRLS());
 console.log("  🕸️  Engine Graphify → /api/graph (auto relational APIs)");
 app.route("/api/functions", functionsRoutes);
 app.route("/api/actions", actionsRoutes);
+app.use("/api/keys", exigirAdmin);
+app.use("/api/keys/*", exigirAdmin);
 app.route("/api/keys", apiKeysRoutes);
+// OAuth 2.1 para MCP: /.well-known/oauth-* y /api/oauth/* (lib/oauth, docs/agents/oauth.md)
+app.route("/", oauthRoutes);
+app.route("/api/oauth", oauthPanelRoutes);
+arrancarBarridoDeOAuth();
 if (features.mcpEnabled) {
   app.route("/api/mcp", mcpRoutes);
   console.log("  🤖 MCP Server → ENABLED (/api/mcp)");
@@ -781,6 +1042,12 @@ if (features.mcpEnabled) {
   console.log("  🤖 MCP Server → DISABLED");
 }
 app.route("/api/admin/registry", adminRegistryRoutes);
+// La cola de Postgres: recuento, «dead letter», reintentar y descartar.
+app.route("/api/admin/queue", colaRoutes);
+// Las peticiones registradas: actor, kon, operación, tiempo en la base, bloqueos.
+app.route("/api/admin/requests", trazasRoutes);
+// B3: la URL de aviso (webhook firmado) de cada agente.
+app.route("/api/admin/agents", avisosDeAgentesRoutes);
 console.log("  🔑 Secrets Manager (Prefect-style) → /api/admin/secrets");
 app.use("/api/admin/vault/*", withTransactionalRLS());
 // Superficie Hono RPC (chained): graphify + secrets + vault — ver src/rpc.ts
@@ -792,11 +1059,39 @@ console.log(
     : "disabled (set KITSUDEN_VAULT_ENABLED=true)"
 );
 app.route("/api/admin/agents", agentRoutes);
+// Fase E: permisos (amplios + finos + denegaciones), claves y cuotas de cada
+// agente para el panel. Bajo /api/v1: solo admin (RUTAS_SOLO_ADMIN).
+app.route("/api/v1", permisosDeAgentesRoutes);
+// Fase F: bandeja y configuración de la aprobación humana (solo humanos del
+// equipo) y el estado de sus propuestas para cada agente.
+app.route("/api/approvals", aprobacionesRoutes);
+app.route("/api/proposals", propuestasRoutes);
+// Fase H3: los modelos (defineModelo) de los kons montados, para el panel.
+app.route(RUTA_DE_MODELOS, modelosRoutes);
+fijarAppDeAprobaciones((req, env) => app.fetch(req, env));
+arrancarBarridoDePropuestas();
+// Fase I: promoción de código de agentes. Las operaciones del agente
+// (/api/promotion) van en la transacción RLS de la petición y se registran
+// entre las MONTADAS (herramientas MCP promotion_*; la puerta de /api/promotion
+// las abre a promotion:propose); las del panel (/api/approvals/promotion), solo
+// humanos admin. Ver lib/promocion.ts y docs/agents/promotion.md.
+montarRlsDeKon(app, RUTA_DE_PROMOCION);
+app.route(RUTA_DE_PROMOCION, promocionRoutes);
+registrarOperacionesMontadas(KON_DE_PROMOCION, RUTA_DE_PROMOCION, operacionesDePromocion, promocionRoutes);
+app.route(RUTA_DE_PROMOCION_ADMIN, promocionAdminRoutes);
+arrancarBarridoDeVigilancias();
 // /api/v1 (agents/traces/identities) ahora se monta via rpcSurface (src/rpc.ts)
 app.route("/api/admin/agents", agentPlaygroundRoutes);
 app.route("/api/agent/memory", agentMemoryRoutes);
 app.route("/api/admin/data-sources", dataSourcesRoutes);
 app.route("/api/explorer", explorerRoutes);
+// Memoria de agentes (2026-10-28): operaciones del SDK con dueño y RLS, en
+// la transacción de la petición. Se registran entre las MONTADAS: de ahí salen
+// sus herramientas MCP (brain_search, brain_read, brain_note_write…) y la
+// puerta de /api/brain las abre a los agentes con brain:read / brain:write.
+montarRlsDeKon(app, RUTA_DE_MEMORIA);
+app.route(RUTA_DE_MEMORIA, brainMemoriaRoutes);
+registrarOperacionesMontadas(KON_DE_MEMORIA, RUTA_DE_MEMORIA, operacionesDeMemoria, brainMemoriaRoutes);
 app.route("/api/brain", brainRoutes);
 console.log("  🧠 KITSUDEN Brain → /api/brain");
 app.route("/api/map", systemMapRoutes);
@@ -827,6 +1122,9 @@ console.log("  🔗 Inline Relations → Django-style inlines enabled");
 // Va aqui, despues de cargar los kons, porque para entonces ya estan aplicadas
 // todas las politicas y la base responde.
 await verificarConexionRls(db, { estricto: config.NODE_ENV === "production" });
+
+// Fresh install: the one-time token for the first administrator, in the log.
+await announceSetupTokenAtBoot();
 
 // ── La configuración siembra la base, y a partir de ahí manda la base ──────
 //
@@ -862,6 +1160,10 @@ try {
 }
 
 await loadModules(app);
+
+// `/api/version` solo anuncia los contratos cuyo kon responde de verdad
+// (cargado al arrancar o activado después): ver routes/version.ts.
+fijarDisponibilidadDeKons((konId) => konDisponible(konId, getInformeDeCarga().cargados));
 
 // Invalidate GraphQL cache after kons are loaded so new tables appear
 invalidateGraphQLCache();
@@ -953,9 +1255,10 @@ app.notFound((c) => {
         path: c.req.path,
         method: c.req.method,
         didYouMean,
-        hint:
-          "Todas las rutas de los kons están en GET /api/docs/openapi.json, " +
-          "y la guía para agentes en GET /llms.txt.",
+        hint: features.swaggerEnabled
+          ? "Todas las rutas de los kons están en GET /api/docs/openapi.json, " +
+            "y la guía para agentes en GET /llms.txt."
+          : "Todas las rutas de los kons están en la guía para agentes: GET /llms.txt.",
         requestId: c.get("requestId"),
       },
       404
@@ -1000,7 +1303,9 @@ app.onError((err, c) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Mount docs routes (dynamic OpenAPI from kons)
-app.route("/api/docs", dynamicDocsRouter);
+// `ENABLE_SWAGGER=false` apaga la documentación (se leía en config y nadie la
+// miraba: la documentación se montaba siempre).
+if (features.swaggerEnabled) app.route("/api/docs", dynamicDocsRouter);
 
 /**
  * Guía para agentes. En la raíz porque es donde un agente la busca por
@@ -1010,7 +1315,11 @@ app.route("/api/docs", dynamicDocsRouter);
  */
 const servirGuiaParaAgentes = (c: Context) =>
   c.text(
-    generarGuiaParaAgentes({ baseUrl: `${new URL(c.req.url).origin}/api`, rutas: rutasDeKons() }),
+    generarGuiaParaAgentes({
+      baseUrl: `${new URL(c.req.url).origin}/api`,
+      rutas: rutasDeKons(),
+      contratoPublicado: features.swaggerEnabled,
+    }),
     200,
     { "content-type": "text/markdown; charset=utf-8" }
   );
@@ -1018,23 +1327,32 @@ app.get("/llms.txt", servirGuiaParaAgentes);
 app.get("/api/llms.txt", servirGuiaParaAgentes);
 
 // Also mount legacy docs for compatibility
-app.route("/api/docs-legacy", docsRoutes);
+if (features.swaggerEnabled) app.route("/api/docs-legacy", docsRoutes);
 
-// Redirect legacy /api/swagger to new docs
-app.get("/api/swagger", (c) => c.redirect("/api/docs"));
+// Con la documentación apagada, estas redirecciones llevarían a un 404.
+if (features.swaggerEnabled) {
+  // Redirect legacy /api/swagger to new docs
+  app.get("/api/swagger", (c) => c.redirect("/api/docs"));
 
-// Also redirect /api/doc (OpenAPI JSON spec) to new endpoint
-app.get("/api/doc", (c) => c.redirect("/api/docs/openapi.json"));
+  // Also redirect /api/doc (OpenAPI JSON spec) to new endpoint
+  app.get("/api/doc", (c) => c.redirect("/api/docs/openapi.json"));
 
-console.log("  📚 API Documentation → /api/docs (Swagger UI)");
-console.log("  📚 API Reference (Modern) → /api/docs/modern (Scalar)");
-console.log("  📚 OpenAPI Spec → /api/docs/openapi.json");
+  console.log("  📚 API Documentation → /api/docs (Swagger UI)");
+  console.log("  📚 API Reference (Modern) → /api/docs/modern (Scalar)");
+  console.log("  📚 OpenAPI Spec → /api/docs/openapi.json");
+} else {
+  console.log("  📚 API Documentation → OFF (ENABLE_SWAGGER=false); agent guide at /llms.txt");
+}
 
 // ══════════════════════════════════════════════
 // 🚀 SERVER START
 // ══════════════════════════════════════════════
 
 const port = Number(process.env.PORT) || 3001;
+const hostname = hostDeEscucha();
+
+// Búsqueda semántica de los modelos: el proveedor de embeddings (D5).
+configurarEmbeddingsDeModelos();
 
 // Initialize workers (non-blocking)
 setupWorkers().catch((err) => {
@@ -1068,12 +1386,17 @@ function generateClientId(): string {
 /**
  * Extract session from WebSocket upgrade request.
  */
-async function getSessionFromRequest(req: Request): Promise<{ userId: string | null }> {
+async function getSessionFromRequest(
+  req: Request
+): Promise<{ userId: string | null; userRole: string | null }> {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
-    return { userId: session?.user?.id || null };
+    return {
+      userId: session?.user?.id || null,
+      userRole: ((session?.user as { role?: string } | undefined)?.role as string) || null,
+    };
   } catch {
-    return { userId: null };
+    return { userId: null, userRole: null };
   }
 }
 
@@ -1086,7 +1409,6 @@ initActionsEngine();
 // Initialize DX Actions Layer (Nivel 1)
 initActions({
   hono: app as any,
-  bullmq: valkeyConnection,
   mcp: true,
 });
 
@@ -1125,8 +1447,8 @@ console.log(`
 ║   ⚡ Kitsuden API v0.9.0-beta (Actions)       ║
 ║   Runtime: Bun + Hono                          ║
 ║   Auth: Better-Auth 🔐                         ║
-║   Queue: BullMQ + Dragonfly 🐉                 ║
-║   Real-time: WebSocket + Valkey 📡             ║
+║   Queue: Postgres (outbox) 🐘                  ║
+║   Real-time: WebSocket + ${valkeyConfigurado() ? "Valkey 📡           " : "LISTEN/NOTIFY 📡    "} ║
 ║   Actions: Unified Engine ⚡                    ║
 ║   GraphQL: /api/graphql 📊                    ║
 ║   Docs: /api/docs (Swagger) 📚                ║
@@ -1135,6 +1457,19 @@ console.log(`
 ║   Port: ${port}                                  ║
 ╚══════════════════════════════════════════════════╝
 `);
+
+// Apagado ordenado: el worker de la cola termina lo que tiene en marcha (lo
+// que no acabe lo recupera el barrido cuando venza su arriendo).
+let apagando = false;
+for (const senal of ["SIGTERM", "SIGINT"] as const) {
+  process.once(senal, () => {
+    if (apagando) return;
+    apagando = true;
+    void Promise.allSettled([shutdownQueues(), pararTrazas(), closeValkey()]).finally(() =>
+      process.exit(0)
+    );
+  });
+}
 
 export { app };
 
@@ -1149,11 +1484,20 @@ export type { KitsudenRpcType } from "./rpc";
 
 export default {
   port,
+  hostname,
   fetch: async (req: Request, server: any): Promise<Response> => {
     const url = new URL(req.url);
 
     // WebSocket upgrade for /api/realtime
     if (url.pathname === "/api/realtime") {
+      // El navegador manda las cookies en el handshake de un WebSocket aunque
+      // lo abra otra web (no hay CORS para WebSockets). Sin mirar `Origin`,
+      // cualquier página podía abrir el canal con la sesión del visitante.
+      // Los clientes que no son navegador no mandan `Origin` y siguen igual.
+      const origen = req.headers.get("origin");
+      if (origen && !corsConfig.origins.includes(origen)) {
+        return new Response("Origin not allowed", { status: 403 });
+      }
       const session = await getSessionFromRequest(req);
       const clientId = generateClientId();
 
@@ -1161,6 +1505,9 @@ export default {
         data: {
           clientId,
           userId: session.userId,
+          // Sin el rol, el autorizador de canales veía a TODOS como sin rol:
+          // un admin no podía suscribirse a lo que su política le deja ver.
+          userRole: session.userRole,
         } satisfies WSClientData,
       });
 
@@ -1171,14 +1518,24 @@ export default {
       return new Response("WebSocket upgrade failed", { status: 400 });
     }
 
+    // El SSE de MCP (`GET /api/mcp`) es una conexión larga que solo manda un
+    // keepalive cada 30 s, y Bun corta por defecto lo que pasa 10 s sin datos
+    // (`idleTimeout`): la sesión moría a los 10 s y el siguiente `POST` del
+    // agente recibía «Invalid or expired session» (lo encontró el recorrido de
+    // la fase F: un agente que propone y consulta después). Sin límite para
+    // esa petición; la sesión sigue caducando a la hora sin actividad.
+    if (url.pathname === "/api/mcp" && req.method === "GET") {
+      (server as { timeout?: (r: Request, s: number) => void }).timeout?.(req, 0);
+    }
+
     // Regular HTTP request → Hono
     return app.fetch(req, { ip: server.requestIP(req) });
   },
 
   websocket: {
     open(ws: ServerWebSocket<WSClientData>) {
-      const { clientId, userId } = ws.data;
-      realtimeManager.addClient(clientId, ws, userId);
+      const { clientId, userId, userRole } = ws.data;
+      realtimeManager.addClient(clientId, ws, userId, userRole ?? null);
 
       // Send welcome message
       ws.send(

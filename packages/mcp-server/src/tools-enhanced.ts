@@ -320,8 +320,8 @@ All operations are executed atomically - if one fails, all are rolled back.`,
             z.object({
               op: z.enum(["create", "update", "delete", "upsert"]),
               id: z.string().optional().describe("Record ID (for update/delete)"),
-              data: z.record(z.any()).optional().describe("Data for create/update"),
-              where: z.record(z.any()).optional().describe("Filter for update/delete"),
+              data: z.record(z.string(), z.any()).optional().describe("Data for create/update"),
+              where: z.record(z.string(), z.any()).optional().describe("Filter for update/delete"),
             })
           )
           .describe("Operations to execute"),
@@ -512,7 +512,7 @@ import { z } from "zod";
 
 // Schema definition
 const ${pascalName}Schema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   name: z.string().min(1),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

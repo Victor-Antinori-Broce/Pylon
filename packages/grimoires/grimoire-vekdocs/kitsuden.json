@@ -1,0 +1,9 @@
+{
+  "id": "kitsuden-vekdocs",
+  "name": "VekDocs",
+  "description": "Tema claro carmesí: fondo crema cálido, ergonómico para sesiones largas de revisión documental.",
+  "version": "1.0.0",
+  "type": "theme",
+  "author": "KitsudenTeam",
+  "css_entry": "variables.css"
+}

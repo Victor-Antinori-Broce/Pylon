@@ -8,9 +8,43 @@ import chalk from "chalk";
 import { postProcessSqlForIdempotency } from "../migrations/detector.js";
 import { findProjectRoot } from "../utils/project.js";
 
+import { makemigrationsDeModelos } from "./modelos.js";
+
 const execAsync = promisify(exec);
 
-export async function makemigrationsCommand(options: { name?: string; dryRun?: boolean }) {
+export interface MakemigrationsOptions {
+  name?: string;
+  dryRun?: boolean;
+  kon?: string;
+  dir?: string;
+  allowDestructive?: boolean;
+  /** El generador de antes (drizzle-kit export del schema.ts de cada kon). */
+  drizzle?: boolean;
+}
+
+/**
+ * `kitsuden makemigrations`: por defecto, el diff de los modelos declarados
+ * con `defineModelo` (fase H3, ver modelos.ts). Con `--drizzle`, el generador
+ * de antes (drizzle-kit export del esquema entero de cada kon, con nombre por
+ * marca de tiempo): queda por compatibilidad.
+ */
+export async function makemigrationsCommand(options: MakemigrationsOptions) {
+  if (!options.drizzle) {
+    console.log(chalk.blue("🔍 Models (defineModelo) → migrations\n"));
+    try {
+      await makemigrationsDeModelos({
+        kon: options.kon,
+        dir: options.dir,
+        name: options.name,
+        dryRun: options.dryRun,
+        allowDestructive: options.allowDestructive,
+      });
+    } catch (error) {
+      console.error(chalk.red(`✖ ${(error as Error).message}`));
+      process.exit(1);
+    }
+    return;
+  }
   console.log(chalk.blue("🔍 Detectando schemas de kons...\n"));
 
   try {

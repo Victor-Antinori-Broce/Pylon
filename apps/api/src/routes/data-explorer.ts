@@ -11,6 +11,7 @@
  *   ✅ Smart Views (saved filter presets)
  */
 
+import { TABLAS_SOLO_POR_SU_RUTA } from "../lib/codigo-de-acciones";
 import { messageOf } from "@kitsuden/engine";
 import { count, eq, sql, asc, desc, ilike, gt, lt, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
@@ -24,7 +25,11 @@ import {
   siteSettings,
   modules,
 } from "../db/schema";
-import { escrituraExigeAdmin, tablaEsExplorable } from "../lib/tablas-explorables";
+import {
+  escrituraExigeAdmin,
+  sinColumnasSecretas,
+  tablaEsExplorable,
+} from "../lib/tablas-explorables";
 import { requireAuth } from "../middleware/auth";
 import {
   introspectTable,
@@ -36,6 +41,24 @@ export const explorerRoutes = new Hono();
 
 // Apply authentication to all routes
 explorerRoutes.use("/*", requireAuth);
+
+// Ninguna respuesta del explorador lleva un secreto vivo (tokens, contraseñas,
+// hashes de claves), ni siquiera a un admin. Ver `sinColumnasSecretas`.
+explorerRoutes.use("/*", async (c, next) => {
+  await next();
+  if (!(c.res.headers.get("content-type") ?? "").includes("application/json")) return;
+  const cuerpo = await c.res
+    .clone()
+    .json()
+    .catch(() => undefined);
+  if (cuerpo === undefined) return;
+  const cabeceras = new Headers(c.res.headers);
+  cabeceras.delete("content-length");
+  c.res = new Response(JSON.stringify(sinColumnasSecretas(cuerpo)), {
+    status: c.res.status,
+    headers: cabeceras,
+  });
+});
 
 /**
  * Operadores de `?filter_op=`.
@@ -74,6 +97,17 @@ function denegarEscrituraSensible(
   c: { get(k: "user"): { role?: string } | undefined; json: (b: unknown, s: 403) => Response },
   tabla: string
 ): Response | null {
+  // Fase I (decisión 2): las tablas con ruta propia no se escriben por aquí.
+  if (TABLAS_SOLO_POR_SU_RUTA.has(tabla)) {
+    return c.json(
+      {
+        error: "Forbidden",
+        code: "KITSUDEN_E_FORBIDDEN",
+        message: `'${tabla}' is not written through the explorer: use its own route (/api/actions or promotion_propose for actions, /api/approvals for approvals and proposals, /api/admin/agents for agents).`,
+      },
+      403
+    );
+  }
   if (!escrituraExigeAdmin(tabla)) return null;
 
   const rol = c.get("user")?.role;

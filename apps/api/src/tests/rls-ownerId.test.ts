@@ -5,10 +5,19 @@ let dbAvailable = false;
 // Lazy-load DB-dependent modules to avoid schema-merger crash on non-DB tests
 async function loadDbModules() {
   const { db } = await import("../db");
-  const { dataSets, dataEntries } = await import("../db/schema-core");
+  const { dataSets, dataEntries, authUsers } = await import("../db/schema-core");
   const { eq } = await import("drizzle-orm");
   const { isDatabaseAvailable, clearTestData, generateTestId } = await import("./setup");
-  return { db, dataSets, dataEntries, eq, isDatabaseAvailable, clearTestData, generateTestId };
+  return {
+    db,
+    dataSets,
+    dataEntries,
+    authUsers,
+    eq,
+    isDatabaseAvailable,
+    clearTestData,
+    generateTestId,
+  };
 }
 
 describe("RLS OwnerId Tests", () => {
@@ -45,11 +54,14 @@ describe("RLS OwnerId Tests", () => {
       expect(resolveEntryOwnerId({ title: "Algo" }, "user-1")).toBe("user-1");
     });
 
-    it("el ownerId del payload MANDA sobre la sesión", async () => {
-      // Deliberado: lo usan las importaciones que atribuyen filas a otro
-      // usuario. Si algún día se restringe, este test es el que debe cambiar.
+    it("el ownerId del payload solo manda si escribe el equipo", async () => {
+      // Las importaciones atribuyen filas a otro usuario, y eso es del equipo.
+      // A cualquier otra cuenta se le ignora: antes le bastaba para meter
+      // filas en el espacio privado de otro (auditoría 2026-10-15).
       const { resolveEntryOwnerId } = await import("../routes/crud");
-      expect(resolveEntryOwnerId({ ownerId: "user-2" }, "user-1")).toBe("user-2");
+      expect(resolveEntryOwnerId({ ownerId: "user-2" }, "user-1", true)).toBe("user-2");
+      expect(resolveEntryOwnerId({ ownerId: "user-2" }, "user-1")).toBe("user-1");
+      expect(resolveEntryOwnerId({ ownerId: "user-2" }, "user-1", false)).toBe("user-1");
     });
 
     it("sin payload y sin sesión queda NULL, nunca undefined", async () => {
@@ -83,10 +95,20 @@ describe("RLS OwnerId Tests", () => {
       return;
     }
 
-    const { db, dataSets, dataEntries, eq, generateTestId } = await loadDbModules();
+    const { db, dataSets, dataEntries, authUsers, eq, generateTestId } = await loadDbModules();
 
     const testId = generateTestId();
     const slug = `test-dataset-${testId}`;
+
+    // `data_entries.owner_id` es una clave ajena a `auth_users`: un dueño
+    // inventado («test-user-123») lo rechaza Postgres. Con pg-mem esto nunca
+    // se ejecutaba. El correo `test-…@example.com` lo limpia clearTestData.
+    const ownerId = `owner-${testId}`;
+    await db.insert(authUsers).values({
+      id: ownerId,
+      name: "RLS Owner",
+      email: `${testId}@example.com`,
+    });
 
     // Create dataset
     const [dataset] = await db
@@ -108,24 +130,36 @@ describe("RLS OwnerId Tests", () => {
     expect(dataset).toBeDefined();
     expect(dataset.id).toBeDefined();
 
-    // Insert data entry with explicit ownerId
+    // Insert data entry with explicit ownerId.
+    //
+    // La copia en `data.ownerId` (la que leen `buildDatasetWhere` y la política
+    // `data->>'ownerId'` de rls-policies.sql) la escribe el HANDLER
+    // (`POST /api/data-sets/:id/entries`, routes/crud.ts), no un trigger: no hay
+    // ninguno en `data_entries` que la rellene. Este insert directo hace lo
+    // mismo que el handler; que el handler lo haga lo prueban rls-e2e y
+    // datasets-http (aislamiento por HTTP).
     const [entry] = await db
       .insert(dataEntries)
       .values({
         dataSetId: dataset.id,
         title: "Test Entry",
-        data: { foo: "bar" },
-        ownerId: "test-user-123",
+        data: { foo: "bar", ownerId },
+        ownerId,
       })
       .returning();
 
     expect(entry).toBeDefined();
-    expect(entry.ownerId).toBe("test-user-123");
-    expect((entry.data as Record<string, unknown>).ownerId).toBe("test-user-123");
+    expect(entry.ownerId).toBe(ownerId);
+
+    // Releída de la base, no del `returning` en memoria
+    const [releida] = await db.select().from(dataEntries).where(eq(dataEntries.id, entry.id));
+    expect(releida.ownerId).toBe(ownerId);
+    expect((releida.data as Record<string, unknown>).ownerId).toBe(ownerId);
 
     // Clean up this test's data
     await db.delete(dataEntries).where(eq(dataEntries.dataSetId, dataset.id));
     await db.delete(dataSets).where(eq(dataSets.id, dataset.id));
+    await db.delete(authUsers).where(eq(authUsers.id, ownerId));
   });
 
   // ── 3. Existing RLS policy checks ──

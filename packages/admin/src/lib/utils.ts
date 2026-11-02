@@ -1,3 +1,4 @@
+import { localeFormato } from "$lib/i18n";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -12,7 +13,7 @@ export function formatDate(
   if (!date) return "—";
   const d = new Date(date);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(localeFormato(), {
     year: "numeric",
     month: style === "long" ? "long" : "short",
     day: "numeric",
@@ -21,7 +22,7 @@ export function formatDate(
 
 export function formatNumber(n: number | undefined): string {
   if (n === undefined || n === null) return "—";
-  return n.toLocaleString();
+  return n.toLocaleString(localeFormato());
 }
 
 export function truncate(str: string, length: number): string {

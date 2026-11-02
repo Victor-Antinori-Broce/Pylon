@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr, localeFormato } from "$lib/i18n";
   import {
     GraduationCap,
     BookOpen,
@@ -120,10 +121,10 @@
   };
 
   const tabs = [
-    { key: "courses", label: "Courses", icon: BookOpen },
-    { key: "paths", label: "Learning Paths", icon: Route },
-    { key: "groups", label: "Groups", icon: Users },
-    { key: "assignments", label: "Assignments", icon: Layers },
+    { key: "courses", label: tr("academyView.courses"), icon: BookOpen },
+    { key: "paths", label: tr("academyView.learningPaths"), icon: Route },
+    { key: "groups", label: tr("academyView.groups"), icon: Users },
+    { key: "assignments", label: tr("academyView.assignments"), icon: Layers },
   ] as const;
 
   const pageSize = 10;
@@ -221,7 +222,7 @@
       metricas = data.metricas ?? null;
       alertas = data.alertas ?? [];
     } catch (e: any) {
-      toast.error("Failed to load dashboard");
+      toast.error(tr("academyView.failedToLoadDashboard"));
     }
   }
 
@@ -230,7 +231,7 @@
       const data = await api.getAcademyReportesCursos();
       reportes = data.reportes ?? [];
     } catch (e: any) {
-      toast.error("Failed to load courses");
+      toast.error(tr("academyView.failedToLoadCourses"));
     }
   }
 
@@ -239,7 +240,7 @@
       const data = await api.getAcademyLearningPaths();
       learningPaths = data.learningPaths ?? [];
     } catch (e: any) {
-      toast.error("Failed to load learning paths");
+      toast.error(tr("academyView.failedToLoadLearningPaths"));
     }
   }
 
@@ -248,7 +249,7 @@
       const data = await api.getAcademyGrupos();
       grupos = data.grupos ?? [];
     } catch (e: any) {
-      toast.error("Failed to load groups");
+      toast.error(tr("academyView.failedToLoadGroups"));
     }
   }
 
@@ -257,7 +258,7 @@
       const data = await api.getAcademyAsignaciones();
       asignaciones = data.asignaciones ?? [];
     } catch (e: any) {
-      toast.error("Failed to load assignments");
+      toast.error(tr("academyView.failedToLoadAssignments"));
     }
   }
 
@@ -296,7 +297,7 @@
       .then((d) => {
         drawerStats = d.estadisticas ?? null;
       })
-      .catch(() => toast.error("Failed to load course stats"))
+      .catch(() => toast.error(tr("academyView.failedToLoadCourseStats")))
       .finally(() => {
         drawerLoading = false;
       });
@@ -316,13 +317,13 @@
   async function confirmDelete() {
     try {
       await Promise.all(deleteTargetIds.map((id) => api.deleteAcademyCurso(id)));
-      toast.success(`${deleteTargetIds.length} course(s) deleted`);
+      toast.success(tr("academyView.courseSDeleted", { deleteTargetIdsCount: deleteTargetIds.length }));
       selectedIds = new Set();
       await loadReportes();
       await loadDashboard();
       closeDrawer();
     } catch (e: any) {
-      toast.error("Failed to delete course(s)");
+      toast.error(tr("academyView.failedToDeleteCourseS"));
     } finally {
       showDeleteModal = false;
       deleteTargetIds = [];
@@ -351,36 +352,36 @@
           .map((s) => s.trim())
           .filter(Boolean),
       });
-      toast.success("Assignments created");
+      toast.success(tr("academyView.assignmentsCreated"));
       showAssignModal = false;
       await loadAssignments();
       await loadDashboard();
     } catch (e: any) {
-      toast.error("Failed to create assignments");
+      toast.error(tr("academyView.failedToCreateAssignments"));
     } finally {
       assignLoading = false;
     }
   }
 
   async function deletePath(id: string) {
-    if (!confirm("Delete this learning path?")) return;
+    if (!confirm(tr("academyView.deleteThisLearningPath"))) return;
     try {
       await api.deleteAcademyLearningPath(id);
-      toast.success("Learning path deleted");
+      toast.success(tr("academyView.learningPathDeleted"));
       await loadPaths();
     } catch {
-      toast.error("Failed to delete");
+      toast.error(tr("academyView.failedToDelete"));
     }
   }
 
   async function deleteGroup(id: string) {
-    if (!confirm("Delete this group?")) return;
+    if (!confirm(tr("academyView.deleteThisGroup"))) return;
     try {
       await api.deleteAcademyGrupo(id);
-      toast.success("Group deleted");
+      toast.success(tr("academyView.groupDeleted"));
       await loadGroups();
     } catch {
-      toast.error("Failed to delete");
+      toast.error(tr("academyView.failedToDelete"));
     }
   }
 
@@ -418,14 +419,14 @@
     <div>
       <h2 class="text-xl font-bold text-kitsuden-text flex items-center gap-2">
         <GraduationCap class="w-6 h-6 text-kitsuden-accent" />
-        Academy LMS
+        {tr("academyView.academyLms")}
       </h2>
       <p class="text-sm text-kitsuden-subtle mt-0.5">
-        Course management, assignments &amp; analytics
+        {tr("academyView.courseManagementAssignmentsAnalytics")}
       </p>
     </div>
     <a href="/g/kon-academy-lms/grid-courses" class="btn-primary inline-flex items-center gap-2">
-      <Plus class="w-4 h-4" /> New Course
+      <Plus class="w-4 h-4" /> {tr("academyView.newCourse")}
     </a>
   </div>
 
@@ -448,7 +449,7 @@
         <BookOpen class="w-5 h-5 text-kitsuden-accent" />
       </div>
       <div>
-        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total Courses</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{tr("academyView.totalCourses")}</p>
         <p class="text-2xl font-bold text-kitsuden-text">{metricas?.totalCursos ?? 0}</p>
       </div>
     </div>
@@ -457,7 +458,7 @@
         <Users class="w-5 h-5 text-purple-400" />
       </div>
       <div>
-        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total Assignments</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{tr("academyView.totalAssignments")}</p>
         <p class="text-2xl font-bold text-kitsuden-text">{metricas?.totalAsignaciones ?? 0}</p>
       </div>
     </div>
@@ -466,7 +467,7 @@
         <TrendingUp class="w-5 h-5 text-kitsuden-green" />
       </div>
       <div class="flex-1">
-        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Completion Rate</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{tr("academyView.completionRate")}</p>
         <div class="flex items-center gap-2 mt-1">
           <p class="text-2xl font-bold text-kitsuden-text">{fmtPct(metricas?.tasaCompletado)}</p>
           <div class="flex-1 h-1.5 bg-kitsuden-bg rounded-full overflow-hidden">
@@ -483,7 +484,7 @@
         <Star class="w-5 h-5 text-kitsuden-amber" />
       </div>
       <div>
-        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Avg Satisfaction</p>
+        <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{tr("academyView.avgSatisfaction")}</p>
         <p class="text-2xl font-bold text-kitsuden-text">
           {metricas?.totalEncuestas
             ? ((metricas.totalFeedbacks ?? 0) / (metricas.totalEncuestas || 1)).toFixed(1)
@@ -535,7 +536,7 @@
             />
             <input
               type="text"
-              placeholder="Search courses..."
+              placeholder={tr("academyView.searchCourses")}
               class="w-full pl-10 pr-4 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-text-dim focus:outline-none focus:border-kitsuden-accent/50"
               bind:value={searchQuery}
               oninput={() => (currentPage = 1)}
@@ -543,18 +544,18 @@
           </div>
           {#if selectedIds.size > 0}
             <div class="flex items-center gap-2 ml-auto">
-              <span class="text-xs text-kitsuden-subtle">{selectedIds.size} selected</span>
+              <span class="text-xs text-kitsuden-subtle">{selectedIds.size} {tr("common.selected")}</span>
               <button
                 class="btn-secondary text-xs inline-flex items-center gap-1"
                 onclick={() => openAssignModal()}
               >
-                <Users class="w-3.5 h-3.5" /> Assign
+                <Users class="w-3.5 h-3.5" /> {tr("academyView.assign")}
               </button>
               <button
                 class="btn-danger text-xs inline-flex items-center gap-1"
                 onclick={() => promptDelete(Array.from(selectedIds))}
               >
-                <Trash2 class="w-3.5 h-3.5" /> Delete
+                <Trash2 class="w-3.5 h-3.5" /> {tr("common.delete")}
               </button>
             </div>
           {/if}
@@ -564,7 +565,7 @@
         {#if filteredCourses.length === 0}
           <div class="card p-16 text-center">
             <BookOpen class="w-10 h-10 text-kitsuden-text-dim mx-auto mb-3" />
-            <p class="text-kitsuden-text-dim">No courses found.</p>
+            <p class="text-kitsuden-text-dim">{tr("academyView.noCoursesFound")}</p>
           </div>
         {:else}
           <div class="card overflow-hidden">
@@ -584,53 +585,53 @@
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("titulo")}
-                      >Title {#if sortKey === "titulo"}<span class="text-kitsuden-accent"
+                      >{tr("common.title")} {#if sortKey === "titulo"}<span class="text-kitsuden-accent"
                           >{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("asignaciones")}
-                      >Assignments {#if sortKey === "asignaciones"}<span
+                      >{tr("academyView.assignments")} {#if sortKey === "asignaciones"}<span
                           class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("completados")}
-                      >Completed {#if sortKey === "completados"}<span class="text-kitsuden-accent"
+                      >{tr("academyView.completed")} {#if sortKey === "completados"}<span class="text-kitsuden-accent"
                           >{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("progresoPromedio")}
-                      >Avg Progress {#if sortKey === "progresoPromedio"}<span
+                      >{tr("academyView.avgProgress")} {#if sortKey === "progresoPromedio"}<span
                           class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("tasaFinalizacion")}
-                      >Completion {#if sortKey === "tasaFinalizacion"}<span
+                      >{tr("academyView.completion")} {#if sortKey === "tasaFinalizacion"}<span
                           class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("totalEncuestas")}
-                      >Surveys {#if sortKey === "totalEncuestas"}<span class="text-kitsuden-accent"
+                      >{tr("academyView.surveys")} {#if sortKey === "totalEncuestas"}<span class="text-kitsuden-accent"
                           >{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
                     <th
                       class="px-4 py-3 font-medium text-kitsuden-subtle cursor-pointer select-none"
                       onclick={() => toggleSort("satisfaccionPromedio")}
-                      >Satisfaction {#if sortKey === "satisfaccionPromedio"}<span
+                      >{tr("academyView.satisfaction")} {#if sortKey === "satisfaccionPromedio"}<span
                           class="text-kitsuden-accent">{sortDir === "asc" ? "▲" : "▼"}</span
                         >{/if}</th
                     >
-                    <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
+                    <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -685,17 +686,17 @@
                         >
                           <button
                             class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent"
-                            title="View stats"
+                            title={tr("academyView.viewStats")}
                             onclick={() => openDrawer(r)}><Eye class="w-3.5 h-3.5" /></button
                           >
                           <a
                             href="/academy/courses/{r.curso.id}/edit"
                             class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
-                            title="Edit"><Edit2 class="w-3.5 h-3.5" /></a
+                            title={tr("common.edit")}><Edit2 class="w-3.5 h-3.5" /></a
                           >
                           <button
                             class="p-1.5 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-accent-2"
-                            title="Delete"
+                            title={tr("common.delete")}
                             onclick={() => promptDelete([r.curso.id])}
                             ><Trash2 class="w-3.5 h-3.5" /></button
                           >
@@ -713,7 +714,7 @@
                 class="p-3 border-t border-kitsuden-border bg-kitsuden-card flex items-center justify-between"
               >
                 <span class="text-xs text-kitsuden-subtle"
-                  >{filteredCourses.length} total · Page {currentPage} of {totalPages}</span
+                  >{filteredCourses.length} {tr("academyView.totalPageOf", { currentPage })} {totalPages}</span
                 >
                 <div class="flex items-center gap-2">
                   <button
@@ -755,11 +756,11 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-kitsuden-bg">
               <tr class="border-b border-kitsuden-border">
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Name</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Category</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Courses</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Sequential Approval</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.name")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.category")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.courses")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.sequentialApproval")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -780,7 +781,7 @@
                       class="px-2 py-0.5 rounded text-xs font-medium {lp.secuencial
                         ? 'bg-kitsuden-green/15 text-kitsuden-green'
                         : 'bg-kitsuden-text-dim/15 text-kitsuden-subtle'}"
-                      >{lp.secuencial ? "Yes" : "No"}</span
+                      >{lp.secuencial ? tr("common.yes") : tr("common.no")}</span
                     >
                   </td>
                   <td class="px-4 py-3">
@@ -800,7 +801,7 @@
               {:else}
                 <tr
                   ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-text-dim"
-                    ><Route class="w-8 h-8 mx-auto mb-2" />No learning paths found.</td
+                    ><Route class="w-8 h-8 mx-auto mb-2" />{tr("academyView.noLearningPathsFound")}</td
                   ></tr
                 >
               {/each}
@@ -818,10 +819,10 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-kitsuden-bg">
               <tr class="border-b border-kitsuden-border">
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Name</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Members</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Supervisor</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Actions</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.name")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.members")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.supervisor")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -854,7 +855,7 @@
               {:else}
                 <tr
                   ><td colspan="4" class="px-4 py-12 text-center text-kitsuden-text-dim"
-                    ><Users class="w-8 h-8 mx-auto mb-2" />No groups found.</td
+                    ><Users class="w-8 h-8 mx-auto mb-2" />{tr("academyView.noGroupsFound")}</td
                   ></tr
                 >
               {/each}
@@ -872,11 +873,11 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-kitsuden-bg">
               <tr class="border-b border-kitsuden-border">
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Course ID</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">User ID</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Group ID</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Method</th>
-                <th class="px-4 py-3 font-medium text-kitsuden-subtle">Date</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.courseId")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.userId")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.groupId")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("academyView.method")}</th>
+                <th class="px-4 py-3 font-medium text-kitsuden-subtle">{tr("common.date")}</th>
               </tr>
             </thead>
             <tbody>
@@ -892,13 +893,13 @@
                   >
                   <td class="px-4 py-3 text-kitsuden-text">{a.metodo || "—"}</td>
                   <td class="px-4 py-3 text-kitsuden-subtle"
-                    >{a.fecha ? new Date(a.fecha).toLocaleDateString("es-ES") : "—"}</td
+                    >{a.fecha ? new Date(a.fecha).toLocaleDateString(localeFormato()) : "—"}</td
                   >
                 </tr>
               {:else}
                 <tr
                   ><td colspan="5" class="px-4 py-12 text-center text-kitsuden-text-dim"
-                    ><Layers class="w-8 h-8 mx-auto mb-2" />No assignments found.</td
+                    ><Layers class="w-8 h-8 mx-auto mb-2" />{tr("academyView.noAssignmentsFound")}</td
                   ></tr
                 >
               {/each}
@@ -934,7 +935,7 @@
             {/if}
           </div>
           <h2 class="text-lg font-bold text-kitsuden-text truncate">
-            {drawerCurso?.curso.titulo || "Course"}
+            {drawerCurso?.curso.titulo || tr("academyView.course")}
           </h2>
         </div>
         <div class="flex items-center gap-2 shrink-0">
@@ -942,7 +943,7 @@
             class="btn-secondary text-xs inline-flex items-center gap-1"
             onclick={() => drawerCurso && openAssignModal([drawerCurso.curso.id])}
           >
-            <Users class="w-3.5 h-3.5" /> Assign
+            <Users class="w-3.5 h-3.5" /> {tr("academyView.assign")}
           </button>
           <button
             class="p-2 hover:bg-kitsuden-bg rounded-lg text-kitsuden-text-dim hover:text-kitsuden-text"
@@ -960,12 +961,12 @@
             ></div>
           </div>
         {:else if !drawerStats}
-          <div class="text-center text-kitsuden-subtle py-12">No stats available.</div>
+          <div class="text-center text-kitsuden-subtle py-12">{tr("academyView.noStatsAvailable")}</div>
         {:else}
           {@const s = drawerStats}
           <!-- Stats Grid -->
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {#each [{ label: "Assigned", value: s.totalAsignados, icon: Users, color: "text-kitsuden-accent" }, { label: "Completed", value: s.completados, icon: CheckCircle, color: "text-kitsuden-green" }, { label: "In Progress", value: s.enProgreso, icon: TrendingUp, color: "text-kitsuden-amber" }, { label: "Not Started", value: s.noIniciados, icon: AlertCircle, color: "text-kitsuden-accent-2" }, { label: "Completion Rate", value: fmtPct(s.tasaFinalizacion), icon: BarChart3, color: "text-kitsuden-green" }, { label: "Avg Progress", value: fmtPct(s.progresoPromedio), icon: TrendingUp, color: "text-kitsuden-accent" }, { label: "Quiz Passers", value: s.aprobadosQuiz, icon: CheckCircle, color: "text-kitsuden-green" }, { label: "Avg Quiz Score", value: s.puntajePromedioQuiz?.toFixed(1) ?? "—", icon: Star, color: "text-kitsuden-amber" }, { label: "Surveys", value: s.totalEncuestas, icon: Layers, color: "text-kitsuden-accent" }, { label: "Satisfaction", value: fmtStar(s.satisfaccionPromedio), icon: Star, color: "text-kitsuden-amber" }, { label: "Instructor Rating", value: s.expositorPromedio?.toFixed(1) ?? "—", icon: UserCircle, color: "text-purple-400" }] as stat}
+            {#each [{ label: tr("academyView.assigned"), value: s.totalAsignados, icon: Users, color: "text-kitsuden-accent" }, { label: tr("academyView.completed2"), value: s.completados, icon: CheckCircle, color: "text-kitsuden-green" }, { label: tr("academyView.inProgress"), value: s.enProgreso, icon: TrendingUp, color: "text-kitsuden-amber" }, { label: tr("academyView.notStarted"), value: s.noIniciados, icon: AlertCircle, color: "text-kitsuden-accent-2" }, { label: tr("academyView.completionRate2"), value: fmtPct(s.tasaFinalizacion), icon: BarChart3, color: "text-kitsuden-green" }, { label: tr("academyView.avgProgress2"), value: fmtPct(s.progresoPromedio), icon: TrendingUp, color: "text-kitsuden-accent" }, { label: tr("academyView.quizPassers"), value: s.aprobadosQuiz, icon: CheckCircle, color: "text-kitsuden-green" }, { label: tr("academyView.avgQuizScore"), value: s.puntajePromedioQuiz?.toFixed(1) ?? "—", icon: Star, color: "text-kitsuden-amber" }, { label: tr("academyView.surveys2"), value: s.totalEncuestas, icon: Layers, color: "text-kitsuden-accent" }, { label: tr("academyView.satisfaction2"), value: fmtStar(s.satisfaccionPromedio), icon: Star, color: "text-kitsuden-amber" }, { label: tr("academyView.instructorRating"), value: s.expositorPromedio?.toFixed(1) ?? "—", icon: UserCircle, color: "text-purple-400" }] as stat}
               <div
                 class="bg-kitsuden-bg border border-kitsuden-border rounded-lg p-3 flex items-center gap-3"
               >
@@ -984,9 +985,9 @@
 
           <!-- Mini Bar Chart -->
           <div class="bg-kitsuden-bg border border-kitsuden-border rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-kitsuden-text mb-3">Student Distribution</h3>
+            <h3 class="text-sm font-semibold text-kitsuden-text mb-3">{tr("academyView.studentDistribution")}</h3>
             <div class="space-y-2">
-              {#each [{ label: "Completed", value: s.completados, color: "bg-kitsuden-green" }, { label: "In Progress", value: s.enProgreso, color: "bg-kitsuden-amber" }, { label: "Not Started", value: s.noIniciados, color: "bg-kitsuden-accent-2" }] as bar}
+              {#each [{ label: tr("academyView.completed2"), value: s.completados, color: "bg-kitsuden-green" }, { label: tr("academyView.inProgress"), value: s.enProgreso, color: "bg-kitsuden-amber" }, { label: tr("academyView.notStarted"), value: s.noIniciados, color: "bg-kitsuden-accent-2" }] as bar}
                 {@const max = Math.max(s.totalAsignados || 1, 1)}
                 <div class="flex items-center gap-3">
                   <span class="w-20 text-xs text-kitsuden-subtle text-right">{bar.label}</span>
@@ -1019,13 +1020,13 @@
     <div
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-xl p-6 w-full max-w-sm shadow-2xl"
     >
-      <h3 class="text-lg font-bold text-kitsuden-text mb-2">Delete Course(s)?</h3>
+      <h3 class="text-lg font-bold text-kitsuden-text mb-2">{tr("academyView.deleteCourseS")}</h3>
       <p class="text-sm text-kitsuden-subtle mb-4">
-        This will permanently delete {deleteTargetIds.length} course(s). This action cannot be undone.
+        {tr("academyView.thisWillPermanentlyDeleteCourse", { deleteTargetIdsCount: deleteTargetIds.length })}
       </p>
       <div class="flex items-center justify-end gap-2">
-        <button class="btn-secondary" onclick={() => (showDeleteModal = false)}>Cancel</button>
-        <button class="btn-danger" onclick={confirmDelete}><Trash2 class="w-4 h-4" /> Delete</button
+        <button class="btn-secondary" onclick={() => (showDeleteModal = false)}>{tr("common.cancel")}</button>
+        <button class="btn-danger" onclick={confirmDelete}><Trash2 class="w-4 h-4" /> {tr("common.delete")}</button
         >
       </div>
     </div>
@@ -1045,41 +1046,41 @@
       class="relative bg-kitsuden-card border border-kitsuden-border rounded-xl p-6 w-full max-w-md shadow-2xl"
     >
       <h3 class="text-lg font-bold text-kitsuden-text mb-1">
-        Assign {assignCursoIds.length} Course(s)
+        {tr("academyView.assignCourseS", { assignCursoIdsCount: assignCursoIds.length })}
       </h3>
-      <p class="text-xs text-kitsuden-subtle mb-4">Enter comma-separated IDs</p>
+      <p class="text-xs text-kitsuden-subtle mb-4">{tr("academyView.enterCommaSeparatedIds")}</p>
       <div class="space-y-3">
         <div>
-          <label for="assignuserids" class="block text-xs text-kitsuden-subtle mb-1">User IDs</label
+          <label for="assignuserids" class="block text-xs text-kitsuden-subtle mb-1">{tr("academyView.userIds")}</label
           >
           <input
             id="assignuserids"
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent/50"
-            placeholder="user1, user2..."
+            placeholder={tr("academyView.user1User2")}
             bind:value={assignUserIds}
           />
         </div>
         <div>
           <label for="assigngroupids" class="block text-xs text-kitsuden-subtle mb-1"
-            >Group IDs</label
+            >{tr("academyView.groupIds")}</label
           >
           <input
             id="assigngroupids"
             class="w-full px-3 py-2 bg-kitsuden-bg border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent/50"
-            placeholder="group1, group2..."
+            placeholder={tr("academyView.group1Group2")}
             bind:value={assignGroupIds}
           />
         </div>
       </div>
       <div class="flex items-center justify-end gap-2 mt-4">
-        <button class="btn-secondary" onclick={() => (showAssignModal = false)}>Cancel</button>
+        <button class="btn-secondary" onclick={() => (showAssignModal = false)}>{tr("common.cancel")}</button>
         <button
           class="btn-primary inline-flex items-center gap-2"
           onclick={submitAssign}
           disabled={assignLoading}
         >
           {#if assignLoading}<Loader2 class="w-4 h-4 animate-spin" />{/if}
-          <Users class="w-4 h-4" /> Assign
+          <Users class="w-4 h-4" /> {tr("academyView.assign")}
         </button>
       </div>
     </div>

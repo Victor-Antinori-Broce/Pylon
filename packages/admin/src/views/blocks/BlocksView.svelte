@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Plus, Database } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -14,14 +15,36 @@
     publishedAt?: string;
   }
 
+  const ESTADOS: Record<string, string> = {
+    draft: t("common.draft"),
+    published: t("common.published"),
+    archived: t("common.archived"),
+  };
+
   let pages = $state<Page[]>([]);
   let loading = $state(true);
   let showDatasetModal = $state(false);
 
+  /**
+   * Todas las páginas, en cualquier estado. La API responde `{ docs }` (leer
+   * `pages` dejaba el listado vacío) y sin `?status` solo da las publicadas, así
+   * que un borrador recién creado no aparecía nunca. Se pide cada estado.
+   */
+  async function cargarPaginas(): Promise<Page[]> {
+    const listas = await Promise.all(
+      ["draft", "published", "archived"].map((estado) =>
+        api
+          .get<{ docs?: Page[] }>(`/page-builder/pages?status=${estado}&limit=100`)
+          .then((r) => r.docs ?? [])
+          .catch(() => [] as Page[])
+      )
+    );
+    return listas.flat();
+  }
+
   onMount(async () => {
     try {
-      const data = await api.get<{ pages: Page[] }>("/page-builder/pages");
-      pages = data.pages || [];
+      pages = await cargarPaginas();
     } catch {
       // empty
     } finally {
@@ -79,8 +102,7 @@
       }
 
       // Refresh pages list
-      const refreshed = await api.get<{ pages: Page[] }>("/page-builder/pages");
-      pages = refreshed.pages || [];
+      pages = await cargarPaginas();
     } catch (err: any) {
       console.error("Failed to create page from dataset:", err);
     }
@@ -90,8 +112,8 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-xl font-bold text-kitsuden-text">Pages</h2>
-      <p class="text-sm text-kitsuden-text-dim mt-0.5">Manage your landing pages and content</p>
+      <h2 class="text-xl font-bold text-kitsuden-text">{t("blocksView.pages")}</h2>
+      <p class="text-sm text-kitsuden-text-dim mt-0.5">{t("blocksView.manageYourLandingPagesAnd")}</p>
     </div>
     <div class="flex items-center gap-2">
       <button
@@ -99,10 +121,10 @@
         onclick={() => (showDatasetModal = true)}
       >
         <Database class="w-4 h-4" />
-        From Dataset
+        {t("blocksView.fromDataset")}
       </button>
-      <a href="/builder" class="btn-primary inline-flex items-center gap-2">
-        <Plus class="w-4 h-4" /> New Page
+      <a href="/g/system-tools/builder" class="btn-primary inline-flex items-center gap-2">
+        <Plus class="w-4 h-4" /> {t("blocksView.newPage")}
       </a>
     </div>
   </div>
@@ -116,14 +138,14 @@
   {:else if pages.length === 0}
     <div class="card p-16 text-center">
       <div class="text-4xl mb-3">🎯</div>
-      <p class="text-kitsuden-text-dim">No pages yet.</p>
-      <p class="text-xs text-kitsuden-subtle mt-1">Create your first landing page.</p>
+      <p class="text-kitsuden-text-dim">{t("blocksView.noPagesYet")}</p>
+      <p class="text-xs text-kitsuden-subtle mt-1">{t("blocksView.createYourFirstLandingPage")}</p>
     </div>
   {:else}
     <div class="space-y-3">
       {#each pages as page}
         <a
-          href="/builder"
+          href="/g/system-tools/builder?id={page.id}"
           class="card p-4 flex items-center justify-between group hover:border-kitsuden-accent/30 transition-colors"
         >
           <div class="flex items-center gap-4">
@@ -144,7 +166,7 @@
             </div>
           </div>
           <span class="px-2 py-1 text-xs rounded-full border {statusColor(page.status)}">
-            {page.status}
+            {ESTADOS[page.status] ?? page.status}
           </span>
         </a>
       {/each}

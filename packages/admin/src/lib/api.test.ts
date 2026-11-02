@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { api } from "./api";
 
 describe("ApiClient", () => {
-  const API_URL = "http://localhost:3001"; // Default API URL for tests
+  // The same base the client uses: VITE_API_URL from packages/admin/.env when
+  // there is one (development), "" (relative URLs) in a clean clone or in CI.
+  const API_URL = import.meta.env.VITE_API_URL ?? "";
 
   beforeEach(() => {
     api.clearToken();

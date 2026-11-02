@@ -90,7 +90,7 @@ The seed script (`apps/api/scripts/seed-mcp-test.ts`) creates:
 
 - **Agent Identity**: `DevBot` (type: `claude-desktop`)
 - **Scopes**: `["read:issues", "write:intake"]`
-- **Token**: `kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g`
+- **Token**: `<YOUR_AGENT_KEY>`
 
 ## 📊 Test Scenarios Details
 

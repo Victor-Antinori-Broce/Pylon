@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import {
     Tv,
     Users,
@@ -123,7 +124,7 @@
       totalDocs = res.totalDocs || 0;
       totalPages = res.totalPages || 1;
     } catch (err: any) {
-      toast.error(err.message || "Failed to load streamers");
+      toast.error(err.message || t("streamersView.failedToLoadStreamers"));
     } finally {
       loading = false;
     }
@@ -140,7 +141,7 @@
 
   function formatNumber(n?: number) {
     if (n == null) return "—";
-    return new Intl.NumberFormat("en", { notation: "compact" }).format(n);
+    return new Intl.NumberFormat(localeFormato(), { notation: "compact" }).format(n);
   }
 
   function timeAgo(date?: string) {
@@ -207,7 +208,7 @@
 
   async function saveStreamer() {
     if (!form.displayName.trim() || !form.slug.trim() || !form.channelId.trim()) {
-      toast.error("Please fill in required fields");
+      toast.error(t("streamersView.pleaseFillInRequiredFields"));
       return;
     }
     saving = true;
@@ -215,46 +216,46 @@
       const payload = { ...form };
       if (editingStreamer) {
         await api.updateStreamer(editingStreamer.id, payload as any);
-        toast.success("Streamer updated");
+        toast.success(t("streamersView.streamerUpdated"));
       } else {
         await api.createStreamer(payload as any);
-        toast.success("Streamer created");
+        toast.success(t("streamersView.streamerCreated"));
       }
       closeModal();
       fetchStreamers();
     } catch (err: any) {
-      toast.error(err.message || "Failed to save streamer");
+      toast.error(err.message || t("streamersView.failedToSaveStreamer"));
     } finally {
       saving = false;
     }
   }
 
   async function deleteStreamer(id: string) {
-    if (!confirm("Delete this streamer?")) return;
+    if (!confirm(t("streamersView.deleteThisStreamer"))) return;
     deletingId = id;
     try {
       await api.deleteStreamer(id);
-      toast.success("Streamer deleted");
+      toast.success(t("streamersView.streamerDeleted"));
       const next = new Set(selectedIds);
       next.delete(id);
       selectedIds = next;
       fetchStreamers();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete streamer");
+      toast.error(err.message || t("streamersView.failedToDeleteStreamer"));
     } finally {
       deletingId = null;
     }
   }
 
   async function deleteSelected() {
-    if (!confirm(`Delete ${selectedCount} selected streamers?`)) return;
+    if (!confirm(t("streamersView.deleteSelectedStreamers", { selectedCount }))) return;
     try {
       await Promise.all([...selectedIds].map((id) => api.deleteStreamer(id)));
-      toast.success(`${selectedCount} streamers deleted`);
+      toast.success(t("streamersView.streamersDeleted", { selectedCount }));
       selectedIds = new Set();
       fetchStreamers();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete streamers");
+      toast.error(err.message || t("streamersView.failedToDeleteStreamers"));
     }
   }
 
@@ -282,13 +283,13 @@
     <div>
       <h1 class="text-2xl font-bold text-kitsuden-text flex items-center gap-2">
         <Tv class="w-6 h-6 text-kitsuden-accent" />
-        Streamers
+        {t("common.streamers")}
       </h1>
-      <p class="text-sm text-kitsuden-subtle mt-0.5">Manage partnered content creators</p>
+      <p class="text-sm text-kitsuden-subtle mt-0.5">{t("streamersView.managePartneredContentCreators")}</p>
     </div>
     <button class="btn-primary inline-flex items-center gap-2" onclick={openAdd}>
       <Plus class="w-4 h-4" />
-      Add Streamer
+      {t("streamersView.addStreamer")}
     </button>
   </div>
 
@@ -300,7 +301,7 @@
       </div>
       <div>
         <p class="text-2xl font-bold text-kitsuden-text">{stats.total}</p>
-        <p class="text-xs text-kitsuden-subtle">Total Streamers</p>
+        <p class="text-xs text-kitsuden-subtle">{t("streamersView.totalStreamers")}</p>
       </div>
     </div>
     <div class="card p-4 flex items-center gap-4">
@@ -311,7 +312,7 @@
       </div>
       <div>
         <p class="text-2xl font-bold text-kitsuden-text">{stats.live}</p>
-        <p class="text-xs text-kitsuden-subtle">Live Now</p>
+        <p class="text-xs text-kitsuden-subtle">{t("streamersView.liveNow")}</p>
       </div>
     </div>
     <div class="card p-4 flex items-center gap-4">
@@ -320,7 +321,7 @@
       </div>
       <div>
         <p class="text-2xl font-bold text-kitsuden-text">{formatNumber(stats.viewers)}</p>
-        <p class="text-xs text-kitsuden-subtle">Total Viewers</p>
+        <p class="text-xs text-kitsuden-subtle">{t("streamersView.totalViewers")}</p>
       </div>
     </div>
     <div class="card p-4 flex items-center gap-4">
@@ -329,7 +330,7 @@
       </div>
       <div>
         <p class="text-2xl font-bold text-kitsuden-text">{formatNumber(stats.avgFollowers)}</p>
-        <p class="text-xs text-kitsuden-subtle">Avg Followers</p>
+        <p class="text-xs text-kitsuden-subtle">{t("streamersView.avgFollowers")}</p>
       </div>
     </div>
   </div>
@@ -341,7 +342,7 @@
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
         <input
           bind:value={search}
-          placeholder="Search by name or channel ID…"
+          placeholder={t("streamersView.searchByNameOrChannel")}
           class="w-full pl-9 pr-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
         />
       </div>
@@ -350,28 +351,28 @@
           bind:value={platformFilter}
           class="px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
         >
-          <option value="">All Platforms</option>
-          <option value="twitch">Twitch</option>
-          <option value="youtube">YouTube</option>
-          <option value="kick">Kick</option>
-          <option value="other">Other</option>
+          <option value="">{t("streamersView.allPlatforms")}</option>
+          <option value="twitch">{t("streamersView.twitch")}</option>
+          <option value="youtube">{t("streamersView.youtube")}</option>
+          <option value="kick">{t("streamersView.kick")}</option>
+          <option value="other">{t("streamersView.other")}</option>
         </select>
         <label
           for="sortby"
           class="flex items-center gap-2 px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm text-kitsuden-text cursor-pointer select-none"
         >
           <input type="checkbox" bind:checked={liveOnly} class="accent-kitsuden-accent-2" />
-          Live only
+          {t("streamersView.liveOnly")}
         </label>
         <select
           id="sortby"
           bind:value={sortBy}
           class="px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
         >
-          <option value="followersDesc">Followers ↓</option>
-          <option value="viewersDesc">Viewers ↓</option>
-          <option value="nameAsc">Name A-Z</option>
-          <option value="lastSynced">Last Synced</option>
+          <option value="followersDesc">{t("streamersView.followers")}</option>
+          <option value="viewersDesc">{t("streamersView.viewers")}</option>
+          <option value="nameAsc">{t("streamersView.nameAZ")}</option>
+          <option value="lastSynced">{t("streamersView.lastSynced")}</option>
         </select>
       </div>
     </div>
@@ -381,13 +382,13 @@
       <div
         class="flex items-center justify-between px-4 py-2 bg-kitsuden-surface border-b border-kitsuden-border animate-fade-in"
       >
-        <span class="text-sm text-kitsuden-text font-medium">{selectedCount} selected</span>
+        <span class="text-sm text-kitsuden-text font-medium">{selectedCount} {t("common.selected")}</span>
         <button
           class="btn-ghost text-kitsuden-accent-2 inline-flex items-center gap-1.5 text-sm"
           onclick={deleteSelected}
         >
           <Trash2 class="w-4 h-4" />
-          Delete Selected
+          {t("streamersView.deleteSelected")}
         </button>
       </div>
     {/if}
@@ -400,9 +401,9 @@
     {:else if filteredStreamers.length === 0}
       <div class="flex flex-col items-center justify-center py-20 text-center">
         <Tv class="w-12 h-12 text-kitsuden-subtle mb-3" />
-        <p class="text-kitsuden-text-dim font-medium">No streamers found</p>
+        <p class="text-kitsuden-text-dim font-medium">{t("streamersView.noStreamersFound")}</p>
         <p class="text-xs text-kitsuden-subtle mt-1">
-          Try adjusting your filters or add a new streamer.
+          {t("streamersView.tryAdjustingYourFiltersOr")}
         </p>
       </div>
     {:else}
@@ -420,15 +421,15 @@
                   class="accent-kitsuden-accent"
                 />
               </th>
-              <th class="px-4 py-3 w-12">Avatar</th>
-              <th class="px-4 py-3">Display Name</th>
-              <th class="px-4 py-3">Platform</th>
-              <th class="px-4 py-3">Channel ID</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3 text-right">Viewers</th>
-              <th class="px-4 py-3 text-right">Followers</th>
-              <th class="px-4 py-3">Last Synced</th>
-              <th class="px-4 py-3 text-right">Actions</th>
+              <th class="px-4 py-3 w-12">{t("streamersView.avatar")}</th>
+              <th class="px-4 py-3">{t("streamersView.displayName")}</th>
+              <th class="px-4 py-3">{t("common.platform")}</th>
+              <th class="px-4 py-3">{t("streamersView.channelId")}</th>
+              <th class="px-4 py-3">{t("common.status")}</th>
+              <th class="px-4 py-3 text-right">{t("streamersView.viewers2")}</th>
+              <th class="px-4 py-3 text-right">{t("streamersView.followers2")}</th>
+              <th class="px-4 py-3">{t("streamersView.lastSynced")}</th>
+              <th class="px-4 py-3 text-right">{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -496,13 +497,13 @@
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-kitsuden-accent-2 animate-pulse"
                       ></span>
-                      LIVE
+                      {t("streamersView.live")}
                     </span>
                   {:else}
                     <span
                       class="px-2 py-0.5 text-[10px] font-medium bg-kitsuden-surface text-kitsuden-subtle rounded-full border border-kitsuden-border"
                     >
-                      Offline
+                      {t("streamersView.offline")}
                     </span>
                   {/if}
                 </td>
@@ -515,14 +516,14 @@
                 <td class="px-4 py-3 text-kitsuden-subtle text-xs">{timeAgo(s.lastSyncedAt)}</td>
                 <td class="px-4 py-3 text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button class="btn-ghost p-1.5" onclick={() => openEdit(s)} title="Edit">
+                    <button class="btn-ghost p-1.5" onclick={() => openEdit(s)} title={t("common.edit")}>
                       <Pencil class="w-4 h-4" />
                     </button>
                     <button
                       class="btn-ghost p-1.5 text-kitsuden-accent-2"
                       onclick={() => deleteStreamer(s.id)}
                       disabled={deletingId === s.id}
-                      title="Delete"
+                      title={t("common.delete")}
                     >
                       {#if deletingId === s.id}
                         <Loader2 class="w-4 h-4 animate-spin" />
@@ -546,15 +547,15 @@
           onclick={() => page--}
         >
           <ChevronLeft class="w-4 h-4" />
-          Prev
+          {t("streamersView.prev")}
         </button>
-        <span class="text-sm text-kitsuden-subtle">Page {page} of {totalPages}</span>
+        <span class="text-sm text-kitsuden-subtle">{t("streamersView.pageOf", { page })} {totalPages}</span>
         <button
           class="btn-secondary inline-flex items-center gap-1 text-sm"
           disabled={page >= totalPages}
           onclick={() => page++}
         >
-          Next
+          {t("common.next")}
           <ChevronRight class="w-4 h-4" />
         </button>
       </div>
@@ -568,7 +569,7 @@
     <div class="card w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in">
       <div class="flex items-center justify-between p-4 border-b border-kitsuden-border">
         <h3 class="text-lg font-semibold text-kitsuden-text">
-          {editingStreamer ? "Edit Streamer" : "Add Streamer"}
+          {editingStreamer ? t("streamersView.editStreamer") : t("streamersView.addStreamer")}
         </h3>
         <button class="btn-ghost p-1" onclick={closeModal}>
           <X class="w-4 h-4" />
@@ -577,7 +578,7 @@
       <div class="p-4 space-y-4">
         <div>
           <label for="displayname" class="block text-xs font-medium text-kitsuden-subtle mb-1"
-            >Display Name *</label
+            >{t("streamersView.displayName2")}</label
           >
           <input
             id="displayname"
@@ -587,7 +588,7 @@
         </div>
         <div>
           <label for="slug" class="block text-xs font-medium text-kitsuden-subtle mb-1"
-            >Slug *</label
+            >{t("streamersView.slug")}</label
           >
           <input
             id="slug"
@@ -598,22 +599,22 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="platform" class="block text-xs font-medium text-kitsuden-subtle mb-1"
-              >Platform *</label
+              >{t("streamersView.platform")}</label
             >
             <select
               id="platform"
               bind:value={form.platform}
               class="w-full px-3 py-2 bg-kitsuden-surface border border-kitsuden-border rounded-lg text-sm text-kitsuden-text focus:outline-none focus:border-kitsuden-accent"
             >
-              <option value="twitch">Twitch</option>
-              <option value="youtube">YouTube</option>
-              <option value="kick">Kick</option>
-              <option value="other">Other</option>
+              <option value="twitch">{t("streamersView.twitch")}</option>
+              <option value="youtube">{t("streamersView.youtube")}</option>
+              <option value="kick">{t("streamersView.kick")}</option>
+              <option value="other">{t("streamersView.other")}</option>
             </select>
           </div>
           <div>
             <label for="channelid" class="block text-xs font-medium text-kitsuden-subtle mb-1"
-              >Channel ID *</label
+              >{t("streamersView.channelId2")}</label
             >
             <input
               id="channelid"
@@ -624,7 +625,7 @@
         </div>
         <div>
           <label for="channelurl" class="block text-xs font-medium text-kitsuden-subtle mb-1"
-            >Channel URL</label
+            >{t("streamersView.channelUrl")}</label
           >
           <input
             id="channelurl"
@@ -634,7 +635,7 @@
           />
         </div>
         <div>
-          <label for="bio" class="block text-xs font-medium text-kitsuden-subtle mb-1">Bio</label>
+          <label for="bio" class="block text-xs font-medium text-kitsuden-subtle mb-1">{t("streamersView.bio")}</label>
           <textarea
             id="bio"
             bind:value={form.bio}
@@ -644,7 +645,7 @@
         </div>
       </div>
       <div class="flex justify-end gap-2 p-4 border-t border-kitsuden-border">
-        <button class="btn-secondary" onclick={closeModal}>Cancel</button>
+        <button class="btn-secondary" onclick={closeModal}>{t("common.cancel")}</button>
         <button
           class="btn-primary inline-flex items-center gap-2"
           onclick={saveStreamer}
@@ -653,7 +654,7 @@
           {#if saving}
             <Loader2 class="w-4 h-4 animate-spin" />
           {/if}
-          Save
+          {t("streamersView.save")}
         </button>
       </div>
     </div>

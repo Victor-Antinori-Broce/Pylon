@@ -35,16 +35,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourorg/kitsuden.git",
+    "url": "https://github.com/Victor-Antinori-Broce/kitsuden.git",
     "directory": "packages/shared"
   },
   "bugs": {
-    "url": "https://github.com/yourorg/kitsuden/issues"
+    "url": "https://github.com/Victor-Antinori-Broce/kitsuden/issues"
   },
   "homepage": "https://docs.kitsuden.dev",
   "dependencies": {
     "marked": "^17.0.3",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

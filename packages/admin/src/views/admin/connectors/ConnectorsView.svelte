@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     Plug,
     Plus,
@@ -103,7 +104,7 @@
         await loadConnectors();
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create connector");
+        alert(err.error || t("connectorsView.failedToCreateConnector"));
       }
     } catch (e: any) {
       alert(e.message);
@@ -163,7 +164,7 @@
   }
 
   async function deleteConnector(id: string) {
-    if (!confirm("Delete this connector? This cannot be undone.")) return;
+    if (!confirm(t("connectorsView.deleteThisConnectorThisCannot"))) return;
     try {
       await fetch(`${API_URL}/api/custom/connectors/${id}`, {
         method: "DELETE",
@@ -224,10 +225,10 @@
         >
           <Plug class="w-5 h-5 text-kitsuden-purple" />
         </div>
-        Data Connectors
+        {t("connectorsView.dataConnectors")}
       </h1>
       <p class="text-sm text-kitsuden-subtle mt-1">
-        Connect external databases (MySQL, MariaDB) and APIs as read-only data sources.
+        {t("connectorsView.connectExternalDatabasesMysqlMariadb")}
       </p>
     </div>
     <div class="flex items-center gap-2">
@@ -235,7 +236,7 @@
         <RefreshCw class="w-4 h-4" />
       </button>
       <button class="btn-primary" onclick={() => (showCreate = true)}>
-        <Plus class="w-4 h-4" /> New Connector
+        <Plus class="w-4 h-4" /> {t("connectorsView.newConnector")}
       </button>
     </div>
   </div>
@@ -249,7 +250,7 @@
         </div>
         <div>
           <p class="text-2xl font-bold text-kitsuden-text">{connectors.length}</p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Total</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("connectorsView.total")}</p>
         </div>
       </div>
     </div>
@@ -262,7 +263,7 @@
           <p class="text-2xl font-bold text-kitsuden-text">
             {connectors.filter((c) => c.type === "database").length}
           </p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">Databases</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("connectorsView.databases")}</p>
         </div>
       </div>
     </div>
@@ -275,7 +276,7 @@
           <p class="text-2xl font-bold text-kitsuden-text">
             {connectors.filter((c) => c.type === "api").length}
           </p>
-          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">APIs</p>
+          <p class="text-xs text-kitsuden-subtle uppercase tracking-wider">{t("connectorsView.apis")}</p>
         </div>
       </div>
     </div>
@@ -285,7 +286,7 @@
   {#if showCreate}
     <form class="card p-6 border-kitsuden-purple/20 space-y-4" onsubmit={createConnector}>
       <div class="flex items-center justify-between">
-        <h3 class="font-semibold text-kitsuden-text">New Connector</h3>
+        <h3 class="font-semibold text-kitsuden-text">{t("connectorsView.newConnector")}</h3>
         <button
           type="button"
           class="p-1 text-kitsuden-subtle hover:text-kitsuden-text"
@@ -300,25 +301,25 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label for="formname" class="text-xs text-kitsuden-subtle block mb-1">Name *</label>
+          <label for="formname" class="text-xs text-kitsuden-subtle block mb-1">{t("common.name2")}</label>
           <input
             id="formname"
             type="text"
             bind:value={formName}
-            placeholder="e.g. Legacy MySQL"
+            placeholder={t("connectorsView.eGLegacyMysql")}
             required
             class="w-full bg-kitsuden-bg text-kitsuden-text placeholder-kitsuden-text-dim border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
           />
         </div>
         <div>
-          <label for="formtype" class="text-xs text-kitsuden-subtle block mb-1">Type *</label>
+          <label for="formtype" class="text-xs text-kitsuden-subtle block mb-1">{t("connectorsView.type")}</label>
           <select
             id="formtype"
             bind:value={formType}
             class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
           >
-            <option value="database">Database (MySQL/MariaDB)</option>
-            <option value="api">REST API</option>
+            <option value="database">{t("connectorsView.databaseMysqlMariadb")}</option>
+            <option value="api">{t("connectorsView.restApi")}</option>
           </select>
         </div>
       </div>
@@ -326,7 +327,7 @@
       {#if formType === "database"}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="md:col-span-2">
-            <label for="formhost" class="text-xs text-kitsuden-subtle block mb-1">Host</label>
+            <label for="formhost" class="text-xs text-kitsuden-subtle block mb-1">{t("connectorsView.host")}</label>
             <input
               id="formhost"
               type="text"
@@ -336,7 +337,7 @@
             />
           </div>
           <div>
-            <label for="formport" class="text-xs text-kitsuden-subtle block mb-1">Port</label>
+            <label for="formport" class="text-xs text-kitsuden-subtle block mb-1">{t("connectorsView.port")}</label>
             <input
               id="formport"
               type="text"
@@ -346,21 +347,21 @@
             />
           </div>
           <div>
-            <label for="formdialect" class="text-xs text-kitsuden-subtle block mb-1">Dialect</label>
+            <label for="formdialect" class="text-xs text-kitsuden-subtle block mb-1">{t("connectorsView.dialect")}</label>
             <select
               id="formdialect"
               bind:value={formDialect}
               class="w-full bg-kitsuden-bg text-kitsuden-text border border-kitsuden-border rounded-lg px-3 py-2 text-sm focus:border-kitsuden-accent/50 focus:outline-none"
             >
-              <option value="mysql">MySQL</option>
-              <option value="mariadb">MariaDB</option>
+              <option value="mysql">{t("connectorsView.mysql")}</option>
+              <option value="mariadb">{t("connectorsView.mariadb")}</option>
             </select>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label for="formdbname" class="text-xs text-kitsuden-subtle block mb-1"
-              >Database *</label
+              >{t("connectorsView.database")}</label
             >
             <input
               id="formdbname"
@@ -372,7 +373,7 @@
             />
           </div>
           <div>
-            <label for="formuser" class="text-xs text-kitsuden-subtle block mb-1">User *</label>
+            <label for="formuser" class="text-xs text-kitsuden-subtle block mb-1">{t("connectorsView.user")}</label>
             <input
               id="formuser"
               type="text"
@@ -383,7 +384,7 @@
             />
           </div>
           <div>
-            <label for="formpass" class="text-xs text-kitsuden-subtle block mb-1">Password</label>
+            <label for="formpass" class="text-xs text-kitsuden-subtle block mb-1">{t("common.password")}</label>
             <input
               id="formpass"
               type="password"
@@ -397,7 +398,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="formbaseurl" class="text-xs text-kitsuden-subtle block mb-1"
-              >Base URL *</label
+              >{t("connectorsView.baseUrl")}</label
             >
             <input
               id="formbaseurl"
@@ -409,7 +410,7 @@
             />
           </div>
           <div>
-            <label for="formapikey" class="text-xs text-kitsuden-subtle block mb-1">API Key</label>
+            <label for="formapikey" class="text-xs text-kitsuden-subtle block mb-1">{t("connectorsView.apiKey")}</label>
             <input
               id="formapikey"
               type="password"
@@ -428,11 +429,11 @@
           onclick={() => {
             showCreate = false;
             resetForm();
-          }}>Cancel</button
+          }}>{t("common.cancel")}</button
         >
         <button type="submit" class="btn-primary" disabled={creating || !formName}>
           {#if creating}<Loader2 class="w-4 h-4 animate-spin" />{/if}
-          Create Connector
+          {t("connectorsView.createConnector")}
         </button>
       </div>
     </form>
@@ -452,12 +453,12 @@
           <Plug class="w-8 h-8 text-kitsuden-purple" />
         </div>
       </div>
-      <h3 class="text-lg font-medium text-kitsuden-text mb-2">No connectors configured</h3>
+      <h3 class="text-lg font-medium text-kitsuden-text mb-2">{t("connectorsView.noConnectorsConfigured")}</h3>
       <p class="text-sm text-kitsuden-subtle mb-4">
-        Connect external databases or APIs to browse their data from within Kitsuden.
+        {t("connectorsView.connectExternalDatabasesOrApis")}
       </p>
       <button onclick={() => (showCreate = true)} class="btn-primary">
-        <Plus class="w-4 h-4" /> Create First Connector
+        <Plus class="w-4 h-4" /> {t("connectorsView.createFirstConnector")}
       </button>
     </div>
   {:else}
@@ -492,7 +493,7 @@
                     <span class="truncate max-w-[200px]">{conn.config.baseUrl}</span>
                   {/if}
                   {#if conn.lastSyncedAt}
-                    <span>Last sync: {formatDate(conn.lastSyncedAt)}</span>
+                    <span>{t("connectorsView.lastSync")} {formatDate(conn.lastSyncedAt)}</span>
                   {/if}
                 </div>
               </div>
@@ -519,7 +520,7 @@
                 class="btn-secondary-sm"
                 onclick={() => testConnection(conn.id)}
                 disabled={testing === conn.id}
-                title="Test connection"
+                title={t("connectorsView.testConnection")}
               >
                 {#if testing === conn.id}
                   <Loader2 class="w-4 h-4 animate-spin" />
@@ -531,7 +532,7 @@
               <button
                 class="btn-secondary-sm"
                 onclick={() => browseConnector(conn.id)}
-                title="Browse data"
+                title={t("connectorsView.browseData")}
               >
                 <Eye class="w-4 h-4" />
               </button>
@@ -539,7 +540,7 @@
               <button
                 class="btn-secondary-sm"
                 onclick={() => toggleConnector(conn.id, conn.enabled)}
-                title={conn.enabled ? "Disable" : "Enable"}
+                title={conn.enabled ? t("connectorsView.disable") : t("connectorsView.enable")}
               >
                 <Zap
                   class="w-4 h-4 {conn.enabled ? 'text-kitsuden-green' : 'text-kitsuden-subtle'}"
@@ -549,7 +550,7 @@
               <button
                 class="p-2 rounded-lg hover:bg-kitsuden-accent-2/10 text-kitsuden-text-dim hover:text-kitsuden-accent-2 transition-colors"
                 onclick={() => deleteConnector(conn.id)}
-                title="Delete"
+                title={t("common.delete")}
               >
                 <Trash2 class="w-4 h-4" />
               </button>
@@ -569,7 +570,7 @@
         <div class="flex items-center justify-between p-4 border-b border-kitsuden-border">
           <h3 class="text-lg font-semibold text-kitsuden-text flex items-center gap-2">
             <Table2 class="w-5 h-5 text-kitsuden-accent" />
-            Browse: {connectors.find((c) => c.id === browsing?.connectorId)?.name || ""}
+            {t("connectorsView.browse")} {connectors.find((c) => c.id === browsing?.connectorId)?.name || ""}
             {#if browsing.table}
               <span class="text-kitsuden-subtle"> / {browsing.table}</span>
             {/if}
@@ -630,14 +631,14 @@
                 </tbody>
               </table>
               {#if browsing.data.length === 0}
-                <p class="text-center py-8 text-kitsuden-subtle">No rows found</p>
+                <p class="text-center py-8 text-kitsuden-subtle">{t("connectorsView.noRowsFound")}</p>
               {/if}
             </div>
             <button
               class="btn-secondary-sm mt-3"
               onclick={() => (browsing = { ...browsing!, table: undefined, data: undefined })}
             >
-              Back to tables
+              {t("connectorsView.backToTables")}
             </button>
           {/if}
         </div>

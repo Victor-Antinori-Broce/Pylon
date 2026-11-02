@@ -110,6 +110,20 @@ NODE_ENV=test
 BETTER_AUTH_SECRET=change-me-to-a-random-string-at-least-32-chars
 ```
 
+## Rollback per test (`rollback.ts`)
+
+`itConRollback(name, fn)` runs a test inside one transaction that is always
+rolled back, instead of cleaning up with `clearTestData()` (`DELETE FROM` whole
+tables). Measured in `rollback-por-test.test.ts`: 40 tests x 25 rows, 156 ms
+with `DELETE` against 96 ms with `ROLLBACK` (2026-10-28, local Docker).
+
+What it covers: `repo()`, `dbDeLaPeticion()`, kons, the explicit `tx`, and a
+request through `transaccionRls` (the middleware reuses the test transaction).
+What it does not: the global `db` used directly (another pool connection, it
+commits). Do **not** use it in tests that check a real COMMIT: the request
+transaction, the queue (`cola-postgres.test.ts`), or RLS with the request's own
+user (pass the user to `itConRollback` instead).
+
 ## Test Coverage
 
 | Module       | Tests  | Coverage | DB Required |

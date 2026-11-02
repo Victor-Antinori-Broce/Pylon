@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * DataExplorer - Componente Genérico de Exploración de Datos
    *
@@ -239,7 +240,7 @@
         rows = response;
       }
     } catch (err: any) {
-      error = err.message || "Failed to load data";
+      error = err.message || t("dataExplorer.failedToLoadData");
       console.error("DataExplorer load error:", err);
     } finally {
       loading = false;
@@ -385,9 +386,9 @@
     <div>
       <h2 class="text-xl font-bold text-kitsuden-text">{fullConfig.label}</h2>
       <p class="text-sm text-kitsuden-text-dim mt-0.5">
-        {pagination.total} records
+        {t("componentsDataExplorer.records", { total: pagination.total })}
         {#if selectedRows.size > 0}
-          · {selectedRows.size} selected
+          {t("componentsDataExplorer.selected", { size: selectedRows.size })}
         {/if}
       </p>
     </div>
@@ -408,7 +409,7 @@
         </div>
       {/if}
 
-      <button class="btn-secondary-sm" onclick={exportCSV} title="Export CSV">
+      <button class="btn-secondary-sm" onclick={exportCSV} title={t("componentsDataExplorer.exportCsv")}>
         <Download class="w-4 h-4" />
       </button>
 
@@ -420,7 +421,7 @@
           onclick={() => (showFilterPanel = !showFilterPanel)}
         >
           <Filter class="w-4 h-4" />
-          Filter
+          {t("common.filter")}
         </button>
       {/if}
     </div>
@@ -433,7 +434,7 @@
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kitsuden-subtle" />
         <input
           type="text"
-          placeholder="Search..."
+          placeholder={t("common.search")}
           bind:value={searchQuery}
           class="w-full pl-10 pr-4 py-2 bg-kitsuden-card border border-kitsuden-border rounded-lg text-sm text-kitsuden-text placeholder:text-kitsuden-subtle focus:outline-none focus:border-kitsuden-accent"
         />
@@ -445,12 +446,12 @@
   {#if showFilterPanel && fullConfig.filterableFields?.length}
     <div class="card p-4 border-kitsuden-accent/20">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-medium text-kitsuden-text">Filters</h3>
+        <h3 class="font-medium text-kitsuden-text">{t("componentsDataExplorer.filters")}</h3>
         <button
           class="text-sm text-kitsuden-subtle hover:text-kitsuden-text"
           onclick={() => (activeFilters = {})}
         >
-          Clear all
+          {t("componentsDataExplorer.clearAll")}
         </button>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -540,7 +541,7 @@
           {:else if rows.length === 0}
             <tr>
               <td colspan={fullConfig.columns.length + 2} class="px-4 py-16 text-center">
-                <p class="text-kitsuden-text-dim">No records found</p>
+                <p class="text-kitsuden-text-dim">{t("componentsDataExplorer.noRecordsFound")}</p>
                 {#if searchQuery || Object.keys(activeFilters).length > 0}
                   <button
                     class="text-sm text-kitsuden-accent hover:underline mt-2"
@@ -549,7 +550,7 @@
                       activeFilters = {};
                     }}
                   >
-                    Clear filters
+                    {t("componentsDataExplorer.clearFilters")}
                   </button>
                 {/if}
               </td>
@@ -632,7 +633,7 @@
                         <button
                           class="p-1.5 rounded hover:bg-kitsuden-accent/10 text-kitsuden-subtle hover:text-kitsuden-accent"
                           onclick={() => startEdit(row)}
-                          title="Edit"
+                          title={t("common.edit")}
                         >
                           <Edit2 class="w-4 h-4" />
                         </button>
@@ -652,9 +653,7 @@
   {#if fullConfig.pagination && pagination.totalPages > 1}
     <div class="flex items-center justify-between">
       <p class="text-sm text-kitsuden-subtle">
-        Showing {(pagination.page - 1) * pagination.pageSize + 1} to
-        {Math.min(pagination.page * pagination.pageSize, pagination.total)} of
-        {pagination.total} results
+        {t("componentsDataExplorer.showingToOfResults", { v: (pagination.page - 1) * pagination.pageSize + 1, v2: Math.min(pagination.page * pagination.pageSize, pagination.total), total: pagination.total })}
       </p>
       <div class="flex items-center gap-2">
         <button
@@ -665,7 +664,7 @@
           <ChevronLeft class="w-4 h-4" />
         </button>
         <span class="text-sm text-kitsuden-text px-2">
-          Page {pagination.page} of {pagination.totalPages}
+          {t("componentsDataExplorer.pageOf", { page: pagination.page, totalPages: pagination.totalPages })}
         </span>
         <button
           class="btn-secondary-sm"

@@ -1,0 +1,9 @@
+{
+  "id": "kitsuden-viggo",
+  "name": "Viggo",
+  "description": "Tema de emisión: alto contraste sobre fondo oscuro, legible en stream.",
+  "version": "1.0.0",
+  "type": "theme",
+  "author": "KitsudenTeam",
+  "css_entry": "variables.css"
+}

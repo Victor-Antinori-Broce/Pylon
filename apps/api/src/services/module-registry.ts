@@ -22,12 +22,13 @@
  *     Games, Streamers, Platforms, Tags, Collections (when Grimoire Esports active)
  */
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { sql } from "drizzle-orm";
 
 import { db } from "../db";
+import { idDeKon, konsInstalados, rutaDeKon } from "../lib/kons-instalados";
 
 export type KonCategory = "core" | "core-den" | "optional" | "grimoire";
 
@@ -239,7 +240,8 @@ const KONS_CURADOS: KonDef[] = [
   {
     key: "kon-analytics",
     name: "Analítica",
-    description: "Vistas por sujeto y día, sin cookies ni datos personales. Ordena la portada y mide el blog y los torneos.",
+    description:
+      "Vistas por sujeto y día, sin cookies ni datos personales. Ordena la portada y mide el blog y los torneos.",
     icon: "📊",
     color: "#38BDF8",
     category: "core-den",
@@ -368,17 +370,12 @@ const KONS_CURADOS: KonDef[] = [
  * en el panel, sin `tables` con las que contar filas y sin `dependsOn`. Y el
  * modo de fallo era el peor: no había hueco visible, simplemente no salían.
  *
- * Ahora la lista curada de arriba manda, y todo kon que exista en disco y no
- * esté en ella entra derivado de su propio kon.json. Añadir un kon deja de
+ * Ahora la lista curada de arriba manda, y todo kon INSTALADO (ver
+ * lib/kons-instalados.ts) que no esté en ella entra derivado de su propio
+ * kon.json. Una ficha curada de un kon que no está instalado no entra. Añadir un kon deja de
  * exigir tocar este fichero; curarlo sigue siendo opcional y para eso está
  * KONS_CURADOS.
  */
-function resolverDirKons(): string {
-  const cwdCheck = join(process.cwd(), "packages", "kons", "package.json");
-  const raiz = existsSync(cwdCheck) ? process.cwd() : join(process.cwd(), "../../");
-  return join(raiz, "packages", "kons");
-}
-
 /** `tables` admite cadenas o fichas con `name`; los consumidores aceptan ambas. */
 function nombresDeTablas(tables: unknown): string[] {
   if (!Array.isArray(tables)) return [];
@@ -404,15 +401,15 @@ function colorDesdeId(id: string): string {
 }
 
 function derivarKonsDelDisco(yaCurados: Set<string>): KonDef[] {
-  const dir = resolverDirKons();
-  if (!existsSync(dir)) return [];
-
   const derivados: KonDef[] = [];
 
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    if (!entrada.isDirectory() || yaCurados.has(entrada.name)) continue;
+  // Lo INSTALADO (kitsuden.kons.json + KITSUDEN_KONS), no lo que haya en la
+  // carpeta: desde la fase C los kons viven en kitsuden-kons.
+  for (const kon of konsInstalados()) {
+    if (kon.origen === "nucleo" || !kon.ruta || yaCurados.has(kon.id)) continue;
+    const entrada = { name: kon.id };
 
-    const manifiesto = join(dir, entrada.name, "kon.json");
+    const manifiesto = join(kon.ruta, "kon.json");
     if (!existsSync(manifiesto)) continue;
 
     let m: Record<string, any>;
@@ -457,8 +454,9 @@ function derivarKonsDelDisco(yaCurados: Set<string>): KonDef[] {
 function completarDesdeManifiesto(kon: KonDef): KonDef {
   if (kon.tables.length > 0 && kon.dependsOn.length > 0) return kon;
 
-  const manifiesto = join(resolverDirKons(), kon.key, "kon.json");
-  if (!existsSync(manifiesto)) return kon; // los kons de core no viven ahí
+  const ruta = rutaDeKon(kon.key);
+  const manifiesto = ruta ? join(ruta, "kon.json") : "";
+  if (!ruta || !existsSync(manifiesto)) return kon;
 
   try {
     const m = JSON.parse(readFileSync(manifiesto, "utf8"));
@@ -477,8 +475,16 @@ function completarDesdeManifiesto(kon: KonDef): KonDef {
 }
 
 export const KON_REGISTRY: KonDef[] = (() => {
-  const curados = new Set(KONS_CURADOS.map((k) => k.key));
-  return [...KONS_CURADOS.map(completarDesdeManifiesto), ...derivarKonsDelDisco(curados)];
+  // Las fichas curadas de kons que NO están instalados no entran: el panel
+  // ofrecería encender algo que no existe. Las del núcleo (media, datasets,
+  // blocks) siempre están.
+  const instalados = new Set(konsInstalados().map((k) => k.id));
+  // (Las que no son kons —`ai-memories`, un módulo heredado de la API— se quedan.)
+  const curadas = KONS_CURADOS.filter(
+    (k) => !k.key.startsWith("kon-") || instalados.has(idDeKon(k.key))
+  );
+  const claves = new Set(KONS_CURADOS.map((k) => k.key));
+  return [...curadas.map(completarDesdeManifiesto), ...derivarKonsDelDisco(claves)];
 })();
 
 export const KON_KEYS = KON_REGISTRY.map((g) => g.key);

@@ -37,7 +37,7 @@ export function registerTools(server: McpServer, deps: McpServerDependencies) {
       const results = await query.limit(Math.min(limit, 100));
 
       return {
-        content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(results) }],
       };
     }
   );
@@ -50,7 +50,7 @@ export function registerTools(server: McpServer, deps: McpServerDependencies) {
       inputSchema: z.object({
         datasetId: z.string().describe("UUID of the dataset"),
         title: z.string().describe("Title of the new record"),
-        data: z.record(z.any()).describe("JSON payload matching the dataset schema"),
+        data: z.record(z.string(), z.any()).describe("JSON payload matching the dataset schema"),
         status: z.string().default("draft").describe("Initial status of the record"),
       }),
       outputSchema: z.any(),
@@ -76,13 +76,13 @@ export function registerTools(server: McpServer, deps: McpServerDependencies) {
     "kitsuden_dispatch_worker",
     {
       title: "Dispatch Worker Task",
-      description: "Enqueue an asynchronous task to Valkey via BullMQ",
+      description: "Enqueue an asynchronous background job (Postgres queue)",
       inputSchema: z.object({
         queueName: z
           .string()
           .describe("Name of the queue (e.g., 'kitsuden-email', 'kitsuden-webhooks')"),
         jobName: z.string().describe("Name of the job inside the queue"),
-        payload: z.record(z.any()).describe("Payload data to send to the worker"),
+        payload: z.record(z.string(), z.any()).describe("Payload data to send to the worker"),
       }),
       outputSchema: z.any(),
     },

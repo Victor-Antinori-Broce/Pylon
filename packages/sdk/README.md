@@ -2,7 +2,6 @@
 
 Official JavaScript/TypeScript SDK for Kitsuden — The Modular BaaS/CMS.
 
-[![npm version](https://badge.fury.io/js/@kitsuden%2Fsdk.svg)](https://www.npmjs.com/package/@kitsuden/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -11,24 +10,56 @@ Official JavaScript/TypeScript SDK for Kitsuden — The Modular BaaS/CMS.
 - 🔥 **Edge-Ready** — Works in Cloudflare Workers, Vercel Edge, Deno Deploy
 - 📝 **Type-Safe** — Full TypeScript support with generic table types
 - 🚀 **Zero Dependencies** — Lightweight, only uses native `fetch` and `WebSocket`
-- ⚡ **Fast** — TOON format support for AI agents (60% fewer tokens)
+- ⚡ **Lean on the wire** — reads TOON and lets the server pick the shorter of compact JSON / TOON per response
 - 🔒 **Secure** — Agent NHI tokens (`kitsuden_agent_*`) + Bearer auth
 - 🔄 **Real-time** — Live Query subscriptions via WebSocket
 
 ## Installation
 
-```bash
-# npm
-npm install @kitsuden/sdk
+`@kitsuden/sdk` is **not published on npm**. Use it from the Kitsuden
+monorepo: inside the workspace, depend on it with `"@kitsuden/sdk": "workspace:*"`
+and build it with `pnpm --filter @kitsuden/sdk build`. Outside the monorepo,
+build it and install the folder (or a `pnpm pack` tarball) by path.
 
-# bun
-bun add @kitsuden/sdk
+## Typed client: 5 lines to your first call
 
-# pnpm
-pnpm add @kitsuden/sdk
+Generated from the API's OpenAPI 3.1 (every `defineOperacion` of the installed kons and
+the core: 700+ operations, one property per kon). Set `KITSUDEN_API_URL` (the API origin)
+and `KITSUDEN_API_TOKEN` (`kitsuden_agent_…`):
+
+```typescript
+import { createKitsuden } from "@kitsuden/sdk";
+
+const kitsuden = createKitsuden();
+const res = await kitsuden.datasets.listarDatasets({ limit: 5 });
+if (res.kind === "ok") console.log(res.data.docs.map((d) => d.name));
 ```
 
-## Quick Start
+- Typed arguments (path and query flat, body under `body`: the MCP tool's shape) and typed
+  responses; `KitsudenErrorCode` is the closed union of `KITSUDEN_E_*` codes.
+- `202 KITSUDEN_E_APPROVAL_REQUIRED` comes back as `{ kind: "proposal_pending", proposal }`,
+  never retried.
+- Automatic `Idempotency-Key` on writes; retries only when safe, honouring `Retry-After`.
+- `format: "json" | "toon" | "tron" | "auto"`, always decoded; `provenance: true` gives
+  `meta.provenance` and `provenanceOf(row)`.
+- `kitsuden.blog.listarEntradas.iterate({ limit: 50 })` walks every page.
+- Streaming operations (`salida.flujo` on the server) return a typed `AsyncIterable`:
+  `for await (const step of kitsuden.imports.progreso({ id })) …`. Standard Server-Sent
+  Events underneath (no custom protocol); `event: error` throws `KitsudenApiError`, and
+  breaking out of the loop aborts the request.
+- Validate before sending with any Standard Schema consumer (Zod, Valibot, ArkType, form
+  libraries): `operationSchemas(spec, "blog.crear-entrada").body` turns the operation's
+  JSON Schema into a Standard Schema v1 validator; the spec ships as
+  `@kitsuden/sdk/openapi.json`. `toStandardSchema(jsonSchema)` does it for any schema.
+- Zero runtime dependencies: Node 18+, Bun, Deno and browsers.
+
+Full guide: [docs/agents/clients.md](../../docs/agents/clients.md). Regenerate after an API
+change with `pnpm sdk:openapi && pnpm sdk:generate` (CI runs `pnpm sdk:check`), or keep
+`pnpm sdk:watch` running: it regenerates on every change to a `defineModelo` or
+`defineOperacion` (about 3 s) and only rewrites the files that changed, so your editor
+picks up the new types at once.
+
+## Quick Start (CRUD helpers)
 
 ```typescript
 import { KitsudenClient } from "@kitsuden/sdk";
@@ -164,20 +195,33 @@ await kitsuden.modules.toggle("academy");
 const enabled = await kitsuden.modules.enabled();
 ```
 
-### TOON Format (for AI Agents)
+### Wire formats: JSON, TOON, auto
 
-TOON reduces token usage by ~60% compared to JSON:
+The SDK always returns plain objects; `format` only changes what travels over
+the wire:
+
+- `"json"` (default): compact JSON.
+- `"toon"`: [TOON](https://toonformat.dev). Shorter than JSON for flat, uniform
+  lists (categories, tags, page lists); **longer** for nested records such as
+  dataset entries. Measured numbers: `docs/agents/benchmarks.md` in the
+  Kitsuden repository.
+- `"auto"`: the server encodes each response as compact JSON and as TOON,
+  checks that the TOON version decodes back to exactly the same data, and
+  sends the shorter one (`Content-Type` says which).
 
 ```typescript
 const agent = new KitsudenClient({
   url: "https://api.yourgame.com",
   apiKey: "kitsuden_agent_xxx",
-  format: "toon",
+  format: "auto",
 });
 
-const toonData = await agent.from("games").list();
-// Returns parsed TOON data (same structure, optimized wire format)
+const games = await agent.from("games").list(); // same objects as with "json"
 ```
+
+The TOON codec is exported too: `import { encodeToon, decodeToon } from "@kitsuden/sdk"`.
+The API can also answer in TRON (`Accept: application/vnd.tron`); the SDK does
+not decode TRON, to stay dependency-free.
 
 ### Error Handling
 
@@ -271,8 +315,8 @@ interface KitsudenClientConfig {
   url: string;
   /** Agent NHI token for authentication (optional) */
   apiKey?: string;
-  /** Response format: 'json' (default) or 'toon' */
-  format?: "json" | "toon";
+  /** Wire format: 'json' (default), 'toon' or 'auto' */
+  format?: "json" | "toon" | "auto";
 }
 ```
 
@@ -397,10 +441,8 @@ MIT © Kitsuden Contributors
 
 ## Links
 
-- [Documentation](https://docs.kitsuden.dev)
-- [GitHub](https://github.com/yourorg/kitsuden)
-- [npm](https://www.npmjs.com/package/@kitsuden/sdk)
-- [Issues](https://github.com/yourorg/kitsuden/issues)
+- [GitHub](https://github.com/Victor-Antinori-Broce/kitsuden)
+- [Issues](https://github.com/Victor-Antinori-Broce/kitsuden/issues)
 
 ---
 

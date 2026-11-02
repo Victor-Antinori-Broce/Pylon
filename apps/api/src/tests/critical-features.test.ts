@@ -32,7 +32,7 @@ beforeAll(async () => {
   // Register features
   registerCriticalFeatures(app);
   // Mock auth endpoint for rate-limit testing
-  app.post("/api/auth/login", (c) => c.json({ success: true }));
+  app.post("/api/auth/sign-in/email", (c) => c.json({ success: true }));
   // Mock context
   createMockContext(app);
 });
@@ -97,9 +97,9 @@ describe("🔒 Rate Limiting", () => {
     const testIp = `192.168.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
     let blocked = false;
 
-    // The /api/auth/login route is configured for 5 requests per 5-minute window.
-    for (let i = 0; i < 7; i++) {
-      const res = await app.request("/api/auth/login", {
+    // /api/auth/sign-in/email (the real better-auth path) allows 10 per 5-minute window.
+    for (let i = 0; i < 12; i++) {
+      const res = await app.request("/api/auth/sign-in/email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,10 +182,9 @@ describe("📊 Observability", () => {
     const body = (await res.json()) as any;
     expect(body.message).toBe("Kitsuden API");
     expect(body).toHaveProperty("status");
-    expect(["healthy", "degraded"]).toContain(body.status);
-    if (body.status === "healthy") {
-      expect(body).toHaveProperty("stats");
-    }
+    // Sin sesión, solo «está viva»: los recuentos y la actividad son del panel.
+    expect(body).not.toHaveProperty("stats");
+    expect(body).not.toHaveProperty("activity");
   });
 
   it("should require auth for realtime stats", async () => {

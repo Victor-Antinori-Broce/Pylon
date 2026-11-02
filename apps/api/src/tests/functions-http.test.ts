@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 
 import { app } from "../index";
 
-import { isDatabaseAvailable, clearTestData, generateTestId } from "./setup";
+import { isDatabaseAvailable, clearTestData, generateTestId, entrarComo } from "./setup";
 
 let dbAvailable = false;
 
@@ -17,11 +17,6 @@ function req(path: string, opts: RequestInit = {}, cookie?: string): Request {
   if (cookie) headers.set("Cookie", cookie);
   headers.set("Content-Type", "application/json");
   return new Request(`http://localhost:3000${path}`, { ...opts, headers });
-}
-
-function extractCookie(headers: Headers): string {
-  const setCookie = headers.get("set-cookie") || "";
-  return setCookie.split(";")[0];
 }
 
 describe("Functions HTTP", () => {
@@ -44,19 +39,14 @@ describe("Functions HTTP", () => {
     it("creates and signs in a user", async () => {
       if (!dbAvailable) return;
 
-      await app.request(
-        req("/api/auth/sign-up/email", {
-          method: "POST",
-          body: JSON.stringify({ email, password, name: "Functions User" }),
-        })
-      );
-      const res = await app.request(
-        req("/api/auth/sign-in/email", {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        })
-      );
-      cookie = extractCookie(res.headers);
+      // /api/functions es solo de admin (middleware/matriz-de-autorizacion.ts):
+      // ejecuta código en el servidor. Antes cualquier cuenta podía.
+      ({ cookie } = await entrarComo(app, {
+        email,
+        password,
+        name: "Functions User",
+        role: "admin",
+      }));
     });
   });
 

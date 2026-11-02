@@ -15,6 +15,15 @@ import {
   getGrimoireKons,
   getCoreDenKons,
 } from "../services/module-registry";
+import { konInstalado } from "../lib/kons-instalados";
+
+/**
+ * Desde la fase C los kons se instalan (repo kitsuden-kons) y el registro solo
+ * conoce lo instalado. Lo que espera un kon concreto se prueba si ESE kon está
+ * instalado; en un clon limpio del núcleo quedan los del núcleo.
+ */
+const instalado = (key: string) => !key.startsWith("kon-") || Boolean(konInstalado(key)?.ruta);
+const hayKonsDeGrimoire = ["kon-games", "kon-esports", "kon-streamers"].some(instalado);
 
 describe("Kon Registry", () => {
   describe("Registry Structure", () => {
@@ -132,7 +141,7 @@ describe("Kon Registry", () => {
     ];
 
     for (const expected of expectedKons) {
-      it(`should have ${expected.key} as ${expected.category}`, () => {
+      (instalado(expected.key) ? it : it.skip)(`should have ${expected.key} as ${expected.category}`, () => {
         const kon = KON_REGISTRY.find((g) => g.key === expected.key);
         expect(kon).toBeDefined();
         expect((kon as any).category).toBe(expected.category);
@@ -220,7 +229,7 @@ describe("Kon Registry Helpers", () => {
     expect(grimoireEsports.every((g) => g.grimoireId === "grimoire-esports")).toBe(true);
   });
 
-  it("getGrimoireKons without filter should return all grimoire kons", () => {
+  (hayKonsDeGrimoire ? it : it.skip)("getGrimoireKons without filter should return all grimoire kons", () => {
     const allGrimoire = getGrimoireKons();
     expect(allGrimoire.length).toBeGreaterThan(0);
     expect(allGrimoire.every((g) => g.category === "grimoire")).toBe(true);
@@ -229,8 +238,10 @@ describe("Kon Registry Helpers", () => {
 
 describe("Registry Counts", () => {
   it("should have expected number of kons", () => {
-    // We expect at least 13 kons based on the current registry
-    expect(KON_REGISTRY.length).toBeGreaterThanOrEqual(13);
+    // Los del núcleo (media, datasets, blocks) y ai-memories siempre; con los
+    // kons de antes instalados, al menos 13.
+    const conLosDeAntes = ["kon-blog", "kon-crm", "kon-games", "kon-dms"].every(instalado);
+    expect(KON_REGISTRY.length).toBeGreaterThanOrEqual(conLosDeAntes ? 13 : 4);
   });
 
   it("core y grimoire no se solapan", () => {

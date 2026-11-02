@@ -14,7 +14,9 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "node --test \"tests/*.test.mjs\"",
+    "prepack": "pnpm build && node scripts/empaquetar-starter.mjs"
   },
   "dependencies": {
     "@kitsuden/core": "workspace:*",
@@ -27,7 +29,6 @@
     "fs-extra": "^11.2.0",
     "postgres": "^3.4.5",
     "execa": "^9.0.0",
-    "degit": "^2.8.4",
     "node-fetch": "^3.3.2",
     "@kitsuden/codegen": "workspace:*"
   },

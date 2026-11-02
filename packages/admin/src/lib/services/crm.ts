@@ -16,7 +16,9 @@ import type {
   CrmEntityConfig,
 } from "$views/crm/types";
 
-const API_BASE = "/api/crm";
+// Con VITE_API_URL (panel y API en orígenes distintos) una ruta relativa iba al
+// servidor del panel y devolvía su index.html con 404.
+const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api/crm`;
 
 // ============== Companies ==============
 

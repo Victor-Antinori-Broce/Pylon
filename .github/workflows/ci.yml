@@ -6,42 +6,61 @@ name: CI - Quality Checks
 #
 # El filtro `branches: [main, develop]` hacia que todo esto —la cadena de
 # migraciones, las sondas del repo, el smoke test de rutas— no se ejecutara
-# NUNCA mientras el trabajo vivia en una rama, que es donde vive siempre. Las
-# comprobaciones existian y no comprobaban nada hasta el momento en que ya era
-# tarde para que salieran baratas.
+# NUNCA mientras el trabajo vivia en una rama, que es donde vive siempre.
 #
-# Una comprobacion que solo corre en la rama de destino no es una red: es un
-# informe post mortem.
+# ── LO QUE TODOS LOS JOBS NECESITAN ────────────────────────────────────────
+#
+#   · pnpm 9.15.4 (la del lockfile y la de `packageManager`).
+#   · Node 22: el starter neutro exige 22.12+.
+#   · Bun en TODOS los jobs que instalan: el `prepare` de @kitsuden/shared
+#     compila con bun (`bun run scripts/build.ts`), y sin bun `pnpm install`
+#     falla en un clon limpio, antes de llegar a ningun paso.
+#   · `svelte-kit sync` antes del lint y de los tests del panel: genera
+#     `packages/admin/.svelte-kit/tsconfig.json`, que el tsconfig del panel
+#     extiende. En un clon limpio no existe.
 on:
   push:
   pull_request:
     branches: [main, develop]
+  # A mano (Actions → Run workflow): lo usa el job aig-red-team
+  workflow_dispatch:
+
+# Solo lectura del repo para el GITHUB_TOKEN (auditoría 2026-10-25): ningún
+# job escribe en GitHub, y sin esto el token heredaba los permisos por defecto
+# del repositorio. La caché `type=gha` de buildx no usa este token.
+permissions:
+  contents: read
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   PNPM_VERSION: "9.15.4"
+  # Bun fijado, no `latest` (auditoría 2026-10-25): una versión nueva de bun
+  # cambiaba el resultado de CI sin ningún commit. 1.3.14 es la del entorno de
+  # desarrollo y la de @types/bun en el lockfile.
+  BUN_VERSION: "1.3.14"
 
 jobs:
   lint-and-format:
     name: Lint & Format Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate SvelteKit types (admin)
+        run: pnpm --filter @kitsuden/admin exec svelte-kit sync
 
       - name: Run ESLint
         run: pnpm run lint
@@ -53,25 +72,23 @@ jobs:
     name: TypeScript Type Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Run TypeScript type check
-        run: pnpm run typecheck
+        run: pnpm run typecheck:core
 
   test-api:
     name: API Tests
@@ -99,172 +116,91 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
+    # La suite de la API exige las dos: KITSUDEN_TEST_DB=postgres para usar la
+    # base del servicio (sin ella intenta pg-mem y parte de los tests no
+    # aplica), y un BETTER_AUTH_SECRET de 32+ caracteres (sin él better-auth
+    # no arranca). El secreto es de mentira y solo vale en este job.
+    env:
+      DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+      KITSUDEN_TEST_DB: postgres
+      BETTER_AUTH_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
-
-      # Bun NO viene en el runner y estos pasos lo invocan (`bun run`, `bun test`).
-      # Sin esto el job fallaba en el primer paso que lo usa, asi que la cadena
-      # de migraciones y la suite de la API no se ejecutaban en CI.
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       # El esquema se construye desde CERO en cada push, aplicando la cadena
-      # completa de migraciones contra Postgres de verdad.
-      #
-      # Antes no existía este paso: CI levantaba Postgres y lanzaba los tests
-      # sin crear el esquema, así que la cadena de migraciones no se validaba
-      # NUNCA. Se descubrió que estaba rota — la migración 0020 usaba una
-      # columna que ninguna migración creaba, porque los ficheros 0003-0019 no
-      # están en el repositorio.
-      #
-      # Este paso es el que impide que vuelva a pasar: si una migración no
+      # completa de migraciones contra Postgres de verdad: si una migración no
       # aplica sobre una base limpia, el push falla aquí y no en producción.
       - name: Apply migrations + RLS
         working-directory: apps/api
-        env:
-          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
-          NODE_ENV: test
         run: bun run scripts/migrate.ts
 
       # Segunda pasada: una migración que no es idempotente rompe cualquier
       # despliegue que se reintente. Aquí no debe aplicarse nada nuevo.
+      # El patrón es el de la línea de migraciones («Aplicando N migración(es)»),
+      # no la palabra suelta: «Aplicando políticas RLS» sale en TODAS las pasadas.
       - name: Verify migrations are idempotent
         working-directory: apps/api
-        env:
-          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
-          NODE_ENV: test
         run: |
           salida=$(bun run scripts/migrate.ts)
           echo "$salida"
-          if echo "$salida" | grep -q "Aplicando"; then
+          if echo "$salida" | grep -Eq "Aplicando [0-9]+ migraci"; then
             echo "::error::La segunda pasada aplicó migraciones: la cadena no es idempotente."
             exit 1
           fi
 
       # Que las migraciones apliquen no significa que el esquema sea el que el
-      # codigo espera. `game_collections` existia y le faltaban dos columnas que
-      # su esquema Drizzle declara: la migracion pasaba, y `GET /api/games/
-      # collections` devolvia 500 en produccion.
+      # codigo espera (tablas declaradas en Drizzle sin migracion que las cree).
       - name: Verify declared schema exists
         working-directory: apps/api
-        env:
-          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
-          NODE_ENV: test
         run: bun run scripts/verificar-esquema.ts
 
       # Se piden TODAS las rutas GET registradas y se exige que ninguna devuelva
-      # 5xx. Un 401 o un 404 estan bien: significan «hace falta sesion» y «ese id
-      # no existe». Un 500 significa que el servidor no supo atender su propia
-      # ruta.
-      #
-      # Es lo que faltaba para ver `GET /api/games/collections`, que llevaba
-      # meses en 500 porque `/:id` estaba registrada antes y consultaba
-      # `WHERE id = 'collections'`. Ninguna prueba unitaria lo veia: el handler
-      # correcto estaba bien escrito, lo que fallaba era cual se ejecutaba.
+      # 5xx. Un 401 o un 404 estan bien; un 500 es que el servidor no supo
+      # atender su propia ruta.
       - name: Smoke test de rutas (ninguna puede devolver 5xx)
         working-directory: apps/api
-        env:
-          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
-          REDIS_URL: redis://localhost:6379
-          NODE_ENV: test
         run: bun run scripts/humo-rutas.ts
 
-      - name: Run API tests
+      # Integración en un proceso (comparten base) y unitarias un proceso por
+      # fichero: sus `mock.module` valen para todo el proceso y en lote el
+      # resultado dependía del orden (ver apps/api/scripts/test-aislado.mjs).
+      - name: Run API integration tests
         working-directory: apps/api
-        env:
-          DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
-          REDIS_URL: redis://localhost:6379
-          NODE_ENV: test
-        run: bun test
+        run: bun test src/tests/
 
-  test-admin:
-    name: Admin Frontend Tests
+      - name: Run API unit tests (one process per file)
+        working-directory: apps/api
+        run: node scripts/test-aislado.mjs
+
+  # La API arrancada con NODE 22+, sin Bun en tiempo de ejecucion y SIN Valkey
+  # (kitsuden2.md G4 y B1b): src/servidor-node.ts compilado con --target node.
+  # Bun solo hace falta para compilar. Si un modulo nativo o una API de Bun se
+  # cuela en el camino de arranque, falla aqui y no el dia que haga falta Node.
+  api-on-node:
+    name: API on Node 22 (no Valkey)
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Vitest tests
-        working-directory: packages/admin
-        run: pnpm test
-
-      # La suite de la RAIZ — `tests/unit/**` — no la ejecutaba ningun job.
-      # Ahi viven las pruebas de vigilancia que impiden que vuelvan clases
-      # enteras de fallo: rutas ensombrecidas por un comodin, tablas que un kon
-      # declara y ninguna migracion crea, enlaces del panel que llevan a un 404,
-      # modulos nativos empaquetados, scripts de arranque que no terminan.
-      #
-      # Estaban escritas y no gateaban nada.
-      - name: Run repo guard tests
-        run: pnpm run test:unit
-
-  migraciones-de-todos-los-kons:
-    name: Migraciones de TODOS los kons
-    runs-on: ubuntu-latest
-    # ═════════════════════════════════════════════════════════════════════════
-    # POR QUE EXISTE ESTE JOB
-    # ═════════════════════════════════════════════════════════════════════════
-    #
-    # El job `test-api` migra los kons HABILITADOS: seis de veintiocho. Los otros
-    # veintidos vienen apagados de fabrica, asi que su SQL no lo ejecutaba nadie
-    # — ni en CI ni en desarrollo — hasta que un usuario activaba uno desde el
-    # panel de un servidor. En ese momento, y solo entonces, se descubria en que
-    # estado estaban. Lo que se encontro al mirarlos por primera vez:
-    #
-    #   · kon-dms, kon-esports, kon-agile y kon-directory NO tenian migracion de
-    #     arranque. Sus ficheros empezaban por un ALTER o un RENAME contra tablas
-    #     que nada creaba. Cuarenta y una tablas sin una sola sentencia CREATE.
-    #   · kon-games y kon-esports usaban `ALTER TYPE IF EXISTS`, que no existe en
-    #     PostgreSQL. Error de SINTAXIS: la cadena entera caia en la linea 6.
-    #   · kon-booking se renombraba una tabla a su propio nombre. Postgres no lo
-    #     trata como no-op, y rompia toda instalacion nueva justo despues de
-    #     haberlo creado todo bien.
-    #   · kon-streamers llevaba seis columnas de deriva: la tabla existia y la
-    #     consulta fallaba en tiempo de ejecucion.
-    #
-    # Ninguna de las cuatro clases la detecta una prueba unitaria: hacen falta un
-    # Postgres de verdad y una base VACIA. Eso es este job.
-    #
-    # `--todos-los-kons` no se usa en un servidor: crearia tablas de kons que
-    # nadie ha pedido. Es exclusivamente una comprobacion.
     services:
       postgres:
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: kitsuden
           POSTGRES_PASSWORD: kitsudenpassword
-          POSTGRES_DB: kitsuden_kons
+          POSTGRES_DB: kitsuden_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -273,33 +209,264 @@ jobs:
         ports:
           - 5432:5432
     env:
-      DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_kons
-      NODE_ENV: test
+      DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_test
+      NODE_ENV: development
+      BETTER_AUTH_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+      BETTER_AUTH_URL: http://127.0.0.1:3100
+      PORT: "3100"
+      HOST: 127.0.0.1
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply migrations
+        working-directory: apps/api
+        run: bun run scripts/migrate.ts
+      - name: Build for Node
+        working-directory: apps/api
+        run: pnpm run build:node
+      - name: Start on Node and check health
+        working-directory: apps/api
+        run: |
+          node --version
+          node dist-node/servidor-node.js > node.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3100/api/health > health.json 2>/dev/null; then break; fi
+            sleep 2
+          done
+          cat health.json || (cat node.log; exit 1)
+          grep -q '"database":{"status":"ok"' health.json || (cat node.log; exit 1)
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/api/realtime)
+          test "$code" = "501"
+
+  # Schemathesis contra el contrato del SDK (apps/api/scripts/schemathesis.ts):
+  # genera miles de peticiones desde los esquemas de cada operación y falla con
+  # 500, respuestas que no cumplen lo declarado o estados no documentados. Los
+  # fallos YA CONOCIDOS están en apps/api/schemathesis-baseline.json: solo hace
+  # fallar el job uno nuevo. Job APARTE y con su propia base: la suite de
+  # integración vacía los datasets (`clearTestData`) y le borraría los datos a
+  # mitad de pasada. Schemathesis no es dependencia: va con uvx, versión fija.
+  # Aquí solo están los kons del núcleo (los demás viven en kitsuden-kons).
+  schemathesis:
+    name: Schemathesis (contrato del SDK)
+    runs-on: ubuntu-latest
+    # Bloqueante: los 21 fallos del baseline inicial están arreglados (2026-10-26)
+    # y dos pasadas sobre bases nuevas salen limpias. Un fallo aquí es un 500 o
+    # un contrato roto DE VERDAD, aunque lo destape un dato generado al azar:
+    # arreglarlo, o aceptarlo a propósito con `--baseline-update`.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kitsuden
+          POSTGRES_PASSWORD: kitsudenpassword
+          POSTGRES_DB: kitsuden_schemathesis_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_schemathesis_test
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+      KITSUDEN_TEST_DB: postgres
+      LOG_LEVEL: error
+      BETTER_AUTH_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.9.8"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Sobre una base VACIA: es la unica forma de ver que una cadena que solo
-      # renombra tablas heredadas no crea nada.
+      - name: Apply migrations + RLS
+        working-directory: apps/api
+        run: bun run scripts/migrate.ts
+
+      - name: Run Schemathesis
+        working-directory: apps/api
+        run: bun run scripts/schemathesis.ts
+
+      - name: Upload Schemathesis report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schemathesis-report
+          path: apps/api/.schemathesis/
+          retention-days: 14
+
+  # ── Red-teaming del MCP con AI-Infra-Guard (Tencent Zhuque Lab, Apache-2.0) ──
+  # NO bloqueante: un LLM audita el código del servidor MCP, los kons y la
+  # skill, y sus hallazgos son opiniones que hay que revisar a mano (SARIF como
+  # artefacto). Solo corre si existe el secreto LLM_API_KEY, y solo en push a
+  # main o a mano: cada pasada manda el código al endpoint del LLM y cuesta
+  # dinero (docs/agents/red-teaming.md). Versiones fijadas en
+  # scripts/seguridad/aig.mjs. La interfaz web de AIG NUNCA se despliega: no
+  # tiene autenticación.
+  aig-red-team:
+    name: AI-Infra-Guard (MCP + skill, no bloqueante)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    continue-on-error: true
+    timeout-minutes: 60
+    env:
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      # Opcionales (variables del repo): endpoint OpenAI-compatible y modelo
+      AIG_BASE_URL: ${{ vars.AIG_BASE_URL }}
+      AIG_MODEL: ${{ vars.AIG_MODEL }}
+    steps:
+      - name: ¿Hay clave del LLM?
+        id: clave
+        run: |
+          if [ -n "$LLM_API_KEY" ]; then echo "hay=true" >> "$GITHUB_OUTPUT"; else echo "::notice::LLM_API_KEY no configurada: se salta AI-Infra-Guard"; fi
+      - uses: actions/checkout@v4
+        if: steps.clave.outputs.hay == 'true'
+      # kitsuden-kons vive en otro repositorio: solo si la variable lo nombra
+      - uses: actions/checkout@v4
+        if: steps.clave.outputs.hay == 'true' && vars.KITSUDEN_KONS_REPO != ''
+        with:
+          repository: ${{ vars.KITSUDEN_KONS_REPO }}
+          token: ${{ secrets.KITSUDEN_KONS_TOKEN || github.token }}
+          path: kitsuden-kons
+      - uses: actions/setup-node@v4
+        if: steps.clave.outputs.hay == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: astral-sh/setup-uv@v10.3.0
+        if: steps.clave.outputs.hay == 'true'
+        with:
+          version: "0.9.8"
+      - name: AI-Infra-Guard
+        if: steps.clave.outputs.hay == 'true'
+        env:
+          KITSUDEN_KONS_DIR: ${{ github.workspace }}/kitsuden-kons/kons
+        run: |
+          objetivos=codigo,skill
+          if [ -d kitsuden-kons/kons ]; then objetivos=codigo,skill,kons; fi
+          node scripts/seguridad/aig.mjs --objetivo=$objetivos
+      - name: Subir SARIF
+        if: always() && steps.clave.outputs.hay == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aig-sarif
+          path: .aig/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  test-admin:
+    name: Admin + repo guard tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate SvelteKit types (admin)
+        run: pnpm --filter @kitsuden/admin exec svelte-kit sync
+
+      - name: Run Vitest tests (admin)
+        working-directory: packages/admin
+        run: pnpm test
+
+      # La suite de la RAIZ — `tests/unit/**` — son las pruebas de vigilancia
+      # que impiden que vuelvan clases enteras de fallo: rutas ensombrecidas,
+      # tablas sin migracion, enlaces del panel a un 404, scripts de arranque
+      # que no terminan. Las que dependen de algo que no está en el repo (el
+      # repo hermano de Inti) se saltan solas, diciendo por qué.
+      - name: Run repo guard tests
+        run: pnpm run test:unit
+
+  migraciones-de-todos-los-kons:
+    name: Migraciones de TODOS los kons
+    runs-on: ubuntu-latest
+    # El job `test-api` migra los kons HABILITADOS. Los demás vienen apagados de
+    # fabrica, asi que su SQL no lo ejecutaba nadie hasta que un usuario
+    # activaba uno desde el panel. Aquí se aplican TODOS sobre una base VACIA.
+    # `--todos-los-kons` no se usa en un servidor: es solo una comprobacion.
+    #
+    # La base acaba en `_test`: los scripts se niegan a crear tablas de todos
+    # los kons en una base que no parezca de pruebas.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kitsuden
+          POSTGRES_PASSWORD: kitsudenpassword
+          POSTGRES_DB: kitsuden_kons_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    # KITSUDEN_TEST_DB=postgres: con NODE_ENV=test y sin ella, src/db usa pg-mem
+    # y la cadena «se aplica» sobre una base en memoria que no es Postgres.
+    env:
+      DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_kons_test
+      NODE_ENV: test
+      KITSUDEN_TEST_DB: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Aplicar la cadena de todos los kons desde cero
         working-directory: apps/api
         run: bun run scripts/migrate.ts --todos-los-kons --no-rls
@@ -309,35 +476,203 @@ jobs:
         run: |
           salida=$(bun run scripts/migrate.ts --todos-los-kons --no-rls)
           echo "$salida"
-          if echo "$salida" | grep -q "Aplicando"; then
+          if echo "$salida" | grep -Eq "Aplicando [0-9]+ migraci"; then
             echo "::error::La segunda pasada aplico migraciones: la cadena no es idempotente."
             exit 1
           fi
 
-      # Migrar sin error no significa que el esquema sea el que el codigo espera.
-      # Este paso compara CADA tabla y CADA columna que declara el fichero
-      # Drizzle de cada kon con lo que la base tiene de verdad.
       - name: Verificar el esquema declarado por cada kon
         working-directory: apps/api
         run: bun run scripts/verificar-esquema.ts --todos-los-kons
 
       # RLS al final y sobre el esquema completo: las politicas de propiedad se
-      # generan recorriendo las tablas que existen, asi que un tipo de columna
-      # inesperado en un kon solo se ve aqui. Fue exactamente el caso de
-      # `uuid = text`, que tumbaba el contenedor al arrancar.
+      # generan recorriendo las tablas que existen.
       - name: Aplicar RLS sobre el esquema completo
         working-directory: apps/api
         run: bun run scripts/migrate.ts --todos-los-kons
+
+  # ── El starter neutro, SIN Inti ────────────────────────────────────────────
+  #
+  # Es la web de ejemplo del repo: tiene que instalar y compilar sin que exista
+  # Inti, y el bundle no puede llevar nada de `@intijs` (tests/build.test.mjs lo
+  # inspecciona; la compilación con Inti se salta sola si no está instalado).
+  starter-basic:
+    name: Neutral starter (build without Inti)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies (starter only)
+        run: pnpm install --frozen-lockfile --filter "@kitsuden/starter-basic..."
+
+      - name: Render tests of every block
+        working-directory: packages/starters/kitsuden-starter-basic
+        run: pnpm test
+
+      - name: Build and inspect the bundle
+        working-directory: packages/starters/kitsuden-starter-basic
+        run: pnpm test:build
+
+  # ── El starter neutro CON Inti instalado desde git ─────────────────────────
+  #
+  # PREPARADO Y APAGADO: el repositorio público de Inti todavía no existe.
+  # Cuando exista (Victor-Antinori-Broce/inti), quitar el `if: false`. Instala
+  # @intijs/core y @intijs/adapter-kitsuden desde git, del MISMO commit, como
+  # explica el README del starter, compila con INTI=true y ejecuta los tests de
+  # contrato del adaptador contra las respuestas de referencia de este repo.
+  starter-with-inti:
+    name: Neutral starter + Inti from git
+    if: false
+    runs-on: ubuntu-latest
+    env:
+      INTI_REPO: Victor-Antinori-Broce/inti
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.INTI_REPO }}
+          path: inti
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install Kitsuden (starter only)
+        run: pnpm install --frozen-lockfile --filter "@kitsuden/starter-basic..."
+
+      - name: Add Inti from git (same commit for core and adapter)
+        working-directory: packages/starters/kitsuden-starter-basic
+        run: |
+          COMMIT=$(git -C ../../../inti rev-parse HEAD)
+          pnpm add "github:${INTI_REPO}#${COMMIT}&path:/packages/core" \
+                   "github:${INTI_REPO}#${COMMIT}&path:/packages/adapter-kitsuden"
+
+      - name: Build with and without Inti
+        working-directory: packages/starters/kitsuden-starter-basic
+        run: pnpm test:build
+
+      - name: Contract tests of the adapter (Inti side)
+        working-directory: inti
+        run: |
+          npm ci
+          bun test packages/adapter-kitsuden
+
+  # ── Typed clients (TypeScript + Python) generated from the OpenAPI ─────────
+  #
+  # `pnpm sdk:check` fails when the committed clients are stale: regenerating
+  # from the committed snapshot must give the same bytes, the TRON fixtures
+  # must match the pinned library, and the snapshot must match the kon SDK
+  # operations of the kons installed HERE (the kitsuden-kons ones are absent in
+  # a clean clone and are reported as not checked). Fix: `pnpm sdk:openapi &&
+  # pnpm sdk:generate` and commit. Then both mocked-server suites.
+  sdk-clients:
+    name: Typed clients (generated, TS + Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.9.8"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generated clients are up to date
+        run: pnpm sdk:check
+
+      - name: TypeScript client (mocked server)
+        run: pnpm test:sdk:ts
+
+      - name: Python client (mocked server, 3.9 and 3.12)
+        working-directory: packages/sdk-python
+        run: |
+          for v in 3.9 3.12; do
+            uv run --no-project --python "$v" --with "httpx>=0.24" --with pytest -- python -m pytest -q -p no:cacheprovider tests
+          done
+
+  # Both clients against a real API on the job's own Postgres (core kons only).
+  sdk-clients-integration:
+    name: Typed clients against a live API
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kitsuden
+          POSTGRES_PASSWORD: kitsudenpassword
+          POSTGRES_DB: kitsuden_sdk_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    env:
+      KITSUDEN_SDK_IT_DATABASE_URL: postgres://kitsuden:kitsudenpassword@localhost:5432/kitsuden_sdk_test
+      KITSUDEN_SDK_IT_REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.9.8"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate, start the API, run both clients
+        run: pnpm test:sdk:integration
 
   build-docker:
     name: Docker Build Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
 
       - name: Build API Docker image
         uses: docker/build-push-action@v5
@@ -358,3 +693,56 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # La web pública de ejemplo (el starter neutro)
+      - name: Build Web Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.web
+          target: web
+          push: false
+          build-args: |
+            SITE_URL=https://ci.invalid
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── La configuración del despliegue (compose + Caddy) ─────────────────────
+  #
+  # Sin secretos: un .env de mentira con valores que no sirven para nada. Lo
+  # que se comprueba es que `docker compose ... config` interpola y que el
+  # Caddyfile es válido.
+  deploy-config:
+    name: Configuración de despliegue
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar docker compose (local y producción)
+        run: |
+          cat > /tmp/ci.env <<'EOF'
+          COMPOSE_PROJECT_NAME=cms
+          POSTGRES_PASSWORD=ci-no-es-un-secreto-ci-no-es-un-secreto
+          APP_DB_PASSWORD=ci-no-es-un-secreto
+          BETTER_AUTH_SECRET=ci-no-es-un-secreto-ci-no-es-un-secreto
+          SITIO_API_CLAVE=ci-no-es-un-secreto
+          SITE_DOMAIN=ejemplo.invalid
+          ACME_EMAIL=ops@ejemplo.invalid
+          EOF
+          docker compose --env-file /tmp/ci.env -f docker-compose.yml config -q
+          docker compose --env-file /tmp/ci.env -f docker-compose.yml -f docker-compose.tls.yml config -q
+          # Nada salvo Caddy puede publicar fuera de 127.0.0.1
+          docker compose --env-file /tmp/ci.env -f docker-compose.yml -f docker-compose.tls.yml config --format json \
+            | jq -e '[.services | to_entries[] | select(.key != "kitsuden_proxy") | .value.ports // [] | .[] | select((.host_ip // "") != "127.0.0.1")] | length == 0'
+
+      - name: Validar docker/Caddyfile
+        run: |
+          docker run --rm -e SITE_DOMAIN=ejemplo.invalid -e KITSUDEN_DOMAIN=panel.ejemplo.invalid \
+            -e ACME_EMAIL=ops@ejemplo.invalid -v "$PWD/docker/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Sintaxis de los scripts de arranque, copias y despliegue
+        run: |
+          sh -n docker/backup-medios.sh
+          sh -n docker/start-with-check.sh
+          bash -n scripts/deploy.sh

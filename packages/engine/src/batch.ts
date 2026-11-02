@@ -165,6 +165,14 @@ export class BatchProcessor {
   private refs: ResolvedRefs = new Map();
 
   /**
+   * @param conexion where the transaction opens. In a request, the request's RLS
+   * transaction (`resolveExecutor(db)`), which turns this one into a savepoint:
+   * without it the batch runs on the global pool, as the system, with no policy
+   * in effect.
+   */
+  constructor(private readonly conexion: Pick<typeof db, "transaction"> = db) {}
+
+  /**
    * Ejecuta un batch de operaciones transaccionalmente.
    *
    * @param operations - Array de operaciones a ejecutar
@@ -180,7 +188,7 @@ export class BatchProcessor {
 
     try {
       // Ejecutar en transacción
-      await db.transaction(async (tx) => {
+      await this.conexion.transaction(async (tx) => {
         for (let i = 0; i < operations.length; i++) {
           const op = operations[i];
 

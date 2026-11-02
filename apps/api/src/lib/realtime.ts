@@ -250,6 +250,13 @@ class RealtimeManager {
       return;
     }
 
+    // Presencia solo con sesión: cualquiera que abriera el socket entraba en
+    // cualquier sala y veía quién estaba (auditoría 2026-10-25).
+    if (!client.userId) {
+      this.sendError(client.socket, "Presence requires an authenticated session");
+      return;
+    }
+
     client.rooms.add(room);
 
     if (!this.presenceRooms.has(room)) {

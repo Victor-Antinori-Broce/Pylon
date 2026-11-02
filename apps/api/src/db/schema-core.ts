@@ -11,7 +11,7 @@
  * with active kon schemas at runtime.
  */
 
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -27,6 +27,9 @@ import {
   index,
   pgEnum,
   customType,
+  date,
+  primaryKey,
+  bigint,
 } from "drizzle-orm/pg-core";
 
 // ─── Block Type (shared with admin + web) ─────────────────────
@@ -164,7 +167,7 @@ export const siteSettings = pgTable("site_settings", {
   mainNav: jsonb("main_nav").$type<Array<{ label: string; url: string; openInNewTab?: boolean }>>(),
   /**
    * Redes del GRUPO, configurables desde el panel: son el mismo juego en las
-   * tres webs (Cardback, TodoGachas…), así que viven aquí y no en el
+   * varias webs, así que viven aquí y no en el
    * entorno de cada plantilla. Lo que el panel no tenga, cada web puede
    * seguir supliendo por entorno (lee `lib/perfil.ts` del template).
    *
@@ -540,9 +543,35 @@ export const agentIdentities = pgTable(
     type: text("type").default("custom").notNull(),
     scopes: jsonb("scopes").default([]),
     rateLimit: integer("rate_limit").default(60),
+    /** Cuotas por día UTC (fase E). NULL = sin límite. Ver lib/cuotas-de-agente.ts. */
+    writesPerDay: integer("writes_per_day"),
+    budgetUnitsPerDay: integer("budget_units_per_day"),
     capabilities: jsonb("capabilities").default([]),
     systemPrompt: text("system_prompt"),
     allowedTools: jsonb("allowed_tools").default([]),
+    /**
+     * Fase F: aprobación humana. `inherit` (decide el interruptor global),
+     * `propose` (todo lo que escribe queda como propuesta) o `direct` (nunca).
+     * Ver lib/aprobaciones.ts y docs/agents/approvals.md.
+     */
+    approvalMode: text("approval_mode").default("inherit").notNull(),
+    /**
+     * Fase F (decisión del propietario): la cuenta humana que FIRMA lo que el
+     * agente crea (autor del blog, dueño de entradas). NULL = sin firmante. Sin
+     * FK a propósito (migración 0049): borrada la cuenta, el agente sabe que
+     * su firmante ya no vale. Ver @kitsuden/shared firmante.ts.
+     */
+    sponsorUserId: text("sponsor_user_id"),
+    /**
+     * Ajustes MCP del agente (migración 0052, lib/ajustes-mcp.ts): `toolset` por
+     * defecto y `untrustedWrap`. `{}` = lo de siempre.
+     */
+    mcpSettings: jsonb("mcp_settings").default({}).notNull(),
+    /**
+     * Fase I (migración 0053, lib/promocion.ts): cómo se promociona el código
+     * que escribe. `suggestion` (de fábrica) o `turbo`. Ver docs/agents/promotion.md.
+     */
+    promotionMode: text("promotion_mode").default("suggestion").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -569,6 +598,13 @@ export const agentApiKeys = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
+    /** Fase E: nombre para humanos («producción», «CI»…). */
+    name: text("name"),
+    /** Fase E: revocada (deja de autenticar en la siguiente petición; la fila queda para auditar). */
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedBy: text("revoked_by"),
+    /** Fase E: la clave que esta sustituyó al rotar (la vieja caduca tras la gracia). */
+    rotatedFrom: text("rotated_from"),
   },
   (t) => [
     index("agent_api_keys_agent_id_idx").on(t.agentId),
@@ -576,6 +612,202 @@ export const agentApiKeys = pgTable(
     uniqueIndex("agent_api_keys_key_id_idx").on(t.keyId),
     index("agent_api_keys_expires_at_idx").on(t.expiresAt),
   ]
+);
+
+/**
+ * Consumo diario de cuota de cada agente: la RESERVA cuando Valkey no está
+ * (fase E, lib/cuotas-de-agente.ts). Día en UTC.
+ */
+export const agentQuotaUsage = pgTable(
+  "agent_quota_usage",
+  {
+    agentId: text("agent_id")
+      .references(() => agentIdentities.id, { onDelete: "cascade" })
+      .notNull(),
+    day: date("day").notNull(),
+    writes: integer("writes").default(0).notNull(),
+    units: integer("units").default(0).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.agentId, t.day] })]
+);
+
+/**
+ * Lo que el formato `auto` ahorró frente a JSON compacto, por agente, día UTC
+ * y canal (migración 0052, lib/ahorro-de-formato.ts). Solo contadores.
+ */
+export const agentFormatSavings = pgTable(
+  "agent_format_savings",
+  {
+    agentId: text("agent_id")
+      .references(() => agentIdentities.id, { onDelete: "cascade" })
+      .notNull(),
+    day: date("day").notNull(),
+    channel: text("channel").default("mcp").notNull(),
+    responses: integer("responses").default(0).notNull(),
+    compacted: integer("compacted").default(0).notNull(),
+    jsonBytes: bigint("json_bytes", { mode: "number" }).default(0).notNull(),
+    sentBytes: bigint("sent_bytes", { mode: "number" }).default(0).notNull(),
+    jsonTokensEst: bigint("json_tokens_est", { mode: "number" }).default(0).notNull(),
+    sentTokensEst: bigint("sent_tokens_est", { mode: "number" }).default(0).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.agentId, t.day, t.channel] }), index("agent_format_savings_day_idx").on(t.day)]
+);
+
+/**
+ * Fase F: la configuración de la aprobación humana (una fila, `id = 'global'`).
+ * Sin fila = la de fábrica (apagada). Migración 0048.
+ */
+export const approvalSettings = pgTable("approval_settings", {
+  id: text("id").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedBy: text("updated_by"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Fase F: peticiones de agentes retenidas hasta que un humano las apruebe o
+ * rechace. El cuerpo va SIN secretos; el resultado real se queda para que el
+ * agente lo lea. Migración 0048; ver lib/aprobaciones.ts.
+ */
+export const agentProposals = pgTable(
+  "agent_proposals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentId: text("agent_id")
+      .references(() => agentIdentities.id, { onDelete: "cascade" })
+      .notNull(),
+    keyId: text("key_id"),
+    /** `rest` o `mcp`: por dónde llegó (y por dónde se ejecuta al aprobarla). */
+    channel: text("channel").notNull(),
+    method: text("method").notNull(),
+    /** Camino con su query. En MCP, el de la operación del SDK o `mcp:<herramienta>`. */
+    path: text("path").notNull(),
+    konId: text("kon_id"),
+    operationId: text("operation_id"),
+    /** La clave de configuración (`kon:blog:borrar-entrada`, `mcp:<nombre>`), si la hay. */
+    operationKey: text("operation_key"),
+    tool: text("tool"),
+    body: jsonb("body"),
+    contentType: text("content_type"),
+    fingerprint: text("fingerprint").notNull(),
+    idempotencyKey: text("idempotency_key"),
+    scopes: jsonb("scopes").default([]).notNull(),
+    reason: text("reason").notNull(),
+    diff: jsonb("diff"),
+    status: text("status").default("pending").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    decidedBy: text("decided_by"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decisionComment: text("decision_comment"),
+    executedAt: timestamp("executed_at", { withTimezone: true }),
+    resultStatus: integer("result_status"),
+    resultContentType: text("result_content_type"),
+    resultBody: jsonb("result_body"),
+    resultError: text("result_error"),
+    /** D5: la segunda opinión de un clasificador de inyección (migración 0059). */
+    injectionCheck: jsonb("injection_check"),
+    /** El firmante del agente al proponer y, tras aprobar, al ejecutar (0049). */
+    sponsorUserId: text("sponsor_user_id"),
+  },
+  (t) => [
+    index("agent_proposals_status_idx").on(t.status, t.createdAt),
+    index("agent_proposals_agent_idx").on(t.agentId, t.createdAt),
+    index("agent_proposals_fingerprint_idx").on(t.agentId, t.fingerprint),
+    uniqueIndex("agent_proposals_idempotency_idx").on(t.agentId, t.idempotencyKey),
+  ]
+);
+
+/**
+ * Fase I: versiones del código de una acción (`code`) escritas por agentes.
+ * La activa nunca se edita: un cambio es otra fila. Migración 0053; RLS en
+ * rls-owned-tables.sql («Code promotion»); ver lib/promocion.ts.
+ */
+export const codeVersions = pgTable(
+  "code_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    targetKind: text("target_kind").default("action").notNull(),
+    targetId: uuid("target_id").references(() => actions.id, { onDelete: "set null" }),
+    targetSlug: text("target_slug").notNull(),
+    targetName: text("target_name").notNull(),
+    versionNumber: integer("version_number").notNull(),
+    /** `agent` (un borrador), `manual` (edición de una persona) o `baseline` (la foto de lo que corría). */
+    origin: text("origin").default("agent").notNull(),
+    agentId: text("agent_id"),
+    keyId: text("key_id"),
+    sponsorUserId: text("sponsor_user_id"),
+    channel: text("channel").default("rest").notNull(),
+    description: text("description"),
+    code: text("code").notNull(),
+    capabilities: jsonb("capabilities").default({}).notNull(),
+    tests: jsonb("tests").default([]).notNull(),
+    contentHash: text("content_hash").notNull(),
+    baseHash: text("base_hash"),
+    parentVersionId: uuid("parent_version_id"),
+    mode: text("mode").default("suggestion").notNull(),
+    status: text("status").notNull(),
+    testReport: jsonb("test_report"),
+    scanReport: jsonb("scan_report"),
+    capabilityDiff: jsonb("capability_diff"),
+    decision: jsonb("decision"),
+    proposalId: uuid("proposal_id").references(() => agentProposals.id, { onDelete: "set null" }),
+    previousVersionId: uuid("previous_version_id"),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+    activatedBy: text("activated_by"),
+    watchUntil: timestamp("watch_until", { withTimezone: true }),
+    watch: jsonb("watch"),
+    rolledBackAt: timestamp("rolled_back_at", { withTimezone: true }),
+    rolledBackBy: text("rolled_back_by"),
+    rollbackReason: text("rollback_reason"),
+    activationError: text("activation_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("code_versions_dedupe_idx")
+      .on(t.agentId, t.targetSlug, t.contentHash)
+      .where(sql`origin = 'agent'`),
+    uniqueIndex("code_versions_number_idx").on(t.targetSlug, t.versionNumber),
+    uniqueIndex("code_versions_one_active_idx").on(t.targetSlug).where(sql`status = 'active'`),
+    index("code_versions_agent_idx").on(t.agentId, t.createdAt),
+    index("code_versions_status_idx").on(t.status, t.createdAt),
+    index("code_versions_proposal_idx").on(t.proposalId),
+  ]
+);
+
+/** `bytea` de Postgres: el driver (node-postgres) lo devuelve como Buffer. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+/**
+ * Fase F (decisión del propietario, 2026-10-26): las IMÁGENES de una subida
+ * multipart retenida como propuesta. Fuera del almacén público de `/media`
+ * hasta que un humano decide; se borran al rechazarla, caducar o ejecutarse.
+ * Migración 0050; ver lib/aprobaciones.ts.
+ */
+export const agentProposalFiles = pgTable(
+  "agent_proposal_files",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proposalId: uuid("proposal_id")
+      .references(() => agentProposals.id, { onDelete: "cascade" })
+      .notNull(),
+    position: integer("position").notNull(),
+    field: text("field").notNull(),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    sha256: text("sha256").notNull(),
+    content: bytea("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("agent_proposal_files_proposal_idx").on(t.proposalId, t.position)]
 );
 
 export const agentMemory = pgTable(
@@ -614,9 +846,10 @@ export const agentAuditLogs = pgTable(
   "agent_audit_logs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    agentId: text("agent_id")
-      .references(() => agentIdentities.id, { onDelete: "cascade" })
-      .notNull(),
+    // NULL = intento de un agente que no existe (clave inventada o mal
+    // formada). Con NOT NULL esos fallos de autenticación no se podían
+    // registrar: "unknown" violaba la FK. Migración 0044.
+    agentId: text("agent_id").references(() => agentIdentities.id, { onDelete: "cascade" }),
     keyId: text("key_id"),
     action: text("action").notNull(),
     resource: text("resource"),
@@ -801,10 +1034,21 @@ export const brainNotes = pgTable(
     confidence: integer("confidence").default(80).notNull(),
     metadata: jsonb("metadata").default({}).$type<Record<string, unknown>>(),
     relatedNoteIds: jsonb("related_note_ids").default([]).$type<string[]>(),
+    // 0051: owner (a user OR an agent), the agent's human signer, visibility
+    // (private | shared), the owner's idempotency key and the embedding kind.
+    // Policies: rls-owned-tables.sql («Agent memory»).
+    ownerUserId: text("owner_user_id"),
+    ownerAgentId: text("owner_agent_id"),
+    sponsorUserId: text("sponsor_user_id"),
+    visibility: varchar("visibility", { length: 16 }).notNull().default("private"),
+    noteKey: text("note_key"),
+    embeddingKind: varchar("embedding_kind", { length: 100 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
+    index("brain_notes_owner_user_idx").on(t.ownerUserId),
+    index("brain_notes_owner_agent_idx").on(t.ownerAgentId),
     index("brain_notes_category_idx").on(t.category),
     index("brain_notes_source_idx").on(t.source),
     index("brain_notes_created_at_idx").on(t.createdAt),
@@ -825,6 +1069,12 @@ export const brainConnections = pgTable(
     relationType: varchar("relation_type", { length: 100 }).notNull().default("related"),
     strength: real("strength").default(0.5).notNull(),
     metadata: jsonb("metadata").default({}).$type<Record<string, unknown>>(),
+    // 0051: provenance. EXTRACTED (explicit in a source) | INFERRED (similarity,
+    // a model's guess) | MANUAL (asserted through the API); confianza in [0, 1].
+    origen: varchar("origen", { length: 16 }).notNull().default("INFERRED"),
+    confianza: real("confianza").notNull().default(0),
+    ownerUserId: text("owner_user_id"),
+    ownerAgentId: text("owner_agent_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
@@ -859,6 +1109,41 @@ export const brainSources = pgTable(
     uniqueIndex("brain_sources_hash_idx").on(t.contentHash),
     index("brain_sources_type_idx").on(t.sourceType),
     index("brain_sources_created_at_idx").on(t.createdAt),
+  ]
+);
+
+// ── Brain Claims (0051): a statement of a note with its evidence ──
+// The source (Layer 1) and its SHA-256 when the claim was made. Sources are
+// immutable; a newer source with the same uri and another hash makes the
+// claim stale (lint). Policies: rls-owned-tables.sql («Agent memory»).
+export const brainClaims = pgTable(
+  "brain_claims",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    noteId: uuid("note_id")
+      .references(() => brainNotes.id, { onDelete: "cascade" })
+      .notNull(),
+    statement: text("statement").notNull(),
+    statementHash: varchar("statement_hash", { length: 64 }).notNull(),
+    sourceId: uuid("source_id").references(() => brainSources.id, { onDelete: "set null" }),
+    sourceSha256: varchar("source_sha256", { length: 64 }).notNull(),
+    sourceUri: text("source_uri"),
+    sourceRange: jsonb("source_range").$type<{ unit: "line" | "char"; start: number; end: number } | null>(),
+    status: varchar("status", { length: 16 }).notNull().default("fresh"),
+    staleReason: text("stale_reason"),
+    checkedAt: timestamp("checked_at", { withTimezone: true }).defaultNow().notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    verifiedBy: text("verified_by"),
+    ownerUserId: text("owner_user_id"),
+    ownerAgentId: text("owner_agent_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("brain_claims_note_idx").on(t.noteId),
+    index("brain_claims_source_idx").on(t.sourceId),
+    index("brain_claims_status_idx").on(t.status),
+    uniqueIndex("brain_claims_unique_idx").on(t.noteId, t.statementHash, t.sourceSha256),
   ]
 );
 

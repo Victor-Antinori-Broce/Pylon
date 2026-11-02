@@ -1,0 +1,10 @@
+{
+  "id": "kon-notas",
+  "name": "Notes (defineModelo demo)",
+  "description": "Test-only demo kon: two models declared once with defineModelo (docs/agents/models.md). Not installed anywhere; tests/unit/modelos-*.test.ts mount it.",
+  "version": "0.1.0",
+  "sdk": 1,
+  "type": "kon",
+  "mount": { "path": "/api/notas" },
+  "tables": ["notes", "categories"]
+}

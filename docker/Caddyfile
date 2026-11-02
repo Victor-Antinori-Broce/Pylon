@@ -1,0 +1,78 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Kitsuden — TLS termination (production on a VPS)
+#
+#   docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
+#
+# Caddy obtains and renews the certificates on its own (Let's Encrypt). The
+# DNS A records (and AAAA with IPv6) of the THREE names must point to the
+# server, and ports 80 and 443 must reach it:
+#
+#   {$SITE_DOMAIN}        the public website (the neutral starter)
+#   www.{$SITE_DOMAIN}    redirects to the one above
+#   {$KITSUDEN_DOMAIN}    the admin panel, and the API the browser uses (/api/*)
+#
+# docker-compose.tls.yml sets the variables from .env.
+#
+# The website talks to the API over the internal Docker network
+# (KITSUDEN_API_URL), so its domain does not need the API. The panel's nginx
+# forwards /api/* to the API, which is how the browser reaches it.
+# ═══════════════════════════════════════════════════════════════════════════
+
+{
+	email {$ACME_EMAIL}
+}
+
+# Common headers. HSTS without `includeSubDomains` or `preload` on purpose:
+# with includeSubDomains, any subdomain without TLS becomes unreachable for a
+# year. Add them once you know every subdomain has a certificate.
+#
+# X-Frame-Options (auditoría 2026-10-25): sin ella, cualquier web podía meter
+# el panel o el sitio en un iframe (clickjacking). SAMEORIGIN y no DENY porque
+# el propio sitio sí puede enmarcarse; las vistas previas del panel usan
+# `srcdoc`, que no depende de esto. Sin CSP completa a propósito: rompería los
+# incrustados y los scripts en línea de las webs.
+(cabeceras) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+# ── The admin panel and the API ────────────────────────────────────────────
+{$KITSUDEN_DOMAIN} {
+	import cabeceras
+	encode zstd gzip
+
+	# Same limit nginx has for `/api/`: the media library uploads large files.
+	request_body {
+		max_size 100MB
+	}
+
+	# Uploaded files (`/media/*`) are served by the API itself.
+	handle /media/* {
+		reverse_proxy kitsuden_api_prod:3000
+	}
+
+	handle {
+		reverse_proxy kitsuden_admin_prod:80
+	}
+}
+
+# ── The website ────────────────────────────────────────────────────────────
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} 308
+}
+
+{$SITE_DOMAIN} {
+	import cabeceras
+	encode zstd gzip
+
+	# The starter serves images from its own origin (/img/…, /media/…) and
+	# proxies them from the API, so everything goes to the site.
+	handle {
+		reverse_proxy kitsuden_web_prod:4321
+	}
+}

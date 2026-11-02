@@ -9,9 +9,8 @@
 ::   • API:         http://localhost:3000
 ::   • S3 (medios): http://localhost:9000  (SeaweedFS; crea su bucket solo)
 ::
-:: Las cuatro webs NO van en Docker: se compilan y se sirven aparte
-::   cd packages\starters\kitsuden-blog-template && node build-all.mjs
-::   node start-all-webs.mjs        (todas en http://localhost:4321)
+:: La web publica de ejemplo NO va en este compose: se sirve aparte
+::   cd packages\starters\kitsuden-starter-basic && pnpm dev   (http://localhost:4321)
 
 chcp 65001 >nul
 cd /d "%~dp0"
@@ -62,16 +61,15 @@ echo ╠════════════════════════
 echo ║  📊 Panel Admin:  http://localhost:3001                        ║
 echo ║  🔌 API:          http://localhost:3000                        ║
 echo ║  💾 S3 (medios):  http://localhost:9000                        ║
-echo ║  🌐 Webs:         node start-all-webs.mjs  (:4321)             ║
+echo ║  🌐 Web ejemplo:  kitsuden-starter-basic, pnpm dev (:4321)     ║
 echo ╠════════════════════════════════════════════════════════════════╣
 echo ║  Comandos útiles:                                              ║
 echo ║    docker compose logs -f     (Ver logs en tiempo real)        ║
 echo ║    docker compose down        (Detener todo)                   ║
 echo ╚════════════════════════════════════════════════════════════════╝
 echo.
-echo 💡 Las webs se compilan y sirven aparte:
-echo    cd packages\starters\kitsuden-blog-template ^&^& node build-all.mjs
-echo    node start-all-webs.mjs
+echo 💡 La web de ejemplo se sirve aparte:
+echo    cd packages\starters\kitsuden-starter-basic ^&^& pnpm dev
 echo.
 
 pause

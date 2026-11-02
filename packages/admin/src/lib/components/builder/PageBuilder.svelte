@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import {
     LayoutGrid,
     Plus,
@@ -63,21 +64,21 @@
     const d = block.data;
     switch (block.type) {
       case "hero":
-        return d.title || "Untitled hero";
+        return d.title || t("pageBuilder.untitledHero");
       case "richtext":
-        return d.content?.slice(0, 60) || "Empty content";
+        return d.content?.slice(0, 60) || t("pageBuilder.emptyContent");
       case "image-gallery":
         return `${(d.images || []).length} images · ${d.layout || "grid"}`;
       case "game-map":
-        return d.mapTitle || d.mapImageUrl || "No map configured";
+        return d.mapTitle || d.mapImageUrl || t("pageBuilder.noMapConfigured");
       case "streamer-widget":
         return `${d.platform}/${d.channelName || "?"}`;
       case "embed":
-        return d.url || "No embed URL";
+        return d.url || t("pageBuilder.noEmbedUrl");
       case "callout":
         return `${d.variant}: ${d.content?.slice(0, 40) || "empty"}`;
       case "facebook-group":
-        return d.url || "Sin enlace de grupo";
+        return d.url || t("pageBuilder.sinEnlaceDeGrupo");
       case "divider":
         return d.style || "gradient";
       default:
@@ -192,22 +193,22 @@
     >
       <div class="flex items-center gap-2">
         <LayoutGrid class="w-4 h-4 text-kitsuden-accent" />
-        <span class="text-xs font-semibold text-kitsuden-text">Layout Builder</span>
-        <span class="badge-cyan text-[9px]">{blocks.length} blocks</span>
+        <span class="text-xs font-semibold text-kitsuden-text">{t("pageBuilder.layoutBuilder")}</span>
+        <span class="badge-cyan text-[9px]">{blocks.length} {t("pageBuilder.blocks")}</span>
       </div>
       <button
         onclick={() => (panelMode = panelMode === "picker" ? null : "picker")}
-        class="btn-ghost btn-sm"><Plus class="w-3.5 h-3.5" /> Add Block</button
+        class="btn-ghost btn-sm"><Plus class="w-3.5 h-3.5" /> {t("pageBuilder.addBlock")}</button
       >
     </div>
 
     {#if blocks.length === 0}
       <div class="flex flex-col items-center justify-center py-24 text-kitsuden-subtle">
         <LayoutGrid class="w-14 h-14 mb-5 text-kitsuden-muted" />
-        <p class="text-sm font-medium mb-1">No blocks yet</p>
-        <p class="text-xs mb-6">Click "Add Block" or drag blocks from the panel</p>
+        <p class="text-sm font-medium mb-1">{t("pageBuilder.noBlocksYet")}</p>
+        <p class="text-xs mb-6">{t("pageBuilder.clickAddBlockOrDrag")}</p>
         <button onclick={() => (panelMode = "picker")} class="btn-primary btn-sm"
-          ><Plus class="w-3.5 h-3.5" /> Add Your First Block</button
+          ><Plus class="w-3.5 h-3.5" /> {t("pageBuilder.addYourFirstBlock")}</button
         >
       </div>
     {:else}
@@ -271,7 +272,7 @@
                   }}
                   disabled={idx === 0}
                   class="btn-icon p-1 disabled:opacity-20"
-                  title="Move up"><ChevronUp class="w-3.5 h-3.5" /></button
+                  title={t("pageBuilder.moveUp")}><ChevronUp class="w-3.5 h-3.5" /></button
                 >
                 <button
                   onclick={(e) => {
@@ -280,7 +281,7 @@
                   }}
                   disabled={idx === blocks.length - 1}
                   class="btn-icon p-1 disabled:opacity-20"
-                  title="Move down"><ChevronDown class="w-3.5 h-3.5" /></button
+                  title={t("pageBuilder.moveDown")}><ChevronDown class="w-3.5 h-3.5" /></button
                 >
                 <button
                   onclick={(e) => {
@@ -288,7 +289,7 @@
                     duplicateBlock(idx);
                   }}
                   class="btn-icon p-1"
-                  title="Duplicate"><Copy class="w-3.5 h-3.5" /></button
+                  title={t("pageBuilder.duplicate")}><Copy class="w-3.5 h-3.5" /></button
                 >
                 <button
                   onclick={(e) => {
@@ -296,7 +297,7 @@
                     removeBlock(idx);
                   }}
                   class="btn-icon p-1 hover:!text-kitsuden-accent-2"
-                  title="Delete"><Trash2 class="w-3.5 h-3.5" /></button
+                  title={t("common.delete")}><Trash2 class="w-3.5 h-3.5" /></button
                 >
               </div>
             </div>
@@ -330,7 +331,7 @@
                         ? 'bg-red-500/10 border border-red-500/20 text-red-400'
                         : 'bg-purple-500/10 border border-purple-500/20 text-purple-400'}"
               >
-                {block.data.content?.slice(0, 80) || "Empty callout"}{block.data.content?.length >
+                {block.data.content?.slice(0, 80) || t("pageBuilder.emptyCallout")}{block.data.content?.length >
                 80
                   ? "…"
                   : ""}

@@ -37,7 +37,7 @@
 // apps/api/src/services/agent-auth.ts (implementado)
 
 // Token format con hash seguro
-const token = "kitsuden_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g";
+const token = "<YOUR_AGENT_KEY>";
 
 // Validación completa
 const authResult = await authenticateAgent(token, {

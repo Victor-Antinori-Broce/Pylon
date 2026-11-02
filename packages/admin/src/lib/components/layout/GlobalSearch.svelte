@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t as tr } from "$lib/i18n";
   import { Search, Clock, Database, LayoutDashboard, FileText, ArrowRight } from "lucide-svelte";
   import { onMount, tick } from "svelte";
 
@@ -253,7 +254,7 @@
               results.push({
                 id: `entry-${ds.id}-${entry.id}`,
                 title,
-                subtitle: `Dataset: ${ds.name}`,
+                subtitle: tr("globalSearch.dataset", { name: ds.name }),
                 path: `/datasets/${ds.id}/entries`,
                 icon: FileText,
                 category: "entries" as const,
@@ -395,7 +396,7 @@
     <input
       bind:this={searchInput}
       type="text"
-      placeholder="Search..."
+      placeholder={tr("common.search")}
       class="w-full h-9 pl-10 pr-4 text-sm rounded-lg border border-kitsuden-border bg-kitsuden-card text-kitsuden-text placeholder:text-kitsuden-text-dim/60 focus:outline-none focus:ring-2 focus:ring-kitsuden-accent/30 focus:border-kitsuden-accent/50 transition-all"
       bind:value={query}
       onfocus={handleInputFocus}
@@ -418,9 +419,9 @@
       {#if flatResults.length === 0}
         <div class="px-4 py-8 text-center text-sm text-kitsuden-text-dim">
           {#if query.trim()}
-            No results found for "{query}"
+            {tr("globalSearch.noResultsFoundFor", { query })}
           {:else}
-            Start typing to search across navigation, datasets, and entries
+            {tr("globalSearch.startTypingToSearchAcross")}
           {/if}
         </div>
       {:else}
@@ -479,8 +480,8 @@
         <div
           class="px-3 py-1.5 text-[10px] text-kitsuden-subtle bg-kitsuden-bg/30 border-t border-kitsuden-border/50 flex items-center justify-between"
         >
-          <span>{flatResults.length} result{flatResults.length === 1 ? "" : "s"}</span>
-          <span class="hidden sm:inline">↑↓ to navigate · Enter to select · Esc to close</span>
+          <span>{flatResults.length} {tr("globalSearch.result")}{flatResults.length === 1 ? "" : "s"}</span>
+          <span class="hidden sm:inline">{tr("globalSearch.toNavigateEnterToSelect")}</span>
         </div>
       {/if}
     </div>

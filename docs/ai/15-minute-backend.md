@@ -2,13 +2,20 @@
 
 > **Prerequisite:** Node.js + Docker Desktop installed.  
 > **Goal:** Go from zero to a working backend with auth, database, admin panel, and typed frontend hooks.
+>
+> **Note:** the `kitsuden` CLI is **not published on npm**, so `npx kitsuden`
+> does not work. Build it from the Kitsuden repository
+> (`pnpm --filter @kitsuden/cli build`) and run `node packages/cli/dist/index.js`;
+> this page calls it `kitsuden`. Only `kitsuden new` and `kitsuden make` are
+> tested (`packages/cli/README.md`); the other commands used here are
+> experimental. For a tested installation, follow `docs/install/`.
 
 ---
 
 ## Minute 0–2: Initialize
 
 ```bash
-npx kitsuden@latest init my-app --template blog
+kitsuden init my-app --template blog
 ```
 
 **What happens:**
@@ -57,7 +64,7 @@ kitsuden status
 **Email/password** is already enabled by default. Add Google OAuth:
 
 ```bash
-npx kitsuden auth add google \
+kitsuden auth add google \
   --client-id YOUR_GOOGLE_CLIENT_ID \
   --client-secret YOUR_GOOGLE_CLIENT_SECRET
 ```
@@ -100,7 +107,7 @@ curl -X POST http://localhost:3000/api/items/blog-posts \
 
 ```bash
 # React hooks + components + types
-npx kitsuden generate-sdk --framework react --collection blog-posts
+kitsuden generate-sdk --framework react --collection blog-posts
 
 # Output: ./sdk/blog-posts/
 #   - useBlogPosts.ts      (SWR query hook)

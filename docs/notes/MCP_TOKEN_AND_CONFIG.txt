@@ -7,7 +7,7 @@ Estado: ✅ COMPLETADO
 🔐 TOKEN MCP GENERADO:
 ────────────────────────────────────────────────────────────────────
 
-grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g
+<YOUR_AGENT_KEY>
 
 ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ Archivo: %APPDATA%\Claude\claude_desktop_config.json
       "args": ["run", "apps/api/src/mcp-server.ts"],
       "cwd": "C:\\Users\\vantinori\\Documents\\github\\cms",
       "env": {
-        "GREMUS_MCP_TOKEN": "grm_agent_claude-desktop_XUNgpwuKoeB52UYHPoEdXQlgSkKtFZ0LNgll-jQCm2g",
+        "GREMUS_MCP_TOKEN": "<YOUR_AGENT_KEY>",
         "GREMUS_API_URL": "http://localhost:3001",
         "NODE_ENV": "development"
       }

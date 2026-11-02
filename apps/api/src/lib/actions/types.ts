@@ -6,6 +6,7 @@
  */
 
 import type { actions, actionExecutions } from "../../db/schema";
+import type { EjecutorDeAccion } from "../sandbox/identidad";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Database Types
@@ -56,6 +57,12 @@ export interface CodeActionConfig {
   timeoutMs?: number;
   memoryLimitMb?: number;
   envVars?: Record<string, string>;
+  /** Scopes de `kitsuden.api` para el código; sin ellos no hay API (docs/agents/sandbox.md). */
+  scopes?: string[];
+  /** Hosts a los que `fetch` puede llamar (`api.ejemplo.com`, `*.ejemplo.com`). */
+  fetchAllow?: string[];
+  /** Máximo de llamadas a fetch + API por ejecución (50 por defecto, 500 como mucho). */
+  maxCalls?: number;
 }
 
 export interface WebhookOutConfig {
@@ -118,6 +125,13 @@ export interface ActionContext {
   // Environment variables
   env: Record<string, string>;
 
+  /**
+   * Quién pidió la ejecución (rutas). Cron y eventos no lo traen: entonces
+   * responde quien creó la acción. Decide la identidad de `kitsuden.api`
+   * dentro del sandbox (ver lib/sandbox/identidad.ts). NO se guarda.
+   */
+  ejecutor?: EjecutorDeAccion;
+
   // Execution metadata
   executionId: string;
   startedAt: Date;
@@ -161,6 +175,8 @@ export interface CreateActionInput {
   triggerConfig?: TriggerConfig;
   config?: ActionConfig;
   status?: ActionStatus;
+  /** Cuenta responsable (de la sesión): ver lib/sandbox/identidad.ts. */
+  createdById?: string | null;
 }
 
 export interface UpdateActionInput {

@@ -18,6 +18,32 @@ import { createMiddleware } from "hono/factory";
 
 import { db } from "../db";
 
+/**
+ * ¿Existe `directory_employees` (kon-directory instalado)? Se mira como mucho
+ * una vez por minuto (rendimiento, 2026-10-27).
+ *
+ * Antes la consulta del departamento se lanzaba en CADA petición autenticada
+ * —también en las de cada agente— y, sin kon-directory (lo normal), fallaba
+ * siempre: una ida y vuelta a Postgres y un ERROR en su log por petición. Al
+ * instalar kon-directory, el departamento aparece en menos de un minuto.
+ */
+let tablaDeEmpleados: { existe: boolean; hasta: number } | null = null;
+async function hayTablaDeEmpleados(): Promise<boolean> {
+  const ahora = Date.now();
+  if (tablaDeEmpleados && tablaDeEmpleados.hasta > ahora) return tablaDeEmpleados.existe;
+  const r = await db.execute(
+    sql`SELECT to_regclass('public.directory_employees') IS NOT NULL AS existe`
+  );
+  const existe = Boolean((r.rows as Array<{ existe: boolean }>)[0]?.existe);
+  tablaDeEmpleados = { existe, hasta: ahora + 60_000 };
+  return existe;
+}
+
+/** Para pruebas: vuelve a mirar si existe la tabla. */
+export function olvidarTablaDeEmpleados(): void {
+  tablaDeEmpleados = null;
+}
+
 export const enrichUserContext = createMiddleware(async (c, next) => {
   const user = c.get("user");
 
@@ -35,12 +61,16 @@ export const enrichUserContext = createMiddleware(async (c, next) => {
   // 2. Department — lookup in directory_employees (if table exists)
   let userDepartmentId: string | null = null;
 
+  // Un agente no es un empleado (su id no es una cuenta): no hay nada que buscar.
+  const esAgente = Boolean((c.get as (k: string) => unknown)("agent"));
   try {
-    const result = await db.execute(
-      sql`SELECT department_id FROM directory_employees WHERE user_id = ${user.id} LIMIT 1`
-    );
-    const rows = result.rows as Array<{ department_id: string | null }>;
-    userDepartmentId = rows[0]?.department_id ?? null;
+    if (!esAgente && (await hayTablaDeEmpleados())) {
+      const result = await db.execute(
+        sql`SELECT department_id FROM directory_employees WHERE user_id = ${user.id} LIMIT 1`
+      );
+      const rows = result.rows as Array<{ department_id: string | null }>;
+      userDepartmentId = rows[0]?.department_id ?? null;
+    }
   } catch {
     // kon-directory not installed or table missing → leave as null
   }

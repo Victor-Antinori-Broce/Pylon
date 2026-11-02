@@ -1,0 +1,22 @@
+{
+  // Base de los kons INSTALADOS en packages/kons/<kon>/ (`kitsuden kon add`).
+  //
+  // Cada kon trae `"extends": "../../tsconfig.kons.json"`: en el repo
+  // kitsuden-kons esa ruta es su propia base (que apunta al núcleo enlazado en
+  // .kitsuden); copiado aquí, es ESTE fichero. Así un kon comprueba sus tipos
+  // igual en los dos sitios sin tocar su tsconfig al instalarlo.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@kitsuden/shared": ["./shared/src/index.ts"],
+      "@kitsuden/shared/*": ["./shared/src/*"],
+      "@kitsuden/engine": ["./engine/index.ts"],
+      "@kitsuden/engine/zod": ["./engine/zod.ts"],
+      "@kitsuden/kon-cardsim": ["./kons/kon-cardsim/index.ts"],
+      "@kitsuden/kon-esports": ["./kons/kon-esports/index.ts"],
+      "@kitsuden/kon-formulas": ["./kons/kon-formulas/index.ts"]
+    }
+  }
+}

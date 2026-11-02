@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // SIN `baseUrl` a propósito (2026-10-28): con `baseUrl: "."`, Bun resolvía el
+    // import desnudo `"zod"` de cualquier fichero del engine a `./zod.ts` (la
+    // entrada `@kitsuden/engine/zod`), que se importaba a sí mismo. Las `paths`
+    // de abajo son relativas a este fichero y no lo necesitan.
+    "paths": {
+      "@kitsuden/shared": ["../shared/src/index.ts"],
+      "@kitsuden/shared/*": ["../shared/src/*"],
+      // El engine re-exporta módulos del host (apps/api) por ruta relativa;
+      // esos archivos usan el alias `@/` propio de apps/api, así que hay que
+      // declararlo aquí también o su resolución falla al typechequear.
+      "@/*": ["../../apps/api/src/*"]
+    }
+  },
+  // Acotado a lo propio: sin `include`, tsc arrastraba medio monorepo (admin,
+  // kons, cli templates) y afloraba deuda ajena con aliases que este
+  // proyecto no declara. Cada paquete typechequea lo suyo.
+  "include": ["index.ts", "src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "src/**/tests/**"]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "kon-example",
+  "name": "Example Kon",
+  "description": "A standard kon package for Kitsuden",
+  "version": "1.0.0",
+  "type": "kon",
+  "icon": "Box",
+  "tables": [
+    {
+      "name": "examples",
+      "label": "Examples",
+      "icon": "Box",
+      "description": "Example records"
+    }
+  ],
+  "dependencies": {
+    "kons": ["kon-media"],
+    "core": ["auth"]
+  },
+  "admin": {
+    "category": "content",
+    "views": [
+      {
+        "id": "grid",
+        "type": "grid",
+        "title": "All Examples",
+        "table": "examples"
+      }
+    ]
+  },
+  "mount": {
+    "path": "/api/examples"
+  }
+}

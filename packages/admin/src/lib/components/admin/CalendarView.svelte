@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { ChevronLeft, ChevronRight } from "lucide-svelte";
   import { onMount } from "svelte";
 
@@ -150,7 +151,7 @@
   <div class="flex items-center justify-between">
     <h2 class="text-xl font-semibold text-kitsuden-text">{view.title}</h2>
     <div class="flex items-center gap-2">
-      <button class="btn-secondary-sm" onclick={goToday}>Today</button>
+      <button class="btn-secondary-sm" onclick={goToday}>{t("calendarView.today")}</button>
       <button class="p-2 rounded hover:bg-kitsuden-border/30" onclick={prevMonth}>
         <ChevronLeft class="w-4 h-4 text-kitsuden-text-dim" />
       </button>
@@ -176,15 +177,15 @@
     >
       <div class="text-center max-w-md p-6">
         <div class="text-4xl mb-4">⚠️</div>
-        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">Incompatible Calendar View</h3>
+        <h3 class="text-lg font-semibold text-kitsuden-text mb-2">{t("calendarView.incompatibleCalendarView")}</h3>
         <p class="text-sm text-kitsuden-subtle mb-4">
-          This Calendar view is configured to map events by <code
+          {t("calendarView.thisCalendarViewIsConfigured")} <code
             class="bg-kitsuden-bg px-1.5 py-0.5 rounded text-kitsuden-accent"
             >'{view.dateField}'</code
-          >, but the underlying table does not contain this field.
+          >{t("calendarView.butTheUnderlyingTableDoes")}
         </p>
         <p class="text-xs text-kitsuden-text-dim">
-          Please update the grimoire config to use a valid date field, or switch to Grid view.
+          {t("calendarView.pleaseUpdateTheGrimoireConfig")}
         </p>
       </div>
     </div>
@@ -226,12 +227,12 @@
                 <div class="space-y-1">
                   {#each eventsByDate[cell.fullDate].slice(0, 3) as event, idx}
                     <div class="text-[10px] px-1.5 py-0.5 rounded truncate {getEventColor(idx)}">
-                      {event[view.titleField] || event.title || event.name || "Event"}
+                      {event[view.titleField] || event.title || event.name || t("calendarView.event")}
                     </div>
                   {/each}
                   {#if eventsByDate[cell.fullDate].length > 3}
                     <div class="text-[9px] text-kitsuden-subtle px-1.5">
-                      +{eventsByDate[cell.fullDate].length - 3} more
+                      {t("common.more", { v: eventsByDate[cell.fullDate].length - 3 })}
                     </div>
                   {/if}
                 </div>
@@ -244,11 +245,11 @@
 
     <!-- Legend -->
     <div class="flex items-center gap-4 text-xs text-kitsuden-text-dim">
-      <span>{data.length} events total</span>
+      <span>{data.length} {t("calendarView.eventsTotal")}</span>
       <span>·</span>
-      <span>Date field: <code class="text-kitsuden-accent">{view.dateField}</code></span>
+      <span>{t("calendarView.dateField")} <code class="text-kitsuden-accent">{view.dateField}</code></span>
       <span>·</span>
-      <span>Title field: <code class="text-kitsuden-accent">{view.titleField}</code></span>
+      <span>{t("calendarView.titleField")} <code class="text-kitsuden-accent">{view.titleField}</code></span>
     </div>
   {/if}
 </div>

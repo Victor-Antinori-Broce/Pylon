@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * Redirector heredado: esta pantalla la sirve `/g/[id]` con el renderizador
    * generico, a partir del `kon.json` del kon.
@@ -23,6 +24,6 @@
     <div
       class="w-8 h-8 border-2 border-kitsuden-accent/30 border-t-kitsuden-accent rounded-full animate-spin"
     ></div>
-    <p class="text-kitsuden-subtle text-sm">Redirecting to grimoire-directory...</p>
+    <p class="text-kitsuden-subtle text-sm">{t("directoryPage.redirectingToGrimoireDirectory")}</p>
   </div>
 </div>

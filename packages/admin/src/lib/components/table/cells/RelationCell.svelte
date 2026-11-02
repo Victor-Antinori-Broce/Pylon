@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * RelationCell.svelte
    *
@@ -68,7 +69,7 @@
 
       {#if remainingCount > 0}
         <span class="text-xs text-kitsuden-subtle">
-          +{remainingCount} more
+          {t("relationCell.more", { remainingCount })}
         </span>
       {/if}
     </div>

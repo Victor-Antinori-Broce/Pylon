@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+  import { t } from "$lib/i18n";
   import { fade } from "svelte/transition";
 </script>
 
@@ -131,13 +132,13 @@
   <button class="preview-toggle-btn" onclick={togglePreview} disabled={isLoading}>
     {#if isLoading}
       <Loader2 size={18} class="animate-spin" />
-      <span>Cargando preview...</span>
+      <span>{t("socialPreviewExample.cargandoPreview")}</span>
     {:else if showPreview}
       <EyeOff size={18} />
-      <span>Ocultar preview social</span>
+      <span>{t("socialPreviewExample.ocultarPreviewSocial")}</span>
     {:else}
       <Eye size={18} />
-      <span>Ver preview en redes sociales</span>
+      <span>{t("socialPreviewExample.verPreviewEnRedesSociales")}</span>
     {/if}
   </button>
 
@@ -146,8 +147,8 @@
     <div class="preview-container" transition:fade={{ duration: 200 }}>
       {#if error}
         <div class="preview-error">
-          <p>Error cargando preview: {error}</p>
-          <button onclick={loadSEOPreview}>Reintentar</button>
+          <p>{t("socialPreviewExample.errorCargandoPreview")} {error}</p>
+          <button onclick={loadSEOPreview}>{t("socialPreviewExample.reintentar")}</button>
         </div>
       {:else}
         <SocialPreview {seoData} {postTitle} postUrl={`${siteUrl}/blog/${postSlug}`} {postSlug} />

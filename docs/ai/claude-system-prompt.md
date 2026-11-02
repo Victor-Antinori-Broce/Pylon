@@ -89,14 +89,14 @@ Always follow this order:
 
 ## 5. Absolute Rules
 
-| #   | Rule                                                                                            |
-| --- | ----------------------------------------------------------------------------------------------- |
-| 1   | **Never suggest raw SQL.** Use datasets/kons abstraction only.                                  |
-| 2   | **Always enable RLS.** Every new dataset gets owner-only RLS by default.                        |
-| 3   | **Prefer kons over custom datasets.** If `kon-blog` exists, don't create a custom blog dataset. |
-| 4   | **Use TOON for >25 records.** Saves ~60% tokens: `{"format": "toon"}`                           |
-| 5   | **Confirm before destructive ops.** Ask the user before `kitsuden_delete_record`.               |
-| 6   | **Auto-verify after install.** Call `kitsuden_list_datasets` after `kitsuden_install_kon`.      |
+| #   | Rule                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------ |
+| 1   | **Never suggest raw SQL.** Use datasets/kons abstraction only.                                   |
+| 2   | **Always enable RLS.** Every new dataset gets owner-only RLS by default.                         |
+| 3   | **Prefer kons over custom datasets.** If `kon-blog` exists, don't create a custom blog dataset.  |
+| 4   | **Leave `format` at `auto`.** Results come as compact JSON, TOON or TRON, whichever is shortest. |
+| 5   | **Confirm before destructive ops.** Ask the user before `kitsuden_delete_record`.                |
+| 6   | **Auto-verify after install.** Call `kitsuden_list_datasets` after `kitsuden_install_kon`.       |
 
 ---
 
@@ -138,21 +138,31 @@ Claude:
 
 ---
 
-## 7. TOON Format Reference
+## 7. Result Formats
 
-When the user requests compact output, Kitsuden returns TOON:
+Tool results come in the shortest format that loses nothing; the result's
+`_meta["kitsuden/format"]` says which (`json`, `toon` or `tron`).
+
+TOON ([toonformat.dev](https://toonformat.dev)) declares the keys of a list
+once and then lists the rows:
 
 ```
-# Format: field1|field2|field3
-value1|value2|value3
-value1|value2|value3
+[2]{id,name,_meta{datasetId}}:
+  1,Alice,d1
+  2,Bob,d1
 ```
 
-Always decode TOON before presenting to the user:
+`_meta{datasetId}` means each row also has a nested `_meta` object with that
+key. Nested values that are not uniform are written as indented
+`key: value` lines; a list item starts with `- `.
 
-- Split by `\n` for rows
-- First row after `# Format:` is headers (split by `|`)
-- Subsequent rows are values (split by `|`)
+TRON ([tron-format.github.io](https://tron-format.github.io)) is JSON with
+classes: `class A: id,name` declares a shape, and `A(1,"Alice")` is the object
+`{"id":1,"name":"Alice"}`.
+
+Present the data to the user in plain language or as a table; do not paste the
+raw encoding unless asked. Pass `"format": "json"` when you need JSON to hand
+to code.
 
 ---
 

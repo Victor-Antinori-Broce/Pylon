@@ -29,7 +29,7 @@ export function registerResources(server: McpServer, deps: McpServerDependencies
         contents: [
           {
             uri: uri.href,
-            text: JSON.stringify(mapped, null, 2),
+            text: JSON.stringify(mapped),
           },
         ],
       };
@@ -70,7 +70,7 @@ export function registerResources(server: McpServer, deps: McpServerDependencies
         contents: [
           {
             uri: uri.href,
-            text: JSON.stringify(dataset.schema, null, 2),
+            text: JSON.stringify(dataset.schema),
           },
         ],
       };
@@ -91,7 +91,7 @@ export function registerResources(server: McpServer, deps: McpServerDependencies
         contents: [
           {
             uri: uri.href,
-            text: JSON.stringify(konRegistry, null, 2),
+            text: JSON.stringify(konRegistry),
           },
         ],
       };

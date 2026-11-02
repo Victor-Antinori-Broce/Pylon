@@ -1,0 +1,34 @@
+{
+  "id": "grimoire-gremius",
+  "name": "Gremius",
+  "description": "CMS para medios de videojuegos: catálogo de juegos, perfiles de streamers y contenido editorial con SEO/GEO. Para portales, wikis y publicaciones gaming.",
+  "version": "1.0.0",
+  "type": "grimoire",
+  "author": "Kitsuden Team",
+  "industry": "gaming",
+  "keywords": ["gaming", "cms", "contenido", "juegos", "streamers", "media"],
+  "kons": ["kon-games", "kon-streamers"],
+  "optional_kons": [
+    "kon-members",
+    "kon-newsletter",
+    "kon-payments",
+    "kon-esports",
+    "kon-formulas",
+    "kon-character-builder",
+    "kon-wiki",
+    "kon-maps",
+    "kon-cardsim",
+    "kon-tierlist",
+    "kon-comments",
+    "kon-collection"
+  ],
+  "config": {
+    "theme": {
+      "css_entry": "variables.css",
+      "primary_color": "#00e5ff",
+      "accent_color": "#ff2a6d"
+    }
+  },
+  "konConfig": {},
+  "seed": null
+}

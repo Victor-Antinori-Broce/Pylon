@@ -4,6 +4,14 @@
  */
 
 import type {
+  AccessCatalog,
+  AgentAccess,
+  AgentApiKey,
+  AgentQuotas,
+  AgentQuotaLimits,
+  AgentMcpSettings,
+  UntrustedWrap,
+  AgentSponsor,
   Agent,
   AgentTrace,
   AgentTraceStep,
@@ -12,7 +20,18 @@ import type {
   UpdateAgentInput,
 } from "$lib/types/agents";
 
-const API_BASE = "/api/admin";
+// Con VITE_API_URL (panel y API en orígenes distintos) una ruta relativa iba al
+// servidor del panel y devolvía su index.html con 404.
+const RAIZ = import.meta.env.VITE_API_URL ?? "";
+/**
+ * Agentes, trazas e identidades viven en `/api/v1` (routes/agents-v1.ts), que es
+ * el contrato que este servicio espera: listas planas y `{ agent, token }`.
+ * Apuntaba a `/api/admin`, que envuelve en `{ success, data }` y no tiene
+ * identidades: la pantalla de agentes salía vacía aunque hubiera agentes.
+ */
+const API_BASE = `${RAIZ}/api/v1`;
+/** El chat del playground sí está en /api/admin/agents/:id/chat (agent-playground.ts). */
+const API_ADMIN = `${RAIZ}/api/admin`;
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -80,19 +99,19 @@ export async function listTraces(options: ListTracesOptions = {}): Promise<Agent
   params.set("offset", String(offset));
   if (sessionId) params.set("sessionId", sessionId);
 
-  if (agentId) {
-    return fetchJson<AgentTrace[]>(`${API_BASE}/agents/${agentId}/traces?${params}`);
-  }
+  if (agentId) params.set("agentId", agentId);
 
-  return fetchJson<AgentTrace[]>(`/api/v1/traces?${params}`);
+  // /api/v1/traces responde { traces, total }
+  const res = await fetchJson<{ traces: AgentTrace[] } | AgentTrace[]>(`${API_BASE}/traces?${params}`);
+  return Array.isArray(res) ? res : (res.traces ?? []);
 }
 
 export async function getTrace(id: string): Promise<AgentTrace & { steps: AgentTraceStep[] }> {
-  return fetchJson<AgentTrace & { steps: AgentTraceStep[] }>(`/api/v1/traces/${id}?expand=steps`);
+  return fetchJson<AgentTrace & { steps: AgentTraceStep[] }>(`${API_BASE}/traces/${id}?expand=steps`);
 }
 
 export async function listTraceSteps(traceId: string): Promise<AgentTraceStep[]> {
-  return fetchJson<AgentTraceStep[]>(`${API_BASE}/agents/traces/${traceId}/steps`);
+  return fetchJson<AgentTraceStep[]>(`${API_BASE}/traces/${traceId}/steps`);
 }
 
 // ============== Playground ==============
@@ -121,7 +140,7 @@ export async function sendPlaygroundMessage(
   message: string,
   sessionId?: string
 ): Promise<PlaygroundResponse> {
-  return fetchJson<PlaygroundResponse>(`${API_BASE}/agents/${agentId}/chat`, {
+  return fetchJson<PlaygroundResponse>(`${API_ADMIN}/agents/${agentId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -168,4 +187,84 @@ export async function updateIdentity(
 
 export async function deleteIdentity(id: string): Promise<void> {
   await fetchJson<void>(`${API_BASE}/identities/${id}`, { method: "DELETE" });
+}
+
+// ============== Permisos, claves y cuotas (fase E: routes/permisos-de-agentes.ts) ==============
+
+const json = (body: unknown): RequestInit => ({
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+/** Qué se puede conceder: presets, scopes amplios, operaciones por kon y datasets. */
+export function getAccessCatalog(): Promise<AccessCatalog> {
+  return fetchJson<AccessCatalog>(`${API_BASE}/agent-access/catalog`);
+}
+
+/** Lo que este agente puede hacer, ya fusionado (amplio + fino − denegado). */
+export function getAgentAccess(agentId: string): Promise<AgentAccess> {
+  return fetchJson<AgentAccess>(`${API_BASE}/agents/${agentId}/access`);
+}
+
+/** Reemplaza la lista de scopes (la API la valida: 422 con el motivo). */
+export function setAgentScopes(agentId: string, scopes: string[]): Promise<AgentAccess> {
+  return fetchJson<AgentAccess>(`${API_BASE}/agents/${agentId}/scopes`, { method: "PUT", ...json({ scopes }) });
+}
+
+export async function listAgentKeys(agentId: string): Promise<AgentApiKey[]> {
+  const r = await fetchJson<{ keys: AgentApiKey[] }>(`${API_BASE}/agents/${agentId}/keys`);
+  return r.keys;
+}
+
+export function createAgentKey(
+  agentId: string,
+  data: { name?: string; expiresInDays?: number | null }
+): Promise<{ key: AgentApiKey; apiKey: string }> {
+  return fetchJson(`${API_BASE}/agents/${agentId}/keys`, { method: "POST", ...json(data) });
+}
+
+export function rotateAgentKey(
+  agentId: string,
+  keyId: string,
+  data: { graceHours: number; expiresInDays?: number | null }
+): Promise<{ key: AgentApiKey; apiKey: string; previous: AgentApiKey }> {
+  return fetchJson(`${API_BASE}/agents/${agentId}/keys/${keyId}/rotate`, { method: "POST", ...json(data) });
+}
+
+export function revokeAgentKey(agentId: string, keyId: string): Promise<{ key: AgentApiKey }> {
+  return fetchJson(`${API_BASE}/agents/${agentId}/keys/${keyId}/revoke`, { method: "POST", ...json({}) });
+}
+
+export function getAgentQuotas(agentId: string): Promise<AgentQuotas> {
+  return fetchJson<AgentQuotas>(`${API_BASE}/agents/${agentId}/quotas`);
+}
+
+export function setAgentQuotas(agentId: string, limits: Partial<AgentQuotaLimits>): Promise<AgentQuotas> {
+  return fetchJson<AgentQuotas>(`${API_BASE}/agents/${agentId}/quotas`, { method: "PUT", ...json(limits) });
+}
+
+// ============== Ajustes MCP (toolset y contenido no confiable) ==============
+
+export function getAgentMcpSettings(agentId: string): Promise<AgentMcpSettings> {
+  return fetchJson<AgentMcpSettings>(`${API_BASE}/agents/${agentId}/mcp-settings`);
+}
+
+/** `toolset: null` = todas las herramientas. */
+export function setAgentMcpSettings(
+  agentId: string,
+  settings: { toolset?: string | null; untrustedWrap?: UntrustedWrap }
+): Promise<AgentMcpSettings> {
+  return fetchJson<AgentMcpSettings>(`${API_BASE}/agents/${agentId}/mcp-settings`, { method: "PUT", ...json(settings) });
+}
+
+// ============== Firmante humano (fase F) ==============
+
+/** Quién firma lo que crea el agente, y quién puede hacerlo (admin o editor). */
+export function getAgentSponsor(agentId: string): Promise<AgentSponsor> {
+  return fetchJson<AgentSponsor>(`${API_BASE}/agents/${agentId}/sponsor`);
+}
+
+/** `null` quita el firmante (el agente vuelve a lo de antes). */
+export function setAgentSponsor(agentId: string, userId: string | null): Promise<AgentSponsor> {
+  return fetchJson<AgentSponsor>(`${API_BASE}/agents/${agentId}/sponsor`, { method: "PUT", ...json({ userId }) });
 }

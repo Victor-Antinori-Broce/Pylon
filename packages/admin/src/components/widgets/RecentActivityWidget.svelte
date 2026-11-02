@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   /**
    * RecentActivityWidget
    *
@@ -76,7 +77,7 @@
   <div class="flex items-center justify-between">
     <h3 class="font-semibold text-kitsuden-text flex items-center gap-2">
       <Activity class="w-4 h-4 text-kitsuden-accent" />
-      Recent Activity
+      {t("recentActivityWidget.recentActivity")}
     </h3>
   </div>
 
@@ -98,7 +99,7 @@
             <span class="text-kitsuden-text-dim">{activity.item}</span>
           </p>
           <p class="text-xs text-kitsuden-subtle mt-0.5">
-            by {activity.user} • {activity.time}
+            {t("recentActivityWidget.by", { user: activity.user, time: activity.time })}
           </p>
         </div>
       </div>
@@ -106,7 +107,7 @@
   </div>
 
   <button class="w-full text-center text-xs text-kitsuden-accent hover:underline">
-    View All Activity
+    {t("recentActivityWidget.viewAllActivity")}
   </button>
 </div>
 

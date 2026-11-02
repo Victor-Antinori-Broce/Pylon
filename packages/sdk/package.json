@@ -1,12 +1,13 @@
 {
   "name": "@kitsuden/sdk",
   "version": "0.9.0-beta",
-  "description": "Kitsuden Universal SDK — CRUD in 3 lines. Edge-ready. Type-safe.",
+  "description": "Kitsuden SDK: typed client generated from the API's OpenAPI 3.1 (every kon operation), plus CRUD helpers. Zero runtime dependencies. Node, Bun, Deno and browsers.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./openapi.json": "./openapi/kitsuden.openapi.json",
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
@@ -49,15 +50,19 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tests/tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config tests/integration/vitest.config.ts"
   },
   "devDependencies": {
-    "hono": "^4.12.3",
+    "hono": "4.13.13",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3"
   },
@@ -70,7 +75,11 @@
     "edge",
     "serverless",
     "realtime",
-    "websocket"
+    "websocket",
+    "openapi",
+    "ai-agents",
+    "mcp",
+    "typed-client"
   ],
   "license": "MIT",
   "engines": {
@@ -83,5 +92,6 @@
     "hono": {
       "optional": true
     }
-  }
+  },
+  "sideEffects": false
 }

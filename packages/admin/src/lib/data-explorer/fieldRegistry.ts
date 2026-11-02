@@ -1,3 +1,4 @@
+import { localeFormato } from "$lib/i18n";
 /**
  * DataExplorer Field Registry
  *
@@ -251,7 +252,7 @@ export const calculatedHelpers = {
 
   // Formatear moneda
   currency: (value: number, currency = "USD"): string =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(value),
+    new Intl.NumberFormat(localeFormato(), { style: "currency", currency }).format(value),
 
   // Condicional
   if: (condition: boolean, trueValue: any, falseValue: any): any =>

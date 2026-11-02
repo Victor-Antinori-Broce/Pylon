@@ -30,7 +30,6 @@ COPY packages/engine/package.json ./packages/engine/
 COPY packages/core/package.json ./packages/core/
 COPY packages/kons/package.json ./packages/kons/
 COPY packages/grimoires/package.json ./packages/grimoires/
-COPY packages/starters/kitsuden-blog-template/package.json ./packages/starters/kitsuden-blog-template/
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile

@@ -3,12 +3,25 @@
  *
  * Wraps `cacheGet`/`cacheSet` from valkey.ts into a convenient
  * `cachedQuery` helper. Falls through to Postgres when Valkey is down.
+ * Sin `VALKEY_URL` (instancia única) cachea en la memoria del proceso.
  *
  * Usage:
  *   const data = await cachedQuery("blog:list:1", 60, () => db.select()...);
  */
 
-import { cacheGet, cacheSet, isValkeyAvailable, getValkeyClient } from "./valkey";
+import { memoriaDel, memoriaKeys } from "./cache-en-memoria";
+import {
+  cacheGet,
+  cacheSet,
+  isValkeyAvailable,
+  getValkeyClient,
+  valkeyConfigurado,
+} from "./valkey";
+
+/** ¿Se puede cachear ahora? En memoria siempre; en Valkey si responde. */
+async function hayCache(): Promise<boolean> {
+  return !valkeyConfigurado() || (await isValkeyAvailable());
+}
 
 // ── Cached Query ───────────────────────────────────────────────
 
@@ -28,8 +41,7 @@ export async function cachedQuery<T>(
   queryFn: () => Promise<T>
 ): Promise<T> {
   try {
-    const available = await isValkeyAvailable();
-    if (available) {
+    if (await hayCache()) {
       const cached = await cacheGet(key);
       if (cached) {
         return JSON.parse(cached) as T;
@@ -44,8 +56,7 @@ export async function cachedQuery<T>(
 
   // Store in Valkey (fire-and-forget, don't block response)
   try {
-    const available = await isValkeyAvailable();
-    if (available) {
+    if (await hayCache()) {
       await cacheSet(key, JSON.stringify(result), ttl);
     }
   } catch {
@@ -65,6 +76,10 @@ export async function cachedQuery<T>(
  */
 export async function invalidateCache(...patterns: string[]): Promise<void> {
   try {
+    if (!valkeyConfigurado()) {
+      for (const pattern of patterns) for (const key of memoriaKeys(pattern)) memoriaDel(key);
+      return;
+    }
     const available = await isValkeyAvailable();
     if (!available) return;
 

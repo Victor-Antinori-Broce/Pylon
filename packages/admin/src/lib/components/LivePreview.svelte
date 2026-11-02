@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import { Monitor, Tablet, Smartphone } from "lucide-svelte";
   import { renderizarBloques } from "@kitsuden/shared";
 
@@ -73,7 +74,7 @@
   };
 
   const htmlContent = $derived.by(() => {
-    const dateText = publishedAt ? new Date(publishedAt).toLocaleDateString() : "";
+    const dateText = publishedAt ? new Date(publishedAt).toLocaleDateString(localeFormato()) : "";
     const metaParts = [
       authorName ? `By ${authorName}` : "",
       dateText,
@@ -203,7 +204,7 @@
 <body>
   <div class="container">
     ${featuredImageUrl ? `<img src="${featuredImageUrl}" class="featured-image" alt="" />` : ""}
-    <h1>${title || "Untitled Post"}</h1>
+    <h1>${title || t("livePreview.untitledPost")}</h1>
     ${metaParts.length ? `<div class="meta">${metaParts.join(" &bull; ")}</div>` : ""}
     ${excerpt ? `<div class="excerpt">${excerpt}</div>` : ""}
     <div class="content">${(content || "").replace(/\n/g, "<br/>")}</div>
@@ -251,7 +252,7 @@
       página — y entonces, y no antes, la etiqueta puede volver a prometerlo.
     -->
     <span class="text-xs font-medium text-kitsuden-subtle uppercase tracking-wider"
-      >Content Preview</span
+      >{t("common.contentPreview")}</span
     >
     <div class="flex items-center gap-1">
       <button
@@ -259,7 +260,7 @@
           ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
           : 'text-kitsuden-subtle hover:text-kitsuden-text hover:bg-kitsuden-border/30'}"
         onclick={() => (viewport = "desktop")}
-        aria-label="Desktop view"
+        aria-label={t("livePreview.desktopView")}
       >
         <Monitor class="w-4 h-4" />
       </button>
@@ -268,7 +269,7 @@
           ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
           : 'text-kitsuden-subtle hover:text-kitsuden-text hover:bg-kitsuden-border/30'}"
         onclick={() => (viewport = "tablet")}
-        aria-label="Tablet view"
+        aria-label={t("livePreview.tabletView")}
       >
         <Tablet class="w-4 h-4" />
       </button>
@@ -277,7 +278,7 @@
           ? 'bg-kitsuden-accent/10 text-kitsuden-accent'
           : 'text-kitsuden-subtle hover:text-kitsuden-text hover:bg-kitsuden-border/30'}"
         onclick={() => (viewport = "mobile")}
-        aria-label="Mobile view"
+        aria-label={t("livePreview.mobileView")}
       >
         <Smartphone class="w-4 h-4" />
       </button>
@@ -291,7 +292,7 @@
       style="width: {viewportWidths[viewport]};"
     >
       <iframe
-        title="Post Preview"
+        title={t("livePreview.postPreview")}
         srcdoc={htmlContent}
         class="w-full h-full border-0"
         sandbox="allow-scripts"

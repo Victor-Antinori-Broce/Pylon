@@ -3,6 +3,7 @@
   Panel de chat interactivo para probar agentes
 -->
 <script lang="ts">
+  import { t, localeFormato } from "$lib/i18n";
   import { Send, Bot, User, Loader2, Wrench, Sparkles } from "lucide-svelte";
   import { tick } from "svelte";
 
@@ -67,7 +68,7 @@
   });
 
   function formatTime(date: Date): string {
-    return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString(localeFormato(), { hour: "2-digit", minute: "2-digit" });
   }
 </script>
 
@@ -84,12 +85,12 @@
     </div>
     <div>
       <h3 class="font-medium text-zinc-100">{agentName}</h3>
-      <p class="text-xs text-zinc-500">Playground de pruebas</p>
+      <p class="text-xs text-zinc-500">{t("chatInterface.playgroundDePruebas")}</p>
     </div>
     {#if loading}
       <div class="ml-auto flex items-center gap-2 text-xs text-zinc-500">
         <Loader2 size={14} class="animate-spin" />
-        <span>Pensando...</span>
+        <span>{t("chatInterface.pensando")}</span>
       </div>
     {/if}
   </div>
@@ -99,9 +100,9 @@
     {#if messages.length === 0}
       <div class="flex flex-col items-center justify-center h-full text-center text-zinc-500">
         <Bot size={48} class="mb-4 opacity-50" />
-        <p class="text-sm">Envía un mensaje para iniciar la conversación</p>
+        <p class="text-sm">{t("chatInterface.enviaUnMensajeParaIniciar")}</p>
         <p class="text-xs mt-2 opacity-70">
-          El agente responderá usando sus herramientas configuradas
+          {t("chatInterface.elAgenteResponderaUsandoSus")}
         </p>
       </div>
     {:else}
@@ -149,7 +150,7 @@
                   </span>
                 {/if}
                 {#if message.metadata.tokensOut}
-                  <span>{message.metadata.tokensIn}/{message.metadata.tokensOut} tokens</span>
+                  <span>{message.metadata.tokensIn}{t("chatInterface.tokens", { tokensOut: message.metadata.tokensOut })}</span>
                 {/if}
                 {#if message.metadata.durationMs}
                   <span>{(message.metadata.durationMs / 1000).toFixed(2)}s</span>
@@ -157,10 +158,10 @@
                 {#if message.metadata.cached}
                   <span
                     class="flex items-center gap-1 text-amber-400"
-                    title="Respuesta desde caché"
+                    title={t("chatInterface.respuestaDesdeCache")}
                   >
                     <Sparkles size={10} />
-                    cached
+                    {t("chatInterface.cached")}
                   </span>
                 {/if}
               </div>
@@ -222,7 +223,7 @@
       <input
         type="text"
         bind:value={inputValue}
-        placeholder="Escribe un mensaje..."
+        placeholder={t("chatInterface.escribeUnMensaje")}
         disabled={loading}
         class="flex-1 px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 disabled:opacity-50"
       />

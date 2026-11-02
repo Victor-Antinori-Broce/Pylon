@@ -7,11 +7,13 @@
  * Reemplaza todos los mockups con datos del sistema real.
  */
 
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import { eqEnum } from "@kitsuden/engine";
 import { sql, count, desc, gte, and, eq, lte } from "drizzle-orm";
 import { Hono } from "hono";
 
-import { db } from "../db";
+import { db, estadoDelPool } from "../db";
 import {
   dataSets,
   dataEntries,
@@ -23,12 +25,22 @@ import {
   agentAuditLogs,
 } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
+import { exigirAdmin } from "../middleware/auth-guard";
 import type { AppVariables } from "../types/hono";
 
 import { getMetricsSnapshot, getRouteSnapshots } from "./metrics";
 import { realtimeManager } from "./realtime";
 import { buildAlertReport, evaluateSlo } from "./slo";
-import { getValkeyClient } from "./valkey";
+import { getValkeyClient, valkeyConfigurado } from "./valkey";
+
+/** `Bearer <METRICS_TOKEN>` en tiempo constante; sin token configurado, nunca. */
+export function tokenDeMetricasValido(cabecera: string | undefined): boolean {
+  const esperado = process.env.METRICS_TOKEN ?? "";
+  if (esperado.length < 16 || !cabecera?.startsWith("Bearer ")) return false;
+  const a = createHash("sha256").update(esperado).digest();
+  const b = createHash("sha256").update(cabecera.slice(7).trim()).digest();
+  return timingSafeEqual(a, b);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -203,20 +215,25 @@ async function getInfraStats() {
   // 500 en vez de reportar "cache: down" — justo al revés de para lo que
   // existe un health check, y encima tumbaba también el estado de la base de
   // datos, que estaba perfectamente sana.
+  // Sin VALKEY_URL la caché es la memoria del proceso (instancia única): no
+  // hay nada que pueda estar caído.
   const cacheStart = Date.now();
-  let cacheHealthy = false;
-  try {
-    const valkey = await getValkeyClient();
-    await valkey.ping();
-    cacheHealthy = true;
-  } catch {
-    cacheHealthy = false;
+  let cacheHealthy = !valkeyConfigurado();
+  if (!cacheHealthy) {
+    try {
+      const valkey = await getValkeyClient();
+      await valkey.ping();
+      cacheHealthy = true;
+    } catch {
+      cacheHealthy = false;
+    }
   }
   const cacheLatency = Date.now() - cacheStart;
 
   return {
     databaseStatus: (dbHealthy ? "healthy" : "down") as "healthy" | "degraded" | "down",
     cacheStatus: (cacheHealthy ? "healthy" : "down") as "healthy" | "degraded" | "down",
+    cacheBackend: valkeyConfigurado() ? ("valkey" as const) : ("memory" as const),
     websocketConnections: wsStats.connections,
     activeChannels: wsStats.channels,
     latency: {
@@ -604,41 +621,53 @@ observabilityRoutes.get("/admin/realtime", requireAuth, async (c) => {
 /**
  * GET / - Homepage con stats (para el dashboard)
  */
-observabilityRoutes.get("/", async (c) => {
-  try {
-    const [stats, health, activity] = await Promise.all([
-      getSystemStats(),
-      getHealthStatus(),
-      getRecentActivity(5),
-    ]);
+observabilityRoutes.get(
+  "/",
+  async (c, next) => {
+    // Público: solo que la API está viva. Los recuentos y la actividad reciente
+    // (títulos de entradas, nombres de usuario) son del panel: los ve un admin.
+    // Antes salían a cualquiera, sin límite de peticiones (`/` no está bajo
+    // `/api/*`) y lanzando varios COUNT sobre tablas de cientos de miles de filas.
+    const cabecera = c.req.header("cookie") || c.req.header("authorization");
+    if (!cabecera) return c.json({ message: "Kitsuden API", status: "ok" });
+    return exigirAdmin(c, next);
+  },
+  async (c) => {
+    try {
+      const [stats, health, activity] = await Promise.all([
+        getSystemStats(),
+        getHealthStatus(),
+        getRecentActivity(5),
+      ]);
 
-    return c.json({
-      message: "Kitsuden API",
-      version: "0.5.0",
-      status: health.status,
-      stats: {
-        datasets: stats.datasets.total,
-        entries: stats.datasets.entries,
-        users: stats.users.total,
-        content: stats.content.posts + stats.content.games,
-        agents: stats.agents.total,
-        uptime: stats.uptime.duration,
-      },
-      activity,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    return c.json(
-      {
+      return c.json({
         message: "Kitsuden API",
         version: "0.5.0",
-        status: "degraded",
-        error: "Partial data available",
-      },
-      200
-    );
+        status: health.status,
+        stats: {
+          datasets: stats.datasets.total,
+          entries: stats.datasets.entries,
+          users: stats.users.total,
+          content: stats.content.posts + stats.content.games,
+          agents: stats.agents.total,
+          uptime: stats.uptime.duration,
+        },
+        activity,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      return c.json(
+        {
+          message: "Kitsuden API",
+          version: "0.5.0",
+          status: "degraded",
+          error: "Partial data available",
+        },
+        200
+      );
+    }
   }
-});
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TELEMETRY & TRACEABILITY ENDPOINTS (Prometheus / Loki / OpenTelemetry friendly)
@@ -863,6 +892,25 @@ async function generatePrometheusMetrics(): Promise<string> {
   lines.push("# TYPE kitsuden_memory_heap_total_bytes gauge");
   lines.push(`kitsuden_memory_heap_total_bytes ${mem.heapTotal}`);
 
+  // CPU del proceso (usuario + sistema, acumulada): con dos lecturas se saca el uso.
+  const cpu = process.cpuUsage();
+  lines.push("# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds");
+  lines.push("# TYPE process_cpu_seconds_total counter");
+  lines.push(`process_cpu_seconds_total ${((cpu.user + cpu.system) / 1e6).toFixed(6)}`);
+
+  // Pool de Postgres: abiertas, libres y peticiones esperando conexión.
+  const pool = estadoDelPool();
+  if (pool) {
+    lines.push("# HELP kitsuden_db_pool_connections Postgres pool connections by state");
+    lines.push("# TYPE kitsuden_db_pool_connections gauge");
+    lines.push(`kitsuden_db_pool_connections{state="total"} ${pool.total}`);
+    lines.push(`kitsuden_db_pool_connections{state="idle"} ${pool.idle}`);
+    lines.push(`kitsuden_db_pool_connections{state="max"} ${pool.max}`);
+    lines.push("# HELP kitsuden_db_pool_waiting Requests waiting for a pool connection");
+    lines.push("# TYPE kitsuden_db_pool_waiting gauge");
+    lines.push(`kitsuden_db_pool_waiting ${pool.waiting}`);
+  }
+
   // Uptime
   lines.push("# HELP kitsuden_uptime_seconds Process uptime in seconds");
   lines.push("# TYPE kitsuden_uptime_seconds counter");
@@ -1080,16 +1128,28 @@ observabilityRoutes.get("/admin/metrics/prometheus", requireAuth, async (c) => {
 });
 
 /**
- * GET /metrics - Prometheus scraping endpoint (público, sin auth).
+ * GET /metrics - Prometheus scraping endpoint.
+ *
+ * Era público: recuentos de agentes, nombres de herramientas y acciones de
+ * auditoría para cualquiera. Ahora pide `Authorization: Bearer <METRICS_TOKEN>`
+ * (para el recolector) o sesión de admin (lo resuelve `exigirAdmin`). Sin
+ * `METRICS_TOKEN` configurado, solo admin.
  */
-observabilityRoutes.get("/metrics", async (c) => {
-  try {
-    const metrics = await generatePrometheusMetrics();
-    return c.text(metrics, 200, {
-      "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
-    });
-  } catch (error) {
-    console.error("Prometheus metrics error:", error);
-    return c.text("# Failed to generate metrics\n", 500);
+observabilityRoutes.get(
+  "/metrics",
+  async (c, next) => {
+    if (tokenDeMetricasValido(c.req.header("authorization"))) return next();
+    return exigirAdmin(c, next);
+  },
+  async (c) => {
+    try {
+      const metrics = await generatePrometheusMetrics();
+      return c.text(metrics, 200, {
+        "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+      });
+    } catch (error) {
+      console.error("Prometheus metrics error:", error);
+      return c.text("# Failed to generate metrics\n", 500);
+    }
   }
-});
+);
