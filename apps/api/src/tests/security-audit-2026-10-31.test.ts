@@ -111,8 +111,10 @@ async function human(role: "admin" | "editor" | "user" = "user"): Promise<{ cook
 
 /** MCP session of an agent (same shape as the other MCP suites). */
 async function mcp(token: string) {
+  // Its own client: this route's limit is shared with every other MCP suite in the process.
+  const ip = ipDePrueba();
   const res = await app.request(
-    new Request("http://localhost:3000/api/mcp", { headers: { Authorization: `Bearer ${token}` } })
+    new Request("http://localhost:3000/api/mcp", { headers: { Authorization: `Bearer ${token}`, "X-Forwarded-For": ip } })
   );
   expect(res.status).toBe(200);
   const reader = res.body!.getReader();
@@ -130,7 +132,7 @@ async function mcp(token: string) {
       const r = await app.request(
         new Request(`http://localhost:3000/api/mcp?sessionId=${sessionId}`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Forwarded-For": ip },
           body: JSON.stringify({ jsonrpc: "2.0", id: id++, method: "tools/call", params: { name, arguments: args } }),
         })
       );
