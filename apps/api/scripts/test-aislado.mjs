@@ -40,7 +40,9 @@ function ficheros(dir) {
 /** bun escribe el resumen en stderr: se leen los dos flujos */
 function correr(fichero) {
   return new Promise((resolve) => {
-    const hijo = spawn("bun", ["test", fichero], {
+    // .env.test, never apps/api/.env: that one is production on the owner's machine.
+    const argsDelHijo = ["--env-file=../../.env.test", "test", fichero];
+    const hijo = spawn("bun", argsDelHijo, {
       cwd: RAIZ,
       env: process.env,
       shell: process.platform === "win32",

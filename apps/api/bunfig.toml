@@ -1,4 +1,6 @@
 [test]
+# Stops any run against a database whose name lacks "test" (src/tests/guard-test-db.ts).
+preload = ["./src/tests/guard-test-db.ts"]
 exclude = [
   "src/tests-unit/**",
 ]

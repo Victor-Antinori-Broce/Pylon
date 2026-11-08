@@ -2,9 +2,11 @@
 
 > Finding ids (F1..F82) match `CLAUDE-SECURITY-20261104-040917/CLAUDE-SECURITY-RESULTS.jsonl` and the SARIF log. The finding descriptions below are kept as written at scan time; this section gives their current state.
 
-## Status as of 2026-11-05
+## Status as of 2026-11-08
 
-All 31 findings have a fix in the working tree (uncommitted). This was checked by reading the code and diffs and by running the new unit tests (`tests/unit`, 102 tests passing) and `tsc --noEmit` in `apps/api`. It is not an independent re-scan. The `bun` suites in `apps/api/src/tests-unit` and the database-backed suites were not run.
+All 31 findings have a fix, committed on `security-cleanup` (`db51a29`, `main` fast-forwarded to it; not deployed). Checked by reading the code and diffs, `tsc --noEmit` in `apps/api`, the unit suite (`tests/unit`), the isolated `bun` unit suite (`apps/api/src/tests-unit`, 770 passing) and the database suites (`apps/api/src/tests`, 549 tests: every file passes run alone; a full run in one process can trip the shared per-minute limiters, giving a few 429s). It is not an independent re-scan.
+
+The database suites used to read `apps/api/.env`, which on the owner's machine is production, and the shared test database had been migrated by the English core. They now run only through `.env.test` (own database `kitsuden_test_cms`, test-only secrets, no S3), and `src/tests/guard-test-db.ts` refuses any database whose name lacks `test`.
 
 | Findings | Fixed in |
 |---|---|
@@ -18,9 +20,9 @@ All 31 findings have a fix in the working tree (uncommitted). This was checked b
 
 **`apps/api/drizzle`** (7 tracked files): scanned, no findings. A candidate about cleartext OAuth tokens in `auth_accounts` was rejected as unreachable by an attacker on its own.
 
-**Dependencies** (`pnpm audit`, 2026-11-05): 31 advisories (12 high, 11 moderate, 8 low, 0 critical), down from 36. Still open in `apps/api` runtime paths: `@hono/node-server` 1.19.17 (moderate, fixed in 2.1.3; no `serveStatic` use found in `apps/api/src`), and low advisories for `esbuild` and `@sveltejs/kit` through `better-auth`. The rest is development tooling. `node_modules` itself is untracked and cannot be scanned.
+**Dependencies** (`pnpm audit`, 2026-11-08): 28 advisories (12 high, 10 moderate, 6 low, 0 critical), down from 36; none reaches `apps/api` any more. `@hono/node-server` is now 2.1.6 (the MCP SDK accepts `^2.0.5`; MCP suites 70/70). What remains is development tooling (brace-expansion, js-yaml, flatted, minimatch, browserslist, postcss-selector-parser under eslint, vitest and the panel build); most fixes are major-version jumps of those tools. `node_modules` itself is untracked and cannot be scanned.
 
-**Still open:** bump `@hono/node-server`; run the bun and database suites; commit the fixes when you decide to.
+**Still open:** deploy (rebuild the API image from this tree; the owner's step); the development-tooling advisories.
 
 Scope: `apps/api` (469 tracked files) of the repository at `C:\Users\vantinori\Documents\github\cms`, revision `0f9bba7`, mode `scan`, effort `medium`, focus on attack surface (production code an attacker can reach; tests, fixtures and generated code were background only). Scanned on 2026-11-04. 31 findings survived verification: 0 critical, 0 high, 8 medium, 23 low. Nothing was executed: every finding comes from reading the code, so none has been demonstrated with a proof of concept.
 
