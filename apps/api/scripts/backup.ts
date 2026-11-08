@@ -75,6 +75,59 @@ function exigirHerramienta(nombre: string) {
   return (r.stdout || "").trim();
 }
 
+/**
+ * La conexión para `pg_dump`/`pg_restore` SIN la contraseña en la línea de
+ * órdenes: cualquier usuario de la máquina la lee con `ps` o en
+ * `/proc/<pid>/cmdline` mientras dura el volcado (auditoría F77). Host,
+ * puerto, usuario y base van como opciones; el resto de parámetros de la URL
+ * (`sslmode`…) en la cadena de conexión de `--dbname`; la contraseña, en el
+ * entorno del hijo (`PGPASSWORD`), que no se ve en la tabla de procesos.
+ */
+export function conexionDePg(url: string): { args: string[]; env: Record<string, string> } {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    throw new Error("DATABASE_URL no es una URL postgresql:// válida");
+  }
+  if (u.protocol !== "postgresql:" && u.protocol !== "postgres:") {
+    throw new Error("DATABASE_URL tiene que empezar por postgresql:// o postgres://");
+  }
+  const dec = (s: string) => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  };
+  // Valor de una cadena de conexión de libpq: entre comillas simples, con
+  // `\` y `'` escapados.
+  const valor = (s: string) => `'${s.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+
+  const args: string[] = [];
+  const host = dec(u.hostname).replace(/^\[|\]$/g, "");
+  if (host) args.push("--host", host);
+  if (u.port) args.push("--port", u.port);
+  if (u.username) args.push("--username", dec(u.username));
+
+  const base = dec(u.pathname.replace(/^\//, ""));
+  const extra = [...u.searchParams.entries()].filter(([k]) => k !== "password");
+  if (extra.length > 0) {
+    const partes = [...(base ? [`dbname=${valor(base)}`] : []), ...extra.map(([k, v]) => `${k}=${valor(v)}`)];
+    args.push("--dbname", partes.join(" "));
+  } else {
+    // Siempre con --dbname: sin él, pg_restore escribe el SQL por la salida en
+    // vez de restaurar. Por defecto libpq usa el nombre del usuario.
+    args.push("--dbname", base || dec(u.username) || "postgres");
+  }
+
+  const env: Record<string, string> = {};
+  // También `?password=` en la URL: libpq lo acepta, y tampoco va en argv.
+  const clave = u.password ? dec(u.password) : u.searchParams.get("password");
+  if (clave) env.PGPASSWORD = clave;
+  return { args, env };
+}
+
 function sello(): string {
   // Sin dos puntos: Windows no los admite en nombres de fichero.
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -134,12 +187,14 @@ function crear() {
 
   console.log(`\nVolcando a ${nombre} …`);
   const t0 = Date.now();
+  const conexion = conexionDePg(url);
   const r = spawnSync(
     "pg_dump",
-    ["--format=custom", "--no-owner", "--no-privileges", "--file", ruta, url],
+    ["--format=custom", "--no-owner", "--no-privileges", "--file", ruta, ...conexion.args],
     {
       encoding: "utf8",
       stdio: ["ignore", "inherit", "pipe"],
+      env: { ...process.env, ...conexion.env },
     }
   );
 
@@ -192,10 +247,11 @@ function restaurar(fichero: string) {
   }
 
   console.log(`\nRestaurando ${ruta} …`);
+  const conexion = conexionDePg(url);
   const r = spawnSync(
     "pg_restore",
-    ["--clean", "--if-exists", "--no-owner", "--no-privileges", "--dbname", url, ruta],
-    { encoding: "utf8", stdio: ["ignore", "inherit", "pipe"] }
+    ["--clean", "--if-exists", "--no-owner", "--no-privileges", ...conexion.args, ruta],
+    { encoding: "utf8", stdio: ["ignore", "inherit", "pipe"], env: { ...process.env, ...conexion.env } }
   );
 
   // pg_restore devuelve != 0 por avisos benignos (objetos que no existían al
@@ -215,29 +271,33 @@ function restaurar(fichero: string) {
 }
 
 // ── Entrada ─────────────────────────────────────────────────────────────────
+// Solo al ejecutarlo (`bun run scripts/backup.ts`): las pruebas importan
+// `conexionDePg` sin que se lance ningún volcado.
 
-const args = process.argv.slice(2);
-const idx = (f: string) => args.indexOf(f);
+if (import.meta.main) {
+  const args = process.argv.slice(2);
+  const idx = (f: string) => args.indexOf(f);
 
-if (args.includes("--list")) {
-  const copias = listar();
-  if (copias.length === 0) {
-    console.log(`\nNo hay copias en ${DIR}\n`);
+  if (args.includes("--list")) {
+    const copias = listar();
+    if (copias.length === 0) {
+      console.log(`\nNo hay copias en ${DIR}\n`);
+    } else {
+      console.log(`\n${copias.length} copia(s) en ${DIR}:\n`);
+      for (const f of copias) console.log(`  ${f}  ${tamaño(f)}`);
+      console.log();
+    }
+  } else if (idx("--verify") >= 0) {
+    const f = args[idx("--verify") + 1];
+    const ruta = f?.includes("/") || f?.includes("\\") ? f : join(DIR, f ?? "");
+    const v = verificar(ruta);
+    console.log(
+      v.ok ? `\n  ok  ${f} — ${v.objetos} objetos legibles\n` : `\n  ✗  ${f} — ${v.error}\n`
+    );
+    process.exit(v.ok ? 0 : 1);
+  } else if (idx("--restore") >= 0) {
+    restaurar(args[idx("--restore") + 1]);
   } else {
-    console.log(`\n${copias.length} copia(s) en ${DIR}:\n`);
-    for (const f of copias) console.log(`  ${f}  ${tamaño(f)}`);
-    console.log();
+    crear();
   }
-} else if (idx("--verify") >= 0) {
-  const f = args[idx("--verify") + 1];
-  const ruta = f?.includes("/") || f?.includes("\\") ? f : join(DIR, f ?? "");
-  const v = verificar(ruta);
-  console.log(
-    v.ok ? `\n  ok  ${f} — ${v.objetos} objetos legibles\n` : `\n  ✗  ${f} — ${v.error}\n`
-  );
-  process.exit(v.ok ? 0 : 1);
-} else if (idx("--restore") >= 0) {
-  restaurar(args[idx("--restore") + 1]);
-} else {
-  crear();
 }

@@ -46,6 +46,7 @@ import {
   esSoloLectura,
   fusionarConfigDeAprobaciones,
   herramientaMcpSensiblePorDefecto,
+  huellaDeContextoDeDecision,
   leerConfigDeAprobaciones,
   reglaLegadaCasa,
   scopeFinoDeOperacion,
@@ -86,7 +87,13 @@ import {
 
 import { avisarResolucion } from "./avisos-de-propuestas";
 import { encolarClasificacion } from "./clasificador-de-inyeccion";
-import { CLAVE_IDEMPOTENCIA_VALIDA, contieneSecreto, cuerpoConSecreto, huellaDePeticion } from "./idempotencia";
+import {
+  CLAVE_IDEMPOTENCIA_VALIDA,
+  contieneSecreto,
+  cuerpoConSecreto,
+  huellaDePeticion,
+  rutaQueRecibeSecretos,
+} from "./idempotencia";
 import { logger } from "./logger";
 
 export type Propuesta = typeof agentProposals.$inferSelect;
@@ -753,6 +760,12 @@ export interface DatosDePropuesta {
  */
 export async function crearPropuesta(d: DatosDePropuesta): Promise<{ propuesta: Propuesta; nueva: boolean }> {
   const agentId = d.agente.agentId;
+  // El último filtro antes de la base (F79): pase por donde pase (REST, MCP,
+  // subida), una propuesta no guarda un secreto. Al aprobarla se ejecuta el
+  // cuerpo GUARDADO, así que no se puede guardar censurado: se rechaza.
+  if (cuerpoConSecretoParaPropuesta(d.camino, d.cuerpo) || (d.diff !== undefined && contieneSecreto(d.diff))) {
+    throw new PropuestaNoAdmitida("secret");
+  }
   if (d.idempotencyKey) {
     const [previa] = await db
       .select()
@@ -780,12 +793,14 @@ export async function crearPropuesta(d: DatosDePropuesta): Promise<{ propuesta: 
   }
 
   const { config } = await instantaneaDeAprobaciones();
-  const diff =
+  const diffCalculado =
     d.diff !== undefined
       ? d.diff
       : d.caminoDeDiff
         ? await calcularDiff(d.agente, d.metodo, d.caminoDeDiff, d.cuerpo)
         : null;
+  // El diff solo informa: si la lectura del estado actual trae un secreto, no se guarda.
+  const diff = diffCalculado && contieneSecreto(diffCalculado) ? { omitted: "secret" } : diffCalculado;
   // La propuesta y sus imágenes, juntas: o las dos o ninguna.
   const insertadas = await db.transaction(async (tx) => {
     const filas = await tx
@@ -931,6 +946,9 @@ export const EXCLUIDAS_DE_APROBACION = [
   // Fase I: la promoción de código tiene su propia puerta humana (un borrador
   // ya ES una propuesta). Retener el envío del borrador sería pedir dos veces.
   "/api/promotion",
+  // Los planes se proponen a sí mismos: su POST crea la propuesta; retenerlo
+  // sería pedir aprobación para pedir aprobación.
+  "/api/agent/plans",
 ];
 
 function excluida(camino: string): boolean {
@@ -939,7 +957,8 @@ function excluida(camino: string): boolean {
 
 function problemaNoAdmitida(motivo: PropuestaNoAdmitida["motivo"], instance: string, requestId?: string | null) {
   const que: Record<PropuestaNoAdmitida["motivo"], string> = {
-    secret: "its body carries a secret (a token, password or key), and proposals never store secrets",
+    secret:
+      "its body carries a secret (a token, password, key, credential header or a value for the secrets store), and proposals never store secrets; a human or an agent in direct mode has to send it",
     multipart: "the multipart form could not be read",
     not_image:
       "only image uploads (JPEG, PNG, GIF, WebP or AVIF, checked by their content) can be held as proposals; any other file has to be uploaded by a human or an agent in direct mode",
@@ -968,9 +987,26 @@ function responderJson(c: Context, cuerpo: unknown, estado: number, tipo = "appl
   return c.body(JSON.stringify(cuerpo), estado as never, { "Content-Type": tipo });
 }
 
+/**
+ * ¿Lleva secreto este cuerpo, para esta ruta? Por contenido (`contieneSecreto`)
+ * o por destino: lo que va al almacén de secretos (`/api/admin/secrets`) ES un
+ * secreto aunque el campo se llame `value` (F79).
+ */
+export function cuerpoConSecretoParaPropuesta(camino: string, cuerpo: unknown): boolean {
+  const vacio =
+    cuerpo === null ||
+    cuerpo === undefined ||
+    cuerpo === "" ||
+    (typeof cuerpo === "object" && !Array.isArray(cuerpo) && Object.keys(cuerpo as object).length === 0);
+  if (!vacio && rutaQueRecibeSecretos(camino)) return true;
+  return contieneSecreto(cuerpo);
+}
+
 /** El cuerpo de la petición, para guardarlo (JSON y sin secretos), o lanza. */
-export function cuerpoParaPropuesta(tipo: string, bytes: Uint8Array): unknown {
+export function cuerpoParaPropuesta(tipo: string, bytes: Uint8Array, camino?: string): unknown {
   if (bytes.byteLength === 0) return null;
+  // Al almacén de secretos: el cuerpo es el secreto, se llame como se llame el campo.
+  if (camino && rutaQueRecibeSecretos(camino)) throw new PropuestaNoAdmitida("secret");
   const t = tipo.toLowerCase();
   if (t.includes("multipart/")) throw new PropuestaNoAdmitida("multipart");
   if (bytes.byteLength > MAX_CUERPO_BYTES) throw new PropuestaNoAdmitida("too_large");
@@ -1040,7 +1076,7 @@ export function puertaDeAprobacion() {
         tipoDeHuella = TIPO_DE_SUBIDA_RETENIDA;
       } else {
         const bytes = new Uint8Array(await c.req.raw.clone().arrayBuffer());
-        cuerpo = cuerpoParaPropuesta(tipo, bytes);
+        cuerpo = cuerpoParaPropuesta(tipo, bytes, camino);
         paraHuella = bytes;
         tipoGuardado = bytes.byteLength > 0 ? tipo : null;
       }
@@ -1071,6 +1107,9 @@ export function puertaDeAprobacion() {
     } catch (err) {
       if (err instanceof ClaveDeIdempotenciaReutilizada) {
         return responderJson(c, problemaDeClaveReutilizada(camino, requestId), 422);
+      }
+      if (err instanceof PropuestaNoAdmitida) {
+        return responderJson(c, problemaNoAdmitida(err.motivo, camino, requestId), 403);
       }
       throw err;
     }
@@ -1138,6 +1177,35 @@ export async function propuestaPorId(id: string): Promise<Propuesta | null> {
   return p ?? null;
 }
 
+/**
+ * La huella de LO QUE SE VE en la bandeja de decisión: cuerpo, diff, ficheros
+ * retenidos (con su sha256) y scopes del agente. Se guarda en la auditoría al
+ * decidir: fija qué contexto exacto aprobó o rechazó el humano (si cualquiera
+ * de eso cambia, la huella cambia).
+ */
+export async function huellaDelContextoDe(p: Propuesta): Promise<string> {
+  const ficheros = await db
+    .select({
+      field: agentProposalFiles.field,
+      filename: agentProposalFiles.filename,
+      sha256: agentProposalFiles.sha256,
+      size: agentProposalFiles.size,
+    })
+    .from(agentProposalFiles)
+    .where(eq(agentProposalFiles.proposalId, p.id))
+    .orderBy(asc(agentProposalFiles.position));
+  return huellaDeContextoDeDecision({
+    method: p.method,
+    path: p.path,
+    tool: p.tool,
+    operationKey: p.operationKey,
+    body: p.body,
+    diff: p.diff,
+    files: ficheros,
+    scopes: p.scopes,
+  });
+}
+
 export interface Humano {
   id: string;
   role: string;
@@ -1178,6 +1246,20 @@ export const MOTIVOS_PARA_NO_APROBAR: Record<MotivoParaNoAprobar, string> = {
 export async function motivoParaNoAprobar(h: Humano, p: Propuesta): Promise<MotivoParaNoAprobar | null> {
   if (h.role === "admin") return null;
   if (h.role !== "editor") return "not_staff";
+  // Un PLAN lo puede aprobar un editor solo si TODOS sus pasos son operaciones
+  // del SDK que él mismo podría ejecutar; si hay rutas legadas, admin.
+  if (p.method === "PLAN") {
+    const plan = pasosDePlan(p.body);
+    if (!plan) return "legacy_without_gate";
+    for (const paso of plan.steps) {
+      const deRuta = operacionDeRuta(paso.method, paso.path.split("?")[0]!);
+      if (!deRuta) return "legacy_without_gate";
+      if (!deRuta.op.permiso) continue;
+      const puede = await concedeOperacion(deRuta.konId, deRuta.op, { id: h.id, role: h.role });
+      if (!puede) return "role_cannot";
+    }
+    return null;
+  }
   if (p.channel === "mcp" && !p.konId) return "core_mcp_tool";
   const camino = p.path.split("?")[0]!;
   if (camino === "/api/admin" || camino.startsWith("/api/admin/")) return "admin_route";
@@ -1271,19 +1353,24 @@ export async function aprobarPropuesta(id: string, humano: Humano, comentario?: 
     const otra = (await propuestaPorId(id))!;
     return { ok: false, estado: 409, motivo: `Proposal is ${otra.status}`, propuesta: otra };
   }
+  // Lo que el humano tuvo delante al firmar: queda fijado en la auditoría.
+  const contextHash = await huellaDelContextoDe(reservada).catch((err) => {
+    logger.error({ err, proposalId: id }, "[aprobaciones] no se pudo calcular la huella del contexto");
+    return null;
+  });
   await auditar({
     agentId: reservada.agentId,
     action: "proposal_approved",
     resource: `${reservada.method} ${reservada.path}`,
     resourceId: reservada.id,
-    details: { by: humano.id, sponsor: reservada.sponsorUserId ?? null, comment: reservada.decisionComment },
+    details: { by: humano.id, sponsor: reservada.sponsorUserId ?? null, comment: reservada.decisionComment, contextHash },
   });
 
-  const final = await ejecutarReservada(reservada, humano);
+  const final = await ejecutarReservada(reservada, humano, contextHash);
   return { ok: true, propuesta: final };
 }
 
-async function ejecutarReservada(p: Propuesta, humano: Humano): Promise<Propuesta> {
+async function ejecutarReservada(p: Propuesta, humano: Humano, contextHash: string | null = null): Promise<Propuesta> {
   const aprobacion = { proposalId: p.id, approvedBy: humano.id };
   let final: Propuesta;
   try {
@@ -1301,6 +1388,11 @@ async function ejecutarReservada(p: Propuesta, humano: Humano): Promise<Propuest
           status: 403,
           error: "not_executed: agent_permission_revoked",
         });
+      } else if (p.method === "PLAN") {
+        // Un plan aprobado: sus pasos se ejecutan SECUENCIALMENTE con la
+        // identidad del agente (releída), sin volver a pagar la puerta: la
+        // aprobación humana cubre el plan entero.
+        final = await ejecutarPlanAprobado(p, ctx.context, aprobacion);
       } else if (p.channel === "mcp" && p.tool) {
         if (!ejecutorMcp) throw new Error("MCP no registró su ejecutor");
         const args = (p.body && typeof p.body === "object" ? p.body : {}) as Record<string, unknown>;
@@ -1341,13 +1433,119 @@ async function ejecutarReservada(p: Propuesta, humano: Humano): Promise<Propuest
     resource: `${final.method} ${final.path}`,
     resourceId: final.id,
     // Agente (agentId), firmante y aprobador: los tres (decisión del propietario).
-    details: { by: humano.id, sponsor: final.sponsorUserId ?? null, status: final.resultStatus, error: final.resultError },
+    details: { by: humano.id, sponsor: final.sponsorUserId ?? null, status: final.resultStatus, error: final.resultError, contextHash },
     success: final.status === "executed",
     errorMessage: final.resultError ?? undefined,
   }).catch(() => undefined);
   // B3: ejecutada o fallida, el agente se entera sin consultar.
   await avisarResolucion(final.agentId, vistaParaAgente(final)).catch(() => undefined);
   return final;
+}
+
+/**
+ * El plan guardado en el cuerpo de una propuesta PLAN, validado; o `null`.
+ * La propiedad `body` de cada paso se vuelve a enviar tal cual al ejecutar.
+ */
+export function pasosDePlan(cuerpo: unknown): { goal: string; steps: PasoDePlan[] } | null {
+  const plan = (cuerpo as { plan?: unknown } | null)?.plan;
+  if (!plan || typeof plan !== "object") return null;
+  const { goal, steps } = plan as { goal?: unknown; steps?: unknown };
+  if (typeof goal !== "string" || !goal.trim() || !Array.isArray(steps) || steps.length === 0) {
+    return null;
+  }
+  const limpios: PasoDePlan[] = [];
+  for (const crudo of steps) {
+    const s = crudo as Partial<PasoDePlan> | null;
+    const method = String(s?.method ?? "").toUpperCase();
+    const path = String(s?.path ?? "");
+    if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method) || !path.startsWith("/api/")) {
+      return null;
+    }
+    limpios.push({
+      method: method as PasoDePlan["method"],
+      path,
+      body: s?.body,
+      comment: typeof s?.comment === "string" ? s.comment : undefined,
+      continueOnError: s?.continueOnError === true,
+    });
+  }
+  return { goal: goal.trim(), steps: limpios };
+}
+
+/** Un paso de un plan de agente (K1: Plan/Act). */
+export interface PasoDePlan {
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  path: string;
+  body?: unknown;
+  comment?: string;
+  /** Si es true, un fallo de este paso no detiene el plan. */
+  continueOnError?: boolean;
+}
+
+/**
+ * Ejecuta un plan aprobado: sus pasos, en orden, con la identidad del agente.
+ * Un paso que falla detiene el plan (salvo `continueOnError`); el resultado
+ * agregado queda en `resultBody` con el estado de cada paso.
+ */
+async function ejecutarPlanAprobado(
+  p: Propuesta,
+  agente: AgentAuthContext,
+  aprobacion: { proposalId: string; approvedBy: string }
+): Promise<Propuesta> {
+  const plan = pasosDePlan(p.body);
+  if (!plan) {
+    return guardarResultado(p.id, "failed", { status: 400, error: "not_executed: invalid_plan_body" });
+  }
+  const resultados: Record<string, unknown>[] = [];
+  let fallo: { index: number; status: number; body: unknown } | null = null;
+  for (let i = 0; i < plan.steps.length; i++) {
+    const paso = plan.steps[i]!;
+    const inicio = Date.now();
+    try {
+      const res = await peticionInterna(
+        { agente, aprobacion },
+        paso.method,
+        paso.path,
+        paso.body,
+        "application/json"
+      );
+      const leido = await leerResultadoHttp(res);
+      resultados.push({
+        index: i,
+        method: paso.method,
+        path: paso.path,
+        status: res.status,
+        durationMs: Date.now() - inicio,
+        body: leido.body,
+      });
+      if (res.status >= 400 && !paso.continueOnError) {
+        fallo = { index: i, status: res.status, body: leido.body };
+        break;
+      }
+    } catch (err) {
+      resultados.push({
+        index: i,
+        method: paso.method,
+        path: paso.path,
+        status: 0,
+        durationMs: Date.now() - inicio,
+        error: err instanceof Error ? err.message : "error",
+      });
+      if (!paso.continueOnError) {
+        fallo = { index: i, status: 0, body: null };
+        break;
+      }
+    }
+  }
+  const cuerpo = recortar({ kind: "plan", goal: plan.goal, results: resultados });
+  if (fallo) {
+    return guardarResultado(p.id, "failed", {
+      status: fallo.status || 502,
+      body: cuerpo,
+      error: `plan_step_failed: step ${fallo.index}`,
+    });
+  }
+  return guardarResultado(p.id, "executed", { status: 200, contentType: "application/json", body: cuerpo });
 }
 
 /** Rechaza: no se ejecuta NUNCA. */
@@ -1372,14 +1570,19 @@ export async function rechazarPropuesta(id: string, humano: Humano, comentario?:
     const otra = (await propuestaPorId(id))!;
     return { ok: false, estado: 409, motivo: `Proposal is ${otra.status}`, propuesta: otra };
   }
-  // Rechazada no se ejecuta nunca: sus imágenes retenidas sobran.
+  // Primero la huella (los ficheros aún están: es parte de lo que se vio),
+  // luego se borran: rechazada no se ejecuta nunca.
+  const contextHash = await huellaDelContextoDe(rechazada).catch((err) => {
+    logger.error({ err, proposalId: id }, "[aprobaciones] no se pudo calcular la huella del contexto");
+    return null;
+  });
   await borrarFicherosDePropuestas([rechazada.id]);
   await auditar({
     agentId: rechazada.agentId,
     action: "proposal_rejected",
     resource: `${rechazada.method} ${rechazada.path}`,
     resourceId: rechazada.id,
-    details: { by: humano.id, comment: rechazada.decisionComment },
+    details: { by: humano.id, comment: rechazada.decisionComment, contextHash },
   });
   await avisarResolucion(rechazada.agentId, vistaParaAgente(rechazada)).catch(() => undefined);
   return { ok: true, propuesta: rechazada };

@@ -26,15 +26,21 @@ import {
   BatchProcessor,
   BatchProcessorError,
   resolveExecutor,
+  esUuid,
 } from "@kitsuden/engine";
+import { accesoADataset } from "@kitsuden/shared";
 import { eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { z } from "zod";
 
+// Deep import, como transactional-rls: la fachada del engine no exporta el
+// mapa de relaciones, y hace falta para saber a QUÉ tabla lleva un `expand`.
+import { getRelationsMap } from "../../../../packages/engine/src/translator";
 import { db, mergedSchema } from "../db";
 import { dataSets, dataEntries } from "../db/schema-core";
+import { esColumnaSecreta, sinColumnasSecretas, tablaNativaProhibida } from "../lib/tablas-explorables";
 import { requireAuth } from "../middleware/auth";
 import { buildDrizzleWhere, publishedOrOwnQl, type PolicyJson, type RLSUser } from "../lib/rls-builder";
 import { checkDatasetReadAccess, checkDatasetWriteAccess } from "../middleware/permissions";
@@ -127,7 +133,85 @@ const BatchRequestSchema = z
 // HELPER: Obtener tabla Drizzle por nombre desde mergedSchema
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/** Nombre SQL de una tabla de drizzle. */
+function nombreSql(tabla: unknown): string | undefined {
+  return (tabla as Record<symbol, unknown> | null | undefined)?.[Symbol.for("drizzle:Name")] as
+    | string
+    | undefined;
+}
+
+/**
+ * La tabla del esquema fusionado con ese nombre, salvo las prohibidas
+ * (auditoría 2026-11-04, F71): `POST /query/authAccounts` devolvía hashes de
+ * contraseña y tokens a un admin. Una prohibida responde como inexistente, y
+ * tampoco sale en la lista de tablas disponibles.
+ */
 function getTableByName(name: string): PgTable | undefined {
+  const tabla = buscarTabla(name);
+  if (tabla && tablaNativaProhibida(nombreSql(tabla) ?? "")) return undefined;
+  return tabla;
+}
+
+/** Las claves del esquema fusionado que se pueden nombrar aquí. */
+function tablasDisponibles(): string[] {
+  return Object.entries(mergedSchema as Record<string, unknown>)
+    .filter(([, v]) => {
+      const nombre = nombreSql(v);
+      return nombre !== undefined && !tablaNativaProhibida(nombre);
+    })
+    .map(([k]) => k);
+}
+
+/**
+ * ¿Qué tiene esta consulta que no se puede pedir sobre una tabla nativa?
+ * `null` si nada. Un `where`, un `orderBy` o un `select` sobre una columna
+ * secreta es un oráculo (o una fuga directa), y un `expand` a una tabla
+ * prohibida la lee de lado (`agentIdentities.apiKeys` → `agent_api_keys`).
+ */
+export function problemaDeConsultaNativa(table: PgTable, body: unknown): string | null {
+  const consulta = (body ?? {}) as {
+    where?: unknown;
+    orderBy?: { field?: unknown }[];
+    select?: unknown[];
+    expand?: unknown[];
+  };
+  const campoSecreto = (where: unknown): string | null => {
+    if (!where || typeof where !== "object") return null;
+    if (Array.isArray(where)) {
+      for (const w of where) {
+        const s = campoSecreto(w);
+        if (s) return s;
+      }
+      return null;
+    }
+    for (const [clave, valor] of Object.entries(where as Record<string, unknown>)) {
+      if (clave === "AND" || clave === "OR" || clave === "NOT") {
+        const s = campoSecreto(valor);
+        if (s) return s;
+      } else if (esColumnaSecreta(clave)) {
+        return clave;
+      }
+    }
+    return null;
+  };
+  const enWhere = campoSecreto(consulta.where);
+  if (enWhere) return `Column "${enWhere}" cannot be filtered`;
+  for (const o of consulta.orderBy ?? []) {
+    if (typeof o?.field === "string" && esColumnaSecreta(o.field)) return `Column "${o.field}" cannot be sorted`;
+  }
+  for (const c of consulta.select ?? []) {
+    if (typeof c === "string" && esColumnaSecreta(c)) return `Column "${c}" cannot be selected`;
+  }
+  const relaciones = getRelationsMap().get(nombreSql(table) ?? "");
+  for (const rel of consulta.expand ?? []) {
+    if (typeof rel !== "string") continue;
+    const destino = relaciones?.get(rel)?.table;
+    if (destino && tablaNativaProhibida(nombreSql(destino) ?? "")) return `Relation "${rel}" cannot be expanded`;
+  }
+  return null;
+}
+
+function buscarTabla(name: string): PgTable | undefined {
   // Buscar en mergedSchema (core + kons activos)
   const table = (mergedSchema as Record<string, unknown>)[name];
   // La marca interna de drizzle es un Symbol: indexar `unknown` con él no
@@ -153,6 +237,40 @@ function getTableByName(name: string): PgTable | undefined {
     }
   }
   return undefined;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER: scopes por dataset del agente (auditoría 2026-11-04, F70)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Los scopes `datasets:<slug>:<acción>` y sus denegaciones `!datasets:<slug>:*`
+ * deciden ANTES que la política, como en `crud.ts`, kon-datasets y MCP. Esta
+ * ruta solo miraba `policyJson`: una clave con `["admin", "!datasets:secreto:*"]`
+ * leía aquí lo que `/api/data-sets/:id/entries` le niega.
+ *
+ * `null`: los scopes no dicen nada de este dataset; decide la política.
+ */
+export function accesoPorScopesDelAgente(
+  c: { get: unknown },
+  slug: string | null | undefined,
+  accion: "read" | "write"
+): "denegado" | "concedido" | null {
+  const get = (c.get as (k: string) => unknown).bind(c);
+  const agente = get("agent") as { scopes?: string[] } | undefined;
+  const usuario = get("user") as { scopes?: unknown } | null | undefined;
+  const scopes = agente?.scopes ?? (Array.isArray(usuario?.scopes) ? (usuario!.scopes as string[]) : undefined);
+  return accesoADataset(scopes, slug ?? null, accion);
+}
+
+/**
+ * ¿Puede leer este dataset? Scopes del agente primero; si no dicen nada, la
+ * política (`checkDatasetReadAccess`).
+ */
+async function puedeLeerDataset(c: Context, dataset: { id: string; slug: string | null }): Promise<boolean> {
+  const acceso = accesoPorScopesDelAgente(c, dataset.slug, "read");
+  if (acceso) return acceso === "concedido";
+  return checkDatasetReadAccess(c, dataset.id);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -196,8 +314,8 @@ export async function queryDatasetHandler(c: Context) {
       return c.json({ error: "Dataset not found" }, 404);
     }
 
-    // 2. Verificar permisos de lectura
-    const hasAccess = await checkDatasetReadAccess(c, datasetId);
+    // 2. Verificar permisos de lectura: scopes por dataset del agente, luego la política
+    const hasAccess = await puedeLeerDataset(c, dataset);
     if (!hasAccess) {
       return c.json({ error: "Forbidden: No read access to this dataset" }, 403);
     }
@@ -299,15 +417,19 @@ export async function queryTableHandler(c: Context) {
     return c.json(
       {
         error: `Table "${tableName}" not found`,
-        availableTables: Object.keys(mergedSchema as Record<string, unknown>),
+        availableTables: tablasDisponibles(),
       },
       400
     );
   }
 
+  const problema = problemaDeConsultaNativa(table, body);
+  if (problema) return c.json({ error: problema, code: "FIELD_NOT_ALLOWED" }, 400);
+
   try {
     const result = await parseKitsudenQuery(table, body as any);
-    return c.json(result, 200);
+    // Ni a un admin se le devuelve un hash o un token (como `/api/items`, MCP y el explorador).
+    return c.json(sinColumnasSecretas(result) as Record<string, unknown>, 200);
   } catch (error) {
     console.error("[QueryEngine] Error:", error);
 
@@ -344,6 +466,15 @@ export async function queryTableHandler(c: Context) {
  */
 export async function listRelationsHandler(c: Context) {
   const datasetId = c.req.param("id")!;
+
+  // Las mismas puertas que la consulta: un dataset que no puede leer no existe
+  // para él (la lista es estática, pero confirmaría que el id existe).
+  const [dataset] = esUuid(datasetId)
+    ? await db.select({ id: dataSets.id, slug: dataSets.slug }).from(dataSets).where(eq(dataSets.id, datasetId)).limit(1)
+    : [];
+  if (!dataset || !(await puedeLeerDataset(c, dataset))) {
+    return c.json({ error: "Dataset not found" }, 404);
+  }
 
   // Las relaciones disponibles para dataEntries están definidas en el translator
   const availableRels = getAvailableRelations(dataEntries);
@@ -462,9 +593,14 @@ export async function batchOperationsHandler(c: Context) {
       }
     }
 
-    // Verificar acceso de escritura a todos los datasets involucrados
+    // Verificar acceso de escritura a todos los datasets involucrados: una
+    // denegación `!datasets:<slug>:*` del agente gana a su scope `admin`.
     for (const dsId of datasetIds) {
-      const hasAccess = await checkDatasetWriteAccess(c, dsId);
+      const [ds] = esUuid(dsId)
+        ? await db.select({ slug: dataSets.slug }).from(dataSets).where(eq(dataSets.id, dsId)).limit(1)
+        : [];
+      const acceso = accesoPorScopesDelAgente(c, ds?.slug, "write");
+      const hasAccess = acceso ? acceso === "concedido" : await checkDatasetWriteAccess(c, dsId);
       if (!hasAccess) {
         return c.json(
           {
@@ -554,7 +690,7 @@ export async function validateQueryHandler(c: Context) {
       {
         valid: false,
         errors: [`Table "${tableName}" not found`],
-        availableTables: Object.keys(mergedSchema as Record<string, unknown>),
+        availableTables: tablasDisponibles(),
       },
       400
     );

@@ -8,11 +8,44 @@
  * - Nested inlines (limited depth)
  */
 
+import { resolveExecutor } from "@kitsuden/engine";
 import { sql } from "drizzle-orm";
 
 import { db } from "../db";
+import {
+  esColumnaSecreta,
+  sinColumnasSecretas,
+  tablaEsExplorable,
+  tablaNativaProhibida,
+} from "../lib/tablas-explorables";
 
 import { introspectTable } from "./schema-introspector";
+
+/**
+ * ── LA LISTA NEGRA TAMBIÉN AQUÍ (auditoría 2026-11-04, F10/F69) ────────────
+ *
+ * Los hijos de una tabla salen de `information_schema`: cualquier tabla con FK
+ * a `<padre>.id`. Con `auth_users` de padre, eso eran `auth_accounts`
+ * (hashes de contraseña y tokens OAuth), `auth_sessions` y `api_keys`, y el
+ * POST reescribía una credencial con nombres de columna elegidos por quien
+ * llama. Ahora el padre y cada hijo pasan la misma puerta que el explorador
+ * (`tablaEsExplorable`, más todo `auth_*` salvo `auth_users`, como MCP), las
+ * filas salen sin columnas secretas, y una escritura solo nombra columnas que
+ * existen en la tabla, no secretas.
+ *
+ * Tablas de plataforma que el explorador enseña aunque ningún kon las declare
+ * (nombres SQL; el registro del explorador las tiene por clave).
+ */
+const REGISTRO_DEL_NUCLEO = ["auth_users", "media", "data_sets", "data_entries", "site_settings", "modules"];
+
+/** ¿Puede esta tabla ser padre o hijo de una relación en línea? */
+export async function tablaInlinePermitida(nombre: string): Promise<boolean> {
+  if (tablaNativaProhibida(nombre)) return false;
+  return (await tablaEsExplorable(nombre, REGISTRO_DEL_NUCLEO)).permitida;
+}
+
+/** El ejecutor de la petición (transacción con contexto RLS) o, fuera de ella, la global. */
+const exec = (): typeof db => resolveExecutor(db) as typeof db;
 
 /** Inline configuration for a relationship */
 export interface InlineConfig {
@@ -200,19 +233,23 @@ export async function detectRelations(tableName: string): Promise<RelationInfo[]
  * Generate inline configs for a table
  */
 export async function generateInlineConfigs(tableName: string): Promise<InlineConfig[]> {
+  // Ni el padre ni los hijos fuera de la lista blanca, ni prohibidos.
+  if (!(await tablaInlinePermitida(tableName))) return [];
   const relations = await detectRelations(tableName);
   const configs: InlineConfig[] = [];
 
   for (const relation of relations) {
     // Only create inlines for has_many relations
     if (relation.type !== "has_many" || !relation.inverseColumn) continue;
+    if (!(await tablaInlinePermitida(relation.relatedTable))) continue;
 
     // Introspect the child table to get field suggestions
     const childIntrospected = await introspectTable(relation.relatedTable);
     if (!childIntrospected) continue;
 
     // Pick fields to display (exclude FK to parent and metadata)
-    const fields = childIntrospected.columns
+    const visibles = childIntrospected.columns.filter((c) => !esColumnaSecreta(c.name));
+    const fields = visibles
       .filter(
         (c) =>
           c.name !== relation.inverseColumn &&
@@ -228,7 +265,7 @@ export async function generateInlineConfigs(tableName: string): Promise<InlineCo
     // Add some meaningful fields if we filtered too aggressively
     if (fields.length === 0) {
       fields.push(
-        ...childIntrospected.columns
+        ...visibles
           .filter((c) => c.name !== "id" && c.name !== relation.inverseColumn)
           .slice(0, 3)
           .map((c) => c.name)
@@ -269,7 +306,7 @@ export async function fetchInlineData(
 
   try {
     // Build query dynamically
-    const result = await db.execute(sql`
+    const result = await exec().execute(sql`
       SELECT *
       FROM ${sql.identifier(config.table)}
       WHERE ${sql.identifier(config.fkColumn)} = ${parentId}
@@ -279,7 +316,7 @@ export async function fetchInlineData(
     `);
 
     // Get total count
-    const countResult = await db.execute(sql`
+    const countResult = await exec().execute(sql`
       SELECT COUNT(*) as count
       FROM ${sql.identifier(config.table)}
       WHERE ${sql.identifier(config.fkColumn)} = ${parentId}
@@ -289,7 +326,8 @@ export async function fetchInlineData(
 
     return {
       config,
-      records: result.rows as Record<string, unknown>[],
+      // Ni a un admin se le enseña un token o un hash por aquí.
+      records: sinColumnasSecretas(result.rows) as Record<string, unknown>[],
       totalCount,
       canAddMore: !config.maxCount || totalCount < config.maxCount,
     };
@@ -312,6 +350,34 @@ interface InlineRecord {
 }
 
 /**
+ * ¿Qué tiene de malo esta escritura? `null` si nada.
+ *
+ * Los nombres de columna van a `sql.identifier`, así que no inyectan SQL, pero
+ * sí eligen QUÉ se escribe: solo columnas reales de la tabla y nunca una
+ * secreta (contraseña, token, hash de clave).
+ */
+export function problemaDeRegistrosInline(
+  records: unknown,
+  deletedIds: unknown,
+  columnas: ReadonlySet<string>
+): string | null {
+  if (!Array.isArray(records)) return "'records' must be an array";
+  if (!Array.isArray(deletedIds) || deletedIds.some((id) => typeof id !== "string")) {
+    return "'deletedIds' must be an array of ids";
+  }
+  for (const record of records) {
+    if (!record || typeof record !== "object" || Array.isArray(record)) {
+      return "Each record must be an object";
+    }
+    for (const columna of Object.keys(record)) {
+      if (esColumnaSecreta(columna)) return `Column '${columna}' cannot be written here`;
+      if (!columnas.has(columna)) return `Unknown column '${columna}'`;
+    }
+  }
+  return null;
+}
+
+/**
  * Save inline records (create/update/delete)
  */
 export async function saveInlineRecords(
@@ -321,13 +387,23 @@ export async function saveInlineRecords(
   records: InlineRecord[],
   deletedIds: string[] = []
 ): Promise<{ success: boolean; error?: string }> {
+  // Columnas reales de la tabla hija, de `information_schema`.
+  const hija = await introspectTable(tableName);
+  if (!hija) return { success: false, error: `Table '${tableName}' not found` };
+  const problema = problemaDeRegistrosInline(
+    records,
+    deletedIds,
+    new Set(hija.columns.map((c) => c.name))
+  );
+  if (problema) return { success: false, error: problema };
+
   try {
     // Delete removed records
     if (deletedIds.length > 0) {
       const idPlaceholders = deletedIds.map((id: string) => sql`${id}`);
-      await db.execute(sql`
+      await exec().execute(sql`
         DELETE FROM ${sql.identifier(tableName)}
-        WHERE id IN (${sql.join(idPlaceholders)})
+        WHERE id IN (${sql.join(idPlaceholders, sql`, `)})
         AND ${sql.identifier(fkColumn)} = ${parentId}
       `);
     }
@@ -340,7 +416,7 @@ export async function saveInlineRecords(
         // Update
         const { id, ...updateData } = data;
         const entries = Object.entries(updateData);
-        await db.execute(sql`
+        await exec().execute(sql`
           UPDATE ${sql.identifier(tableName)}
           SET ${sql.join(
             entries.map(([k, v]) => sql`${sql.identifier(k)} = ${v}`),
@@ -353,7 +429,7 @@ export async function saveInlineRecords(
         // Insert
         const keys = Object.keys(data);
         const values = Object.values(data);
-        await db.execute(sql`
+        await exec().execute(sql`
           INSERT INTO ${sql.identifier(tableName)} (${sql.join(
             keys.map((k) => sql.identifier(k)),
             sql`, `

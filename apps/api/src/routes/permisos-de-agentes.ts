@@ -93,7 +93,7 @@ import { logger } from "../lib/logger";
 import { konsMontados } from "../lib/rutas-de-kons";
 import { registrarOperacionesDelNucleo } from "../lib/operaciones-del-nucleo";
 import { requireAuth, optionalAuth } from "../middleware/auth";
-import { exigirAdmin } from "../middleware/auth-guard";
+import { exigirAdmin, sinAgentesEnGestionDeAgentes } from "../middleware/auth-guard";
 import { logAgentAction } from "../services/agent-audit";
 import { firmanteDeAgente, generateAgentApiKey } from "../services/agent-auth";
 
@@ -730,7 +730,15 @@ const SIN_MCP = {
   excluir:
     "Admin configuration of agents (permissions, keys, quotas): kept out of MCP so no agent can change agent permissions; use the admin panel or REST with an admin session.",
 };
-const SOLO_ADMIN: MiddlewareHandler[] = [exigirAdmin as unknown as MiddlewareHandler];
+/**
+ * Un agente NUNCA escribe aquí, ni con `admin` (F5): podía reescribir sus
+ * propios scopes (borrando sus `!denegaciones`), acuñarse claves o subir sus
+ * cuotas. Las lecturas siguen la puerta de admin de siempre.
+ */
+const SOLO_ADMIN: MiddlewareHandler[] = [
+  sinAgentesEnGestionDeAgentes as unknown as MiddlewareHandler,
+  exigirAdmin as unknown as MiddlewareHandler,
+];
 const PERMISO = { roles: ["admin"] };
 
 const comun = {

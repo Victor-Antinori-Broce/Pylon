@@ -118,6 +118,19 @@ async function humanoDe(c: Context): Promise<Humano | null> {
 
 // ── Vistas ──────────────────────────────────────────────────────────────────
 
+/**
+ * Lo que sustituye al cuerpo, al diff y al resultado para quien NO podría
+ * aprobar la propuesta (F79): un editor ve que hay una petición a una ruta de
+ * admin (método, camino, agente, estado), no lo que lleva.
+ */
+export const CUERPO_RESERVADO = { redacted: true, reason: "viewer_cannot_approve" } as const;
+
+/** ¿Puede este humano ver el contenido? Solo quien podría aprobarla (en cualquier estado). */
+async function puedeVerContenido(humano: Humano | null | undefined, p: Propuesta): Promise<boolean> {
+  if (!humano) return false;
+  return (await motivoParaNoAprobar(humano, p)) === null;
+}
+
 async function vistaParaEquipo(p: Propuesta & { agentName?: string | null }, humano?: Humano | null) {
   const nombres = await nombresDeUsuarios([p.decidedBy, p.sponsorUserId]);
   // Tras decidir, la fila llega del UPDATE sin el nombre del agente: se busca.
@@ -129,16 +142,19 @@ async function vistaParaEquipo(p: Propuesta & { agentName?: string | null }, hum
       .limit(1);
     p = { ...p, agentName: a?.name ?? null };
   }
+  const verContenido = await puedeVerContenido(humano, p);
+  const motivo = humano && p.status === "pending" ? await motivoParaNoAprobar(humano, p) : null;
   return {
     ...vistaParaAgente(p),
     agentId: p.agentId,
     agentName: p.agentName ?? null,
     keyId: p.keyId,
-    body: p.body,
+    body: verContenido ? p.body : p.body === null ? null : CUERPO_RESERVADO,
+    bodyRedacted: !verContenido && p.body !== null,
     contentType: p.contentType,
     idempotencyKey: p.idempotencyKey,
     scopes: p.scopes,
-    diff: p.diff,
+    diff: verContenido ? p.diff : p.diff === null ? null : CUERPO_RESERVADO,
     injectionCheck: p.injectionCheck ?? null,
     konId: p.konId,
     operationId: p.operationId,
@@ -151,12 +167,17 @@ async function vistaParaEquipo(p: Propuesta & { agentName?: string | null }, hum
     files: await ficherosDePropuesta(p.id),
     result:
       p.status === "executed" || p.status === "failed"
-        ? { status: p.resultStatus, contentType: p.resultContentType, body: p.resultBody, error: p.resultError }
+        ? {
+            status: p.resultStatus,
+            contentType: p.resultContentType,
+            body: verContenido || p.resultBody === null ? p.resultBody : CUERPO_RESERVADO,
+            error: p.resultError,
+          }
         : null,
     ...(humano
       ? {
-          canDecide: p.status === "pending" ? (await motivoParaNoAprobar(humano, p)) === null : false,
-          cannotDecideReason: p.status === "pending" ? await motivoParaNoAprobar(humano, p) : null,
+          canDecide: p.status === "pending" ? motivo === null : false,
+          cannotDecideReason: p.status === "pending" ? motivo : null,
         }
       : {}),
   };
@@ -177,16 +198,23 @@ async function bandeja(c: Context, filtro: z.infer<typeof FiltroDeBandeja>) {
   await caducarPropuestas();
   const { proposals, total } = await listarPropuestas(filtro);
   const nombres = await nombresDeUsuarios(proposals.map((p) => p.decidedBy));
-  return c.json({
-    total,
-    proposals: proposals.map((p) => ({
-      ...vistaParaAgente(p),
+  const humano = await humanoDe(c);
+  const vistas = [];
+  for (const p of proposals) {
+    const vista = vistaParaAgente(p);
+    // El resultado de una ruta que este humano no podría aprobar, tampoco (F79).
+    if ("result" in vista && vista.result && vista.result.body !== null && !(await puedeVerContenido(humano, p))) {
+      vista.result = { ...vista.result, body: CUERPO_RESERVADO as never };
+    }
+    vistas.push({
+      ...vista,
       agentId: p.agentId,
       agentName: p.agentName,
       decidedBy: p.decidedBy,
       decidedByName: p.decidedBy ? (nombres[p.decidedBy] ?? p.decidedBy) : null,
-    })),
-  });
+    });
+  }
+  return c.json({ total, proposals: vistas });
 }
 
 async function detalle(c: Context, id: string) {

@@ -385,6 +385,27 @@ export {
 export type { AccionDeDataset, PresetDeAgente } from "./permisos-de-agente";
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MANIFIESTO DE AGENTE — role/goal/backstory → persona (docs/agents/permissions.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  MAPA_DE_CAPACIDADES,
+  MAX_PUEDE,
+  compilarManifiestoDeAgente,
+} from "./manifiesto-de-agente";
+export type { ManifiestoDeAgente, PersonaCompilada } from "./manifiesto-de-agente";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HUELLA DEL CONTEXTO DE DECISIÓN — qué vio quien firmó (docs/agents/approvals.md)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export {
+  canonizar,
+  huellaDeContextoDeDecision,
+} from "./huella-de-contexto";
+export type { ContextoDeDecision, FicheroEnContexto } from "./huella-de-contexto";
+
+// ═══════════════════════════════════════════════════════════════════════════
 // APROBACIÓN HUMANA — propuestas de agentes (fase F, docs/agents/approvals.md)
 // ═══════════════════════════════════════════════════════════════════════════
 

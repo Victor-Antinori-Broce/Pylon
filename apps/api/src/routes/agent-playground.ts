@@ -15,12 +15,15 @@ import { logger } from "@/lib/logger";
 import { runAgent } from "@/services/agent-engine";
 
 import { requireAuth } from "../middleware/auth";
+import { sinAgentesEnGestionDeAgentes } from "../middleware/auth-guard";
 import type { AppVariables } from "../types/hono";
 
 const playgroundRouter = new Hono<{ Variables: AppVariables }>();
 
 // Requiere sesión de administrador (usado desde el Admin UI)
 playgroundRouter.use("*", requireAuth);
+// Un agente no hace hablar a otro agente (con los scopes de ESE): solo personas (F5).
+playgroundRouter.use("*", sinAgentesEnGestionDeAgentes);
 
 /**
  * POST /api/admin/agents/:id/chat

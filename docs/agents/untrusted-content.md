@@ -103,8 +103,14 @@ inside the result too. Three modes:
 | `object` | `{ "untrusted": "hi" }` |
 
 - Only records with `untrusted: true` are wrapped, only their **string**
-  values (recursively in `data`), and never ids, dates, status, slugs, owner
-  or author columns, or keys that start with `_`.
+  values. The record's own top-level system columns (ids, dates, status,
+  slugs, owner and author columns, `_meta`) stay as they are, and only while
+  they hold identifier-like values; a column that a view copied from `data`
+  does not count as a system column.
+- Inside `data` (written by the author) every string is wrapped, whatever its
+  key is called and however deep it sits; below 24 levels the rest is
+  serialized and wrapped as one string. A key that is not a short, neutral
+  name (letters, digits, `_ $ . -`) is wrapped with delimiters too.
 - With `delimiters`, a `<untrusted-content` or `</untrusted-content` written
   by the author is neutralised (`&lt;…`), so the text cannot "close" the
   wrapper and continue outside it.

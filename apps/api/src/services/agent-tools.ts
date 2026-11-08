@@ -28,6 +28,8 @@ export interface AgentToolContext {
   keyId?: string;
   /** La lista `allowedTools` del agente (vacía = sin lista: decide el scope). */
   allowedTools?: string[];
+  /** Retener toda escritura para aprobación humana (ver `AgenteMcp.retenerEscrituras`, F9). */
+  retenerEscrituras?: boolean;
 }
 
 /**
@@ -80,6 +82,7 @@ export async function executeAgentTool(
     apiKeyId: context.keyId ?? "",
     scopes: context.scopes ?? [],
     allowedTools: permitidas,
+    retenerEscrituras: context.retenerEscrituras,
   });
   if (retenida) return JSON.stringify(retenida.structuredContent ?? retenida);
 

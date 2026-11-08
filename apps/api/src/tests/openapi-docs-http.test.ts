@@ -20,6 +20,8 @@ const slugs = {
   vacio: `openapi-vacio-${sufijo}`,
   fields: `openapi-fields-${sufijo}`,
   lista: `openapi-lista-${sufijo}`,
+  // Sin política: solo lo lee un admin, así que el documento anónimo no lo describe (F11).
+  privado: `openapi-privado-${sufijo}`,
 };
 
 /** Todas las `$ref` locales del documento apuntan a algo que existe. */
@@ -45,12 +47,15 @@ describe("OpenAPI", () => {
     app = (await import("../index")).app as never;
     dbAvailable = await isDatabaseAvailable();
     if (!dbAvailable) return;
+    // El documento se pide sin sesión: solo describe los datasets de lectura pública.
     await db.execute(sql`
-      INSERT INTO data_sets (name, slug, schema) VALUES
-        (${"OpenAPI vacío"}, ${slugs.vacio}, '{}'::jsonb),
+      INSERT INTO data_sets (name, slug, schema, policy_json) VALUES
+        (${"OpenAPI vacío"}, ${slugs.vacio}, '{}'::jsonb, '{"readAccess":"public"}'::jsonb),
         (${"OpenAPI fields"}, ${slugs.fields},
-          '{"fields":[{"name":"titulo","type":"text","required":true}]}'::jsonb),
-        (${"OpenAPI lista"}, ${slugs.lista}, '[{"fieldName":"precio","fieldType":"number"}]'::jsonb)
+          '{"fields":[{"name":"titulo","type":"text","required":true}]}'::jsonb, '{"readAccess":"public"}'::jsonb),
+        (${"OpenAPI lista"}, ${slugs.lista}, '[{"fieldName":"precio","fieldType":"number"}]'::jsonb,
+          '{"readAccess":"public"}'::jsonb),
+        (${"OpenAPI privado"}, ${slugs.privado}, '{"fields":[{"name":"secreto","type":"text"}]}'::jsonb, NULL)
     `);
     // Montar la app con todos los kons tarda más que el límite por defecto.
   }, 60_000);
@@ -58,7 +63,7 @@ describe("OpenAPI", () => {
   afterAll(async () => {
     if (!dbAvailable) return;
     await db.execute(
-      sql`DELETE FROM data_sets WHERE slug IN (${slugs.vacio}, ${slugs.fields}, ${slugs.lista})`
+      sql`DELETE FROM data_sets WHERE slug IN (${slugs.vacio}, ${slugs.fields}, ${slugs.lista}, ${slugs.privado})`
     );
   });
 
@@ -87,6 +92,9 @@ describe("OpenAPI", () => {
     expect(esquemas[`Dataset_${slugs.fields}`]?.properties?.titulo).toEqual({ type: "string" });
     expect(esquemas[`Dataset_${slugs.fields}`]?.required).toContain("titulo");
     expect(esquemas[`Dataset_${slugs.lista}`]?.properties?.precio).toEqual({ type: "number" });
+    // F11: lo que el anónimo no puede leer no sale ni en los esquemas ni en las rutas.
+    expect(esquemas[`Dataset_${slugs.privado}`]).toBeUndefined();
+    expect(JSON.stringify(doc)).not.toContain(slugs.privado);
   });
 
   it("GET /api/docs sirve la interfaz HTML", async () => {

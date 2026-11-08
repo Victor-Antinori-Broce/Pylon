@@ -162,9 +162,14 @@ export function envolverTexto(texto: string, modo: ModoDeEnvoltorio): unknown {
 }
 
 /**
- * Claves que son del sistema y no texto de nadie: identificadores, fechas,
+ * Columnas que son del sistema y no texto de nadie: identificadores, fechas,
  * estados. No se envuelven (cambiarlas rompería al cliente que las usa para
  * enlazar o filtrar).
+ *
+ * SOLO en el nivel superior de la fila (auditoría 2026-11-04, F72/F75): antes la
+ * exención valía a cualquier profundidad y por patrón de nombre, así que
+ * dentro de `data` (que escribe el autor) un `{"_note": "SYSTEM: …"}`, un
+ * `{"slug": "…"}` o un texto anidado seis niveles salían SIN marcar.
  */
 const CLAVES_DEL_SISTEMA = new Set([
   "id",
@@ -188,14 +193,112 @@ const CLAVES_DEL_SISTEMA = new Set([
   "data_set_id",
 ]);
 
+/** ¿Nombre de columna del sistema? (lista exacta, `_meta`-like o clave ajena `xxxId`). */
+function nombreDeSistema(k: string): boolean {
+  return CLAVES_DEL_SISTEMA.has(k) || k.startsWith("_") || /(^id|Id|_id)$/.test(k);
+}
+
+/**
+ * Un valor que puede quedar sin marcar bajo un nombre del sistema: un
+ * identificador, una fecha, un número… nunca prosa. Así una columna «del
+ * sistema» que en realidad vino del autor (una vista que esparce `data` en la
+ * fila) no puede llevar instrucciones: `"ignora tus instrucciones"` tiene
+ * espacios y se envuelve.
+ */
+const PARECE_IDENTIFICADOR = /^[\p{L}\p{N}_.:@+\-/]{0,200}$/u;
+
+/** Profundidad máxima que se recorre; más abajo, el subárbol entero se serializa y se envuelve. */
+const PROFUNDIDAD_MAXIMA = 24;
+
+/** Claves que puede llevar un objeto escrito por terceros sin tocarlas. */
+const CLAVE_NEUTRA = /^[\p{L}\p{N}_$.\-]{1,64}$/u;
+
+function soloIdentificadores(v: unknown, prof = 0): boolean {
+  if (v === null || v === undefined || typeof v === "number" || typeof v === "boolean") return true;
+  if (v instanceof Date) return true;
+  if (typeof v === "string") return PARECE_IDENTIFICADOR.test(v);
+  if (prof >= 4 || typeof v !== "object") return false;
+  if (Array.isArray(v)) return v.every((x) => soloIdentificadores(x, prof + 1));
+  return Object.entries(v as Record<string, unknown>).every(
+    ([k, x]) => CLAVE_NEUTRA.test(k) && soloIdentificadores(x, prof + 1)
+  );
+}
+
+/** Los valores de las columnas del sistema de la fila de la base (para las vistas derivadas). */
+function valoresDelSistema(fuente: unknown): Set<string> {
+  const salida = new Set<string>();
+  if (!fuente || typeof fuente !== "object") return salida;
+  for (const [k, v] of Object.entries(fuente as Record<string, unknown>)) {
+    if (!nombreDeSistema(k)) continue;
+    if (typeof v === "string" || typeof v === "number") salida.add(String(v));
+  }
+  return salida;
+}
+
+/** ¿Todo lo que lleva `v` sale de columnas del sistema de la fila de la base? */
+function soloDeLaFuente(v: unknown, valores: Set<string>, prof = 0): boolean {
+  if (v === null || v === undefined || typeof v === "boolean" || v instanceof Date) return true;
+  if (typeof v === "string" || typeof v === "number") return valores.has(String(v));
+  if (prof >= 4 || typeof v !== "object") return false;
+  if (Array.isArray(v)) return v.every((x) => soloDeLaFuente(x, valores, prof + 1));
+  return Object.entries(v as Record<string, unknown>).every(
+    ([k, x]) => CLAVE_NEUTRA.test(k) && soloDeLaFuente(x, valores, prof + 1)
+  );
+}
+
+/** Una clave escrita por terceros: si no es un nombre corto y neutro, va marcada. */
+function claveNeutralizada(k: string): string {
+  if (CLAVE_NEUTRA.test(k)) return k;
+  // Una clave solo puede ser texto: en los dos modos, con delimitadores.
+  return envolverTexto(k, "delimiters") as string;
+}
+
+/** Todo lo de dentro es del autor: cada texto se envuelve, sin excepciones por nombre. */
 function envolverValor(v: unknown, modo: ModoDeEnvoltorio, prof: number): unknown {
   if (typeof v === "string") return v ? envolverTexto(v, modo) : v;
-  if (prof >= 6 || v === null || typeof v !== "object") return v;
-  if (Array.isArray(v)) return v.map((x) => envolverValor(x, modo, prof + 1));
+  if (v === null || typeof v !== "object") return v;
   if (v instanceof Date) return v;
+  if (prof >= PROFUNDIDAD_MAXIMA) {
+    // Sin corte que deje texto sin marcar: lo que queda se entrega serializado y envuelto.
+    let texto: string;
+    try {
+      texto = JSON.stringify(v) ?? "";
+    } catch {
+      texto = String(v);
+    }
+    return envolverTexto(texto, modo);
+  }
+  if (Array.isArray(v)) return v.map((x) => envolverValor(x, modo, prof + 1));
   const salida: Record<string, unknown> = {};
   for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-    salida[k] = CLAVES_DEL_SISTEMA.has(k) || k.startsWith("_") || /(^id|Id|_id)$/.test(k) ? x : envolverValor(x, modo, prof + 1);
+    salida[claveNeutralizada(k)] = envolverValor(x, modo, prof + 1);
+  }
+  return salida;
+}
+
+/**
+ * Una fila no confiable. En el nivel superior, una columna del sistema queda
+ * igual si de verdad lo es:
+ *
+ *   · fila = la de la base (`fuente` igual o ausente): por nombre, y solo si
+ *     su valor parece un identificador (sin prosa);
+ *   · fila DERIVADA (la vista REST de items esparce `data` junto a `id` y
+ *     `_meta`): solo si su valor sale de las columnas del sistema de la fila
+ *     de la base. Un `slug` o un `_note` que vino de `data` se envuelve.
+ *
+ * Todo lo demás, a cualquier profundidad, se envuelve.
+ */
+function envolverFila(fila: unknown, fuente: unknown, modo: ModoDeEnvoltorio): unknown {
+  if (!fila || typeof fila !== "object" || Array.isArray(fila) || fila instanceof Date) {
+    return envolverValor(fila, modo, 0);
+  }
+  const derivada = fuente !== undefined && fuente !== fila && !!fuente && typeof fuente === "object";
+  const valores = derivada ? valoresDelSistema(fuente) : null;
+  const salida: Record<string, unknown> = {};
+  for (const [k, x] of Object.entries(fila as Record<string, unknown>)) {
+    const exenta =
+      nombreDeSistema(k) && (valores ? soloDeLaFuente(x, valores) : soloIdentificadores(x));
+    salida[exenta ? k : claveNeutralizada(k)] = exenta ? x : envolverValor(x, modo, 1);
   }
   return salida;
 }
@@ -203,12 +306,19 @@ function envolverValor(v: unknown, modo: ModoDeEnvoltorio, prof: number): unknow
 /**
  * Devuelve las filas con el texto de las NO confiables envuelto (las de
  * `system` quedan igual). `modo: "none"` devuelve las mismas filas.
+ * `fuentes`: las filas de la base de las que salen `filas`, si la respuesta
+ * las transforma (decide qué columnas son del sistema de verdad).
  */
-export function envolverFilas<T>(filas: readonly T[], procedencia: Procedencia, modo: ModoDeEnvoltorio): T[] {
+export function envolverFilas<T>(
+  filas: readonly T[],
+  procedencia: Procedencia,
+  modo: ModoDeEnvoltorio,
+  fuentes?: readonly unknown[]
+): T[] {
   if (modo === "none") return filas as T[];
   return filas.map((fila, i) => {
     if (!procedencia.records[i]?.untrusted) return fila;
-    return envolverValor(fila, modo, 0) as T;
+    return envolverFila(fila, fuentes ? fuentes[i] : undefined, modo) as T;
   });
 }
 
@@ -270,5 +380,5 @@ export async function aplicarProcedenciaEnRest<T extends object>(
   const modo = envoltorioDeRest(c.req.header(CABECERA_ENVOLTORIO), agente?.mcpSettings?.untrustedWrap);
   const p = await procedenciaDeFilas(fuentes, ejecutor, { lector: agente?.agentId ?? null, wrap: modo });
   c.header(CABECERA_PEDIR_PROCEDENCIA, cabeceraDeProcedencia(p));
-  return conProcedenciaEnFilas(envolverFilas(filas, p, modo), p);
+  return conProcedenciaEnFilas(envolverFilas(filas, p, modo, fuentes), p);
 }

@@ -50,12 +50,40 @@ export const requireAuth = withRouteMeta(
       return;
     }
 
-    const session = await auth.api.getSession({
+    /**
+     * ── UNA SESIÓN HUMANA YA RESUELTA NO SE PISA ──────────────────────────
+     *
+     * El middleware global de `index.ts` ya resolvió la sesión por cookie y,
+     * para admin y editor, releyó el rol de la base (`disableCookieCache`).
+     * Volver a llamar aquí a `getSession` (con la caché en cookie de 5 min) y
+     * sobrescribir `user` devolvía el rol VIEJO: un admin degradado seguía
+     * siéndolo en `/api/graph` (Graphify) hasta 5 minutos (F74). Si hay
+     * `user` Y `session` (solo los pone una sesión humana), se respeta.
+     */
+    const sesionPrevia = (c as unknown as { get(clave: string): unknown }).get("session");
+    if (usuario && sesionPrevia) {
+      await next();
+      return;
+    }
+
+    let session = await auth.api.getSession({
       headers: c.req.raw.headers,
     });
 
     if (!session) {
       return c.json({ error: "Unauthorized - Authentication required" }, 401);
+    }
+
+    // Rutas montadas ANTES del middleware global: el rol privilegiado se relee
+    // de la base, no de la caché en cookie (la misma regla que index.ts).
+    if (esRolPrivilegiado((session.user as { role?: unknown } | undefined)?.role)) {
+      session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+        query: { disableCookieCache: true },
+      });
+      if (!session) {
+        return c.json({ error: "Unauthorized - Authentication required" }, 401);
+      }
     }
 
     // Inject user/session into context
@@ -66,6 +94,11 @@ export const requireAuth = withRouteMeta(
   }),
   { auth: "required" }
 );
+
+/** Los roles que abren algo más que lo propio: su valor nunca sale de la caché en cookie. */
+function esRolPrivilegiado(rol: unknown): boolean {
+  return rol === "admin" || rol === "editor";
+}
 
 /**
  * Middleware factory to require specific roles

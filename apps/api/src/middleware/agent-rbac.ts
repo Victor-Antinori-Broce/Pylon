@@ -17,6 +17,7 @@
 
 import type { MiddlewareHandler, Context, Next } from "hono";
 
+import { ipDelCliente } from "@/lib/ip-del-cliente";
 import { logger } from "@/lib/logger";
 import type { AgentAuthContext } from "@/services/agent-auth";
 import { hasScope, hasAllScopes, hasAnyScope } from "@/services/agent-auth";
@@ -299,8 +300,12 @@ export function agentAuthWithRBAC(options: AgentAuthWithRBACOptions): Middleware
 
     // Autenticar agente
     const result = await authenticateAgent(apiKey, {
-      ipAddress: c.req.header("x-forwarded-for") || undefined,
+      // La IP de verdad, no `x-forwarded-for` crudo (lo escribe el cliente):
+      // igual que el middleware global de index.ts (auditoría 2026-10-25).
+      ipAddress: ipDelCliente(c),
       userAgent: c.req.header("user-agent") || undefined,
+      // La audiencia de un token OAuth (RFC 8707) se comprueba contra el camino.
+      ruta: c.req.path,
     });
 
     if (!result.success || !result.context) {

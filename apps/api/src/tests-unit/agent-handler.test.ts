@@ -56,6 +56,13 @@ const baseContext: ActionContext = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
+// Quién responde (auditoría 2026-11-04, F6): un admin vigente, sin tocar la base.
+const responsableAdmin = {
+  rolDeUsuario: async () => "admin",
+  scopesDeAgente: async () => ["admin"],
+};
+const conAdmin = { ...baseContext, ejecutor: { tipo: "humano", userId: "u-admin" } } as unknown as ActionContext;
+
 describe("executeAgentAction", () => {
   it("returns error when no agentId configured", async () => {
     const result = await executeAgentAction(baseAction({}), baseContext);
@@ -70,7 +77,8 @@ describe("executeAgentAction", () => {
 
     const result = await executeAgentAction(
       baseAction({ agentId: "agent-1", promptTemplate: "Hello" }),
-      baseContext
+      conAdmin,
+      responsableAdmin
     );
 
     expect(result.success).toBe(true);
@@ -93,17 +101,21 @@ describe("executeAgentAction", () => {
     shouldFail = false;
 
     const context = {
-      ...baseContext,
+      ...conAdmin,
       event: { data: { user: { name: "Arqui" }, issue: "BUG-42" } },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     await executeAgentAction(
       baseAction({ agentId: "agent-1", promptTemplate: "Revisa {{issue}} de {{user.name}}" }),
-      context
+      context,
+      responsableAdmin
     );
 
-    expect(runAgentCalls[0].message).toBe("Revisa BUG-42 de Arqui");
+    // Los valores del evento van cercados como dato no confiable (F9)
+    expect(runAgentCalls[0].message).toEndWith(
+      "Revisa <untrusted-content>BUG-42</untrusted-content> de <untrusted-content>Arqui</untrusted-content>"
+    );
   });
 
   it("respeta opt-out de memoria y brain search", async () => {
@@ -112,7 +124,8 @@ describe("executeAgentAction", () => {
 
     await executeAgentAction(
       baseAction({ agentId: "agent-1", enableMemory: false, enableBrainSearch: false }),
-      baseContext
+      conAdmin,
+      responsableAdmin
     );
 
     expect(runAgentCalls[0].enableMemory).toBe(false);
@@ -122,12 +135,32 @@ describe("executeAgentAction", () => {
   it("mapea errores del Agent Engine a ActionResult", async () => {
     shouldFail = true;
 
-    const result = await executeAgentAction(baseAction({ agentId: "agent-1" }), baseContext);
+    const result = await executeAgentAction(baseAction({ agentId: "agent-1" }), conAdmin, responsableAdmin);
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("LLM provider unavailable");
     expect(result.durationMs).toBeDefined();
 
     shouldFail = false;
+  });
+
+  it("sin quien pida ni creador (p. ej. por evento, definida por MCP): no ejecuta (F6)", async () => {
+    runAgentCalls = [];
+    const result = await executeAgentAction(baseAction({ agentId: "agent-1" }), baseContext, responsableAdmin);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("needs a creator");
+    expect(runAgentCalls.length).toBe(0);
+  });
+
+  it("un agente sin los scopes del objetivo: no ejecuta (F6)", async () => {
+    runAgentCalls = [];
+    const comoAgente = {
+      ...baseContext,
+      ejecutor: { tipo: "agente", agente: { agentId: "ag-a", scopes: ["mcp:admin"] } },
+    } as unknown as ActionContext;
+    const result = await executeAgentAction(baseAction({ agentId: "agent-1" }), comoAgente, responsableAdmin);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("more permissions");
+    expect(runAgentCalls.length).toBe(0);
   });
 });

@@ -42,7 +42,6 @@
  */
 
 import { spawn, spawnSync } from "node:child_process";
-import { lookup } from "node:dns/promises";
 import { existsSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { isIP } from "node:net";
@@ -52,7 +51,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { messageOf } from "@kitsuden/engine";
 
 import { enProduccion } from "./entorno";
-import { direccionNoPublica } from "./oauth/cimd";
+import { ErrorDeSalida, peticionSaliente, resolverDestino, validarUrlSaliente } from "./salida-segura";
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -280,24 +279,6 @@ export function hostPermitido(hostname: string, lista: string[]): boolean {
 
 class ErrorDeLlamada extends Error {}
 
-async function leerAcotado(res: Response, maximo: number): Promise<string> {
-  const lector = res.body?.getReader();
-  if (!lector) return "";
-  const trozos: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await lector.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > maximo) {
-      await lector.cancel().catch(() => {});
-      throw new ErrorDeLlamada(`Response too large (max ${maximo} bytes)`);
-    }
-    trozos.push(value);
-  }
-  return new TextDecoder().decode(Buffer.concat(trozos));
-}
-
 function cabecerasSeguras(h: unknown): Record<string, string> {
   const salida: Record<string, string> = {};
   if (!h || typeof h !== "object") return salida;
@@ -314,32 +295,38 @@ function cabecerasSeguras(h: unknown): Record<string, string> {
  * host pointing at 169.254.169.254 or at a service of the Docker network would
  * hand its response to the code. `KITSUDEN_SANDBOX_ALLOW_INTERNAL_FETCH=true` is
  * the opt-in for actions that really call an internal service.
+ *
+ * Solo comprueba (lo usan las pruebas y quien quiera mirar antes); la petición
+ * de verdad (`llamarFetch`) resuelve, comprueba y CONECTA a la misma dirección
+ * en `lib/salida-segura.ts` (F81: antes se resolvía dos veces).
  */
 export async function exigirHostPublico(hostname: string): Promise<void> {
-  if (process.env.KITSUDEN_SANDBOX_ALLOW_INTERNAL_FETCH === "true") return;
+  if (internosPermitidosEnSandbox()) return;
   const host = hostname.replace(/^\[|\]$/g, "");
-  let direcciones: { address: string }[];
+  let url: URL;
   try {
-    direcciones = isIP(host) ? [{ address: host }] : await lookup(host, { all: true, verbatim: true });
+    url = new URL(`http://${isIP(host) === 6 ? `[${host}]` : host}/`);
   } catch {
     throw new ErrorDeLlamada(`Host could not be resolved: ${hostname}`);
   }
-  if (!direcciones.length || direcciones.some((d) => direccionNoPublica(d.address))) {
-    throw new ErrorDeLlamada(`Host resolves to a non-public address: ${hostname}`);
+  try {
+    await resolverDestino(url);
+  } catch (err) {
+    throw new ErrorDeLlamada(messageOf(err).replace(url.hostname, hostname));
   }
+}
+
+function internosPermitidosEnSandbox(): boolean {
+  return process.env.KITSUDEN_SANDBOX_ALLOW_INTERNAL_FETCH === "true";
 }
 
 async function llamarFetch(args: Record<string, unknown>, lista: string[]): Promise<RespuestaDeSandbox> {
   let url: URL;
   try {
-    url = new URL(String(args.url ?? ""));
-  } catch {
-    throw new ErrorDeLlamada("Invalid URL");
+    url = validarUrlSaliente(String(args.url ?? ""));
+  } catch (err) {
+    throw new ErrorDeLlamada(messageOf(err));
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new ErrorDeLlamada(`Protocol not allowed: ${url.protocol}`);
-  }
-  if (url.username || url.password) throw new ErrorDeLlamada("Credentials in URL are not allowed");
   if (!hostPermitido(url.hostname, lista)) {
     throw new ErrorDeLlamada(
       `Host not allowed: ${url.hostname} (allowed: ${lista.length ? lista.join(", ") : "none"})`
@@ -349,22 +336,28 @@ async function llamarFetch(args: Record<string, unknown>, lista: string[]): Prom
   if (!/^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)$/.test(metodo)) {
     throw new ErrorDeLlamada(`Method not allowed: ${metodo}`);
   }
-  await exigirHostPublico(url.hostname);
-  const res = await fetch(url, {
-    method: metodo,
-    headers: cabecerasSeguras(args.headers),
-    body: typeof args.body === "string" && metodo !== "GET" && metodo !== "HEAD" ? args.body : undefined,
-    // Una redirección a otro host saltaría la lista blanca: se devuelve tal cual.
-    redirect: "manual",
-    signal: AbortSignal.timeout(LIMITES.fetchTimeoutMs),
-  });
-  return {
-    status: res.status,
-    statusText: res.statusText,
-    headers: Object.fromEntries(res.headers.entries()),
-    body: await leerAcotado(res, LIMITES.respuestaMaxima),
-    url: url.href,
-  };
+  try {
+    // Resuelve UNA vez, rechaza lo no público y conecta a esa dirección (Host/SNI = el nombre).
+    // Las redirecciones no se siguen: una a otro host saltaría la lista blanca; se devuelven tal cual.
+    const res = await peticionSaliente(url, {
+      method: metodo,
+      headers: cabecerasSeguras(args.headers),
+      body: typeof args.body === "string" && metodo !== "GET" && metodo !== "HEAD" ? args.body : undefined,
+      timeoutMs: LIMITES.fetchTimeoutMs,
+      maxBytes: LIMITES.respuestaMaxima,
+      permitirInternos: internosPermitidosEnSandbox(),
+    });
+    return {
+      status: res.status,
+      statusText: res.statusText,
+      headers: res.headers,
+      body: res.body,
+      url: res.url,
+    };
+  } catch (err) {
+    if (err instanceof ErrorDeSalida) throw new ErrorDeLlamada(err.message);
+    throw err;
+  }
 }
 
 /** Valida un camino de la API para el código: relativo, bajo `/api/`, sin trucos. */

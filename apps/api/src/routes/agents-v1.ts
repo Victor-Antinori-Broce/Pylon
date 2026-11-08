@@ -16,6 +16,7 @@ import { db } from "../db";
 import { agentIdentities, agentApiKeys, agentTraces, agentTraceSteps } from "../db/schema";
 import { logger } from "../lib/logger";
 import { requireAuth } from "../middleware/auth";
+import { sinAgentesEnGestionDeAgentes } from "../middleware/auth-guard";
 import type { AppVariables } from "../types/hono";
 
 // CHAINED (Hono RPC): una sola expresion para que typeof agentsV1Router
@@ -24,6 +25,13 @@ const agentsV1Router = new Hono<{ Variables: AppVariables }>()
 
   // Apply authentication middleware to all routes
   .use("*", requireAuth)
+
+  // Gestionar agentes (alta, edición, borrado, tokens, playground) e
+  // identidades: solo personas, traiga el agente los scopes que traiga (F5).
+  .use("/agents", sinAgentesEnGestionDeAgentes)
+  .use("/agents/*", sinAgentesEnGestionDeAgentes)
+  .use("/identities", sinAgentesEnGestionDeAgentes)
+  .use("/identities/*", sinAgentesEnGestionDeAgentes)
 
   // ═══════════════════════════════════════════════════════════════════════════
   // AGENTS CRUD (for /api/v1/agents)

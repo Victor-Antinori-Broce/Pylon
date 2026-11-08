@@ -19,7 +19,7 @@
  * estado con `kitsuden_proposal_status`.
  */
 
-import { buildProblem } from "@kitsuden/shared";
+import { buildProblem, claveDeHerramientaMcp, esMetodoDeEscritura } from "@kitsuden/shared";
 import { createHash } from "node:crypto";
 import { listMCPTools } from "@kitsuden/engine";
 
@@ -68,6 +68,13 @@ export interface AgenteMcp {
   scopes: string[];
   allowedTools: string[];
   sponsor?: AgentAuthContext["sponsor"];
+  /**
+   * Retener TODA escritura, diga lo que diga la configuración: el turno lleva
+   * datos de terceros (una acción `agent` con datos del evento en el prompt) y
+   * un texto inyectado no debe poder escribir sin que una persona lo vea
+   * (auditoría de seguridad, F9). Las lecturas siguen su regla normal.
+   */
+  retenerEscrituras?: boolean;
 }
 
 export function contextoDeSesion(a: AgenteMcp): AgentAuthContext {
@@ -140,7 +147,8 @@ export async function retenerHerramientaSiHaceFalta(
   agente: AgenteMcp
 ): Promise<ReturnType<typeof resultadoPendiente> | ReturnType<typeof resultadoDeError> | null> {
   const i = await instantaneaDeAprobaciones();
-  if (todoApagado(i)) return null;
+  const forzar = agente.retenerEscrituras === true;
+  if (todoApagado(i) && !forzar) return null;
   const argumentos = (args && typeof args === "object" && !Array.isArray(args) ? args : {}) as Record<string, unknown>;
   const ctx = contextoDeSesion(agente);
   const usuario = { id: agente.agentId, role: "agent", scopes: agente.scopes };
@@ -149,7 +157,11 @@ export async function retenerHerramientaSiHaceFalta(
     const sdk = peticionDeHerramienta(nombre, argumentos);
     if (sdk) {
       if ("error" in sdk) return null;
-      const decision = evaluarPeticion(i, agente.agentId, sdk.metodo, sdk.camino);
+      const decision =
+        evaluarPeticion(i, agente.agentId, sdk.metodo, sdk.camino) ??
+        (forzar && esMetodoDeEscritura(sdk.metodo)
+          ? { motivo: "propose_only" as const, sensible: false, clave: null, deRuta: null }
+          : null);
       if (!decision) return null;
       if (!(await agentePodriaEjecutar(decision.deRuta, usuario))) return null;
       if (contieneSecreto(argumentos)) return errorDeNoAdmitida("secret");
@@ -178,7 +190,11 @@ export async function retenerHerramientaSiHaceFalta(
     // Herramientas del núcleo y de acciones
     const esAccion = listMCPTools().some((t) => t.name === nombre);
     const escribe = esAccion || herramientaQueEscribe(nombre);
-    const decision = evaluarHerramientaDelNucleo(i, agente.agentId, nombre, escribe);
+    const decision =
+      evaluarHerramientaDelNucleo(i, agente.agentId, nombre, escribe) ??
+      (forzar && escribe
+        ? { motivo: "propose_only" as const, clave: claveDeHerramientaMcp(nombre), sensible: false }
+        : null);
     if (!decision) return null;
     if (!esAccion && !puedeIntentarHerramienta(nombre, agente.scopes)) return null;
     if (contieneSecreto(argumentos)) return errorDeNoAdmitida("secret");

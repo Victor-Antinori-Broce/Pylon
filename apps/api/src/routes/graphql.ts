@@ -12,7 +12,14 @@
  * Playground: GET /api/graphql (returns GraphiQL HTML)
  */
 
-import { TABLAS_SOLO_POR_SU_RUTA } from "../lib/codigo-de-acciones";
+import {
+  columnasSecretasEn,
+  esAdminHumano,
+  esColumnaSecreta,
+  motivoParaNoEscribirTablaNativa,
+  sinColumnasSecretas,
+  tablaNativaProhibida,
+} from "../lib/tablas-explorables";
 import { resolveExecutor, messageOf } from "@kitsuden/engine";
 import { eq, desc, asc, ilike, and, sql, count } from "drizzle-orm";
 import {
@@ -188,6 +195,48 @@ interface TableGraphQLTypes {
   hasIdColumn: boolean;
 }
 
+/**
+ * Contexto de cada ejecución: quién pregunta. Se fija en el POST; los
+ * resolvers de mutación lo miran para `TABLAS_ESCRITURA_ADMIN`.
+ */
+export interface ContextoGraphQL {
+  adminHumano: boolean;
+}
+
+/**
+ * ── LISTA NEGRA Y COLUMNAS SECRETAS (auditoría 2026-11-04, F12/F13) ────────
+ *
+ * El grafo generaba consulta y mutaciones para TODA tabla del esquema
+ * fusionado: un admin, o una clave con `admin`, pedía `authAccounts { docs {
+ * password accessToken } }` y reescribía un hash de contraseña. Ahora, con la
+ * regla de `/api/items` y MCP (`tablaNativaProhibida`):
+ *   · las tablas prohibidas no tienen tipo, consulta, mutación ni aparecen en
+ *     `collections` o en `items`;
+ *   · las columnas secretas no son campos del tipo, no ordenan, y una
+ *     mutación que las nombre se rechaza;
+ *   · `TABLAS_ESCRITURA_ADMIN` solo las modifica un admin humano.
+ */
+function columnasVisibles(table: unknown): DrizzleColumnInfo[] {
+  return getTableColumns(table).filter((c) => !esColumnaSecreta(c.key) && !esColumnaSecreta(c.name));
+}
+
+/** Lanza si quien pregunta no puede escribir esta tabla, o si `input` nombra una columna secreta. */
+export function exigirEscrituraGraphQL(
+  tableName: string,
+  ctx: ContextoGraphQL | undefined,
+  input?: Record<string, unknown>
+): void {
+  const motivo = motivoParaNoEscribirTablaNativa(tableName, ctx?.adminHumano === true);
+  if (motivo === "exige-admin-humano") {
+    throw new Error(`Writing ${tableName} requires a human admin session`);
+  }
+  if (motivo) throw new Error(`${tableName} is not written through GraphQL`);
+  const secretas = columnasSecretasEn(input);
+  if (secretas.length > 0) {
+    throw new Error(`Column ${secretas[0]} of ${tableName} cannot be written through GraphQL`);
+  }
+}
+
 const DeletionResultType = new GraphQLObjectType({
   name: "DeletionResult",
   fields: {
@@ -216,8 +265,10 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
 
     const table = exportedValue as any;
     const tableName = table[Symbol.for("drizzle:Name")];
+    // Credenciales, sesiones, claves, secretos: ni tipo ni consulta.
+    if (tablaNativaProhibida(tableName)) continue;
     const typeName = toPascalCase(exportKey);
-    const columns = getTableColumns(table);
+    const columns = columnasVisibles(table);
     const hasIdColumn = columns.some((c) => c.key === "id");
 
     // Build GraphQL fields from columns
@@ -259,7 +310,7 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
         async resolve(_: any, args: any) {
           try {
             const [doc] = await exec().select().from(table).where(eq(table.id, args.id)).limit(1);
-            return doc || null;
+            return doc ? sinColumnasSecretas(doc) : null;
           } catch (err: unknown) {
             logger.error(
               { table: tableName, error: messageOf(err) },
@@ -304,8 +355,9 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
           const where = conditions.length > 0 ? and(...conditions) : undefined;
 
           // Determine sort column
+          // Solo por columnas visibles: ordenar por un hash es un oráculo.
           let orderByCol = table.createdAt || table.id;
-          if (args.sort && table[args.sort]) {
+          if (args.sort && columns.some((c) => c.key === args.sort)) {
             orderByCol = table[args.sort];
           }
           const orderBy = args.order === "asc" ? asc(orderByCol) : desc(orderByCol);
@@ -319,7 +371,7 @@ async function buildNativeTableTypes(schema: Record<string, unknown>): Promise<{
           ]);
 
           return {
-            docs,
+            docs: sinColumnasSecretas(docs),
             totalDocs: total?.value || 0,
             page: args.page || 1,
             limit,
@@ -345,8 +397,10 @@ async function buildNativeTableMutations(
     if (!hasIdColumn) continue;
 
     const tableName = table[Symbol.for("drizzle:Name")];
-    // Fase I (decisión 2): sin mutaciones para las tablas con ruta propia.
-    if (TABLAS_SOLO_POR_SU_RUTA.has(tableName)) continue;
+    // Fase I (decisión 2): sin mutaciones para las tablas con ruta propia, ni
+    // para las prohibidas. Las de `TABLAS_ESCRITURA_ADMIN` sí existen, pero el
+    // resolver exige un admin humano (`exigirEscrituraGraphQL`).
+    if (motivoParaNoEscribirTablaNativa(tableName, true)) continue;
     const typeName = toPascalCase(exportKey);
 
     mutations[`create${typeName}`] = {
@@ -354,13 +408,14 @@ async function buildNativeTableMutations(
       args: {
         input: { type: new GraphQLNonNull(GraphQLJSON) },
       },
-      async resolve(_: any, args: any) {
+      async resolve(_: any, args: any, ctx: ContextoGraphQL) {
+        const input = args.input ? { ...args.input } : {};
+        delete input.id;
+        exigirEscrituraGraphQL(tableName, ctx, input);
         try {
-          const input = args.input ? { ...args.input } : {};
-          delete input.id;
           const [doc] = await (exec().insert(table).values(input).returning() as Promise<any[]>);
           await invalidateGraphQLCache();
-          return doc;
+          return doc ? sinColumnasSecretas(doc) : doc;
         } catch (err: unknown) {
           logger.error(
             { table: tableName, error: messageOf(err) },
@@ -377,17 +432,18 @@ async function buildNativeTableMutations(
         id: { type: new GraphQLNonNull(GraphQLString) },
         input: { type: new GraphQLNonNull(GraphQLJSON) },
       },
-      async resolve(_: any, args: any) {
+      async resolve(_: any, args: any, ctx: ContextoGraphQL) {
+        const input = args.input ? { ...args.input } : {};
+        delete input.id;
+        exigirEscrituraGraphQL(tableName, ctx, input);
         try {
-          const input = args.input ? { ...args.input } : {};
-          delete input.id;
           const [doc] = await exec()
             .update(table)
             .set(input)
             .where(eq(table.id, args.id))
             .returning();
           await invalidateGraphQLCache();
-          return doc || null;
+          return doc ? sinColumnasSecretas(doc) : null;
         } catch (err: unknown) {
           logger.error(
             { table: tableName, error: messageOf(err) },
@@ -403,7 +459,8 @@ async function buildNativeTableMutations(
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      async resolve(_: any, args: any) {
+      async resolve(_: any, args: any, ctx: ContextoGraphQL) {
+        exigirEscrituraGraphQL(tableName, ctx);
         try {
           await exec().delete(table).where(eq(table.id, args.id));
           await invalidateGraphQLCache();
@@ -777,10 +834,11 @@ function buildUniversalQuery(
       );
       const table = tableKey ? (schema as any)[tableKey] : null;
 
-      if (table && isDrizzleTable(table)) {
+      // La misma lista negra que los tipos: una tabla prohibida "no existe".
+      if (table && isDrizzleTable(table) && !tablaNativaProhibida(table[Symbol.for("drizzle:Name")])) {
         if (args.id && table.id) {
           const [doc] = await exec().select().from(table).where(eq(table.id, args.id)).limit(1);
-          return doc || null;
+          return doc ? sinColumnasSecretas(doc) : null;
         }
 
         const [docs, [total]] = await Promise.all([
@@ -795,7 +853,7 @@ function buildUniversalQuery(
             .from(table),
         ]);
         return {
-          docs,
+          docs: sinColumnasSecretas(docs),
           totalDocs: total?.value || 0,
           page: args.page,
           limit,
@@ -841,7 +899,13 @@ async function buildSchema(): Promise<GraphQLSchema> {
           .select({ slug: dataSets.slug, name: dataSets.name })
           .from(dataSets);
         const tables = Object.entries(freshMergedSchema)
-          .filter(([k, v]) => isDrizzleTable(v) && !k.endsWith("Relations") && !k.endsWith("Enum"))
+          .filter(
+            ([k, v]) =>
+              isDrizzleTable(v) &&
+              !k.endsWith("Relations") &&
+              !k.endsWith("Enum") &&
+              !tablaNativaProhibida((v as Record<symbol, string>)[Symbol.for("drizzle:Name")])
+          )
           .map(([k, v]) => ({
             type: "table",
             name: k,
@@ -919,11 +983,13 @@ graphqlRoutes.post("/", protectRoute, withTransactionalRLS(), async (c) => {
 
   try {
     const schema = await buildSchema();
+    const contextValue: ContextoGraphQL = { adminHumano: esAdminHumano(c) };
     const result = await graphql({
       schema,
       source: queryStr,
       variableValues: variables,
       operationName,
+      contextValue,
     });
 
     return c.json(result);

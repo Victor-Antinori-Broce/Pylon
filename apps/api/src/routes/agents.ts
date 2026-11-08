@@ -9,7 +9,7 @@
  * - Statistics and monitoring
  */
 
-import { normalizarScopes } from "@kitsuden/shared";
+import { compilarManifiestoDeAgente, normalizarScopes } from "@kitsuden/shared";
 import { eq, desc, count, and, gte, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 
@@ -25,126 +25,166 @@ import { logger } from "@/lib/logger";
 import { generateAgentApiKey } from "@/services/agent-auth";
 
 import { requireAuth } from "../middleware/auth";
+import { sinAgentesEnGestionDeAgentes } from "../middleware/auth-guard";
 import type { AppVariables } from "../types/hono";
 
 const agentsRouter = new Hono<{ Variables: AppVariables }>();
 
 // Apply authentication middleware to all routes
 agentsRouter.use("*", requireAuth);
+// Crear, editar, borrar agentes y acuñar sus claves: solo personas (F5).
+agentsRouter.use("*", sinAgentesEnGestionDeAgentes);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AGENT CRUD
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** Cuerpo validado de la petición de alta (también lo usa `/from-manifest`). */
+interface CuerpoDeAlta {
+  name?: unknown;
+  description?: unknown;
+  type?: unknown;
+  capabilities?: unknown;
+  systemPrompt?: unknown;
+  allowedTools?: unknown;
+  scopes?: unknown;
+  rateLimit?: unknown;
+  expiresInDays?: unknown;
+  isActive?: unknown;
+}
+
 /**
- * POST /api/admin/agents
- * Create a new agent identity with Persona configuration
+ * El alta propiamente dicha: valida tipos/scopes, crea la identidad y acuña
+ * la primera clave. Compartida por POST / y POST /from-manifest.
  */
-agentsRouter.post("/", async (c) => {
+async function crearAgente(body: CuerpoDeAlta) {
+  const {
+    name,
+    description,
+    type,
+    capabilities,
+    systemPrompt,
+    allowedTools,
+    scopes,
+    rateLimit,
+    expiresInDays,
+    isActive,
+  } = body;
+
+  if (!name || typeof name !== "string" || !name.trim()) {
+    throw new Error("Name is required");
+  }
+
+  // Validate type
+  const agentType = type || "custom";
+  const validTypes = [
+    "claude-desktop",
+    "claude-web",
+    "scraper",
+    "worker",
+    "webhook",
+    "mcp-server",
+    "custom",
+  ];
+  if (typeof agentType !== "string" || !validTypes.includes(agentType)) {
+    throw new Error(`Invalid type. Must be one of: ${validTypes.join(", ")}`);
+  }
+
+  // Validar scopes: amplios, finos (`kon:<kon>:<op>`, `datasets:<slug>:<acción>`)
+  // y denegaciones (`!patrón`). Antes un filtro `^[a-z]+:[a-z*]+$` tiraba EN
+  // SILENCIO todo lo fino (fase E): un scope que no vale es un 400, no un hueco.
+  const validScopes = normalizarScopes(scopes ?? ["mcp:connect"]);
+
+  // Validate capabilities (if provided)
+  const validCapabilities = (Array.isArray(capabilities) ? capabilities : []).filter(
+    (c: unknown) => typeof c === "string" && c.length > 0
+  );
+
+  // Validate allowedTools (if provided)
+  const validAllowedTools = (Array.isArray(allowedTools) ? allowedTools : []).filter(
+    (t: unknown) => typeof t === "string" && t.length > 0
+  );
+
+  // Generate first API key WITH TYPE
+  const { plainKey, keyHash, keyPrefix, keyId, algorithm } = await generateAgentApiKey(agentType);
+
+  // Create agent identity with new Persona fields
+  const [agent] = await db
+    .insert(agentIdentities)
+    .values({
+      name: name.trim(),
+      description: typeof description === "string" ? description : null,
+      type: agentType,
+      capabilities: validCapabilities,
+      systemPrompt: typeof systemPrompt === "string" ? systemPrompt : null,
+      allowedTools: validAllowedTools,
+      scopes: validScopes,
+      rateLimit: typeof rateLimit === "number" && rateLimit > 0 ? rateLimit : 60,
+      isActive: isActive !== false,
+    })
+    .returning();
+
+  const expiresAt =
+    typeof expiresInDays === "number" && expiresInDays > 0
+      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+      : null;
+
+  // `keyId` y `algorithm` son los que usa `authenticateAgent` para encontrar
+  // y verificar la clave. Sin ellos (como se guardaba aquí) la clave salía
+  // del panel y NO autenticaba nunca (2026-10-15). Igual que createAgent().
+  await db.insert(agentApiKeys).values({
+    agentId: agent.id,
+    keyId,
+    keyHash,
+    keyPrefix,
+    algorithm,
+    expiresAt,
+  });
+
+  logger.info(
+    {
+      agentId: agent.id,
+      name: agent.name,
+      type: agentType,
+      capabilitiesCount: validCapabilities.length,
+    },
+    "Agent created with Persona"
+  );
+
+  return { agent, plainKey };
+}
+
+/**
+ * POST /api/admin/agents/from-manifest
+ * Alta declarativa: un manifiesto role/goal/backstory (CrewAI-style) compilado
+ * a persona (scopes + systemPrompt). Acepta `manifest` (objeto) o `yaml`
+ * (texto). Las capacidades desconocidas son un 400, nunca un permiso inventado.
+ */
+agentsRouter.post("/from-manifest", async (c) => {
   try {
     const body = await c.req.json();
-    const {
-      name,
-      description,
-      type,
-      capabilities,
-      systemPrompt,
-      allowedTools,
-      scopes,
-      rateLimit,
-      expiresInDays,
-      isActive,
-    } = body;
-
-    if (!name) {
-      return c.json({ success: false, error: "Name is required" }, 400);
+    let crudo = body?.manifest;
+    if (crudo === undefined && typeof body?.yaml === "string") {
+      const { parse } = await import("yaml");
+      crudo = parse(body.yaml);
     }
-
-    // Validate type
-    const agentType = type || "custom";
-    const validTypes = [
-      "claude-desktop",
-      "claude-web",
-      "scraper",
-      "worker",
-      "webhook",
-      "mcp-server",
-      "custom",
-    ];
-    if (!validTypes.includes(agentType)) {
-      return c.json(
-        {
-          success: false,
-          error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
-        },
-        400
-      );
-    }
-
-    // Validar scopes: amplios, finos (`kon:<kon>:<op>`, `datasets:<slug>:<acción>`)
-    // y denegaciones (`!patrón`). Antes un filtro `^[a-z]+:[a-z*]+$` tiraba EN
-    // SILENCIO todo lo fino (fase E): un scope que no vale es un 400, no un hueco.
-    let validScopes: string[];
+    let persona;
     try {
-      validScopes = normalizarScopes(scopes ?? ["mcp:connect"]);
+      persona = compilarManifiestoDeAgente(crudo);
     } catch (err) {
       return c.json({ success: false, error: (err as Error).message }, 400);
     }
 
-    // Validate capabilities (if provided)
-    const validCapabilities = (capabilities || []).filter(
-      (c: string) => typeof c === "string" && c.length > 0
-    );
-
-    // Validate allowedTools (if provided)
-    const validAllowedTools = (allowedTools || []).filter(
-      (t: string) => typeof t === "string" && t.length > 0
-    );
-
-    // Generate first API key WITH TYPE
-    const { plainKey, keyHash, keyPrefix, keyId, algorithm } = await generateAgentApiKey(agentType);
-
-    // Create agent identity with new Persona fields
-    const [agent] = await db
-      .insert(agentIdentities)
-      .values({
-        name,
-        description: description || null,
-        type: agentType,
-        capabilities: validCapabilities,
-        systemPrompt: systemPrompt || null,
-        allowedTools: validAllowedTools,
-        scopes: validScopes,
-        rateLimit: rateLimit || 60,
-        isActive: isActive !== false,
-      })
-      .returning();
-
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-      : null;
-
-    // `keyId` y `algorithm` son los que usa `authenticateAgent` para encontrar
-    // y verificar la clave. Sin ellos (como se guardaba aquí) la clave salía
-    // del panel y NO autenticaba nunca (2026-10-15). Igual que createAgent().
-    await db.insert(agentApiKeys).values({
-      agentId: agent.id,
-      keyId,
-      keyHash,
-      keyPrefix,
-      algorithm,
-      expiresAt,
+    const { agent, plainKey } = await crearAgente({
+      name: persona.nombre,
+      description: persona.descripcion,
+      type: persona.type,
+      systemPrompt: persona.systemPrompt,
+      scopes: persona.scopes,
+      rateLimit: persona.rateLimit,
+      expiresInDays: body?.expiresInDays,
+      isActive: body?.isActive,
     });
-
-    logger.info(
-      {
-        agentId: agent.id,
-        name,
-        type: agentType,
-        capabilitiesCount: validCapabilities.length,
-      },
-      "Agent created with Persona"
-    );
 
     return c.json(
       {
@@ -169,8 +209,49 @@ agentsRouter.post("/", async (c) => {
       201
     );
   } catch (error) {
+    const mensaje = error instanceof Error ? error.message : "Failed to create agent";
+    logger.error({ error }, "Failed to create agent from manifest");
+    const status = /is required|Invalid|Unknown|Empty|more than/i.test(mensaje) ? 400 : 500;
+    return c.json({ success: false, error: mensaje }, status);
+  }
+});
+
+/**
+ * POST /api/admin/agents
+ * Create a new agent identity with Persona configuration
+ */
+agentsRouter.post("/", async (c) => {
+  try {
+    const body: CuerpoDeAlta = await c.req.json();
+    const { agent, plainKey } = await crearAgente(body);
+
+    return c.json(
+      {
+        success: true,
+        data: {
+          agent: {
+            id: agent.id,
+            name: agent.name,
+            type: agent.type,
+            description: agent.description,
+            capabilities: agent.capabilities,
+            systemPrompt: agent.systemPrompt,
+            allowedTools: agent.allowedTools,
+            scopes: agent.scopes,
+            rateLimit: agent.rateLimit,
+            isActive: agent.isActive,
+            createdAt: agent.createdAt,
+          },
+          apiKey: plainKey, // Only shown once!
+        },
+      },
+      201
+    );
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : "Failed to create agent";
     logger.error({ error }, "Failed to create agent");
-    return c.json({ success: false, error: "Failed to create agent" }, 500);
+    const status = /is required|Invalid|Unknown|Empty|more than/i.test(mensaje) ? 400 : 500;
+    return c.json({ success: false, error: mensaje }, status);
   }
 });
 

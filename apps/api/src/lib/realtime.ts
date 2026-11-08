@@ -39,6 +39,10 @@ export interface WSClient {
   userId: string | null;
   /** Rol del usuario — lo necesita la autorización de canales. */
   userRole: string | null;
+  /** Sesión de better-auth con la que se abrió el socket (null: anónimo). */
+  sessionId: string | null;
+  /** Caducidad de esa sesión (ms epoch); el socket no vive más que ella. */
+  sessionExpiresAt: number | null;
   socket: ServerWebSocket<WSClientData>;
   channels: Set<string>;
   rooms: Set<string>; // Presence rooms
@@ -48,12 +52,78 @@ export interface WSClientData {
   clientId: string;
   userId: string | null;
   userRole?: string | null;
+  sessionId?: string | null;
+  sessionExpiresAt?: number | null;
 }
 
 interface IncomingMessage {
   type: "subscribe" | "unsubscribe" | "presence:join" | "presence:leave" | "ping";
   channel?: string;
   room?: string;
+}
+
+/**
+ * Tope de longitud de `type`, `channel` y `room` en un frame del cliente. Los
+ * nombres válidos son cortos; uno enorme solo sirve para gastar CPU en regex
+ * o inflar el mensaje de error que se le devuelve.
+ */
+export const MAX_NOMBRE_EN_FRAME = 200;
+
+/** Cada cuánto se revalida la sesión de los sockets con usuario. */
+export const REVALIDAR_SESION_MS = 60_000;
+
+/** Códigos de cierre (rango 4000–4999, de aplicación). */
+export const CIERRE_SESION_INVALIDA = 4401;
+
+// ═══════════════════════════════════════════════════════════════
+// Revalidación de sesión (pura, testeable)
+// ═══════════════════════════════════════════════════════════════
+
+/** Lo que el socket guardó al abrirse. */
+export interface SesionDelSocket {
+  userId: string | null;
+  userRole: string | null;
+  sessionId: string | null;
+}
+
+/** La sesión tal como está AHORA en la base de datos (null: ya no existe). */
+export interface SesionActual {
+  userId: string;
+  role: string | null;
+  /** ms epoch */
+  expiresAt: number;
+}
+
+export type DecisionDeSesion =
+  | { mantener: true; expiresAt: number | null }
+  | { mantener: false; motivo: "revocada" | "caducada" | "otro-usuario" | "rol-cambiado" | "sin-sesion" };
+
+/**
+ * ¿Sigue valiendo el socket? Decide con lo que se guardó al abrirlo y lo que
+ * hay ahora. El anónimo no tiene sesión que revalidar: se mantiene (sus
+ * permisos ya son los mínimos). Un cambio de rol, en cualquier sentido,
+ * cierra: el cliente reconecta y se le autoriza con el rol nuevo.
+ */
+export function decidirSesion(
+  socket: SesionDelSocket,
+  actual: SesionActual | null,
+  ahora: number
+): DecisionDeSesion {
+  if (!socket.userId) return { mantener: true, expiresAt: null };
+  // Con usuario pero sin id de sesión no hay forma de revalidar: cerrar.
+  if (!socket.sessionId) return { mantener: false, motivo: "sin-sesion" };
+  if (!actual) return { mantener: false, motivo: "revocada" };
+  if (actual.expiresAt <= ahora) return { mantener: false, motivo: "caducada" };
+  if (actual.userId !== socket.userId) return { mantener: false, motivo: "otro-usuario" };
+  if ((actual.role ?? null) !== (socket.userRole ?? null)) {
+    return { mantener: false, motivo: "rol-cambiado" };
+  }
+  return { mantener: true, expiresAt: actual.expiresAt };
+}
+
+/** Un nombre que viene en un frame: texto, no vacío y con tope. */
+function nombreValido(valor: unknown): valor is string {
+  return typeof valor === "string" && valor.length > 0 && valor.length <= MAX_NOMBRE_EN_FRAME;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -67,6 +137,10 @@ class RealtimeManager {
   // @ts-ignore - Private property, may be used in future
   private _valkeySubscriptions = new Map<string, () => Promise<void>>(); // channel → unsubscribe fn
   private initialized = false;
+  /** Cola por canal: un evento que espera a su política no adelanta a otro. */
+  private channelQueues = new Map<string, Promise<void>>();
+  /** Barrido periódico de sesiones; solo existe mientras haya clientes. */
+  private revalidationTimer: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize Valkey subscriber for real-time events.
@@ -104,19 +178,123 @@ class RealtimeManager {
     clientId: string,
     socket: ServerWebSocket<WSClientData>,
     userId: string | null,
-    userRole: string | null = null
+    userRole: string | null = null,
+    session: { id: string | null; expiresAt: number | null } = { id: null, expiresAt: null }
   ): WSClient {
     const client: WSClient = {
       id: clientId,
       userId,
       userRole,
+      sessionId: userId ? session.id : null,
+      sessionExpiresAt: userId ? session.expiresAt : null,
       socket,
       channels: new Set(),
       rooms: new Set(),
     };
     this.clients.set(clientId, client);
+    this.startRevalidation();
     console.log(`  📡 [WS] Client connected: ${clientId} (user: ${userId || "anonymous"})`);
     return client;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Revalidación de sesión
+  //
+  // La identidad y el rol se leían UNA vez en el upgrade y valían toda la
+  // vida del socket: una cuenta degradada o con la sesión revocada seguía
+  // recibiendo datos (auditoría de seguridad, F15/F82). Ahora se revalida al
+  // suscribirse y cada REVALIDAR_SESION_MS, y el socket se cierra si la
+  // sesión ya no existe, caducó o el rol cambió.
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Revalida un cliente. Devuelve `true` si sigue conectado. Si el
+   * validador falla (sin DB), se cierra: falla cerrado, como el HTTP, que
+   * sin sesión legible trata la petición como anónima.
+   */
+  async revalidateClient(clientId: string): Promise<boolean> {
+    const client = this.clients.get(clientId);
+    if (!client) return false;
+    if (!client.userId) return true; // anónimo: nada que revalidar
+
+    let actual: SesionActual | null;
+    try {
+      if (_sessionValidator && client.sessionId) {
+        actual = await _sessionValidator(client.sessionId);
+      } else {
+        // Sin validador registrado: al menos la caducidad que se guardó.
+        actual =
+          client.sessionExpiresAt !== null
+            ? { userId: client.userId, role: client.userRole, expiresAt: client.sessionExpiresAt }
+            : null;
+      }
+    } catch (err) {
+      console.warn(`  🔒 [WS] ${clientId}: session check failed (${errorMessage(err)})`);
+      this.closeClient(clientId, "Session could not be verified");
+      return false;
+    }
+
+    // El cliente pudo irse mientras se consultaba.
+    if (!this.clients.has(clientId)) return false;
+
+    const decision = decidirSesion(
+      { userId: client.userId, userRole: client.userRole, sessionId: client.sessionId },
+      actual,
+      Date.now()
+    );
+    if (!decision.mantener) {
+      console.warn(`  🔒 [WS] ${clientId} closed: session ${decision.motivo}`);
+      this.closeClient(clientId, `Session ${decision.motivo}`);
+      return false;
+    }
+    // better-auth alarga la sesión al usarla: se guarda la caducidad nueva.
+    client.sessionExpiresAt = decision.expiresAt;
+    return true;
+  }
+
+  /** Revalida todos los sockets con usuario (lo llama el barrido periódico). */
+  async revalidateAll(): Promise<void> {
+    const ids = [...this.clients.values()].filter((c) => c.userId).map((c) => c.id);
+    await Promise.all(ids.map((id) => this.revalidateClient(id).catch(() => false)));
+  }
+
+  /** Cierra el socket y limpia su estado. Idempotente. */
+  closeClient(clientId: string, reason: string): void {
+    const client = this.clients.get(clientId);
+    if (!client) return;
+    this.sendError(client.socket, reason);
+    try {
+      client.socket.close(CIERRE_SESION_INVALIDA, reason.slice(0, 120));
+    } catch {
+      // Ya cerrado
+    }
+    this.removeClient(clientId);
+  }
+
+  private startRevalidation(): void {
+    if (this.revalidationTimer) return;
+    this.revalidationTimer = setInterval(() => {
+      this.revalidateAll().catch((err) => {
+        console.warn(`  🔒 [WS] session sweep failed: ${errorMessage(err)}`);
+      });
+    }, REVALIDAR_SESION_MS);
+    // El barrido no mantiene vivo el proceso por sí solo.
+    (this.revalidationTimer as { unref?: () => void }).unref?.();
+  }
+
+  private stopRevalidationIfIdle(): void {
+    if (this.clients.size > 0 || !this.revalidationTimer) return;
+    clearInterval(this.revalidationTimer);
+    this.revalidationTimer = null;
+  }
+
+  /** ¿Caducó ya la sesión guardada? (comprobación barata, sin DB). */
+  private sessionExpired(client: WSClient): boolean {
+    return (
+      client.userId !== null &&
+      client.sessionExpiresAt !== null &&
+      client.sessionExpiresAt <= Date.now()
+    );
   }
 
   /**
@@ -137,6 +315,7 @@ class RealtimeManager {
     }
 
     this.clients.delete(clientId);
+    this.stopRevalidationIfIdle();
     console.log(`  📡 [WS] Client disconnected: ${clientId}`);
   }
 
@@ -148,10 +327,14 @@ class RealtimeManager {
     if (!client) return;
 
     // Validate channel format (table, entry, content channels)
-    if (!channel.match(/^(table|entry|content):[a-zA-Z0-9_-]+$/)) {
-      this.sendError(client.socket, `Invalid channel format: ${channel}`);
+    if (!nombreValido(channel) || !/^(table|entry|content):[a-zA-Z0-9_-]+$/.test(channel)) {
+      this.sendError(client.socket, "Invalid channel format");
       return;
     }
+
+    // La sesión se revalida ANTES de autorizar: el rol con el que se decide
+    // tiene que ser el de ahora, no el del upgrade.
+    if (!(await this.revalidateClient(clientId))) return;
 
     // AUTORIZACIÓN — antes solo se validaba el FORMATO del canal, así que
     // cualquier cliente conectado podía escuchar cualquier tabla. El
@@ -166,6 +349,9 @@ class RealtimeManager {
       console.warn(`  🔒 [WS] ${clientId} DENIED on ${channel} (user: ${client.userId ?? "anon"})`);
       return;
     }
+
+    // Se fue (o se le cerró) mientras se autorizaba: no dejar un suscriptor huérfano.
+    if (this.clients.get(clientId) !== client) return;
 
     client.channels.add(channel);
 
@@ -205,6 +391,42 @@ class RealtimeManager {
     const subscribers = this.channelSubscribers.get(channel);
     if (!subscribers || subscribers.size === 0) return;
 
+    // El preparador (lo cablea el host) puede necesitar refrescar la política
+    // del canal antes de filtrar. Mientras haya un refresco pendiente, los
+    // eventos de ese canal esperan en cola para no llegar desordenados.
+    let preparando: void | Promise<void> = undefined;
+    try {
+      preparando = _channelPreparer?.(channel);
+    } catch (err) {
+      console.warn(`  🔒 [WS] channel prepare failed on ${channel}: ${errorMessage(err)}`);
+    }
+    const pendiente = this.channelQueues.get(channel);
+    if (!preparando && !pendiente) {
+      this.fanOut(channel, message);
+      return;
+    }
+
+    const siguiente: Promise<void> = (pendiente ?? Promise.resolve())
+      .then(() => preparando)
+      .catch((err) => {
+        // Sin política fresca el filtro deja pasar solo a quien no la necesita.
+        console.warn(`  🔒 [WS] channel prepare failed on ${channel}: ${errorMessage(err)}`);
+      })
+      .then(() => this.fanOut(channel, message))
+      .catch((err) => {
+        console.warn(`  📡 [WS] broadcast failed on ${channel}: ${errorMessage(err)}`);
+      })
+      .then(() => {
+        if (this.channelQueues.get(channel) === siguiente) this.channelQueues.delete(channel);
+      });
+    this.channelQueues.set(channel, siguiente);
+  }
+
+  /** Entrega un mensaje ya preparado a cada suscriptor que pueda verlo. */
+  private fanOut(channel: string, message: string): void {
+    const subscribers = this.channelSubscribers.get(channel);
+    if (!subscribers || subscribers.size === 0) return;
+
     let data: unknown;
     try {
       data = JSON.parse(message);
@@ -212,9 +434,15 @@ class RealtimeManager {
       data = message;
     }
 
-    for (const clientId of subscribers) {
+    for (const clientId of [...subscribers]) {
       const client = this.clients.get(clientId);
       if (!client) continue;
+
+      // La sesión caducó entre dos barridos: no se entrega y se cierra.
+      if (this.sessionExpired(client)) {
+        this.closeClient(clientId, "Session caducada");
+        continue;
+      }
 
       // FILTRADO POR SUSCRIPTOR — no un fan-out ciego.
       // Entregar la misma fila a todos los suscritos al canal filtraría datos
@@ -222,11 +450,18 @@ class RealtimeManager {
       // de datasets, pero en streaming). El filtro decide POR CLIENTE si esa
       // fila concreta le corresponde; sin filtro registrado, solo se entrega
       // a admins (deny-by-default).
-      const visible = _rowFilter
-        ? _rowFilter(channel, data, { id: client.userId, role: client.userRole ?? null })
-        : client.userRole === "admin"
-          ? data
-          : null;
+      let visible: unknown = null;
+      try {
+        visible = _rowFilter
+          ? _rowFilter(channel, data, { id: client.userId, role: client.userRole ?? null })
+          : client.userRole === "admin"
+            ? data
+            : null;
+      } catch (err) {
+        // Un filtro que falla no entrega (y no corta a los demás suscriptores).
+        console.warn(`  🔒 [WS] row filter failed on ${channel}: ${errorMessage(err)}`);
+        visible = null;
+      }
 
       if (visible === null || visible === undefined) continue;
       this.send(client.socket, { type: "message", channel, data: visible });
@@ -245,8 +480,8 @@ class RealtimeManager {
     if (!client) return;
 
     // Validate room format
-    if (!room.match(/^[a-zA-Z0-9_:-]+$/)) {
-      this.sendError(client.socket, `Invalid room format: ${room}`);
+    if (!nombreValido(room) || !/^[a-zA-Z0-9_:-]+$/.test(room)) {
+      this.sendError(client.socket, "Invalid room format");
       return;
     }
 
@@ -359,44 +594,75 @@ class RealtimeManager {
    * Handle incoming WebSocket message.
    */
   handleMessage(clientId: string, raw: string): void {
-    let msg: IncomingMessage;
-    try {
-      msg = JSON.parse(raw);
-    } catch {
-      const client = this.clients.get(clientId);
-      if (client) this.sendError(client.socket, "Invalid JSON");
-      return;
-    }
-
     const client = this.clients.get(clientId);
     if (!client) return;
 
-    switch (msg.type) {
-      case "subscribe":
-        if (msg.channel) this.subscribeToChannel(clientId, msg.channel);
-        break;
+    // El frame viene de un cliente que puede ser anónimo: nada de lo que trae
+    // se usa sin comprobar su tipo. Un `null`, un número o `{"channel": 1}`
+    // lanzaban dentro de una promesa sin `catch` (auditoría de seguridad, F78).
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      this.sendError(client.socket, "Invalid JSON");
+      return;
+    }
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      this.sendError(client.socket, "Invalid message");
+      return;
+    }
+    const msg = parsed as Record<string, unknown>;
+    if (!nombreValido(msg.type)) {
+      this.sendError(client.socket, "Invalid message type");
+      return;
+    }
+    const type = msg.type as IncomingMessage["type"];
 
-      case "unsubscribe":
-        if (msg.channel) this.unsubscribeFromChannel(clientId, msg.channel);
-        break;
+    const necesitaCanal = type === "subscribe" || type === "unsubscribe";
+    const necesitaSala = type === "presence:join" || type === "presence:leave";
+    if (necesitaCanal && !nombreValido(msg.channel)) {
+      this.sendError(client.socket, "Invalid channel");
+      return;
+    }
+    if (necesitaSala && !nombreValido(msg.room)) {
+      this.sendError(client.socket, "Invalid room");
+      return;
+    }
+    const channel = msg.channel as string;
+    const room = msg.room as string;
 
-      case "presence:join":
-        if (msg.room) this.joinPresenceRoom(clientId, msg.room);
-        break;
+    try {
+      switch (type) {
+        case "subscribe":
+          this.subscribeToChannel(clientId, channel).catch((err) => {
+            console.warn(`  📡 [WS] ${clientId} subscribe failed: ${errorMessage(err)}`);
+            const vivo = this.clients.get(clientId);
+            if (vivo) this.sendError(vivo.socket, "Subscription failed");
+          });
+          break;
 
-      case "presence:leave":
-        if (msg.room) this.leavePresenceRoom(clientId, msg.room);
-        break;
+        case "unsubscribe":
+          this.unsubscribeFromChannel(clientId, channel);
+          break;
 
-      case "ping":
-        this.send(client.socket, { type: "pong", timestamp: Date.now() });
-        break;
+        case "presence:join":
+          this.joinPresenceRoom(clientId, room);
+          break;
 
-      default: {
-        // Unknown message type
-        const unknownMsg = msg as { type?: string };
-        this.sendError(client.socket, `Unknown message type: ${unknownMsg.type ?? "undefined"}`);
+        case "presence:leave":
+          this.leavePresenceRoom(clientId, room);
+          break;
+
+        case "ping":
+          this.send(client.socket, { type: "pong", timestamp: Date.now() });
+          break;
+
+        default:
+          this.sendError(client.socket, "Unknown message type");
       }
+    } catch (err) {
+      console.warn(`  📡 [WS] ${clientId} message failed: ${errorMessage(err)}`);
+      this.sendError(client.socket, "Message failed");
     }
   }
 
@@ -531,4 +797,33 @@ export function setSubscriptionAuthorizer(fn: SubscriptionAuthorizer | null): vo
 /** Registra el filtro por fila que se aplica a cada suscriptor en el broadcast. */
 export function setRowFilter(fn: RowFilter | null): void {
   _rowFilter = fn;
+}
+
+/**
+ * Prepara un canal antes de repartir un evento (p. ej. refrescar la política
+ * caducada del dataset). Si devuelve una promesa, el evento espera a que
+ * termine; los siguientes del mismo canal esperan detrás, en orden.
+ */
+export type ChannelPreparer = (channel: string) => void | Promise<void>;
+
+/** Lee la sesión por id tal como está ahora (null si ya no existe). */
+export type SessionValidator = (sessionId: string) => Promise<SesionActual | null>;
+
+let _channelPreparer: ChannelPreparer | null = null;
+let _sessionValidator: SessionValidator | null = null;
+
+export function setChannelPreparer(fn: ChannelPreparer | null): void {
+  _channelPreparer = fn;
+}
+
+/**
+ * Registra cómo se revalida una sesión. Sin esto solo se comprueba la
+ * caducidad guardada en el upgrade (no se ven revocaciones ni cambios de rol).
+ */
+export function setSessionValidator(fn: SessionValidator | null): void {
+  _sessionValidator = fn;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }

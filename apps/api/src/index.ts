@@ -46,6 +46,7 @@ import {
   rutaLocalDe,
   usaS3,
 } from "./lib/almacen";
+import { anchoPedido, esReescalable, garantizarDerivado } from "./lib/derivados";
 import { verificarConexionRls } from "./lib/rls-connection-guard";
 import {
   authUsers as user,
@@ -122,11 +123,12 @@ import {
 import { actionsRoutes } from "./routes/actions";
 import { adminRegistryRoutes } from "./routes/admin-registry";
 import agentMemoryRoutes from "./routes/agent-memory";
+import agentPlansRoutes from "./routes/agent-plans";
 import agentPlaygroundRoutes from "./routes/agent-playground";
 import type { Context } from "hono";
 
 import { generarGuiaParaAgentes } from "./lib/guia-para-agentes";
-import { rutasDeKons, sugerirRutas } from "./lib/rutas-de-kons";
+import { puedeSugerir, rutasDeKons, sugerirRutas } from "./lib/rutas-de-kons";
 import agentRoutes from "./routes/agents";
 import { apiKeysRoutes } from "./routes/api-keys";
 import { brainRoutes } from "./routes/brain";
@@ -657,6 +659,29 @@ if (!usaS3) {
       const ruta = rutaLocalDe(clave);
       const medio = fichero(ruta);
       if (!(await medio.exists())) return c.notFound();
+
+      /**
+       * `?w=<ancho>`: un derivado al vuelo, cacheado en disco
+       * (`.derivados/<ancho>/<clave>`). Un icono de 32 px ya no descarga la
+       * cabecera entera de Steam. Si no se puede derivar, cae al original.
+       */
+      const ancho = anchoPedido(c.req.query("w"));
+      if (ancho && esReescalable(clave)) {
+        const derivado = await garantizarDerivado(clave, ruta, ancho);
+        if (derivado) {
+          const { cuerpo, tipo } = cuerpoDeFichero(derivado);
+          return new Response(cuerpo, {
+            headers: {
+              ...(tipo ? { "Content-Type": tipo } : {}),
+              // El ancho va en la URL y la clave es hash: no cambia jamás
+              "Cache-Control": "public, max-age=31536000, immutable",
+              "Access-Control-Allow-Origin": "*",
+              "Content-Security-Policy": CSP_DE_MEDIOS,
+            },
+          });
+        }
+      }
+
       // Bajo Bun, el BunFile (tipo y envío sin copia); bajo Node, un stream (G4).
       const { cuerpo, tipo } = cuerpoDeFichero(ruta);
       return new Response(cuerpo, {
@@ -1083,6 +1108,7 @@ arrancarBarridoDeVigilancias();
 // /api/v1 (agents/traces/identities) ahora se monta via rpcSurface (src/rpc.ts)
 app.route("/api/admin/agents", agentPlaygroundRoutes);
 app.route("/api/agent/memory", agentMemoryRoutes);
+app.route("/api/agent/plans", agentPlansRoutes);
 app.route("/api/admin/data-sources", dataSourcesRoutes);
 app.route("/api/explorer", explorerRoutes);
 // Memoria de agentes (2026-10-28): operaciones del SDK con dueño y RLS, en
@@ -1232,7 +1258,10 @@ app.notFound((c) => {
    * y si no, las rutas más parecidas y dónde está el contrato completo.
    */
   if (c.req.path.startsWith("/api/")) {
-    const { allow, didYouMean } = sugerirRutas(c.req.method, c.req.path);
+    // Pasado su presupuesto por minuto, un cliente recibe el 404 sin sugerencias (F3/F8).
+    const { allow, didYouMean } = puedeSugerir(ipDelCliente(c))
+      ? sugerirRutas(c.req.method, c.req.path)
+      : { allow: [] as string[], didYouMean: [] as { method: string; path: string }[] };
 
     if (allow.length > 0) {
       c.header("Allow", allow.join(", "));
@@ -1385,18 +1414,34 @@ function generateClientId(): string {
 
 /**
  * Extract session from WebSocket upgrade request.
+ *
+ * Sin la caché de 5 minutos de la cookie: un socket vive mucho más que una
+ * petición, y con la caché una cuenta recién degradada o revocada abría el
+ * canal con el rol viejo (auditoría de seguridad, F15). Se guarda también el
+ * id y la caducidad de la sesión: el gestor la revalida al suscribirse y cada
+ * minuto, y cierra el socket si ya no vale (F82).
  */
-async function getSessionFromRequest(
-  req: Request
-): Promise<{ userId: string | null; userRole: string | null }> {
+async function getSessionFromRequest(req: Request): Promise<{
+  userId: string | null;
+  userRole: string | null;
+  sessionId: string | null;
+  sessionExpiresAt: number | null;
+}> {
   try {
-    const session = await auth.api.getSession({ headers: req.headers });
+    const session = await auth.api.getSession({
+      headers: req.headers,
+      query: { disableCookieCache: true },
+    });
+    const userId = session?.user?.id || null;
+    const expira = session?.session?.expiresAt ? new Date(session.session.expiresAt).getTime() : NaN;
     return {
-      userId: session?.user?.id || null,
+      userId,
       userRole: ((session?.user as { role?: string } | undefined)?.role as string) || null,
+      sessionId: userId ? session?.session?.id || null : null,
+      sessionExpiresAt: userId && Number.isFinite(expira) ? expira : null,
     };
   } catch {
-    return { userId: null, userRole: null };
+    return { userId: null, userRole: null, sessionId: null, sessionExpiresAt: null };
   }
 }
 
@@ -1508,6 +1553,8 @@ export default {
           // Sin el rol, el autorizador de canales veía a TODOS como sin rol:
           // un admin no podía suscribirse a lo que su política le deja ver.
           userRole: session.userRole,
+          sessionId: session.sessionId,
+          sessionExpiresAt: session.sessionExpiresAt,
         } satisfies WSClientData,
       });
 
@@ -1533,9 +1580,16 @@ export default {
   },
 
   websocket: {
+    // Los frames del protocolo son JSON de pocas decenas de bytes; el valor
+    // por defecto de Bun (16 MB) solo sirve para que un anónimo gaste CPU en JSON.parse.
+    maxPayloadLength: 64 * 1024,
+
     open(ws: ServerWebSocket<WSClientData>) {
-      const { clientId, userId, userRole } = ws.data;
-      realtimeManager.addClient(clientId, ws, userId, userRole ?? null);
+      const { clientId, userId, userRole, sessionId, sessionExpiresAt } = ws.data;
+      realtimeManager.addClient(clientId, ws, userId, userRole ?? null, {
+        id: sessionId ?? null,
+        expiresAt: sessionExpiresAt ?? null,
+      });
 
       // Send welcome message
       ws.send(
@@ -1550,8 +1604,14 @@ export default {
 
     message(ws: ServerWebSocket<WSClientData>, message: string | Buffer) {
       const { clientId } = ws.data;
-      const raw = typeof message === "string" ? message : message.toString();
-      realtimeManager.handleMessage(clientId, raw);
+      // Un frame que rompe no tumba el proceso: handleMessage ya valida, esto
+      // es la última red (auditoría de seguridad, F78).
+      try {
+        const raw = typeof message === "string" ? message : message.toString();
+        realtimeManager.handleMessage(clientId, raw);
+      } catch (err) {
+        console.error(`[WS Error] ${clientId}:`, messageOf(err));
+      }
     },
 
     close(ws: ServerWebSocket<WSClientData>) {

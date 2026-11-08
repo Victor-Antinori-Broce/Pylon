@@ -221,24 +221,172 @@ export function cabecerasRepetibles(cabeceras: Headers): Array<[string, string]>
   return salida;
 }
 
-/** Nombres de campo que llevan un secreto. */
+/** Nombres de campo que llevan un secreto (la lista exacta de siempre). */
 const CAMPO_SECRETO =
   /^(token|access_?token|refresh_?token|id_?token|session_?token|secret|client_?secret|password|passwd|api_?key|apikey|raw_?key|plain_?key|private_?key|secret_?key|signing_?key|webhook_?secret)$/i;
 /** Valores que son claves de Kitsuden, se llamen como se llamen. */
 const VALOR_SECRETO = /^(kitsuden_agent_|kitsuden_sk_|grm_agent_|kitsuden_oat_|kitsuden_ort_|kcs_)[A-Za-z0-9_-]{8,}/;
 
+/**
+ * Valores que tienen forma de credencial ajena (auditoría 2026-11-04, F79): cabeceras
+ * `Bearer`/`Basic`, claves de proveedores conocidos, claves privadas PEM.
+ */
+const VALOR_CREDENCIAL =
+  /^(?:(?:Bearer|Basic|Token|Digest)\s+\S{8,}|sk-[A-Za-z0-9_-]{16,}|sk_(?:live|test)_[A-Za-z0-9]{8,}|rk_(?:live|test)_[A-Za-z0-9]{8,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{16,}|xox[abprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,})/;
+const CLAVE_PRIVADA_PEM = /-----BEGIN [A-Z ]*PRIVATE KEY-----/;
+
+/** Trozos de un nombre: `OPENAI_API_KEY`, `apiKey`, `x-api-key` → api, key… */
+function trozosDeNombre(nombre: string): string[] {
+  return nombre
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+/** Un trozo que por sí solo dice «aquí va un secreto». */
+const TROZO_SECRETO = new Set([
+  "secret",
+  "secrets",
+  "password",
+  "passwd",
+  "pwd",
+  "passphrase",
+  "token",
+  "credential",
+  "credentials",
+  "authorization",
+  "cookie",
+  "apikey",
+  "privatekey",
+  "secretkey",
+  "accesskey",
+  "signingkey",
+  "dsn",
+]);
+/** `key` con uno de estos al lado: `api_key`, `privateKey`, `STRIPE_SECRET_KEY`… */
+const CALIFICA_A_KEY = new Set([
+  "api",
+  "private",
+  "secret",
+  "access",
+  "signing",
+  "client",
+  "auth",
+  "encryption",
+  "master",
+  "license",
+  "service",
+  "webhook",
+  "session",
+  "ssh",
+  "deploy",
+  "admin",
+  "bot",
+  "app",
+]);
+/**
+ * Trozos que convierten el nombre en un DATO SOBRE el secreto, no el secreto:
+ * `tokenCount`, `apiKeyId`, `secretName`, `passwordUpdatedAt`, `tokenUrl`.
+ */
+const TROZO_DESCRIPTIVO = new Set([
+  "count",
+  "counts",
+  "max",
+  "min",
+  "limit",
+  "type",
+  "types",
+  "usage",
+  "consent",
+  "expires",
+  "expiry",
+  "expiration",
+  "ttl",
+  "length",
+  "url",
+  "uri",
+  "endpoint",
+  "id",
+  "ids",
+  "name",
+  "names",
+  "hint",
+  "policy",
+  "label",
+  "field",
+  "enabled",
+  "required",
+  "at",
+  "prefix",
+  "last4",
+  "masked",
+]);
+/** Objetos cuyo contenido entero son valores de entorno o credenciales (`config.envVars`). */
+const CONTENEDOR_SECRETO = new Set(["envvars", "env", "environment", "secrets", "credentials"]);
+
+/**
+ * ¿Este nombre de campo (o de cabecera, o de variable) lleva un secreto?
+ * Más amplio que la lista exacta: cualquier nombre con secret/password/token/
+ * credential/authorization/cookie, o `key` calificada (`api`, `private`…), o
+ * una variable de entorno `ALGO_KEY`. No: los nombres que describen al secreto
+ * (`tokenCount`, `apiKeyId`, `secretName`).
+ */
+export function nombreDeSecreto(nombre: string): boolean {
+  if (typeof nombre !== "string" || !nombre) return false;
+  if (CAMPO_SECRETO.test(nombre)) return true;
+  const trozos = trozosDeNombre(nombre);
+  if (trozos.some((t) => TROZO_DESCRIPTIVO.has(t))) return false;
+  if (trozos.some((t) => TROZO_SECRETO.has(t))) return true;
+  if (trozos.includes("key") && trozos.some((t) => CALIFICA_A_KEY.has(t))) return true;
+  // Variables de entorno: `STRIPE_KEY`, `OPENAI_API_KEY`.
+  return /^[A-Z][A-Z0-9_]*_KEY$/.test(nombre);
+}
+
+function valorConSecreto(v: string): boolean {
+  return VALOR_SECRETO.test(v) || VALOR_CREDENCIAL.test(v) || CLAVE_PRIVADA_PEM.test(v);
+}
+
+/** ¿Lleva algún texto no vacío? */
+function tieneTexto(valor: unknown, profundidad = 0): boolean {
+  if (profundidad > 12 || valor === null || valor === undefined) return false;
+  if (typeof valor === "string") return valor.length > 0;
+  if (typeof valor === "object") {
+    return Object.values(valor as Record<string, unknown>).some((v) => tieneTexto(v, profundidad + 1));
+  }
+  return false;
+}
+
 /** ¿Hay un secreto en este JSON? Recorre a cualquier profundidad (con tope). */
 export function contieneSecreto(valor: unknown, profundidad = 0): boolean {
   if (profundidad > 12 || valor === null || valor === undefined) return false;
-  if (typeof valor === "string") return VALOR_SECRETO.test(valor);
+  if (typeof valor === "string") return valorConSecreto(valor);
   if (Array.isArray(valor)) return valor.some((v) => contieneSecreto(v, profundidad + 1));
   if (typeof valor === "object") {
-    for (const [clave, v] of Object.entries(valor as Record<string, unknown>)) {
-      if (CAMPO_SECRETO.test(clave) && typeof v === "string" && v.length > 0) return true;
+    const o = valor as Record<string, unknown>;
+    // `{ key: "OPENAI_API_KEY", value: "sk-…" }` (el Secrets Manager), `{ name: "Authorization", value: … }`.
+    const etiqueta = [o.key, o.name, o.header, o.variable].find((x) => typeof x === "string") as string | undefined;
+    if (etiqueta && nombreDeSecreto(etiqueta) && tieneTexto(o.value)) return true;
+    for (const [clave, v] of Object.entries(o)) {
+      if (nombreDeSecreto(clave) && tieneTexto(v)) return true;
+      if (CONTENEDOR_SECRETO.has(clave.toLowerCase()) && v && typeof v === "object" && tieneTexto(v)) return true;
       if (contieneSecreto(v, profundidad + 1)) return true;
     }
   }
   return false;
+}
+
+/**
+ * Rutas cuyo cuerpo ES un secreto, se llame como se llame el campo: lo que se
+ * manda ahí es para guardarlo cifrado y no enseñarlo nunca. Una propuesta
+ * guarda el cuerpo para ejecutarlo al aprobarla, así que no se puede retener
+ * sin guardar el secreto: se rechaza (F79).
+ */
+const RUTAS_DE_SECRETOS = [/^\/api\/admin\/secrets(?:\/|$)/, /^\/api\/v1\/admin\/secrets(?:\/|$)/];
+
+export function rutaQueRecibeSecretos(camino: string): boolean {
+  const c = String(camino ?? "").split("?")[0]!.replace(/\/{2,}/g, "/");
+  return RUTAS_DE_SECRETOS.some((r) => r.test(c));
 }
 
 /** ¿El cuerpo (bytes) lleva un secreto? Solo se mira si es JSON o texto. */
@@ -253,7 +401,11 @@ export function cuerpoConSecreto(tipo: string, cuerpo: Uint8Array): boolean {
       // JSON roto: se mira como texto
     }
   }
-  return /(kitsuden_agent_|kitsuden_sk_|grm_agent_|kitsuden_oat_|kitsuden_ort_|kcs_)[A-Za-z0-9_-]{8,}/.test(texto);
+  return (
+    /(kitsuden_agent_|kitsuden_sk_|grm_agent_|kitsuden_oat_|kitsuden_ort_|kcs_)[A-Za-z0-9_-]{8,}/.test(texto) ||
+    CLAVE_PRIVADA_PEM.test(texto) ||
+    /(?:^|\s)(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{16,}/.test(texto)
+  );
 }
 
 // ── Almacén en memoria (tests y modo «un solo proceso») ─────────────────────

@@ -7,7 +7,63 @@
 
 import { createHmac } from "crypto";
 
+import {
+  ErrorDeSalida,
+  hostDeUrl,
+  hostEnLista,
+  peticionSaliente,
+  resolverDestino,
+  validarUrlSaliente,
+} from "../../salida-segura";
 import type { Action, ActionContext, ActionResult } from "../types";
+
+/** Tope de la respuesta que se guarda (el mismo que el `fetch` del sandbox). */
+const RESPUESTA_MAXIMA = 1_000_000;
+const TIEMPO_MAXIMO_MS = 30_000;
+
+/**
+ * Hosts INTERNOS a los que un `webhook_out` sí puede llamar (auditoría 2026-11-04, F7):
+ * `KITSUDEN_WEBHOOK_ALLOW_INTERNAL=n8n,*.interno.lan,10.0.0.5`. Sin esta lista,
+ * un webhook solo sale a direcciones públicas (nada de localhost, la red de
+ * Docker ni los metadatos de la nube). Es un opt-in de quien despliega: la
+ * config de una acción la escribe un admin o un agente con scope `admin`.
+ */
+export function hostsInternosDeWebhook(): string[] {
+  return (process.env.KITSUDEN_WEBHOOK_ALLOW_INTERNAL ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function internoPermitido(url: URL): boolean {
+  return hostEnLista(hostDeUrl(url), hostsInternosDeWebhook());
+}
+
+/**
+ * Validación de `config.url` al crear o editar la acción: forma (http/https,
+ * sin credenciales) y, si el nombre resuelve, que no sea una dirección interna
+ * fuera de la lista. Un nombre que aún no resuelve se deja pasar: al enviar se
+ * vuelve a comprobar (y es esa comprobación la que manda). `null` = vale.
+ */
+export async function problemaDeUrlDeWebhook(valor: unknown): Promise<string | null> {
+  if (typeof valor !== "string" || !valor.trim()) return "config.url is required for webhook_out actions";
+  let url: URL;
+  try {
+    url = validarUrlSaliente(valor.trim());
+  } catch (err) {
+    return `config.url: ${(err as Error).message}`;
+  }
+  if (internoPermitido(url)) return null;
+  try {
+    await resolverDestino(url);
+  } catch (err) {
+    const texto = (err as Error).message;
+    if (/non-public/.test(texto)) {
+      return `config.url: ${texto} (internal hosts must be listed in KITSUDEN_WEBHOOK_ALLOW_INTERNAL)`;
+    }
+  }
+  return null;
+}
 
 interface WebhookOutConfig {
   url: string;
@@ -71,16 +127,29 @@ export async function executeWebhookOutAction(
   let lastError: Error | null = null;
   let attempt = 0;
 
+  // Forma de la URL: si no vale, no hay reintento que la arregle.
+  let url: URL;
+  try {
+    url = validarUrlSaliente(config.url);
+  } catch (err) {
+    return { success: false, error: `Invalid webhook URL: ${(err as Error).message}`, durationMs: Date.now() - startTime };
+  }
+  const permitirInternos = internoPermitido(url);
+
   while (attempt <= maxRetries) {
     try {
-      const response = await fetch(config.url, {
+      // Resuelve una vez, rechaza lo no público y conecta a ESA dirección
+      // (Host y SNI = el nombre). Sin seguir redirecciones (lib/salida-segura.ts).
+      const response = await peticionSaliente(url, {
         method: "POST",
         headers,
         body,
-        signal: AbortSignal.timeout(30000), // 30s timeout
+        timeoutMs: TIEMPO_MAXIMO_MS,
+        maxBytes: RESPUESTA_MAXIMA,
+        permitirInternos,
       });
 
-      const responseBody = await response.text();
+      const responseBody = response.body;
       let parsedBody: unknown;
       try {
         parsedBody = JSON.parse(responseBody);
@@ -93,7 +162,7 @@ export async function executeWebhookOutAction(
         durationMs: Date.now() - startTime,
         httpResponse: {
           statusCode: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
+          headers: response.headers,
           body: parsedBody,
         },
       };
@@ -105,6 +174,10 @@ export async function executeWebhookOutAction(
       return result;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      // Destino prohibido o respuesta demasiado grande: reintentar no cambia nada.
+      if (error instanceof ErrorDeSalida && /non-public|too large|Invalid URL|not allowed/.test(error.message)) {
+        return { success: false, error: error.message, durationMs: Date.now() - startTime };
+      }
       attempt++;
 
       if (attempt <= maxRetries) {

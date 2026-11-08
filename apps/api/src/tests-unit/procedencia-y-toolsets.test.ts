@@ -74,7 +74,7 @@ describe("envoltorio del texto no confiable", () => {
     expect(t.match(/<untrusted-content>/gi)!.length).toBe(1);
   });
 
-  it("object convierte cada texto en { untrusted } y no toca ids, fechas ni dueño", async () => {
+  it("object convierte cada texto en { untrusted } y no toca ids, fechas ni dueño de la fila", async () => {
     const filas = [
       {
         id: "1",
@@ -94,7 +94,8 @@ describe("envoltorio del texto no confiable", () => {
     expect(f.createdById).toBe("u");
     expect(f.title).toEqual({ untrusted: INYECCION });
     expect(f.data.body).toEqual({ untrusted: INYECCION });
-    expect(f.data.ownerId).toBe("u");
+    // Dentro de `data` (lo escribe el autor) no hay nombres exentos (F72/F75).
+    expect(f.data.ownerId).toEqual({ untrusted: "u" });
     expect(f.data.tags).toEqual([{ untrusted: "a" }]);
     expect(f.data.n).toBe(3);
     expect(f.data.nested.note).toEqual({ untrusted: "x" });

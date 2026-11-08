@@ -168,41 +168,157 @@ export function rutasDeKons(): RutaDeKon[] {
 }
 
 // ── Sugerencias para un 404 ──────────────────────────────────────────────────
+//
+// El 404 de `/api/*` es anónimo y el camino lo escribe quien llama: hasta ~16 KB.
+// Una distancia de edición completa contra cada ruta era O(rutas × largo²) en
+// el único hilo (auditoría F3/F8). Ahora: tope de largo, filtro por largo y
+// número de segmentos, distancia en banda con salida temprana y las plantillas
+// compiladas una sola vez.
 
-function distancia(a: string, b: string): number {
-  const fila = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let diagonal = fila[0];
-    fila[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const arriba = fila[j];
-      fila[j] = Math.min(fila[j] + 1, fila[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diagonal = arriba;
-    }
+/** Por encima de este largo no se sugiere nada: ningún camino real es así. */
+export const LARGO_MAXIMO_PARA_SUGERIR = 200;
+/** Ni se busca el `Allow`: con más, el camino no es de nadie. */
+export const LARGO_MAXIMO_PARA_ALLOW = 2000;
+/** Distancia máxima para sugerir (y ancho de la banda de la distancia). */
+const UMBRAL_MAXIMO = 20;
+
+/**
+ * Distancia de Levenshtein si es `<= tope`; si no, `tope + 1`. Solo calcula
+ * la banda de ancho `2·tope + 1` alrededor de la diagonal y para en cuanto
+ * toda una fila pasa del tope: O(largo × tope), no O(largo²).
+ */
+export function distanciaAcotada(a: string, b: string, tope: number): number {
+  if (Math.abs(a.length - b.length) > tope) return tope + 1;
+  if (a === b) return 0;
+  // Lo común al principio y al final no cuenta: con el parámetro relleno del
+  // camino pedido, casi todo el texto es común y la tabla queda en nada.
+  let inicio = 0;
+  while (inicio < a.length && inicio < b.length && a.charCodeAt(inicio) === b.charCodeAt(inicio)) inicio++;
+  let finA = a.length;
+  let finB = b.length;
+  while (finA > inicio && finB > inicio && a.charCodeAt(finA - 1) === b.charCodeAt(finB - 1)) {
+    finA--;
+    finB--;
   }
-  return fila[b.length];
+  if (inicio > 0 || finA < a.length) {
+    a = a.slice(inicio, finA);
+    b = b.slice(inicio, finB);
+  }
+  if (a.length === 0 || b.length === 0) {
+    const d = Math.max(a.length, b.length);
+    return d <= tope ? d : tope + 1;
+  }
+  const fuera = tope + 1;
+  let previa = new Array<number>(b.length + 1).fill(fuera);
+  let actual = new Array<number>(b.length + 1).fill(fuera);
+  for (let j = 0; j <= Math.min(b.length, tope); j++) previa[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    const desde = Math.max(1, i - tope);
+    const hasta = Math.min(b.length, i + tope);
+    // Solo se tocan la banda y sus dos bordes (centinelas `fuera`): lo de fuera
+    // de la banda no se lee nunca.
+    actual[0] = i <= tope ? i : fuera;
+    if (desde > 1) actual[desde - 1] = fuera;
+    if (hasta < b.length) actual[hasta + 1] = fuera;
+    let minimo = actual[0];
+    for (let j = desde; j <= hasta; j++) {
+      const coste = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      const v = Math.min(previa[j]! + 1, actual[j - 1]! + 1, previa[j - 1]! + coste);
+      actual[j] = v > fuera ? fuera : v;
+      if (actual[j]! < minimo) minimo = actual[j]!;
+    }
+    if (minimo > tope) return fuera;
+    [previa, actual] = [actual, previa];
+  }
+  return Math.min(previa[b.length]!, fuera);
 }
 
-function casaConPlantilla(plantilla: string, camino: string): boolean {
+function regexDePlantilla(plantilla: string): RegExp {
   const regex = plantilla
     .split("/")
     .map((seg) =>
       seg.startsWith(":") ? "[^/]+" : seg === "*" ? ".*" : seg.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
     )
     .join("/");
-  return new RegExp(`^${regex}/?$`).test(camino);
+  return new RegExp(`^${regex}/?$`);
+}
+
+interface RutaParaSugerir {
+  method: string;
+  path: string;
+  segmentos: string[];
+  regex: RegExp;
 }
 
 /**
- * Rellena los parámetros de la plantilla con los segmentos del camino pedido,
- * para comparar lo que de verdad difiere: en `/tournament/abc/reports` contra
- * `/tournament/:id/report`, la diferencia es una `s`, no el id.
+ * Las rutas ya partidas y con su regex compilada, recalculadas solo cuando
+ * cambia lo montado (huella: kons y número de rutas de cada router).
  */
-function comparable(plantilla: string, camino: string): string {
-  const p = plantilla.split("/");
-  const c = camino.split("/");
-  if (p.length !== c.length) return plantilla;
-  return p.map((seg, i) => (seg.startsWith(":") ? c[i] : seg)).join("/");
+let indice: { huella: string; rutas: RutaParaSugerir[] } | null = null;
+
+function rutasParaSugerir(): RutaParaSugerir[] {
+  const huella = [...registro.values()].map((r) => `${r.konId}:${r.mountPath}:${r.router.routes.length}`).join("|");
+  if (indice?.huella === huella) return indice.rutas;
+  const rutas = rutasDeKons().map((r) => ({
+    method: r.method,
+    path: r.path,
+    segmentos: r.path.split("/"),
+    regex: regexDePlantilla(r.path),
+  }));
+  indice = { huella, rutas };
+  return rutas;
+}
+
+/**
+ * Distancia entre una plantilla y el camino pedido, con tope.
+ *
+ * Con el mismo número de segmentos, se compara segmento a segmento y los
+ * parámetros se rellenan con lo pedido: en `/tournament/abc/reports` contra
+ * `/tournament/:id/report` la diferencia es una `s`, no el id. Un parámetro
+ * cuesta 0 por largo que sea, y un literal corto contra un segmento largo se
+ * descarta por largo al momento. Con distinto número de segmentos se compara
+ * la plantilla entera.
+ */
+function distanciaARuta(r: RutaParaSugerir, limpio: string, segmentos: string[], tope: number): number {
+  if (r.segmentos.length !== segmentos.length) return distanciaAcotada(r.path, limpio, tope);
+  let total = 0;
+  for (let i = 0; i < segmentos.length; i++) {
+    const seg = r.segmentos[i]!;
+    if (seg.startsWith(":")) continue;
+    total += distanciaAcotada(seg, segmentos[i]!, tope - total);
+    if (total > tope) return tope + 1;
+  }
+  return total;
+}
+
+/**
+ * Presupuesto de sugerencias por cliente.
+ *
+ * El limitador general cuenta por camino, y cada camino basura estrena su
+ * propio contador: un cliente que inventa rutas nunca lo agota (auditoría de
+ * seguridad, F3/F8). Aquí se cuenta por cliente. Pasado el presupuesto el 404
+ * sigue contestando, solo que sin calcular sugerencias, que es lo que cuesta CPU.
+ */
+export const SUGERENCIAS_POR_MINUTO = 60;
+const VENTANA_DE_SUGERENCIAS_MS = 60_000;
+// Techo de memoria: con más clientes distintos que esto se empieza de cero.
+const CLIENTES_MAXIMOS = 10_000;
+const gastoDeSugerencias = new Map<string, { desde: number; usadas: number }>();
+
+export function puedeSugerir(cliente: string, ahora = Date.now()): boolean {
+  const gasto = gastoDeSugerencias.get(cliente);
+  if (!gasto || ahora - gasto.desde >= VENTANA_DE_SUGERENCIAS_MS) {
+    if (!gasto && gastoDeSugerencias.size >= CLIENTES_MAXIMOS) gastoDeSugerencias.clear();
+    gastoDeSugerencias.set(cliente, { desde: ahora, usadas: 1 });
+    return true;
+  }
+  gasto.usadas++;
+  return gasto.usadas <= SUGERENCIAS_POR_MINUTO;
+}
+
+/** Solo para pruebas. */
+export function olvidarGastoDeSugerencias(): void {
+  gastoDeSugerencias.clear();
 }
 
 export interface SugerenciaDeRuta {
@@ -220,24 +336,32 @@ export interface SugerenciaDeRuta {
  * existe». Aquí se responde a las tres.
  */
 export function sugerirRutas(method: string, camino: string, maximo = 3): SugerenciaDeRuta {
-  const rutas = rutasDeKons();
+  const vacio: SugerenciaDeRuta = { allow: [], didYouMean: [] };
+  if (camino.length > LARGO_MAXIMO_PARA_ALLOW) return vacio;
+  const rutas = rutasParaSugerir();
 
-  const allow = [
-    ...new Set(rutas.filter((r) => casaConPlantilla(r.path, camino)).map((r) => r.method)),
-  ].sort();
+  const allow = [...new Set(rutas.filter((r) => r.regex.test(camino)).map((r) => r.method))].sort();
+  if (camino.length > LARGO_MAXIMO_PARA_SUGERIR) return { allow, didYouMean: [] };
 
-  const limpio = camino.replace(/\/+$/, "") || "/";
-  const umbral = Math.max(3, Math.floor(limpio.length * 0.25));
+  let fin = camino.length;
+  while (fin > 1 && camino[fin - 1] === "/") fin--;
+  const limpio = camino.slice(0, fin) || "/";
+  // Más de ~20 cambios ya no es «una errata»: el techo acota también la banda.
+  const umbral = Math.min(UMBRAL_MAXIMO, Math.max(3, Math.floor(limpio.length * 0.25)));
+  const segmentos = limpio.split("/");
+  const metodo = method.toUpperCase();
 
-  const didYouMean = rutas
-    .map((r) => ({
-      method: r.method,
-      path: r.path,
-      d:
-        distancia(comparable(r.path, limpio), limpio) +
-        // Mismo método, a igualdad de camino, va antes.
-        (r.method === method.toUpperCase() ? 0 : 0.5),
-    }))
+  const candidatas: { method: string; path: string; d: number }[] = [];
+  for (const r of rutas) {
+    // Cada segmento de más o de menos cuesta al menos un carácter (la `/`).
+    if (Math.abs(r.segmentos.length - segmentos.length) > umbral) continue;
+    const d = distanciaARuta(r, limpio, segmentos, umbral);
+    if (d > umbral) continue;
+    // Mismo método, a igualdad de camino, va antes.
+    candidatas.push({ method: r.method, path: r.path, d: d + (r.method === metodo ? 0 : 0.5) });
+  }
+
+  const didYouMean = candidatas
     .filter((r) => r.d <= umbral)
     .sort((a, b) => a.d - b.d)
     .slice(0, maximo)

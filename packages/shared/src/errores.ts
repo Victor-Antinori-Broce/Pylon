@@ -131,6 +131,18 @@ export const KITSUDEN_ERRORS = {
     retryable: false,
     hint: "This agent needs human approval for this request, but it cannot be stored as a proposal (it carries a secret, a file that is not an image, or a body that is too large). Ask a human to do it, or ask an admin to change the agent's approval mode.",
   },
+  KITSUDEN_E_APPROVALS_DISABLED: {
+    status: 403,
+    title: "Human approvals are disabled",
+    retryable: false,
+    hint: "Plans require the human approvals flow. Ask an admin to enable it in the Approvals settings, then propose the plan again.",
+  },
+  KITSUDEN_E_PLAN_INVALID: {
+    status: 400,
+    title: "Invalid agent plan",
+    retryable: false,
+    hint: "A plan is { goal, steps: [{ method, path, body? }] } with at most 10 steps, each an /api/ route that is not under /api/admin. Nothing was stored or executed.",
+  },
   KITSUDEN_E_AGENT_SPONSOR_INVALID: {
     status: 403,
     title: "Agent signer no longer valid",

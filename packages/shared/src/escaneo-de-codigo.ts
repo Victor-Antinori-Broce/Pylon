@@ -383,6 +383,15 @@ function hostPermitido(host: string, lista: readonly string[]): boolean {
   });
 }
 
+/**
+ * ¿Acaba el argumento en el literal? Solo si lo sigue `)` o `,`. Con `+`,
+ * `.concat(`, `?:`, `[…]` o cualquier otra cosa el camino real se calcula en
+ * ejecución y el literal solo es un prefijo (auditoría F73).
+ */
+function argumentoTermina(tok: Token | undefined): boolean {
+  return tok?.t === "p" && (tok.v === ")" || tok.v === ",");
+}
+
 function caminoLiteral(tok: Token | undefined): { camino: string | null; literal: boolean } {
   if (!tok || tok.t !== "s") return { camino: null, literal: false };
   if (tok.interpolada) {
@@ -624,7 +633,12 @@ export function escanearCodigo(codigo: string, opciones: OpcionesDeEscaneo = {})
         const camino = caminoLiteral(tokens[k + 8]);
         const literalM = m?.t === "s" && !m.interpolada ? m.v.toUpperCase() : "*";
         const okComa = coma?.t === "p" && coma.v === ",";
-        llamadas.push({ method: literalM, path: okComa ? caminoDeLlamada(camino.camino, tok.l) : null, line: tok.l });
+        const okFin = argumentoTermina(tokens[k + 9]);
+        llamadas.push({
+          method: literalM,
+          path: okComa && okFin ? caminoDeLlamada(camino.camino, tok.l) : null,
+          line: tok.l,
+        });
         continue;
       }
       const http = METODOS_DE_API[metodo.v];
@@ -632,7 +646,10 @@ export function escanearCodigo(codigo: string, opciones: OpcionesDeEscaneo = {})
         add("api_alias", "medium", tok.l, `kitsuden.api.${metodo.v} is not a sandbox API method`);
         continue;
       }
-      llamadas.push({ method: http, path: caminoDeLlamada(caminoLiteral(tokens[k + 6]).camino, tok.l), line: tok.l });
+      // `"/api/ad" + "min/users/1"`: si tras el literal no viene `)` ni `,`, el
+      // camino se calcula y el literal es solo un prefijo → sin clasificar.
+      const camino = argumentoTermina(tokens[k + 7]) ? caminoLiteral(tokens[k + 6]).camino : null;
+      llamadas.push({ method: http, path: caminoDeLlamada(camino, tok.l), line: tok.l });
       continue;
     }
 

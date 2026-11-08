@@ -9,17 +9,22 @@
 
 import { Hono } from "hono";
 
+import { esAdminHumano, motivoParaNoEscribirTablaNativa } from "../lib/tablas-explorables";
 import { requireAuth } from "../middleware/auth";
+import { withTransactionalRLS } from "../middleware/transactional-rls";
 import {
   detectRelations,
   generateInlineConfigs,
   fetchInlineData,
   saveInlineRecords,
+  tablaInlinePermitida,
 } from "../services/inline-relations";
 
 export const inlineRelationsRoutes = new Hono();
 
-inlineRelationsRoutes.use("/*", requireAuth);
+// Las lecturas y escrituras corren en la transacción con contexto RLS de la
+// petición (el servicio usa `resolveExecutor`), no en el pool global.
+inlineRelationsRoutes.use("/*", requireAuth, withTransactionalRLS());
 
 /**
  * GET /api/relations/:tableName
@@ -29,7 +34,14 @@ inlineRelationsRoutes.get("/:tableName", async (c) => {
   const tableName = c.req.param("tableName");
 
   try {
-    const relations = await detectRelations(tableName);
+    // Una tabla fuera de la lista blanca responde como una inexistente: un 403
+    // confirmaría que existe.
+    if (!(await tablaInlinePermitida(tableName))) {
+      return c.json({ success: false, error: `Table '${tableName}' not found` }, 404);
+    }
+    const todas = await detectRelations(tableName);
+    const relations = [];
+    for (const r of todas) if (await tablaInlinePermitida(r.relatedTable)) relations.push(r);
 
     return c.json({
       success: true,
@@ -84,8 +96,8 @@ inlineRelationsRoutes.get("/:tableName/inlines/config", async (c) => {
 inlineRelationsRoutes.get("/:tableName/inlines/:parentId", async (c) => {
   const { tableName, parentId } = c.req.param();
   const inlineName = c.req.query("inline");
-  const page = parseInt(c.req.query("page") || "1");
-  const limit = parseInt(c.req.query("limit") || "10");
+  const page = Math.max(parseInt(c.req.query("page") || "1") || 1, 1);
+  const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "10") || 10, 1), 100);
 
   try {
     const configs = await generateInlineConfigs(tableName);
@@ -163,6 +175,22 @@ inlineRelationsRoutes.post("/:tableName/inlines/:parentId", async (c) => {
       );
     }
 
+    // Fase I y auditoría 2026-11-04: ni tablas con ruta propia ni, sin una
+    // persona admin, las que dan poder (`auth_users`, `modules`…).
+    const motivo = motivoParaNoEscribirTablaNativa(config.table, esAdminHumano(c));
+    if (motivo) {
+      return c.json(
+        {
+          success: false,
+          error:
+            motivo === "exige-admin-humano"
+              ? `Writing '${config.table}' requires a human admin session`
+              : `'${config.table}' is not written through inline relations`,
+        },
+        403
+      );
+    }
+
     if (!config.editable) {
       return c.json(
         {
@@ -177,8 +205,8 @@ inlineRelationsRoutes.post("/:tableName/inlines/:parentId", async (c) => {
       config.table,
       config.fkColumn,
       parentId,
-      records || [],
-      deletedIds || []
+      records ?? [],
+      deletedIds ?? []
     );
 
     if (result.success) {

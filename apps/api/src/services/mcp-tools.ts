@@ -34,7 +34,7 @@ import { db, mergedSchema } from "@/db";
 import { actions, dataEntries, dataSets, installedKons, modules, siteSettings } from "@/db/schema";
 import { emailQueue } from "@/lib/queue";
 import { CodigoFueraDePromocion, TABLAS_SOLO_POR_SU_RUTA, traeCodigo } from "@/lib/codigo-de-acciones";
-import { sinColumnasSecretas, TABLAS_ESCRITURA_ADMIN, TABLAS_PROHIBIDAS } from "@/lib/tablas-explorables";
+import { sinColumnasSecretas, TABLAS_ESCRITURA_ADMIN, tablaNativaProhibida } from "@/lib/tablas-explorables";
 import { codificarRespuesta, type Formato, type FormatoPedido } from "@/lib/formatos";
 import { MODOS_DE_ENVOLTORIO, type ModoDeEnvoltorio } from "@/lib/ajustes-mcp";
 import { envolverFilas, procedenciaDeFilas, type Procedencia } from "@/lib/procedencia";
@@ -1235,9 +1235,8 @@ const TABLAS_SIN_ESCRITURA_MCP = new Set([
   ...TABLAS_SOLO_POR_SU_RUTA,
 ]);
 
-function prohibidaPorMcp(nombre: string): boolean {
-  return TABLAS_PROHIBIDAS.has(nombre) || (nombre.startsWith("auth_") && nombre !== "auth_users");
-}
+// La misma regla que GraphQL, relaciones y consultas por tabla: un solo sitio.
+const prohibidaPorMcp = tablaNativaProhibida;
 
 /**
  * La tabla nativa que puede usar esta herramienta, o lanza. `uso`:
@@ -1614,6 +1613,19 @@ async function kitsudenDefineAction(args: ArgsDe<"kitsuden_define_action">): Pro
   if (!["manual", "cron", "event", "http"].includes(trigger)) return "Invalid trigger";
   // Fase I (decisión 2): el código de una acción solo entra por promotion_propose.
   if (type === "code" || traeCodigo(config)) throw new CodigoFueraDePromocion();
+  // F7: la URL de un webhook saliente, comprobada al guardarla (y otra vez al enviar).
+  if (type === "webhook_out") {
+    const { problemaDeUrlDeWebhook } = await import("@/lib/actions/handlers/webhook-out-handler");
+    const problema = await problemaDeUrlDeWebhook((config as { url?: unknown } | undefined)?.url);
+    if (problema) return problema;
+  }
+  // F6: un agente no define una acción que haga hablar a un agente con MÁS
+  // permisos que él (su `config.agentId` correría con los scopes de ese).
+  if (type === "agent" || (config as { agentId?: unknown } | undefined)?.agentId !== undefined) {
+    const { motivoParaNoDefinir } = await import("@/lib/actions/handlers/agent-handler");
+    const motivo = await motivoParaNoDefinir((config as { agentId?: unknown } | undefined)?.agentId, actor().scopes);
+    if (motivo) throw new PermisoDeHerramienta(motivo);
+  }
 
   const [newAction] = await bd()
     .insert(actions)

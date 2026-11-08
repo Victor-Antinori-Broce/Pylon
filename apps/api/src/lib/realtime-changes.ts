@@ -85,17 +85,43 @@ export function canSubscribe(
   const resource = resourceOf(channel);
   if (!resource) return false; // canal con formato desconocido → denegar
   if (!policy) return user?.role === "admin"; // recurso sin política → admin
+  // El equipo lee cualquier dataset por REST (`legible` en crud.ts, `view` en
+  // kon-datasets): aquí igual.
+  if (esDelEquipo(user)) return true;
   return checkReadAccess(policy.policyJson, user);
+}
+
+/**
+ * El equipo (admin, editor): la misma regla que `esStaff` de kon-datasets y
+ * `esDelEquipo` de crud.ts. Ve todas las filas, sin `rlsRules` ni
+ * `publishedOrOwn`.
+ */
+export function esDelEquipo(user: RLSUser | null): boolean {
+  return !!user?.id && (user.role === "admin" || user.role === "editor");
+}
+
+/**
+ * `publishedOrOwn` de rls-builder, en memoria: fuera del equipo solo se ven
+ * las filas publicadas y las propias (`ownerId` o `createdById` es el usuario).
+ * Sin id, solo las publicadas. Una fila sin `status` no cuenta como publicada.
+ */
+export function publicadaOPropia(fila: Record<string, unknown>, user: RLSUser | null): boolean {
+  if (fila.status === "published") return true;
+  const id = user?.id;
+  if (!id) return false;
+  const dueno = fila.ownerId ?? fila.owner_id;
+  const autor = fila.createdById ?? fila.created_by_id;
+  return (dueno != null && String(dueno) === id) || (autor != null && String(autor) === id);
 }
 
 /**
  * ¿Este suscriptor puede ver ESTA fila concreta?
  *
- * Es el equivalente en streaming de `buildDatasetWhere`: cuando la política
- * declara aislamiento por dueño, un usuario solo recibe los cambios de sus
- * propias filas. El admin ve todo.
+ * Es el equivalente en streaming de `buildDatasetWhere` + `publishedOrOwn`:
+ * fuera del equipo, solo filas publicadas o propias, y que cumplan TODAS las
+ * `rlsRules`. El equipo ve todo.
  *
- * Devuelve la fila (posiblemente recortada) o `null` si no debe entregarse.
+ * Devuelve el evento (posiblemente recortado) o `null` si no debe entregarse.
  */
 export function filterForClient(
   event: ChangeEvent,
@@ -103,18 +129,37 @@ export function filterForClient(
   policy: ResourcePolicy | null
 ): ChangeEvent | null {
   if (!policy) return user?.role === "admin" ? event : null;
+  if (esDelEquipo(user)) return event;
   if (!checkReadAccess(policy.policyJson, user)) return null;
-  if (user?.role === "admin") return event;
+  if (!event.row || typeof event.row !== "object") return null;
 
-  // TODAS las reglas, como `buildDrizzleWhere` en una lectura REST (AND).
+  // Los borradores ajenos no salen (REST tampoco los da: auditoría 2026-10-25).
+  if (!filaVisible(event.row, user, policy)) return null;
+
+  // La fila previa de un UPDATE también es contenido: si era un borrador
+  // ajeno (o no cumple las reglas), se entrega el evento sin ella.
+  if (event.previous && !filaVisible(event.previous, user, policy)) {
+    const { previous: _previa, ...sinPrevia } = event;
+    return sinPrevia;
+  }
+  return event;
+}
+
+/** `publishedOrOwn` y TODAS las `rlsRules`, como una lectura REST (AND). */
+function filaVisible(
+  fila: Record<string, unknown>,
+  user: RLSUser | null,
+  policy: ResourcePolicy
+): boolean {
+  if (!publicadaOPropia(fila, user)) return false;
   // Antes solo se miraba la del dueño: con `status eq published` el socket
   // entregaba también los borradores (auditoría 2026-10-25).
   const rules = policy.policyJson?.rlsRules ?? [];
-  const data = (event.row.data ?? {}) as Record<string, unknown>;
+  const data = (fila.data ?? {}) as Record<string, unknown>;
   for (const regla of rules) {
-    if (!cumpleRegla(regla, event.row, data, user, policy.ownerField)) return null;
+    if (!cumpleRegla(regla, fila, data, user, policy.ownerField)) return false;
   }
-  return event;
+  return true;
 }
 
 /**

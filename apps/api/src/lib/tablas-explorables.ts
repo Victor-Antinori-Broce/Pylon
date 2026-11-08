@@ -45,6 +45,7 @@
  * `admin`.
  */
 
+import { TABLAS_SOLO_POR_SU_RUTA } from "./codigo-de-acciones";
 import { scanPackages } from "../services/scanner";
 
 /**
@@ -177,6 +178,55 @@ export async function tablaEsExplorable(
 /** ¿Modificar esta tabla exige rol `admin`? */
 export function escrituraExigeAdmin(nombre: string): boolean {
   return TABLAS_ESCRITURA_ADMIN.has(nombre);
+}
+
+/**
+ * ── TABLAS NATIVAS POR LAS VÍAS GENÉRICAS (auditoría 2026-11-04) ───────────
+ *
+ * GraphQL, las relaciones en línea y `POST /api/datasets/query/:tabla`
+ * resolvían cualquier tabla del esquema fusionado —o de `information_schema`—
+ * sin consultar la lista negra: un admin (o una clave con `admin`) leía los
+ * hashes de `auth_accounts` y reescribía una credencial. La regla es la de MCP
+ * (`services/mcp-tools.ts`), en un solo sitio:
+ *
+ *   · `TABLAS_PROHIBIDAS` y todo `auth_*` salvo `auth_users` no se leen ni se
+ *     escriben por ninguna de esas vías, con ningún rol.
+ *   · `TABLAS_SOLO_POR_SU_RUTA` no se escriben por ellas (tienen su ruta).
+ *   · `TABLAS_ESCRITURA_ADMIN` solo las escribe un admin HUMANO: una clave de
+ *     agente con `admin` no se cambia el rol ni enciende kons por aquí.
+ *   · Las columnas secretas (`esColumnaSecreta`) no salen, no se escriben y no
+ *     se filtran ni se ordenan por ellas (un filtro es un oráculo).
+ */
+export function tablaNativaProhibida(nombre: string): boolean {
+  return TABLAS_PROHIBIDAS.has(nombre) || (nombre.startsWith("auth_") && nombre !== "auth_users");
+}
+
+export type MotivoSinEscritura = "prohibida" | "solo-por-su-ruta" | "exige-admin-humano";
+
+/**
+ * ¿Por qué no se puede escribir esta tabla por una vía genérica? `null` si se
+ * puede. `adminHumano`: sesión de persona con rol `admin` (no una clave).
+ */
+export function motivoParaNoEscribirTablaNativa(
+  nombre: string,
+  adminHumano: boolean
+): MotivoSinEscritura | null {
+  if (tablaNativaProhibida(nombre)) return "prohibida";
+  if (TABLAS_SOLO_POR_SU_RUTA.has(nombre)) return "solo-por-su-ruta";
+  if (escrituraExigeAdmin(nombre) && !adminHumano) return "exige-admin-humano";
+  return null;
+}
+
+/** ¿Es la petición de una PERSONA con rol `admin`? Una clave de agente no lo es. */
+export function esAdminHumano(c: { get: unknown }): boolean {
+  const get = (c.get as (k: string) => unknown).bind(c);
+  if (get("agent")) return false;
+  return (get("user") as { role?: string } | null | undefined)?.role === "admin";
+}
+
+/** Las claves de `valor` que son columnas secretas (para rechazar una escritura). */
+export function columnasSecretasEn(valor: Record<string, unknown> | null | undefined): string[] {
+  return valor ? Object.keys(valor).filter(esColumnaSecreta) : [];
 }
 
 /** Para las pruebas: olvidar lo cacheado. */

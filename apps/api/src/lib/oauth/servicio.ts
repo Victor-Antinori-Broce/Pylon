@@ -47,6 +47,7 @@ import {
 } from "./config";
 import { concesionSigueDelegable, humanoPuedeDelegar, nuevoToken } from "./tokens";
 import {
+  errorSePuedeRedirigir,
   hashDe,
   leerScopes,
   motivoDeRedireccionInvalida,
@@ -299,6 +300,16 @@ export function urlDeVuelta(redirectUri: string, parametros: Record<string, stri
   return u.toString();
 }
 
+/** ¿Tiene este cliente alguna concesión sin revocar? (un humano lo aprobó) */
+async function tieneConcesionViva(clientId: string): Promise<boolean> {
+  const [g] = await db
+    .select({ id: oauthGrants.id })
+    .from(oauthGrants)
+    .where(and(eq(oauthGrants.clientId, clientId), isNull(oauthGrants.revokedAt)))
+    .limit(1);
+  return Boolean(g);
+}
+
 export async function empezarAutorizacion(q: Record<string, string | undefined>): Promise<ResultadoDeAutorizacion> {
   const clientId = q.client_id ?? "";
   let cliente: Cliente | null = null;
@@ -309,6 +320,7 @@ export async function empezarAutorizacion(q: Record<string, string | undefined>)
     throw e;
   }
   if (!cliente) return { tipo: "pantalla", error: "invalid_client", descripcion: "Unknown client_id" };
+  const clienteId = cliente.id;
   const redirectUri = q.redirect_uri ?? "";
   if (!redirectUri || !redireccionCasa(cliente.redirectUris, redirectUri)) {
     return {
@@ -317,10 +329,22 @@ export async function empezarAutorizacion(q: Record<string, string | undefined>)
       descripcion: "redirect_uri is missing or does not exactly match a registered redirect URI",
     };
   }
-  const error = (codigo: string, descripcion: string): ResultadoDeAutorizacion => ({
-    tipo: "redirigir",
-    url: urlDeVuelta(redirectUri, { error: codigo, error_description: descripcion, state: q.state }),
-  });
+  /**
+   * Un error se devuelve al cliente con un 302 solo si su redirección es de
+   * fiar (RFC 9700 §4.11): loopback, o un cliente que un humano ya aprobó
+   * (concesión sin revocar). Un cliente registrado por un anónimo y nunca
+   * aprobado ve la pantalla de error: si no, el registro abierto más este 302
+   * sin login ni consentimiento son un redirector abierto (auditoría F68).
+   */
+  const error = async (codigo: string, descripcion: string): Promise<ResultadoDeAutorizacion> => {
+    if (!errorSePuedeRedirigir(redirectUri, await tieneConcesionViva(clienteId))) {
+      return { tipo: "pantalla", error: codigo, descripcion };
+    }
+    return {
+      tipo: "redirigir",
+      url: urlDeVuelta(redirectUri, { error: codigo, error_description: descripcion, state: q.state }),
+    };
+  };
   if (q.response_type !== "code") {
     return error("unsupported_response_type", "Only response_type=code is supported");
   }

@@ -26,7 +26,7 @@ import { app } from "../index";
 import { vaciarMemoriaDeCuotas } from "../lib/cuotas-de-agente";
 import { createAgent } from "../services/agent-auth";
 
-import { isDatabaseAvailable, generateTestId } from "./setup";
+import { isDatabaseAvailable, generateTestId, entrarComo } from "./setup";
 import { konInstalado } from "../lib/kons-instalados";
 
 // kon-blog es un kon INSTALABLE (repo kitsuden-kons): sin él no hay rutas que
@@ -49,14 +49,34 @@ async function agente(
   return { id: agent.id, token: plainApiKey };
 }
 
+/**
+ * La administración de agentes (claves, scopes, cuotas) es solo de PERSONAS
+ * (auditoría 2026-11-04, F5): un agente con `admin` recibe 403 al escribir en ella. Las
+ * pruebas que la ejercitan entran con la cookie de un admin humano.
+ */
+let cookieAdmin = "";
+let idAdmin = "";
+async function adminHumano(): Promise<{ id: string; token: { cookie: string } }> {
+  if (!cookieAdmin) {
+    ({ cookie: cookieAdmin, userId: idAdmin } = await entrarComo(app, {
+      email: `fino-admin-${generateTestId()}@example.com`,
+      password: "TestPassword123!",
+      name: "Admin humano",
+      role: "admin",
+    }));
+  }
+  return { id: idAdmin, token: { cookie: cookieAdmin } };
+}
+
 async function pedir(
-  token: string | null,
+  token: string | { cookie: string } | null,
   metodo: string,
   camino: string,
   cuerpo?: unknown
 ): Promise<Response> {
   const headers: Record<string, string> = { origin: ORIGEN };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (typeof token === "string") headers.Authorization = `Bearer ${token}`;
+  else if (token) headers.Cookie = token.cookie;
   if (cuerpo !== undefined) headers["Content-Type"] = "application/json";
   return app.request(
     new Request(`http://localhost:3000${camino}`, {
@@ -304,8 +324,11 @@ describe("Fase E — permisos finos de agentes", () => {
   // ── 4. Claves ──
   itConBlog("claves: rotar sin corte, revocar al instante, caducar y último uso", async () => {
     if (!dbAvailable) return;
-    const admin = await agente(["admin"]);
+    const admin = await adminHumano();
     const objetivo = await agente(["mcp:connect"]);
+    // Un agente `admin` no se acuña claves (ni para otro): F5
+    const agenteAdmin = await agente(["admin"]);
+    expect((await pedir(agenteAdmin.token, "POST", `/api/v1/agents/${objetivo.id}/keys`, {})).status).toBe(403);
 
     const nueva = await pedir(admin.token, "POST", `/api/v1/agents/${objetivo.id}/keys`, {
       name: "ci",
@@ -364,8 +387,13 @@ describe("Fase E — permisos finos de agentes", () => {
   // ── 5. Scopes por el panel ──
   itConBlog("PUT scopes valida, y /access fusiona lo que puede hacer", async () => {
     if (!dbAvailable) return;
-    const admin = await agente(["admin"]);
+    const admin = await adminHumano();
     const obj = await agente([]);
+    // Un agente `admin` con denegaciones no las borra reescribiendo sus scopes: F5
+    const recortado = await agente(["admin", `!datasets:${privado.slug}:*`]);
+    expect(
+      (await pedir(recortado.token, "PUT", `/api/v1/agents/${recortado.id}/scopes`, { scopes: ["admin"] })).status
+    ).toBe(403);
     // Ningún scope fino abre la administración de agentes: no se registra entre
     // las operaciones montadas (un agente no puede darse permisos a sí mismo).
     const listo = await agente(["kon:*", "agentes:*", "kon:agentes:*"]);
@@ -404,7 +432,7 @@ describe("Fase E — permisos finos de agentes", () => {
   itConBlog("cuotas: minuto → RATE_LIMITED; escrituras y presupuesto → QUOTA_EXCEEDED con retry_after", async () => {
     if (!dbAvailable) return;
     vaciarMemoriaDeCuotas();
-    const admin = await agente(["admin"]);
+    const admin = await adminHumano();
 
     const lento = await agente(["mcp:connect"], { rateLimit: 3 });
     for (let i = 0; i < 3; i++) expect((await pedir(lento.token, "GET", "/api/blog")).status).toBe(200);

@@ -209,7 +209,9 @@ export function checkReadAccess(policy: PolicyJson | null, user: RLSUser): boole
     case "public":
       return true;
     case "authenticated":
-      return !!user;
+      // Con id, no basta un objeto: el realtime envolvía al anónimo como
+      // `{ id: undefined }`, que es verdadero, y pasaba esta puerta.
+      return !!user?.id;
     case "admin":
       return user?.role === "admin";
     default:
@@ -232,7 +234,8 @@ export function checkWriteAccess(policy: PolicyJson | null, user: RLSUser): bool
 
   switch (policy.writeAccess) {
     case "authenticated":
-      return !!user;
+      // Igual que en lectura: un objeto sin id no es un usuario.
+      return !!user?.id;
     case "admin":
       return user?.role === "admin";
     default:

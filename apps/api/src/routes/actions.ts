@@ -26,6 +26,7 @@ import {
   responderProblema,
   traeCodigo,
 } from "../lib/codigo-de-acciones";
+import { problemaDeUrlDeWebhook } from "../lib/actions/handlers/webhook-out-handler";
 import { creadorDePeticion, ejecutorDePeticion } from "../lib/sandbox/identidad";
 import { protectRoute } from "../middleware/auth-guard";
 
@@ -37,6 +38,17 @@ import { protectRoute } from "../middleware/auth-guard";
 async function registrarEdicionManual(...args: Parameters<typeof import("../lib/promocion").registrarEdicionManual>) {
   const { registrarEdicionManual: registrar } = await import("../lib/promocion");
   return registrar(...args);
+}
+
+/**
+ * F6: ¿puede este AGENTE definir una acción que haga hablar al agente
+ * `agentId` (con los scopes de ESE)? Solo si sus scopes cubren los del
+ * objetivo. Import diferido, como `registrarEdicionManual`: el manejador de
+ * agentes arrastra el motor de agentes entero.
+ */
+async function motivoParaNoDefinirAgente(agentId: unknown, scopes: readonly string[]): Promise<string | null> {
+  const { motivoParaNoDefinir } = await import("../lib/actions/handlers/agent-handler");
+  return motivoParaNoDefinir(agentId, scopes);
 }
 
 function requestIdDe(c: Context): string | null {
@@ -113,10 +125,21 @@ export async function createActionHandler(c: Context) {
     return c.json({ error: "triggerConfig.cronExpression required for cron trigger" }, 400);
   }
 
+  // F7: la URL de un webhook saliente se comprueba ya al guardarla (y otra vez al enviar).
+  if (body.type === "webhook_out") {
+    const problema = await problemaDeUrlDeWebhook(body.config?.url);
+    if (problema) return c.json({ error: problema }, 400);
+  }
+
   // Fase I (decisión 2): un agente no crea código por aquí, solo por la promoción.
   const ejecutor = ejecutorDePeticion(c);
   if (ejecutor?.tipo === "agente" && (body.type === "code" || traeCodigo(body.config))) {
     return responderProblema(c as never, problemaDeCodigoFueraDePromocion(c.req.path, requestIdDe(c)));
+  }
+  // F6: un agente no define una acción `agent` contra un agente con más permisos que él.
+  if (ejecutor?.tipo === "agente" && (body.type === "agent" || body.config?.agentId !== undefined)) {
+    const motivo = await motivoParaNoDefinirAgente(body.config?.agentId, ejecutor.agente.scopes ?? []);
+    if (motivo) return c.json({ error: motivo, code: "FORBIDDEN" }, 403);
   }
 
   try {
@@ -173,6 +196,21 @@ export async function updateActionHandler(c: Context) {
   const ejecutor = ejecutorDePeticion(c);
   if (tocaCodigo && ejecutor?.tipo !== "humano") {
     return responderProblema(c as never, problemaDeCodigoFueraDePromocion(c.req.path, requestIdDe(c)));
+  }
+  // F7: una config nueva de un webhook saliente pasa la misma comprobación que al crearlo.
+  if (antes?.type === "webhook_out") {
+    const problema = await problemaDeUrlDeWebhook((body.config as { url?: unknown } | null)?.url);
+    if (problema) return c.json({ error: problema }, 400);
+  }
+  // F6: un agente que edita una acción `agent` (su prompt, su disparo, su
+  // agente…) tiene que poder actuar como el agente con el que queda.
+  if (ejecutor?.tipo === "agente") {
+    const previa = antes ?? (await getAction(c.req.param("id")!));
+    const config = (body.config ?? previa?.config) as { agentId?: unknown } | null | undefined;
+    if (previa?.type === "agent" || config?.agentId !== undefined) {
+      const motivo = await motivoParaNoDefinirAgente(config?.agentId, ejecutor.agente.scopes ?? []);
+      if (motivo) return c.json({ error: motivo, code: "FORBIDDEN" }, 403);
+    }
   }
 
   try {

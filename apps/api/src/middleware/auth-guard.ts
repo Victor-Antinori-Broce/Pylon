@@ -5,6 +5,7 @@ import {
   denegacionQueCubre,
   nombreCortoDeKon,
 } from "@kitsuden/shared";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 
 import { operacionDeRuta } from "../../../../packages/engine/src/operaciones";
@@ -162,12 +163,15 @@ export function setRefrescoDeSesion(fn: RefrescoDeSesion): void {
 export function exigirRol(roles: readonly string[], scopeDeAgente?: string) {
   return createMiddleware(async (c, next) => {
     const agent = c.get("agent") as { scopes?: string[] } | undefined;
-    if (agent?.scopes?.includes("admin")) {
-      await next();
-      return;
-    }
-    // Coincidencia EXACTA: ni comodines (`contenido:*`) ni el scope de otra regla.
-    if (scopeDeAgente && agent?.scopes?.includes(scopeDeAgente)) {
+    const pasaPorScope =
+      agent?.scopes?.includes("admin") ||
+      // Coincidencia EXACTA: ni comodines (`contenido:*`) ni el scope de otra regla.
+      (scopeDeAgente !== undefined && agent?.scopes?.includes(scopeDeAgente));
+    if (pasaPorScope) {
+      // `admin` no borra las denegaciones `!patrón` del agente: si una cubre
+      // esta ruta, 403 aunque la puerta sea de rol (F5).
+      const motivo = denegacionDeRuta(agent?.scopes, c.req.method, c.req.path);
+      if (motivo) return respuestaDeDenegacion(c, motivo);
       await next();
       return;
     }
@@ -491,23 +495,71 @@ export function puertaDeAdmin(reglas: readonly ReglaDePuerta[]) {
  */
 export const denegacionesDeAgente = createMiddleware(async (c, next) => {
   const agente = c.get("agent") as { scopes?: string[] } | undefined;
-  const scopes = agente?.scopes;
-  if (!scopes?.some((s) => s.startsWith("!"))) return next();
-  const deRuta = operacionDeRuta(c.req.method, c.req.path);
-  let motivo: string | null = null;
-  if (deRuta) {
-    motivo = denegacionDeOperacion(scopes, deRuta.konId, deRuta.op);
-  } else {
-    const kon = konDeCamino(c.req.path);
-    if (kon) {
-      const corto = nombreCortoDeKon(kon);
-      // El comodín de operación «*» solo lo cubre una denegación de TODO el kon.
-      motivo = denegacionQueCubre(scopes, [`kon:${corto}:*`, `${corto}:*`]);
-    }
-  }
+  const motivo = denegacionDeRuta(agente?.scopes, c.req.method, c.req.path);
   if (!motivo) return next();
+  return respuestaDeDenegacion(c, motivo);
+});
+
+/**
+ * La denegación `!patrón` de estos scopes que cierra esta petición, o `null`
+ * (la regla de `denegacionesDeAgente`; también la usa `exigirRol`).
+ */
+export function denegacionDeRuta(
+  scopes: readonly string[] | undefined,
+  metodo: string,
+  camino: string
+): string | null {
+  if (!scopes?.some((s) => s.startsWith("!"))) return null;
+  const deRuta = operacionDeRuta(metodo, camino);
+  if (deRuta) return denegacionDeOperacion(scopes, deRuta.konId, deRuta.op);
+  const kon = konDeCamino(camino);
+  if (!kon) return null;
+  const corto = nombreCortoDeKon(kon);
+  // El comodín de operación «*» solo lo cubre una denegación de TODO el kon.
+  return denegacionQueCubre(scopes, [`kon:${corto}:*`, `${corto}:*`]);
+}
+
+function respuestaDeDenegacion(c: Context, motivo: string): Response {
   return c.json(
     { error: "Forbidden", message: `Denied for this agent key by '${motivo}'`, code: "FORBIDDEN" },
+    403
+  );
+}
+
+/**
+ * ¿Es un agente quien llama? Una clave de agente (`agent` en el contexto), el
+ * usuario sintético que deja (`role: "agent"`) o una clave heredada
+ * `kitsuden_sk_*` (`machine-…`, ya retiradas). La misma regla que
+ * `soloHumanos` (routes/aprobaciones.ts).
+ */
+export function llamaUnAgente(c: Context): boolean {
+  const get = c.get as (k: string) => unknown;
+  const usuario = get("user") as { id?: string; role?: string } | null | undefined;
+  return !!get("agent") || usuario?.role === "agent" || !!usuario?.id?.startsWith("machine-");
+}
+
+/**
+ * La GESTIÓN de agentes (crear, editar, borrar, sus scopes, claves, cuotas,
+ * firmante, avisos, tokens, playground) es solo de personas (F5).
+ *
+ * Antes un agente con `admin` pasaba `exigirRol` y podía reescribir SUS
+ * scopes (`PUT /api/v1/agents/<él>/scopes {"scopes":["admin"]}`), borrando
+ * las denegaciones `!patrón` con que el operador lo recortaba, o crear otro
+ * agente admin / acuñarse claves nuevas. MCP ya lo excluía; REST no. Las
+ * lecturas siguen abiertas a quien pase la puerta (no conceden nada); toda
+ * escritura de un agente es 403, traiga los scopes que traiga.
+ */
+export const sinAgentesEnGestionDeAgentes = createMiddleware(async (c, next) => {
+  const metodo = c.req.method.toUpperCase();
+  if (metodo === "GET" || metodo === "HEAD" || metodo === "OPTIONS") return next();
+  if (!llamaUnAgente(c)) return next();
+  return c.json(
+    {
+      error: "Forbidden",
+      message:
+        "Agents cannot manage agents (create, edit, scopes, keys, tokens, quotas, signer, notifications or playground): use the admin panel with a human admin session.",
+      code: "FORBIDDEN",
+    },
     403
   );
 });

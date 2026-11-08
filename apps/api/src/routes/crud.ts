@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { db } from "../db";
 import { olvidarAjustesDelSitio } from "../lib/ajustes-del-sitio";
 import { aplicarProcedenciaEnRest } from "../lib/procedencia";
+import { invalidateRealtimePolicy } from "../lib/realtime-wiring";
 import { dataSets, dataEntries, siteSettings } from "../db/schema";
 import {
   addSchemaVersionToData,
@@ -350,6 +351,9 @@ dataSetsRoutes.patch("/:id", requireAuth, async (c) => {
   }
 
   await invalidateGraphQLCache();
+  // La política del realtime se cachea por slug: la vieja y la nueva (si cambió).
+  invalidateRealtimePolicy(existing.slug);
+  if (updated?.slug && updated.slug !== existing.slug) invalidateRealtimePolicy(updated.slug);
   return c.json(updated);
 });
 

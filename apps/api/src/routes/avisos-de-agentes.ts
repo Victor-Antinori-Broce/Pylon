@@ -34,12 +34,16 @@ import {
 import { logger } from "../lib/logger";
 import { registrarOperacionesDelNucleo } from "../lib/operaciones-del-nucleo";
 import { optionalAuth, requireAuth } from "../middleware/auth";
-import { exigirAdmin } from "../middleware/auth-guard";
+import { exigirAdmin, sinAgentesEnGestionDeAgentes } from "../middleware/auth-guard";
 
 const deAdmin = {
   acceso: "sesion" as const,
   permiso: { roles: ["admin"] },
-  antes: [exigirAdmin as unknown as MiddlewareHandler],
+  // La URL y el secreto los pone una persona, nunca un agente (F5)
+  antes: [
+    sinAgentesEnGestionDeAgentes as unknown as MiddlewareHandler,
+    exigirAdmin as unknown as MiddlewareHandler,
+  ],
   mcp: { excluir: "Only a human administrator sets where an agent's notifications go (an agent could point them at an internal address)." },
   etiquetas: ["agents"],
 };

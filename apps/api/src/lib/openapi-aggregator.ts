@@ -14,7 +14,7 @@
  * - Supports tags, webhooks, and reusable components
  */
 
-import { VERSION_DE_KITSUDEN, camposDelSchema, type OperacionDeKon , KonDefinition, KonOpenApiPath, OpenApiMethod } from "@kitsuden/shared";
+import { VERSION_DE_KITSUDEN, accesoADataset, camposDelSchema, type OperacionDeKon , KonDefinition, KonOpenApiPath, OpenApiMethod } from "@kitsuden/shared";
 import type {
   OpenAPIObject,
   PathItemObject,
@@ -28,6 +28,7 @@ import { db } from "../db";
 import { dataSets } from "../db/schema";
 
 import { logger } from "./logger";
+import { checkReadAccess, type PolicyJson, type RLSUser } from "./rls-builder";
 import { componentesComunes, esquemaJson, operacionOpenApi } from "./operaciones-openapi";
 import { operacionesDelNucleo } from "./operaciones-del-nucleo";
 import { rutasDeKons } from "./rutas-de-kons";
@@ -48,6 +49,32 @@ export interface OpenApiAggregatorOptions {
   includeKons?: string[];
   /** Exclude specific kons */
   excludeKons?: string[];
+  /**
+   * Quién pide el documento. Solo se describen los datasets que ESTA identidad
+   * puede leer; sin identidad (o `null`), los de lectura pública.
+   */
+  usuario?: RLSUser | null;
+}
+
+/**
+ * ¿Sale este dataset en el documento OpenAPI de esta identidad?
+ *
+ * Auditoría 2026-11-04 (F11): `/api/docs/openapi.json` no pide sesión y
+ * describía TODOS los datasets —nombre, descripción, campos y opciones de sus
+ * enums— incluidos los que `GET /api/data-sets` le oculta a quien pregunta. La
+ * regla es la de ese listado (`crud.ts`, `puedeVerDataset`): los scopes por
+ * dataset del agente deciden primero, el equipo los ve todos, y si no, la
+ * política de lectura.
+ */
+export function datasetVisibleEnDocs(
+  ds: { slug: string | null; policyJson: unknown },
+  usuario: RLSUser | null | undefined
+): boolean {
+  const scopes = (usuario as { scopes?: unknown } | null | undefined)?.scopes;
+  const acceso = accesoADataset(Array.isArray(scopes) ? (scopes as string[]) : undefined, ds.slug, "read");
+  if (acceso) return acceso === "concedido";
+  if (usuario?.role === "admin" || usuario?.role === "editor") return true;
+  return checkReadAccess((ds.policyJson ?? null) as PolicyJson | null, usuario ?? null);
 }
 
 /**
@@ -389,6 +416,7 @@ export async function generateOpenAPISpec(
     ],
     includeKons,
     excludeKons = [],
+    usuario = null,
   } = options;
 
   // Filter kons
@@ -464,15 +492,18 @@ export async function generateOpenAPISpec(
   }> = [];
 
   try {
-    datasets = await db
+    // Sin caché a propósito: el documento depende de quién lo pide.
+    const todos = await db
       .select({
         id: dataSets.id,
         name: dataSets.name,
         slug: dataSets.slug,
         description: dataSets.description,
         schema: dataSets.schema,
+        policyJson: dataSets.policyJson,
       })
       .from(dataSets);
+    datasets = todos.filter((ds) => datasetVisibleEnDocs(ds, usuario));
   } catch (err) {
     logger.warn({ err }, "Could not fetch datasets for OpenAPI spec");
   }
@@ -832,7 +863,11 @@ export async function generateOpenAPISpec(
 /**
  * Generate OpenAPI spec for a single kon
  */
-export async function generateKonSpec(kon: KonDefinition): Promise<OpenAPIObject | null> {
+export async function generateKonSpec(
+  kon: KonDefinition,
+  /** Quién lo pide: ver `OpenApiAggregatorOptions.usuario`. */
+  usuario: RLSUser | null = null
+): Promise<OpenAPIObject | null> {
   // Antes devolvía `null` para todo kon sin declaración manual, que eran todos.
   const tieneRutas = rutasDeKons().some((r) => r.konId === kon.id);
   if (!kon.openApi && !tieneRutas) {
@@ -843,6 +878,7 @@ export async function generateKonSpec(kon: KonDefinition): Promise<OpenAPIObject
     includeKons: [kon.id],
     title: `${kon.name} API`,
     description: kon.description || `${kon.name} endpoints`,
+    usuario,
   });
 }
 

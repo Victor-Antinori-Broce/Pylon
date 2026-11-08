@@ -37,7 +37,8 @@ const policyOf = (json: Partial<PolicyJson> | null): ResourcePolicy | null =>
 const eventFor = (ownerId: string | null): ChangeEvent => ({
   type: "INSERT",
   resource: "products",
-  row: { id: "row-1", title: "Teclado", ownerId },
+  // Publicada: fuera del equipo, `publishedOrOwn` deja fuera los borradores ajenos.
+  row: { id: "row-1", title: "Teclado", ownerId, status: "published" },
   at: "2026-07-26T00:00:00.000Z",
 });
 
@@ -112,7 +113,7 @@ describe("filterForClient — aislamiento por fila", () => {
     });
     const conEstado = (status: string): ChangeEvent => ({
       ...eventFor("user-bob"),
-      row: { ...eventFor("user-bob").row, data: { status } },
+      row: { ...eventFor("user-bob").row, status, data: { status } },
     });
     expect(filterForClient(conEstado("published"), alice, p)).not.toBeNull();
     expect(filterForClient(conEstado("draft"), alice, p)).toBeNull();
@@ -133,7 +134,7 @@ describe("filterForClient — aislamiento por fila", () => {
     const event: ChangeEvent = {
       type: "UPDATE",
       resource: "products",
-      row: { id: "row-2", data: { ownerId: "user-alice", title: "X" } },
+      row: { id: "row-2", status: "published", data: { ownerId: "user-alice", title: "X" } },
       at: "2026-07-26T00:00:00.000Z",
     };
     expect(filterForClient(event, alice, p)).not.toBeNull();

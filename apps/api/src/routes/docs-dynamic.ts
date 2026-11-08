@@ -18,9 +18,14 @@ import { Hono } from "hono";
 import { logger } from "../lib/logger";
 import { getLoadedKons } from "../lib/module-loader";
 import { generateOpenAPISpec, generateKonSpec, listOperations } from "../lib/openapi-aggregator";
+import type { RLSUser } from "../lib/rls-builder";
 import type { AppVariables } from "../types/hono";
 
 export const dynamicDocsRouter = new Hono<{ Variables: AppVariables }>();
+
+/** La identidad que dejó el middleware global (sesión o clave de agente), o `null`. */
+const usuarioDe = (c: { get: unknown }) =>
+  ((c.get as (k: string) => unknown).call(c, "user") ?? null) as RLSUser | null;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCALAR UI (Modern)
@@ -63,6 +68,8 @@ dynamicDocsRouter.get("/openapi.json", async (c) => {
   try {
     const kons = await getLoadedKons();
     const spec = await generateOpenAPISpec(kons, {
+      // Solo los datasets que puede leer quien pregunta (anónimo: los públicos).
+      usuario: usuarioDe(c),
       servers: [
         {
           url: `${new URL(c.req.url).origin}/api`,
@@ -109,7 +116,7 @@ dynamicDocsRouter.get("/:kon/openapi.json", async (c) => {
       );
     }
 
-    const spec = await generateKonSpec(kon);
+    const spec = await generateKonSpec(kon, usuarioDe(c));
 
     if (!spec) {
       return c.json(
