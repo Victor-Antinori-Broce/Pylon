@@ -1,4 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+/*
+ * Fuentes alojadas con el panel (Geist y Geist Mono, OFL-1.1), nunca de Google:
+ * el panel se instala en redes internas sin salida a internet, cada petición a
+ * Google le manda la IP del usuario, y un @import remoto bloquea el pintado.
+ */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @tailwind base;
 @tailwind components;
@@ -42,8 +48,11 @@
     --kitsuden-yellow: 255 214 0;
     --kitsuden-purple: 179 136 255;
     --kitsuden-danger: 255 45 111;
-    --kitsuden-font-sans: "Inter", system-ui, sans-serif;
-    --kitsuden-font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --kitsuden-font-sans: "Geist Variable", system-ui, sans-serif;
+    --kitsuden-font-mono: "Geist Mono Variable", ui-monospace, monospace;
+    /* Nombre público para las vistas de kons (Web Components): la variable
+       atraviesa su shadow DOM y las fuentes de arriba ya están cargadas. */
+    --kitsuden-font: var(--kitsuden-font-sans);
   }
 
   * {
@@ -53,7 +62,6 @@
   body {
     @apply bg-kitsuden-bg text-kitsuden-text antialiased;
     font-family: var(--kitsuden-font-sans);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   ::-webkit-scrollbar {

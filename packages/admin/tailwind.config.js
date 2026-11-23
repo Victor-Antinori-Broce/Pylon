@@ -26,8 +26,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["var(--kitsuden-font-sans)", "Inter", "system-ui", "sans-serif"],
-        mono: ["var(--kitsuden-font-mono)", "JetBrains Mono", "Fira Code", "monospace"],
+        sans: ["var(--kitsuden-font-sans)", "Geist Variable", "system-ui", "sans-serif"],
+        mono: ["var(--kitsuden-font-mono)", "Geist Mono Variable", "ui-monospace", "monospace"],
       },
       animation: {
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
