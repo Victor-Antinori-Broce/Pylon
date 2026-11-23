@@ -135,7 +135,8 @@ describe("la barra de abajo en el marco del juego", () => {
   it("solo por debajo de md, y sin espaciador: aparta la página el <body>", () => {
     expect(barra).toContain("hideAbove={767}");
     expect(barra).toContain("spacer={false}");
-    expect(lee("layouts", "BaseLayout.astro")).toContain('data-barra-inferior={conBarraInferior ? "" : undefined}');
+    // La de juego o la global de la web (§13.8): cualquiera de las dos aparta el final de la página
+    expect(lee("layouts", "BaseLayout.astro")).toContain('data-barra-inferior={conBarraInferior || conBarraGlobal ? "" : undefined}');
     // Dentro del bloque de móvil, y contando el borde de 1 px de la barra
     expect(css).toMatch(
       /@media \(max-width: 767px\) \{\s*(\/\*[^*]*\*\/\s*)?body\[data-barra-inferior\] \{\s*padding-bottom: calc\(var\(--ta-bottom-nav-height, 3\.75rem\) \+ env\(safe-area-inset-bottom, 0px\) \+ 1px\);/
@@ -261,6 +262,8 @@ describe("el hub en bento: la sección principal, grande", () => {
     expect(atajos.match(/repartirImagenes\(/g)).toHaveLength(1);
     const desdeMd = atajos.slice(atajos.indexOf("@media (min-width: 768px)"));
     expect(desdeMd).toMatch(/\.atajo-principal \{\s*grid-column: span 2;/);
-    expect(atajos).not.toMatch(/max-width: 767px[\s\S]*atajo-principal/);
+    // Solo en el CSS: el `sizes` de una imagen también dice «max-width: 767px»
+    const estilos = atajos.slice(atajos.indexOf("<style"));
+    expect(estilos).not.toMatch(/max-width: 767px[\s\S]*atajo-principal/);
   });
 });

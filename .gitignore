@@ -260,6 +260,7 @@
 /tests/unit/marca-y-sus-destinos.test.ts
 /tests/unit/mensajes-para-quien-mira.test.ts
 /tests/unit/meta-de-juego.test.ts
+/tests/unit/movil-imagenes-y-letras.test.ts
 /tests/unit/nombres-de-datos.test.ts
 /tests/unit/orden-de-juegos.test.ts
 /tests/unit/orden-de-los-destacados.test.ts

@@ -148,8 +148,14 @@ export function createKitsuden(options: ClientOptions) {
   async function request<T>(path: string): Promise<T | null> {
     const headers: Record<string, string> = { accept: "application/json" };
     if (options.siteKey) {
+      // 0.8 names (this repository's API) and 0.9 names (`x-kitsuden-site` / `-client`):
+      // each API version reads its own, so the per-visitor quota survives the upgrade.
       headers["x-kitsuden-sitio"] = options.siteKey;
-      if (options.clientIp) headers["x-kitsuden-cliente"] = options.clientIp.slice(0, 64);
+      headers["x-kitsuden-site"] = options.siteKey;
+      if (options.clientIp) {
+        headers["x-kitsuden-cliente"] = options.clientIp.slice(0, 64);
+        headers["x-kitsuden-client"] = options.clientIp.slice(0, 64);
+      }
     }
     let res: Response;
     try {
@@ -175,6 +181,24 @@ export function createKitsuden(options: ClientOptions) {
       async list(limit = 100): Promise<PageSummary[]> {
         const data = await get<{ docs?: PageSummary[] }>(`/api/page-builder/pages?limit=${limit}`);
         return Array.isArray(data?.docs) ? data.docs : [];
+      },
+
+      /**
+       * Every published page, page by page: the API serves at most 100 per request, so
+       * `list()` alone left a site with more pages out of its sitemap. Stops at `max`.
+       */
+      async listAll(max = 5000): Promise<PageSummary[]> {
+        const all: PageSummary[] = [];
+        for (let offset = 0; all.length < max; offset += 100) {
+          const data = await get<{ docs?: PageSummary[]; totalDocs?: number }>(
+            `/api/page-builder/pages?limit=100&offset=${offset}`
+          );
+          const docs = Array.isArray(data?.docs) ? data.docs : [];
+          all.push(...docs);
+          const total = typeof data?.totalDocs === "number" ? data.totalDocs : 0;
+          if (docs.length < 100 || all.length >= total) break;
+        }
+        return all.slice(0, max);
       },
 
       /**
