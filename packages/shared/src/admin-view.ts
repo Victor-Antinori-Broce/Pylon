@@ -108,7 +108,9 @@ export function isSafeAssetPath(src: string, options: { allowHtml?: boolean } = 
   // que solo se habilita para los GRÁFICOS (overlays de OBS) y con una CSP
   // restrictiva encima. Las vistas de admin son Web Components: no lo
   // necesitan, y dárselo sería ampliar la superficie sin motivo.
-  return options.allowHtml ? /\.(js|mjs|css|map|html)$/.test(src) : /\.(js|mjs|css|map)$/.test(src);
+  //
+  // `.map` tampoco: un source map publica el código fuente del kon.
+  return options.allowHtml ? /\.(js|mjs|css|html)$/.test(src) : /\.(js|mjs|css)$/.test(src);
 }
 
 /** Id de kon utilizable en una ruta: sin separadores ni saltos. */

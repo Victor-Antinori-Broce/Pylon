@@ -558,6 +558,19 @@ export function assertToolScope(toolName: string, scopes?: string[]): void {
   }
 }
 
+/**
+ * Scope base de una herramienta DINÁMICA (acción `agent.tool:*` de un kon).
+ * No se sabe si lee o escribe —es código del kon—, así que se exige
+ * `mcp:write`: con el `mcp:read` por defecto, un agente de solo lectura
+ * ejecutaba acciones que escriben. Los `requiredScopes` que la acción
+ * declare los exige después el engine.
+ */
+export function assertDynamicToolScope(toolName: string, scopes?: string[]): void {
+  if (!hasToolScope(scopes || [], "mcp:write")) {
+    throw new Error(`Agent lacks required scope 'mcp:write' to execute tool '${toolName}'`);
+  }
+}
+
 export interface MCPSessionContext {
   /** The human who approved this call, when it replays a held proposal. */
   approvedBy?: string;
@@ -1348,6 +1361,23 @@ async function kitsudenCreateRecord(
   return `Created native record: ${result[0]?.id}`;
 }
 
+/**
+ * Funde `data` sobre lo guardado, pero `ownerId` sigue siendo el de la fila:
+ * al crear lo fija `duenoDeEntrada`, y una edición no puede cambiarlo (las
+ * reglas `rlsRules` de un dataset filtran por `data->>'ownerId'`; sin esto un
+ * agente plantaba sus filas en la vista de otro usuario).
+ */
+export function fusionarConservandoDueno(
+  guardado: unknown,
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const previo = (guardado && typeof guardado === "object" ? guardado : {}) as Record<string, unknown>;
+  const fusion: Record<string, unknown> = { ...previo, ...data };
+  if (Object.prototype.hasOwnProperty.call(previo, "ownerId")) fusion.ownerId = previo.ownerId;
+  else delete fusion.ownerId;
+  return fusion;
+}
+
 async function kitsudenUpdateRecord(
   args: ArgsDe<"kitsuden_update_record">,
   callbacks: MCPExecutionCallbacks | undefined,
@@ -1374,7 +1404,7 @@ async function kitsudenUpdateRecord(
     if (!(await filaEditable(delDataset, existing.dataSetId, recordId, "write", scopes))) {
       return `Record not found: ${recordId}`;
     }
-    const mergedData = { ...(existing.data as any), ...data };
+    const mergedData = fusionarConservandoDueno(existing.data, data);
     const updates: Record<string, unknown> = { data: mergedData, updatedAt: new Date() };
     if (args.status) updates.status = args.status;
     const [updated] = await bd()
@@ -1395,7 +1425,7 @@ async function kitsudenUpdateRecord(
     // puede servir para escribir en aquel.
     const existing = await filaEditable(ds, ds.id, recordId, "write", scopes);
     if (!existing) return `Record not found: ${recordId}`;
-    const mergedData = { ...(existing.data as any), ...data };
+    const mergedData = fusionarConservandoDueno(existing.data, data);
     const [updated] = await bd()
       .update(dataEntries)
       .set({ data: mergedData, updatedAt: new Date() })

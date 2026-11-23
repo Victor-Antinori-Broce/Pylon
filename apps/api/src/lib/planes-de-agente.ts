@@ -41,6 +41,41 @@ export const CAMINO_DE_PLAN = "/api/agent/plans";
 
 export class PlanNoValido extends Error {}
 
+/**
+ * El camino de un paso tal como lo verá el router. Las comprobaciones (veto
+ * de `/api/admin`, permisos, secretos) se hacían sobre el texto CRUDO y la
+ * ejecución lo normalizaba como URL: `/api/./admin/...` pasaba el veto y
+ * llegaba a `/api/admin/...`, y el humano aprobaba un camino que no era el
+ * real. Ahora se rechaza todo lo que la normalización cambiaría (segmentos
+ * `.`/`..`, también codificados, barras invertidas, `//`), así que el camino
+ * guardado y comprobado es exactamente el que se ejecuta.
+ */
+export function caminoCanonico(crudo: string, i: number): string {
+  const [ruta = "", ...resto] = crudo.split("?");
+  if (/\\|\/\/|%2e|%2f|%5c/i.test(ruta) || /(^|\/)\.{1,2}(\/|$)/.test(ruta)) {
+    throw new PlanNoValido(`step ${i}: path must not contain dot segments, encoded separators or '//'`);
+  }
+  let normalizada: string;
+  try {
+    normalizada = new URL(ruta, "http://kitsuden.invalid").pathname;
+  } catch {
+    throw new PlanNoValido(`step ${i}: path is not a valid URL path`);
+  }
+  // El parser de URL también QUITA tabuladores y saltos de línea
+  // (`/api/ad\tmin` → `/api/admin`). Solo se acepta si lo único que cambió
+  // es la codificación de caracteres (un slug con `ñ`).
+  let decodificada = normalizada;
+  try {
+    decodificada = decodeURI(normalizada);
+  } catch {
+    // Se queda la normalizada: la comparación de abajo decide.
+  }
+  if (normalizada !== ruta && decodificada !== ruta) {
+    throw new PlanNoValido(`step ${i}: path must be in canonical form (${normalizada})`);
+  }
+  return resto.length > 0 ? `${ruta}?${resto.join("?")}` : ruta;
+}
+
 /** Valida y normaliza el plan que manda el agente. Lanza `PlanNoValido`. */
 export function validarPlan(crudo: unknown): { goal: string; steps: PasoDePlan[] } {
   const plan = (crudo as { goal?: unknown; steps?: unknown } | null);
@@ -57,11 +92,12 @@ export function validarPlan(crudo: unknown): { goal: string; steps: PasoDePlan[]
   const steps: PasoDePlan[] = plan.steps.map((s, i) => {
     const paso = s as Partial<PasoDePlan> | null;
     const method = String(paso?.method ?? "").toUpperCase();
-    const path = String(paso?.path ?? "");
+    const crudo = String(paso?.path ?? "");
     if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) {
       throw new PlanNoValido(`step ${i}: method must be GET, POST, PUT, PATCH or DELETE`);
     }
-    if (!path.startsWith("/api/")) throw new PlanNoValido(`step ${i}: path must start with /api/`);
+    if (!crudo.startsWith("/api/")) throw new PlanNoValido(`step ${i}: path must start with /api/`);
+    const path = caminoCanonico(crudo, i);
     if (path.startsWith("/api/admin")) throw new PlanNoValido(`step ${i}: admin routes cannot be planned`);
     return {
       method: method as PasoDePlan["method"],

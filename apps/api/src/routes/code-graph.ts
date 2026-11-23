@@ -46,8 +46,9 @@ import {
   type CodeEmbeddingProvider,
   type SemanticIndex,
 } from "@kitsuden/engine";
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 
+import { enProduccion } from "../lib/entorno";
 import { protectRoute, requireAdmin } from "../middleware/auth-guard";
 
 const app = new Hono();
@@ -226,15 +227,42 @@ app.get("/semantic", protectRoute, async (c) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // EDICIÓN SEMÁNTICA — refactor a nivel símbolo
 //
-// SEGURIDAD: requiere ADMIN (modifica el código fuente del servidor) y es
-// dry-run salvo `apply: true` explícito en el body. El engine además verifica
-// que el resultado siga siendo sintácticamente válido antes de escribir.
+// SEGURIDAD: requiere un ADMIN HUMANO (modifica el código fuente del servidor:
+// un agente con scope `admin` no basta, porque lo escrito se ejecuta en el
+// siguiente arranque) y es dry-run salvo `apply: true` explícito en el body.
+// En producción `apply` se rechaza siempre. El engine además verifica que el
+// resultado siga siendo sintácticamente válido antes de escribir.
 // ═══════════════════════════════════════════════════════════════════════════
 
-app.post("/edit/:op", protectRoute, requireAdmin, async (c) => {
+/** Un agente (clave, token OAuth o máquina) nunca edita el código del servidor. */
+const soloHumanos: MiddlewareHandler = async (c, next) => {
+  const get = c.get as (k: string) => unknown;
+  const usuario = get("user") as { id?: string; role?: string } | null;
+  if (get("agent") || usuario?.role === "agent" || usuario?.id?.startsWith("machine-")) {
+    return c.json(
+      { error: { code: "FORBIDDEN", message: "Agents cannot edit server source code" } },
+      403
+    );
+  }
+  await next();
+};
+
+app.post("/edit/:op", protectRoute, requireAdmin, soloHumanos, async (c) => {
   const op = c.req.param("op");
   const body = await c.req.json().catch(() => ({}) as Record<string, unknown>);
   const { name, newName, code, apply } = body as Record<string, string | boolean>;
+
+  if (apply === true && enProduccion()) {
+    return c.json(
+      {
+        error: {
+          code: "FORBIDDEN",
+          message: "apply is disabled in production; run the edit in development",
+        },
+      },
+      403
+    );
+  }
 
   if (typeof name !== "string" || !name) {
     return c.json({ error: { code: "VALIDATION", message: "Falta 'name'" } }, 400);

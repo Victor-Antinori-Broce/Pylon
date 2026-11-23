@@ -129,6 +129,10 @@ function leerTokens(codigo: string): Lectura {
     if (u.t === "n" || u.t === "s" || u.t === "re") return false;
     if (u.v === ")") return ultimoCierreEsControl;
     if (u.v === "}") return ultimaLlaveEsBloque;
+    // `a++ / b`: tras `++`/`--` una barra es una división (incrementar un
+    // literal regex no es JavaScript válido). Leerla como regex se tragaba
+    // el resto de la línea y escondía código al escáner.
+    if (u.v === "++" || u.v === "--") return false;
     return u.v !== "]";
   };
   /**
@@ -139,7 +143,50 @@ function leerTokens(codigo: string): Lectura {
    */
   const barraDudosa = () => {
     const u = ultimoSignificativo();
-    return u?.t === "id" ? ANTES_DE_REGEX_DUDOSO.includes(u.v) : u?.t === "p" && u.v === "}";
+    if (u?.t === "id") return ANTES_DE_REGEX_DUDOSO.includes(u.v);
+    // Tras `++`/`--` se lee como división, pero la línea va a un humano igual:
+    // un `++` en una línea aparte puede ser prefijo de lo que sigue (ASI).
+    return u?.t === "p" && (u.v === "}" || u.v === "++" || u.v === "--");
+  };
+
+  /**
+   * Lee el escape que empieza en `codigo[i] === "\\"` como lo lee el
+   * intérprete y devuelve su valor y cuántos caracteres ocupa. Antes solo se
+   * entendían `\n` y `\t`: `"\x65val"` o `"eval"` se leían como `x65val`,
+   * y una palabra vetada escrita así pasaba el escáner.
+   */
+  const leerEscape = (desde: number): { valor: string; largo: number } => {
+    const sig = codigo[desde + 1] ?? "";
+    const simples: Record<string, string> = { n: "\n", t: "\t", r: "\r", b: "\b", f: "\f", v: "\v" };
+    if (sig in simples) return { valor: simples[sig]!, largo: 2 };
+    // Continuación de línea: la barra y el salto no son parte del texto.
+    if (sig === "\r" && codigo[desde + 2] === "\n") return { valor: "", largo: 3 };
+    if (sig === "\n" || sig === "\r" || sig === " " || sig === " ") return { valor: "", largo: 2 };
+    if (sig === "x") {
+      const hex = codigo.slice(desde + 2, desde + 4);
+      if (/^[0-9a-fA-F]{2}$/.test(hex)) return { valor: String.fromCharCode(parseInt(hex, 16)), largo: 4 };
+      return { valor: "x", largo: 2 };
+    }
+    if (sig === "u") {
+      if (codigo[desde + 2] === "{") {
+        const fin = codigo.indexOf("}", desde + 3);
+        const hex = fin > 0 ? codigo.slice(desde + 3, fin) : "";
+        if (/^[0-9a-fA-F]{1,6}$/.test(hex) && parseInt(hex, 16) <= 0x10ffff) {
+          return { valor: String.fromCodePoint(parseInt(hex, 16)), largo: fin - desde + 1 };
+        }
+        return { valor: "u", largo: 2 };
+      }
+      const hex = codigo.slice(desde + 2, desde + 6);
+      if (/^[0-9a-fA-F]{4}$/.test(hex)) return { valor: String.fromCharCode(parseInt(hex, 16)), largo: 6 };
+      return { valor: "u", largo: 2 };
+    }
+    // Octal heredado (`\145` = "e"), fuera de modo estricto.
+    const octal = /^[0-7]{1,3}/.exec(codigo.slice(desde + 1, desde + 4))?.[0];
+    if (octal && !(octal === "0" && /[89]/.test(codigo[desde + 2] ?? ""))) {
+      const valido = parseInt(octal, 8) > 0o377 ? octal.slice(0, 2) : octal;
+      return { valor: String.fromCharCode(parseInt(valido, 8)), largo: 1 + valido.length };
+    }
+    return { valor: sig, largo: sig ? 2 : 1 };
   };
 
   /**
@@ -154,10 +201,10 @@ function leerTokens(codigo: string): Lectura {
     while (i < n) {
       const d = codigo[i]!;
       if (d === "\\") {
-        const sig = codigo[i + 1] ?? "";
-        valor += sig === "n" ? "\n" : sig === "t" ? "\t" : sig;
-        if (sig === "\n") linea++;
-        i += 2;
+        const esc = leerEscape(i);
+        valor += esc.valor;
+        for (let k = i; k < i + esc.largo; k++) if (codigo[k] === "\n") linea++;
+        i += esc.largo;
         continue;
       }
       if (d === "\n") linea++;
@@ -242,10 +289,10 @@ function leerTokens(codigo: string): Lectura {
       while (i < n) {
         const d = codigo[i]!;
         if (d === "\\") {
-          const sig = codigo[i + 1] ?? "";
-          valor += sig === "n" ? "\n" : sig === "t" ? "\t" : sig;
-          if (sig === "\n") linea++;
-          i += 2;
+          const esc = leerEscape(i);
+          valor += esc.valor;
+          for (let k = i; k < i + esc.largo; k++) if (codigo[k] === "\n") linea++;
+          i += esc.largo;
           continue;
         }
         if (d === "\n") {
@@ -464,7 +511,7 @@ export function escanearCodigo(codigo: string, opciones: OpcionesDeEscaneo = {})
   const { tokens, sinTerminar, barrasDudosas } = leerTokens(codigo);
   if (sinTerminar) add("unparsable", "medium", 1, "Unterminated string or comment: the code cannot be reviewed reliably");
   for (const linea of barrasDudosas) {
-    add("ambiguous_slash", "medium", linea, "A '/' after '}', 'of' or 'yield' can be a regex or a division: the code after it cannot be reviewed reliably");
+    add("ambiguous_slash", "medium", linea, "A '/' after '}', '++', '--', 'of' or 'yield' can be a regex or a division: the code after it cannot be reviewed reliably");
   }
 
   /** A literal API path: flags percent-escapes and records what the router will see. */

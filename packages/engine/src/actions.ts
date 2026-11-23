@@ -51,7 +51,7 @@
  * ```
  */
 
-import type { KonContext } from "@kitsuden/shared";
+import { concedeScope, type KonContext } from "@kitsuden/shared";
 import type { Hono, Context as HonoContext } from "hono";
 
 import { queue, type OpcionesDeDespacho, type TrabajoDeCola } from "./cola";
@@ -690,17 +690,13 @@ class MCPAdapter implements ActionAdapter {
 }
 
 /**
- * Scopes requeridos que los concedidos no cubren. Misma semántica que
- * `hasScope` de la API (`admin`/`admin:*` lo cubren todo, `recurso:*` y
- * `*:accion` como comodines); vive aquí porque el engine no importa de la app.
+ * Scopes requeridos que los concedidos no cubren. Usa `concedeScope`, la
+ * MISMA regla que el resto del sistema: `admin` lo cubre todo, comodines por
+ * segmento, y una denegación `!scope` gana siempre (también sobre `admin`).
+ * Un matcher propio aquí ignoraba las denegaciones.
  */
 export function scopesQueFaltan(requeridos: readonly string[], concedidos: readonly string[]): string[] {
-  if (concedidos.includes("admin") || concedidos.includes("admin:*")) return [];
-  const cubre = (concedido: string, requerido: string) =>
-    concedido === requerido ||
-    (concedido.endsWith(":*") && requerido.startsWith(concedido.slice(0, -1))) ||
-    (concedido.startsWith("*:") && requerido.endsWith(concedido.slice(1)));
-  return requeridos.filter((r) => !concedidos.some((c) => cubre(c, r)));
+  return requeridos.filter((r) => !concedeScope(concedidos, r));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

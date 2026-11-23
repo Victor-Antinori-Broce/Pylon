@@ -33,7 +33,7 @@
 
 import { createReadStream } from "node:fs";
 import { stat, realpath } from "node:fs/promises";
-import { join, resolve, extname, sep } from "node:path";
+import { join, resolve, extname, sep, posix } from "node:path";
 import { Readable } from "node:stream";
 
 import { isSafeAssetPath, isValidKonId } from "@kitsuden/shared";
@@ -42,15 +42,17 @@ import { Hono, type Context } from "hono";
 import { logger } from "../lib/logger";
 import { resolveWorkspaceRoot } from "../lib/module-loader";
 import { rutaDeKon } from "../lib/kons-instalados";
+import { getKonAdminConfig } from "../services/admin-registry";
 
 const app = new Hono();
 
 /** Tipos MIME de los únicos artefactos que se sirven. */
+// `.map` NO se sirve: un source map publica el código fuente de un kon
+// (incluido el de uno privado o de pago) a cualquiera, sin sesión.
 const MIME: Record<string, string> = {
   ".js": "application/javascript; charset=utf-8",
   ".mjs": "application/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
-  ".map": "application/json; charset=utf-8",
   // Solo para gráficos: ver la CSP que se aplica al servirlo.
   ".html": "text/html; charset=utf-8",
 };
@@ -71,11 +73,14 @@ async function konDirectory(konId: string): Promise<string | null> {
   // puede vivir en packages/kons, en node_modules o enlazado desde otro repo.
   // El id solo se usa para BUSCAR en esa lista, nunca para construir la ruta.
   const instalada = rutaDeKon(konId);
+  // Los kons core viven fuera de packages/kons y su id lleva prefijo. Un id
+  // que se queda vacío al quitarlo (`kon-`) resolvería a `packages/core`
+  // entero: no es un kon, no se busca.
+  const nombreCore = konId.replace(/^kon-/, "");
   const candidates = [
     ...(instalada ? [instalada] : []),
     join(root, "packages", "kons", konId),
-    // Los kons core viven fuera de packages/kons y su id lleva prefijo.
-    join(root, "packages", "core", konId.replace(/^kon-/, "")),
+    ...(nombreCore ? [join(root, "packages", "core", nombreCore)] : []),
   ];
 
   for (const dir of candidates) {
@@ -87,6 +92,29 @@ async function konDirectory(konId: string): Promise<string | null> {
     }
   }
   return null;
+}
+
+/**
+ * Carpetas (relativas al paquete) de los `src` de las vistas `element` que el
+ * kon declara. Un `src` en la raíz del paquete no abre la raíz: devuelve "" y
+ * se ignora, para no volver a servir el paquete entero.
+ */
+async function carpetasDeclaradas(konId: string): Promise<string[]> {
+  let config;
+  try {
+    config = await getKonAdminConfig(konId);
+  } catch (err) {
+    logger.warn({ konId, err }, "[kon-assets] no se pudo leer el registro de admin");
+    return [];
+  }
+  const carpetas = new Set<string>();
+  for (const view of config?.views ?? []) {
+    if (view.type !== "element" || typeof view.src !== "string") continue;
+    const src = view.src.replace(/^\.\//, "");
+    if (!isSafeAssetPath(src)) continue;
+    carpetas.add(posix.dirname(src) === "." ? "" : posix.dirname(src));
+  }
+  return [...carpetas];
 }
 
 /** Qué clase de artefacto sirve cada ruta. Determina extensiones y cabeceras. */
@@ -123,6 +151,18 @@ async function serveFromKon(c: Context, kind: AssetKind) {
   if (!isSafeAssetPath(requested, { allowHtml })) {
     logger.warn({ konId, requested, kind }, "[kon-assets] ruta de artefacto rechazada");
     return c.json({ error: "Invalid asset path" }, 400);
+  }
+
+  // ── Capa 2b: solo lo que el manifiesto declara ──
+  // Una vista de admin se sirve desde la carpeta de su `src` declarado (y sus
+  // chunks, que viven junto a él). Nada más del paquete es público: ni otros
+  // `.js` del servidor, ni los `dist/` de un kon privado.
+  if (kind === "admin-asset") {
+    const carpetas = await carpetasDeclaradas(konId);
+    const pedido = requested.replace(/^\.\//, "");
+    if (!carpetas.some((dir) => dir !== "" && pedido.startsWith(dir + "/"))) {
+      return c.json({ error: "Not found" }, 404);
+    }
   }
 
   const konDir = await konDirectory(konId);

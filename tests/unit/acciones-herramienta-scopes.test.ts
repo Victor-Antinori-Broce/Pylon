@@ -25,6 +25,13 @@ describe("scopesQueFaltan", () => {
     expect(scopesQueFaltan(["crm:write"], [])).toEqual(["crm:write"]);
     expect(scopesQueFaltan([], [])).toEqual([]);
   });
+
+  it("una denegación `!scope` gana, también sobre admin y comodines (auditoría 2026-11-18)", () => {
+    expect(scopesQueFaltan(["mail:send"], ["admin", "!mail:send"])).toEqual(["mail:send"]);
+    expect(scopesQueFaltan(["mail:send"], ["admin:*", "!mail:*"])).toEqual(["mail:send"]);
+    expect(scopesQueFaltan(["crm:write"], ["crm:*", "!crm:write"])).toEqual(["crm:write"]);
+    expect(scopesQueFaltan(["crm:read"], ["crm:*", "!crm:write"])).toEqual([]);
+  });
 });
 
 describe("executeMCPTool con requiredScopes", () => {

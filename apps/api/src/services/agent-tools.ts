@@ -18,7 +18,12 @@ import { messageOf } from "../../../../packages/engine/src/errors";
 
 import { logToolCall } from "./agent-audit";
 import type { LLMTool, LLMToolParameter } from "./llm/types";
-import { listHardcodedMCPTools, executeHardcodedTool, assertToolScope } from "./mcp-tools";
+import {
+  listHardcodedMCPTools,
+  executeHardcodedTool,
+  assertToolScope,
+  assertDynamicToolScope,
+} from "./mcp-tools";
 
 export interface AgentToolContext {
   agentId: string;
@@ -90,8 +95,9 @@ export async function executeAgentTool(
   const isDynamic = dynamicTools.find((t) => t.name === name);
 
   if (isDynamic) {
-    // Las tools dinámicas heredan el scope base mcp:read o mcp:write según el kon.
-    assertToolScope(name, context.scopes);
+    // Las tools dinámicas exigen `mcp:write` (no se sabe si escriben) y luego
+    // los `requiredScopes` que la acción declare.
+    assertDynamicToolScope(name, context.scopes);
     const toolStart = Date.now();
     let success = true;
     let error: string | undefined;

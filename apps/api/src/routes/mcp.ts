@@ -97,6 +97,7 @@ import {
 import {
   agentePuedeLeerDataset,
   assertToolScope,
+  assertDynamicToolScope,
   herramientaQueEscribe,
   herramientaDelNucleoDeDatos,
   herramientaDelNucleoDeSoloLectura,
@@ -1060,7 +1061,7 @@ async function executeTool(
     if (dynamicTools.find((t) => t.name === name)) {
       // Igual que en agent-tools: el scope base de MCP, y luego los que la
       // acción declare (los exige el engine con los scopes de la sesión)
-      assertToolScope(name, session.scopes);
+      assertDynamicToolScope(name, session.scopes);
       const result = await executeMCPTool(name, args, session);
       return {
         jsonrpc: "2.0",
